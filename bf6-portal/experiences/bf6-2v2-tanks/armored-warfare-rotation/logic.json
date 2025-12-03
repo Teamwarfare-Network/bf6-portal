@@ -1,0 +1,12 @@
+{
+  "_comment": "PLACEHOLDER - Replace this file with your actual Rules Editor export",
+  "_instructions": [
+    "1. Open your experience in Portal Builder: https://portal.battlefield.com/bf6",
+    "2. Go to the Rules Editor tab",
+    "3. If using blocks: Click 'Export to Script' to get the logic",
+    "4. For full experience JSON: Use browser dev tools, open Network tab, save the experience, and copy the JSON payload from the API request",
+    "5. Replace this entire file with that exported content"
+  ],
+  "experienceCode": "zfvxv",
+  "placeholder": true
+}
