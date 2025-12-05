@@ -15,10 +15,10 @@ Each experience consists of:
 
 | Experience | Ladder | Status | Experience Code |
 |------------|--------|--------|-----------------|
-| [Armored Warfare - 3 Map Rotation](./experiences/bf6-2v2-tanks/armored-warfare-rotation/) | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) | ✅ Approved | `zfvxv` |
-| [Armored Warfare - Manhattan Bridge](./experiences/bf6-2v2-tanks/armored-warfare-manhattan-bridge/) | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) | ✅ Approved | `zgzq8` |
-| [Armored Warfare - Mirak Valley](./experiences/bf6-2v2-tanks/armored-warfare-mirak-valley/) | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) | ✅ Approved | `zgzqa` |
-| [Armored Warfare - Defense Nexus](./experiences/bf6-2v2-tanks/armored-warfare-defense-nexus/) | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) | ✅ Approved | `zgzqb` |
+| [Armored Warfare - 3 Map Rotation](./experiences/bf6-2v2-tanks/armored-warfare-rotation/) | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) | 🧪 Testing | `zfvxv` |
+| [Armored Warfare - Manhattan Bridge](./experiences/bf6-2v2-tanks/armored-warfare-manhattan-bridge/) | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) | 🧪 Testing | `zgzq8` |
+| [Armored Warfare - Mirak Valley](./experiences/bf6-2v2-tanks/armored-warfare-mirak-valley/) | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) | 🧪 Testing | `zgzqa` |
+| [Armored Warfare - Defense Nexus](./experiences/bf6-2v2-tanks/armored-warfare-defense-nexus/) | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) | 🧪 Testing | `zgzqb` |
 
 ## Quick Links
 
