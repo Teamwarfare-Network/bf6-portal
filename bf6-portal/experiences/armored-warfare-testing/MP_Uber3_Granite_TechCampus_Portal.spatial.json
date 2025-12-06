@@ -1,0 +1,4427 @@
+{
+    "Portal_Dynamic": [
+        {
+            "name": "TEAM_1_HQ",
+            "AltTeam": "TeamNeutral",
+            "ObjId": 1,
+            "InfantrySpawns": [
+                "TEAM_1_HQ/SpawnPoint_1_1",
+                "TEAM_1_HQ/SpawnPoint_1_2",
+                "TEAM_1_HQ/SpawnPoint_1_3",
+                "TEAM_1_HQ/SpawnPoint_1_4"
+            ],
+            "HQArea": "TEAM_1_HQ/HQ_Team1",
+            "type": "HQ_PlayerSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -151.086,
+                "y": 133.694,
+                "z": 428.018
+            },
+            "id": "TEAM_1_HQ",
+            "linked": [
+                "HQArea",
+                "InfantrySpawns"
+            ]
+        },
+        {
+            "name": "HQ_Team1",
+            "type": "PolygonVolume",
+            "id": "TEAM_1_HQ/HQ_Team1",
+            "height": 0,
+            "points": [
+                {
+                    "x": -165.9736,
+                    "y": 140.98833,
+                    "z": 467.0563
+                },
+                {
+                    "x": -165.9736,
+                    "y": 140.98833,
+                    "z": 457.0563
+                },
+                {
+                    "x": -175.9736,
+                    "y": 140.98833,
+                    "z": 457.0563
+                },
+                {
+                    "x": -175.9736,
+                    "y": 140.98833,
+                    "z": 467.0563
+                }
+            ]
+        },
+        {
+            "name": "SpawnPoint_1_1",
+            "type": "SpawnPoint",
+            "right": {
+                "x": -0.88061,
+                "y": 0,
+                "z": 0.473843
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.473843,
+                "y": 0,
+                "z": -0.88061
+            },
+            "position": {
+                "x": -170.9736,
+                "y": 135.47606,
+                "z": 459.0563
+            },
+            "id": "TEAM_1_HQ/SpawnPoint_1_1"
+        },
+        {
+            "name": "SpawnPoint_1_2",
+            "type": "SpawnPoint",
+            "right": {
+                "x": -0.9995,
+                "y": 0,
+                "z": 0.0316198
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.0316198,
+                "y": 0,
+                "z": -0.9995
+            },
+            "position": {
+                "x": -167.9736,
+                "y": 134.427261,
+                "z": 462.0563
+            },
+            "id": "TEAM_1_HQ/SpawnPoint_1_2"
+        },
+        {
+            "name": "SpawnPoint_1_3",
+            "type": "SpawnPoint",
+            "right": {
+                "x": -0.865222,
+                "y": 0,
+                "z": 0.50139
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.50139,
+                "y": 0,
+                "z": -0.865222
+            },
+            "position": {
+                "x": -173.9736,
+                "y": 135.85754,
+                "z": 462.0563
+            },
+            "id": "TEAM_1_HQ/SpawnPoint_1_3"
+        },
+        {
+            "name": "SpawnPoint_1_4",
+            "type": "SpawnPoint",
+            "right": {
+                "x": -0.982064,
+                "y": 0,
+                "z": 0.188547
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.188547,
+                "y": 0,
+                "z": -0.982064
+            },
+            "position": {
+                "x": -170.9736,
+                "y": 134.71263,
+                "z": 465.0563
+            },
+            "id": "TEAM_1_HQ/SpawnPoint_1_4"
+        },
+        {
+            "name": "South-Bradley-IFV",
+            "ObjId": 54,
+            "VehicleType": "M2Bradley",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 15,
+            "P_TimeUntilAbandon": 5,
+            "P_KeepAliveAbandonRadius": 10,
+            "P_KeepAliveSpawnerRadius": 25,
+            "type": "VehicleSpawner",
+            "right": {
+                "x": -0.872833,
+                "y": 0.126221,
+                "z": 0.471413
+            },
+            "up": {
+                "x": 0.118798,
+                "y": 0.99187,
+                "z": -0.0456166
+            },
+            "front": {
+                "x": -0.473338,
+                "y": 0.0161872,
+                "z": -0.880732
+            },
+            "position": {
+                "x": -178.8364,
+                "y": 137.09349,
+                "z": 453.5645
+            },
+            "id": "TEAM_1_HQ/South-Bradley-IFV"
+        },
+        {
+            "name": "South-Abrams-MBT",
+            "ObjId": 56,
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 15,
+            "P_TimeUntilAbandon": 5,
+            "P_KeepAliveAbandonRadius": 10,
+            "P_KeepAliveSpawnerRadius": 25,
+            "type": "VehicleSpawner",
+            "right": {
+                "x": -0.978847,
+                "y": 0.126221,
+                "z": 0.161016
+            },
+            "up": {
+                "x": 0.12718,
+                "y": 0.99187,
+                "z": -0.00438347
+            },
+            "front": {
+                "x": -0.16026,
+                "y": 0.0161872,
+                "z": -0.986942
+            },
+            "position": {
+                "x": -189.611,
+                "y": 137.34261,
+                "z": 456.8339
+            },
+            "id": "TEAM_1_HQ/South-Abrams-MBT"
+        },
+        {
+            "name": "South-Leopard-MBT",
+            "ObjId": 55,
+            "VehicleType": "Leopard",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 15,
+            "P_TimeUntilAbandon": 5,
+            "P_KeepAliveAbandonRadius": 10,
+            "P_KeepAliveSpawnerRadius": 25,
+            "type": "VehicleSpawner",
+            "right": {
+                "x": -0.978847,
+                "y": 0.126221,
+                "z": 0.161016
+            },
+            "up": {
+                "x": 0.12718,
+                "y": 0.99187,
+                "z": -0.00438347
+            },
+            "front": {
+                "x": -0.16026,
+                "y": 0.0161872,
+                "z": -0.986942
+            },
+            "position": {
+                "x": -184.0493,
+                "y": 137.33194,
+                "z": 455.5904
+            },
+            "id": "TEAM_1_HQ/South-Leopard-MBT"
+        },
+        {
+            "name": "South-Bradley-2-IFV",
+            "ObjId": 53,
+            "VehicleType": "M2Bradley",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 15,
+            "P_TimeUntilAbandon": 5,
+            "P_KeepAliveAbandonRadius": 10,
+            "P_KeepAliveSpawnerRadius": 25,
+            "type": "VehicleSpawner",
+            "right": {
+                "x": -0.957804,
+                "y": -0.0313199,
+                "z": 0.285712
+            },
+            "up": {
+                "x": 0.00549086,
+                "y": 0.99187,
+                "z": 0.127136
+            },
+            "front": {
+                "x": -0.287371,
+                "y": 0.123341,
+                "z": -0.949845
+            },
+            "position": {
+                "x": -173.6436,
+                "y": 136.51366,
+                "z": 451.4635
+            },
+            "id": "TEAM_1_HQ/South-Bradley-2-IFV"
+        },
+        {
+            "name": "South-CV90-IFV",
+            "ObjId": 51,
+            "VehicleType": "CV90",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 15,
+            "P_TimeUntilAbandon": 5,
+            "P_KeepAliveAbandonRadius": 10,
+            "P_KeepAliveSpawnerRadius": 25,
+            "type": "VehicleSpawner",
+            "right": {
+                "x": -0.850982,
+                "y": -0.0313199,
+                "z": 0.524261
+            },
+            "up": {
+                "x": 0.0382642,
+                "y": 0.99187,
+                "z": 0.121366
+            },
+            "front": {
+                "x": -0.5238,
+                "y": 0.123341,
+                "z": -0.842865
+            },
+            "position": {
+                "x": -168.0092,
+                "y": 135.73143,
+                "z": 448.9937
+            },
+            "id": "TEAM_1_HQ/South-CV90-IFV"
+        },
+        {
+            "name": "South-CV90-2-IFV",
+            "ObjId": 50,
+            "VehicleType": "CV90",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 15,
+            "P_TimeUntilAbandon": 5,
+            "P_KeepAliveAbandonRadius": 10,
+            "P_KeepAliveSpawnerRadius": 25,
+            "type": "VehicleSpawner",
+            "right": {
+                "x": -0.777151,
+                "y": -0.0313199,
+                "z": 0.628535
+            },
+            "up": {
+                "x": 0.0534338,
+                "y": 0.99187,
+                "z": 0.115493
+            },
+            "front": {
+                "x": -0.627042,
+                "y": 0.123341,
+                "z": -0.769159
+            },
+            "position": {
+                "x": -162.7443,
+                "y": 135.06372,
+                "z": 446.2299
+            },
+            "id": "TEAM_1_HQ/South-CV90-2-IFV"
+        },
+        {
+            "name": "TEAM_1_HQswapsides",
+            "AltTeam": "TeamNeutral",
+            "ObjId": 1,
+            "InfantrySpawns": [
+                "TEAM_1_HQswapsides/SpawnPoint_1_1",
+                "TEAM_1_HQswapsides/SpawnPoint_1_2",
+                "TEAM_1_HQswapsides/SpawnPoint_1_3",
+                "TEAM_1_HQswapsides/SpawnPoint_1_4"
+            ],
+            "HQArea": "TEAM_1_HQswapsides/HQ_Team1swapsides",
+            "type": "HQ_PlayerSpawner",
+            "right": {
+                "x": 0.712394,
+                "y": 0,
+                "z": 0.70178
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.70178,
+                "y": 0,
+                "z": 0.712394
+            },
+            "position": {
+                "x": -107.36,
+                "y": 314.147,
+                "z": 111.548
+            },
+            "id": "TEAM_1_HQswapsides",
+            "linked": [
+                "HQArea",
+                "InfantrySpawns"
+            ]
+        },
+        {
+            "name": "HQ_Team1swapsides",
+            "type": "PolygonVolume",
+            "id": "TEAM_1_HQswapsides/HQ_Team1swapsides",
+            "height": 0,
+            "points": [
+                {
+                    "x": -102.36,
+                    "y": 314.147,
+                    "z": 116.548
+                },
+                {
+                    "x": -102.36,
+                    "y": 314.147,
+                    "z": 106.548
+                },
+                {
+                    "x": -112.36,
+                    "y": 314.147,
+                    "z": 106.548
+                },
+                {
+                    "x": -112.36,
+                    "y": 314.147,
+                    "z": 116.548
+                }
+            ]
+        },
+        {
+            "name": "SpawnPoint_1_1",
+            "type": "SpawnPoint",
+            "right": {
+                "x": -0.95987482088,
+                "y": 0,
+                "z": -0.280431575658
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.280431575658,
+                "y": 0,
+                "z": -0.95987482088
+            },
+            "position": {
+                "x": -110.28302187156,
+                "y": 314.147,
+                "z": 111.54800349488
+            },
+            "id": "TEAM_1_HQswapsides/SpawnPoint_1_1"
+        },
+        {
+            "name": "SpawnPoint_1_2",
+            "type": "SpawnPoint",
+            "right": {
+                "x": -0.73422723385,
+                "y": 0,
+                "z": -0.6789026524188
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.6789026524188,
+                "y": 0,
+                "z": -0.73422723385
+            },
+            "position": {
+                "x": -107.36000516246,
+                "y": 314.147,
+                "z": 114.76099343628
+            },
+            "id": "TEAM_1_HQswapsides/SpawnPoint_1_2"
+        },
+        {
+            "name": "SpawnPoint_1_3",
+            "type": "SpawnPoint",
+            "right": {
+                "x": -0.968244435668,
+                "y": 0,
+                "z": -0.2500082675
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.2500082675,
+                "y": 0,
+                "z": -0.968244435668
+            },
+            "position": {
+                "x": -107.35999992224,
+                "y": 314.147,
+                "z": 108.93071145844
+            },
+            "id": "TEAM_1_HQswapsides/SpawnPoint_1_3"
+        },
+        {
+            "name": "SpawnPoint_1_4",
+            "type": "SpawnPoint",
+            "right": {
+                "x": -0.831934302482,
+                "y": 0,
+                "z": -0.554872420622
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.554872420622,
+                "y": 0,
+                "z": -0.831934302482
+            },
+            "position": {
+                "x": -104.6763051503,
+                "y": 314.147,
+                "z": 111.54800372916
+            },
+            "id": "TEAM_1_HQswapsides/SpawnPoint_1_4"
+        },
+        {
+            "name": "TEAM_2_HQ",
+            "Team": "Team2",
+            "AltTeam": "TeamNeutral",
+            "ObjId": 2,
+            "InfantrySpawns": [
+                "TEAM_2_HQ/SpawnPoint_2_1",
+                "TEAM_2_HQ/SpawnPoint_2_2",
+                "TEAM_2_HQ/SpawnPoint_2_3",
+                "TEAM_2_HQ/SpawnPoint_2_4"
+            ],
+            "HQArea": "TEAM_2_HQ/HQ_Team2",
+            "type": "HQ_PlayerSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -107.727,
+                "y": 139.293,
+                "z": 123.248
+            },
+            "id": "TEAM_2_HQ",
+            "linked": [
+                "HQArea",
+                "InfantrySpawns"
+            ]
+        },
+        {
+            "name": "HQ_Team2",
+            "type": "PolygonVolume",
+            "id": "TEAM_2_HQ/HQ_Team2",
+            "height": 0,
+            "points": [
+                {
+                    "x": -95.80552,
+                    "y": 144.293,
+                    "z": 106.86
+                },
+                {
+                    "x": -95.80552,
+                    "y": 144.293,
+                    "z": 96.86
+                },
+                {
+                    "x": -105.80552,
+                    "y": 144.293,
+                    "z": 96.86
+                },
+                {
+                    "x": -105.80552,
+                    "y": 144.293,
+                    "z": 106.86
+                }
+            ]
+        },
+        {
+            "name": "SpawnPoint_2_1",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.788977,
+                "y": 0,
+                "z": 0.614424
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.614424,
+                "y": 0,
+                "z": 0.788977
+            },
+            "position": {
+                "x": -100.80552,
+                "y": 139.293,
+                "z": 98.86
+            },
+            "id": "TEAM_2_HQ/SpawnPoint_2_1"
+        },
+        {
+            "name": "SpawnPoint_2_2",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.697653,
+                "y": 0,
+                "z": 0.716436
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.716436,
+                "y": 0,
+                "z": 0.697653
+            },
+            "position": {
+                "x": -97.80552,
+                "y": 139.293,
+                "z": 101.86
+            },
+            "id": "TEAM_2_HQ/SpawnPoint_2_2"
+        },
+        {
+            "name": "SpawnPoint_2_3",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.776563,
+                "y": 0,
+                "z": 0.630039
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.630039,
+                "y": 0,
+                "z": 0.776563
+            },
+            "position": {
+                "x": -103.80552,
+                "y": 138.947022,
+                "z": 101.86
+            },
+            "id": "TEAM_2_HQ/SpawnPoint_2_3"
+        },
+        {
+            "name": "SpawnPoint_2_4",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.859638,
+                "y": 0,
+                "z": 0.510903
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.510903,
+                "y": 0,
+                "z": 0.859638
+            },
+            "position": {
+                "x": -100.80552,
+                "y": 138.643983,
+                "z": 104.86
+            },
+            "id": "TEAM_2_HQ/SpawnPoint_2_4"
+        },
+        {
+            "name": "North-Abrams-MBT",
+            "ObjId": 58,
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 15,
+            "P_TimeUntilAbandon": 5,
+            "P_KeepAliveAbandonRadius": 10,
+            "P_KeepAliveSpawnerRadius": 25,
+            "type": "VehicleSpawner",
+            "right": {
+                "x": 0.685565,
+                "y": 0,
+                "z": 0.728012
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.728012,
+                "y": 0,
+                "z": 0.685565
+            },
+            "position": {
+                "x": -116.24469,
+                "y": 140.46512,
+                "z": 103.9441
+            },
+            "id": "TEAM_2_HQ/North-Abrams-MBT"
+        },
+        {
+            "name": "North-CV90-IFV2",
+            "ObjId": 60,
+            "VehicleType": "CV90",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 15,
+            "P_TimeUntilAbandon": 5,
+            "P_KeepAliveAbandonRadius": 10,
+            "P_KeepAliveSpawnerRadius": 25,
+            "type": "VehicleSpawner",
+            "right": {
+                "x": 0.701519,
+                "y": 0,
+                "z": 0.712651
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.712651,
+                "y": 0,
+                "z": 0.701519
+            },
+            "position": {
+                "x": -103.73101,
+                "y": 140.59093,
+                "z": 114.46097
+            },
+            "id": "TEAM_2_HQ/North-CV90-IFV2"
+        },
+        {
+            "name": "North-Leopard-MBT",
+            "ObjId": 59,
+            "VehicleType": "Leopard",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 15,
+            "P_TimeUntilAbandon": 5,
+            "P_KeepAliveAbandonRadius": 10,
+            "P_KeepAliveSpawnerRadius": 25,
+            "type": "VehicleSpawner",
+            "right": {
+                "x": 0.701519,
+                "y": 0,
+                "z": 0.712651
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.712651,
+                "y": 0,
+                "z": 0.701519
+            },
+            "position": {
+                "x": -108.486407,
+                "y": 140.59093,
+                "z": 112.0296
+            },
+            "id": "TEAM_2_HQ/North-Leopard-MBT"
+        },
+        {
+            "name": "North-CV90-IFV",
+            "ObjId": 57,
+            "VehicleType": "CV90",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 15,
+            "P_TimeUntilAbandon": 5,
+            "P_KeepAliveAbandonRadius": 10,
+            "P_KeepAliveSpawnerRadius": 25,
+            "type": "VehicleSpawner",
+            "right": {
+                "x": 0.701519,
+                "y": 0,
+                "z": 0.712651
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.712651,
+                "y": 0,
+                "z": 0.701519
+            },
+            "position": {
+                "x": -141.382,
+                "y": 140.252213,
+                "z": 105.7885
+            },
+            "id": "TEAM_2_HQ/North-CV90-IFV"
+        },
+        {
+            "name": "North-Bradley-IFV",
+            "ObjId": 61,
+            "VehicleType": "M2Bradley",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 15,
+            "P_TimeUntilAbandon": 5,
+            "P_KeepAliveAbandonRadius": 10,
+            "P_KeepAliveSpawnerRadius": 25,
+            "type": "VehicleSpawner",
+            "right": {
+                "x": 0.730889,
+                "y": 0,
+                "z": 0.682496
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.682496,
+                "y": 0,
+                "z": 0.730889
+            },
+            "position": {
+                "x": -103.62264,
+                "y": 140.53374,
+                "z": 121.72105
+            },
+            "id": "TEAM_2_HQ/North-Bradley-IFV"
+        },
+        {
+            "name": "North-Bradley-2-IFV",
+            "ObjId": 62,
+            "VehicleType": "M2Bradley",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 15,
+            "P_TimeUntilAbandon": 5,
+            "P_KeepAliveAbandonRadius": 10,
+            "P_KeepAliveSpawnerRadius": 25,
+            "type": "VehicleSpawner",
+            "right": {
+                "x": 0.754801,
+                "y": 0,
+                "z": 0.655954
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.655954,
+                "y": 0,
+                "z": 0.754801
+            },
+            "position": {
+                "x": -104.43895,
+                "y": 140.291505,
+                "z": 129.44636
+            },
+            "id": "TEAM_2_HQ/North-Bradley-2-IFV"
+        },
+        {
+            "name": "TEAM_2_HQswapsides",
+            "Team": "Team2",
+            "AltTeam": "TeamNeutral",
+            "ObjId": 2,
+            "InfantrySpawns": [
+                "TEAM_2_HQswapsides/SpawnPoint_2_1",
+                "TEAM_2_HQswapsides/SpawnPoint_2_2",
+                "TEAM_2_HQswapsides/SpawnPoint_2_3",
+                "TEAM_2_HQswapsides/SpawnPoint_2_4"
+            ],
+            "HQArea": "TEAM_2_HQswapsides/HQ_Teamswapsides",
+            "type": "HQ_PlayerSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -169.139,
+                "y": 305.22,
+                "z": 460.625
+            },
+            "id": "TEAM_2_HQswapsides",
+            "linked": [
+                "HQArea",
+                "InfantrySpawns"
+            ]
+        },
+        {
+            "name": "HQ_Teamswapsides",
+            "type": "PolygonVolume",
+            "id": "TEAM_2_HQswapsides/HQ_Teamswapsides",
+            "height": 0,
+            "points": [
+                {
+                    "x": -164.139,
+                    "y": 305.22,
+                    "z": 465.625
+                },
+                {
+                    "x": -164.139,
+                    "y": 305.22,
+                    "z": 455.625
+                },
+                {
+                    "x": -174.139,
+                    "y": 305.22,
+                    "z": 455.625
+                },
+                {
+                    "x": -174.139,
+                    "y": 305.22,
+                    "z": 465.625
+                }
+            ]
+        },
+        {
+            "name": "SpawnPoint_2_1",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.788977,
+                "y": 0,
+                "z": 0.614424
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.614424,
+                "y": 0,
+                "z": 0.788977
+            },
+            "position": {
+                "x": -162.21752,
+                "y": 307.31276,
+                "z": 454.32468
+            },
+            "id": "TEAM_2_HQswapsides/SpawnPoint_2_1"
+        },
+        {
+            "name": "SpawnPoint_2_2",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.697653,
+                "y": 0,
+                "z": 0.716436
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.716436,
+                "y": 0,
+                "z": 0.697653
+            },
+            "position": {
+                "x": -159.21752,
+                "y": 307.46782,
+                "z": 457.32468
+            },
+            "id": "TEAM_2_HQswapsides/SpawnPoint_2_2"
+        },
+        {
+            "name": "SpawnPoint_2_3",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.776563,
+                "y": 0,
+                "z": 0.630039
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.630039,
+                "y": 0,
+                "z": 0.776563
+            },
+            "position": {
+                "x": -165.21752,
+                "y": 307.12184,
+                "z": 457.32468
+            },
+            "id": "TEAM_2_HQswapsides/SpawnPoint_2_3"
+        },
+        {
+            "name": "SpawnPoint_2_4",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.859638,
+                "y": 0,
+                "z": 0.510903
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.510903,
+                "y": 0,
+                "z": 0.859638
+            },
+            "position": {
+                "x": -162.21752,
+                "y": 306.8188,
+                "z": 460.324677
+            },
+            "id": "TEAM_2_HQswapsides/SpawnPoint_2_4"
+        },
+        {
+            "name": "CombatArea",
+            "CombatVolume": "CombatArea/CombatVolume",
+            "type": "CombatArea",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -193.415,
+                "y": 136.643,
+                "z": 352.408
+            },
+            "id": "CombatArea",
+            "linked": [
+                "CombatVolume"
+            ]
+        },
+        {
+            "name": "CombatVolume",
+            "type": "PolygonVolume",
+            "id": "CombatArea/CombatVolume",
+            "height": 100,
+            "points": [
+                {
+                    "x": 2.5089,
+                    "y": 138.3887,
+                    "z": 298.2509
+                },
+                {
+                    "x": -4.3051,
+                    "y": 138.3887,
+                    "z": 272.3516
+                },
+                {
+                    "x": -15.0011,
+                    "y": 138.3887,
+                    "z": 255.2559
+                },
+                {
+                    "x": -38.2611,
+                    "y": 138.3887,
+                    "z": 232.53825
+                },
+                {
+                    "x": -68.9641,
+                    "y": 138.3887,
+                    "z": 201.997
+                },
+                {
+                    "x": -98.4845,
+                    "y": 138.3887,
+                    "z": 172.7699
+                },
+                {
+                    "x": -102.29,
+                    "y": 138.3887,
+                    "z": 153.2727
+                },
+                {
+                    "x": -89.4598,
+                    "y": 138.3887,
+                    "z": 133.5651
+                },
+                {
+                    "x": -89.3778,
+                    "y": 138.3887,
+                    "z": 107.469
+                },
+                {
+                    "x": -125.2793,
+                    "y": 138.3887,
+                    "z": 75.224
+                },
+                {
+                    "x": -170.5237,
+                    "y": 138.3887,
+                    "z": 31.057
+                },
+                {
+                    "x": -243.0651,
+                    "y": 138.3887,
+                    "z": -8.179
+                },
+                {
+                    "x": -294.1891,
+                    "y": 138.3887,
+                    "z": 43.388
+                },
+                {
+                    "x": -330.4151,
+                    "y": 138.3887,
+                    "z": 80.047
+                },
+                {
+                    "x": -359.3161,
+                    "y": 138.3887,
+                    "z": 51.415
+                },
+                {
+                    "x": -394.8471,
+                    "y": 138.3887,
+                    "z": 60.605
+                },
+                {
+                    "x": -416.1771,
+                    "y": 138.3887,
+                    "z": 64.483
+                },
+                {
+                    "x": -445.9171,
+                    "y": 138.3887,
+                    "z": 94.757
+                },
+                {
+                    "x": -477.5101,
+                    "y": 138.3887,
+                    "z": 145.1273
+                },
+                {
+                    "x": -493.8251,
+                    "y": 138.3887,
+                    "z": 194.5608
+                },
+                {
+                    "x": -507.4881,
+                    "y": 138.3887,
+                    "z": 238.9817
+                },
+                {
+                    "x": -497.3381,
+                    "y": 138.3887,
+                    "z": 322.4103
+                },
+                {
+                    "x": -472.1821,
+                    "y": 138.3887,
+                    "z": 372.058
+                },
+                {
+                    "x": -430.9801,
+                    "y": 138.3887,
+                    "z": 403.567
+                },
+                {
+                    "x": -393.0231,
+                    "y": 138.3887,
+                    "z": 410.108
+                },
+                {
+                    "x": -347.5021,
+                    "y": 138.3887,
+                    "z": 413.536
+                },
+                {
+                    "x": -325.3581,
+                    "y": 138.3887,
+                    "z": 421.49
+                },
+                {
+                    "x": -297.3511,
+                    "y": 138.3887,
+                    "z": 433.992
+                },
+                {
+                    "x": -283.9041,
+                    "y": 138.3887,
+                    "z": 431.815
+                },
+                {
+                    "x": -253.4931,
+                    "y": 138.3887,
+                    "z": 422.903
+                },
+                {
+                    "x": -231.1247,
+                    "y": 138.3887,
+                    "z": 415.957
+                },
+                {
+                    "x": -215.3444,
+                    "y": 138.3887,
+                    "z": 424.592
+                },
+                {
+                    "x": -205.528,
+                    "y": 138.3887,
+                    "z": 436.932
+                },
+                {
+                    "x": -197.4045,
+                    "y": 138.3887,
+                    "z": 460.059
+                },
+                {
+                    "x": -185.0499,
+                    "y": 138.3887,
+                    "z": 479.411
+                },
+                {
+                    "x": -149.68793,
+                    "y": 138.3887,
+                    "z": 483.3
+                },
+                {
+                    "x": -126.4412,
+                    "y": 138.3887,
+                    "z": 477.375
+                },
+                {
+                    "x": -106.4511,
+                    "y": 138.3887,
+                    "z": 474.005
+                },
+                {
+                    "x": -88.2124,
+                    "y": 138.3887,
+                    "z": 476.737
+                },
+                {
+                    "x": -66.9253,
+                    "y": 138.3887,
+                    "z": 478.525
+                },
+                {
+                    "x": -38.6861,
+                    "y": 138.3887,
+                    "z": 467.812
+                },
+                {
+                    "x": -28.8771,
+                    "y": 138.3887,
+                    "z": 449.567
+                },
+                {
+                    "x": -21.3061,
+                    "y": 138.3887,
+                    "z": 424.753
+                },
+                {
+                    "x": -13.7911,
+                    "y": 138.3887,
+                    "z": 375.68
+                },
+                {
+                    "x": 1.9879,
+                    "y": 138.3887,
+                    "z": 335.502
+                }
+            ]
+        },
+        {
+            "name": "DeployCam",
+            "type": "DeployCam",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 0.101056,
+                "z": -0.994881
+            },
+            "front": {
+                "x": 0,
+                "y": 0.994881,
+                "z": 0.101056
+            },
+            "position": {
+                "x": -218.643,
+                "y": 501.636,
+                "z": 311.623
+            },
+            "id": "Camera3D/DeployCam"
+        },
+        {
+            "name": "SouthBaseAreaTrigger",
+            "ObjId": 501,
+            "Area": "SouthBaseAreaTrigger/SouthBaseOOBVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -157.679,
+                "y": 138.398,
+                "z": 466.641
+            },
+            "id": "SouthBaseAreaTrigger",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "SouthBaseOOBVolume",
+            "type": "PolygonVolume",
+            "id": "SouthBaseAreaTrigger/SouthBaseOOBVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -199.621719,
+                    "y": 132.45246,
+                    "z": 448.467641
+                },
+                {
+                    "x": -196.029319,
+                    "y": 132.45246,
+                    "z": 460.542821
+                },
+                {
+                    "x": -185.260519,
+                    "y": 132.45246,
+                    "z": 480.044641
+                },
+                {
+                    "x": -150.996889,
+                    "y": 132.45246,
+                    "z": 483.687741
+                },
+                {
+                    "x": -124.958919,
+                    "y": 132.45246,
+                    "z": 477.199241
+                },
+                {
+                    "x": -142.859919,
+                    "y": 132.45246,
+                    "z": 457.914071
+                },
+                {
+                    "x": -193.227719,
+                    "y": 132.45246,
+                    "z": 408.043541
+                },
+                {
+                    "x": -203.154619,
+                    "y": 132.45246,
+                    "z": 416.581441
+                },
+                {
+                    "x": -214.135519,
+                    "y": 132.45246,
+                    "z": 424.341641
+                },
+                {
+                    "x": -205.184919,
+                    "y": 132.45246,
+                    "z": 435.395041
+                }
+            ]
+        },
+        {
+            "name": "SouthBaseSector",
+            "SectorArea": "SouthBaseAreaTrigger/SouthBaseOOBVolume",
+            "RetreatArea": "SouthBaseAreaTrigger/SouthBaseOOBVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -309.635,
+                "y": 0,
+                "z": 366.08
+            },
+            "id": "SouthBaseAreaTrigger/SouthBaseSector",
+            "linked": [
+                "SectorArea",
+                "RetreatArea"
+            ]
+        },
+        {
+            "name": "NorthBaseAreaTrigger",
+            "ObjId": 500,
+            "Area": "NorthBaseAreaTrigger/NorthBaseOOBVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -100.918,
+                "y": 156.304,
+                "z": 108.325
+            },
+            "id": "NorthBaseAreaTrigger",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "NorthBaseOOBVolume",
+            "type": "PolygonVolume",
+            "id": "NorthBaseAreaTrigger/NorthBaseOOBVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -136.783919,
+                    "y": 137.4525,
+                    "z": 118.951341
+                },
+                {
+                    "x": -133.124119,
+                    "y": 137.4525,
+                    "z": 123.912541
+                },
+                {
+                    "x": -127.343719,
+                    "y": 137.4525,
+                    "z": 129.794041
+                },
+                {
+                    "x": -114.403319,
+                    "y": 137.4525,
+                    "z": 142.337741
+                },
+                {
+                    "x": -101.4515924,
+                    "y": 137.4525,
+                    "z": 151.817541
+                },
+                {
+                    "x": -89.999919,
+                    "y": 137.4525,
+                    "z": 133.880641
+                },
+                {
+                    "x": -89.431219,
+                    "y": 137.4525,
+                    "z": 106.823501
+                },
+                {
+                    "x": -103.726949,
+                    "y": 137.4525,
+                    "z": 92.758241
+                },
+                {
+                    "x": -118.376119,
+                    "y": 137.4525,
+                    "z": 79.457641
+                },
+                {
+                    "x": -147.777119,
+                    "y": 137.4525,
+                    "z": 108.5056567
+                }
+            ]
+        },
+        {
+            "name": "NorthBaseSector",
+            "SectorArea": "NorthBaseAreaTrigger/NorthBaseOOBVolume",
+            "RetreatArea": "NorthBaseAreaTrigger/NorthBaseOOBVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -99.0136,
+                "y": 155.807998,
+                "z": 95.6917
+            },
+            "id": "NorthBaseAreaTrigger/NorthBaseSector",
+            "linked": [
+                "SectorArea",
+                "RetreatArea"
+            ]
+        },
+        {
+            "name": "GM1083CargoTruck_01_Bed8",
+            "type": "GM1083CargoTruck_01_Bed",
+            "right": {
+                "x": -0.956626,
+                "y": 0,
+                "z": 0.29132
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.29132,
+                "y": 0,
+                "z": -0.956626
+            },
+            "position": {
+                "x": -269.558,
+                "y": 138.522,
+                "z": 295.998
+            },
+            "id": "GM1083CargoTruck_01_Bed8"
+        },
+        {
+            "name": "GM1083CargoTruck_01_Bed9",
+            "type": "GM1083CargoTruck_01_Bed",
+            "right": {
+                "x": -0.859058,
+                "y": 0,
+                "z": 0.511878
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.511878,
+                "y": 0,
+                "z": -0.859058
+            },
+            "position": {
+                "x": -290.292,
+                "y": 138.522,
+                "z": 301.132
+            },
+            "id": "GM1083CargoTruck_01_Bed9"
+        },
+        {
+            "name": "GM1083CargoTruck_01_Bed11",
+            "type": "GM1083CargoTruck_01_Bed",
+            "right": {
+                "x": -0.997072,
+                "y": 0,
+                "z": 0.0764754
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.0764754,
+                "y": 0,
+                "z": -0.997072
+            },
+            "position": {
+                "x": -284.801,
+                "y": 138.522,
+                "z": 300.667
+            },
+            "id": "GM1083CargoTruck_01_Bed11"
+        },
+        {
+            "name": "GM1083CargoTruck_01_Bed10",
+            "type": "GM1083CargoTruck_01_Bed",
+            "right": {
+                "x": -0.00296703,
+                "y": 0,
+                "z": 0.999996
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.999996,
+                "y": 0,
+                "z": -0.00296703
+            },
+            "position": {
+                "x": -301.423,
+                "y": 138.522,
+                "z": 300.591
+            },
+            "id": "GM1083CargoTruck_01_Bed10"
+        },
+        {
+            "name": "GM1083CargoTruck_01_Bed4",
+            "type": "GM1083CargoTruck_01_Bed",
+            "right": {
+                "x": 0.55718,
+                "y": 0,
+                "z": 0.830392
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.830392,
+                "y": 0,
+                "z": 0.55718
+            },
+            "position": {
+                "x": -261.566,
+                "y": 138.586,
+                "z": 289.985
+            },
+            "id": "GM1083CargoTruck_01_Bed4"
+        },
+        {
+            "name": "GM1083CargoTruck_01_Bed5",
+            "type": "GM1083CargoTruck_01_Bed",
+            "right": {
+                "x": 0.71369,
+                "y": 0,
+                "z": 0.700461
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.700461,
+                "y": 0,
+                "z": 0.71369
+            },
+            "position": {
+                "x": -254.637,
+                "y": 138.603,
+                "z": 283.687
+            },
+            "id": "GM1083CargoTruck_01_Bed5"
+        },
+        {
+            "name": "GM1083CargoTruck_01_Bed6",
+            "type": "GM1083CargoTruck_01_Bed",
+            "right": {
+                "x": 0.844842,
+                "y": 0,
+                "z": 0.535016
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.535016,
+                "y": 0,
+                "z": 0.844842
+            },
+            "position": {
+                "x": -248.708,
+                "y": 138.522,
+                "z": 276.412
+            },
+            "id": "GM1083CargoTruck_01_Bed6"
+        },
+        {
+            "name": "GM1083CargoTruck_01_Bed7",
+            "type": "GM1083CargoTruck_01_Bed",
+            "right": {
+                "x": 0.903335,
+                "y": 0,
+                "z": 0.428935
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.428935,
+                "y": 0,
+                "z": 0.903335
+            },
+            "position": {
+                "x": -243.952,
+                "y": 138.585,
+                "z": 268.521
+            },
+            "id": "GM1083CargoTruck_01_Bed7"
+        },
+        {
+            "name": "GM1083CargoTruck_01_Bed2",
+            "type": "GM1083CargoTruck_01_Bed",
+            "right": {
+                "x": 0.711964,
+                "y": 0,
+                "z": -0.702215
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.702215,
+                "y": 0,
+                "z": 0.711964
+            },
+            "position": {
+                "x": -254.418,
+                "y": 138.522,
+                "z": 202.522
+            },
+            "id": "GM1083CargoTruck_01_Bed2"
+        },
+        {
+            "name": "GM1083CargoTruck_01_Bed12",
+            "type": "GM1083CargoTruck_01_Bed",
+            "right": {
+                "x": 0.976004,
+                "y": 0,
+                "z": -0.217752
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.217752,
+                "y": 0,
+                "z": 0.976004
+            },
+            "position": {
+                "x": -239.657,
+                "y": 138.462,
+                "z": 233.7
+            },
+            "id": "GM1083CargoTruck_01_Bed12"
+        },
+        {
+            "name": "GM1083CargoTruck_01_Bed13",
+            "type": "GM1083CargoTruck_01_Bed",
+            "right": {
+                "x": 0.999987,
+                "y": 0,
+                "z": 0.00520104
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.00520104,
+                "y": 0,
+                "z": 0.999987
+            },
+            "position": {
+                "x": -238.535,
+                "y": 138.442,
+                "z": 242.123
+            },
+            "id": "GM1083CargoTruck_01_Bed13"
+        },
+        {
+            "name": "GM1083CargoTruck_01_Bed3",
+            "type": "GM1083CargoTruck_01_Bed",
+            "right": {
+                "x": -0.735412,
+                "y": 0,
+                "z": 0.677621
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.677621,
+                "y": 0,
+                "z": -0.735412
+            },
+            "position": {
+                "x": -231.761,
+                "y": 138.322,
+                "z": 198.448
+            },
+            "id": "GM1083CargoTruck_01_Bed3"
+        },
+        {
+            "name": "DumpTruck_01",
+            "type": "DumpTruck_01",
+            "right": {
+                "x": -0.892955,
+                "y": 0,
+                "z": -0.450145
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.450145,
+                "y": 0,
+                "z": -0.892955
+            },
+            "position": {
+                "x": -252.869,
+                "y": 138.47,
+                "z": 299.464
+            },
+            "id": "DumpTruck_01"
+        },
+        {
+            "name": "DumpTruck_04",
+            "type": "DumpTruck_01",
+            "right": {
+                "x": 0.660181,
+                "y": -0.0480975,
+                "z": -0.749565
+            },
+            "up": {
+                "x": 0.0291266,
+                "y": 0.998836,
+                "z": -0.0384393
+            },
+            "front": {
+                "x": 0.750541,
+                "y": 0.00354467,
+                "z": 0.660814
+            },
+            "position": {
+                "x": -197.206,
+                "y": 138.47,
+                "z": 217.393
+            },
+            "id": "DumpTruck_04"
+        },
+        {
+            "name": "DumpTruck_03",
+            "type": "DumpTruck_01",
+            "right": {
+                "x": 0.313595,
+                "y": 0,
+                "z": 0.949557
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.949557,
+                "y": 0,
+                "z": 0.313595
+            },
+            "position": {
+                "x": -273.824,
+                "y": 138.451,
+                "z": 303.548
+            },
+            "id": "DumpTruck_03"
+        },
+        {
+            "name": "DumpTruck_02",
+            "type": "DumpTruck_01",
+            "right": {
+                "x": -0.910684,
+                "y": 0,
+                "z": -0.413104
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.413104,
+                "y": 0,
+                "z": -0.910684
+            },
+            "position": {
+                "x": -228.998,
+                "y": 138.45,
+                "z": 255.174
+            },
+            "id": "DumpTruck_02"
+        },
+        {
+            "name": "GDumpTruck_01_B2",
+            "type": "GDumpTruck_01_B",
+            "right": {
+                "x": -0.886098,
+                "y": 0,
+                "z": -0.463497
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.463497,
+                "y": 0,
+                "z": -0.886098
+            },
+            "position": {
+                "x": -243.055,
+                "y": 138.469,
+                "z": 282.871
+            },
+            "id": "GDumpTruck_01_B2"
+        },
+        {
+            "name": "GDumpTruck_01_B3",
+            "type": "GDumpTruck_01_B",
+            "right": {
+                "x": -0.907374,
+                "y": 0,
+                "z": 0.420323
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.420323,
+                "y": 0,
+                "z": -0.907374
+            },
+            "position": {
+                "x": -252.85,
+                "y": 138.415,
+                "z": 317.281
+            },
+            "id": "GDumpTruck_01_B3"
+        },
+        {
+            "name": "GDumpTruck_01_B4",
+            "type": "GDumpTruck_01_B",
+            "right": {
+                "x": -0.744649,
+                "y": 0,
+                "z": 0.667455
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.667455,
+                "y": 0,
+                "z": -0.744649
+            },
+            "position": {
+                "x": -241.243,
+                "y": 138.157,
+                "z": 333.01
+            },
+            "id": "GDumpTruck_01_B4"
+        },
+        {
+            "name": "GDumpTruck_01_B7",
+            "type": "GDumpTruck_01_B",
+            "right": {
+                "x": -0.767657,
+                "y": 0,
+                "z": -0.64086
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.64086,
+                "y": 0,
+                "z": -0.767657
+            },
+            "position": {
+                "x": -209.228,
+                "y": 138.512,
+                "z": 322.271
+            },
+            "id": "GDumpTruck_01_B7"
+        },
+        {
+            "name": "GDumpTruck_01_B5",
+            "type": "GDumpTruck_01_B",
+            "right": {
+                "x": -0.713175,
+                "y": -0.0189007,
+                "z": 0.700731
+            },
+            "up": {
+                "x": 0.0110627,
+                "y": 0.999209,
+                "z": 0.0382106
+            },
+            "front": {
+                "x": -0.700899,
+                "y": 0.0350028,
+                "z": -0.712401
+            },
+            "position": {
+                "x": -204.678,
+                "y": 136.497,
+                "z": 371.568
+            },
+            "id": "GDumpTruck_01_B5"
+        },
+        {
+            "name": "GDumpTruck_01_B6",
+            "type": "GDumpTruck_01_B",
+            "right": {
+                "x": -0.68267,
+                "y": -0.0189007,
+                "z": 0.730482
+            },
+            "up": {
+                "x": 0.0126807,
+                "y": 0.999209,
+                "z": 0.0377045
+            },
+            "front": {
+                "x": -0.730616,
+                "y": 0.0350028,
+                "z": -0.68189
+            },
+            "position": {
+                "x": -198.117,
+                "y": 136.174,
+                "z": 377.407
+            },
+            "id": "GDumpTruck_01_B6"
+        },
+        {
+            "name": "GCarSUV_01_OpenDoors",
+            "type": "GCarSUV_01_OpenDoors",
+            "right": {
+                "x": 0.952985,
+                "y": 0,
+                "z": 0.303019
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.303019,
+                "y": 0,
+                "z": 0.952985
+            },
+            "position": {
+                "x": -203.251,
+                "y": 138.47,
+                "z": 291.199
+            },
+            "id": "GCarSUV_01_OpenDoors"
+        },
+        {
+            "name": "GCarSUV_01_OpenDoors4",
+            "type": "GCarSUV_01_OpenDoors",
+            "right": {
+                "x": 0.807084,
+                "y": 0,
+                "z": -0.590437
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.590437,
+                "y": 0,
+                "z": 0.807084
+            },
+            "position": {
+                "x": -206.492,
+                "y": 138.47,
+                "z": 241.398
+            },
+            "id": "GCarSUV_01_OpenDoors4"
+        },
+        {
+            "name": "GCarSUV_01",
+            "type": "GCarSUV_01",
+            "right": {
+                "x": 0.886785,
+                "y": 0,
+                "z": 0.462182
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.462182,
+                "y": 0,
+                "z": 0.886785
+            },
+            "position": {
+                "x": -209.41,
+                "y": 138.453,
+                "z": 306.73
+            },
+            "id": "GCarSUV_01"
+        },
+        {
+            "name": "GCarSUV_02",
+            "type": "GCarSUV_01",
+            "right": {
+                "x": 0.806507,
+                "y": 0,
+                "z": -0.591225
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.591225,
+                "y": 0,
+                "z": 0.806507
+            },
+            "position": {
+                "x": -246.349,
+                "y": 138.443,
+                "z": 215.86
+            },
+            "id": "GCarSUV_02"
+        },
+        {
+            "name": "GCarSUV_03",
+            "type": "GCarSUV_01",
+            "right": {
+                "x": 0.216354,
+                "y": 0,
+                "z": -0.976315
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.976315,
+                "y": 0,
+                "z": 0.216354
+            },
+            "position": {
+                "x": -241.099,
+                "y": 138.472,
+                "z": 209.636
+            },
+            "id": "GCarSUV_03"
+        },
+        {
+            "name": "GCarSUV_01_OpenDoors2",
+            "type": "GCarSUV_01_OpenDoors",
+            "right": {
+                "x": 0.703823,
+                "y": -0.000125519,
+                "z": 0.710376
+            },
+            "up": {
+                "x": -0.00401421,
+                "y": 0.999983,
+                "z": 0.00415387
+            },
+            "front": {
+                "x": -0.710365,
+                "y": -0.00577519,
+                "z": 0.70381
+            },
+            "position": {
+                "x": -226.508,
+                "y": 138.336,
+                "z": 327.783
+            },
+            "id": "GCarSUV_01_OpenDoors2"
+        },
+        {
+            "name": "GCarSUV_01_OpenDoors3",
+            "type": "GCarSUV_01_OpenDoors",
+            "right": {
+                "x": 0.817798,
+                "y": 0,
+                "z": 0.575505
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.575505,
+                "y": 0,
+                "z": 0.817798
+            },
+            "position": {
+                "x": -213.531,
+                "y": 138.479,
+                "z": 313.322
+            },
+            "id": "GCarSUV_01_OpenDoors3"
+        },
+        {
+            "name": "BarrierConstruction_01_256_120_B",
+            "type": "BarrierConstruction_01_256_120_B",
+            "right": {
+                "x": 0.371092,
+                "y": 0,
+                "z": -0.928596
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.928596,
+                "y": 0,
+                "z": 0.371092
+            },
+            "position": {
+                "x": -247.705,
+                "y": 139.738,
+                "z": 416.174
+            },
+            "id": "BarrierConstruction_01_256_120_B"
+        },
+        {
+            "name": "BarrierConstruction_01_256_120_DDPF",
+            "type": "BarrierConstruction_01_256_120_DDPF",
+            "right": {
+                "x": 0.0317596,
+                "y": 0,
+                "z": -0.999496
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.999496,
+                "y": 0,
+                "z": 0.0317596
+            },
+            "position": {
+                "x": -248.025,
+                "y": 139.725,
+                "z": 419.808
+            },
+            "id": "BarrierConstruction_01_256_120_DDPF"
+        },
+        {
+            "name": "CarSedan_01_B",
+            "type": "CarSedan_01_B",
+            "right": {
+                "x": 0.778539,
+                "y": 0,
+                "z": -0.627596
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.627596,
+                "y": 0,
+                "z": 0.778539
+            },
+            "position": {
+                "x": -267.545,
+                "y": 138.46,
+                "z": 194.445
+            },
+            "id": "CarSedan_01_B"
+        },
+        {
+            "name": "GCarSedan_01",
+            "type": "GCarSedan_01",
+            "right": {
+                "x": 0.724364,
+                "y": 0,
+                "z": -0.689417
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.689417,
+                "y": 0,
+                "z": 0.724364
+            },
+            "position": {
+                "x": -263.517,
+                "y": 138.449,
+                "z": 198.864
+            },
+            "id": "GCarSedan_01"
+        },
+        {
+            "name": "GCarSedan_02",
+            "type": "GCarSedan_01",
+            "right": {
+                "x": 0.74125,
+                "y": 0,
+                "z": 0.671229
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.671229,
+                "y": 0,
+                "z": 0.74125
+            },
+            "position": {
+                "x": -219.332,
+                "y": 138.449,
+                "z": 320.441
+            },
+            "id": "GCarSedan_02"
+        },
+        {
+            "name": "GCarSedan_03",
+            "type": "GCarSedan_01",
+            "right": {
+                "x": 0.941005,
+                "y": 0,
+                "z": -0.338393
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.338393,
+                "y": 0,
+                "z": 0.941005
+            },
+            "position": {
+                "x": -204.127,
+                "y": 138.449,
+                "z": 247.3
+            },
+            "id": "GCarSedan_03"
+        },
+        {
+            "name": "ConcreteBarriers_01",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.718763,
+                "y": -0.0261223,
+                "z": 0.694764
+            },
+            "up": {
+                "x": 0.010943,
+                "y": 0.999595,
+                "z": 0.0262626
+            },
+            "front": {
+                "x": -0.695169,
+                "y": -0.0112738,
+                "z": 0.718758
+            },
+            "position": {
+                "x": -167.891,
+                "y": 134.016,
+                "z": 434.013
+            },
+            "id": "ConcreteBarriers_01"
+        },
+        {
+            "name": "ConcreteBarriers_11",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.710086,
+                "y": -0.0261223,
+                "z": 0.70363
+            },
+            "up": {
+                "x": 0.0106163,
+                "y": 0.999595,
+                "z": 0.0263964
+            },
+            "front": {
+                "x": -0.704034,
+                "y": -0.0112738,
+                "z": 0.710076
+            },
+            "position": {
+                "x": -141.792,
+                "y": 132.817,
+                "z": 460.082
+            },
+            "id": "ConcreteBarriers_11"
+        },
+        {
+            "name": "ConcreteBarriers_12",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.698963,
+                "y": -0.0348407,
+                "z": 0.714309
+            },
+            "up": {
+                "x": 0.0231246,
+                "y": 0.999391,
+                "z": 0.0261179
+            },
+            "front": {
+                "x": -0.714784,
+                "y": -0.00173732,
+                "z": 0.699343
+            },
+            "position": {
+                "x": -136.629,
+                "y": 132.565,
+                "z": 465.347
+            },
+            "id": "ConcreteBarriers_12"
+        },
+        {
+            "name": "ConcreteBarriers_13",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.698963,
+                "y": -0.0348407,
+                "z": 0.714309
+            },
+            "up": {
+                "x": 0.0231246,
+                "y": 0.999391,
+                "z": 0.0261179
+            },
+            "front": {
+                "x": -0.714784,
+                "y": -0.00173732,
+                "z": 0.699343
+            },
+            "position": {
+                "x": -131.131,
+                "y": 132.276,
+                "z": 471.094
+            },
+            "id": "ConcreteBarriers_13"
+        },
+        {
+            "name": "ConcreteBarriers_14",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.698963,
+                "y": -0.0348407,
+                "z": 0.714309
+            },
+            "up": {
+                "x": 0.0231246,
+                "y": 0.999391,
+                "z": 0.0261179
+            },
+            "front": {
+                "x": -0.714784,
+                "y": -0.00173732,
+                "z": 0.699343
+            },
+            "position": {
+                "x": -126.74,
+                "y": 132.013,
+                "z": 475.56
+            },
+            "id": "ConcreteBarriers_14"
+        },
+        {
+            "name": "ConcreteBarriers_15",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.698963,
+                "y": -0.0348407,
+                "z": 0.714309
+            },
+            "up": {
+                "x": 0.0231246,
+                "y": 0.999391,
+                "z": 0.0261179
+            },
+            "front": {
+                "x": -0.714784,
+                "y": -0.00173732,
+                "z": 0.699343
+            },
+            "position": {
+                "x": -121.604,
+                "y": 131.713,
+                "z": 480.893
+            },
+            "id": "ConcreteBarriers_15"
+        },
+        {
+            "name": "ConcreteBarriers_02",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.712003,
+                "y": -0.045034,
+                "z": 0.700731
+            },
+            "up": {
+                "x": 0.0190729,
+                "y": 0.998813,
+                "z": 0.0448112
+            },
+            "front": {
+                "x": -0.701917,
+                "y": -0.0185408,
+                "z": 0.712017
+            },
+            "position": {
+                "x": -171.625,
+                "y": 134.213,
+                "z": 430.339
+            },
+            "id": "ConcreteBarriers_02"
+        },
+        {
+            "name": "ConcreteBarriers_03",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.71211,
+                "y": -0.0325497,
+                "z": 0.701313
+            },
+            "up": {
+                "x": 0.0106922,
+                "y": 0.999312,
+                "z": 0.0355237
+            },
+            "front": {
+                "x": -0.701987,
+                "y": -0.0177982,
+                "z": 0.711968
+            },
+            "position": {
+                "x": -175.568,
+                "y": 134.422,
+                "z": 426.403
+            },
+            "id": "ConcreteBarriers_03"
+        },
+        {
+            "name": "ConcreteBarriers_04",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.71211,
+                "y": -0.0325497,
+                "z": 0.701313
+            },
+            "up": {
+                "x": 0.0106922,
+                "y": 0.999312,
+                "z": 0.0355237
+            },
+            "front": {
+                "x": -0.701987,
+                "y": -0.0177982,
+                "z": 0.711968
+            },
+            "position": {
+                "x": -179.176,
+                "y": 134.607,
+                "z": 422.853
+            },
+            "id": "ConcreteBarriers_04"
+        },
+        {
+            "name": "ConcreteBarriers_05",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.698403,
+                "y": -0.0325497,
+                "z": 0.714964
+            },
+            "up": {
+                "x": 0.0100027,
+                "y": 0.999312,
+                "z": 0.035724
+            },
+            "front": {
+                "x": -0.715635,
+                "y": -0.0177982,
+                "z": 0.698248
+            },
+            "position": {
+                "x": -183.504,
+                "y": 134.843,
+                "z": 418.433
+            },
+            "id": "ConcreteBarriers_05"
+        },
+        {
+            "name": "ConcreteBarriers_06",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.698403,
+                "y": -0.0325497,
+                "z": 0.714964
+            },
+            "up": {
+                "x": 0.0100027,
+                "y": 0.999312,
+                "z": 0.035724
+            },
+            "front": {
+                "x": -0.715635,
+                "y": -0.0177982,
+                "z": 0.698248
+            },
+            "position": {
+                "x": -187.553,
+                "y": 135.097,
+                "z": 414.451
+            },
+            "id": "ConcreteBarriers_06"
+        },
+        {
+            "name": "ConcreteBarriers_07",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.698403,
+                "y": -0.0325497,
+                "z": 0.714964
+            },
+            "up": {
+                "x": 0.0100027,
+                "y": 0.999312,
+                "z": 0.035724
+            },
+            "front": {
+                "x": -0.715635,
+                "y": -0.0177982,
+                "z": 0.698248
+            },
+            "position": {
+                "x": -191.283,
+                "y": 135.331,
+                "z": 410.711
+            },
+            "id": "ConcreteBarriers_07"
+        },
+        {
+            "name": "ConcreteBarriers_08",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": -0.723378,
+                "y": 0.0246229,
+                "z": 0.690013
+            },
+            "up": {
+                "x": 0.0225272,
+                "y": 0.999674,
+                "z": -0.0120565
+            },
+            "front": {
+                "x": -0.690084,
+                "y": 0.0068226,
+                "z": -0.723697
+            },
+            "position": {
+                "x": -195.945,
+                "y": 135.517,
+                "z": 410.747
+            },
+            "id": "ConcreteBarriers_08"
+        },
+        {
+            "name": "ConcreteBarriers_09",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": -0.818901,
+                "y": 0.0459899,
+                "z": 0.572089
+            },
+            "up": {
+                "x": 0.0407963,
+                "y": 0.998928,
+                "z": -0.0219064
+            },
+            "front": {
+                "x": -0.572483,
+                "y": 0.00539991,
+                "z": -0.819899
+            },
+            "position": {
+                "x": -199.893,
+                "y": 135.567,
+                "z": 414.115
+            },
+            "id": "ConcreteBarriers_09"
+        },
+        {
+            "name": "ConcreteBarriers_10",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": -0.748653,
+                "y": 0.319681,
+                "z": 0.580795
+            },
+            "up": {
+                "x": 0.292242,
+                "y": 0.945485,
+                "z": -0.143709
+            },
+            "front": {
+                "x": -0.595074,
+                "y": 0.0621448,
+                "z": -0.801264
+            },
+            "position": {
+                "x": -209.189,
+                "y": 136.661,
+                "z": 421.334
+            },
+            "id": "ConcreteBarriers_10"
+        },
+        {
+            "name": "ConcreteBarriers_16",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.708795,
+                "y": 0,
+                "z": 0.705414
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.705414,
+                "y": 0,
+                "z": 0.708795
+            },
+            "position": {
+                "x": -117.402,
+                "y": 138.483,
+                "z": 138.843
+            },
+            "id": "ConcreteBarriers_16"
+        },
+        {
+            "name": "ConcreteBarriers_23",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.824203,
+                "y": 0.157085,
+                "z": 0.544072
+            },
+            "up": {
+                "x": -0.166787,
+                "y": 0.985478,
+                "z": -0.0318667
+            },
+            "front": {
+                "x": -0.541176,
+                "y": -0.0644796,
+                "z": 0.838433
+            },
+            "position": {
+                "x": -107.016,
+                "y": 139.207,
+                "z": 147.295
+            },
+            "id": "ConcreteBarriers_23"
+        },
+        {
+            "name": "ConcreteBarriers_17",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.708795,
+                "y": 0,
+                "z": 0.705414
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.705414,
+                "y": 0,
+                "z": 0.708795
+            },
+            "position": {
+                "x": -120.282,
+                "y": 138.483,
+                "z": 135.973
+            },
+            "id": "ConcreteBarriers_17"
+        },
+        {
+            "name": "ConcreteBarriers_18",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.708795,
+                "y": 0,
+                "z": 0.705414
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.705414,
+                "y": 0,
+                "z": 0.708795
+            },
+            "position": {
+                "x": -123.19,
+                "y": 138.477,
+                "z": 133.006
+            },
+            "id": "ConcreteBarriers_18"
+        },
+        {
+            "name": "ConcreteBarriers_19",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.708795,
+                "y": 0,
+                "z": 0.705414
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.705414,
+                "y": 0,
+                "z": 0.708795
+            },
+            "position": {
+                "x": -131.03,
+                "y": 138.736,
+                "z": 125.568
+            },
+            "id": "ConcreteBarriers_19"
+        },
+        {
+            "name": "ConcreteBarriers_20",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.604571,
+                "y": 0,
+                "z": 0.796551
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.796551,
+                "y": 0,
+                "z": 0.604571
+            },
+            "position": {
+                "x": -133.97,
+                "y": 138.736,
+                "z": 122.202
+            },
+            "id": "ConcreteBarriers_20"
+        },
+        {
+            "name": "ConcreteBarriers_21",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.71826,
+                "y": 0,
+                "z": 0.695775
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.695775,
+                "y": 0,
+                "z": 0.71826
+            },
+            "position": {
+                "x": -137.895,
+                "y": 138.991,
+                "z": 117.415
+            },
+            "id": "ConcreteBarriers_21"
+        },
+        {
+            "name": "ConcreteBarriers_22",
+            "type": "ConcreteBarriers_01",
+            "right": {
+                "x": 0.71826,
+                "y": 0,
+                "z": 0.695775
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.695775,
+                "y": 0,
+                "z": 0.71826
+            },
+            "position": {
+                "x": -142.399,
+                "y": 138.787,
+                "z": 112.589
+            },
+            "id": "ConcreteBarriers_22"
+        },
+        {
+            "name": "GDumpTruck_01_B",
+            "type": "GDumpTruck_01_B",
+            "right": {
+                "x": -0.768204,
+                "y": -0.00952897,
+                "z": 0.640134
+            },
+            "up": {
+                "x": 0.0351375,
+                "y": 0.997754,
+                "z": 0.0570199
+            },
+            "front": {
+                "x": -0.63924,
+                "y": 0.0662957,
+                "z": -0.766145
+            },
+            "position": {
+                "x": -206.52,
+                "y": 138.907,
+                "z": 204.254
+            },
+            "id": "GDumpTruck_01_B"
+        },
+        {
+            "name": "BarrierHesco_01_128x120",
+            "type": "BarrierHesco_01_128x120",
+            "right": {
+                "x": 0.849626,
+                "y": 0,
+                "z": -0.527386
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.527386,
+                "y": 0,
+                "z": 0.849626
+            },
+            "position": {
+                "x": -241.094,
+                "y": 138.467,
+                "z": 219.183
+            },
+            "id": "BarrierHesco_01_128x120"
+        },
+        {
+            "name": "BarrierHesco_01_128x120_DDPF",
+            "type": "BarrierHesco_01_128x120_DDPF",
+            "right": {
+                "x": 0.450223,
+                "y": 0,
+                "z": -0.892916
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.892916,
+                "y": 0,
+                "z": 0.450223
+            },
+            "position": {
+                "x": -235.718,
+                "y": 138.469,
+                "z": 213.042
+            },
+            "id": "BarrierHesco_01_128x120_DDPF"
+        },
+        {
+            "name": "BarrierHesco_01_Row03",
+            "type": "BarrierHesco_01_Row03",
+            "right": {
+                "x": -0.756287,
+                "y": 0,
+                "z": -0.65424
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.65424,
+                "y": 0,
+                "z": -0.756287
+            },
+            "position": {
+                "x": -238.148,
+                "y": 138.448,
+                "z": 216.257
+            },
+            "id": "BarrierHesco_01_Row03"
+        },
+        {
+            "name": "CrateAmmo_01",
+            "type": "CrateAmmo_01",
+            "right": {
+                "x": 0.245121,
+                "y": 0,
+                "z": -0.969492
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.969492,
+                "y": 0,
+                "z": 0.245121
+            },
+            "position": {
+                "x": -240.394,
+                "y": 138.579,
+                "z": 262.183
+            },
+            "id": "CrateAmmo_01"
+        },
+        {
+            "name": "CrateAmmo_01_StackC",
+            "type": "CrateAmmo_01_StackC",
+            "right": {
+                "x": -0.253657,
+                "y": 0,
+                "z": 0.967294
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.967294,
+                "y": 0,
+                "z": -0.253657
+            },
+            "position": {
+                "x": -241.512,
+                "y": 138.519,
+                "z": 261.832
+            },
+            "id": "CrateAmmo_01_StackC"
+        },
+        {
+            "name": "CrateAmmo_02",
+            "type": "CrateAmmo_01",
+            "right": {
+                "x": 0.896254,
+                "y": 0,
+                "z": -0.44354
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.44354,
+                "y": 0,
+                "z": 0.896254
+            },
+            "position": {
+                "x": -266.131,
+                "y": 138.529,
+                "z": 293.314
+            },
+            "id": "CrateAmmo_02"
+        },
+        {
+            "name": "CrateAmmo_01_StackC2",
+            "type": "CrateAmmo_01_StackC",
+            "right": {
+                "x": -0.900129,
+                "y": 0,
+                "z": 0.435624
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.435624,
+                "y": 0,
+                "z": -0.900129
+            },
+            "position": {
+                "x": -266.591,
+                "y": 138.519,
+                "z": 292.236
+            },
+            "id": "CrateAmmo_01_StackC2"
+        },
+        {
+            "name": "CratePallet_01",
+            "type": "CratePallet_01",
+            "right": {
+                "x": -0.217138,
+                "y": 0,
+                "z": 0.976141
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.976141,
+                "y": 0,
+                "z": -0.217138
+            },
+            "position": {
+                "x": -240.864,
+                "y": 138.562,
+                "z": 258.762
+            },
+            "id": "CratePallet_01"
+        },
+        {
+            "name": "CrateWooden_02_B",
+            "type": "CrateWooden_02_B",
+            "right": {
+                "x": 0.969812,
+                "y": 0,
+                "z": 0.243852
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.243852,
+                "y": 0,
+                "z": 0.969812
+            },
+            "position": {
+                "x": -240.056,
+                "y": 138.57,
+                "z": 256.736
+            },
+            "id": "CrateWooden_02_B"
+        },
+        {
+            "name": "CrateWeapon_01",
+            "type": "CrateWeapon_01",
+            "right": {
+                "x": -0.242616,
+                "y": 0,
+                "z": 0.970122
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.970122,
+                "y": 0,
+                "z": -0.242616
+            },
+            "position": {
+                "x": -238.109,
+                "y": 139.173,
+                "z": 255.022
+            },
+            "id": "CrateWeapon_01"
+        },
+        {
+            "name": "Crate_03_B",
+            "type": "Crate_03_B",
+            "right": {
+                "x": 0.179386,
+                "y": 0,
+                "z": -0.983779
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.983779,
+                "y": 0,
+                "z": 0.179386
+            },
+            "position": {
+                "x": -239.791,
+                "y": 138.554,
+                "z": 251.269
+            },
+            "id": "Crate_03_B"
+        },
+        {
+            "name": "CrateMetalWide_01_A",
+            "type": "CrateMetalWide_01_A",
+            "right": {
+                "x": 0.976956,
+                "y": 0,
+                "z": 0.21344
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.21344,
+                "y": 0,
+                "z": 0.976956
+            },
+            "position": {
+                "x": -239.495,
+                "y": 138.535,
+                "z": 252.264
+            },
+            "id": "CrateMetalWide_01_A"
+        },
+        {
+            "name": "CratePallet_02_B",
+            "type": "CratePallet_02_B",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -238.814,
+                "y": 138.524,
+                "z": 249.029
+            },
+            "id": "CratePallet_02_B"
+        },
+        {
+            "name": "Crate_01_A",
+            "type": "Crate_01_A",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -238.534,
+                "y": 138.877,
+                "z": 247.935
+            },
+            "id": "Crate_01_A"
+        },
+        {
+            "name": "CrateMetal_01_B",
+            "type": "CrateMetal_01_B",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -238.558,
+                "y": 138.507,
+                "z": 247.981
+            },
+            "id": "CrateMetal_01_B"
+        },
+        {
+            "name": "CrateAmmo_01_StackB",
+            "type": "CrateAmmo_01_StackB",
+            "right": {
+                "x": 0.983175,
+                "y": 0,
+                "z": 0.182665
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.182665,
+                "y": 0,
+                "z": 0.983175
+            },
+            "position": {
+                "x": -239.549,
+                "y": 138.549,
+                "z": 254.5
+            },
+            "id": "CrateAmmo_01_StackB"
+        },
+        {
+            "name": "CrateWooden_02_B2",
+            "type": "CrateWooden_02_B",
+            "right": {
+                "x": -0.217717,
+                "y": 0,
+                "z": -0.976012
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.976012,
+                "y": 0,
+                "z": -0.217717
+            },
+            "position": {
+                "x": -241.422,
+                "y": 138.536,
+                "z": 225.614
+            },
+            "id": "CrateWooden_02_B2"
+        },
+        {
+            "name": "CrateAmmo_01_StackB2",
+            "type": "CrateAmmo_01_StackB",
+            "right": {
+                "x": -0.278388,
+                "y": 0,
+                "z": -0.960469
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.960469,
+                "y": 0,
+                "z": -0.278388
+            },
+            "position": {
+                "x": -241.184,
+                "y": 138.549,
+                "z": 227.969
+            },
+            "id": "CrateAmmo_01_StackB2"
+        },
+        {
+            "name": "CrateAmmo_01_StackD",
+            "type": "CrateAmmo_01_StackD",
+            "right": {
+                "x": 0.229999,
+                "y": 0,
+                "z": -0.973191
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.973191,
+                "y": 0,
+                "z": 0.229999
+            },
+            "position": {
+                "x": -238.142,
+                "y": 138.526,
+                "z": 255.108
+            },
+            "id": "CrateAmmo_01_StackD"
+        },
+        {
+            "name": "Crate_03_B2",
+            "type": "Crate_03_B",
+            "right": {
+                "x": 0.985375,
+                "y": 0,
+                "z": 0.170399
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.170399,
+                "y": 0,
+                "z": 0.985375
+            },
+            "position": {
+                "x": -240.015,
+                "y": 138.531,
+                "z": 258.091
+            },
+            "id": "Crate_03_B2"
+        },
+        {
+            "name": "DirtRidge_02",
+            "type": "DirtRidge_02",
+            "right": {
+                "x": 0.362255,
+                "y": 0,
+                "z": 0.896253
+            },
+            "up": {
+                "x": 0,
+                "y": 1.38223,
+                "z": 0
+            },
+            "front": {
+                "x": -1.11292,
+                "y": 0,
+                "z": 0.449829
+            },
+            "position": {
+                "x": -363.117,
+                "y": 138.807,
+                "z": 334.146
+            },
+            "id": "DirtRidge_02"
+        },
+        {
+            "name": "DirtRidge_03",
+            "type": "DirtRidge_02",
+            "right": {
+                "x": 0.0636286,
+                "y": 0,
+                "z": 0.964598
+            },
+            "up": {
+                "x": 0,
+                "y": 1.38223,
+                "z": 0
+            },
+            "front": {
+                "x": -1.19779,
+                "y": 0,
+                "z": 0.0790105
+            },
+            "position": {
+                "x": -359.141,
+                "y": 139.258,
+                "z": 346.522
+            },
+            "id": "DirtRidge_03"
+        },
+        {
+            "name": "FlatbedTrailer_01_A",
+            "type": "FlatbedTrailer_01_A",
+            "right": {
+                "x": 0.962012,
+                "y": 0,
+                "z": 0.273002
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.273002,
+                "y": 0,
+                "z": 0.962012
+            },
+            "position": {
+                "x": -197.242,
+                "y": 138.482,
+                "z": 211.213
+            },
+            "id": "FlatbedTrailer_01_A"
+        },
+        {
+            "name": "FlatbedTrailer_01_Base",
+            "type": "FlatbedTrailer_01_Base",
+            "right": {
+                "x": -0.945723,
+                "y": 0,
+                "z": -0.324974
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.324974,
+                "y": 0,
+                "z": -0.945723
+            },
+            "position": {
+                "x": -231.72,
+                "y": 138.479,
+                "z": 261.808
+            },
+            "id": "FlatbedTrailer_01_Base"
+        },
+        {
+            "name": "DumpTruck_05",
+            "type": "DumpTruck_01",
+            "right": {
+                "x": -0.884792,
+                "y": 0,
+                "z": 0.465986
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.465986,
+                "y": 0,
+                "z": -0.884792
+            },
+            "position": {
+                "x": -199.272,
+                "y": 138.45,
+                "z": 253.619
+            },
+            "id": "DumpTruck_05"
+        },
+        {
+            "name": "FlatbedTrailer_01_Base2",
+            "type": "FlatbedTrailer_01_Base",
+            "right": {
+                "x": -0.836669,
+                "y": 0,
+                "z": 0.547709
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.547709,
+                "y": 0,
+                "z": -0.836669
+            },
+            "position": {
+                "x": -195.701,
+                "y": 138.521,
+                "z": 259.838
+            },
+            "id": "FlatbedTrailer_01_Base2"
+        },
+        {
+            "name": "SemiTruckTrailer_01",
+            "type": "SemiTruckTrailer_01",
+            "right": {
+                "x": -0.923411,
+                "y": 0,
+                "z": 0.383812
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.383812,
+                "y": 0,
+                "z": -0.923411
+            },
+            "position": {
+                "x": -199.547,
+                "y": 138.557,
+                "z": 242.945
+            },
+            "id": "SemiTruckTrailer_01"
+        },
+        {
+            "name": "SemiTruckTrailer_02",
+            "type": "SemiTruckTrailer_01",
+            "right": {
+                "x": -0.974746,
+                "y": 0,
+                "z": -0.223318
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.223318,
+                "y": 0,
+                "z": -0.974746
+            },
+            "position": {
+                "x": -254.778,
+                "y": 138.507,
+                "z": 306.295
+            },
+            "id": "SemiTruckTrailer_02"
+        },
+        {
+            "name": "SemiTruck_01",
+            "type": "SemiTruck_01",
+            "right": {
+                "x": -0.996351,
+                "y": 0,
+                "z": -0.0853472
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.0853472,
+                "y": 0,
+                "z": -0.996351
+            },
+            "position": {
+                "x": -201.844,
+                "y": 138.482,
+                "z": 235.121
+            },
+            "id": "SemiTruck_01"
+        },
+        {
+            "name": "PortableDieselEngine_01",
+            "type": "PortableDieselEngine_01",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -236.393,
+                "y": 138.46,
+                "z": 217.695
+            },
+            "id": "PortableDieselEngine_01"
+        },
+        {
+            "name": "PortableDieselEngine_01_LampTower",
+            "type": "PortableDieselEngine_01_LampTower",
+            "right": {
+                "x": 0.173236,
+                "y": 0,
+                "z": -0.98488
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.98488,
+                "y": 0,
+                "z": 0.173236
+            },
+            "position": {
+                "x": -193.369,
+                "y": 138.475,
+                "z": 224.589
+            },
+            "id": "PortableDieselEngine_01_LampTower"
+        },
+        {
+            "name": "ContainerStandard_Damaged_01_1280",
+            "type": "ContainerStandard_Damaged_01_1280",
+            "right": {
+                "x": 0.964035,
+                "y": -0.00592306,
+                "z": 0.265709
+            },
+            "up": {
+                "x": 0,
+                "y": 0.999752,
+                "z": 0.022286
+            },
+            "front": {
+                "x": -0.265775,
+                "y": -0.0214845,
+                "z": 0.963796
+            },
+            "position": {
+                "x": -122.898,
+                "y": 135.451,
+                "z": 418.419
+            },
+            "id": "ContainerStandard_Damaged_01_1280"
+        },
+        {
+            "name": "ContainerStandard_01_640",
+            "type": "ContainerStandard_01_640",
+            "right": {
+                "x": 0.705191,
+                "y": 0,
+                "z": -0.709017
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.709017,
+                "y": 0,
+                "z": 0.705191
+            },
+            "position": {
+                "x": -186.762,
+                "y": 138.613,
+                "z": 230.467
+            },
+            "id": "ContainerStandard_01_640"
+        },
+        {
+            "name": "ContainerStandard_01_1280",
+            "type": "ContainerStandard_01_1280",
+            "right": {
+                "x": 0.958616,
+                "y": 0,
+                "z": 0.284701
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.284701,
+                "y": 0,
+                "z": 0.958616
+            },
+            "position": {
+                "x": -197.81,
+                "y": 140.107,
+                "z": 217.544
+            },
+            "id": "ContainerStandard_01_1280"
+        },
+        {
+            "name": "DumpTruck_06",
+            "type": "DumpTruck_01",
+            "right": {
+                "x": -0.724071,
+                "y": 0.0149375,
+                "z": 0.689564
+            },
+            "up": {
+                "x": 0.0327339,
+                "y": 0.999383,
+                "z": 0.0127231
+            },
+            "front": {
+                "x": -0.688948,
+                "y": 0.0317845,
+                "z": -0.724113
+            },
+            "position": {
+                "x": -218.817,
+                "y": 137.223,
+                "z": 357.418
+            },
+            "id": "DumpTruck_06"
+        },
+        {
+            "name": "FlatbedTrailer_01_A2",
+            "type": "FlatbedTrailer_01_A",
+            "right": {
+                "x": -0.744295,
+                "y": 0.00719023,
+                "z": 0.667811
+            },
+            "up": {
+                "x": 0.0260505,
+                "y": 0.999494,
+                "z": 0.0182726
+            },
+            "front": {
+                "x": -0.667342,
+                "y": 0.030997,
+                "z": -0.744105
+            },
+            "position": {
+                "x": -213.847,
+                "y": 136.977,
+                "z": 362.76
+            },
+            "id": "FlatbedTrailer_01_A2"
+        },
+        {
+            "name": "ContainerStandard_01_1281",
+            "type": "ContainerStandard_01_1280",
+            "right": {
+                "x": -0.75237,
+                "y": 0.0075673,
+                "z": 0.658698
+            },
+            "up": {
+                "x": 0.0260505,
+                "y": 0.999494,
+                "z": 0.0182726
+            },
+            "front": {
+                "x": -0.658226,
+                "y": 0.0309071,
+                "z": -0.752186
+            },
+            "position": {
+                "x": -218.853,
+                "y": 138.803,
+                "z": 358.932
+            },
+            "id": "ContainerStandard_01_1281"
+        },
+        {
+            "name": "DirtRidge_01",
+            "type": "DirtRidge_01",
+            "right": {
+                "x": -0.336409,
+                "y": 0.0273906,
+                "z": 0.118429
+            },
+            "up": {
+                "x": 0.050746,
+                "y": 0.625364,
+                "z": -0.000487185
+            },
+            "front": {
+                "x": -0.259014,
+                "y": 0.0204411,
+                "z": -0.740482
+            },
+            "position": {
+                "x": -363.983,
+                "y": 138.75,
+                "z": 325.895
+            },
+            "id": "DirtRidge_01"
+        },
+        {
+            "name": "DirtRidge_04",
+            "type": "DirtRidge_02",
+            "right": {
+                "x": 0.0678974,
+                "y": 0.104887,
+                "z": 0.992164
+            },
+            "up": {
+                "x": 0.00109597,
+                "y": 0.99445,
+                "z": -0.105203
+            },
+            "front": {
+                "x": -0.997692,
+                "y": 0.00823042,
+                "z": 0.0674057
+            },
+            "position": {
+                "x": -357.671,
+                "y": 140.321,
+                "z": 358.325
+            },
+            "id": "DirtRidge_04"
+        },
+        {
+            "name": "CementRubble_02",
+            "type": "CementRubble_02",
+            "right": {
+                "x": 0.978264,
+                "y": -0.00772161,
+                "z": -0.207222
+            },
+            "up": {
+                "x": -1.18107e-10,
+                "y": 0.999307,
+                "z": -0.0372367
+            },
+            "front": {
+                "x": 0.207365,
+                "y": 0.0364273,
+                "z": 0.977585
+            },
+            "position": {
+                "x": -356.439,
+                "y": 142.081,
+                "z": 385.3
+            },
+            "id": "CementRubble_02"
+        },
+        {
+            "name": "CementRubble_03",
+            "type": "CementRubble_02",
+            "right": {
+                "x": 0.962429,
+                "y": -0.0538751,
+                "z": -0.266136
+            },
+            "up": {
+                "x": 0.0456033,
+                "y": 0.998268,
+                "z": -0.0371683
+            },
+            "front": {
+                "x": 0.267677,
+                "y": 0.0236351,
+                "z": 0.963219
+            },
+            "position": {
+                "x": -356.87,
+                "y": 139.655,
+                "z": 340.509
+            },
+            "id": "CementRubble_03"
+        },
+        {
+            "name": "CementRubble_04",
+            "type": "CementRubble_02",
+            "right": {
+                "x": -0.829197,
+                "y": 0.457013,
+                "z": 0.321825
+            },
+            "up": {
+                "x": 0.468994,
+                "y": 0.882093,
+                "z": -0.0442459
+            },
+            "front": {
+                "x": -0.3041,
+                "y": 0.114245,
+                "z": -0.945765
+            },
+            "position": {
+                "x": -361.824,
+                "y": 140.962,
+                "z": 358.875
+            },
+            "id": "CementRubble_04"
+        },
+        {
+            "name": "GExcavator_01",
+            "type": "GExcavator_01",
+            "right": {
+                "x": -0.712444,
+                "y": -0.0118508,
+                "z": 0.701628
+            },
+            "up": {
+                "x": 0.0319867,
+                "y": 0.99827,
+                "z": 0.049341
+            },
+            "front": {
+                "x": -0.700999,
+                "y": 0.0575955,
+                "z": -0.710832
+            },
+            "position": {
+                "x": -182.687,
+                "y": 135.31,
+                "z": 392.722
+            },
+            "id": "GExcavator_01"
+        },
+        {
+            "name": "GExcavator_02",
+            "type": "GExcavator_01",
+            "right": {
+                "x": -0.768819,
+                "y": 0,
+                "z": 0.639466
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.639466,
+                "y": 0,
+                "z": -0.768819
+            },
+            "position": {
+                "x": -246.143,
+                "y": 138.295,
+                "z": 327.044
+            },
+            "id": "GExcavator_02"
+        },
+        {
+            "name": "CombatVehicleContainer_02_WalkerSenexContainer",
+            "type": "CombatVehicleContainer_02_WalkerSenexContainer",
+            "right": {
+                "x": 0.707378,
+                "y": 0,
+                "z": 0.706835
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.706835,
+                "y": 0,
+                "z": 0.707378
+            },
+            "position": {
+                "x": -116.986,
+                "y": 138.752,
+                "z": 104.591
+            },
+            "id": "CombatVehicleContainer_02_WalkerSenexContainer"
+        },
+        {
+            "name": "CombatVehicleContainer_02_WalkerSenexContainer2",
+            "type": "CombatVehicleContainer_02_WalkerSenexContainer",
+            "right": {
+                "x": 0.707378,
+                "y": 0,
+                "z": 0.706835
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.706835,
+                "y": 0,
+                "z": 0.707378
+            },
+            "position": {
+                "x": -104.758,
+                "y": 138.43,
+                "z": 115.596
+            },
+            "id": "CombatVehicleContainer_02_WalkerSenexContainer2"
+        },
+        {
+            "name": "CombatVehicleContainer_02_WalkerSenexContainer5",
+            "type": "CombatVehicleContainer_02_WalkerSenexContainer",
+            "right": {
+                "x": 0.706972,
+                "y": -0.030243,
+                "z": 0.706595
+            },
+            "up": {
+                "x": 0.0203807,
+                "y": 0.999542,
+                "z": 0.0223898
+            },
+            "front": {
+                "x": -0.706948,
+                "y": -0.00142804,
+                "z": 0.707264
+            },
+            "position": {
+                "x": -108.926,
+                "y": 138.715,
+                "z": 112.286
+            },
+            "id": "CombatVehicleContainer_02_WalkerSenexContainer5"
+        },
+        {
+            "name": "CombatVehicleContainer_02_WalkerSenexContainer4",
+            "type": "CombatVehicleContainer_02_WalkerSenexContainer",
+            "right": {
+                "x": 0.690377,
+                "y": 0.0965871,
+                "z": 0.716973
+            },
+            "up": {
+                "x": -0.0772106,
+                "y": 0.995224,
+                "z": -0.0597252
+            },
+            "front": {
+                "x": -0.719318,
+                "y": -0.014125,
+                "z": 0.694538
+            },
+            "position": {
+                "x": -104.274,
+                "y": 138.646,
+                "z": 129.59
+            },
+            "id": "CombatVehicleContainer_02_WalkerSenexContainer4"
+        },
+        {
+            "name": "CombatVehicleContainer_02_WalkerSenexContainer3",
+            "type": "CombatVehicleContainer_02_WalkerSenexContainer",
+            "right": {
+                "x": 0.707378,
+                "y": 0,
+                "z": 0.706835
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.706835,
+                "y": 0,
+                "z": 0.707378
+            },
+            "position": {
+                "x": -102.304,
+                "y": 138.444,
+                "z": 120.119
+            },
+            "id": "CombatVehicleContainer_02_WalkerSenexContainer3"
+        },
+        {
+            "name": "UH60wreckfromthesky!",
+            "DisableRespawn": true,
+            "VehicleType": "UH60_Pax",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 9999999999,
+            "P_TimeUntilAbandon": 0,
+            "P_KeepAliveAbandonRadius": 0,
+            "P_KeepAliveSpawnerRadius": 0,
+            "type": "VehicleSpawner",
+            "right": {
+                "x": 0.100295,
+                "y": 0.0052229,
+                "z": 0.994944
+            },
+            "up": {
+                "x": 0.0520048,
+                "y": -0.998647,
+                "z": 6.36371e-09
+            },
+            "front": {
+                "x": 0.993598,
+                "y": 0.0517418,
+                "z": -0.100431
+            },
+            "position": {
+                "x": -219.424,
+                "y": 140.663,
+                "z": 226.685
+            },
+            "id": "UH60wreckfromthesky!"
+        },
+        {
+            "name": "EuroCopterwreckfromthesky!",
+            "DisableRespawn": true,
+            "VehicleType": "Eurocopter",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 9999999999,
+            "P_TimeUntilAbandon": 0,
+            "P_KeepAliveAbandonRadius": 0,
+            "P_KeepAliveSpawnerRadius": 0,
+            "type": "VehicleSpawner",
+            "right": {
+                "x": 0.836631,
+                "y": 0.0052229,
+                "z": 0.547742
+            },
+            "up": {
+                "x": 0.0327058,
+                "y": -0.998647,
+                "z": -0.040433
+            },
+            "front": {
+                "x": 0.54679,
+                "y": 0.0517418,
+                "z": -0.83567
+            },
+            "position": {
+                "x": -220.631,
+                "y": 145.358,
+                "z": 281.658
+            },
+            "id": "EuroCopterwreckfromthesky!"
+        },
+        {
+            "name": "Ah64wreckfromthesky!",
+            "DisableRespawn": true,
+            "VehicleType": "AH64",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 9999999999,
+            "P_TimeUntilAbandon": 0,
+            "P_KeepAliveAbandonRadius": 0,
+            "P_KeepAliveSpawnerRadius": 0,
+            "type": "VehicleSpawner",
+            "right": {
+                "x": -0.587328,
+                "y": -0.0942858,
+                "z": -0.803838
+            },
+            "up": {
+                "x": -0.11157,
+                "y": 0.993141,
+                "z": -0.034971
+            },
+            "front": {
+                "x": 0.801622,
+                "y": 0.0691448,
+                "z": -0.593819
+            },
+            "position": {
+                "x": -298.935,
+                "y": 165.311,
+                "z": 351.637
+            },
+            "id": "Ah64wreckfromthesky!"
+        }
+    ],
+    "Static": [
+        {
+            "name": "MP_Granite_TechCampus_Portal_Terrain",
+            "metadata/_edit_lock_": true,
+            "type": "MP_Granite_TechCampus_Portal_Terrain",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "id": "Static/MP_Granite_TechCampus_Portal_Terrain"
+        },
+        {
+            "name": "MP_Granite_TechCampus_Portal_Assets",
+            "metadata/_edit_lock_": true,
+            "type": "MP_Granite_TechCampus_Portal_Assets",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "id": "Static/MP_Granite_TechCampus_Portal_Assets"
+        }
+    ]
+}
