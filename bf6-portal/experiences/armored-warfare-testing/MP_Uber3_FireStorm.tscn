@@ -1,0 +1,638 @@
+[gd_scene load_steps=11 format=3 uid="uid://c4ng0rh8ifq4k"]
+
+[ext_resource type="PackedScene" path="res://objects/Gameplay/Common/HQ_PlayerSpawner.tscn" id="1_b2558"]
+[ext_resource type="PackedScene" uid="uid://jv31so3xcr7p" path="res://addons/bf_portal/portal_tools/types/PolygonVolume/PolygonVolume.tscn" id="2_vjhop"]
+[ext_resource type="PackedScene" path="res://objects/entities/SpawnPoint.tscn" id="3_hgsb3"]
+[ext_resource type="PackedScene" path="res://objects/Gameplay/Common/VehicleSpawner.tscn" id="4_kgrsv"]
+[ext_resource type="PackedScene" path="res://objects/Gameplay/Common/CombatArea.tscn" id="5_jwush"]
+[ext_resource type="PackedScene" path="res://objects/Gameplay/Common/DeployCam.tscn" id="6_3nyaq"]
+[ext_resource type="PackedScene" path="res://static/MP_FireStorm_Terrain.tscn" id="7_jpnu6"]
+[ext_resource type="PackedScene" path="res://static/MP_FireStorm_Assets.tscn" id="8_waoxg"]
+[ext_resource type="PackedScene" path="res://objects/Gameplay/Common/AreaTrigger.tscn" id="9_hgsb3"]
+[ext_resource type="PackedScene" path="res://objects/Gameplay/Common/Sector.tscn" id="10_kgrsv"]
+
+[node name="MP_FireStorm" type="Node3D"]
+
+[node name="TEAM_2_HQ" parent="." node_paths=PackedStringArray("HQArea", "InfantrySpawns") instance=ExtResource("1_b2558")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 570.692, 110.205, -232.341)
+Team = 2
+AltTeam = 0
+ObjId = 1
+HQArea = NodePath("HQ_Team2")
+InfantrySpawns = [NodePath("SpawnPoint_1_1"), NodePath("SpawnPoint_1_2"), NodePath("SpawnPoint_1_3"), NodePath("SpawnPoint_1_4")]
+
+[node name="HQ_Team2" parent="TEAM_2_HQ" instance=ExtResource("2_vjhop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+points = PackedVector2Array(5, 5, 5, -5, -5, -5, -5, 5)
+
+[node name="SpawnPoint_1_1" parent="TEAM_2_HQ" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(0.999884, 0, -0.0152535, 0, 1, 0, 0.0152535, 0, 0.999884, 0, 0, -3)
+
+[node name="SpawnPoint_1_2" parent="TEAM_2_HQ" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(-0.9995, 0, -0.0316198, 0, 1, 0, 0.0316198, 0, -0.9995, 3, 0, 0)
+
+[node name="SpawnPoint_1_3" parent="TEAM_2_HQ" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(-0.0428871, 0, 0.99908, 0, 1, 0, -0.99908, 0, -0.0428871, -3, 0, 0)
+
+[node name="SpawnPoint_1_4" parent="TEAM_2_HQ" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(0.0841819, 0, -0.99645, 0, 1, 0, 0.99645, 0, 0.0841819, 0, 0, 3)
+
+[node name="VehicleSpawner" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.660408, 0, -0.750907, 0, 1, 0, 0.750907, 0, -0.660408, 36.4584, 0.799675, 3.60114)
+ObjId = 50
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner4" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.621831, 0, -0.783152, 0, 1, 0, 0.783152, 0, -0.621831, 39.7496, 0.799675, -0.117889)
+ObjId = 50
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner31" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.621831, 0, -0.783152, 0, 1, 0, 0.783152, 0, -0.621831, 45.7471, 0.799675, 8.98007)
+ObjId = 50
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner5" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.621831, 0, -0.783152, 0, 1, 0, 0.783152, 0, -0.621831, 45.3454, 0.799675, -10.7238)
+ObjId = 50
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner30" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.621831, 0, -0.783152, 0, 1, 0, 0.783152, 0, -0.621831, 56.5478, 0.799675, -5.42348)
+ObjId = 50
+VehicleType = 1
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner6" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.621831, 0, -0.783152, 0, 1, 0, 0.783152, 0, -0.621831, 48.7353, 0.799675, -14.8885)
+ObjId = 50
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner11" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.621831, 0, -0.783152, 0, 1, 0, 0.783152, 0, -0.621831, 55.535, 0.799675, -22.8533)
+ObjId = 50
+VehicleType = 1
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner12" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.234548, 0, -0.972105, 0, 1, 0, 0.972105, 0, -0.234548, 56.7369, 0.799675, -29.2353)
+ObjId = 50
+VehicleType = 1
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner24" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.558888, 0, -0.829243, 0, 1, 0, 0.829243, 0, -0.558888, 50.2267, 1.32607, -39.8245)
+ObjId = 50
+VehicleType = 15
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner25" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.558888, 0, -0.829243, 0, 1, 0, 0.829243, 0, -0.558888, 61.7443, 1.32607, -46.0386)
+ObjId = 50
+VehicleType = 14
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner26" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.558888, 0, -0.829243, 0, 1, 0, 0.829243, 0, -0.558888, 68.8438, 1.32607, -56.6108)
+ObjId = 50
+VehicleType = 13
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner27" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.45868, 0, -0.888602, 0, 1, 0, 0.888602, 0, -0.45868, 73.8078, 1.32607, -66.7509)
+ObjId = 50
+VehicleType = 17
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner13" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.885126, 0, 0.465353, 0, 1, 0, -0.465353, 0, 0.885126, -5.74158, 1.81129, -13.5686)
+ObjId = 50
+VehicleType = 3
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner14" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.747438, 0, 0.664332, 0, 1, 0, -0.664332, 0, 0.747438, -0.735413, 2.55034, -18.1853)
+ObjId = 50
+VehicleType = 3
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner15" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.884198, 0, 0.467113, 0, 1, 0, -0.467113, 0, 0.884198, 24.0393, 1.56808, -36.116)
+ObjId = 50
+VehicleType = 1
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner17" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.465382, 0, -0.88511, 0, 1, 0, 0.88511, 0, -0.465382, -1.58374, 2.02852, 12.9741)
+ObjId = 50
+VehicleType = 16
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner21" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.949469, 0, 0.313861, 0, 1, 0, -0.313861, 0, 0.949469, -21.3428, 2.90309, 2.81732)
+ObjId = 50
+VehicleType = 1
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner22" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.806981, 0, 0.590578, 0, 1, 0, -0.590578, 0, 0.806981, -17.5844, 2.36002, -2.87561)
+ObjId = 50
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner18" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.66493, 0, -0.746906, 0, 1, 0, 0.746906, 0, -0.66493, -4.68036, 2.02852, 16.999)
+ObjId = 50
+VehicleType = 16
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner19" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.713299, 0, -0.70086, 0, 1, 0, 0.70086, 0, -0.713299, -8.37494, 2.02852, 21.0204)
+ObjId = 50
+VehicleType = 16
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner20" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.922579, 0, -0.38581, 0, 1, 0, 0.38581, 0, -0.922579, -13.3909, 2.58267, 23.7392)
+ObjId = 50
+VehicleType = 16
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner16" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.935166, 0, 0.35421, 0, 1, 0, -0.35421, 0, 0.935166, 18.005, 0.799675, -32.7165)
+ObjId = 50
+VehicleType = 1
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner2" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.648133, 0, -0.761527, 0, 1, 0, 0.761527, 0, -0.648133, 25.4086, 0.799675, 8.28848)
+ObjId = 50
+VehicleType = 2
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner28" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.855726, 0, 0.51743, 0, 1, 0, -0.51743, 0, -0.855726, 11.9911, 2.84591, -50.9374)
+ObjId = 50
+VehicleType = 2
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner23" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.648133, 0, -0.761527, 0, 1, 0, 0.761527, 0, -0.648133, 17.4621, 0.799675, 8.28848)
+ObjId = 50
+VehicleType = 4
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner29" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.781161, 0, 0.624329, 0, 1, 0, -0.624329, 0, -0.781161, -0.249634, 3.55759, -56.3828)
+ObjId = 50
+VehicleType = 4
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner3" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.722316, 0, 0.691563, 0, 1, 0, -0.691563, 0, -0.722316, 72.0417, 1.86343, -24.283)
+ObjId = 50
+VehicleType = 5
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner7" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.500091, 0, -0.865973, 0, 1, 0, 0.865973, 0, 0.500091, -17.0587, 1.86343, -22.839)
+ObjId = 50
+VehicleType = 7
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner9" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.87915, 0, 0.476546, 0, 1, 0, -0.476546, 0, 0.87915, 4.65155, 1.86343, -23.9194)
+ObjId = 50
+VehicleType = 3
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner10" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.93089, 0, 0.3653, 0, 1, 0, -0.3653, 0, 0.93089, 11.4505, 1.86343, -27.2609)
+ObjId = 50
+VehicleType = 3
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="VehicleSpawner8" parent="TEAM_2_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.332129, 0, -0.943234, 0, 1, 0, 0.943234, 0, 0.332129, 0.955261, 1.86343, 31.6093)
+ObjId = 50
+VehicleType = 6
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+P_TimeUntilAbandon = 5
+P_KeepAliveAbandonRadius = 10
+P_KeepAliveSpawnerRadius = 25
+
+[node name="TEAM_2_HQswapsides" parent="." node_paths=PackedStringArray("HQArea", "InfantrySpawns") instance=ExtResource("1_b2558")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -764.417, 318.233, 222.523)
+Team = 2
+AltTeam = 0
+ObjId = 1
+HQArea = NodePath("HQ_Team2swapsides")
+InfantrySpawns = [NodePath("SpawnPoint_1_1"), NodePath("SpawnPoint_1_2"), NodePath("SpawnPoint_1_3"), NodePath("SpawnPoint_1_4")]
+
+[node name="HQ_Team2swapsides" parent="TEAM_2_HQswapsides" instance=ExtResource("2_vjhop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+points = PackedVector2Array(5, 5, 5, -5, -5, -5, -5, 5)
+
+[node name="SpawnPoint_1_1" parent="TEAM_2_HQswapsides" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(0.999884, 0, -0.0152535, 0, 1, 0, 0.0152535, 0, 0.999884, 0, 0, -3)
+
+[node name="SpawnPoint_1_2" parent="TEAM_2_HQswapsides" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(-0.9995, 0, -0.0316198, 0, 1, 0, 0.0316198, 0, -0.9995, 3, 0, 0)
+
+[node name="SpawnPoint_1_3" parent="TEAM_2_HQswapsides" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(-0.0428871, 0, 0.99908, 0, 1, 0, -0.99908, 0, -0.0428871, -3, 0, 0)
+
+[node name="SpawnPoint_1_4" parent="TEAM_2_HQswapsides" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(0.0841819, 0, -0.99645, 0, 1, 0, 0.99645, 0, 0.0841819, 0, 0, 3)
+
+[node name="TEAM_1_HQ" parent="." node_paths=PackedStringArray("HQArea", "InfantrySpawns") instance=ExtResource("1_b2558")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -761.869, 133.091, 223.038)
+AltTeam = 0
+ObjId = 2
+HQArea = NodePath("HQ_Team1")
+InfantrySpawns = [NodePath("SpawnPoint_2_1"), NodePath("SpawnPoint_2_2"), NodePath("SpawnPoint_2_3"), NodePath("SpawnPoint_2_4")]
+
+[node name="HQ_Team1" parent="TEAM_1_HQ" instance=ExtResource("2_vjhop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+points = PackedVector2Array(5, 5, 5, -5, -5, -5, -5, 5)
+
+[node name="SpawnPoint_2_1" parent="TEAM_1_HQ" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(0.87795, 0, -0.478754, 0, 1, 0, 0.478754, 0, 0.87795, 0, 0, -3)
+
+[node name="SpawnPoint_2_2" parent="TEAM_1_HQ" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(-0.997604, 0, 0.0691822, 0, 1, 0, -0.0691822, 0, -0.997604, 3, 0, 0)
+
+[node name="SpawnPoint_2_3" parent="TEAM_1_HQ" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(0.162758, 0, 0.986666, 0, 1, 0, -0.986666, 0, 0.162758, -3, 0, 0)
+
+[node name="SpawnPoint_2_4" parent="TEAM_1_HQ" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(-0.165771, 0, -0.986164, 0, 1, 0, 0.986164, 0, -0.165771, 0, 0, 3)
+
+[node name="VehicleSpawner" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.734263, 0, 0.678865, 0, 1, 0, -0.678865, 0, -0.734263, -24.5825, 1.55971, 25.1874)
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner31" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.734263, 0, 0.678865, 0, 1, 0, -0.678865, 0, -0.734263, -31.4163, 1.55971, 34.8915)
+VehicleType = 1
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner5" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.734263, 0, 0.678865, 0, 1, 0, -0.678865, 0, -0.734263, -14.1979, 1.55971, 33.304)
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner6" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.734263, 0, 0.678865, 0, 1, 0, -0.678865, 0, -0.734263, -10.0261, 1.55971, 36.3915)
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner30" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.734263, 0, 0.678865, 0, 1, 0, -0.678865, 0, -0.734263, -18.4778, 1.55971, 44.1125)
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner28" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.599806, 0, -0.800145, 0, 1, 0, 0.800145, 0, -0.599806, 38.176, 1.55971, -24.639)
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner29" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.756824, 0, -0.653618, 0, 1, 0, 0.653618, 0, -0.756824, 42.0499, 1.55971, -29.6445)
+VehicleType = 1
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner11" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.718187, 0, -0.69585, 0, 1, 0, 0.69585, 0, -0.718187, 24.1851, 1.55971, 7.92096)
+VehicleType = 3
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner19" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.718187, 0, -0.69585, 0, 1, 0, 0.69585, 0, -0.718187, 15.8024, 1.55971, 18.2927)
+VehicleType = 1
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner20" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.718187, 0, -0.69585, 0, 1, 0, 0.69585, 0, -0.718187, 11.0193, 1.55971, 24.942)
+VehicleType = 1
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner21" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.954725, 0, -0.297491, 0, 1, 0, 0.297491, 0, -0.954725, 5.78827, 1.55971, 29.7516)
+VehicleType = 1
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner22" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.954725, 0, -0.297491, 0, 1, 0, 0.297491, 0, -0.954725, 0.472229, 1.55971, 33.7377)
+VehicleType = 1
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner12" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.603236, 0, -0.797563, 0, 1, 0, 0.797563, 0, -0.603236, 28.6555, 1.55971, 2.09079)
+VehicleType = 3
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner13" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.235499, 0, -0.971875, 0, 1, 0, 0.971875, 0, -0.235499, 31.2332, 1.55971, -3.90712)
+VehicleType = 3
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner14" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.8412, 0, -0.540725, 0, 1, 0, 0.540725, 0, -0.8412, 30.909, 1.55971, -10.1948)
+VehicleType = 3
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner15" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.468054, 0, 0.8837, 0, 1, 0, -0.8837, 0, 0.468054, 25.6702, 1.55971, -42.7191)
+VehicleType = 16
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner17" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.557499, 0, 0.830178, 0, 1, 0, -0.830178, 0, 0.557499, 19.9676, 1.55971, -39.1215)
+VehicleType = 16
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner18" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.569825, 0, 0.821766, 0, 1, 0, -0.821766, 0, 0.569825, 12.8962, 1.55971, -35.5336)
+VehicleType = 16
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner16" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.52568, 0, 0.850682, 0, 1, 0, -0.850682, 0, 0.52568, 29.9731, 1.55971, -46.3166)
+VehicleType = 16
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner4" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.734263, 0, 0.678865, 0, 1, 0, -0.678865, 0, -0.734263, -28.4437, 1.55971, 21.3601)
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner2" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.5336, 0, 0.845737, 0, 1, 0, -0.845737, 0, 0.5336, -47.7456, 1.55971, 12.9291)
+VehicleType = 6
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner7" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.5336, 0, 0.845737, 0, 1, 0, -0.845737, 0, 0.5336, -3.13129, 1.55971, -49.5115)
+VehicleType = 7
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner8" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.5336, 0, 0.845737, 0, 1, 0, -0.845737, 0, 0.5336, -24.9131, 1.55971, -18.3241)
+VehicleType = 5
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner9" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.509658, 0, 0.860377, 0, 1, 0, -0.860377, 0, 0.509658, -20.7218, 1.55971, -31.2344)
+VehicleType = 2
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner26" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.373312, 0, 0.927706, 0, 1, 0, -0.927706, 0, 0.373312, -33.6157, 1.55971, -6.52338)
+VehicleType = 2
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner10" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.231341, 0, 0.972873, 0, 1, 0, -0.972873, 0, 0.231341, -14.2985, 1.55971, -35.4614)
+VehicleType = 4
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner27" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(-0.236906, 0, 0.971533, 0, 1, 0, -0.971533, 0, -0.236906, -34.0327, 1.55971, 0.530594)
+VehicleType = 4
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner3" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.5336, 0, 0.845737, 0, 1, 0, -0.845737, 0, 0.5336, 41.6376, 1.55971, 14.9316)
+VehicleType = 15
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner23" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.5336, 0, 0.845737, 0, 1, 0, -0.845737, 0, 0.5336, 33.6349, 1.55971, 25.561)
+VehicleType = 14
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner24" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.5336, 0, 0.845737, 0, 1, 0, -0.845737, 0, 0.5336, 25.5947, 1.55971, 36.019)
+VehicleType = 13
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="VehicleSpawner25" parent="TEAM_1_HQ" instance=ExtResource("4_kgrsv")]
+transform = Transform3D(0.5336, 0, 0.845737, 0, 1, 0, -0.845737, 0, 0.5336, 16.7657, 1.55971, 47.3047)
+VehicleType = 17
+P_AutoSpawnEnabled = true
+P_DefaultRespawnTime = 15
+
+[node name="TEAM_1_HQswapsides" parent="." node_paths=PackedStringArray("HQArea", "InfantrySpawns") instance=ExtResource("1_b2558")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 571.058, 331.168, -232.262)
+AltTeam = 0
+ObjId = 2
+HQArea = NodePath("HQ_Team1swapsides")
+InfantrySpawns = [NodePath("SpawnPoint_2_1"), NodePath("SpawnPoint_2_2"), NodePath("SpawnPoint_2_3"), NodePath("SpawnPoint_2_4")]
+
+[node name="HQ_Team1swapsides" parent="TEAM_1_HQswapsides" instance=ExtResource("2_vjhop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+points = PackedVector2Array(5, 5, 5, -5, -5, -5, -5, 5)
+
+[node name="SpawnPoint_2_1" parent="TEAM_1_HQswapsides" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(0.87795, 0, -0.478754, 0, 1, 0, 0.478754, 0, 0.87795, 0, 0, -3)
+
+[node name="SpawnPoint_2_2" parent="TEAM_1_HQswapsides" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(-0.997604, 0, 0.0691822, 0, 1, 0, -0.0691822, 0, -0.997604, 3, 0, 0)
+
+[node name="SpawnPoint_2_3" parent="TEAM_1_HQswapsides" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(0.162758, 0, 0.986666, 0, 1, 0, -0.986666, 0, 0.162758, -3, 0, 0)
+
+[node name="SpawnPoint_2_4" parent="TEAM_1_HQswapsides" instance=ExtResource("3_hgsb3")]
+transform = Transform3D(-0.165771, 0, -0.986164, 0, 1, 0, 0.986164, 0, -0.165771, 0, 0, 3)
+
+[node name="CombatArea" parent="." node_paths=PackedStringArray("CombatVolume") instance=ExtResource("5_jwush")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -58.2441, 93.4144, 34.2265)
+CombatVolume = NodePath("CombatVolume")
+
+[node name="CombatVolume" parent="CombatArea" instance=ExtResource("2_vjhop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 129.825, 84.381, -100.438)
+points = PackedVector2Array(-487.57, -493.84, -670.338, -325.528, -823.85, -210.91, -889.163, -28.6968, -916.968, 170.99, -881.939, 348.44, -510.255, 641.563, -306.301, 651.196, 2.94098, 528.771, 237.795, 410.472, 396.674, 359.251, 542.094, 289.404, 617.386, 42.2923, 627.937, -165.877, 612.868, -258.354, 486.643, -353.707, 288.021, -502.067, 154.929, -566.562, -227.908, -570.478)
+height = 100.0
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.101056, 0.994881, 0, -0.994881, 0.101056, -12.7025, 577.543, -87.5632)
+
+[node name="DeployCam" parent="Camera3D" instance=ExtResource("6_3nyaq")]
+
+[node name="Static" type="Node3D" parent="."]
+
+[node name="MP_FireStorm_Terrain" parent="Static" instance=ExtResource("7_jpnu6")]
+metadata/_edit_lock_ = true
+
+[node name="MP_FireStorm_Assets" parent="Static" instance=ExtResource("8_waoxg")]
+metadata/_edit_lock_ = true
+
+[node name="WestBaseAreaTrigger" parent="." node_paths=PackedStringArray("Area") instance=ExtResource("9_hgsb3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -723.874, 144.724, 219.687)
+ObjId = 501
+Area = NodePath("WestBaseOOBVolume")
+
+[node name="WestBaseOOBVolume" parent="WestBaseAreaTrigger" instance=ExtResource("2_vjhop")]
+transform = Transform3D(1, 0, 0, 0, 24.4049, 0, 0, 0, 1, 0, 0, 0)
+points = PackedVector2Array(-123.879, -110.91, -89.5828, 57.7964, 282.812, 353.008, 395.587, 361.461, 392.994, 137.944, 163.356, -31.9642, 82.0015, -171.037, -115.331, -174.712)
+
+[node name="WestBaseSector" parent="WestBaseAreaTrigger" node_paths=PackedStringArray("SectorArea") instance=ExtResource("10_kgrsv")]
+SectorArea = NodePath("../WestBaseOOBVolume")
+
+[node name="EastBaseAreaTrigger" parent="." node_paths=PackedStringArray("Area") instance=ExtResource("9_hgsb3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 573.343, 144.724, -240.638)
+ObjId = 500
+Area = NodePath("EastBaseOOBVolume")
+
+[node name="EastBaseOOBVolume" parent="EastBaseAreaTrigger" instance=ExtResource("2_vjhop")]
+transform = Transform3D(1, 0, 0, 0, 24.4049, 0, 0, 0, 1, 0, -29.3871, 0)
+points = PackedVector2Array(-160.348, -82.0781, -135.964, 57.2079, -101.657, 151.502, 120.243, 150.521, 127.044, 14.5668, 111.411, -80.1124, -193.847, -312.896, -282.508, -196.641)
+
+[node name="EastBaseSector" parent="EastBaseAreaTrigger" node_paths=PackedStringArray("SectorArea") instance=ExtResource("10_kgrsv")]
+SectorArea = NodePath("../EastBaseOOBVolume")
