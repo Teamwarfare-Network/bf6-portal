@@ -1,68 +1,30 @@
-# TWL Battlefield 6 Portal Experiences
+# TWL Tanks Only 2v2
 
-Community-created Battlefield 6 Portal experiences for [TeamWarfare League](https://teamwarfare.net) competitive ladders.
+Only tank kills count, compete in a curated competitive 2v2 tanks experience across 7 maps, with rounds and kills tracked in a custom HUD. Triple-tap the interact key to display the Ready up dialog. During combat you can leave your tank to repair (but stay close to it!) and you can use ammo crates for resupply. More ammo crates are given once returning to your main inbetween rounds.
 
-## What This Repo Contains
+Known limitations
+- Cannot edit vehicle loadout once in-game. Reconnect to reconfigure and then rejoin. Tip: Choose and select your optimal/desired MBT, IFV and engineer class loadouts before joining.
+- If you don't see a "Vehicle Registration" message pop up when entering your vehicle, get out and get back in
+- If you have issues spawning in, ensure your loadout just has supply crates for engineer
 
-This repository stores the exported JSON files from BF6 Portal's visual Rules Editor and Spatial Editor, enabling version control and collaboration on TWL's custom competitive experiences.
+Primary features
+- Round-based, vehicle-only scoring; vehicles register to a team on first entry.
+- Destroying a registered vehicle during a LIVE round awards the opposing team a round kill.
+- Rounds end on 2 target kills or round timer expiry; match ends by best-of rounds (default best of 3).
+- Ready Up dialog with roster, per-player ready state, and main-base gating.
+- Team swap via a single button with forced undeploy.
+- Admin panel for live tuning (round kills target, wins, ties, clock, round start/end), complete with auditing messages and admin action counts.
+- HUD and victory/round-end dialogs mirror authoritative match state.
+- Main-base entry/exit tracking with gadget ammo restock and pre-round "over-line" warnings.
 
-Each experience consists of:
-- **Logic JSON** — Game rules, scoring, restrictions (exported from Rules Editor)
-- **Spatial JSON** — Map modifications, spawn points, boundaries (exported from Spatial Editor)
-- **Metadata** — Experience codes, version history, status
+Maps/Experience Codes Supported
+- All 7 Maps: ZKBX5
+- Blackwell Fields (2xMBT): ZKBXE
+- Defense Nexus (2x IFV): ZKBXK
+- Operation Firestorm (2x MBT): ZKBYZ
+- Manhattan Bridge (1x MBT + 1x IFV): ZKBYF
+- Golf Course (1x MBT + 1x IFV): ZKBYP
+- Liberation Peak (1x MBT + 1x IFV): ZKBZ4
+- WIP: Mirak Valley (2xMBT): ZKBZK
 
-## Current Experiences
-
-| Experience | Ladder | Status | Experience Code |
-|------------|--------|--------|-----------------|
-| [Armored Warfare - 3 Map Rotation](./experiences/bf6-2v2-tanks/armored-warfare-rotation/) | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) | 🧪 Testing | `zfvxv` |
-| [Armored Warfare - Manhattan Bridge](./experiences/bf6-2v2-tanks/armored-warfare-manhattan-bridge/) | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) | 🧪 Testing | `zgzq8` |
-| [Armored Warfare - Mirak Valley](./experiences/bf6-2v2-tanks/armored-warfare-mirak-valley/) | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) | 🧪 Testing | `zgzqa` |
-| [Armored Warfare - Defense Nexus](./experiences/bf6-2v2-tanks/armored-warfare-defense-nexus/) | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) | 🧪 Testing | `zgzqb` |
-
-## Quick Links
-
-- [Contributing Guide](./CONTRIBUTING.md) — How to add or modify experiences
-- [Playtesting Guide](./docs/playtesting-guide.md) — Rules for testing Armored Warfare modes
-- [TWL BF6 Ladders](https://teamwarfare.net/ladders) — Live competitive ladders
-
-## Repository Structure
-
-```
-bf6-portal/
-├── experiences/
-│   ├── bf6-2v2-tanks/           # Matches ladder URL slug
-│   │   ├── armored-warfare-rotation/
-│   │   │   ├── logic.json       # Rules Editor export
-│   │   │   ├── spatial/         # Spatial JSONs per map
-│   │   │   │   ├── defense-nexus.spatial.json
-│   │   │   │   ├── manhattan-bridge.spatial.json
-│   │   │   │   └── mirak-valley.spatial.json
-│   │   │   ├── metadata.json    # Experience code, version, status
-│   │   │   └── CHANGELOG.md
-│   │   └── ...
-│   └── bf6-4v4-vehicles/        # Another ladder
-│       └── ...
-├── docs/
-│   └── playtesting-guide.md
-├── CONTRIBUTING.md
-└── README.md
-```
-
-## Status Definitions
-
-| Status | Meaning |
-|--------|---------|
-| 🔨 Draft | Work in progress, not ready for testing |
-| 🧪 Testing | Ready for playtesting, gathering feedback |
-| ✅ Approved | Verified working, approved for ladder play |
-
-## Contributors
-
-This repository is maintained by trusted TWL community members. See [CONTRIBUTING.md](./CONTRIBUTING.md) for how the contribution process works.
-
-## Links
-
-- **TWL Website**: https://teamwarfare.net
-- **BF6 Portal Builder**: https://portal.battlefield.com/bf6
-- **TWL Discord**: Join `#battlefield-6-portal` for discussion
+If you like this experience, check out the 2v2 Tanks Ladder at TWL: https://teamwarfare.net/ The ladder will open very soon!
