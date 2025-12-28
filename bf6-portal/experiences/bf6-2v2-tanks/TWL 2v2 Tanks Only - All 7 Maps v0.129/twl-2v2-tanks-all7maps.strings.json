@@ -1,171 +1,125 @@
 {
-  "twl": {
-    "system": {
-      "genericCounter": "{0}",
-      "slash": "/",
-      "unknownPlayer": "Unknown"
-    },
-    "hud": {
-      "branding": {
-        "title": "teamwarfare . net | TWL 2v2 Tanks (v0.152)",
-        "subtitle": "Experience Code: - - - -"
-      },
-      "roundText": "ROUND",
-      "helpText": "Ready up to start Round!  (Triple tap interact key to show Ready dialog)",
-      "labels": {
-        "totalKills": "Total Kills",
-        "roundKills": "Round Kills",
-        "roundWins": "Round Wins"
-      },
-      "roundStateFormat": "{0} {1} {2}",
-      "roundStateLive": "LIVE",
-      "roundStateNotReady": "NOT READY",
-      "roundStateGameOver": "GAME OVER",
-      "roundRecordFormat": "{0} - {1} - {2}",
-      "roundLiveHelpFormat": "First to {0} Kills Wins the Round",
-      "playersReadyFormat": "{0} / {1} PLAYERS READY",
-      "clock": {
-        "digit": "{0}",
-        "colon": ":"
-      }
-    },
-    "roundEnd": {
-      "draw": "DRAW",
-      "roundNumber": "ROUND {0}"
-    },
-    "overLine": {
-      "title": "{0} IS OVER THE LINE!",
-      "subtitle": "Everyone must return to their main base and ready back up"
-    },
-    "teams": {
-      "leftName": "WEST",
-      "rightName": "EAST"
-    },
-    "notifications": {
-      "ammoRestocked": "Your gadget ammo is restocked",
-      "enteredMainBase": "{} entered their main base",
-      "exitedMainBase": "{} exited their main base",
-      "readyupReturnToBaseNotLive": "Return to main base and ready back up - Round {0} is not live!",
-      "multiclickDetector": "You have switched clicked three times!",
-      "roundEndTie": "Round ended: Tie {0}-{1}.",
-      "roundEndWin": "{0} wins {1}-{2}.",
-      "roundOverRedeploying": "Round over, redeploying to reset in {0}s...",
-      "roundStarted": "Round started.",
-      "roundWins": "Current round score is {0}-{1}",
-      "teamSwitch": "You have switched teams!"
-    },
-    "readyDialog": {
-      "header": "Everyone on both teams needs to press 'Ready' and stay inside their Main Base until the round starts",
-      "bestOfLabel": "Best of {0} Rounds",
-      "bestOfChanged": "{0} changed it to best of {1} rounds",
-      "playerNameFormat": "{0}",
-      "status": {
-        "ready": "READY",
-        "notReady": "NOT READY"
-      },
-      "baseStatus": {
-        "in": "IN MAIN BASE",
-        "out": "NOT IN MAIN BASE"
-      },
-      "buttons": {
-        "ready": "READY",
-        "notReady": "NOT READY",
-        "swapTeams": "CHANGE TEAMS"
-      }
-    },
-    "adminPanel": {
-      "accessed": "{0} accessed the Admin Panel",
-      "actionPressed": "{0} pressed {1} in the admin panel",
-      "actionCountFormat": "({0})",
-      "actionCountVictoryFormat": "Admin Panel Buttons pressed {0} times",
-      "actions": {
-        "t1WinsInc": "T1 Wins +",
-        "t1WinsDec": "T1 Wins -",
-        "t2WinsInc": "T2 Wins +",
-        "t2WinsDec": "T2 Wins -",
-        "t1TotalKillsInc": "T1 Total Kills +",
-        "t1TotalKillsDec": "T1 Total Kills -",
-        "t2TotalKillsInc": "T2 Total Kills +",
-        "t2TotalKillsDec": "T2 Total Kills -",
-        "t1RoundKillsInc": "T1 Round Kills +",
-        "t1RoundKillsDec": "T1 Round Kills -",
-        "t2RoundKillsInc": "T2 Round Kills +",
-        "t2RoundKillsDec": "T2 Round Kills -",
-        "targetRoundKillsInc": "Target Round Kills +",
-        "targetRoundKillsDec": "Target Round Kills -",
-        "tiesInc": "Ties +",
-        "tiesDec": "Ties -",
-        "currentRoundInc": "Current Round +",
-        "currentRoundDec": "Current Round -",
-        "clockTimeInc": "Clock Time +",
-        "clockTimeDec": "Clock Time -",
-        "clockReset": "Clock Reset",
-        "roundStart": "Start Round",
-        "roundEnd": "End Round"
-      },
-      "labels": {
-        "t1RoundKills": "T1 Round Kills",
-        "t2RoundKills": "T2 Round Kills"
-      },
-      "buttons": {
-        "panel": "Admin Panel"
-      },
-      "tester": {
-        "header": "ADMIN PANEL",
-        "buttons": {
-          "clockReset": "Reset Clock",
-          "roundEnd": "End Round",
-          "roundStart": "Start Round"
-        },
-        "labels": {
-          "clockTime": "Clock Time",
-          "currentRound": "Current Round",
-          "leftKills": "T1 Total Kills",
-          "leftWins": "T1 Wins",
-          "ties": "T1 + T2 Round Ties",
-          "rightKills": "T2 Total Kills",
-          "rightWins": "T2 Wins",
-          "roundKillsTarget": "Target Round Kills"
-        }
-      }
-    },
-    "teamSwitch": {
-      "buttons": {
-        "cancel": "CLOSE"
-      },
-      "debugTimeLimit": "{0}"
-    },
-    "ui": {
-      "plus": "+",
-      "minus": "-"
-    },
-    "victory": {
-      "draws": "DRAWS",
-      "loses": "LOSES",
-      "wins": "WINS!",
-      "restartInFormat": "Map will restart/rotate in {0}s",
-      "roundLossesFormat": "{0} Round Losses",
-      "roundTiesFormat": "{0} Round Ties",
-      "roundWinsFormat": "{0} Round Wins",
-      "roundsSummaryFormat": "{0} Rounds played in a best of {1} Rounds matchup",
-      "screenshotPrompt": "Screenshot this to record match results",
-      "teamOutcomeFormat": "{0} {1}",
-      "totalKillsFormat": "{0} Total Kills",
-      "totalMatchTimeLabel": "Total Match time:"
-    },
-    "countdown": {
-      "format": "{0}",
-      "go": "GO!"
-    },
-    "debug": {
-    },
-    "messages": {
-      "init": "Vehicle scoring initialized.",
-      "pointAwardedWithOwner": "{} gets a point: {}'s vehicle was destroyed! ({} Round Kills)",
-      "vehicleDestroyedNotLive": "{}'s {} vehicle was destroyed - but round was not live (no points awarded)",
-      "vehicleReRegistered": "Vehicle re-registered under Team {} by {}.",
-      "vehicleRegisteredNew": "Vehicle registered under Team {} by {}.",
-      "vehicleReturned": "{} has returned to their registered vehicle under Team {}."
-    }
-  }
+  "AMMO_RESTOCKED": "Your gadget ammo is restocked",
+  "ENTERED_MAIN_BASE": "{} entered their main base",
+  "EXITED_MAIN_BASE": "{} exited their main base",
+  "GenericCounterText": "{0}",
+  "HelpText": "Ready up to start Round!  (Triple tap interact key to show Ready dialog)",
+  "MatchTimerColon": ":",
+  "MatchTimerDigit": "{0}",
+  "NOTIFICATION_MULTICLICKDETECTOR": "You have switched clicked three times!",
+  "NOTIFICATION_ROUND_END_TIE": "Round ended: Tie {0}-{1}.",
+  "NOTIFICATION_ROUND_END_WIN": "{0} wins {1}-{2}.",
+  "NOTIFICATION_ROUND_OVER_REDEPLOYING": "Round over, redeploying to reset in {0}s...",
+  "NOTIFICATION_ROUND_STARTED": "Round started.",
+  "NOTIFICATION_ROUND_WINS": "Current round score is {0}-{1}",
+  "NOTIFICATION_TEAMSWITCH": "You have switched teams!",
+  "ROUND_ENDED": "Round ended",
+  "OverLine_Title": "{0} IS OVER THE LINE!",
+  "OverLine_Subtitle": "Everyone must return to their main base and ready back up",
+  "RoundEnd_Draw": "DRAW",
+  "RoundLiveHelp_Format": "First to {0} Kills Wins the Round",
+  "RoundRecordText": "{0} - {1} - {2}",
+  "RoundState_Format": "{0} {1} {2}",
+  "RoundState_GameOver": "GAME OVER",
+  "RoundState_Live": "LIVE",
+  "RoundState_NotReady": "NOT READY",
+  "RoundText": "ROUND",
+  "PlayersReady_Format": "{0} / {1} PLAYERS READY",
+  "Slash": "/",
+  "Label_TotalKills": "Total Kills",
+  "AdminPanel_Accessed": "{0} accessed the Admin Panel",
+  "AdminPanel_ActionPressed": "{0} pressed {1} in the admin panel",
+  "AdminPanel_ActionCount_Victory_Format": "Admin Panel Buttons pressed {0} times",
+  "AdminPanel_ActionCount_Format": "({0})",
+  "AdminPanel_Action_T1_Wins_Inc": "T1 Wins +",
+  "AdminPanel_Action_T1_Wins_Dec": "T1 Wins -",
+  "AdminPanel_Action_T2_Wins_Inc": "T2 Wins +",
+  "AdminPanel_Action_T2_Wins_Dec": "T2 Wins -",
+  "AdminPanel_Action_T1_TotalKills_Inc": "T1 Total Kills +",
+  "AdminPanel_Action_T1_TotalKills_Dec": "T1 Total Kills -",
+  "AdminPanel_Action_T2_TotalKills_Inc": "T2 Total Kills +",
+  "AdminPanel_Action_T2_TotalKills_Dec": "T2 Total Kills -",
+  "AdminPanel_Action_T1_RoundKills_Inc": "T1 Round Kills +",
+  "AdminPanel_Action_T1_RoundKills_Dec": "T1 Round Kills -",
+  "AdminPanel_Action_T2_RoundKills_Inc": "T2 Round Kills +",
+  "AdminPanel_Action_T2_RoundKills_Dec": "T2 Round Kills -",
+  "AdminPanel_Action_TargetRoundKills_Inc": "Target Round Kills +",
+  "AdminPanel_Action_TargetRoundKills_Dec": "Target Round Kills -",
+  "AdminPanel_Action_MaxRound_Inc": "Max Round +",
+  "AdminPanel_Action_MaxRound_Dec": "Max Round -",
+  "AdminPanel_Action_Ties_Inc": "Ties +",
+  "AdminPanel_Action_Ties_Dec": "Ties -",
+  "AdminPanel_Action_CurrentRound_Inc": "Current Round +",
+  "AdminPanel_Action_CurrentRound_Dec": "Current Round -",
+  "AdminPanel_Action_ClockTime_Inc": "Clock Time +",
+  "AdminPanel_Action_ClockTime_Dec": "Clock Time -",
+  "AdminPanel_Action_ClockReset": "Clock Reset",
+  "AdminPanel_Action_RoundStart": "Start Round",
+  "AdminPanel_Action_RoundEnd": "End Round",
+  "ReadyDialog_BestOf_Changed": "{0} changed it to best of {1} rounds",
+  "TeamLeft_Name": "WEST",
+  "Label_RoundKills": "Round Kills",
+  "Label_RoundWins": "Round Wins",
+  "TeamRight_Name": "EAST",
+  "UI_ADMIN_LABEL_T1_ROUND_KILLS": "T1 Round Kills",
+  "UI_ADMIN_LABEL_T2_ROUND_KILLS": "T2 Round Kills",
+  "UI_TEAMSWITCH_BUTTON_CANCEL_LABEL": "CLOSE",
+  "UI_TEAMSWITCH_BUTTON_OPTOUT_LABEL": "DONT SHOW AGAIN",
+  "UI_TEAMSWITCH_BUTTON_SPECTATE_LABEL": "SPECTATE",
+  "UI_TEAMSWITCH_BUTTON_TEAM1_LABEL": "TEAM 1",
+  "UI_TEAMSWITCH_BUTTON_TEAM2_LABEL": "TEAM 2",
+  "UI_TEAMSWITCH_DEBUG_TIMELIMIT": "{0}",
+  "UI_TESTER_HEADER_LABEL": "ADMIN PANEL",
+  "UI_TEST_BUTTON_CLOCK_RESET_LABEL": "Reset Clock",
+  "UI_TEST_BUTTON_ROUND_END_LABEL": "End Round",
+  "UI_TEST_BUTTON_ROUND_START_LABEL": "Start Round",
+  "UI_TEST_LABEL_CLOCK_TIME": "Clock Time",
+  "UI_TEST_LABEL_CUR_ROUND": "Current Round",
+  "UI_TEST_LABEL_LEFT_KILLS": "T1 Total Kills",
+  "UI_TEST_LABEL_LEFT_WINS": "T1 Wins",
+  "UI_TEST_LABEL_MAX_ROUND": "Max Round",
+  "UI_TEST_LABEL_TIES": "T1 + T2 Round Ties",
+  "UI_TEST_LABEL_RIGHT_KILLS": "T2 Total Kills",
+  "UI_TEST_LABEL_RIGHT_WINS": "T2 Wins",
+  "UI_TEST_LABEL_ROUND_KILLS_TARGET": "Target Round Kills",
+  "UI_TEST_MINUS": "-",
+  "UI_TEST_PLUS": "+",
+  "UnknownPlayer": "Unknown",
+  "Upper_Left_Text": "teamwarfare . net | TWL 2v2 Tanks",
+  "Upper_Left_Text_2": "7 Maps Experience Code: ZKBX5",
+  "VictoryDialog_Draws": "DRAWS",
+  "VictoryDialog_Loses": "LOSES",
+  "VictoryDialog_RestartIn_Format": "Map will restart/rotate in {0}s",
+  "VictoryDialog_RoundLosses_Format": "{0} Round Losses",
+  "VictoryDialog_RoundTies_Format": "{0} Round Ties",
+  "VictoryDialog_RoundWins_Format": "{0} Round Wins",
+  "VictoryDialog_RoundsSummary_Format": "{0} Rounds played in a best of {1} Rounds matchup",
+  "VictoryDialog_ScreenshotPrompt": "Screenshot this to record match results",
+  "VictoryDialog_TeamOutcome_Format": "{0} {1}",
+  "VictoryDialog_TotalKills_Format": "{0} Total Kills",
+  "VictoryDialog_TotalMatchTime_Format": "Total Match time: {0}",
+  "VictoryDialog_TotalMatchTime_Label": "Total Match time:",
+  "VictoryDialog_Wins": "WINS!",
+  "msgInit": "Vehicle scoring initialized.",
+  "msgPointAwarded": "Team {} gets a point! ({})",
+  "msgPointAwardedWithOwner": "{} gets a point: {}'s vehicle was destroyed! ({} Round Kills)",
+  "msgVehicleDestroyedNotLive": "{}'s {} vehicle was destroyed - but round was not live (no points awarded)",
+  "msgVehicleReRegistered": "Vehicle re-registered under Team {} by {}.",
+  "msgVehicleRegisteredNew": "Vehicle registered under Team {} by {}.",
+  "msgVehicleReturned": "{} has returned to their registered vehicle under Team {}.",
+  "RoundEnd_RoundNumber": "ROUND {0}",
+  "UI_ADMIN_PANEL_BUTTON": "Admin Panel",
+  "UI_READY_DIALOG_HEADER": "Everyone on both teams needs to press 'Ready' and stay inside their Main Base until the round starts",
+  "UI_READY_DIALOG_BESTOF_LABEL": "Best of {0} Rounds",
+  "UI_PLAYER_NAME_FORMAT": "{0}",
+  "UI_READY_STATUS_READY": "READY",
+  "UI_READY_STATUS_NOT_READY": "NOT READY",
+  "UI_BASE_STATUS_IN": "IN MAIN BASE",
+  "UI_BASE_STATUS_OUT": "NOT IN MAIN BASE",
+  "UI_READY_BUTTON_READY": "READY",
+  "UI_READY_BUTTON_NOT_READY": "NOT READY",
+  "TeamSwitch_SwapTeams": "CHANGE TEAMS",
+  "READYUP_RETURN_TO_BASE_NOT_LIVE": "Return to main base and ready back up - Round {0} is not live!",
+  "PREGAME_COUNTDOWN_FORMAT": "{0}",
+  "PREGAME_COUNTDOWN_GO": "GO!"
 }
