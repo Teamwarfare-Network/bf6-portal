@@ -1,23 +1,21 @@
 //#region -------------------- Versioning --------------------
-
-// version: 0.152 | Date: 12.28.25 | Time: 11:18 UTC
-// name of script: TWL_Tanks_Sandbox_Beta_Script.ts
-// name of paired strings file: TWL_Tanks_Sandbox_Beta_Strings.strings.json
-// policy: the string hud.branding.title should display this same version at the end of the title
+// version: 0.129 | Date: 12.27.25 | Time: 00:35 UTC
+// ----------------------------------------------------------
+//
+// naming (script): TWL_Tanks_Sandbox_Beta_Script.ts
+// naming and paired file (strings): TWL_Tanks_Sandbox_Beta_Strings.strings.json
 // policy: increment minor version on every change (UTC)
 // policy: major versions reserved for milestone feature releases (primary authors only)
 // policy: EOF version line must match the header version and timestamp
-
+//
 //#endregion ----------------- Versioning --------------------
 
 
 
 //#region -------------------- Authors / Attribution --------------------
-
-// Primary Authors: Polynorblu, UberDuberSoldat, Dox
-// Code generation, assistance and support by: ChatGPT (OpenAI, GPT-5.2, GPT-5.2-Codex)
-// BF6 Portal Community Tools used/referenced:
-//  - Portal Community Discord: https://discord.com/invite/battlefield-portal-community-870246147455877181
+// Authors: Polynorblu, UberDuberSoldat, ChatGPT (OpenAI, GPT-5.2, GPT-5.2-Codex)
+// BF6 Portal community tools used:
+//  - Discord: Battlefield Portal Hub
 //  - TypeScript Project Template for Battlefield 6 Portal Scripting by Mike DeLuca: https://github.com/deluca-mike/bf6-portal-scripting-template
 //     - Multi-Click detector by Mike DeLuca: https://github.com/deluca-mike/bf6-portal-utils/tree/master/interact-multi-click-detector
 //  - Team Switch UI Template by TheOzzy: https://github.com/The0zzy/BF6-Portal-TeamSwitchUI
@@ -25,26 +23,44 @@
 //     - GPT Prompt: https://gist.github.com/Quoeiza/8085f142ad8a05ee04b79adcc4ad8fd7
 //  - BF6 User Interface Tool builder by EagleNait: https://tools.bfportal.gg/ui-builder/
 //  - Custom Conquest Template by andy6170: https://bfportal.gg/experiences/custom-conquest-template/
-
 //#endregion ----------------- Authors / Attribution --------------------
 
 
 
-//#region -------------------- Changelog / History --------------------
+//#region -------------------- Header --------------------
+/*
+ * 
+ * List of improvements for only humans and not LLMs, CODEX or GPT to read and do:
+ * --- Join off friends to rejoin same side
+ * --- Player couldn't respawn after a death - redeploy didnt seem to work
+ * --- Over the line is triggering even if player is not ready
+ * --- Change spatial datas for the maps (required for spawn points)
+ * --- Change tank values and make bespoke 1v1 and 2v2 maps 
+ * --- Playtest final product with 1v1, 2v2 for bullet proofing edge cases (4v4 nice to have)
+ * --- Massive refactor: Evaluate new method for vehicle registration based on vehicle spawners and pre-defined object IDs from GODOT
+ * --- Address renderReadyDialogForAllVisibleViewers vs refreshReadyDialogForAllVisibleViewers (duplication)
+ * --- Registry uses Global Var 0/1 (intentional)
+ * - Review user disconnecting during round countdown and stop countdown and fix (nice to have)
+ * - Bigger Triple Tap Dialog Text (readability nice to have)
+ * - Change "Respawn in 10s" message to appear in place at top in yellow instead of "ready up" dialog, during the window of round ending (nice to have)
+ * - Round {0} Starting... message tweak during countdown (nice to have)
+ * - Display user names on Victory dialog to the left and right for each team (nice to have)
+ * - Restart in Xs still rolls over on on top clock (nice to have)
+ * - Disable respawn until round is over? prevents griefing and edge cases (nice to have)
+ * - UI Polish: Clock digits come in (nice to have)
+ * - UI Polish: HUD moves down so compass can breathe (nice to have)
+ * - UI Polish: Yellow text bar helper text is bigger and taller and wider and lower (nice to have)
+ * - Change states into enums / interfaces (major refactor!) (very very nice to have)
+ * - Only let round max decrement when round is not live (not during live round which ends game early) (nice to have)
+ * - Add sound effects for ready up, round start, round end, victory (nice to have)
+ * - Add sound effect on vehicle registration (nice to have)
+ * - Add sound effect on vehicle destruction for scoring (nice to have)
+ * 
+ */
 
-// v0.152: Forcing supply boxes on every spawn, to ensure no other gadget loophole
-// v0.151: Finalized string.json into new format with updated strings policy
-// v0.148: Added Changelog / History section to script header
-// v0.134: Last working version before enum/interface refactor (see archive\enum_interface_implementation_plan.md)
-// v0.129: Release version for Ladder with 7 maps
-// v0.059: Last version before switching primarly from GPT-5.2 web client to GPT-5.2-Codex in VS Code
 
-//#endregion ----------------- Changelog / History --------------------
-
-
-
-//#region -------------------- Gamemode Description --------------------
-
+// -------------------- Mode Overview --------------------
+//
 // This script implements:
 //   - Vehicle scoring + round/match flow (start/end, timers, victory dialog)
 //   - Main-base enter/exit tracking (ammo restock + base state)
@@ -75,58 +91,15 @@
 // Recommendations on tweaking/adjusting/customizing this experience
 // - General UI layout tip: Most widgets define an offset via `position: [x, y]`.
 // - Change those numbers to nudge that widget relative to its anchor; the perceived direction can vary by anchoring, so verify in-game after edits.
-
-//#endregion -------------------- Gamemode Description --------------------
-
-
-
-//#region -------------------- Improvements punchlist --------------------
-
-/*
- * List of improvements (for only humans and not LLMs, CODEX or GPT to design and implement):
- * --- Code Cleanup: Centralize color name constants to be global, not specific to functions, so they're easier to reuse
- * --- Code Cleanup: Gut unused functions / commented out functions from script file (done?)
- * --- Massive refactor - Design and evaluate new method for vehicle registration 
- * ------ Design based on vehicle spawners and pre-defined object IDs from Godot
- * --- Code Cleanup: Address renderReadyDialogForAllVisibleViewers vs refreshReadyDialogForAllVisibleViewers (overlap/duplication?)
- * --- Code Cleanup: We dont need unique functions for single message strings? can we simplify this pattern: NotifyAmmoRestocked(eventPlayer);
- * --- Code Cleanup: There are many various functions which generally do the same thing, can we consider how to unify UI updates/refreshes or use TS template UI library
- * --- Code Cleanup: Embrace TS Template project and break mega file into modular files...
- * --- Code Cleanup: See src\clunkycode.md for various code smells and cleanup opportunities
- * 
- * List of Nice to Haves (for only humans and not LLMs, CODEX or GPT to design and implement):
- * - Identify possibility of code implemented vehicle spawners - will reduce spatial data requirements and increase modularity
- * - Review user disconnecting during round countdown to stop countdown?
- * - Only let round max decrement when round is not live (during live round ends game early?) 
- * - Gameplay: Disable respawn until round is over (or lock player movement when spawning)? (prevents griefing)
- * - Imeplement a user facing toggle for AUTO_START_MIN_ACTIVE_PLAYERS?
- * - Pull "Target Kills" out from Admin panel and unify with min active players? e.g. make a "mode selector": 1v1, 2v2, 4v4?
- * - UI Polish: Bigger Triple Tap Dialog Help Text (readability)
- * - UI Polish: Add "Respawn in 10s..." message synced with clock to appear in place at top in yellow instead of "ready up" dialog, during the window of round ending
- * - UI Polish: Round {0} Starting... message tweak during round start countdown
- * - UI Polish: Display user names on Victory dialog to the left and right for each team 
- * - UI Polish: Restart in Xs still rolls over on top match clock 
- * - UI Polish: Clock digits come in to center
- * - UI Polish: HUD moves down so compass can breathe 
- * - UI Polish: Yellow helper text is bigger and taller and wider and lower
- * - SFX Polish: Add sound effects for ready up, round start countdown, round end display, victory display 
- * - SFX Polish: Add sound effect on vehicle registration 
- * - SFX Polish: Add sound effect on vehicle destruction for scoring 
- * - Moonshot Feature: Dynamic Vehicle selection dialog (choose tanks per player) so a single experience can be 1v1, 2v2, 4v4, etc with a selection
- */
-
-//#endregion ----------------- Improvements punchlist --------------------
+//#endregion ----------------- Header --------------------
 
 
 
 //#region -------------------- Modlib import --------------------
-
-// If not using bundled TS project you need to use modlib import
-// @ts-ignore - ignores error on Portal webclient with importing modlib
+// If not using bundled TS project you need to use modlib.
+// This would only be if you are not using the TS Project Template
+// @ts-ignore - modlib typing depends on import choice (runtime vs local bundling).
 import * as modlib from "modlib";
-// TS project comes with local modlib functions, if using that then no need to import modlib
-// - There seems to be an error with TS template's project local modlib FilteredArray function (drops all vehicles in vehicle array?!)
-
 //#endregion ----------------- Modlib import --------------------
 
 
@@ -135,8 +108,8 @@ import * as modlib from "modlib";
 
 // Core gameplay tuning defaults (safe to edit).
 // Units: seconds unless otherwise noted.
-const DEFAULT_MAX_ROUNDS = 5; // Best-of rounds for a full match.
-const DEFAULT_ROUND_KILLS_TARGET = 1; // 1 for 1v1, 2 for 2v2, etc.
+const DEFAULT_MAX_ROUNDS = 3; // Best-of rounds for a full match.
+const DEFAULT_ROUND_KILLS_TARGET = 2; // 1 for 1v1, 2 for 2v2, etc.
 const ROUND_START_SECONDS = 5 * 60; // Round clock starting time.
 const MATCH_END_DELAY_SECONDS = 45; // Victory dialog duration before match end.
 const ROUND_END_REDEPLOY_DELAY_SECONDS = 10; // Redeploy delay between rounds.
@@ -150,33 +123,13 @@ const ENABLE_DEBUG_NOTIFICATION_MESSAGES = false; // Green box notifications. De
 const ENABLE_DEBUG_HIGHLIGHTED_MESSAGES = false; // White highlighted world log. Defaults to false.
 
 // Team identifiers (script uses T1/T2 semantics).
-enum TeamID {
-    Team1 = 1,
-    Team2 = 2,
-}
-
-// Round phase for scoring + HUD state.
-enum RoundPhase {
-    NotReady = 0,
-    Live = 1,
-    GameOver = 2,
-}
+const TEAM_1 = 1;
+const TEAM_2 = 2;
 
 // Vehicle registry storage (GlobalVariables).
 // Kept at 0/1 to match legacy versions and simplify external tooling.
 const REGISTRY_TEAM1_VAR = 0;
 const REGISTRY_TEAM2_VAR = 1;
-
-// Registered vehicle arrays persist across rounds until explicitly cleared.
-const regVehiclesTeam1 = mod.GlobalVariable(REGISTRY_TEAM1_VAR);
-const regVehiclesTeam2 = mod.GlobalVariable(REGISTRY_TEAM2_VAR);
-
-// Vehicle ownership tracking (best-effort heuristic):
-// - vehIds and vehOwners are parallel arrays keyed by vehicle ObjId.
-// - getLastDriver may return undefined if no enter event was observed for the vehicle.
-// - Do not treat this as authoritative killer attribution; it is used only for informative messaging.
-const vehIds: number[] = [];
-const vehOwners: mod.Player[] = [];
 
 // Main base triggers + ammo restock tuning.
 // Trigger IDs must match the map's spatial data object IDs.
@@ -188,7 +141,7 @@ const RESTOCK_MAG_AMMO_EXIT = 1; // Magazines granted on base exit.
 
 // Ready-up auto-start gating:
 // Set to 1 for solo debug, 2 for 1v1, 4 for 2v2, etc.
-const AUTO_START_MIN_ACTIVE_PLAYERS = 1;
+const AUTO_START_MIN_ACTIVE_PLAYERS = 2;
 
 // Pregame countdown tuning (Ready Up -> round start).
 // Units: seconds and UI scale units.
@@ -199,7 +152,6 @@ const PREGAME_COUNTDOWN_SIZE_DIGIT_START = 620;
 const PREGAME_COUNTDOWN_SIZE_DIGIT_END = 360;
 const PREGAME_COUNTDOWN_SIZE_GO_START = 650;
 const PREGAME_COUNTDOWN_SIZE_GO_END = 420;
-const PREGAME_COUNTDOWN_GO_HOLD_SECONDS = 0.75;
 const PREGAME_COUNTDOWN_ANIMATION_STEPS = 10;
 const PREGAME_ALERT_TEXT_ALPHA = 0.85; // UI text alpha (0..1).
 
@@ -214,53 +166,6 @@ const TEAMSWITCHCONFIG: TeamSwitchConfig = {
     velocityThreshold: 3,
 };
 
-// Admin panel toggle debounce (seconds). Prevents double-toggle from press/release events.
-const ADMIN_PANEL_TOGGLE_COOLDOWN_SECONDS = 0.2;
-
-// Clock + HUD layout constants (pixels unless noted).
-const CLOCK_POSITION_X = 0;
-const CLOCK_POSITION_Y = 53;
-const CLOCK_WIDTH = 220;
-const CLOCK_HEIGHT = 44;
-const ROUND_LIVE_HELP_WIDTH = 300;
-const ROUND_LIVE_HELP_HEIGHT = 18;
-const CLOCK_FONT_SIZE = 32;
-const LOW_TIME_THRESHOLD_SECONDS = 60; // Low-time color threshold in seconds.
-
-// HUD status colors (vectors are RGB 0..1).
-const COLOR_NORMAL = mod.CreateVector(1, 1, 1);
-const COLOR_LOW_TIME = mod.CreateVector(1, 131 / 255, 97 / 255);
-const COLOR_READY_GREEN = mod.CreateVector(173 / 255, 253 / 255, 134 / 255); // #ADFD86
-
-// Status / emphasis colors (use constants; do not inline CreateVector() in UI code).
-const COLOR_NOT_READY_RED = mod.CreateVector(1, 0, 0);
-const COLOR_WARNING_YELLOW = mod.CreateVector(1, 1, 0);
-
-// Victory dialog theme colors (ParseUI expects RGB tuples, not vectors).
-const VICTORY_BG_RGB: [number, number, number] = [0.0314, 0.0431, 0.0431];
-const VICTORY_TEAM1_BG_RGB: [number, number, number] = [0.1098, 0.2304, 0.25];
-const VICTORY_TEAM2_BG_RGB: [number, number, number] = [0.25, 0.1284, 0.0951];
-const VICTORY_TEAM1_TEXT_RGB: [number, number, number] = [0.4392, 0.9216, 1];
-const VICTORY_TEAM2_TEXT_RGB: [number, number, number] = [1, 0.5137, 0.3804];
-
-// Main base messaging string keys (Strings.json).
-const STR_ENTERED_MAIN_BASE = mod.stringkeys.twl.notifications.enteredMainBase;
-const STR_EXITED_MAIN_BASE = mod.stringkeys.twl.notifications.exitedMainBase;
-const STR_AMMO_RESTOCKED = mod.stringkeys.twl.notifications.ammoRestocked;
-const STR_READYUP_RETURN_TO_BASE_NOT_LIVE = mod.stringkeys.twl.notifications.readyupReturnToBaseNotLive;
-
-// "Over the line" global warning (pre-round countdown only).
-const OVER_LINE_TITLE_SIZE = 96; // Font size in UI scale units.
-const OVER_LINE_SUBTITLE_SIZE = 32;
-const OVER_LINE_SUBTITLE_OFFSET_Y = 60; // Vertical offset from title.
-const OVER_LINE_MESSAGE_DURATION_SECONDS = 5; // Duration in seconds.
-
-//#endregion ----------------- Constant Variables and Types --------------------
-
-
-
-//#region ----------------- String Variables --------------------
-
 // -------------------- Strings.json key policy --------------------
 //
 // - UI labels (static text) should be shared (e.g., Label_TotalKills) rather than duplicated per team.
@@ -268,12 +173,6 @@ const OVER_LINE_MESSAGE_DURATION_SECONDS = 5; // Duration in seconds.
 // - Dynamic values (numbers) are usually written into value widgets directly; avoid creating many one-off strings.
 // - If you must use placeholders, keep formatting consistent across the file.
 // - Reminder: UI widget `name:` values are NOT Strings.json keys; they are runtime widget IDs.
-//
-// Policy compliance checklist:
-// - New UI text added? Put it in Strings.json under a shared key (no per-team duplication).
-// - Using placeholders? Match existing formatting patterns for that section.
-// - Reusing an existing label? Use the existing string key rather than a new alias.
-// - Avoid creating string key constants unless reused in multiple places.
 //
 // ------------------------------------------------------------------
 
@@ -314,7 +213,8 @@ const UI_READY_DIALOG_BESTOF_DEC_LABEL_ID = "UI_READY_DIALOG_BESTOF_DEC_LABEL_";
 const UI_READY_DIALOG_BESTOF_INC_ID = "UI_READY_DIALOG_BESTOF_INC_";
 const UI_READY_DIALOG_BESTOF_INC_LABEL_ID = "UI_READY_DIALOG_BESTOF_INC_LABEL_";
 
-// Admin/Tester UI - Widget ID bases (per-player IDs append viewer playerId).
+
+// Tester UI - Widget ID bases (per-player IDs append viewer playerId).
 const UI_TEST_HEADER_LABEL_ID = "UI_TEST_HEADER_LABEL_";
 const UI_TEST_BUTTON_LEFT_WINS_DEC_ID = "UI_TEST_BUTTON_LEFT_WINS_DEC_";
 const UI_TEST_BUTTON_LEFT_WINS_INC_ID = "UI_TEST_BUTTON_LEFT_WINS_INC_";
@@ -361,35 +261,67 @@ const UI_ADMIN_PANEL_BUTTON_ID = "UI_ADMIN_PANEL_BUTTON_";
 const UI_ADMIN_PANEL_BUTTON_LABEL_ID = "UI_ADMIN_PANEL_BUTTON_LABEL_";
 const UI_ADMIN_PANEL_CONTAINER_ID = "UI_ADMIN_PANEL_CONTAINER_";
 
-// "Over the line" messaging strings
-const OVER_LINE_TITLE_ID = "OverLine_Title_"; 
-const OVER_LINE_SUBTITLE_ID = "OverLine_Subtitle_"; 
+// Clock + HUD layout constants (pixels unless noted).
+const CLOCK_POSITION_X = 0;
+const CLOCK_POSITION_Y = 53;
+const CLOCK_WIDTH = 220;
+const CLOCK_HEIGHT = 44;
+const ROUND_LIVE_HELP_WIDTH = 300;
+const ROUND_LIVE_HELP_HEIGHT = 18;
+const CLOCK_FONT_SIZE = 32;
+const LOW_TIME_THRESHOLD_SECONDS = 60; // Low-time color threshold in seconds.
 
-//#endregion -------------- String Variables --------------------
+// HUD status colors (vectors are RGB 0..1).
+const COLOR_NORMAL = mod.CreateVector(1, 1, 1);
+const COLOR_LOW_TIME = mod.CreateVector(1, 131 / 255, 97 / 255);
+const COLOR_READY_GREEN = mod.CreateVector(173 / 255, 253 / 255, 134 / 255); // #ADFD86
+
+// Status / emphasis colors (use constants; do not inline CreateVector() in UI code).
+const COLOR_NOT_READY_RED = mod.CreateVector(1, 0, 0);
+const COLOR_WARNING_YELLOW = mod.CreateVector(1, 1, 0);
+
+// Victory dialog theme colors (ParseUI expects RGB tuples, not vectors).
+const VICTORY_BG_RGB: [number, number, number] = [0.0314, 0.0431, 0.0431];
+const VICTORY_TEAM1_BG_RGB: [number, number, number] = [0.1098, 0.2304, 0.25];
+const VICTORY_TEAM2_BG_RGB: [number, number, number] = [0.25, 0.1284, 0.0951];
+const VICTORY_TEAM1_TEXT_RGB: [number, number, number] = [0.4392, 0.9216, 1];
+const VICTORY_TEAM2_TEXT_RGB: [number, number, number] = [1, 0.5137, 0.3804];
+
+// Main base messaging string keys (Strings.json).
+const STR_ENTERED_MAIN_BASE = "ENTERED_MAIN_BASE";
+const STR_EXITED_MAIN_BASE = "EXITED_MAIN_BASE";
+const STR_AMMO_RESTOCKED = "AMMO_RESTOCKED";
+const STR_READYUP_RETURN_TO_BASE_NOT_LIVE = "READYUP_RETURN_TO_BASE_NOT_LIVE";
+const STR_OVER_LINE_TITLE = "OverLine_Title";
+const STR_OVER_LINE_SUBTITLE = "OverLine_Subtitle";
+
+// "Over the line" global warning (pre-round countdown only).
+const OVER_LINE_TITLE_ID = "OverLine_Title_";
+const OVER_LINE_SUBTITLE_ID = "OverLine_Subtitle_";
+const OVER_LINE_TITLE_SIZE = 96; // Font size in UI scale units.
+const OVER_LINE_SUBTITLE_SIZE = 32;
+const OVER_LINE_SUBTITLE_OFFSET_Y = 60; // Vertical offset from title.
+const OVER_LINE_MESSAGE_DURATION_SECONDS = 5; // Duration in seconds.
+//#endregion ----------------- Constant Variables and Types --------------------
 
 
 
 //#region -------------------- Core gameplay state helpers --------------------
 
-// Core gameplay helper utilities (state sync + messaging gates).
+// Core gameplay tuning defaults (safe to edit)
 
-function getMatchWinsTeam(teamNum: TeamID): number {
+function getMatchWinsTeam(teamNum: number): number {
     // Debug-only: engine GameModeScore can be transient during reconnects / team swaps.
     return Math.floor(mod.GetGameModeScore(mod.GetTeam(teamNum)));
 }
 
-function setMatchWinsTeam(teamNum: TeamID, wins: number): void {
+function setMatchWinsTeam(teamNum: number, wins: number): void {
     mod.SetGameModeScore(mod.GetTeam(teamNum), Math.max(0, Math.floor(wins)));
 }
 
 function shouldSendMessage(isGameplay: boolean, isHighlighted: boolean): boolean {
     if (isGameplay) return ENABLE_GAMEPLAY_MESSAGES;
     return isHighlighted ? ENABLE_DEBUG_HIGHLIGHTED_MESSAGES : ENABLE_DEBUG_NOTIFICATION_MESSAGES;
-}
-
-// Round phase helper for readability (avoids scattered enum comparisons).
-function isRoundLive(): boolean {
-    return State.round.phase === RoundPhase.Live;
 }
 
 function sendNotificationMessage(message: mod.Message, isGameplay: boolean, target?: mod.Player | mod.Team): void {
@@ -411,14 +343,14 @@ function sendHighlightedWorldLogMessage(message: mod.Message, isGameplay: boolea
 }
 
 // Synchronizes HUD win counters from authoritative match state.
-// This should be called after any admin or gameplay mutation of State.match.winsT1/T2.
+// This should be called after any admin or gameplay mutation of matchWinsT1/T2.
 function syncWinCountersHudFromGameModeScore(): void {
     // Debug-only: do not use for authoritative state; pulling from engine here can latch transient values.
-    const t1Wins = getMatchWinsTeam(TeamID.Team1);
-    const t2Wins = getMatchWinsTeam(TeamID.Team2);
+    const t1Wins = getMatchWinsTeam(TEAM_1);
+    const t2Wins = getMatchWinsTeam(TEAM_2);
 
-    State.match.winsT1 = t1Wins;
-    State.match.winsT2 = t2Wins;
+    matchWinsT1 = t1Wins;
+    matchWinsT2 = t2Wins;
     syncRoundRecordHudForAllPlayers();
 
     const players = mod.AllPlayers();
@@ -433,39 +365,37 @@ function syncWinCountersHudFromGameModeScore(): void {
     }
 }
 
-function endGameModeForTeamNum(teamNum: TeamID | 0): void {
+function endGameModeForTeamNum(teamNum: number): void {
     const winningTeam = mod.GetTeam(teamNum);
 
     // End the match by team consistently; ending "by player" can yield inconsistent engine finalization
     // when players reconnect or briefly join different teams.
     mod.EndGameMode(winningTeam);
 }
-
 //#endregion ----------------- Core gameplay state helpers --------------------
 
 
 
 //#region -------------------- Shared ID helpers --------------------
-
 function getObjId(obj: any): number {
     return mod.GetObjId(obj);
 }
 
-function getTeamNumber(team: mod.Team): TeamID | 0 {
-    if (mod.Equals(team, mod.GetTeam(TeamID.Team1))) return TeamID.Team1;
-    if (mod.Equals(team, mod.GetTeam(TeamID.Team2))) return TeamID.Team2;
+function getTeamNumber(team: mod.Team): number {
+    if (mod.Equals(team, mod.GetTeam(TEAM_1))) return TEAM_1;
+    if (mod.Equals(team, mod.GetTeam(TEAM_2))) return TEAM_2;
     return 0;
 }
 
-function getTeamNameKey(teamNum: TeamID | 0): number {
-    if (teamNum === TeamID.Team1) return mod.stringkeys.twl.teams.leftName;
-    if (teamNum === TeamID.Team2) return mod.stringkeys.twl.teams.rightName;
-    return mod.stringkeys.twl.system.unknownPlayer;
+function getTeamNameKey(teamNum: number): number {
+    if (teamNum === TEAM_1) return mod.stringkeys.TeamLeft_Name;
+    if (teamNum === TEAM_2) return mod.stringkeys.TeamRight_Name;
+    return mod.stringkeys.UnknownPlayer;
 }
 
-function opposingTeam(teamNum: TeamID | 0): TeamID | 0 {
-    if (teamNum === TeamID.Team1) return TeamID.Team2;
-    if (teamNum === TeamID.Team2) return TeamID.Team1;
+function opposingTeam(teamNum: number): number {
+    if (teamNum === TEAM_1) return TEAM_2;
+    if (teamNum === TEAM_2) return TEAM_1;
     return 0;
 }
 
@@ -496,13 +426,11 @@ function safeFindPlayer(pid: number): mod.Player | undefined {
         return undefined;
     }
 }
-
 //#endregion ----------------- Shared ID helpers --------------------
 
 
 
 //#region -------------------- HUD Types + Caches --------------------
-
 // We build HUD per-player (playerId receiver) and suffix names with pid to avoid collisions.
 type HudRefs = {
     pid: number;
@@ -564,97 +492,25 @@ type HudRefs = {
     // Optional roots (for cleanup if needed)
     roots: mod.UIWidget[];
 };
-
 //#endregion ----------------- HUD Types + Caches --------------------
 
 
 
-//#region -------------------- Game State Definition --------------------
-
-// GameState centralizes all mutable match/round/UI state so writes are explicit and searchable.
-interface GameState {
-    round: {
-        current: number;
-        max: number;
-        killsTarget: number;
-        phase: RoundPhase;
-        clock: {
-            durationSeconds: number;
-            matchStartElapsedSeconds?: number;
-            pausedRemainingSeconds?: number;
-            isPaused: boolean;
-            lastDisplayedSeconds?: number;
-            lastLowTimeState?: boolean;
-            expiryFired: boolean;
-            expiryHandlers: Array<() => void>;
-        };
-        flow: {
-            roundEndRedeployToken: number;
-            clockExpiryBound: boolean;
-        };
-        countdown: {
-            isActive: boolean;
-            isRequested: boolean;
-            token: number;
-            overLineMessageToken: number;
-        };
-    };
-    scores: {
-        t1RoundKills: number;
-        t2RoundKills: number;
-        t1TotalKills: number;
-        t2TotalKills: number;
-    };
-    match: {
-        winsT1: number;
-        winsT2: number;
-        lossesT1: number;
-        lossesT2: number;
-        tiesT1: number;
-        tiesT2: number;
-        isEnded: boolean;
-        victoryDialogActive: boolean;
-        winnerTeam?: TeamID | 0;
-        endElapsedSecondsSnapshot: number;
-        victoryStartElapsedSecondsSnapshot: number;
-        flow: {
-            matchEndDelayToken: number;
-        };
-    };
-    admin: {
-        actionCount: number;
-    };
-    players: {
-        teamSwitchData: Record<number, teamSwitchData_t>;
-        readyByPid: Record<number, boolean>;
-        inMainBaseByPid: Record<number, boolean>;
-    };
-    hudCache: {
-        lastHudScoreT1?: number;
-        lastHudScoreT2?: number;
-        lastHudRoundKillsT1?: number;
-        lastHudRoundKillsT2?: number;
-        hudByPid: Record<number, HudRefs>;
-        clockWidgetCache: Record<number, ClockWidgetCacheEntry>;
-        countdownWidgetCache: Record<number, CountdownWidgetCacheEntry>;
-        overLineTitleWidgetCache: Record<number, CountdownWidgetCacheEntry>;
-        overLineSubtitleWidgetCache: Record<number, CountdownWidgetCacheEntry>;
-    };
-}
+//#region -------------------- HUD Counter Helpers --------------------
 
 // -------------------- Authoritative State Map --------------------
 //
 // Round state (resets at round start):
-// - State.round.current: current round index (1-based display).
-// - State.round.max: number of rounds in the match.
-// - State.scores.t1RoundKills / State.scores.t2RoundKills: points earned this round by each team.
-// - State.round.killsTarget: points needed to win the round.
-// - State.round.phase: RoundPhase.NotReady | RoundPhase.Live | RoundPhase.GameOver.
-// - State.round.clock.durationSeconds: authoritative remaining seconds in the round.
+// - roundCurrent: current round index (1-based display).
+// - roundMax: number of rounds in the match.
+// - roundKillsT1 / roundKillsT2: points earned this round by each team.
+// - roundKillsTarget: points needed to win the round.
+// - roundSecondsRemaining: authoritative remaining seconds in the round.
+// - isRoundActive: gate that enables scoring; only true while the round is LIVE.
 //
 // Match state (resets at match start):
-// - State.match.winsT1/T2, State.match.lossesT1/T2, State.match.tiesT1/T2: match record across rounds.
-// - State.match.isEnded: indicates match is over and victory dialog should be shown.
+// - matchWinsT1/T2, matchLossesT1/T2, matchTiesT1/T2: match record across rounds.
+// - isMatchEnded: indicates match is over and victory dialog should be shown.
 //
 // Vehicle registration (persists across round transitions unless explicitly cleared):
 // - regVehiclesTeam1 (GlobalVariable 0): array of vehicles registered to Team 1.
@@ -662,124 +518,66 @@ interface GameState {
 // - vehIds/vehOwners: best-effort 'last driver' mapping used for messages only.
 //
 // UI caches (per-player, rebuilt as needed):
-// - State.hudCache.hudByPid[pid]: cached HUD widget references.
+// - hudByPid[pid]: cached HUD widget references.
 // - dialog/widget caches: cached references to modal UI elements (team switch, victory, clock digits).
 //
 // ------------------------------------------------------------------
 
-// Centralized mutable state for match/round flow and UI caches.
-const State: GameState = {
-    round: {
-        current: 1,
-        max: DEFAULT_MAX_ROUNDS,
-        killsTarget: DEFAULT_ROUND_KILLS_TARGET,
-        phase: RoundPhase.NotReady,
-        clock: {
-            durationSeconds: ROUND_CLOCK_DEFAULT_SECONDS,
-            matchStartElapsedSeconds: undefined,
-            pausedRemainingSeconds: undefined,
-            isPaused: false,
-            lastDisplayedSeconds: undefined,
-            lastLowTimeState: undefined,
-            expiryFired: false,
-            expiryHandlers: [],
-        },
-        flow: {
-            roundEndRedeployToken: 0,
-            clockExpiryBound: false,
-        },
-        countdown: {
-            isActive: false,
-            isRequested: false,
-            token: 0,
-            overLineMessageToken: 0,
-        },
-    },
-    scores: {
-        t1RoundKills: 0,
-        t2RoundKills: 0,
-        t1TotalKills: 0,
-        t2TotalKills: 0,
-    },
-    match: {
-        winsT1: 0,
-        winsT2: 0,
-        lossesT1: 0,
-        lossesT2: 0,
-        tiesT1: 0,
-        tiesT2: 0,
-        isEnded: false,
-        victoryDialogActive: false,
-        winnerTeam: undefined,
-        endElapsedSecondsSnapshot: 0,
-        victoryStartElapsedSecondsSnapshot: 0,
-        flow: {
-            matchEndDelayToken: 0,
-        },
-    },
-    admin: {
-        actionCount: 0,
-    },
-    players: {
-        teamSwitchData: {},
-        readyByPid: {},
-        inMainBaseByPid: {},
-    },
-    hudCache: {
-        lastHudScoreT1: undefined,
-        lastHudScoreT2: undefined,
-        lastHudRoundKillsT1: undefined,
-        lastHudRoundKillsT2: undefined,
-        hudByPid: {},
-        clockWidgetCache: {},
-        countdownWidgetCache: {},
-        overLineTitleWidgetCache: {},
-        overLineSubtitleWidgetCache: {},
-    },
-};
+const hudByPid: { [pid: number]: HudRefs } = {};
 
-//#endregion ----------------- Game State Definition --------------------
+// Round counters (driven by tester buttons / future logic)
+let roundCurrent = 1;
+let roundMax = DEFAULT_MAX_ROUNDS;
 
+// Match-critical counters are authoritative in script state and are mirrored to engine score only for display.
+let matchWinsT1 = 0;
+let matchWinsT2 = 0;
 
+let matchLossesT1 = 0;
+let matchLossesT2 = 0;
+let matchTiesT1 = 0;
+let matchTiesT2 = 0;
 
-//#region -------------------- HUD Counter Helpers --------------------
+let adminPanelActionCount = 0;
+
+// Tester-configured round win condition: first team to reach this many round kills wins immediately.
+let roundKillsTarget = DEFAULT_ROUND_KILLS_TARGET;
+
 
 function setCounterText(widget: mod.UIWidget | undefined, value: number): void {
     if (!widget) return;
-    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.system.genericCounter, Math.floor(value)));
+    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.GenericCounterText, Math.floor(value)));
 }
 
 function setRoundRecordText(widget: mod.UIWidget | undefined, wins: number, losses: number, ties: number): void {
     if (!widget) return;
-    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, Math.floor(wins), Math.floor(losses), Math.floor(ties)));
+    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.RoundRecordText, Math.floor(wins), Math.floor(losses), Math.floor(ties)));
 }
 
 function setAdminPanelActionCountText(widget: mod.UIWidget | undefined, value: number): void {
     if (!widget) return;
-    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.adminPanel.actionCountFormat, Math.floor(value)));
+    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.AdminPanel_ActionCount_Format, Math.floor(value)));
 }
-
 //#endregion ----------------- HUD Counter Helpers --------------------
 
 
 
 //#region -------------------- HUD Round State + Help Text --------------------
-
 function setRoundStateText(widget: mod.UIWidget | undefined): void {
     if (!widget) return;
 
-    if (State.round.phase === RoundPhase.GameOver) {
-        mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.roundStateGameOver));
+    if (isMatchEnded) {
+        mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.RoundState_GameOver));
         mod.SetUITextColor(widget, COLOR_WARNING_YELLOW);
         return;
     }
 
-    const isLive = isRoundLive();
-    const stateKey = isLive ? mod.stringkeys.twl.hud.roundStateLive : mod.stringkeys.twl.hud.roundStateNotReady;
+    const isLive = isRoundActive;
+    const stateKey = isLive ? mod.stringkeys.RoundState_Live : mod.stringkeys.RoundState_NotReady;
 
     mod.SetUITextLabel(
         widget,
-        mod.Message(mod.stringkeys.twl.hud.roundStateFormat, mod.stringkeys.twl.hud.roundText, Math.floor(State.round.current), stateKey)
+        mod.Message(mod.stringkeys.RoundState_Format, mod.stringkeys.RoundText, Math.floor(roundCurrent), stateKey)
     );
 
     // Color: white when LIVE, red when NOT READY
@@ -789,14 +587,14 @@ function setRoundStateText(widget: mod.UIWidget | undefined): void {
 function setRoundLiveHelpText(root: mod.UIWidget | undefined, text: mod.UIWidget | undefined): void {
     if (!root || !text) return;
 
-    const show = (!State.match.isEnded) && (isRoundLive());
+    const show = (!isMatchEnded) && (isRoundActive);
     mod.SetUIWidgetVisible(root, show);
 
     if (!show) return;
 
     mod.SetUITextLabel(
         text,
-        mod.Message(mod.stringkeys.twl.hud.roundLiveHelpFormat, Math.floor(State.round.killsTarget))
+        mod.Message(mod.stringkeys.RoundLiveHelp_Format, Math.floor(roundKillsTarget))
     );
     mod.SetUITextColor(text, mod.CreateVector(1, 1, 1));
 }
@@ -851,8 +649,8 @@ function setRoundStateTextForAllPlayers(): void {
  * Visibility rules:
  * - Only shown while preparing for a new round (round NOT live).
  * - Hidden during game-over / victory dialog phases.
- * - Remains visible until the round is actually live (isRoundLive() === true).
- * IMPORTANT: Any code path that changes State.players.readyByPid MUST also refresh:
+ * - Remains visible until the round is actually live (isRoundActive === true).
+ * IMPORTANT: Any code path that changes readyStateByPid MUST also refresh:
  *   - updatePlayersReadyHudTextForAllPlayers()
  *   - renderReadyDialogForAllVisibleViewers() (if the dialog can be open)
  * to prevent stale HUD/roster state (e.g., after swap teams or leaving base forces NOT READY).
@@ -865,10 +663,10 @@ function updatePlayersReadyHudTextForAllPlayers(): void {
     let readyCount = 0;
     for (let i = 0; i < total; i++) {
         const pid = mod.GetObjId(active.all[i]);
-        if (State.players.readyByPid[pid]) readyCount++;
+        if (readyStateByPid[pid]) readyCount++;
     }
 
-    const shouldShow = !State.match.isEnded && !State.match.victoryDialogActive && !isRoundLive() && total > 0;
+    const shouldShow = !isMatchEnded && !isVictoryDialogActive && !isRoundActive && total > 0;
 
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -884,7 +682,7 @@ function updatePlayersReadyHudTextForAllPlayers(): void {
 
         mod.SetUITextLabel(
             cache.playersReadyText,
-            mod.Message(mod.stringkeys.twl.hud.playersReadyFormat, readyCount, total)
+            mod.Message(mod.stringkeys.PlayersReady_Format, readyCount, total)
         );
     }
 }
@@ -903,11 +701,11 @@ function getElapsedHmsParts(totalSeconds: number): { hours: number; minutes: num
     return { hours, minutes, seconds };
 }
 
-function computeTeamOutcomeKey(teamNum: TeamID): number {
-    if (State.match.winnerTeam === undefined || State.match.winnerTeam === 0) {
-        return mod.stringkeys.twl.victory.draws;
+function computeTeamOutcomeKey(teamNum: number): number {
+    if (matchEndWinnerTeamNum === undefined) {
+        return mod.stringkeys.VictoryDialog_Draws;
     }
-    return State.match.winnerTeam === teamNum ? mod.stringkeys.twl.victory.wins : mod.stringkeys.twl.victory.loses;
+    return matchEndWinnerTeamNum === teamNum ? mod.stringkeys.VictoryDialog_Wins : mod.stringkeys.VictoryDialog_Loses;
 }
 
 /**
@@ -929,27 +727,27 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
     // Determine the target player id; dialog widgets are keyed per-player.
 const pid = mod.GetObjId(player);
     // Look up cached UI references for this player (if missing, this update becomes a no-op).
-const refs = State.hudCache.hudByPid[pid];
+const refs = hudByPid[pid];
     if (!refs) return;
 
     if (refs.victoryRoot) {
         // Apply visibility rules for the dialog parts based on match-end state.
-        mod.SetUIWidgetVisible(refs.victoryRoot, State.match.victoryDialogActive);
+        mod.SetUIWidgetVisible(refs.victoryRoot, isVictoryDialogActive);
     }
 
-    if (!State.match.victoryDialogActive) {
+    if (!isVictoryDialogActive) {
         return;
     }
 if (refs.victoryRestartText) {
         // Update string-key labels (Strings.json) so the dialog reflects the latest outcome/countdown.
-        // Remaining seconds can wrap/roll over on some engine timers at the moment it hits 0.
-        // Treat any out-of-range value as 0 to avoid displaying a huge number at the end.
-        let displaySeconds = Math.floor(remainingSeconds);
-        if (displaySeconds < 0) displaySeconds = 0;
-        if (displaySeconds > MATCH_END_DELAY_SECONDS) displaySeconds = 0;
-        mod.SetUITextLabel(refs.victoryRestartText, mod.Message(mod.stringkeys.twl.victory.restartInFormat, displaySeconds));
+// Remaining seconds can wrap/roll over on some engine timers at the moment it hits 0.
+// Treat any out-of-range value as 0 to avoid displaying a huge number at the end.
+let displaySeconds = Math.floor(remainingSeconds);
+if (displaySeconds < 0) displaySeconds = 0;
+if (displaySeconds > MATCH_END_DELAY_SECONDS) displaySeconds = 0;
+mod.SetUITextLabel(refs.victoryRestartText, mod.Message(mod.stringkeys.VictoryDialog_RestartIn_Format, displaySeconds));
     }
-    const parts = getElapsedHmsParts(State.match.endElapsedSecondsSnapshot);
+    const parts = getElapsedHmsParts(matchEndElapsedSecondsSnapshot);
     const hours = Math.min(99, Math.max(0, Math.floor(parts.hours)));
     const minutes = Math.min(59, Math.max(0, Math.floor(parts.minutes)));
     const seconds = Math.min(59, Math.max(0, Math.floor(parts.seconds)));
@@ -961,72 +759,72 @@ if (refs.victoryRestartText) {
     const sT = Math.floor(seconds / 10);
     const sO = seconds % 10;
 
-    if (refs.victoryTimeHoursTens) mod.SetUITextLabel(refs.victoryTimeHoursTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, hT));
-    if (refs.victoryTimeHoursOnes) mod.SetUITextLabel(refs.victoryTimeHoursOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, hO));
-    if (refs.victoryTimeMinutesTens) mod.SetUITextLabel(refs.victoryTimeMinutesTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, mT));
-    if (refs.victoryTimeMinutesOnes) mod.SetUITextLabel(refs.victoryTimeMinutesOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, mO));
-    if (refs.victoryTimeSecondsTens) mod.SetUITextLabel(refs.victoryTimeSecondsTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, sT));
-    if (refs.victoryTimeSecondsOnes) mod.SetUITextLabel(refs.victoryTimeSecondsOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, sO));
+    if (refs.victoryTimeHoursTens) mod.SetUITextLabel(refs.victoryTimeHoursTens, mod.Message(mod.stringkeys.MatchTimerDigit, hT));
+    if (refs.victoryTimeHoursOnes) mod.SetUITextLabel(refs.victoryTimeHoursOnes, mod.Message(mod.stringkeys.MatchTimerDigit, hO));
+    if (refs.victoryTimeMinutesTens) mod.SetUITextLabel(refs.victoryTimeMinutesTens, mod.Message(mod.stringkeys.MatchTimerDigit, mT));
+    if (refs.victoryTimeMinutesOnes) mod.SetUITextLabel(refs.victoryTimeMinutesOnes, mod.Message(mod.stringkeys.MatchTimerDigit, mO));
+    if (refs.victoryTimeSecondsTens) mod.SetUITextLabel(refs.victoryTimeSecondsTens, mod.Message(mod.stringkeys.MatchTimerDigit, sT));
+    if (refs.victoryTimeSecondsOnes) mod.SetUITextLabel(refs.victoryTimeSecondsOnes, mod.Message(mod.stringkeys.MatchTimerDigit, sO));
 
     if (refs.victoryRoundsSummaryText) {
-        mod.SetUITextLabel(refs.victoryRoundsSummaryText, mod.Message(mod.stringkeys.twl.victory.roundsSummaryFormat, Math.floor(State.round.current), Math.floor(State.round.max)));
+        mod.SetUITextLabel(refs.victoryRoundsSummaryText, mod.Message(mod.stringkeys.VictoryDialog_RoundsSummary_Format, Math.floor(roundCurrent), Math.floor(roundMax)));
     }
     if (refs.victoryAdminActionsText) {
-        const actionCount = Math.max(0, Math.floor(State.admin.actionCount));
+        const actionCount = Math.max(0, Math.floor(adminPanelActionCount));
         mod.SetUIWidgetVisible(refs.victoryAdminActionsText, actionCount > 0);
         if (actionCount > 0) {
             mod.SetUITextLabel(
                 refs.victoryAdminActionsText,
-                mod.Message(mod.stringkeys.twl.adminPanel.actionCountVictoryFormat, actionCount)
+                mod.Message(mod.stringkeys.AdminPanel_ActionCount_Victory_Format, actionCount)
             );
         }
     }
 
-    const t1OutcomeKey = computeTeamOutcomeKey(TeamID.Team1);
-    const t2OutcomeKey = computeTeamOutcomeKey(TeamID.Team2);
+    const t1OutcomeKey = computeTeamOutcomeKey(TEAM_1);
+    const t2OutcomeKey = computeTeamOutcomeKey(TEAM_2);
 
     if (refs.victoryLeftOutcomeText) {
-        mod.SetUITextLabel(refs.victoryLeftOutcomeText, mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, mod.stringkeys.twl.teams.leftName, t1OutcomeKey));
+        mod.SetUITextLabel(refs.victoryLeftOutcomeText, mod.Message(mod.stringkeys.VictoryDialog_TeamOutcome_Format, mod.stringkeys.TeamLeft_Name, t1OutcomeKey));
     }
     if (refs.victoryRightOutcomeText) {
-        mod.SetUITextLabel(refs.victoryRightOutcomeText, mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, mod.stringkeys.twl.teams.rightName, t2OutcomeKey));
+        mod.SetUITextLabel(refs.victoryRightOutcomeText, mod.Message(mod.stringkeys.VictoryDialog_TeamOutcome_Format, mod.stringkeys.TeamRight_Name, t2OutcomeKey));
     }
 
     if (refs.victoryLeftRecordText) {
-        mod.SetUITextLabel(refs.victoryLeftRecordText, mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, Math.floor(State.match.winsT1), Math.floor(State.match.winsT2), Math.floor(State.match.tiesT1)));
+        mod.SetUITextLabel(refs.victoryLeftRecordText, mod.Message(mod.stringkeys.RoundRecordText, Math.floor(matchWinsT1), Math.floor(matchWinsT2), Math.floor(matchTiesT1)));
     }
     if (refs.victoryRightRecordText) {
-        mod.SetUITextLabel(refs.victoryRightRecordText, mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, Math.floor(State.match.winsT2), Math.floor(State.match.winsT1), Math.floor(State.match.tiesT2)));
+        mod.SetUITextLabel(refs.victoryRightRecordText, mod.Message(mod.stringkeys.RoundRecordText, Math.floor(matchWinsT2), Math.floor(matchWinsT1), Math.floor(matchTiesT2)));
     }
 
     if (refs.victoryLeftRoundWinsText) {
-        mod.SetUITextLabel(refs.victoryLeftRoundWinsText, mod.Message(mod.stringkeys.twl.victory.roundWinsFormat, Math.floor(State.match.winsT1)));
+        mod.SetUITextLabel(refs.victoryLeftRoundWinsText, mod.Message(mod.stringkeys.VictoryDialog_RoundWins_Format, Math.floor(matchWinsT1)));
     }
     if (refs.victoryRightRoundWinsText) {
-        mod.SetUITextLabel(refs.victoryRightRoundWinsText, mod.Message(mod.stringkeys.twl.victory.roundWinsFormat, Math.floor(State.match.winsT2)));
+        mod.SetUITextLabel(refs.victoryRightRoundWinsText, mod.Message(mod.stringkeys.VictoryDialog_RoundWins_Format, Math.floor(matchWinsT2)));
     }
 
-    const lossesT1 = State.match.lossesT1;
-    const lossesT2 = State.match.lossesT2;
+    const lossesT1 = matchWinsT2;
+    const lossesT2 = matchWinsT1;
 
     if (refs.victoryLeftRoundLossesText) {
-        mod.SetUITextLabel(refs.victoryLeftRoundLossesText, mod.Message(mod.stringkeys.twl.victory.roundLossesFormat, Math.floor(lossesT1)));
+        mod.SetUITextLabel(refs.victoryLeftRoundLossesText, mod.Message(mod.stringkeys.VictoryDialog_RoundLosses_Format, Math.floor(lossesT1)));
     }
     if (refs.victoryRightRoundLossesText) {
-        mod.SetUITextLabel(refs.victoryRightRoundLossesText, mod.Message(mod.stringkeys.twl.victory.roundLossesFormat, Math.floor(lossesT2)));
+        mod.SetUITextLabel(refs.victoryRightRoundLossesText, mod.Message(mod.stringkeys.VictoryDialog_RoundLosses_Format, Math.floor(lossesT2)));
     }
     if (refs.victoryLeftRoundTiesText) {
-        mod.SetUITextLabel(refs.victoryLeftRoundTiesText, mod.Message(mod.stringkeys.twl.victory.roundTiesFormat, Math.floor(State.match.tiesT1)));
+        mod.SetUITextLabel(refs.victoryLeftRoundTiesText, mod.Message(mod.stringkeys.VictoryDialog_RoundTies_Format, Math.floor(matchTiesT1)));
     }
     if (refs.victoryRightRoundTiesText) {
-        mod.SetUITextLabel(refs.victoryRightRoundTiesText, mod.Message(mod.stringkeys.twl.victory.roundTiesFormat, Math.floor(State.match.tiesT2)));
+        mod.SetUITextLabel(refs.victoryRightRoundTiesText, mod.Message(mod.stringkeys.VictoryDialog_RoundTies_Format, Math.floor(matchTiesT2)));
     }
 
     if (refs.victoryLeftTotalKillsText) {
-        mod.SetUITextLabel(refs.victoryLeftTotalKillsText, mod.Message(mod.stringkeys.twl.victory.totalKillsFormat, Math.floor(State.scores.t1TotalKills)));
+        mod.SetUITextLabel(refs.victoryLeftTotalKillsText, mod.Message(mod.stringkeys.VictoryDialog_TotalKills_Format, Math.floor(totalKillsT1)));
     }
     if (refs.victoryRightTotalKillsText) {
-        mod.SetUITextLabel(refs.victoryRightTotalKillsText, mod.Message(mod.stringkeys.twl.victory.totalKillsFormat, Math.floor(State.scores.t2TotalKills)));
+        mod.SetUITextLabel(refs.victoryRightTotalKillsText, mod.Message(mod.stringkeys.VictoryDialog_TotalKills_Format, Math.floor(totalKillsT2)));
     }
 }
 
@@ -1053,7 +851,7 @@ function setRoundEndDialogVisibleForAllPlayers(visible: boolean): void {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
         const pid = mod.GetObjId(p);
-        const refs = State.hudCache.hudByPid[pid];
+        const refs = hudByPid[pid];
         if (!refs) continue;
         if (refs.roundEndRoot) {
             setWidgetVisible(refs.roundEndRoot, visible);
@@ -1061,7 +859,7 @@ function setRoundEndDialogVisibleForAllPlayers(visible: boolean): void {
     }
 }
 
-function updateRoundEndDialogForAllPlayers(winnerTeamNum: TeamID | 0): void {
+function updateRoundEndDialogForAllPlayers(winnerTeamNum: number): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
@@ -1071,9 +869,9 @@ function updateRoundEndDialogForAllPlayers(winnerTeamNum: TeamID | 0): void {
     }
 }
 
-function updateRoundEndDialogForPlayer(player: mod.Player, winnerTeamNum: TeamID | 0): void {
+function updateRoundEndDialogForPlayer(player: mod.Player, winnerTeamNum: number): void {
     const pid = mod.GetObjId(player);
-    const refs = State.hudCache.hudByPid[pid];
+    const refs = hudByPid[pid];
     if (!refs) return;
 
     // Ensure labels are always authoritative at the time the dialog is shown.
@@ -1082,23 +880,23 @@ function updateRoundEndDialogForPlayer(player: mod.Player, winnerTeamNum: TeamID
             refs.roundEndRoundText,
             // RoundEnd_RoundNumber is a dedicated format key ("ROUND {0}") to avoid passing an empty string into RoundState_Format,
             // which Portal renders as <unknown string> when the key cannot be resolved.
-            mod.Message(mod.stringkeys.twl.roundEnd.roundNumber, State.round.current)
+            mod.Message(mod.stringkeys.RoundEnd_RoundNumber, roundCurrent)
         );
     }
 
     if (refs.roundEndOutcomeText) {
-        if (winnerTeamNum === TeamID.Team1) {
+        if (winnerTeamNum === TEAM_1) {
             mod.SetUITextLabel(
                 refs.roundEndOutcomeText,
-                mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, mod.stringkeys.twl.teams.leftName, mod.stringkeys.twl.victory.wins)
+                mod.Message(mod.stringkeys.VictoryDialog_TeamOutcome_Format, mod.stringkeys.TeamLeft_Name, mod.stringkeys.VictoryDialog_Wins)
             );
-        } else if (winnerTeamNum === TeamID.Team2) {
+        } else if (winnerTeamNum === TEAM_2) {
             mod.SetUITextLabel(
                 refs.roundEndOutcomeText,
-                mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, mod.stringkeys.twl.teams.rightName, mod.stringkeys.twl.victory.wins)
+                mod.Message(mod.stringkeys.VictoryDialog_TeamOutcome_Format, mod.stringkeys.TeamRight_Name, mod.stringkeys.VictoryDialog_Wins)
             );
         } else {
-            setWidgetText(refs.roundEndOutcomeText, mod.stringkeys.twl.roundEnd.draw);
+            setWidgetText(refs.roundEndOutcomeText, mod.stringkeys.RoundEnd_Draw);
         }
     }
 
@@ -1106,10 +904,10 @@ function updateRoundEndDialogForPlayer(player: mod.Player, winnerTeamNum: TeamID
         mod.SetUITextLabel(
             refs.roundEndLeftSummaryText,
             mod.Message(
-                mod.stringkeys.twl.hud.roundStateFormat,
-                State.scores.t1RoundKills,
-                mod.stringkeys.twl.hud.labels.roundKills,
-                mod.stringkeys.twl.teams.leftName
+                mod.stringkeys.RoundState_Format,
+                roundKillsT1,
+                mod.stringkeys.Label_RoundKills,
+                mod.stringkeys.TeamLeft_Name
             )
         );
     }
@@ -1117,25 +915,23 @@ function updateRoundEndDialogForPlayer(player: mod.Player, winnerTeamNum: TeamID
         mod.SetUITextLabel(
             refs.roundEndRightSummaryText,
             mod.Message(
-                mod.stringkeys.twl.hud.roundStateFormat,
-                State.scores.t2RoundKills,
-                mod.stringkeys.twl.hud.labels.roundKills,
-                mod.stringkeys.twl.teams.rightName
+                mod.stringkeys.RoundState_Format,
+                roundKillsT2,
+                mod.stringkeys.Label_RoundKills,
+                mod.stringkeys.TeamRight_Name
             )
         );
     }
 }
-
 //#endregion ----------------- HUD Round-End Dialog Updates --------------------
 
 
 
 //#region -------------------- HUD Build/Ensure - Dialog Open + Help Text Visibility --------------------
-
 function isTeamSwitchDialogOpenForPid(pid: number): boolean {
     // With UI caching, the dialog root widget may continue to exist while hidden.
     // Use the explicit per-player state flag as the source of truth for "open".
-    return !!State.players.teamSwitchData[pid]?.dialogVisible;
+    return !!teamSwitchData[pid]?.dialogVisible;
 }
 
 /**
@@ -1148,10 +944,10 @@ function isTeamSwitchDialogOpenForPid(pid: number): boolean {
 
 function updateHelpTextVisibilityForPid(pid: number): void {
     // Fetch this player's HUD/widget refs; if missing (e.g., during join), bail out safely.
-const refs = State.hudCache.hudByPid[pid];
+const refs = hudByPid[pid];
     if (!refs) return;
 
-    const show = (!State.match.isEnded) && (!isRoundLive()) && (!State.players.readyByPid[pid]) && (isTeamSwitchDialogOpenForPid(pid) === false);
+    const show = (!isMatchEnded) && (!isRoundActive) && (!readyStateByPid[pid]) && (isTeamSwitchDialogOpenForPid(pid) === false);
     if (refs.helpTextContainer) {
         // Apply the computed visibility to the help text widget.
 mod.SetUIWidgetVisible(refs.helpTextContainer, show);
@@ -1174,14 +970,11 @@ function updateHelpTextVisibilityForAllPlayers(): void {
         updateHelpTextVisibilityForPid(mod.GetObjId(p));
     }
 }
-
 //#endregion ----------------- HUD Build/Ensure - Dialog Open + Help Text Visibility --------------------
 
 
 
 //#region -------------------- HUD Build/Ensure Function Start --------------------
-
-// Code Cleanup: This is an absurd mega-function - we should refactor and break down
 // Ensures all persistent HUD widgets exist for a player.
 // This function is idempotent and safe to call on join, respawn, or reconnect.
 // Widget references created here are reused and updated elsewhere.
@@ -1197,7 +990,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const pid = getObjId(player);
 
     // If cached and still valid, return it
-    const cached = State.hudCache.hudByPid[pid];
+    const cached = hudByPid[pid];
     if (cached && cached.leftKillsText && cached.rightKillsText) {
         const helpContainer = safeFind(`Container_HelpText_${pid}`);
         if (helpContainer) {
@@ -1208,13 +1001,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     }
 
     const refs: HudRefs = { pid, roots: [] };
-
     //#endregion -------------------- HUD Build/Ensure Function Start --------------------
 
 
 
     //#region -------------------- HUD Build/Ensure - Upper-Left HUD --------------------
-
     // --- Static HUD: Upper-left small box ---
     {
         const rootName = `Upper_Left_Container_${pid}`;
@@ -1224,7 +1015,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             playerId: player,
             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
             position: [5, 5],
-            size: [200, 30],
+            size: [164.5, 30],
             anchor: mod.UIAnchor.TopLeft,
             visible: true,
             padding: 1,
@@ -1233,19 +1024,19 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             bgFill: mod.UIBgFill.Blur,
             children: [
                 {
-                    // UI element: Upper_Left_Text_${pid}
-                    name: `Upper_Left_Text_${pid}`,
+            // UI element: Upper_Left_Text_${pid}
+            name: `Upper_Left_Text_${pid}`,
                     type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [5, -5.5],
-                    size: [200, 17],
+                    size: [154.5, 17],
                     anchor: mod.UIAnchor.CenterLeft,
                     visible: true,
                     padding: 0,
                     bgColor: [0.8353, 0.9216, 0.9765],
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.Blur,
-                    textLabel: mod.stringkeys.twl.hud.branding.title,
+                    textLabel: mod.stringkeys.Upper_Left_Text,
                     textColor: [0.6784, 0.9922, 0.5255],
                     textAlpha: 1,
                     textSize: 9,
@@ -1257,14 +1048,14 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [7.25, 12.5],
-                    size: [200, 16.5],
+                    size: [150, 16.5],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: true,
                     padding: 0,
                     bgColor: [0.2, 0.2, 0.2],
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.branding.subtitle,
+                    textLabel: mod.stringkeys.Upper_Left_Text_2,
                     textColor: [0.6784, 0.9922, 0.5255],
                     textAlpha: 1,
                     textSize: 9,
@@ -1280,12 +1071,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
 
     //#region -------------------- HUD Build/Ensure - Top-Center Panels --------------------
-
     // --- Static HUD: Top-center panels (TeamLeft / Middle / TeamRight) ---
     {
         const mid = modlib.ParseUI({
-            // UI element: Container_TopMiddle_CoreUI_${pid}
-            name: `Container_TopMiddle_CoreUI_${pid}`,
+                        // UI element: Container_TopMiddle_CoreUI_${pid}
+                        name: `Container_TopMiddle_CoreUI_${pid}`,
             type: "Container",
             playerId: player,
             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
@@ -1299,8 +1089,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             bgFill: mod.UIBgFill.Blur,
             children: [
                 {
-                    // UI element: RoundText_${pid}
-                    name: `RoundText_${pid}`,
+            // UI element: RoundText_${pid}
+            name: `RoundText_${pid}`,
                     type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [5.5, -3],
@@ -1311,7 +1101,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgColor: [0.2, 0.2, 0.2],
                     bgAlpha: 1,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.roundText,
+                    textLabel: mod.stringkeys.RoundText,
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 16,
@@ -1332,8 +1122,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgFill: mod.UIBgFill.Solid,
                     children: [
                         {
-                            // Help/instructions text shown when enabled for this player
-                            name: `HelpText_${pid}`,
+                    // Help/instructions text shown when enabled for this player
+                    name: `HelpText_${pid}`,
                             type: "Text",
                             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [10, 2],
@@ -1344,7 +1134,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                             bgColor: [0.2, 0.2, 0.2],
                             bgAlpha: 1,
                             bgFill: mod.UIBgFill.None,
-                            textLabel: mod.stringkeys.twl.hud.helpText,
+                            textLabel: mod.stringkeys.HelpText,
                             textColor: [0.251, 0.0941, 0.0667],
                             textAlpha: 1,
                             textSize: 9,
@@ -1353,8 +1143,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     ],
                 },
                 {
-                    // UI element: Slash_${pid}
-                    name: `Slash_${pid}`,
+                            // UI element: Slash_${pid}
+                            name: `Slash_${pid}`,
                     type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [70.5, -3],
@@ -1365,7 +1155,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgColor: [0.2, 0.2, 0.2],
                     bgAlpha: 1,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.system.slash,
+                    textLabel: mod.stringkeys.Slash,
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 16,
@@ -1376,8 +1166,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         if (mid) refs.roots.push(mid);
 
         const t1Panel = modlib.ParseUI({
-            // UI element: Container_TopLeft_CoreUI_${pid}
-            name: `Container_TopLeft_CoreUI_${pid}`,
+                        // UI element: Container_TopLeft_CoreUI_${pid}
+                        name: `Container_TopLeft_CoreUI_${pid}`,
             type: "Container",
             playerId: player,
             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
@@ -1391,8 +1181,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             bgFill: mod.UIBgFill.Blur,
             children: [
                 {
-                    // Team name label for Team 1 (left side)
-                    name: `TeamLeft_Name_${pid}`,
+            // Team name label for Team 1 (left side)
+            name: `TeamLeft_Name_${pid}`,
                     type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [23.25, -3],
@@ -1403,7 +1193,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgColor: [0.2, 0.2, 0.2],
                     bgAlpha: 1,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.teams.leftName,
+                    textLabel: mod.stringkeys.TeamLeft_Name,
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 16,
@@ -1422,7 +1212,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgColor: [0.2, 0.2, 0.2],
                     bgAlpha: 1,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, 0, 0, 0),
+                    textLabel: mod.Message(mod.stringkeys.RoundRecordText, 0, 0, 0),
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 11,
@@ -1441,7 +1231,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgColor: [0.2, 0.2, 0.2],
                     bgAlpha: 1,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.labels.roundWins,
+                    textLabel: mod.stringkeys.Label_RoundWins,
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 11,
@@ -1460,7 +1250,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgColor: [0.2, 0.2, 0.2],
                     bgAlpha: 1,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.labels.roundKills,
+                    textLabel: mod.stringkeys.Label_RoundKills,
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 11,
@@ -1479,7 +1269,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgColor: [0.2, 0.2, 0.2],
                     bgAlpha: 1,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.labels.totalKills,
+                    textLabel: mod.stringkeys.Label_TotalKills,
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 11,
@@ -1490,8 +1280,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         if (t1Panel) refs.roots.push(t1Panel);
 
         const t2Panel = modlib.ParseUI({
-            // UI element: Container_TopRight_CoreUI_${pid}
-            name: `Container_TopRight_CoreUI_${pid}`,
+                        // UI element: Container_TopRight_CoreUI_${pid}
+                        name: `Container_TopRight_CoreUI_${pid}`,
             type: "Container",
             playerId: player,
             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
@@ -1505,8 +1295,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             bgFill: mod.UIBgFill.Blur,
             children: [
                 {
-                    // Team name label for Team 2 (right side)
-                    name: `TeamRight_Name_${pid}`,
+            // Team name label for Team 2 (right side)
+            name: `TeamRight_Name_${pid}`,
                     type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [23.25, -3],
@@ -1517,7 +1307,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgColor: [0.2, 0.2, 0.2],
                     bgAlpha: 1,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.teams.rightName,
+                    textLabel: mod.stringkeys.TeamRight_Name,
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 16,
@@ -1536,7 +1326,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgColor: [0.2, 0.2, 0.2],
                     bgAlpha: 1,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, 0, 0, 0),
+                    textLabel: mod.Message(mod.stringkeys.RoundRecordText, 0, 0, 0),
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 11,
@@ -1555,7 +1345,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgColor: [0.2, 0.2, 0.2],
                     bgAlpha: 1,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.labels.roundWins,
+                    textLabel: mod.stringkeys.Label_RoundWins,
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 11,
@@ -1574,7 +1364,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgColor: [0.2, 0.2, 0.2],
                     bgAlpha: 1,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.labels.roundKills,
+                    textLabel: mod.stringkeys.Label_RoundKills,
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 11,
@@ -1593,7 +1383,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgColor: [0.2, 0.2, 0.2],
                     bgAlpha: 1,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.labels.totalKills,
+                    textLabel: mod.stringkeys.Label_TotalKills,
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 11,
@@ -1602,13 +1392,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             ],
         });
     }
-
     //#endregion ----------------- HUD Build/Ensure - Top-Center Panels --------------------
 
 
 
     //#region -------------------- HUD Build/Ensure - Admin Action Counter --------------------
-
     {
         // Admin action audit counter (top-right)
         const auditCounter = modlib.ParseUI({
@@ -1623,7 +1411,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             padding: 0,
             bgAlpha: 0,
             bgFill: mod.UIBgFill.None,
-            textLabel: mod.Message(mod.stringkeys.twl.adminPanel.actionCountFormat, 0),
+            textLabel: mod.Message(mod.stringkeys.AdminPanel_ActionCount_Format, 0),
             textColor: [1, 1, 1],
             textAlpha: 1,
             textSize: 10,
@@ -1635,13 +1423,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     refs.leftRecordText = safeFind(`TeamLeft_Record_${pid}`);
     refs.rightRecordText = safeFind(`TeamRight_Record_${pid}`);
     refs.adminPanelActionCountText = safeFind(`AdminPanelActionCount_${pid}`);
-
     //#endregion ----------------- HUD Build/Ensure - Admin Action Counter --------------------
 
 
 
     //#region -------------------- HUD Build/Ensure - Counter Widgets --------------------
-
     // --- Counter widgets (digits) ---
     {
         const mkCounter = (
@@ -1676,7 +1462,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                         bgColor: [0.2, 0.2, 0.2],
                         bgAlpha: 1,
                         bgFill: mod.UIBgFill.None,
-                        textLabel: mod.stringkeys.twl.system.genericCounter,
+                        textLabel: mod.stringkeys.GenericCounterText,
                         textColor: [1, 1, 1],
                         textAlpha: 1,
                         textSize: textSize,
@@ -1706,12 +1492,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
 
     //#region -------------------- HUD Build/Ensure - Round-End Dialog --------------------
-
-    //Code Cleanup: Need to reduce redundant comments, and when manually adjusting position/sizes update directions (e.g. +X is right or left)
     {
-        const roundEndModal = modlib.ParseUI({
-            // UI element: RoundEndDialogRoot_${pid}
-            name: `RoundEndDialogRoot_${pid}`,
+
+                const roundEndModal = modlib.ParseUI({
+                        // UI element: RoundEndDialogRoot_${pid}
+                        name: `RoundEndDialogRoot_${pid}`,
             type: "Container",
             playerId: player,
             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
@@ -1725,8 +1510,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             bgFill: mod.UIBgFill.Solid,
             children: [
                 {
-                    // UI element: RoundEndDialog_Round_${pid}
-                    name: `RoundEndDialog_Round_${pid}`,
+            // UI element: RoundEndDialog_Round_${pid}
+            name: `RoundEndDialog_Round_${pid}`,
                     type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 14],
@@ -1736,7 +1521,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.roundEnd.roundNumber, State.round.current),
+                    textLabel: mod.Message(mod.stringkeys.RoundEnd_RoundNumber, roundCurrent),
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 14,
@@ -1754,7 +1539,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.roundEnd.draw,
+                    textLabel: mod.stringkeys.RoundEnd_Draw,
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 18,
@@ -1774,8 +1559,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgFill: mod.UIBgFill.None,
                     children: [
                         {
-                            // UI element: RoundEndDialog_LeftSummary_${pid}
-                            name: `RoundEndDialog_LeftSummary_${pid}`,
+                    // UI element: RoundEndDialog_LeftSummary_${pid}
+                    name: `RoundEndDialog_LeftSummary_${pid}`,
                             type: "Text",
                             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [-72, 0],
@@ -1785,7 +1570,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                             padding: 0,
                             bgAlpha: 0,
                             bgFill: mod.UIBgFill.None,
-                            textLabel: mod.Message(mod.stringkeys.twl.hud.roundStateFormat, 0, mod.stringkeys.twl.hud.labels.roundKills, mod.stringkeys.twl.teams.leftName),
+                            textLabel: mod.Message(mod.stringkeys.RoundState_Format, 0, mod.stringkeys.Label_RoundKills, mod.stringkeys.TeamLeft_Name),
                             textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
                             textAlpha: 1,
                             textSize: 13,
@@ -1803,7 +1588,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                             padding: 0,
                             bgAlpha: 0,
                             bgFill: mod.UIBgFill.None,
-                            textLabel: mod.stringkeys.twl.hud.clock.colon,
+                            textLabel: mod.stringkeys.MatchTimerColon,
                             textColor: [1, 1, 1],
                             textAlpha: 1,
                             textSize: 12,
@@ -1821,7 +1606,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                             padding: 0,
                             bgAlpha: 0,
                             bgFill: mod.UIBgFill.None,
-                            textLabel: mod.Message(mod.stringkeys.twl.hud.roundStateFormat, 0, mod.stringkeys.twl.hud.labels.roundKills, mod.stringkeys.twl.teams.rightName),
+                            textLabel: mod.Message(mod.stringkeys.RoundState_Format, 0, mod.stringkeys.Label_RoundKills, mod.stringkeys.TeamRight_Name),
                             textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
                             textAlpha: 1,
                             textSize: 13,
@@ -1840,13 +1625,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         refs.roundEndRightSummaryText = safeFind(`RoundEndDialog_RightSummary_${pid}`);
         if (roundEndModal) refs.roots.push(roundEndModal);
     }
-
     //#endregion ----------------- HUD Build/Ensure - Round-End Dialog --------------------
 
 
 
     //#region -------------------- HUD Build/Ensure - Victory Dialog --------------------
-
     {
         const modal = modlib.ParseUI({
                         // UI element: VictoryDialogRoot_${pid}
@@ -1875,7 +1658,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.branding.title,
+                    textLabel: mod.stringkeys.Upper_Left_Text,
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 18,
@@ -1893,7 +1676,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.branding.subtitle,
+                    textLabel: mod.stringkeys.Upper_Left_Text_2,
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 18,
@@ -1911,7 +1694,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.victory.screenshotPrompt,
+                    textLabel: mod.stringkeys.VictoryDialog_ScreenshotPrompt,
                     textColor: [1, 1, 0],
                     textAlpha: 1,
                     textSize: 12,
@@ -1929,7 +1712,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.victory.restartInFormat, MATCH_END_DELAY_SECONDS),
+                    textLabel: mod.Message(mod.stringkeys.VictoryDialog_RestartIn_Format, MATCH_END_DELAY_SECONDS),
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 12,
@@ -1949,8 +1732,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgFill: mod.UIBgFill.None,
                     children: [
                         {
-                            // UI element: VictoryDialog_TotalTimeLabel_${pid}
-                            name: `VictoryDialog_TotalTimeLabel_${pid}`,
+                    // UI element: VictoryDialog_TotalTimeLabel_${pid}
+                    name: `VictoryDialog_TotalTimeLabel_${pid}`,
                             type: "Text",
                             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [-45, 0],
@@ -1960,7 +1743,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                             padding: 0,
                             bgAlpha: 0,
                             bgFill: mod.UIBgFill.None,
-                            textLabel: mod.stringkeys.twl.victory.totalMatchTimeLabel,
+                            textLabel: mod.stringkeys.VictoryDialog_TotalMatchTime_Label,
                             textColor: [1, 1, 1],
                             textAlpha: 1,
                             textSize: 12,
@@ -1980,8 +1763,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                             bgFill: mod.UIBgFill.None,
                             children: [
                                 {
-                                    // UI element: VictoryDialog_TimeHT_${pid}
-                                    name: `VictoryDialog_TimeHT_${pid}`,
+                            // UI element: VictoryDialog_TimeHT_${pid}
+                            name: `VictoryDialog_TimeHT_${pid}`,
                                     type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [-45, 0],
@@ -1991,7 +1774,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
+                                    textLabel: mod.Message(mod.stringkeys.MatchTimerDigit, 0),
                                     textColor: [1, 1, 1],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2009,7 +1792,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
+                                    textLabel: mod.Message(mod.stringkeys.MatchTimerDigit, 0),
                                     textColor: [1, 1, 1],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2027,7 +1810,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.colon),
+                                    textLabel: mod.Message(mod.stringkeys.MatchTimerColon),
                                     textColor: [1, 1, 1],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2045,7 +1828,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
+                                    textLabel: mod.Message(mod.stringkeys.MatchTimerDigit, 0),
                                     textColor: [1, 1, 1],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2063,7 +1846,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
+                                    textLabel: mod.Message(mod.stringkeys.MatchTimerDigit, 0),
                                     textColor: [1, 1, 1],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2081,7 +1864,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.colon),
+                                    textLabel: mod.Message(mod.stringkeys.MatchTimerColon),
                                     textColor: [1, 1, 1],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2099,7 +1882,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
+                                    textLabel: mod.Message(mod.stringkeys.MatchTimerDigit, 0),
                                     textColor: [1, 1, 1],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2117,7 +1900,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
+                                    textLabel: mod.Message(mod.stringkeys.MatchTimerDigit, 0),
                                     textColor: [1, 1, 1],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2128,8 +1911,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     ],
                 },
                 {
-                    // UI element: VictoryDialog_Rounds_${pid}
-                    name: `VictoryDialog_Rounds_${pid}`,
+                                        // UI element: VictoryDialog_Rounds_${pid}
+                                        name: `VictoryDialog_Rounds_${pid}`,
                     type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 122],
@@ -2139,7 +1922,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.victory.roundsSummaryFormat, 0, 0),
+                    textLabel: mod.Message(mod.stringkeys.VictoryDialog_RoundsSummary_Format, 0, 0),
                     textColor: [1, 1, 1],
                     textAlpha: 1,
                     textSize: 12,
@@ -2157,7 +1940,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.adminPanel.actionCountVictoryFormat, 0),
+                    textLabel: mod.Message(mod.stringkeys.AdminPanel_ActionCount_Victory_Format, 0),
                     textColor: [1, 1, 0],
                     textAlpha: 1,
                     textSize: 12,
@@ -2177,8 +1960,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgFill: mod.UIBgFill.None,
                     children: [
                         {
-                            // UI element: VictoryDialog_TeamLeft_${pid}
-                            name: `VictoryDialog_TeamLeft_${pid}`,
+                    // UI element: VictoryDialog_TeamLeft_${pid}
+                    name: `VictoryDialog_TeamLeft_${pid}`,
                             type: "Container",
                             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [-85, 0],
@@ -2191,8 +1974,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                             bgFill: mod.UIBgFill.Solid,
                             children: [
                                 {
-                                    // UI element: VictoryDialog_LeftOutcome_${pid}
-                                    name: `VictoryDialog_LeftOutcome_${pid}`,
+                            // UI element: VictoryDialog_LeftOutcome_${pid}
+                            name: `VictoryDialog_LeftOutcome_${pid}`,
                                     type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, 6],
@@ -2202,7 +1985,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, mod.stringkeys.twl.teams.leftName, mod.stringkeys.twl.victory.loses),
+                                    textLabel: mod.Message(mod.stringkeys.VictoryDialog_TeamOutcome_Format, mod.stringkeys.TeamLeft_Name, mod.stringkeys.VictoryDialog_Loses),
                                     textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 18,
@@ -2220,7 +2003,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, 0, 0, 0),
+                                    textLabel: mod.Message(mod.stringkeys.RoundRecordText, 0, 0, 0),
                                     textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 18,
@@ -2238,7 +2021,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.roundWinsFormat, 0),
+                                    textLabel: mod.Message(mod.stringkeys.VictoryDialog_RoundWins_Format, 0),
                                     textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2256,7 +2039,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.roundLossesFormat, 0),
+                                    textLabel: mod.Message(mod.stringkeys.VictoryDialog_RoundLosses_Format, 0),
                                     textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2274,7 +2057,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.roundTiesFormat, 0),
+                                    textLabel: mod.Message(mod.stringkeys.VictoryDialog_RoundTies_Format, 0),
                                     textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2292,7 +2075,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.totalKillsFormat, 0),
+                                    textLabel: mod.Message(mod.stringkeys.VictoryDialog_TotalKills_Format, 0),
                                     textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2301,8 +2084,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                             ],
                         },
                         {
-                            // UI element: VictoryDialog_TeamRight_${pid}
-                            name: `VictoryDialog_TeamRight_${pid}`,
+                                    // UI element: VictoryDialog_TeamRight_${pid}
+                                    name: `VictoryDialog_TeamRight_${pid}`,
                             type: "Container",
                             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [85, 0],
@@ -2315,8 +2098,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                             bgFill: mod.UIBgFill.Solid,
                             children: [
                                 {
-                                    // UI element: VictoryDialog_RightOutcome_${pid}
-                                    name: `VictoryDialog_RightOutcome_${pid}`,
+                            // UI element: VictoryDialog_RightOutcome_${pid}
+                            name: `VictoryDialog_RightOutcome_${pid}`,
                                     type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, 6],
@@ -2326,7 +2109,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, mod.stringkeys.twl.teams.rightName, mod.stringkeys.twl.victory.wins),
+                                    textLabel: mod.Message(mod.stringkeys.VictoryDialog_TeamOutcome_Format, mod.stringkeys.TeamRight_Name, mod.stringkeys.VictoryDialog_Wins),
                                     textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 18,
@@ -2344,7 +2127,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, 0, 0, 0),
+                                    textLabel: mod.Message(mod.stringkeys.RoundRecordText, 0, 0, 0),
                                     textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 18,
@@ -2362,7 +2145,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.roundWinsFormat, 0),
+                                    textLabel: mod.Message(mod.stringkeys.VictoryDialog_RoundWins_Format, 0),
                                     textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2380,7 +2163,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.roundLossesFormat, 0),
+                                    textLabel: mod.Message(mod.stringkeys.VictoryDialog_RoundLosses_Format, 0),
                                     textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2398,7 +2181,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.roundTiesFormat, 0),
+                                    textLabel: mod.Message(mod.stringkeys.VictoryDialog_RoundTies_Format, 0),
                                     textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2416,7 +2199,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.totalKillsFormat, 0),
+                                    textLabel: mod.Message(mod.stringkeys.VictoryDialog_TotalKills_Format, 0),
                                     textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
@@ -2458,35 +2241,32 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         refs.victoryRightRecordText = safeFind(`VictoryDialog_RightRecord_${pid}`);
         refs.victoryRightTotalKillsText = safeFind(`VictoryDialog_RightTotalKills_${pid}`);
     }
-
     //#endregion ----------------- HUD Build/Ensure - Victory Dialog --------------------
 
 
 
     //#region -------------------- HUD Build/Ensure - Cache Init + Defaults --------------------
-
     refs.helpTextContainer = safeFind(`Container_HelpText_${pid}`);
-    State.hudCache.hudByPid[pid] = refs;
+    hudByPid[pid] = refs;
 
     // Initialize visible numbers immediately
-    setCounterText(refs.roundCurText, State.round.current);
-    setCounterText(refs.roundMaxText, State.round.max);
-    setCounterText(refs.leftWinsText, State.match.winsT1);
-    setCounterText(refs.rightWinsText, State.match.winsT2);
+    setCounterText(refs.roundCurText, roundCurrent);
+    setCounterText(refs.roundMaxText, roundMax);
+    setCounterText(refs.leftWinsText, matchWinsT1);
+    setCounterText(refs.rightWinsText, matchWinsT2);
 
-    setCounterText(refs.leftRoundKillsText, State.scores.t1RoundKills);
-    setCounterText(refs.rightRoundKillsText, State.scores.t2RoundKills);
+    setCounterText(refs.leftRoundKillsText, roundKillsT1);
+    setCounterText(refs.rightRoundKillsText, roundKillsT2);
 
     // Total kills are tracked separately from GameModeScore (which is used for match wins)
-    setCounterText(refs.leftKillsText, State.scores.t1TotalKills);
-    setCounterText(refs.rightKillsText, State.scores.t2TotalKills);
-    setAdminPanelActionCountText(refs.adminPanelActionCountText, State.admin.actionCount);
+    setCounterText(refs.leftKillsText, totalKillsT1);
+    setCounterText(refs.rightKillsText, totalKillsT2);
+    setAdminPanelActionCountText(refs.adminPanelActionCountText, adminPanelActionCount);
 
     updateVictoryDialogForPlayer(player, getRemainingSeconds());
 
     return refs;
 }
-
 //#endregion ----------------- HUD Build/Ensure - Cache Init + Defaults --------------------
 
 
@@ -2494,10 +2274,10 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 //#region -------------------- HUD Update Helpers --------------------
 
 function setHudRoundCountersForAllPlayers(cur: number, max: number): void {
-    State.round.current = Math.max(1, Math.floor(cur));
-    State.round.max = Math.max(1, Math.floor(max));
-    if (State.round.max < State.round.current) {
-        State.round.max = State.round.current;
+    roundCurrent = Math.max(1, Math.floor(cur));
+    roundMax = Math.max(1, Math.floor(max));
+    if (roundMax < roundCurrent) {
+        roundMax = roundCurrent;
     }
 
     const players = mod.AllPlayers();
@@ -2507,12 +2287,12 @@ function setHudRoundCountersForAllPlayers(cur: number, max: number): void {
         if (!p || !mod.IsPlayerValid(p)) continue;
         const refs = ensureHudForPlayer(p);
         if (!refs) continue;
-        setCounterText(refs.roundCurText, State.round.current);
-        setCounterText(refs.roundMaxText, State.round.max);
+        setCounterText(refs.roundCurText, roundCurrent);
+        setCounterText(refs.roundMaxText, roundMax);
     }
 
     setRoundStateTextForAllPlayers();
-    // Keep Ready Up dialog "Best of" label in sync with State.round.max.
+    // Keep Ready Up dialog "Best of" label in sync with roundMax.
     updateBestOfRoundsLabelForAllPlayers();
 }
 
@@ -2521,12 +2301,12 @@ function setHudWinCountersForAllPlayers(t1Wins: number, t2Wins: number): void {
     const rw = Math.max(0, Math.floor(t2Wins));
 
     // Match wins are authoritative in script state; GameModeScore is mirrored for scoreboard display.
-    setMatchWinsTeam(TeamID.Team1, lw);
-    setMatchWinsTeam(TeamID.Team2, rw);
+    setMatchWinsTeam(TEAM_1, lw);
+    setMatchWinsTeam(TEAM_2, rw);
 
     // Cache locally for immediate UI + logic.
-    State.match.winsT1 = lw;
-    State.match.winsT2 = rw;
+    matchWinsT1 = lw;
+    matchWinsT2 = rw;
 
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -2544,8 +2324,8 @@ function setHudWinCountersForAllPlayers(t1Wins: number, t2Wins: number): void {
 
 function syncRoundRecordHudForAllPlayers(): void {
     // Losses are derived from the opponent's win count when rounds end with a single winner.
-    State.match.lossesT1 = State.match.winsT2;
-    State.match.lossesT2 = State.match.winsT1;
+    matchLossesT1 = matchWinsT2;
+    matchLossesT2 = matchWinsT1;
 
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -2554,16 +2334,16 @@ function syncRoundRecordHudForAllPlayers(): void {
         if (!p || !mod.IsPlayerValid(p)) continue;
         const refs = ensureHudForPlayer(p);
         if (!refs) continue;
-        setRoundRecordText(refs.leftRecordText, State.match.winsT1, State.match.lossesT1, State.match.tiesT1);
-        setRoundRecordText(refs.rightRecordText, State.match.winsT2, State.match.lossesT2, State.match.tiesT2);
+        setRoundRecordText(refs.leftRecordText, matchWinsT1, matchLossesT1, matchTiesT1);
+        setRoundRecordText(refs.rightRecordText, matchWinsT2, matchLossesT2, matchTiesT2);
     }
 }
 
 function adjustMatchTiesForBothTeams(delta: number): void {
-    const current = Math.min(State.match.tiesT1, State.match.tiesT2);
+    const current = Math.min(matchTiesT1, matchTiesT2);
     const next = Math.max(0, Math.floor(current + delta));
-    State.match.tiesT1 = next;
-    State.match.tiesT2 = next;
+    matchTiesT1 = next;
+    matchTiesT2 = next;
     syncRoundRecordHudForAllPlayers();
 }
 
@@ -2575,23 +2355,34 @@ function updateAdminPanelActionCountForAllPlayers(): void {
         if (!p || !mod.IsPlayerValid(p)) continue;
         const refs = ensureHudForPlayer(p);
         if (!refs) continue;
-        setAdminPanelActionCountText(refs.adminPanelActionCountText, State.admin.actionCount);
+        setAdminPanelActionCountText(refs.adminPanelActionCountText, adminPanelActionCount);
     }
 }
 
 function handleAdminPanelAction(eventPlayer: mod.Player, actionKey: number): void {
-    State.admin.actionCount = Math.max(0, Math.floor(State.admin.actionCount) + 1);
+    adminPanelActionCount = Math.max(0, Math.floor(adminPanelActionCount) + 1);
     updateAdminPanelActionCountForAllPlayers();
-    sendHighlightedWorldLogMessage(mod.Message(mod.stringkeys.twl.adminPanel.actionPressed, eventPlayer, actionKey), true);
+    sendHighlightedWorldLogMessage(mod.Message(mod.stringkeys.AdminPanel_ActionPressed, eventPlayer, actionKey), true);
 }
-
 //#endregion ----------------- HUD Update Helpers --------------------
 
 
 
-//#region -------------------- Legacy UI Cleanup (old score_root_* containers) --------------------
+//#region -------------------- Vehicle Scoring State (registered vehicles + ownership) --------------------
+const regVehiclesTeam1 = mod.GlobalVariable(REGISTRY_TEAM1_VAR);
+const regVehiclesTeam2 = mod.GlobalVariable(REGISTRY_TEAM2_VAR);
 
-// Code Cleanup: Is this still needed??? "score_root_ is not referenced anywhere else?
+// Vehicle ownership tracking (best-effort heuristic):
+// - vehIds and vehOwners are parallel arrays keyed by vehicle ObjId.
+// - getLastDriver may return undefined if no enter event was observed for the vehicle.
+// - Do not treat this as authoritative killer attribution; it is used only for informative messaging.
+const vehIds: number[] = [];
+const vehOwners: mod.Player[] = [];
+//#endregion ----------------- Vehicle Scoring State (registered vehicles + ownership) --------------------
+
+
+
+//#region -------------------- Legacy UI Cleanup (old score_root_* containers) --------------------
 function deleteLegacyScoreRootForPlayer(player: mod.Player): void {
     const name = "score_root_" + getObjId(player);
     try {
@@ -2615,22 +2406,18 @@ function deleteLegacyScoreRootsForAllPlayers(): void {
 
 
 //#region -------------------- Portal Array Helpers (engine arrays) --------------------
-
 function arrayContainsVehicle(arr: any, vehicle: mod.Vehicle): boolean {
     return modlib.IsTrueForAny(arr, (el: any) => mod.Equals(el, vehicle));
 }
 
 function arrayRemoveVehicle(arr: any, vehicle: mod.Vehicle): any {
-    // FilteredArray must remain stable across engine updates; registry correctness depends on it.
     return modlib.FilteredArray(arr, (el: any) => mod.NotEqualTo(el, vehicle));
 }
-
 //#endregion ----------------- Portal Array Helpers (engine arrays) --------------------
 
 
 
 //#region -------------------- Vehicle Ownership Tracking (vehIds/vehOwners) --------------------
-
 function getVehicleId(v: mod.Vehicle): number { return getObjId(v); }
 
 function getLastDriver(vehicle: mod.Vehicle): mod.Player {
@@ -2677,30 +2464,28 @@ function popLastDriver(vehicle: mod.Vehicle): mod.Player {
 
 
 //#region -------------------- Vehicle Registration (team arrays) --------------------
-
 // Registers vehicle ownership to a team for kill attribution.
 // IMPORTANT:
 // - Vehicle ID and owning team must stay in sync
 // - Reassignments must overwrite previous ownership
-// Code Cleanup: Known fragility - we need to refactor or identify a different method entirely as OnPlayerEnterVehicle is error prone.
 
-function registerVehicleToTeam(vehicle: mod.Vehicle, teamNum: TeamID): void {
+function registerVehicleToTeam(vehicle: mod.Vehicle, teamNum: number): void {
     mod.SetVariable(regVehiclesTeam1, arrayRemoveVehicle(mod.GetVariable(regVehiclesTeam1), vehicle));
     mod.SetVariable(regVehiclesTeam2, arrayRemoveVehicle(mod.GetVariable(regVehiclesTeam2), vehicle));
 
-    if (teamNum === TeamID.Team1) {
+    if (teamNum === TEAM_1) {
         mod.SetVariable(regVehiclesTeam1, mod.AppendToArray(mod.GetVariable(regVehiclesTeam1), vehicle));
-    } else if (teamNum === TeamID.Team2) {
+    } else if (teamNum === TEAM_2) {
         mod.SetVariable(regVehiclesTeam2, mod.AppendToArray(mod.GetVariable(regVehiclesTeam2), vehicle));
     }
 }
-
 //#endregion ----------------- Vehicle Registration (team arrays) --------------------
 
 
 
 //#region -------------------- Kills HUD Sync (GameModeScore -> HUD) --------------------
-
+let lastHudScoreT1: number | undefined;
+let lastHudScoreT2: number | undefined;
 
 function syncKillsHudFromTrackedTotals(_force: boolean): void {
     // Total kills are tracked in script variables; GameModeScore is reserved for match wins.
@@ -2711,18 +2496,20 @@ function syncKillsHudFromTrackedTotals(_force: boolean): void {
         if (!p || !mod.IsPlayerValid(p)) continue;
         const refs = ensureHudForPlayer(p);
         if (!refs) continue;
-        setCounterText(refs.leftKillsText, State.scores.t1TotalKills);
-        setCounterText(refs.rightKillsText, State.scores.t2TotalKills);
+        setCounterText(refs.leftKillsText, totalKillsT1);
+        setCounterText(refs.rightKillsText, totalKillsT2);
     }
 }
 
 // Round kills HUD Sync (RoundKills -> HUD)
+let lastHudRoundKillsT1: number | undefined;
+let lastHudRoundKillsT2: number | undefined;
 
 function syncRoundKillsHud(force: boolean = false): void {
-    if (!force && State.hudCache.lastHudRoundKillsT1 === State.scores.t1RoundKills && State.hudCache.lastHudRoundKillsT2 === State.scores.t2RoundKills) return;
+    if (!force && lastHudRoundKillsT1 === roundKillsT1 && lastHudRoundKillsT2 === roundKillsT2) return;
 
-    State.hudCache.lastHudRoundKillsT1 = State.scores.t1RoundKills;
-    State.hudCache.lastHudRoundKillsT2 = State.scores.t2RoundKills;
+    lastHudRoundKillsT1 = roundKillsT1;
+    lastHudRoundKillsT2 = roundKillsT2;
 
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -2732,16 +2519,27 @@ function syncRoundKillsHud(force: boolean = false): void {
         const refs = ensureHudForPlayer(p);
         if (!refs) continue;
 
-        setCounterText(refs.leftRoundKillsText, State.scores.t1RoundKills);
-        setCounterText(refs.rightRoundKillsText, State.scores.t2RoundKills);
+        setCounterText(refs.leftRoundKillsText, roundKillsT1);
+        setCounterText(refs.rightRoundKillsText, roundKillsT2);
     }
 }
-
 //#endregion ----------------- Kills HUD Sync (GameModeScore -> HUD) --------------------
 
 
 
 //#region -------------------- Match Clock (per-player MM:SS) --------------------
+
+let durationSeconds = ROUND_CLOCK_DEFAULT_SECONDS;
+
+let matchStartElapsedSeconds: number | undefined;
+let pausedRemainingSeconds: number | undefined;
+let isPaused = false;
+
+let lastDisplayedSeconds: number | undefined;
+let lastLowTimeState: boolean | undefined;
+
+let expiryFired = false;
+const expiryHandlers: Array<() => void> = [];
 
 // ClockWidgetCacheEntry:
 // Caches all UI widget references required to render the round clock for one player.
@@ -2765,47 +2563,48 @@ interface ClockWidgetCacheEntry {
     secOnes: mod.UIWidget;
 }
 
+const clockWidgetCache: { [playerId: number]: ClockWidgetCacheEntry } = {};
 
 export function ResetRoundClock(seconds: number): void {
-    State.round.clock.durationSeconds = Math.max(0, Math.floor(seconds));
-    State.round.clock.matchStartElapsedSeconds = Math.floor(mod.GetMatchTimeElapsed());
+    durationSeconds = Math.max(0, Math.floor(seconds));
+    matchStartElapsedSeconds = Math.floor(mod.GetMatchTimeElapsed());
 
-    State.round.clock.isPaused = false;
-    State.round.clock.pausedRemainingSeconds = undefined;
+    isPaused = false;
+    pausedRemainingSeconds = undefined;
 
-    State.round.clock.expiryFired = false;
-    State.round.clock.lastDisplayedSeconds = undefined;
-    State.round.clock.lastLowTimeState = undefined;
+    expiryFired = false;
+    lastDisplayedSeconds = undefined;
+    lastLowTimeState = undefined;
 }
 
 function getRemainingSeconds(): number {
-    if (State.round.clock.isPaused) {
-        return Math.max(0, State.round.clock.pausedRemainingSeconds !== undefined ? State.round.clock.pausedRemainingSeconds : 0);
+    if (isPaused) {
+        return Math.max(0, pausedRemainingSeconds !== undefined ? pausedRemainingSeconds : 0);
     }
 
-    if (State.round.clock.matchStartElapsedSeconds === undefined) return 0;
+    if (matchStartElapsedSeconds === undefined) return 0;
 
-    const elapsed = Math.floor(mod.GetMatchTimeElapsed()) - State.round.clock.matchStartElapsedSeconds;
-    return Math.max(0, State.round.clock.durationSeconds - elapsed);
+    const elapsed = Math.floor(mod.GetMatchTimeElapsed()) - matchStartElapsedSeconds;
+    return Math.max(0, durationSeconds - elapsed);
 }
 
 function adjustRoundClockBySeconds(deltaSeconds: number): void {
     const delta = Math.floor(deltaSeconds);
 
-    if (State.round.clock.isPaused) {
-        const current = State.round.clock.pausedRemainingSeconds !== undefined ? State.round.clock.pausedRemainingSeconds : 0;
-        State.round.clock.pausedRemainingSeconds = Math.max(0, current + delta);
-        State.round.clock.durationSeconds = Math.max(0, State.round.clock.durationSeconds + delta);
+    if (isPaused) {
+        const current = pausedRemainingSeconds !== undefined ? pausedRemainingSeconds : 0;
+        pausedRemainingSeconds = Math.max(0, current + delta);
+        durationSeconds = Math.max(0, durationSeconds + delta);
     } else {
-        State.round.clock.durationSeconds = Math.max(0, State.round.clock.durationSeconds + delta);
+        durationSeconds = Math.max(0, durationSeconds + delta);
     }
 
     if (delta > 0) {
-        State.round.clock.expiryFired = false;
+        expiryFired = false;
     }
 
-    State.round.clock.lastDisplayedSeconds = undefined;
-    State.round.clock.lastLowTimeState = undefined;
+    lastDisplayedSeconds = undefined;
+    lastLowTimeState = undefined;
 }
 
 function resetRoundClockToDefault(): void {
@@ -2826,10 +2625,10 @@ function resetRoundClockToDefault(): void {
 function updateAllPlayersClock(): void {
     const remaining = getRemainingSeconds();
 
-    if (!State.round.clock.expiryFired && remaining <= 0) {
-        State.round.clock.expiryFired = true;
-        for (let i = 0; i < State.round.clock.expiryHandlers.length; i++) {
-            State.round.clock.expiryHandlers[i]();
+    if (!expiryFired && remaining <= 0) {
+        expiryFired = true;
+        for (let i = 0; i < expiryHandlers.length; i++) {
+            expiryHandlers[i]();
         }
     }
 
@@ -2857,11 +2656,11 @@ const seconds = remaining % 60;
         const cacheEntry = ensureClockUIAndGetCache(player);
         if (!cacheEntry) continue;
 
-        if (State.round.clock.lastLowTimeState === undefined || lowTime !== State.round.clock.lastLowTimeState) {
+        if (lastLowTimeState === undefined || lowTime !== lastLowTimeState) {
             setClockColorCached(cacheEntry, lowTime ? COLOR_LOW_TIME : COLOR_NORMAL);
         }
 
-        if (State.round.clock.lastDisplayedSeconds !== remaining) {
+        if (lastDisplayedSeconds !== remaining) {
             setDigitCached(cacheEntry.minTens, digits.mT);
             setDigitCached(cacheEntry.minOnes, digits.mO);
             setColonCached(cacheEntry.colon);
@@ -2872,8 +2671,8 @@ const seconds = remaining % 60;
         updateVictoryDialogForPlayer(player, remaining);
     }
 
-    State.round.clock.lastLowTimeState = lowTime;
-    State.round.clock.lastDisplayedSeconds = remaining;
+    lastLowTimeState = lowTime;
+    lastDisplayedSeconds = remaining;
 }
 
 /**
@@ -2892,7 +2691,7 @@ const pid = mod.GetObjId(player);
     const roundStateRootName = "RoundStateRoot_" + pid;
     const roundLiveHelpRootName = "RoundLiveHelpRoot_" + pid;
 
-    const cached = State.hudCache.clockWidgetCache[pid];
+    const cached = clockWidgetCache[pid];
     if (cached) {
         const probeClock = safeFind(cached.rootName);
         const probeState = safeFind(cached.roundStateRootName);
@@ -2957,7 +2756,7 @@ const pid = mod.GetObjId(player);
                 padding: 0,
                 bgAlpha: 0,
                 bgFill: mod.UIBgFill.None,
-                textLabel: mod.stringkeys.twl.hud.roundStateNotReady,
+                textLabel: mod.stringkeys.RoundState_NotReady,
                 textColor: [1, 1, 1],
                 textAlpha: 1,
                 textSize: 12,
@@ -3008,7 +2807,7 @@ const pid = mod.GetObjId(player);
                 padding: 0,
                 bgAlpha: 0,
                 bgFill: mod.UIBgFill.None,
-                textLabel: mod.stringkeys.twl.hud.roundLiveHelpFormat,
+                textLabel: mod.stringkeys.RoundLiveHelp_Format,
                 textColor: [1, 1, 1],
                 textAlpha: 1,
                 textSize: 12,
@@ -3046,7 +2845,7 @@ const pid = mod.GetObjId(player);
         return undefined;
     }
 
-    State.hudCache.clockWidgetCache[pid] = entry;
+    clockWidgetCache[pid] = entry;
     setClockColorCached(entry, COLOR_NORMAL);
 
     return entry;
@@ -3062,7 +2861,7 @@ function buildDigit(part: string, pid: number, x: number, width: number) {
         size: [width, CLOCK_HEIGHT],
         visible: true,
         bgAlpha: 0,
-        textLabel: mod.stringkeys.twl.hud.clock.digit,
+        textLabel: mod.stringkeys.MatchTimerDigit,
         textSize: CLOCK_FONT_SIZE,
         textAnchor: mod.UIAnchor.Center,
     };
@@ -3078,18 +2877,18 @@ function buildColon(pid: number, x: number, width: number) {
         size: [width, CLOCK_HEIGHT],
         visible: true,
         bgAlpha: 0,
-        textLabel: mod.stringkeys.twl.hud.clock.colon,
+        textLabel: mod.stringkeys.MatchTimerColon,
         textSize: CLOCK_FONT_SIZE,
         textAnchor: mod.UIAnchor.Center,
     };
 }
 
 function setDigitCached(widget: mod.UIWidget, digit: number): void {
-    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.clock.digit, digit));
+    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.MatchTimerDigit, digit));
 }
 
 function setColonCached(widget: mod.UIWidget): void {
-    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.clock.colon));
+    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.MatchTimerColon));
 }
 
 function setClockColorCached(cacheEntry: ClockWidgetCacheEntry, color: any): void {
@@ -3099,13 +2898,11 @@ function setClockColorCached(cacheEntry: ClockWidgetCacheEntry, color: any): voi
     mod.SetUITextColor(cacheEntry.secTens, color);
     mod.SetUITextColor(cacheEntry.secOnes, color);
 }
-
 //#endregion ----------------- Match Clock (per-player MM:SS) --------------------
 
 
 
 //#region -------------------- Team Switch Data + Config --------------------
-
 interface TeamSwitchConfig {
     enableTeamSwitch: boolean;
     interactPointMinLifetime: number;
@@ -3119,30 +2916,28 @@ interface teamSwitchData_t {
     dontShowAgain: boolean;
     adminPanelVisible: boolean;
     adminPanelBuilt: boolean;
-    lastAdminPanelToggleAt: number;
     dialogVisible: boolean;
     // UI caching: true after the first warm-up build so subsequent opens can be instant.
     uiBuilt: boolean;
 }
 
-// Per-player state lives in State.players:
-// - teamSwitchData: dialog + interact-point state per player.
-// - readyByPid: READY toggle state for roster + auto-start gating.
-// - inMainBaseByPid: main-base presence for pre-round gating + UI.
-
+const teamSwitchData: { [id: number]: teamSwitchData_t } = {};
+// Per-player ready state:: per-player ready state (pid -> READY true/false). Source of truth for roster display + all-ready start checks.
+const readyStateByPid: { [id: number]: boolean } = {};
+// per-player base state (pid -> inMainBase true/false). Updated by existing main-base triggers; used for display and gating.
+const inMainBaseByPid: { [id: number]: boolean } = {};
 //#endregion ----------------- Team Switch Data + Config --------------------
 
 
 
 //#region -------------------- Team Switch Logic (interact point + swap teams) --------------------
-
 async function spawnTeamSwitchInteractPoint(eventPlayer: mod.Player) {
     const playerId = mod.GetObjId(eventPlayer);
-    if (!State.players.teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
+    if (!teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
 
     if (
-        State.players.teamSwitchData[playerId].interactPoint === null &&
-        !State.players.teamSwitchData[playerId].dontShowAgain &&
+        teamSwitchData[playerId].interactPoint === null &&
+        !teamSwitchData[playerId].dontShowAgain &&
         TEAMSWITCHCONFIG.enableTeamSwitch
     ) {
         let isOnGround = mod.GetSoldierState(eventPlayer, mod.SoldierStateBool.IsOnGround);
@@ -3167,23 +2962,23 @@ async function spawnTeamSwitchInteractPoint(eventPlayer: mod.Player) {
         );
 
         mod.EnableInteractPoint(interactPoint, true);
-        State.players.teamSwitchData[playerId].interactPoint = interactPoint;
-        State.players.teamSwitchData[playerId].lastDeployTime = mod.GetMatchTimeElapsed();
+        teamSwitchData[playerId].interactPoint = interactPoint;
+        teamSwitchData[playerId].lastDeployTime = mod.GetMatchTimeElapsed();
     }
 }
 
 function teamSwitchInteractPointActivated(eventPlayer: mod.Player, eventInteractPoint: mod.InteractPoint) {
     const playerId = mod.GetObjId(eventPlayer);
-    if (!State.players.teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
+    if (!teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
 
-    if (State.players.teamSwitchData[playerId].interactPoint != null) {
-        const interactPointId = mod.GetObjId(State.players.teamSwitchData[playerId].interactPoint);
+    if (teamSwitchData[playerId].interactPoint != null) {
+        const interactPointId = mod.GetObjId(teamSwitchData[playerId].interactPoint);
         const eventInteractPointId = mod.GetObjId(eventInteractPoint);
         if (interactPointId === eventInteractPointId) {
             mod.EnableUIInputMode(true, eventPlayer);
             createTeamSwitchUI(eventPlayer);
             // Track visibility so roster refreshes can target all viewers with the dialog open.
-            State.players.teamSwitchData[playerId].dialogVisible = true;
+            teamSwitchData[playerId].dialogVisible = true;
             updateHelpTextVisibilityForPid(playerId);
             renderReadyDialogForViewer(eventPlayer, playerId);
             // Immediate self-refresh to avoid relying solely on global refresh bookkeeping.
@@ -3201,12 +2996,12 @@ function removeTeamSwitchInteractPoint(eventPlayer: mod.Player | number) {
         playerId = eventPlayer as number;
     }
 
-    if (!State.players.teamSwitchData[playerId]) return;
+    if (!teamSwitchData[playerId]) return;
 
-    if (State.players.teamSwitchData[playerId].interactPoint != null) {
-        mod.EnableInteractPoint(State.players.teamSwitchData[playerId].interactPoint as mod.InteractPoint, false);
-        mod.UnspawnObject(State.players.teamSwitchData[playerId].interactPoint as mod.InteractPoint);
-        State.players.teamSwitchData[playerId].interactPoint = null;
+    if (teamSwitchData[playerId].interactPoint != null) {
+        mod.EnableInteractPoint(teamSwitchData[playerId].interactPoint as mod.InteractPoint, false);
+        mod.UnspawnObject(teamSwitchData[playerId].interactPoint as mod.InteractPoint);
+        teamSwitchData[playerId].interactPoint = null;
     }
 }
 
@@ -3221,10 +3016,10 @@ function isVelocityBeyond(threshold: number, eventPlayer: mod.Player): boolean {
 function checkTeamSwitchInteractPointRemoval(eventPlayer: mod.Player) {
     if (TEAMSWITCHCONFIG.enableTeamSwitch && !mod.GetSoldierState(eventPlayer, mod.SoldierStateBool.IsDead)) {
         const playerId = mod.GetObjId(eventPlayer);
-        if (!State.players.teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
+        if (!teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
 
-        if (State.players.teamSwitchData[playerId].interactPoint != null) {
-            const lifetime = mod.GetMatchTimeElapsed() - State.players.teamSwitchData[playerId].lastDeployTime;
+        if (teamSwitchData[playerId].interactPoint != null) {
+            const lifetime = mod.GetMatchTimeElapsed() - teamSwitchData[playerId].lastDeployTime;
 
             if (
                 isVelocityBeyond(TEAMSWITCHCONFIG.velocityThreshold, eventPlayer) ||
@@ -3238,11 +3033,10 @@ function checkTeamSwitchInteractPointRemoval(eventPlayer: mod.Player) {
 
 function initTeamSwitchData(eventPlayer: mod.Player) {
     const playerId = mod.GetObjId(eventPlayer);
-    State.players.teamSwitchData[playerId] = {
+    teamSwitchData[playerId] = {
         dontShowAgain: false,
         adminPanelVisible: false,
         adminPanelBuilt: false,
-        lastAdminPanelToggleAt: 0,
         dialogVisible: false,
         interactPoint: null,
         lastDeployTime: 0,
@@ -3267,7 +3061,7 @@ async function forceUndeployPlayer(eventPlayer: mod.Player): Promise<void> {
 function processTeamSwitch(eventPlayer: mod.Player) {
     // Legacy team-switch pathway retained for reuse by the Ready Dialog (Swap Teams button: Swap Teams button).
     // Requirements:
-    // - Change the player's team assignment (TeamID.Team1 <-> TeamID.Team2)
+    // - Change the player's team assignment (TEAM_1 <-> TEAM_2)
     // - Force the player back to the deploy screen on the new team (not just update UI/roster state)
     //
     // NOTE: Some engines cache team affiliation on the deployed soldier entity; therefore we:
@@ -3275,7 +3069,7 @@ function processTeamSwitch(eventPlayer: mod.Player) {
     // 2) Undeploy the player so they must redeploy on the new team.
 
     const currentTeamNum = getTeamNumber(mod.GetTeam(eventPlayer));
-    const newTeamNum = (currentTeamNum === TeamID.Team2) ? TeamID.Team1 : TeamID.Team2;
+    const newTeamNum = (currentTeamNum === TEAM_2) ? TEAM_1 : TEAM_2;
     mod.SetTeam(eventPlayer, mod.GetTeam(newTeamNum));
 
     // Force a rapid return to the deploy screen so the player respawns on the new team.
@@ -3285,7 +3079,7 @@ function processTeamSwitch(eventPlayer: mod.Player) {
     mod.SetRedeployTime(eventPlayer, ROUND_END_REDEPLOY_DELAY_SECONDS);
     void forceUndeployPlayer(eventPlayer);
 
-    sendHighlightedWorldLogMessage(mod.Message(mod.stringkeys.twl.notifications.teamSwitch), false, mod.GetTeam(eventPlayer));
+    sendHighlightedWorldLogMessage(mod.Message(mod.stringkeys.NOTIFICATION_TEAMSWITCH), false, mod.GetTeam(eventPlayer));
     deleteTeamSwitchUI(eventPlayer);
 }
 
@@ -3311,17 +3105,17 @@ function deleteTeamSwitchUI(eventPlayer: mod.Player | number) {
     deleteAdminPanelUI(playerId, true);
     setAdminPanelChildWidgetsVisible(playerId, false);
 
-    if (State.players.teamSwitchData[playerId]) {
-        State.players.teamSwitchData[playerId].adminPanelVisible = false;
-        State.players.teamSwitchData[playerId].adminPanelBuilt = false;
+    if (teamSwitchData[playerId]) {
+        teamSwitchData[playerId].adminPanelVisible = false;
+        teamSwitchData[playerId].adminPanelBuilt = false;
         // Force-hide any stray admin panel children (some engines do not cascade container visibility).
         setAdminPanelChildWidgetsVisible(playerId, false);
         // Delete any previously-built admin container so the panel will rebuild cleanly on demand.
         const existingAdminContainer = safeFind(UI_ADMIN_PANEL_CONTAINER_ID + playerId);
         if (existingAdminContainer) mod.DeleteUIWidget(existingAdminContainer);
-    State.players.teamSwitchData[playerId].adminPanelBuilt = false;
+    teamSwitchData[playerId].adminPanelBuilt = false;
         // Dialog is no longer visible; stop participating in global roster refreshes.
-        State.players.teamSwitchData[playerId].dialogVisible = false;
+        teamSwitchData[playerId].dialogVisible = false;
     }
 
     updateHelpTextVisibilityForPid(playerId);
@@ -3334,7 +3128,7 @@ function closeReadyDialogForAllPlayers(): void {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
         const pid = mod.GetObjId(p);
-        if (State.players.teamSwitchData[pid]?.dialogVisible) {
+        if (teamSwitchData[pid]?.dialogVisible) {
             deleteTeamSwitchUI(p);
         }
     }
@@ -3356,7 +3150,6 @@ function hardDeleteTeamSwitchUI(playerId: number): void {
     const adminContainer = safeFind(UI_ADMIN_PANEL_CONTAINER_ID + playerId);
     if (adminContainer) mod.DeleteUIWidget(adminContainer);
 }
-
 //#endregion ----------------- Team Switch Logic (interact point + swap teams) --------------------
 
 
@@ -3364,16 +3157,37 @@ function hardDeleteTeamSwitchUI(playerId: number): void {
 //#region -------------------- Round Start/End Flow + State --------------------
 
 // Runs round start/end flow tied to the round clock expiry.
-// Victory dialog visibility is intentionally decoupled from State.match.isEnded.
-// State.match.isEnded can become true at round end, but the Victory UI should only appear after the 10s round-end window expires.
-// State.match.victoryDialogActive gates both visibility and countdown updates so the restart timer always starts at 45s when the dialog appears.
+// Victory dialog visibility is intentionally decoupled from isMatchEnded.
+// isMatchEnded can become true at round end, but the Victory UI should only appear after the 10s round-end window expires.
+// isVictoryDialogActive gates both visibility and countdown updates so the restart timer always starts at 45s when the dialog appears.
+
+let isRoundActive = false;
+let isMatchEnded = false;
+let isVictoryDialogActive = false;
 
 // Async control (round end):
-// - State.round.flow.roundEndRedeployToken invalidates any in-flight round-end countdowns when incremented.
-// - State.round.flow.clockExpiryBound prevents double-binding the clock-expiry handler.
+// - roundEndRedeployToken invalidates any in-flight 'round end' countdowns when incremented.
+// - Any async function that waits must capture the token at start and exit if the token changes.
+// - Rationale: prevents overlapping redeploy/countdown flows if multiple end-round triggers fire.
+// Async flow guard tokens:
+// - Any async countdown or delayed action must capture the current token at start and exit early if the token changes.
+// - Only one round-end redeploy countdown and one match-end delay window are intended to be active at a time.
+let roundEndRedeployToken = 0;
 // Async control (match end):
-// - State.match.flow.matchEndDelayToken invalidates any in-flight match-end delays when incremented.
+// - matchEndDelayToken invalidates any in-flight 'match end' delays when incremented.
+// - Only one match-end delay should be active at a time; always token-check after waits.
+let matchEndDelayToken = 0;
+let roundClockExpiryBound = false;
+let roundKillsT1 = 0;
+let roundKillsT2 = 0;
 
+let totalKillsT1 = 0;
+let totalKillsT2 = 0;
+
+// Match-end snapshot values for the victory results dialog
+let matchEndWinnerTeamNum: number | undefined = undefined;
+let matchEndElapsedSecondsSnapshot: number = 0;
+let victoryStartElapsedSecondsSnapshot: number = 0;
 
 function broadcastStringKey(
     stringKey: number,
@@ -3413,14 +3227,14 @@ function broadcastHighlightedStringKey(
 //}
 
 // Standard round-end flow: after ROUND_END_REDEPLOY_DELAY_SECONDS, hide the round-end dialog and undeploy all players.
-// State.round.flow.roundEndRedeployToken cancels older timers if a new round end is triggered before the delay completes.
+// roundEndRedeployToken cancels older timers if a new round end is triggered before the delay completes.
 async function scheduleRoundEndRedeploy(expectedToken: number): Promise<void> {
     await mod.Wait(ROUND_END_REDEPLOY_DELAY_SECONDS);
 
-    if (expectedToken !== State.round.flow.roundEndRedeployToken) {
+    if (expectedToken !== roundEndRedeployToken) {
         return;
     }
-    if (isRoundLive()) {
+    if (isRoundActive) {
         return;
     }
 
@@ -3428,22 +3242,22 @@ async function scheduleRoundEndRedeploy(expectedToken: number): Promise<void> {
     setRoundEndDialogVisibleForAllPlayers(false);
 
     // Skip redeploy when the match has ended (victory dialog continues through the match-end flow).
-    if (State.match.isEnded) {
+    if (isMatchEnded) {
         return;
 // Final-round flow: keep the round-end dialog visible for the normal 10s window, then hide it and show the Victory dialog for MATCH_END_DELAY_SECONDS.
-// This uses State.match.flow.matchEndDelayToken as a cancellation token so admin actions or unexpected state changes cannot trigger stale delayed UI.
+// This uses matchEndDelayToken as a cancellation token so admin actions or unexpected state changes cannot trigger stale delayed UI.
     }
 
     mod.UndeployAllPlayers();
 }
 
-async function scheduleFinalRoundVictory(expectedToken: number, winningTeamNum: TeamID | 0): Promise<void> {
+async function scheduleFinalRoundVictory(expectedToken: number, winningTeamNum: number): Promise<void> {
     await mod.Wait(ROUND_END_REDEPLOY_DELAY_SECONDS);
 
-    if (expectedToken !== State.match.flow.matchEndDelayToken) {
+    if (expectedToken !== matchEndDelayToken) {
         return;
     }
-    if (!State.match.isEnded) {
+    if (!isMatchEnded) {
         return;
     }
 
@@ -3451,24 +3265,24 @@ async function scheduleFinalRoundVictory(expectedToken: number, winningTeamNum: 
     setRoundEndDialogVisibleForAllPlayers(false);
 
     // Start the match-end victory flow only after the round-end window completes.
-    State.match.victoryStartElapsedSecondsSnapshot = Math.floor(mod.GetMatchTimeElapsed());
-    State.match.endElapsedSecondsSnapshot = State.match.victoryStartElapsedSecondsSnapshot;
-    State.match.victoryDialogActive = true;
-    State.round.clock.isPaused = false;
-    State.round.clock.pausedRemainingSeconds = undefined;
+    victoryStartElapsedSecondsSnapshot = Math.floor(mod.GetMatchTimeElapsed());
+    matchEndElapsedSecondsSnapshot = victoryStartElapsedSecondsSnapshot;
+    isVictoryDialogActive = true;
+    isPaused = false;
+    pausedRemainingSeconds = undefined;
     ResetRoundClock(MATCH_END_DELAY_SECONDS);
     updateVictoryDialogForAllPlayers(MATCH_END_DELAY_SECONDS);
 
     void scheduleMatchEnd(expectedToken, winningTeamNum);
 }
 
-async function scheduleMatchEnd(expectedToken: number, winningTeamNum?: TeamID | 0): Promise<void> {
+async function scheduleMatchEnd(expectedToken: number, winningTeamNum?: number): Promise<void> {
     await mod.Wait(MATCH_END_DELAY_SECONDS);
 
-    if (expectedToken !== State.match.flow.matchEndDelayToken) {
+    if (expectedToken !== matchEndDelayToken) {
         return;
     }
-    if (!State.match.isEnded) {
+    if (!isMatchEnded) {
         return;
     }
 
@@ -3481,11 +3295,11 @@ async function scheduleMatchEnd(expectedToken: number, winningTeamNum?: TeamID |
 }
 
 function bindRoundClockExpiryToRoundEnd(): void {
-    if (State.round.flow.clockExpiryBound) return;
-    State.round.flow.clockExpiryBound = true;
+    if (roundClockExpiryBound) return;
+    roundClockExpiryBound = true;
 
-    State.round.clock.expiryHandlers.push(() => {
-        if (isRoundLive()) {
+    expiryHandlers.push(() => {
+        if (isRoundActive) {
             endRound();
         }
     });
@@ -3498,7 +3312,7 @@ function bindRoundClockExpiryToRoundEnd(): void {
 // - Sets round phase state used by HUD and end conditions
 
 function startRound(_triggerPlayer?: mod.Player): void {
-    if (State.match.isEnded) {
+    if (isMatchEnded) {
     // Steps:
     // 1) Reset round-scoped counters and flags
     // 2) Initialize the round clock from ROUND_START_SECONDS
@@ -3507,15 +3321,9 @@ function startRound(_triggerPlayer?: mod.Player): void {
         return;
     }
 
-    // Defensive cleanup: hide countdown UI if we are not currently running a countdown.
-    // This preserves the GO display when startRound is triggered by the countdown itself.
-    if (!State.round.countdown.isActive) {
-        hidePregameCountdownForAllPlayers();
-    }
-
-    State.round.countdown.isRequested = false;
+    isPregameCountdownRequested = false;
     bindRoundClockExpiryToRoundEnd();
-    State.round.phase = RoundPhase.Live; // Enables scoring + LIVE HUD state.
+    isRoundActive = true;
     // Extends the built-in gamemode time limit so the match always has a full hour remaining after each round start.
     const elapsedSeconds = Math.floor(mod.GetMatchTimeElapsed());
     mod.SetGameModeTimeLimit(elapsedSeconds + BACKGROUND_TIME_LIMIT_RESET_SECONDS);
@@ -3523,13 +3331,13 @@ function startRound(_triggerPlayer?: mod.Player): void {
     updateHelpTextVisibilityForAllPlayers();
     setRoundEndDialogVisibleForAllPlayers(false);
 
-    State.scores.t1RoundKills = 0;
-    State.scores.t2RoundKills = 0;
+    roundKillsT1 = 0;
+    roundKillsT2 = 0;
 
     syncRoundKillsHud(true);
 
     ResetRoundClock(ROUND_START_SECONDS);
-    broadcastStringKey(mod.stringkeys.twl.notifications.roundStarted);
+    broadcastStringKey(mod.stringkeys.NOTIFICATION_ROUND_STARTED);
 }
 
 // Ends the current round and schedules transition to the next state.
@@ -3539,7 +3347,7 @@ function startRound(_triggerPlayer?: mod.Player): void {
 // - Match end is handled separately and must not be triggered here
 
 function endRound(_triggerPlayer?: mod.Player, freezeRemainingSeconds?: number): void {
-    if (!isRoundLive()) {
+    if (!isRoundActive) {
     // Steps:
     // 1) Freeze round-live systems (no further scoring)
     // 2) Schedule redeploy / transition using ROUND_END_REDEPLOY_DELAY_SECONDS
@@ -3547,64 +3355,62 @@ function endRound(_triggerPlayer?: mod.Player, freezeRemainingSeconds?: number):
 
         return;
     }
-    State.round.phase = RoundPhase.NotReady; // Return to pre-round state; may be overridden to GameOver below.
+    isRoundActive = false;
     // Ready-cycle auto-start / reset:: round ended -> reset all players to NOT READY for the next ready-up cycle.
     resetReadyStateForAllPlayers();
 
     // Freeze display after ending the round.
-    State.round.clock.isPaused = true;
-    State.round.clock.pausedRemainingSeconds = Math.max(0, freezeRemainingSeconds !== undefined ? Math.floor(freezeRemainingSeconds) : 0);
+    isPaused = true;
+    pausedRemainingSeconds = Math.max(0, freezeRemainingSeconds !== undefined ? Math.floor(freezeRemainingSeconds) : 0);
 
-    const winnerTeamNum = (State.scores.t1RoundKills > State.scores.t2RoundKills) ? TeamID.Team1 : ((State.scores.t2RoundKills > State.scores.t1RoundKills) ? TeamID.Team2 : 0);
+    const winnerTeamNum = (roundKillsT1 > roundKillsT2) ? TEAM_1 : ((roundKillsT2 > roundKillsT1) ? TEAM_2 : 0);
     updateRoundEndDialogForAllPlayers(winnerTeamNum);
     setRoundEndDialogVisibleForAllPlayers(true);
 
-    const t1 = State.scores.t1RoundKills;
-    const t2 = State.scores.t2RoundKills;
+    const t1 = roundKillsT1;
+    const t2 = roundKillsT2;
 
     if (t1 > t2) {
-        const newT1Wins = State.match.winsT1 + 1;
-        const newT2Wins = State.match.winsT2;
+        const newT1Wins = matchWinsT1 + 1;
+        const newT2Wins = matchWinsT2;
         setHudWinCountersForAllPlayers(newT1Wins, newT2Wins);
-        broadcastStringKey(mod.stringkeys.twl.notifications.roundEndWin, mod.stringkeys.twl.teams.leftName, t1, t2);
-        broadcastHighlightedStringKey(mod.stringkeys.twl.notifications.roundWins, newT1Wins, newT2Wins);
+        broadcastStringKey(mod.stringkeys.NOTIFICATION_ROUND_END_WIN, mod.stringkeys.TeamLeft_Name, t1, t2);
+        broadcastHighlightedStringKey(mod.stringkeys.NOTIFICATION_ROUND_WINS, newT1Wins, newT2Wins);
     } else if (t2 > t1) {
-        const newT1Wins = State.match.winsT1;
-        const newT2Wins = State.match.winsT2 + 1;
+        const newT1Wins = matchWinsT1;
+        const newT2Wins = matchWinsT2 + 1;
         setHudWinCountersForAllPlayers(newT1Wins, newT2Wins);
-        broadcastStringKey(mod.stringkeys.twl.notifications.roundEndWin, mod.stringkeys.twl.teams.rightName, t2, t1);
-        broadcastHighlightedStringKey(mod.stringkeys.twl.notifications.roundWins, newT1Wins, newT2Wins);
+        broadcastStringKey(mod.stringkeys.NOTIFICATION_ROUND_END_WIN, mod.stringkeys.TeamRight_Name, t2, t1);
+        broadcastHighlightedStringKey(mod.stringkeys.NOTIFICATION_ROUND_WINS, newT1Wins, newT2Wins);
     } else {
-        State.match.tiesT1 = State.match.tiesT1 + 1;
-        State.match.tiesT2 = State.match.tiesT2 + 1;
+        matchTiesT1 = matchTiesT1 + 1;
+        matchTiesT2 = matchTiesT2 + 1;
         syncRoundRecordHudForAllPlayers();
-        broadcastStringKey(mod.stringkeys.twl.notifications.roundEndTie, t1, t2);
-        broadcastHighlightedStringKey(mod.stringkeys.twl.notifications.roundWins, State.match.winsT1, State.match.winsT2);
+        broadcastStringKey(mod.stringkeys.NOTIFICATION_ROUND_END_TIE, t1, t2);
+        broadcastHighlightedStringKey(mod.stringkeys.NOTIFICATION_ROUND_WINS, matchWinsT1, matchWinsT2);
     }
 
     // End match when a team reaches the required majority of wins.
-    const winsNeeded = Math.floor(State.round.max / 2) + 1;
-    if (State.round.max >= 1) {
-        if (State.match.winsT1 >= winsNeeded) {
-            State.match.isEnded = true;
-            State.round.phase = RoundPhase.GameOver; // Locks HUD to GAME OVER and disables live scoring.
+    const winsNeeded = Math.floor(roundMax / 2) + 1;
+    if (roundMax >= 1) {
+        if (matchWinsT1 >= winsNeeded) {
+            isMatchEnded = true;
             updateHelpTextVisibilityForAllPlayers();
             setRoundStateTextForAllPlayers();
-            State.match.winnerTeam = TeamID.Team1;
-            State.match.flow.matchEndDelayToken = (State.match.flow.matchEndDelayToken + 1) % 1000000000;
-            const matchEndToken = State.match.flow.matchEndDelayToken;
-            void scheduleFinalRoundVictory(matchEndToken, TeamID.Team1);
+            matchEndWinnerTeamNum = TEAM_1;
+            matchEndDelayToken = (matchEndDelayToken + 1) % 1000000000;
+            const matchEndToken = matchEndDelayToken;
+            void scheduleFinalRoundVictory(matchEndToken, TEAM_1);
             return;
         }
-        if (State.match.winsT2 >= winsNeeded) {
-            State.match.isEnded = true;
-            State.round.phase = RoundPhase.GameOver; // Locks HUD to GAME OVER and disables live scoring.
+        if (matchWinsT2 >= winsNeeded) {
+            isMatchEnded = true;
             updateHelpTextVisibilityForAllPlayers();
             setRoundStateTextForAllPlayers();
-            State.match.winnerTeam = TeamID.Team2;
-            State.match.flow.matchEndDelayToken = (State.match.flow.matchEndDelayToken + 1) % 1000000000;
-            const matchEndToken = State.match.flow.matchEndDelayToken;
-            void scheduleFinalRoundVictory(matchEndToken, TeamID.Team2);
+            matchEndWinnerTeamNum = TEAM_2;
+            matchEndDelayToken = (matchEndDelayToken + 1) % 1000000000;
+            const matchEndToken = matchEndDelayToken;
+            void scheduleFinalRoundVictory(matchEndToken, TEAM_2);
             return;
         }
     }    
@@ -3612,51 +3418,49 @@ function endRound(_triggerPlayer?: mod.Player, freezeRemainingSeconds?: number):
     // Ends the match at max rounds by comparing wins; a tie remains a draw.
     // End match when the configured max rounds are completed without a majority winner.
     // Winner is decided by most rounds won; a tie remains a draw.
-    if (State.round.max >= 1 && State.round.current >= State.round.max) {
-        State.match.isEnded = true;
-        State.round.phase = RoundPhase.GameOver; // Locks HUD to GAME OVER and disables live scoring.
+    if (roundMax >= 1 && roundCurrent >= roundMax) {
+        isMatchEnded = true;
         updateHelpTextVisibilityForAllPlayers();
         setRoundStateTextForAllPlayers();
 
-        if (State.match.winsT1 > State.match.winsT2) {
-            State.match.winnerTeam = TeamID.Team1;
-            State.match.flow.matchEndDelayToken = (State.match.flow.matchEndDelayToken + 1) % 1000000000;
-            const matchEndToken = State.match.flow.matchEndDelayToken;
-            void scheduleFinalRoundVictory(matchEndToken, TeamID.Team1);
+        if (matchWinsT1 > matchWinsT2) {
+            matchEndWinnerTeamNum = TEAM_1;
+            matchEndDelayToken = (matchEndDelayToken + 1) % 1000000000;
+            const matchEndToken = matchEndDelayToken;
+            void scheduleFinalRoundVictory(matchEndToken, TEAM_1);
             return;
         }
 
-        if (State.match.winsT2 > State.match.winsT1) {
-            State.match.winnerTeam = TeamID.Team2;
-            State.match.flow.matchEndDelayToken = (State.match.flow.matchEndDelayToken + 1) % 1000000000;
-            const matchEndToken = State.match.flow.matchEndDelayToken;
-            void scheduleFinalRoundVictory(matchEndToken, TeamID.Team2);
+        if (matchWinsT2 > matchWinsT1) {
+            matchEndWinnerTeamNum = TEAM_2;
+            matchEndDelayToken = (matchEndDelayToken + 1) % 1000000000;
+            const matchEndToken = matchEndDelayToken;
+            void scheduleFinalRoundVictory(matchEndToken, TEAM_2);
             return;
         }
 
-        State.match.winnerTeam = undefined;
-        State.match.flow.matchEndDelayToken = (State.match.flow.matchEndDelayToken + 1) % 1000000000;
-        const matchEndToken = State.match.flow.matchEndDelayToken;
+        matchEndWinnerTeamNum = undefined;
+        matchEndDelayToken = (matchEndDelayToken + 1) % 1000000000;
+        const matchEndToken = matchEndDelayToken;
         void scheduleFinalRoundVictory(matchEndToken, 0);
         return;
     }
 
-    State.round.flow.roundEndRedeployToken = (State.round.flow.roundEndRedeployToken + 1) % 1000000000;
-    const redeployToken = State.round.flow.roundEndRedeployToken;
+    roundEndRedeployToken = (roundEndRedeployToken + 1) % 1000000000;
+    const redeployToken = roundEndRedeployToken;
 
     sendHighlightedWorldLogMessage(
-        mod.Message(mod.stringkeys.twl.notifications.roundOverRedeploying, ROUND_END_REDEPLOY_DELAY_SECONDS),
+        mod.Message(mod.stringkeys.NOTIFICATION_ROUND_OVER_REDEPLOYING, ROUND_END_REDEPLOY_DELAY_SECONDS),
         true
     );
     void scheduleRoundEndRedeploy(redeployToken);
 
     // Prepare next round counters after ending the active round.
-    State.round.current = Math.floor(State.round.current) + 1;
-    setHudRoundCountersForAllPlayers(State.round.current, State.round.max);
+    roundCurrent = Math.floor(roundCurrent) + 1;
+    setHudRoundCountersForAllPlayers(roundCurrent, roundMax);
     setRoundStateTextForAllPlayers();
     updateHelpTextVisibilityForAllPlayers();
 }
-
 //#endregion ----------------- Round Start/End Flow + State --------------------
 
 
@@ -3692,22 +3496,22 @@ function teamSwitchButtonEvent(
             // Pre-round gating:: players may only transition to READY while in their main base when the round is NOT active.
             // Ready-cycle auto-start / reset:: when all active players become READY, auto-start the round via startRound().
             const pid = mod.GetObjId(eventPlayer);
-            const currentlyReady = !!State.players.readyByPid[pid];
-            const inBase = (State.players.inMainBaseByPid[pid] !== undefined) ? State.players.inMainBaseByPid[pid] : true;
+            const currentlyReady = !!readyStateByPid[pid];
+            const inBase = (inMainBaseByPid[pid] !== undefined) ? inMainBaseByPid[pid] : true;
 
             // Transition rules:
-            // - NOT READY -> READY: allowed only if (inBase || isRoundLive()) (Pre-round gating: gating applies only pre-round).
+            // - NOT READY -> READY: allowed only if (inBase || isRoundActive) (Pre-round gating: gating applies only pre-round).
             // - READY -> NOT READY: always allowed.
             if (!currentlyReady) {
-                if (!isRoundLive() && !inBase) {
+                if (!isRoundActive && !inBase) {
                     // Deny ready-up outside of base pre-round (no messaging in current milestone).
                     break;
                 }
-                State.players.readyByPid[pid] = true;
+                readyStateByPid[pid] = true;
                 // Keep the HUD "X / Y PLAYERS READY" line in sync on every ready-state change.
                 updatePlayersReadyHudTextForAllPlayers();
             } else {
-                State.players.readyByPid[pid] = false;
+                readyStateByPid[pid] = false;
                 // Keep the HUD "X / Y PLAYERS READY" line in sync on every ready-state change.
                 updatePlayersReadyHudTextForAllPlayers();
             }
@@ -3733,24 +3537,24 @@ function teamSwitchButtonEvent(
 
         case UI_READY_DIALOG_BESTOF_DEC_ID + playerId: {
             // Clamp to current round so max rounds never dips below the live round index.
-            const prevMax = State.round.max;
-            setHudRoundCountersForAllPlayers(State.round.current, Math.max(State.round.current, Math.max(1, State.round.max - 1)));
-            if (State.round.max !== prevMax) {
+            const prevMax = roundMax;
+            setHudRoundCountersForAllPlayers(roundCurrent, Math.max(roundCurrent, Math.max(1, roundMax - 1)));
+            if (roundMax !== prevMax) {
                 // Gameplay-gated world log message for best-of changes.
                 sendHighlightedWorldLogMessage(
-                    mod.Message(mod.stringkeys.twl.readyDialog.bestOfChanged, eventPlayer, Math.floor(State.round.max)),
+                    mod.Message(mod.stringkeys.ReadyDialog_BestOf_Changed, eventPlayer, Math.floor(roundMax)),
                     true
                 );
             }
             break;
         }
         case UI_READY_DIALOG_BESTOF_INC_ID + playerId: {
-            const prevMax = State.round.max;
-            setHudRoundCountersForAllPlayers(State.round.current, State.round.max + 1);
-            if (State.round.max !== prevMax) {
+            const prevMax = roundMax;
+            setHudRoundCountersForAllPlayers(roundCurrent, roundMax + 1);
+            if (roundMax !== prevMax) {
                 // Gameplay-gated world log message for best-of changes.
                 sendHighlightedWorldLogMessage(
-                    mod.Message(mod.stringkeys.twl.readyDialog.bestOfChanged, eventPlayer, Math.floor(State.round.max)),
+                    mod.Message(mod.stringkeys.ReadyDialog_BestOf_Changed, eventPlayer, Math.floor(roundMax)),
                     true
                 );
             }
@@ -3760,29 +3564,25 @@ function teamSwitchButtonEvent(
         case UI_TEAMSWITCH_BUTTON_OPTOUT_ID + playerId:
             // Deprecated UI (v0.5): 'DONT SHOW AGAIN' button removed from the dialog.
             // The opt-out flag and behavior remain to support reintroducing the control in a future version.
-            if (!State.players.teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
-            State.players.teamSwitchData[playerId].dontShowAgain = true;
+            if (!teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
+            teamSwitchData[playerId].dontShowAgain = true;
             deleteTeamSwitchUI(eventPlayer);
             break;
 
         case UI_ADMIN_PANEL_BUTTON_ID + playerId: {
-            if (!State.players.teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
-            const now = mod.GetMatchTimeElapsed();
-            if (now - State.players.teamSwitchData[playerId].lastAdminPanelToggleAt < ADMIN_PANEL_TOGGLE_COOLDOWN_SECONDS) {
-                break;
-            }
-            State.players.teamSwitchData[playerId].lastAdminPanelToggleAt = now;
+            if (!teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
 
             // Toggle admin panel visibility.
-            State.players.teamSwitchData[playerId].adminPanelVisible = !State.players.teamSwitchData[playerId].adminPanelVisible;
-            if (!State.players.teamSwitchData[playerId].adminPanelVisible) {
+            teamSwitchData[playerId].adminPanelVisible = !teamSwitchData[playerId].adminPanelVisible;
+
+            if (!teamSwitchData[playerId].adminPanelVisible) {
                 // Close: delete panel contents to avoid "ghost" children on some clients.
                 deleteAdminPanelUI(playerId, false);
-                State.players.teamSwitchData[playerId].adminPanelBuilt = false;
+                teamSwitchData[playerId].adminPanelBuilt = false;
                 break;
             }
 
-            sendHighlightedWorldLogMessage(mod.Message(mod.stringkeys.twl.adminPanel.accessed, eventPlayer), true);
+            sendHighlightedWorldLogMessage(mod.Message(mod.stringkeys.AdminPanel_Accessed, eventPlayer), true);
 
             // Open: rebuild container + widgets fresh each time (low cost; avoids duplicate draw bugs).
             deleteAdminPanelUI(playerId, false); // safety: ensure no stale container/children exist
@@ -3804,139 +3604,137 @@ function teamSwitchButtonEvent(
 
             const adminContainer = mod.FindUIWidgetWithName(UI_ADMIN_PANEL_CONTAINER_ID + playerId, mod.GetUIRoot());
             buildAdminPanelWidgets(eventPlayer, adminContainer, playerId);
-            State.players.teamSwitchData[playerId].adminPanelBuilt = true;
+            teamSwitchData[playerId].adminPanelBuilt = true;
             mod.SetUIWidgetVisible(adminContainer, true);
             setAdminPanelChildWidgetsVisible(playerId, true);
             break;
         }
-
         //#endregion ----------------- Team Switch UI + Tester Panel (IDs + build helpers) --------------------
 
 
 
         //#region -------------------- Tester Button Events --------------------
-
         case UI_TEST_BUTTON_LEFT_WINS_DEC_ID + playerId:
-            setHudWinCountersForAllPlayers(Math.max(0, State.match.winsT1 - 1), State.match.winsT2);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.t1WinsDec);
+            setHudWinCountersForAllPlayers(Math.max(0, matchWinsT1 - 1), matchWinsT2);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_T1_Wins_Dec);
             break;
         case UI_TEST_BUTTON_LEFT_WINS_INC_ID + playerId:
-            setHudWinCountersForAllPlayers(State.match.winsT1 + 1, State.match.winsT2);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.t1WinsInc);
+            setHudWinCountersForAllPlayers(matchWinsT1 + 1, matchWinsT2);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_T1_Wins_Inc);
             break;
 
         case UI_TEST_BUTTON_RIGHT_WINS_DEC_ID + playerId:
-            setHudWinCountersForAllPlayers(State.match.winsT1, Math.max(0, State.match.winsT2 - 1));
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.t2WinsDec);
+            setHudWinCountersForAllPlayers(matchWinsT1, Math.max(0, matchWinsT2 - 1));
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_T2_Wins_Dec);
             break;
         case UI_TEST_BUTTON_RIGHT_WINS_INC_ID + playerId:
-            setHudWinCountersForAllPlayers(State.match.winsT1, State.match.winsT2 + 1);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.t2WinsInc);
+            setHudWinCountersForAllPlayers(matchWinsT1, matchWinsT2 + 1);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_T2_Wins_Inc);
             break;
 
         case UI_TEST_BUTTON_LEFT_KILLS_DEC_ID + playerId:
-            State.scores.t1TotalKills = Math.max(0, State.scores.t1TotalKills - 1);
+            totalKillsT1 = Math.max(0, totalKillsT1 - 1);
             syncKillsHudFromTrackedTotals(true);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.t1TotalKillsDec);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_T1_TotalKills_Dec);
             break;
         case UI_TEST_BUTTON_LEFT_KILLS_INC_ID + playerId:
-            State.scores.t1TotalKills = State.scores.t1TotalKills + 1;
+            totalKillsT1 = totalKillsT1 + 1;
             syncKillsHudFromTrackedTotals(true);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.t1TotalKillsInc);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_T1_TotalKills_Inc);
             break;
 
         case UI_TEST_BUTTON_RIGHT_KILLS_DEC_ID + playerId:
-            State.scores.t2TotalKills = Math.max(0, State.scores.t2TotalKills - 1);
+            totalKillsT2 = Math.max(0, totalKillsT2 - 1);
             syncKillsHudFromTrackedTotals(true);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.t2TotalKillsDec);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_T2_TotalKills_Dec);
             break;
         case UI_TEST_BUTTON_RIGHT_KILLS_INC_ID + playerId:
-            State.scores.t2TotalKills = State.scores.t2TotalKills + 1;
+            totalKillsT2 = totalKillsT2 + 1;
             syncKillsHudFromTrackedTotals(true);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.t2TotalKillsInc);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_T2_TotalKills_Inc);
             break;
 
         case UI_ADMIN_BUTTON_T1_ROUND_KILLS_DEC_ID + playerId:
-            State.scores.t1RoundKills = Math.max(0, State.scores.t1RoundKills - 1);
+            roundKillsT1 = Math.max(0, roundKillsT1 - 1);
             syncRoundKillsHud(true);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.t1RoundKillsDec);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_T1_RoundKills_Dec);
             break;
         case UI_ADMIN_BUTTON_T1_ROUND_KILLS_INC_ID + playerId:
-            State.scores.t1RoundKills = State.scores.t1RoundKills + 1;
+            roundKillsT1 = roundKillsT1 + 1;
             syncRoundKillsHud(true);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.t1RoundKillsInc);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_T1_RoundKills_Inc);
             break;
 
         case UI_ADMIN_BUTTON_T2_ROUND_KILLS_DEC_ID + playerId:
-            State.scores.t2RoundKills = Math.max(0, State.scores.t2RoundKills - 1);
+            roundKillsT2 = Math.max(0, roundKillsT2 - 1);
             syncRoundKillsHud(true);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.t2RoundKillsDec);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_T2_RoundKills_Dec);
             break;
         case UI_ADMIN_BUTTON_T2_ROUND_KILLS_INC_ID + playerId:
-            State.scores.t2RoundKills = State.scores.t2RoundKills + 1;
+            roundKillsT2 = roundKillsT2 + 1;
             syncRoundKillsHud(true);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.t2RoundKillsInc);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_T2_RoundKills_Inc);
             break;
 
         case UI_TEST_BUTTON_ROUND_KILLS_TARGET_DEC_ID + playerId:
-            State.round.killsTarget = Math.max(1, State.round.killsTarget - 1);
+            roundKillsTarget = Math.max(1, roundKillsTarget - 1);
             // Refresh HUD help text ("First to X Kills") immediately when target kills changes in the Admin Panel.
             setRoundStateTextForAllPlayers();
             syncRoundKillsTargetTesterValueForAllPlayers();
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.targetRoundKillsDec);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_TargetRoundKills_Dec);
             break;
         case UI_TEST_BUTTON_ROUND_KILLS_TARGET_INC_ID + playerId:
             // NOTE: Admin-panel target-kills adjustments must refresh the HUD help text immediately.
-            State.round.killsTarget = State.round.killsTarget + 1;
+            roundKillsTarget = roundKillsTarget + 1;
             // Refresh HUD help text ("First to X Kills") immediately when target kills changes in the Admin Panel.
             setRoundStateTextForAllPlayers();
             syncRoundKillsTargetTesterValueForAllPlayers();
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.targetRoundKillsInc);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_TargetRoundKills_Inc);
             break;
 
         case UI_TEST_BUTTON_TIES_DEC_ID + playerId:
             adjustMatchTiesForBothTeams(-1);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tiesDec);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_Ties_Dec);
             break;
         case UI_TEST_BUTTON_TIES_INC_ID + playerId:
             adjustMatchTiesForBothTeams(1);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tiesInc);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_Ties_Inc);
             break;
 
         case UI_TEST_BUTTON_CUR_ROUND_DEC_ID + playerId:
-            setHudRoundCountersForAllPlayers(Math.max(0, State.round.current - 1), State.round.max);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.currentRoundDec);
+            setHudRoundCountersForAllPlayers(Math.max(0, roundCurrent - 1), roundMax);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_CurrentRound_Dec);
             break;
         case UI_TEST_BUTTON_CUR_ROUND_INC_ID + playerId:
-            setHudRoundCountersForAllPlayers(State.round.current + 1, State.round.max);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.currentRoundInc);
+            setHudRoundCountersForAllPlayers(roundCurrent + 1, roundMax);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_CurrentRound_Inc);
             break;
 
         case UI_TEST_BUTTON_CLOCK_TIME_DEC_ID + playerId:
             adjustRoundClockBySeconds(-60);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.clockTimeDec);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_ClockTime_Dec);
             break;
         case UI_TEST_BUTTON_CLOCK_TIME_INC_ID + playerId:
-            if (!State.round.clock.isPaused && getRemainingSeconds() < 0) {
+            if (!isPaused && getRemainingSeconds() < 0) {
                 ResetRoundClock(60);
             } else {
                 adjustRoundClockBySeconds(60);
             }
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.clockTimeInc);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_ClockTime_Inc);
             break;
 
         case UI_TEST_BUTTON_CLOCK_RESET_ID + playerId:
             resetRoundClockToDefault();
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.clockReset);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_ClockReset);
             break;
 
         case UI_TEST_BUTTON_ROUND_START_ID + playerId:
             startPregameCountdown(eventPlayer, true); //old: startRound(eventPlayer);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.roundStart);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_RoundStart);
             break;
         case UI_TEST_BUTTON_ROUND_END_ID + playerId:
             endRound(eventPlayer);
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.roundEnd);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.AdminPanel_Action_RoundEnd);
             break;
 
 
@@ -3944,7 +3742,6 @@ function teamSwitchButtonEvent(
             break;
     }
 }
-
 //#endregion ----------------- Tester Button Events --------------------
 
 
@@ -3982,15 +3779,15 @@ function renderReadyDialogForViewer(eventPlayer: mod.Player, viewerPid: number):
 }
 
 // Renders the dialog for all players who currently have it open.
-// Code Cleanup: Overlaps with refreshReadyDialogForAllVisibleViewers; consider consolidating to one entrypoint.
+// TODO: Overlaps with refreshReadyDialogForAllVisibleViewers; consider consolidating to one entrypoint.
 /**
  * Broadcast-style refresh for the ready dialog.
  * Call whenever roster membership or per-player display state changes (ready / in-main-base / team).
  */
 function renderReadyDialogForAllVisibleViewers(): void {
-    for (const pidStr in State.players.teamSwitchData) {
+    for (const pidStr in teamSwitchData) {
         const pid = Number(pidStr);
-        const state = State.players.teamSwitchData[pid];
+        const state = teamSwitchData[pid];
         if (!state || !state.dialogVisible) continue;
         const viewer = safeFindPlayer(pid);
         if (!viewer) continue;
@@ -4004,7 +3801,7 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
     const t2Players: mod.Player[] = active.team2;
 
     const maxRowsPerTeam = 16;
-    const emptyMsg = mod.Message(mod.stringkeys.twl.system.genericCounter, "");
+    const emptyMsg = mod.Message(mod.stringkeys.GenericCounterText, "");
     for (let row = 0; row < maxRowsPerTeam; row++) {
         const t1NameId = UI_READY_DIALOG_T1_ROW_NAME_ID + viewerPlayerId + "_" + row;
         const t1ReadyId = UI_READY_DIALOG_T1_ROW_READY_ID + viewerPlayerId + "_" + row;
@@ -4035,13 +3832,13 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
         if (t2Ready) mod.SetUIWidgetVisible(t2Ready, hasP2);
         if (t2Base) mod.SetUIWidgetVisible(t2Base, hasP2);
 
-        mod.SetUITextLabel(t1Name, p1 ? mod.Message(mod.stringkeys.twl.readyDialog.playerNameFormat, p1) : emptyMsg);
-        mod.SetUITextLabel(t1Ready, p1 ? (State.players.readyByPid[mod.GetObjId(p1)] ? mod.Message(mod.stringkeys.twl.readyDialog.status.ready) : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady)) : emptyMsg);
-        mod.SetUITextLabel(t1Base, p1 ? ((State.players.inMainBaseByPid[mod.GetObjId(p1)] !== undefined ? State.players.inMainBaseByPid[mod.GetObjId(p1)] : true) ? mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.in) : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out)) : emptyMsg);
+        mod.SetUITextLabel(t1Name, p1 ? mod.Message(mod.stringkeys.UI_PLAYER_NAME_FORMAT, p1) : emptyMsg);
+        mod.SetUITextLabel(t1Ready, p1 ? (readyStateByPid[mod.GetObjId(p1)] ? mod.Message(mod.stringkeys.UI_READY_STATUS_READY) : mod.Message(mod.stringkeys.UI_READY_STATUS_NOT_READY)) : emptyMsg);
+        mod.SetUITextLabel(t1Base, p1 ? ((inMainBaseByPid[mod.GetObjId(p1)] !== undefined ? inMainBaseByPid[mod.GetObjId(p1)] : true) ? mod.Message(mod.stringkeys.UI_BASE_STATUS_IN) : mod.Message(mod.stringkeys.UI_BASE_STATUS_OUT)) : emptyMsg);
         if (p1) {
             const p1Id = mod.GetObjId(p1);
-            const p1Ready = !!State.players.readyByPid[p1Id];
-            const p1InBase = !!State.players.inMainBaseByPid[p1Id];
+            const p1Ready = !!readyStateByPid[p1Id];
+            const p1InBase = !!inMainBaseByPid[p1Id];
             applyReadyDialogRowColors(t1Name, t1Ready, t1Base, p1Ready, p1InBase);
         } else {
             // Empty row: default to white for any placeholder text.
@@ -4050,13 +3847,13 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
             if (t1Base) mod.SetUITextColor(t1Base, COLOR_NORMAL);
         }
 
-        mod.SetUITextLabel(t2Name, p2 ? mod.Message(mod.stringkeys.twl.readyDialog.playerNameFormat, p2) : emptyMsg);
-        mod.SetUITextLabel(t2Ready, p2 ? (State.players.readyByPid[mod.GetObjId(p2)] ? mod.Message(mod.stringkeys.twl.readyDialog.status.ready) : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady)) : emptyMsg);
-        mod.SetUITextLabel(t2Base, p2 ? ((State.players.inMainBaseByPid[mod.GetObjId(p2)] !== undefined ? State.players.inMainBaseByPid[mod.GetObjId(p2)] : true) ? mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.in) : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out)) : emptyMsg);
+        mod.SetUITextLabel(t2Name, p2 ? mod.Message(mod.stringkeys.UI_PLAYER_NAME_FORMAT, p2) : emptyMsg);
+        mod.SetUITextLabel(t2Ready, p2 ? (readyStateByPid[mod.GetObjId(p2)] ? mod.Message(mod.stringkeys.UI_READY_STATUS_READY) : mod.Message(mod.stringkeys.UI_READY_STATUS_NOT_READY)) : emptyMsg);
+        mod.SetUITextLabel(t2Base, p2 ? ((inMainBaseByPid[mod.GetObjId(p2)] !== undefined ? inMainBaseByPid[mod.GetObjId(p2)] : true) ? mod.Message(mod.stringkeys.UI_BASE_STATUS_IN) : mod.Message(mod.stringkeys.UI_BASE_STATUS_OUT)) : emptyMsg);
         if (p2) {
             const p2Id = mod.GetObjId(p2);
-            const p2Ready = !!State.players.readyByPid[p2Id];
-            const p2InBase = !!State.players.inMainBaseByPid[p2Id];
+            const p2Ready = !!readyStateByPid[p2Id];
+            const p2InBase = !!inMainBaseByPid[p2Id];
             applyReadyDialogRowColors(t2Name, t2Ready, t2Base, p2Ready, p2InBase);
         } else {
             if (t2Name) mod.SetUITextColor(t2Name, COLOR_NORMAL);
@@ -4072,10 +3869,10 @@ function updateReadyToggleButtonForViewer(viewer: mod.Player, viewerPlayerId: nu
     const labelWidget = mod.FindUIWidgetWithName(btnLabelId, mod.GetUIRoot());
     if (!labelWidget) return;
 
-    const isReady = !!State.players.readyByPid[viewerPlayerId];
+    const isReady = !!readyStateByPid[viewerPlayerId];
     const labelMsg = isReady
-        ? mod.Message(mod.stringkeys.twl.readyDialog.buttons.notReady)
-        : mod.Message(mod.stringkeys.twl.readyDialog.buttons.ready);
+        ? mod.Message(mod.stringkeys.UI_READY_BUTTON_NOT_READY)
+        : mod.Message(mod.stringkeys.UI_READY_BUTTON_READY);
 
     mod.SetUITextLabel(labelWidget, labelMsg);
 }
@@ -4085,7 +3882,7 @@ function updateBestOfRoundsLabelForPid(pid: number): void {
     const labelId = UI_READY_DIALOG_BESTOF_LABEL_ID + pid;
     const labelWidget = safeFind(labelId);
     if (!labelWidget) return;
-    mod.SetUITextLabel(labelWidget, mod.Message(mod.stringkeys.twl.readyDialog.bestOfLabel, Math.floor(State.round.max)));
+    mod.SetUITextLabel(labelWidget, mod.Message(mod.stringkeys.UI_READY_DIALOG_BESTOF_LABEL, Math.floor(roundMax)));
 }
 
 function updateBestOfRoundsLabelForAllPlayers(): void {
@@ -4106,13 +3903,12 @@ function refreshReadyDialogForAllVisibleViewers(): void {
     for (let i = 0; i < viewerCount; i++) {
         const viewer = mod.ValueInArray(viewers, i) as mod.Player;
         const vid = mod.GetObjId(viewer);
-        if (State.players.teamSwitchData[vid] && State.players.teamSwitchData[vid].dialogVisible) {
+        if (teamSwitchData[vid] && teamSwitchData[vid].dialogVisible) {
             refreshReadyDialogRosterForViewer(viewer, vid);
             updateReadyToggleButtonForViewer(viewer, vid);
         }
     }
 }
-
 //#endregion ----------------- Ready Dialog (Roster UI) -  (layout + population only) --------------------
 
 
@@ -4126,7 +3922,7 @@ function resetReadyStateForAllPlayers(): void {
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
         const pid = mod.GetObjId(p);
-        State.players.readyByPid[pid] = false;
+        readyStateByPid[pid] = false;
         // Keep the HUD "X / Y PLAYERS READY" line in sync on every ready-state change.
         updatePlayersReadyHudTextForAllPlayers();
     }
@@ -4148,7 +3944,7 @@ function resetReadyStateForAllPlayers(): void {
 // Definition (low-risk, conservative):
 //   - Must be present in mod.AllPlayers() (avoids stale/disconnected pids)
 //   - Must be valid (mod.IsPlayerValid)
-//   - Must be assigned to TeamID.Team1 or TeamID.Team2 (spectators/neutral excluded)
+//   - Must be assigned to TEAM_1 or TEAM_2 (spectators/neutral excluded)
 //
 // Note: We intentionally do NOT filter by "deployed" state here. Some APIs expose deployment state,
 // but this codebase does not currently have a typed/portable check. Treating undeployed teammates as
@@ -4175,10 +3971,10 @@ function getActivePlayers(): ActivePlayers_t {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
         const teamNum = getTeamNumber(mod.GetTeam(p));
-        if (teamNum !== TeamID.Team1 && teamNum !== TeamID.Team2) continue;
+        if (teamNum !== TEAM_1 && teamNum !== TEAM_2) continue;
 
         all.push(p);
-        if (teamNum === TeamID.Team1) team1.push(p);
+        if (teamNum === TEAM_1) team1.push(p);
         else team2.push(p);
     }
 
@@ -4207,7 +4003,7 @@ function areAllActivePlayersReady(): boolean {
             const p = mod.ValueInArray(players, i) as mod.Player;
             if (!p || !mod.IsPlayerValid(p)) continue;
             const pid = mod.GetObjId(p);
-            if (!State.players.readyByPid[pid]) return false;
+            if (!readyStateByPid[pid]) return false;
             validCount++;
         }
         return validCount >= AUTO_START_MIN_ACTIVE_PLAYERS;
@@ -4215,7 +4011,7 @@ function areAllActivePlayersReady(): boolean {
 
     for (const p of active.all) {
         const pid = mod.GetObjId(p);
-        if (!State.players.readyByPid[pid]) return false;
+        if (!readyStateByPid[pid]) return false;
     }
     return true;
 }
@@ -4226,13 +4022,20 @@ interface CountdownWidgetCacheEntry {
     widget?: mod.UIWidget;
 }
 
+const countdownWidgetCache: { [playerId: number]: CountdownWidgetCacheEntry } = {};
+const overLineTitleWidgetCache: { [playerId: number]: CountdownWidgetCacheEntry } = {};
+const overLineSubtitleWidgetCache: { [playerId: number]: CountdownWidgetCacheEntry } = {};
 
+let isPregameCountdownActive = false;
+let isPregameCountdownRequested = false;
+let pregameCountdownToken = 0;
+let overLineMessageToken = 0;
 
 function ensureCountdownUIAndGetWidget(player: mod.Player): mod.UIWidget | undefined {
     const pid = mod.GetObjId(player);
     const rootName = "PregameCountdownText_" + pid;
 
-    const cached = State.hudCache.countdownWidgetCache[pid];
+    const cached = countdownWidgetCache[pid];
     if (cached) {
         if (cached.widget) return cached.widget;
 
@@ -4255,7 +4058,7 @@ function ensureCountdownUIAndGetWidget(player: mod.Player): mod.UIWidget | undef
         bgColor: [0, 0, 0],
         bgAlpha: 0,
         bgFill: mod.UIBgFill.Solid,
-        textLabel: mod.Message(mod.stringkeys.twl.countdown.format, PREGAME_COUNTDOWN_START_NUMBER),
+        textLabel: mod.Message(mod.stringkeys.PREGAME_COUNTDOWN_FORMAT, PREGAME_COUNTDOWN_START_NUMBER),
         textColor: [1, 1, 1],
         textAlpha: PREGAME_ALERT_TEXT_ALPHA,
         textSize: PREGAME_COUNTDOWN_SIZE_DIGIT_START,
@@ -4263,7 +4066,7 @@ function ensureCountdownUIAndGetWidget(player: mod.Player): mod.UIWidget | undef
     });
 
     const widget = safeFind(rootName);
-    State.hudCache.countdownWidgetCache[pid] = { rootName, widget };
+    countdownWidgetCache[pid] = { rootName, widget };
     return widget;
 }
 
@@ -4317,9 +4120,9 @@ function hidePregameCountdownForAllPlayers(): void {
 
 function ensureOverLineTitleUIAndGetWidget(player: mod.Player): mod.UIWidget | undefined {
     const pid = mod.GetObjId(player);
-    const rootName = OVER_LINE_TITLE_ID + pid;
+    const rootName = "OverLineTitleText_" + pid;
 
-    const cached = State.hudCache.overLineTitleWidgetCache[pid];
+    const cached = overLineTitleWidgetCache[pid];
     if (cached) {
         if (cached.widget) return cached.widget;
 
@@ -4342,7 +4145,7 @@ function ensureOverLineTitleUIAndGetWidget(player: mod.Player): mod.UIWidget | u
         bgColor: [0, 0, 0],
         bgAlpha: 0,
         bgFill: mod.UIBgFill.None,
-        textLabel: mod.Message(mod.stringkeys.twl.overLine.title, player),
+        textLabel: mod.Message(mod.stringkeys.OverLine_Title, player),
         textColor: [1, 0, 0],
         textAlpha: PREGAME_ALERT_TEXT_ALPHA,
         textSize: OVER_LINE_TITLE_SIZE,
@@ -4350,15 +4153,15 @@ function ensureOverLineTitleUIAndGetWidget(player: mod.Player): mod.UIWidget | u
     });
 
     const widget = safeFind(rootName);
-    State.hudCache.overLineTitleWidgetCache[pid] = { rootName, widget };
+    overLineTitleWidgetCache[pid] = { rootName, widget };
     return widget;
 }
 
 function ensureOverLineSubtitleUIAndGetWidget(player: mod.Player): mod.UIWidget | undefined {
     const pid = mod.GetObjId(player);
-    const rootName = OVER_LINE_SUBTITLE_ID + pid;
+    const rootName = "OverLineSubtitleText_" + pid;
 
-    const cached = State.hudCache.overLineSubtitleWidgetCache[pid];
+    const cached = overLineSubtitleWidgetCache[pid];
     if (cached) {
         if (cached.widget) return cached.widget;
 
@@ -4381,7 +4184,7 @@ function ensureOverLineSubtitleUIAndGetWidget(player: mod.Player): mod.UIWidget 
         bgColor: [0, 0, 0],
         bgAlpha: 0,
         bgFill: mod.UIBgFill.None,
-        textLabel: mod.Message(mod.stringkeys.twl.overLine.subtitle, player),
+        textLabel: mod.Message(mod.stringkeys.OverLine_Subtitle, player),
         textColor: [1, 1, 0],
         textAlpha: PREGAME_ALERT_TEXT_ALPHA,
         textSize: OVER_LINE_SUBTITLE_SIZE,
@@ -4389,28 +4192,28 @@ function ensureOverLineSubtitleUIAndGetWidget(player: mod.Player): mod.UIWidget 
     });
 
     const widget = safeFind(rootName);
-    State.hudCache.overLineSubtitleWidgetCache[pid] = { rootName, widget };
+    overLineSubtitleWidgetCache[pid] = { rootName, widget };
     return widget;
 }
 
 function cancelPregameCountdown(): void {
-    if (!State.round.countdown.isActive) return;
-    State.round.countdown.token++;
-    State.round.countdown.isActive = false;
+    if (!isPregameCountdownActive) return;
+    pregameCountdownToken++;
+    isPregameCountdownActive = false;
     hidePregameCountdownForAllPlayers();
 }
 
 function deleteOverLineMessageForPlayer(pid: number): void {
-    const title = safeFind(OVER_LINE_TITLE_ID + pid);
+    const title = safeFind("OverLineTitleText_" + pid);
     if (title) mod.SetUIWidgetVisible(title, false);
 
-    const subtitle = safeFind(OVER_LINE_SUBTITLE_ID + pid);
+    const subtitle = safeFind("OverLineSubtitleText_" + pid);
     if (subtitle) mod.SetUIWidgetVisible(subtitle, false);
 }
 
 async function showOverLineMessageForAllPlayers(offender: mod.Player): Promise<void> {
-    State.round.countdown.overLineMessageToken = (State.round.countdown.overLineMessageToken + 1) % 1000000000;
-    const expectedToken = State.round.countdown.overLineMessageToken;
+    overLineMessageToken = (overLineMessageToken + 1) % 1000000000;
+    const expectedToken = overLineMessageToken;
 
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -4423,7 +4226,7 @@ async function showOverLineMessageForAllPlayers(offender: mod.Player): Promise<v
 
         const title = ensureOverLineTitleUIAndGetWidget(p);
         if (title) {
-            mod.SetUITextLabel(title, mod.Message(mod.stringkeys.twl.overLine.title, offender));
+            mod.SetUITextLabel(title, mod.Message(mod.stringkeys.OverLine_Title, offender));
             mod.SetUITextColor(title, COLOR_NOT_READY_RED);
             mod.SetUITextSize(title, OVER_LINE_TITLE_SIZE);
             mod.SetUIWidgetVisible(title, true);
@@ -4431,7 +4234,7 @@ async function showOverLineMessageForAllPlayers(offender: mod.Player): Promise<v
 
         const subtitle = ensureOverLineSubtitleUIAndGetWidget(p);
         if (subtitle) {
-            mod.SetUITextLabel(subtitle, mod.Message(mod.stringkeys.twl.overLine.subtitle, offender));
+            mod.SetUITextLabel(subtitle, mod.Message(mod.stringkeys.OverLine_Subtitle, offender));
             mod.SetUITextColor(subtitle, COLOR_WARNING_YELLOW);
             mod.SetUITextSize(subtitle, OVER_LINE_SUBTITLE_SIZE);
             mod.SetUIWidgetVisible(subtitle, true);
@@ -4439,7 +4242,7 @@ async function showOverLineMessageForAllPlayers(offender: mod.Player): Promise<v
     }
 
     await mod.Wait(OVER_LINE_MESSAGE_DURATION_SECONDS);
-    if (expectedToken !== State.round.countdown.overLineMessageToken) return;
+    if (expectedToken !== overLineMessageToken) return;
 
     const remaining = mod.AllPlayers();
     const remainingCount = mod.CountOf(remaining);
@@ -4451,23 +4254,23 @@ async function showOverLineMessageForAllPlayers(offender: mod.Player): Promise<v
 }
 
 function startPregameCountdown(triggerPlayer?: mod.Player, force?: boolean): void {
-    if (State.round.countdown.isActive) return;
-    if (State.match.isEnded || isRoundLive()) return;
+    if (isPregameCountdownActive) return;
+    if (isMatchEnded || isRoundActive) return;
     if (!force && !areAllActivePlayersReady()) return;
 
     closeReadyDialogForAllPlayers();
-    State.round.countdown.isActive = true;
-    State.round.countdown.isRequested = true;
-    State.round.countdown.token++;
-    const expectedToken = State.round.countdown.token;
+    isPregameCountdownActive = true;
+    isPregameCountdownRequested = true;
+    pregameCountdownToken++;
+    const expectedToken = pregameCountdownToken;
 
     void runPregameCountdown(expectedToken, triggerPlayer, force === true);
 }
 
 function isPregameCountdownStillValid(expectedToken: number, force?: boolean, allowRoundActive?: boolean): boolean {
-    if (expectedToken !== State.round.countdown.token) return false;
-    if (State.match.isEnded) return false;
-    if (!allowRoundActive && isRoundLive()) return false;
+    if (expectedToken !== pregameCountdownToken) return false;
+    if (isMatchEnded) return false;
+    if (!allowRoundActive && isRoundActive) return false;
     if (!force && !areAllActivePlayersReady()) return false;
     return true;
 }
@@ -4498,20 +4301,20 @@ async function runPregameCountdown(expectedToken: number, triggerPlayer?: mod.Pl
     await mod.Wait(PREGAME_COUNTDOWN_INITIAL_DELAY_SECONDS);
 
     if (!isPregameCountdownStillValid(expectedToken, force)) {
-        State.round.countdown.isActive = false;
+        isPregameCountdownActive = false;
         hidePregameCountdownForAllPlayers();
         return;
     }
 
     for (let value = PREGAME_COUNTDOWN_START_NUMBER; value >= 1; value--) {
         if (!isPregameCountdownStillValid(expectedToken, force)) {
-            State.round.countdown.isActive = false;
+            isPregameCountdownActive = false;
             hidePregameCountdownForAllPlayers();
             return;
         }
 
         setPregameCountdownVisualForAllPlayers(
-            mod.stringkeys.twl.countdown.format,
+            mod.stringkeys.PREGAME_COUNTDOWN_FORMAT,
             value,
             getPregameCountdownColor(value),
             PREGAME_COUNTDOWN_SIZE_DIGIT_START,
@@ -4525,20 +4328,20 @@ async function runPregameCountdown(expectedToken: number, triggerPlayer?: mod.Pl
             PREGAME_COUNTDOWN_SIZE_DIGIT_END
         );
         if (!ok) {
-            State.round.countdown.isActive = false;
+            isPregameCountdownActive = false;
             hidePregameCountdownForAllPlayers();
             return;
         }
     }
 
     if (!isPregameCountdownStillValid(expectedToken, force)) {
-        State.round.countdown.isActive = false;
+        isPregameCountdownActive = false;
         hidePregameCountdownForAllPlayers();
         return;
     }
 
     setPregameCountdownVisualForAllPlayers(
-        mod.stringkeys.twl.countdown.go,
+        mod.stringkeys.PREGAME_COUNTDOWN_GO,
         undefined,
         mod.CreateVector(0, 1, 0),
         PREGAME_COUNTDOWN_SIZE_GO_START,
@@ -4553,27 +4356,10 @@ async function runPregameCountdown(expectedToken: number, triggerPlayer?: mod.Pl
         PREGAME_COUNTDOWN_SIZE_GO_END,
         true
     );
-    if (!ok || expectedToken !== State.round.countdown.token) {
-        // If the animation aborted, hide immediately to avoid a stuck GO.
-        if (expectedToken === State.round.countdown.token) {
-            hidePregameCountdownForAllPlayers();
-            State.round.countdown.isActive = false;
-        }
-        return;
-    }
-
-    // Keep GO visible for a short hold to finish the visual beat (unpredictable repro issues).
-    if (State.match.isEnded) {
+    if (ok && expectedToken === pregameCountdownToken) {
         hidePregameCountdownForAllPlayers();
-        State.round.countdown.isActive = false;
-        return;
     }
-
-    await mod.Wait(PREGAME_COUNTDOWN_GO_HOLD_SECONDS);
-    if (expectedToken !== State.round.countdown.token) return;
-
-    hidePregameCountdownForAllPlayers();
-    State.round.countdown.isActive = false;
+    isPregameCountdownActive = false;
 }
 
 // Starts the round as soon as all active players are READY.
@@ -4581,18 +4367,16 @@ async function runPregameCountdown(expectedToken: number, triggerPlayer?: mod.Pl
 // - Only triggers when round is NOT active and match is NOT ended.
 // - Uses the existing startRound() flow; we do not bypass or reimplement round init logic.
 function tryAutoStartRoundIfAllReady(triggerPlayer?: mod.Player): void {
-    if (State.match.isEnded || isRoundLive()) return;
+    if (isMatchEnded || isRoundActive) return;
     if (!areAllActivePlayersReady()) return;
     // All players ready: start the round using the existing function.
     startPregameCountdown(triggerPlayer); //old: startRound(triggerPlayer);
 }
-
 //#endregion ----------------- Ready Dialog (Ready-cycle auto-start / reset:) - All-Ready Auto-Start + Round Reset --------------------
 
 
 
 //#region -------------------- Ready Dialog (Swap Teams button:) - Swap Teams Button (single toggle) --------------------
-
 // Swaps the given player between Team 1 and Team 2. This reuses the existing team-assignment APIs,
 // but exposes them as a single toggle button rather than separate Team 1 / Team 2 buttons.
 function swapPlayerTeam(eventPlayer: mod.Player): void {
@@ -4605,7 +4389,7 @@ function swapPlayerTeam(eventPlayer: mod.Player): void {
     const pid = mod.GetObjId(eventPlayer);
     // Swapping teams must always force the player back to NOT READY.
     // This prevents a player from carrying READY status across team assignment changes.
-    State.players.readyByPid[pid] = false;
+    readyStateByPid[pid] = false;
     // Keep the HUD "X / Y PLAYERS READY" line in sync on every ready-state change.
     updatePlayersReadyHudTextForAllPlayers();
     updateHelpTextVisibilityForPid(pid);
@@ -4615,7 +4399,6 @@ function swapPlayerTeam(eventPlayer: mod.Player): void {
     // If other viewers have the ready dialog open, refresh their rosters so this player moves columns immediately.
     renderReadyDialogForAllVisibleViewers();
 }
-
 //#endregion ----------------- Ready Dialog (Swap Teams button:) - Swap Teams Button (single toggle) --------------------
 
 
@@ -4716,7 +4499,7 @@ function ensureAdminPanelWidgets(eventPlayer: mod.Player, playerId: number): voi
             mod.CreateVector(-10, 10, 0),
             mod.CreateVector(120, 32, 0),
             mod.UIAnchor.TopRight,
-            mod.Message(mod.stringkeys.twl.adminPanel.buttons.panel),
+            mod.Message(mod.stringkeys.UI_ADMIN_PANEL_BUTTON),
             eventPlayer
         );
         toggleLabel = mod.FindUIWidgetWithName(ADMIN_TOGGLE_LABEL_ID, mod.GetUIRoot());
@@ -4750,17 +4533,11 @@ function ensureAdminPanelWidgets(eventPlayer: mod.Player, playerId: number): voi
     mod.SetUIWidgetVisible(toggleBtn, true);
     mod.SetUIWidgetVisible(toggleLabel, true);
 
-    // Default closed on first build; preserve state on reopen.
-    if (!State.players.teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
-    if (!State.players.teamSwitchData[playerId].adminPanelBuilt) {
-        State.players.teamSwitchData[playerId].adminPanelVisible = false;
-        mod.SetUIWidgetVisible(adminContainer, false);
-        setAdminPanelChildWidgetsVisible(playerId, false);
-    } else {
-        const visible = State.players.teamSwitchData[playerId].adminPanelVisible;
-        mod.SetUIWidgetVisible(adminContainer, visible);
-        setAdminPanelChildWidgetsVisible(playerId, visible);
-    }
+    // Default closed whenever the dialog opens (panel visibility is controlled elsewhere).
+    if (!teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
+    teamSwitchData[playerId].adminPanelVisible = false;
+    mod.SetUIWidgetVisible(adminContainer, false);
+    setAdminPanelChildWidgetsVisible(playerId, false);
 }
 
 function createTeamSwitchUI(eventPlayer: mod.Player) {
@@ -4822,13 +4599,11 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     );
     const CONTAINER_BASE = mod.FindUIWidgetWithName(CONTAINER_BASE_ID, mod.GetUIRoot());
     mod.SetUIWidgetBgAlpha(CONTAINER_BASE, 0.995); // Force darker overlay (some clients render blur lighter)
-
     //#endregion -------------------- UI - Ready Up Dialog (construction) --------------------
 
 
 
     //#region -------------------- Ready Dialog (Roster UI) -  (header + team rosters) --------------------
-
     // Header row (string-backed for easy iteration).
     const READY_HEADER_ID = UI_READY_DIALOG_HEADER_ID + playerId;
     mod.AddUIText(
@@ -4837,7 +4612,7 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         mod.CreateVector(-150, -15, 0),
         mod.CreateVector(900, 50, 0), //size
         mod.UIAnchor.TopCenter,
-        mod.Message(mod.stringkeys.twl.readyDialog.header),
+        mod.Message(mod.stringkeys.UI_READY_DIALOG_HEADER),
         eventPlayer
     );
     const READY_HEADER = mod.FindUIWidgetWithName(READY_HEADER_ID, mod.GetUIRoot());
@@ -4875,7 +4650,7 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         mod.CreateVector(125, bestOfY, 0),
         mod.CreateVector(bestOfButtonSizeX, bestOfButtonSizeY, 0),
         mod.UIAnchor.TopRight,
-        mod.Message(mod.stringkeys.twl.ui.minus),
+        mod.Message(mod.stringkeys.UI_TEST_MINUS),
         eventPlayer
     );
     const BESTOF_DEC_LABEL = mod.FindUIWidgetWithName(BESTOF_DEC_LABEL_ID, mod.GetUIRoot());
@@ -4889,7 +4664,7 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         mod.CreateVector(-42, bestOfY, 0),
         mod.CreateVector(bestOfLabelSizeX, bestOfLabelSizeY, 0),
         mod.UIAnchor.TopRight,
-        mod.Message(mod.stringkeys.twl.readyDialog.bestOfLabel, State.round.max),
+        mod.Message(mod.stringkeys.UI_READY_DIALOG_BESTOF_LABEL, roundMax),
         eventPlayer
     );
     const BESTOF_LABEL = mod.FindUIWidgetWithName(BESTOF_LABEL_ID, mod.GetUIRoot());
@@ -4914,7 +4689,7 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         mod.CreateVector(-3, bestOfY, 0),
         mod.CreateVector(bestOfButtonSizeX, bestOfButtonSizeY, 0),
         mod.UIAnchor.TopRight,
-        mod.Message(mod.stringkeys.twl.ui.plus),
+        mod.Message(mod.stringkeys.UI_TEST_PLUS),
         eventPlayer
     );
     const BESTOF_INC_LABEL = mod.FindUIWidgetWithName(BESTOF_INC_LABEL_ID, mod.GetUIRoot());
@@ -4967,7 +4742,7 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         mod.CreateVector(10, 10, 0),
         mod.CreateVector(560, 28, 0),
         mod.UIAnchor.TopLeft,
-        mod.Message(mod.stringkeys.twl.teams.leftName),
+        mod.Message(mod.stringkeys.TeamLeft_Name),
         eventPlayer
     );
     const T1_LABEL = mod.FindUIWidgetWithName(T1_LABEL_ID, mod.GetUIRoot());
@@ -4980,7 +4755,7 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         mod.CreateVector(10, 10, 0),
         mod.CreateVector(560, 28, 0),
         mod.UIAnchor.TopLeft,
-        mod.Message(mod.stringkeys.twl.teams.rightName),
+        mod.Message(mod.stringkeys.TeamRight_Name),
         eventPlayer
     );
     const T2_LABEL = mod.FindUIWidgetWithName(T2_LABEL_ID, mod.GetUIRoot());
@@ -5004,19 +4779,19 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         const t1ReadyId = UI_READY_DIALOG_T1_ROW_READY_ID + playerId + "_" + row;
         const t1BaseId = UI_READY_DIALOG_T1_ROW_BASE_ID + playerId + "_" + row;
 
-        mod.AddUIText(t1NameId, mod.CreateVector(colNameX, y, 0), mod.CreateVector(colNameW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
+        mod.AddUIText(t1NameId, mod.CreateVector(colNameX, y, 0), mod.CreateVector(colNameW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.GenericCounterText, ""), eventPlayer);
         const T1_NAME = mod.FindUIWidgetWithName(t1NameId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(T1_NAME, 0);
         mod.SetUITextSize(T1_NAME, 14);
         mod.SetUIWidgetParent(T1_NAME, T1_CONTAINER);
 
-        mod.AddUIText(t1ReadyId, mod.CreateVector(colReadyX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
+        mod.AddUIText(t1ReadyId, mod.CreateVector(colReadyX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.GenericCounterText, ""), eventPlayer);
         const T1_READY = mod.FindUIWidgetWithName(t1ReadyId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(T1_READY, 0);
         mod.SetUITextSize(T1_READY, 14);
         mod.SetUIWidgetParent(T1_READY, T1_CONTAINER);
 
-        mod.AddUIText(t1BaseId, mod.CreateVector(colBaseX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
+        mod.AddUIText(t1BaseId, mod.CreateVector(colBaseX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.GenericCounterText, ""), eventPlayer);
         const T1_BASE = mod.FindUIWidgetWithName(t1BaseId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(T1_BASE, 0);
         mod.SetUITextSize(T1_BASE, 14);
@@ -5026,19 +4801,19 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         const t2ReadyId = UI_READY_DIALOG_T2_ROW_READY_ID + playerId + "_" + row;
         const t2BaseId = UI_READY_DIALOG_T2_ROW_BASE_ID + playerId + "_" + row;
 
-        mod.AddUIText(t2NameId, mod.CreateVector(colNameX, y, 0), mod.CreateVector(colNameW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
+        mod.AddUIText(t2NameId, mod.CreateVector(colNameX, y, 0), mod.CreateVector(colNameW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.GenericCounterText, ""), eventPlayer);
         const T2_NAME = mod.FindUIWidgetWithName(t2NameId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(T2_NAME, 0);
         mod.SetUITextSize(T2_NAME, 14);
         mod.SetUIWidgetParent(T2_NAME, T2_CONTAINER);
 
-        mod.AddUIText(t2ReadyId, mod.CreateVector(colReadyX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
+        mod.AddUIText(t2ReadyId, mod.CreateVector(colReadyX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.GenericCounterText, ""), eventPlayer);
         const T2_READY = mod.FindUIWidgetWithName(t2ReadyId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(T2_READY, 0);
         mod.SetUITextSize(T2_READY, 14);
         mod.SetUIWidgetParent(T2_READY, T2_CONTAINER);
 
-        mod.AddUIText(t2BaseId, mod.CreateVector(colBaseX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
+        mod.AddUIText(t2BaseId, mod.CreateVector(colBaseX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.GenericCounterText, ""), eventPlayer);
         const T2_BASE = mod.FindUIWidgetWithName(t2BaseId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(T2_BASE, 0);
         mod.SetUITextSize(T2_BASE, 14);
@@ -5047,13 +4822,11 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
 
     // Populate rows for this viewer .
     refreshReadyDialogRosterForViewer(eventPlayer, playerId);
-
     //#endregion ----------------- Ready Dialog (Roster UI) -  (header + team rosters) --------------------
 
     
 
     //#region -------------------- Ready Dialog (Swap Teams button:) - Swap Teams Button --------------------
-
     // Bottom-left toggle: swaps the player's current team (Team 1 <-> Team 2).
     const SWAP_BUTTON_ID = UI_READY_DIALOG_BUTTON_SWAP_ID + playerId;
     const SWAP_BUTTON_LABEL_ID = UI_READY_DIALOG_BUTTON_SWAP_LABEL_ID + playerId;
@@ -5073,19 +4846,17 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         mod.CreateVector(0, 0, 0),
         mod.CreateVector(300, 100, 0),
         mod.UIAnchor.BottomLeft,
-        mod.Message(mod.stringkeys.twl.readyDialog.buttons.swapTeams),
+        mod.Message(mod.stringkeys.TeamSwitch_SwapTeams),
         eventPlayer
     );
     const SWAP_BUTTON_LABEL = mod.FindUIWidgetWithName(SWAP_BUTTON_LABEL_ID, mod.GetUIRoot());
     mod.SetUIWidgetBgAlpha(SWAP_BUTTON_LABEL, 0);
     mod.SetUIWidgetParent(SWAP_BUTTON_LABEL, CONTAINER_BASE);
-
     //#endregion ----------------- Ready Dialog (Swap Teams button:) - Swap Teams Button --------------------
 
 
 
     //#region -------------------- Ready Dialog  - Ready Toggle Button --------------------
-
     // Bottom-center toggle: starts as "Ready" (pressing it sets READY), then flips to "Not Ready".
     const READY_BUTTON_ID = UI_READY_DIALOG_BUTTON_READY_ID + playerId;
     const READY_BUTTON_LABEL_ID = UI_READY_DIALOG_BUTTON_READY_LABEL_ID + playerId;
@@ -5105,7 +4876,7 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         mod.CreateVector(0, 0, 0),
         mod.CreateVector(300, 100, 0),
         mod.UIAnchor.BottomCenter,
-        mod.Message(mod.stringkeys.twl.readyDialog.buttons.ready),
+        mod.Message(mod.stringkeys.UI_READY_BUTTON_READY),
         eventPlayer
     );
     const READY_BUTTON_LABEL = mod.FindUIWidgetWithName(READY_BUTTON_LABEL_ID, mod.GetUIRoot());
@@ -5114,13 +4885,11 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
 
     // Ensure the label matches the current stored state for this viewer (default is NOT READY).
     updateReadyToggleButtonForViewer(eventPlayer, playerId);
-
     //#endregion ----------------- Ready Dialog  - Ready Toggle Button --------------------
 
 
 
     //#region -------------------- Debug Info - Time Limit Seconds --------------------
-
     // Shows the current inferred gamemode time limit (seconds) while the team switch dialog is open.
     const debugTimeLimitSeconds = Math.floor(mod.GetMatchTimeElapsed() + mod.GetMatchTimeRemaining());
     const DEBUG_TIMELIMIT_ID = UI_TEAMSWITCH_DEBUG_TIMELIMIT_ID + playerId;
@@ -5129,7 +4898,7 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         mod.CreateVector(-320, -160, 0),  //mod.CreateVector(-220, 10, 0),
         mod.CreateVector(80, 28, 0),    //mod.CreateVector(80, 28, 0),
         mod.UIAnchor.TopRight,
-        mod.Message(mod.stringkeys.twl.teamSwitch.debugTimeLimit, debugTimeLimitSeconds),
+        mod.Message(mod.stringkeys.UI_TEAMSWITCH_DEBUG_TIMELIMIT, debugTimeLimitSeconds),
         eventPlayer
     );
     const DEBUG_TIMELIMIT = mod.FindUIWidgetWithName(DEBUG_TIMELIMIT_ID, mod.GetUIRoot());
@@ -5137,22 +4906,18 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     mod.SetUIWidgetParent(DEBUG_TIMELIMIT, CONTAINER_BASE);
     mod.SetUIWidgetBgAlpha(DEBUG_TIMELIMIT, 0);
     mod.SetUITextSize(DEBUG_TIMELIMIT, 12);
-
     //#endregion -------------------- Debug Info - Time Limit Seconds --------------------
 
 
     
     //#region -------------------- Admin Panel Toggle Button (Top-Right, only while Ready Up dialog is open) --------------------
-
     // UI caching note: these widgets are created once and then hidden/shown on open/close.
     ensureAdminPanelWidgets(eventPlayer, playerId);
-
     //#endregion ----------------- Admin Panel Toggle Button (Top-Right, only while Ready Up dialog is open) --------------------
 
 
 
     //#region -------------------- Dialog Buttons (Left Side) - Cancel --------------------
-
     // Cancel remains a core function so players can dismiss the dialog and regain control.
     // (Team switching / spectate / opt-out buttons are intentionally not exposed in v0.5+; see Deprecated UI block below.)
     mod.AddUIButton(
@@ -5170,116 +4935,117 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         mod.CreateVector(0, 0, 0),
         mod.CreateVector(300, 100, 0),
         mod.UIAnchor.BottomRight,
-        mod.Message(mod.stringkeys.twl.teamSwitch.buttons.cancel),
+        mod.Message(mod.stringkeys.UI_TEAMSWITCH_BUTTON_CANCEL_LABEL),
         eventPlayer
     );
     const BUTTON_CANCEL_LABEL = mod.FindUIWidgetWithName(BUTTON_CANCEL_LABEL_ID, mod.GetUIRoot());
     mod.SetUIWidgetBgAlpha(BUTTON_CANCEL_LABEL, 0);
     mod.SetUIWidgetParent(BUTTON_CANCEL_LABEL, CONTAINER_BASE);
+    //#endregion ----------------- Dialog Buttons (Left Side) - Cancel --------------------
 
+    // Deprecated UI (v0.5): Team switch / Spectate / Opt-out buttons removed.
+    // - We are intentionally NOT exposing these controls in the dialog for now.
+    // - The underlying functionality remains and is retained for future re-hookup:
+    //     * processTeamSwitch(...) via teamSwitchButtonEvent
+    //     * dontShowAgain opt-out flag (teamSwitchData[playerId].dontShowAgain)
+    //     * spectator scaffolding (UI + handler wiring) to be reintroduced later
+    // -------------------------------------------------------------------------
+
+    //#region -------------------- Tester Panel UI (Right Side) --------------------
     // Layout constants: adjust cautiously; verify in-game dialog Admin panel widgets are built lazily on first open (see buildAdminPanelWidgets) to prevent a one-tick render flicker.
-    updateHelpTextVisibilityForPlayer(eventPlayer);
+updateHelpTextVisibilityForPlayer(eventPlayer);
 }
-
-//#endregion ----------------- Dialog Buttons (Left Side) - Cancel --------------------
-
-
-
-//#region -------------------- Admin Panel UI (Right Side) --------------------
 
 // Builds the Admin Panel widgets lazily (to avoid a 1-frame flicker on dialog open).
 function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIWidget, playerId: number): void {
-
     // Fit at target resolutions.
-    const testerBaseX = 10;
-    const testerBaseY = 10;
+        const testerBaseX = 10;
+        const testerBaseY = 10;
 
-    const buttonSizeX = 48;
-    const buttonSizeY = 34;
-    const labelSizeX = 175;
-    const rowSpacingY = 4;
+        const buttonSizeX = 48;
+        const buttonSizeY = 34;
+        const labelSizeX = 175;
+        const rowSpacingY = 4;
 
-    const decOffsetX = 0;
-    const labelOffsetX = buttonSizeX + 8;
-    const incOffsetX = buttonSizeX + 8 + labelSizeX + 8;
+        const decOffsetX = 0;
+        const labelOffsetX = buttonSizeX + 8;
+        const incOffsetX = buttonSizeX + 8 + labelSizeX + 8;
 
-    const headerId = UI_TEST_HEADER_LABEL_ID + playerId;
+        const headerId = UI_TEST_HEADER_LABEL_ID + playerId;
 
-    mod.AddUIText(
-        headerId,
-        mod.CreateVector(testerBaseX, testerBaseY + 2, 0),
-        mod.CreateVector(220, 18, 0),
-        mod.UIAnchor.TopLeft,
-        mod.Message(mod.stringkeys.twl.adminPanel.tester.header),
-        eventPlayer
-    );
-    const TEST_HEADER = mod.FindUIWidgetWithName(headerId, mod.GetUIRoot());
-    mod.SetUITextSize(TEST_HEADER, 12);
-    mod.SetUIWidgetBgAlpha(TEST_HEADER, 0);
-    mod.SetUIWidgetParent(TEST_HEADER, adminContainer);
+        mod.AddUIText(
+            headerId,
+            mod.CreateVector(testerBaseX, testerBaseY + 2, 0),
+            mod.CreateVector(220, 18, 0),
+            mod.UIAnchor.TopLeft,
+            mod.Message(mod.stringkeys.UI_TESTER_HEADER_LABEL),
+            eventPlayer
+        );
+        const TEST_HEADER = mod.FindUIWidgetWithName(headerId, mod.GetUIRoot());
+        mod.SetUITextSize(TEST_HEADER, 12);
+        mod.SetUIWidgetBgAlpha(TEST_HEADER, 0);
+        mod.SetUIWidgetParent(TEST_HEADER, adminContainer);
 
-    const row0Y = testerBaseY + 22;
+        const row0Y = testerBaseY + 22;
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 0,
-        UI_TEST_BUTTON_LEFT_WINS_DEC_ID, UI_TEST_BUTTON_LEFT_WINS_INC_ID, UI_TEST_LABEL_LEFT_WINS_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.leftWins, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+        addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 0,
+            UI_TEST_BUTTON_LEFT_WINS_DEC_ID, UI_TEST_BUTTON_LEFT_WINS_INC_ID, UI_TEST_LABEL_LEFT_WINS_ID,
+            mod.stringkeys.UI_TEST_LABEL_LEFT_WINS, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 1,
-        UI_TEST_BUTTON_RIGHT_WINS_DEC_ID, UI_TEST_BUTTON_RIGHT_WINS_INC_ID, UI_TEST_LABEL_RIGHT_WINS_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.rightWins, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+        addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 1,
+            UI_TEST_BUTTON_RIGHT_WINS_DEC_ID, UI_TEST_BUTTON_RIGHT_WINS_INC_ID, UI_TEST_LABEL_RIGHT_WINS_ID,
+            mod.stringkeys.UI_TEST_LABEL_RIGHT_WINS, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 2,
-        UI_TEST_BUTTON_LEFT_KILLS_DEC_ID, UI_TEST_BUTTON_LEFT_KILLS_INC_ID, UI_TEST_LABEL_LEFT_KILLS_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.leftKills, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+        addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 2,
+            UI_TEST_BUTTON_LEFT_KILLS_DEC_ID, UI_TEST_BUTTON_LEFT_KILLS_INC_ID, UI_TEST_LABEL_LEFT_KILLS_ID,
+            mod.stringkeys.UI_TEST_LABEL_LEFT_KILLS, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 3,
-        UI_TEST_BUTTON_RIGHT_KILLS_DEC_ID, UI_TEST_BUTTON_RIGHT_KILLS_INC_ID, UI_TEST_LABEL_RIGHT_KILLS_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.rightKills, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+        addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 3,
+            UI_TEST_BUTTON_RIGHT_KILLS_DEC_ID, UI_TEST_BUTTON_RIGHT_KILLS_INC_ID, UI_TEST_LABEL_RIGHT_KILLS_ID,
+            mod.stringkeys.UI_TEST_LABEL_RIGHT_KILLS, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 4,
-        UI_ADMIN_BUTTON_T1_ROUND_KILLS_DEC_ID, UI_ADMIN_BUTTON_T1_ROUND_KILLS_INC_ID, UI_ADMIN_LABEL_T1_ROUND_KILLS_ID,
-        mod.stringkeys.twl.adminPanel.labels.t1RoundKills, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+        addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 4,
+            UI_ADMIN_BUTTON_T1_ROUND_KILLS_DEC_ID, UI_ADMIN_BUTTON_T1_ROUND_KILLS_INC_ID, UI_ADMIN_LABEL_T1_ROUND_KILLS_ID,
+            mod.stringkeys.UI_ADMIN_LABEL_T1_ROUND_KILLS, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 5,
-        UI_ADMIN_BUTTON_T2_ROUND_KILLS_DEC_ID, UI_ADMIN_BUTTON_T2_ROUND_KILLS_INC_ID, UI_ADMIN_LABEL_T2_ROUND_KILLS_ID,
-        mod.stringkeys.twl.adminPanel.labels.t2RoundKills, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+        addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 5,
+            UI_ADMIN_BUTTON_T2_ROUND_KILLS_DEC_ID, UI_ADMIN_BUTTON_T2_ROUND_KILLS_INC_ID, UI_ADMIN_LABEL_T2_ROUND_KILLS_ID,
+            mod.stringkeys.UI_ADMIN_LABEL_T2_ROUND_KILLS, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
 
-    addTesterRowWithValue(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 6,
-        UI_TEST_BUTTON_ROUND_KILLS_TARGET_DEC_ID, UI_TEST_BUTTON_ROUND_KILLS_TARGET_INC_ID, UI_TEST_LABEL_ROUND_KILLS_TARGET_ID, UI_TEST_VALUE_ROUND_KILLS_TARGET_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.roundKillsTarget, State.round.killsTarget, buttonSizeX, buttonSizeY, labelSizeX, 46, decOffsetX, labelOffsetX, incOffsetX);
+        addTesterRowWithValue(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 6,
+            UI_TEST_BUTTON_ROUND_KILLS_TARGET_DEC_ID, UI_TEST_BUTTON_ROUND_KILLS_TARGET_INC_ID, UI_TEST_LABEL_ROUND_KILLS_TARGET_ID, UI_TEST_VALUE_ROUND_KILLS_TARGET_ID,
+            mod.stringkeys.UI_TEST_LABEL_ROUND_KILLS_TARGET, roundKillsTarget, buttonSizeX, buttonSizeY, labelSizeX, 46, decOffsetX, labelOffsetX, incOffsetX);
 
-    syncRoundKillsTargetTesterValueForAllPlayers();
+        syncRoundKillsTargetTesterValueForAllPlayers();
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 7,
-        UI_TEST_BUTTON_TIES_DEC_ID, UI_TEST_BUTTON_TIES_INC_ID, UI_TEST_LABEL_TIES_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.ties, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+        addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 7,
+            UI_TEST_BUTTON_TIES_DEC_ID, UI_TEST_BUTTON_TIES_INC_ID, UI_TEST_LABEL_TIES_ID,
+            mod.stringkeys.UI_TEST_LABEL_TIES, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 8,
-        UI_TEST_BUTTON_CUR_ROUND_DEC_ID, UI_TEST_BUTTON_CUR_ROUND_INC_ID, UI_TEST_LABEL_CUR_ROUND_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.currentRound, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+        addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 8,
+            UI_TEST_BUTTON_CUR_ROUND_DEC_ID, UI_TEST_BUTTON_CUR_ROUND_INC_ID, UI_TEST_LABEL_CUR_ROUND_ID,
+            mod.stringkeys.UI_TEST_LABEL_CUR_ROUND, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 9,
-        UI_TEST_BUTTON_CLOCK_TIME_DEC_ID, UI_TEST_BUTTON_CLOCK_TIME_INC_ID, UI_TEST_LABEL_CLOCK_TIME_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.clockTime, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+        addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 9,
+            UI_TEST_BUTTON_CLOCK_TIME_DEC_ID, UI_TEST_BUTTON_CLOCK_TIME_INC_ID, UI_TEST_LABEL_CLOCK_TIME_ID,
+            mod.stringkeys.UI_TEST_LABEL_CLOCK_TIME, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
 
-    addTesterResetButton(eventPlayer, adminContainer, playerId, testerBaseX,
-        row0Y + (buttonSizeY + rowSpacingY) * 10, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36);
+        addTesterResetButton(eventPlayer, adminContainer, playerId, testerBaseX,
+            row0Y + (buttonSizeY + rowSpacingY) * 10, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36);
 
-    addTesterActionButton(eventPlayer, adminContainer, playerId, testerBaseX,
-        row0Y + (buttonSizeY + rowSpacingY) * 11, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36,
-        UI_TEST_BUTTON_ROUND_START_ID, UI_TEST_ROUND_START_TEXT_ID, mod.stringkeys.twl.adminPanel.tester.buttons.roundStart);
+        addTesterActionButton(eventPlayer, adminContainer, playerId, testerBaseX,
+            row0Y + (buttonSizeY + rowSpacingY) * 11, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36,
+            UI_TEST_BUTTON_ROUND_START_ID, UI_TEST_ROUND_START_TEXT_ID, mod.stringkeys.UI_TEST_BUTTON_ROUND_START_LABEL);
 
-    addTesterActionButton(eventPlayer, adminContainer, playerId, testerBaseX,
-        row0Y + (buttonSizeY + rowSpacingY) * 12, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36,
-        UI_TEST_BUTTON_ROUND_END_ID, UI_TEST_ROUND_END_TEXT_ID, mod.stringkeys.twl.adminPanel.tester.buttons.roundEnd);
+        addTesterActionButton(eventPlayer, adminContainer, playerId, testerBaseX,
+            row0Y + (buttonSizeY + rowSpacingY) * 12, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36,
+            UI_TEST_BUTTON_ROUND_END_ID, UI_TEST_ROUND_END_TEXT_ID, mod.stringkeys.UI_TEST_BUTTON_ROUND_END_LABEL);
 }
-
-//#endregion ----------------- Admin Panel UI (Right Side) --------------------
+//#endregion ----------------- Tester Panel UI (Right Side) --------------------
 
 
 
 //#region -------------------- Admin Panel UI builder helpers --------------------
-
 function addTesterRow(
     eventPlayer: mod.Player,
     containerBase: mod.UIWidget,
@@ -5318,7 +5084,7 @@ function addTesterRow(
     mod.SetUIWidgetParent(DEC_BUTTON, containerBase);
 
     mod.AddUIText(minusTextId, mod.CreateVector(baseX + decOffsetX, baseY + 11, 0), mod.CreateVector(buttonSizeX, buttonSizeY - 22, 0),
-        mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.ui.minus), eventPlayer);
+        mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.UI_TEST_MINUS), eventPlayer);
     mod.SetUITextSize(mod.FindUIWidgetWithName(minusTextId, mod.GetUIRoot()), 12);
     const MINUS_TEXT = mod.FindUIWidgetWithName(minusTextId, mod.GetUIRoot());
     mod.SetUIWidgetBgAlpha(MINUS_TEXT, 0);
@@ -5337,7 +5103,7 @@ function addTesterRow(
     mod.SetUIWidgetParent(INC_BUTTON, containerBase);
 
     mod.AddUIText(plusTextId, mod.CreateVector(baseX + incOffsetX, baseY + 11, 0), mod.CreateVector(buttonSizeX, buttonSizeY - 22, 0),
-        mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.ui.plus), eventPlayer);
+        mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.UI_TEST_PLUS), eventPlayer);
     mod.SetUITextSize(mod.FindUIWidgetWithName(plusTextId, mod.GetUIRoot()), 12);
     const PLUS_TEXT = mod.FindUIWidgetWithName(plusTextId, mod.GetUIRoot());
     mod.SetUIWidgetBgAlpha(PLUS_TEXT, 0);
@@ -5372,7 +5138,7 @@ function addTesterRowWithValue(
     const valueX = baseX + incOffsetX - 16 - valueSizeX;
 
     mod.AddUIText(valueId, mod.CreateVector(valueX, baseY + 11, 0), mod.CreateVector(valueSizeX, buttonSizeY - 22, 0),
-        mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, Math.floor(initialValue)), eventPlayer);
+        mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.GenericCounterText, Math.floor(initialValue)), eventPlayer);
     mod.SetUITextSize(mod.FindUIWidgetWithName(valueId, mod.GetUIRoot()), 12);
     const VALUE_TEXT = mod.FindUIWidgetWithName(valueId, mod.GetUIRoot());
     mod.SetUIWidgetBgAlpha(VALUE_TEXT, 0);
@@ -5388,7 +5154,7 @@ function syncRoundKillsTargetTesterValueForAllPlayers(): void {
         const pid = getObjId(p);
         const widget = mod.FindUIWidgetWithName(UI_TEST_VALUE_ROUND_KILLS_TARGET_ID + pid, mod.GetUIRoot());
         if (!widget) continue;
-        mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.system.genericCounter, Math.floor(State.round.killsTarget)));
+        mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.GenericCounterText, Math.floor(roundKillsTarget)));
     }
 }
 
@@ -5409,7 +5175,7 @@ function addTesterResetButton(
     mod.SetUIWidgetParent(RESET_BUTTON, containerBase);
 
     mod.AddUIText(labelId, mod.CreateVector(baseX, baseY + 11, 0), mod.CreateVector(width, height - 22, 0),
-        mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.adminPanel.tester.buttons.clockReset), eventPlayer);
+        mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.UI_TEST_BUTTON_CLOCK_RESET_LABEL), eventPlayer);
     const RESET_LABEL = mod.FindUIWidgetWithName(labelId, mod.GetUIRoot());
     mod.SetUITextSize(RESET_LABEL, 12);
     mod.SetUIWidgetBgAlpha(RESET_LABEL, 0);
@@ -5448,8 +5214,6 @@ function addTesterActionButton(
 
 
 //#region -------------------- MultiClickDetector (triple tap interact) --------------------
-
-//Code Cleanup: Refactor this reference and use TS Template as a tool import instead
 class InteractMultiClickDetector {
     private static readonly STATES: Record<number, { lastIsInteracting: boolean; clickCount: number; sequenceStartTime: number }> = {};
     private static readonly WINDOW_MS = 1_000;
@@ -5491,7 +5255,6 @@ class InteractMultiClickDetector {
         return true;
     }
 }
-
 //#endregion ----------------- MultiClickDetector (triple tap interact) --------------------
 
 
@@ -5503,8 +5266,8 @@ function IsPlayerInOwnMainBase(player: mod.Player, areaTrigger: mod.AreaTrigger)
     const teamId = mod.GetObjId(mod.GetTeam(player));
 
     return mod.Or(
-        mod.And(mod.Equals(triggerId, TEAM1_MAIN_BASE_TRIGGER_ID), mod.Equals(teamId, mod.GetObjId(mod.GetTeam(TeamID.Team1)))),
-        mod.And(mod.Equals(triggerId, TEAM2_MAIN_BASE_TRIGGER_ID), mod.Equals(teamId, mod.GetObjId(mod.GetTeam(TeamID.Team2))))
+        mod.And(mod.Equals(triggerId, TEAM1_MAIN_BASE_TRIGGER_ID), mod.Equals(teamId, mod.GetObjId(mod.GetTeam(TEAM_1)))),
+        mod.And(mod.Equals(triggerId, TEAM2_MAIN_BASE_TRIGGER_ID), mod.Equals(teamId, mod.GetObjId(mod.GetTeam(TEAM_2))))
     );
 }
 
@@ -5520,13 +5283,11 @@ function RestockGadgetAmmo(player: mod.Player, magAmmo: number): void {
     mod.SetInventoryMagazineAmmo(player, mod.InventorySlots.GadgetOne, magAmmo);
     mod.SetInventoryMagazineAmmo(player, mod.InventorySlots.GadgetTwo, magAmmo);
 }
-
 //#endregion ----------------- Main Base Restock (area triggers) --------------------
 
 
 
 //#region -------------------- Exported Event Handlers (single exports) --------------------
-
 /**
  * Entry point for this experience when the game mode starts.
  *
@@ -5537,11 +5298,13 @@ function RestockGadgetAmmo(player: mod.Player, magAmmo: number): void {
  * 4) Arm any recurring processes (clock tick, cleanup passes) that keep state and UI in sync.
  *
  * Important invariants:
- * - Do not award points unless `isRoundLive()` is true.
+ * - Do not award points unless `isRoundActive` is true.
  * - Round/match counters are authoritative; the HUD is a projection of that state.
  * - Any async work started here must use the guard tokens to prevent overlap if the mode restarts.
- *
- * Why async functions: uses small engine waits (mod.Wait/await) to sequence UI rebuilds/timers safely without blocking the main thread.
+ */
+
+/**
+ * Why async: uses small engine waits (mod.Wait/await) to sequence UI rebuilds/timers safely without blocking the main thread.
  */
 export async function OnGameModeStarted(): Promise<void> {
     // Vehicle scoring init + legacy cleanup
@@ -5555,8 +5318,8 @@ export async function OnGameModeStarted(): Promise<void> {
     vehIds.length = 0;
     vehOwners.length = 0;
 
-    sendHighlightedWorldLogMessage(mod.Message(mod.stringkeys.twl.messages.init), false, mod.GetTeam(TeamID.Team1));
-    sendHighlightedWorldLogMessage(mod.Message(mod.stringkeys.twl.messages.init), false, mod.GetTeam(TeamID.Team2));
+    sendHighlightedWorldLogMessage(mod.Message(mod.stringkeys.msgInit), false, mod.GetTeam(TEAM_1));
+    sendHighlightedWorldLogMessage(mod.Message(mod.stringkeys.msgInit), false, mod.GetTeam(TEAM_2));
 
     // Ensure HUD exists for anyone already in-game at start
     await mod.Wait(0.1);
@@ -5572,27 +5335,26 @@ export async function OnGameModeStarted(): Promise<void> {
     }
 
     // Reset HUD state
-    State.match.isEnded = false;
-    State.match.victoryDialogActive = false;
-    State.round.phase = RoundPhase.NotReady; // Reset round phase for a new match.
+    isMatchEnded = false;
+    isVictoryDialogActive = false;
 
-    setMatchWinsTeam(TeamID.Team1, 0);
-    setMatchWinsTeam(TeamID.Team2, 0);
-    State.scores.t1TotalKills = 0;
-    State.scores.t2TotalKills = 0;
+    setMatchWinsTeam(TEAM_1, 0);
+    setMatchWinsTeam(TEAM_2, 0);
+    totalKillsT1 = 0;
+    totalKillsT2 = 0;
 
-    State.match.winnerTeam = undefined;
-    State.match.endElapsedSecondsSnapshot = 0;
-    State.match.victoryStartElapsedSecondsSnapshot = 0;
-    State.admin.actionCount = 0;
+    matchEndWinnerTeamNum = undefined;
+    matchEndElapsedSecondsSnapshot = 0;
+    victoryStartElapsedSecondsSnapshot = 0;
+    adminPanelActionCount = 0;
 
-    State.hudCache.lastHudScoreT1 = undefined;
-    State.hudCache.lastHudScoreT2 = undefined;
+    lastHudScoreT1 = undefined;
+    lastHudScoreT2 = undefined;
     // Init visible counters
-    setHudRoundCountersForAllPlayers(State.round.current, State.round.max);
+    setHudRoundCountersForAllPlayers(roundCurrent, roundMax);
     setHudWinCountersForAllPlayers(0, 0);
-    State.match.tiesT1 = 0;
-    State.match.tiesT2 = 0;
+    matchTiesT1 = 0;
+    matchTiesT2 = 0;
     syncRoundRecordHudForAllPlayers();
     syncWinCountersHudFromGameModeScore();
     syncKillsHudFromTrackedTotals(true);
@@ -5609,15 +5371,18 @@ export async function OnGameModeStarted(): Promise<void> {
         updateAllPlayersClock();
         syncKillsHudFromTrackedTotals(false);
 
-        if (State.match.victoryDialogActive) {
-            const elapsedSinceVictory = Math.floor(mod.GetMatchTimeElapsed()) - Math.floor(State.match.victoryStartElapsedSecondsSnapshot);
+        if (isVictoryDialogActive) {
+            const elapsedSinceVictory = Math.floor(mod.GetMatchTimeElapsed()) - Math.floor(victoryStartElapsedSecondsSnapshot);
             const remaining = MATCH_END_DELAY_SECONDS - elapsedSinceVictory;
             updateVictoryDialogForAllPlayers(Math.max(0, Math.floor(remaining)));
         }
-        await mod.Wait(1.0);
+await mod.Wait(1.0);
     }
 }
 
+/**
+ * Why async: uses small engine waits (mod.Wait/await) to sequence UI rebuilds/timers safely without blocking the main thread.
+ */
 export async function OnPlayerJoinGame(eventPlayer: mod.Player) {
     initTeamSwitchData(eventPlayer);
 
@@ -5628,16 +5393,16 @@ export async function OnPlayerJoinGame(eventPlayer: mod.Player) {
 
     // Join-time HUD initialization uses script-authoritative counters; do not pull from engine scores here.
     if (refs) {
-        setCounterText(refs.leftWinsText, State.match.winsT1);
-        setCounterText(refs.rightWinsText, State.match.winsT2);
-        setRoundRecordText(refs.leftRecordText, State.match.winsT1, State.match.lossesT1, State.match.tiesT1);
-        setRoundRecordText(refs.rightRecordText, State.match.winsT2, State.match.lossesT2, State.match.tiesT2);
-        setCounterText(refs.leftRoundKillsText, State.scores.t1RoundKills);
-        setCounterText(refs.rightRoundKillsText, State.scores.t2RoundKills);
-        setCounterText(refs.leftKillsText, State.scores.t1TotalKills);
-        setCounterText(refs.rightKillsText, State.scores.t2TotalKills);
-        setCounterText(refs.roundCurText, State.round.current);
-        setCounterText(refs.roundMaxText, State.round.max);
+        setCounterText(refs.leftWinsText, matchWinsT1);
+        setCounterText(refs.rightWinsText, matchWinsT2);
+        setRoundRecordText(refs.leftRecordText, matchWinsT1, matchLossesT1, matchTiesT1);
+        setRoundRecordText(refs.rightRecordText, matchWinsT2, matchLossesT2, matchTiesT2);
+        setCounterText(refs.leftRoundKillsText, roundKillsT1);
+        setCounterText(refs.rightRoundKillsText, roundKillsT2);
+        setCounterText(refs.leftKillsText, totalKillsT1);
+        setCounterText(refs.rightKillsText, totalKillsT2);
+        setCounterText(refs.roundCurText, roundCurrent);
+        setCounterText(refs.roundMaxText, roundMax);
     }
     {
         const cache = ensureClockUIAndGetCache(eventPlayer);
@@ -5647,25 +5412,15 @@ export async function OnPlayerJoinGame(eventPlayer: mod.Player) {
     deleteLegacyScoreRootForPlayer(eventPlayer);
 }
 
+/**
+ * Why async: uses small engine waits (mod.Wait/await) to sequence UI rebuilds/timers safely without blocking the main thread.
+ */
 export async function OnPlayerDeployed(eventPlayer: mod.Player) {
-    //Remove existing gadgets and give deployable vehicle supply crates
-    mod.RemoveEquipment(eventPlayer, mod.InventorySlots.GadgetOne);
-    mod.RemoveEquipment(eventPlayer, mod.InventorySlots.GadgetTwo);
-    mod.AddEquipment(
-        eventPlayer,
-        mod.Gadgets.Deployable_Vehicle_Supply_Crate,
-        mod.InventorySlots.GadgetOne
-    );
-    mod.AddEquipment(
-        eventPlayer,
-        mod.Gadgets.Deployable_Vehicle_Supply_Crate,
-        mod.InventorySlots.GadgetTwo
-    );
     // Rejoin / spawn behavior: players always start NOT READY for the next round gating.
     const pid = mod.GetObjId(eventPlayer);
-    State.players.readyByPid[pid] = false;
+    readyStateByPid[pid] = false;
     // Design assumption: players spawn in their main base; update immediately for roster display.
-    State.players.inMainBaseByPid[pid] = true;
+    inMainBaseByPid[pid] = true;
     updatePlayersReadyHudTextForAllPlayers();
     renderReadyDialogForAllVisibleViewers();
     updateHelpTextVisibilityForAllPlayers();
@@ -5684,10 +5439,10 @@ export function OnPlayerLeaveGame(eventNumber: number) {
     // Cleanup: delete cached UI widgets so we do not leak UI for disconnected players.
     hardDeleteTeamSwitchUI(eventNumber);
     // Remove any persisted per-player state so rejoin starts clean (NOT READY by default).
-    delete State.players.readyByPid[eventNumber];
-    delete State.players.inMainBaseByPid[eventNumber];
+    delete readyStateByPid[eventNumber];
+    delete inMainBaseByPid[eventNumber];
     // Also drop dialog-visible tracking if present (viewer is gone).
-    delete State.players.teamSwitchData[eventNumber];
+    delete teamSwitchData[eventNumber];
 
     // Refresh UI for remaining players so rosters + HUD ready counts immediately reflect the disconnect.
     renderReadyDialogForAllVisibleViewers();
@@ -5699,7 +5454,7 @@ export function OnPlayerUndeploy(eventPlayer: mod.Player) {
     // If the player is leaving the deployed state (death / manual undeploy / forced redeploy),
     // the Ready Up dialog should be closed. This prevents interacting with the UI while undeployed.
     const pid = mod.GetObjId(eventPlayer);
-    if (State.players.teamSwitchData[pid]?.dialogVisible) {
+    if (teamSwitchData[pid]?.dialogVisible) {
         deleteTeamSwitchUI(eventPlayer);
     }
 
@@ -5718,17 +5473,17 @@ export function OngoingPlayer(eventPlayer: mod.Player): void {
     // UI caching warm-up: build the Ready Up dialog once per player so the first real open is snappy.
     // We build and immediately hide; the dialog becomes visible only when the player opens it via the interact point.
     const pid = mod.GetObjId(eventPlayer);
-    if (State.players.teamSwitchData[pid] && !State.players.teamSwitchData[pid].uiBuilt) {
+    if (teamSwitchData[pid] && !teamSwitchData[pid].uiBuilt) {
         createTeamSwitchUI(eventPlayer);
         // Ensure the warm-up build does not count as "open" for refresh logic.
-        State.players.teamSwitchData[pid].dialogVisible = false;
+        teamSwitchData[pid].dialogVisible = false;
         deleteTeamSwitchUI(eventPlayer); // now hides (cached) rather than deleting
-        State.players.teamSwitchData[pid].uiBuilt = true;
+        teamSwitchData[pid].uiBuilt = true;
     }
 
     if (InteractMultiClickDetector.checkMultiClick(eventPlayer)) {
         spawnTeamSwitchInteractPoint(eventPlayer);
-        //mod.DisplayHighlightedWorldLogMessage(mod.Message(mod.stringkeys.twl.notifications.multiclickDetector), mod.GetTeam(eventPlayer));
+        //mod.DisplayHighlightedWorldLogMessage(mod.Message(mod.stringkeys.NOTIFICATION_MULTICLICKDETECTOR), mod.GetTeam(eventPlayer));
     }
 }
 
@@ -5747,12 +5502,11 @@ export function OnPlayerUIButtonEvent(eventPlayer: mod.Player, eventUIWidget: mo
 // Notes:
 // - Registration is idempotent; re-entering does not double-register.
 // - Last driver is best-effort and not authoritative for scoring.
-// Code Cleanup: Known fragility - we need to refactor or identify a different method entirely as OnPlayerEnterVehicle is error prone.
 export function OnPlayerEnterVehicle(eventPlayer: mod.Player, eventVehicle: mod.Vehicle) {
     if (!mod.IsPlayerValid(eventPlayer)) return;
 
     const teamNum = getTeamNumber(mod.GetTeam(eventPlayer));
-    if (teamNum !== TeamID.Team1 && teamNum !== TeamID.Team2) return;
+    if (teamNum !== TEAM_1 && teamNum !== TEAM_2) return;
 
     const inT1 = arrayContainsVehicle(mod.GetVariable(regVehiclesTeam1), eventVehicle);
     const inT2 = arrayContainsVehicle(mod.GetVariable(regVehiclesTeam2), eventVehicle);
@@ -5766,39 +5520,38 @@ export function OnPlayerEnterVehicle(eventPlayer: mod.Player, eventVehicle: mod.
 
     const teamNameKey = getTeamNameKey(teamNum);
 
-    //Send notifications around different vehicle registration events so players can spot known issue with OnPlayerEnterVehicle
-    if (!wasRegistered) { //Old Vehicle Different Player
+    if (!wasRegistered) {
         sendHighlightedWorldLogMessage(
-            mod.Message(mod.stringkeys.twl.messages.vehicleRegisteredNew, teamNameKey, eventPlayer), 
+            mod.Message(mod.stringkeys.msgVehicleRegisteredNew, teamNameKey, eventPlayer),
             true,
-            mod.GetTeam(TeamID.Team1)
+            mod.GetTeam(TEAM_1)
         );
         sendHighlightedWorldLogMessage(
-            mod.Message(mod.stringkeys.twl.messages.vehicleRegisteredNew, teamNameKey, eventPlayer), 
+            mod.Message(mod.stringkeys.msgVehicleRegisteredNew, teamNameKey, eventPlayer),
             true,
-            mod.GetTeam(TeamID.Team2)
+            mod.GetTeam(TEAM_2)
         );
-    } else if (isReturnToSameOwner) { //Old Vehicle Same Player
+    } else if (isReturnToSameOwner) {
         sendHighlightedWorldLogMessage(
-            mod.Message(mod.stringkeys.twl.messages.vehicleReturned, eventPlayer, teamNameKey), 
+            mod.Message(mod.stringkeys.msgVehicleReturned, eventPlayer, teamNameKey),
             true,
-            mod.GetTeam(TeamID.Team1)
-        );
-        sendHighlightedWorldLogMessage(
-            mod.Message(mod.stringkeys.twl.messages.vehicleReturned, eventPlayer, teamNameKey), 
-            true,
-            mod.GetTeam(TeamID.Team2)
-        );
-    } else { //New Vehicle
-        sendHighlightedWorldLogMessage(
-            mod.Message(mod.stringkeys.twl.messages.vehicleReRegistered, teamNameKey, eventPlayer), 
-            true,
-            mod.GetTeam(TeamID.Team1)
+            mod.GetTeam(TEAM_1)
         );
         sendHighlightedWorldLogMessage(
-            mod.Message(mod.stringkeys.twl.messages.vehicleReRegistered, teamNameKey, eventPlayer), 
+            mod.Message(mod.stringkeys.msgVehicleReturned, eventPlayer, teamNameKey),
             true,
-            mod.GetTeam(TeamID.Team2)
+            mod.GetTeam(TEAM_2)
+        );
+    } else {
+        sendHighlightedWorldLogMessage(
+            mod.Message(mod.stringkeys.msgVehicleReRegistered, teamNameKey, eventPlayer),
+            true,
+            mod.GetTeam(TEAM_1)
+        );
+        sendHighlightedWorldLogMessage(
+            mod.Message(mod.stringkeys.msgVehicleReRegistered, teamNameKey, eventPlayer),
+            true,
+            mod.GetTeam(TEAM_2)
         );
     }
 }
@@ -5813,6 +5566,9 @@ export function OnPlayerEnterVehicle(eventPlayer: mod.Player, eventVehicle: mod.
 // Important:
 // - Infantry deaths are ignored entirely.
 // - This function is the ONLY place round vehicle kills are awarded.
+/**
+ * Why async: uses small engine waits (mod.Wait/await) to sequence UI rebuilds/timers safely without blocking the main thread.
+ */
 export async function OnVehicleDestroyed(eventVehicle: mod.Vehicle) {
     const inT1 = arrayContainsVehicle(mod.GetVariable(regVehiclesTeam1), eventVehicle);
     const inT2 = arrayContainsVehicle(mod.GetVariable(regVehiclesTeam2), eventVehicle);
@@ -5821,28 +5577,28 @@ export async function OnVehicleDestroyed(eventVehicle: mod.Vehicle) {
         return;
     }
 
-    const destroyedTeamNum = inT1 ? TeamID.Team1 : TeamID.Team2;
+    const destroyedTeamNum = inT1 ? TEAM_1 : TEAM_2;
     const scoringTeamNum = opposingTeam(destroyedTeamNum);
 
-    if (isRoundLive()) {
-        if (scoringTeamNum === TeamID.Team1) {
-            State.scores.t1RoundKills = State.scores.t1RoundKills + 1;
-        } else if (scoringTeamNum === TeamID.Team2) {
-            State.scores.t2RoundKills = State.scores.t2RoundKills + 1;
+    if (isRoundActive) {
+        if (scoringTeamNum === TEAM_1) {
+            roundKillsT1 = roundKillsT1 + 1;
+        } else if (scoringTeamNum === TEAM_2) {
+            roundKillsT2 = roundKillsT2 + 1;
         }
 
         // Update round kills HUD immediately.
         syncRoundKillsHud();
 
         // End the round immediately if a team reaches the configured round-kills target.
-        if (State.scores.t1RoundKills >= State.round.killsTarget || State.scores.t2RoundKills >= State.round.killsTarget) {
+        if (roundKillsT1 >= roundKillsTarget || roundKillsT2 >= roundKillsTarget) {
             endRound(undefined, getRemainingSeconds());
         }
 
-        if (scoringTeamNum === TeamID.Team1) {
-            State.scores.t1TotalKills = Math.floor(State.scores.t1TotalKills) + 1;
-        } else if (scoringTeamNum === TeamID.Team2) {
-            State.scores.t2TotalKills = Math.floor(State.scores.t2TotalKills) + 1;
+        if (scoringTeamNum === TEAM_1) {
+            totalKillsT1 = Math.floor(totalKillsT1) + 1;
+        } else if (scoringTeamNum === TEAM_2) {
+            totalKillsT2 = Math.floor(totalKillsT2) + 1;
         }
 
         // Update top HUD kills counters.
@@ -5855,19 +5611,19 @@ export async function OnVehicleDestroyed(eventVehicle: mod.Vehicle) {
 
         await mod.Wait(3.0);
 
-        const roundKills = (scoringTeamNum === TeamID.Team1) ? State.scores.t1RoundKills : State.scores.t2RoundKills;
-        const teamNameKey = (scoringTeamNum === TeamID.Team1) ? mod.stringkeys.twl.teams.leftName : mod.stringkeys.twl.teams.rightName;
-        const ownerNameOrKey = owner ? owner : mod.stringkeys.twl.system.unknownPlayer;
+        const roundKills = (scoringTeamNum === TEAM_1) ? roundKillsT1 : roundKillsT2;
+        const teamNameKey = (scoringTeamNum === TEAM_1) ? mod.stringkeys.TeamLeft_Name : mod.stringkeys.TeamRight_Name;
+        const ownerNameOrKey = owner ? owner : mod.stringkeys.UnknownPlayer;
 
         sendHighlightedWorldLogMessage(
-            mod.Message(mod.stringkeys.twl.messages.pointAwardedWithOwner, teamNameKey, ownerNameOrKey, Math.floor(roundKills)),
+            mod.Message(mod.stringkeys.msgPointAwardedWithOwner, teamNameKey, ownerNameOrKey, Math.floor(roundKills)),
             true,
-            mod.GetTeam(TeamID.Team1)
+            mod.GetTeam(TEAM_1)
         );
         sendHighlightedWorldLogMessage(
-            mod.Message(mod.stringkeys.twl.messages.pointAwardedWithOwner, teamNameKey, ownerNameOrKey, Math.floor(roundKills)),
+            mod.Message(mod.stringkeys.msgPointAwardedWithOwner, teamNameKey, ownerNameOrKey, Math.floor(roundKills)),
             true,
-            mod.GetTeam(TeamID.Team2)
+            mod.GetTeam(TEAM_2)
         );
 
         return;
@@ -5881,18 +5637,18 @@ export async function OnVehicleDestroyed(eventVehicle: mod.Vehicle) {
 
     await mod.Wait(3.0);
 
-    const destroyedTeamNameKey = (destroyedTeamNum === TeamID.Team1) ? mod.stringkeys.twl.teams.leftName : mod.stringkeys.twl.teams.rightName;
-    const ownerNameOrKey = owner ? owner : mod.stringkeys.twl.system.unknownPlayer;
+    const destroyedTeamNameKey = (destroyedTeamNum === TEAM_1) ? mod.stringkeys.TeamLeft_Name : mod.stringkeys.TeamRight_Name;
+    const ownerNameOrKey = owner ? owner : mod.stringkeys.UnknownPlayer;
 
     sendHighlightedWorldLogMessage(
-        mod.Message(mod.stringkeys.twl.messages.vehicleDestroyedNotLive, ownerNameOrKey, destroyedTeamNameKey),
+        mod.Message(mod.stringkeys.msgVehicleDestroyedNotLive, ownerNameOrKey, destroyedTeamNameKey),
         true,
-        mod.GetTeam(TeamID.Team1)
+        mod.GetTeam(TEAM_1)
     );
     sendHighlightedWorldLogMessage(
-        mod.Message(mod.stringkeys.twl.messages.vehicleDestroyedNotLive, ownerNameOrKey, destroyedTeamNameKey),
+        mod.Message(mod.stringkeys.msgVehicleDestroyedNotLive, ownerNameOrKey, destroyedTeamNameKey),
         true,
-        mod.GetTeam(TeamID.Team2)
+        mod.GetTeam(TEAM_2)
     );
 }
 
@@ -5901,13 +5657,12 @@ export async function OnVehicleDestroyed(eventVehicle: mod.Vehicle) {
 
 
 //#region -------------------- Main Base - Enter/Exit Triggers --------------------
-
 export function OnPlayerEnterAreaTrigger(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger) {
     if (!eventPlayer) return;
 
     if (IsPlayerInOwnMainBase(eventPlayer, eventAreaTrigger)) {
         // track per-player main base state for UI display (authoritative gating comes later).
-        State.players.inMainBaseByPid[mod.GetObjId(eventPlayer)] = true;
+        inMainBaseByPid[mod.GetObjId(eventPlayer)] = true;
         renderReadyDialogForAllVisibleViewers();
         BroadcastMainBaseEvent(mod.Message(STR_ENTERED_MAIN_BASE, eventPlayer));
         RestockGadgetAmmo(eventPlayer, RESTOCK_MAG_AMMO_ENTER);
@@ -5921,19 +5676,19 @@ export function OnPlayerExitAreaTrigger(eventPlayer: mod.Player, eventAreaTrigge
     if (!mod.GetSoldierState(eventPlayer, mod.SoldierStateBool.IsAlive)) return;
 
     if (IsPlayerInOwnMainBase(eventPlayer, eventAreaTrigger)) {
-        State.players.inMainBaseByPid[mod.GetObjId(eventPlayer)] = false;
+        inMainBaseByPid[mod.GetObjId(eventPlayer)] = false;
         // Pre-round gating:: if the round is NOT active, leaving the main base forces the player back to NOT READY.
-        if (!isRoundLive()) {
-            State.players.readyByPid[mod.GetObjId(eventPlayer)] = false;
+        if (!isRoundActive) {
+            readyStateByPid[mod.GetObjId(eventPlayer)] = false;
             // Keep the HUD "X / Y PLAYERS READY" line in sync when leaving main base forces NOT READY.
             updatePlayersReadyHudTextForAllPlayers();
-            if (State.round.countdown.isRequested) {
+            if (isPregameCountdownRequested) {
                 cancelPregameCountdown();
                 void showOverLineMessageForAllPlayers(eventPlayer);
             }
             // Player-only warning: they were ready, but left main base before the round went live.
             // This is intentionally not broadcast globally; it is actionable guidance for the individual player.
-            sendHighlightedWorldLogMessage(mod.Message(STR_READYUP_RETURN_TO_BASE_NOT_LIVE, Math.floor(State.round.current)), false, eventPlayer);
+            sendHighlightedWorldLogMessage(mod.Message(STR_READYUP_RETURN_TO_BASE_NOT_LIVE, Math.floor(roundCurrent)), false, eventPlayer);
         }
         renderReadyDialogForAllVisibleViewers();
         BroadcastMainBaseEvent(mod.Message(STR_EXITED_MAIN_BASE, eventPlayer));
@@ -5941,7 +5696,6 @@ export function OnPlayerExitAreaTrigger(eventPlayer: mod.Player, eventAreaTrigge
         NotifyAmmoRestocked(eventPlayer);
     }
 }
-
 //#endregion ----------------- Main Base - Enter/Exit Triggers --------------------
 
-// EOF version: 0.152 | Date: 12.28.25 | Time: 11:18 UTC
+// EOF version: 0.129 | Date: 12.27.25 | Time: 00:35 UTC
