@@ -1,0 +1,10 @@
+{
+  "id": "twl-tanks-7maps-v0.129",
+  "name": "TWL 2v2 Tanks Only - All 7 Maps",
+  "version": "0.129",
+  "script": "twl-2v2-tanks-all7maps.script.ts",
+  "strings": "twl-2v2-tanks-all7maps.strings.ts",
+  "url": "https://portal.battlefield.com/bf6/experience/rules/script?id=376658c0-e2ce-11f0-9f71-996eaf801302&teams=0"
+  "code": "ZKBX5",
+  "status": "Published"
+}
