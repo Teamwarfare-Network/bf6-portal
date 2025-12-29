@@ -17,14 +17,14 @@ Primary features
 - HUD and victory/round-end dialogs mirror authoritative match state.
 - Main-base entry/exit tracking with gadget ammo restock and pre-round "over-line" warnings.
 
-Maps/Experience Codes Supported
-- All 7 Maps: ZKBX5
-- Blackwell Fields (2xMBT): ZKBXE
-- Defense Nexus (2x IFV): ZKBXK
-- Operation Firestorm (2x MBT): ZKBYZ
-- Manhattan Bridge (1x MBT + 1x IFV): ZKBYF
-- Golf Course (1x MBT + 1x IFV): ZKBYP
-- Liberation Peak (1x MBT + 1x IFV): ZKBZ4
-- WIP: Mirak Valley (2xMBT): ZKBZK
+2v2 Tank Maps/Experience Codes Supported Today (version 0.129):
+- ZKBX5: All 7 Maps
+- ZKBXE: Blackwell Fields (2xMBT)
+- ZKBXK: Defense Nexus (2xIFV)
+- ZKBYZ: Operation Firestorm (2xMBT) 
+- ZKBYF: Manhattan Bridge (1xMBT & 1xIFV)
+- ZKBYP: Golf Course (1xMBT & 1xIFV) 
+- ZKBZ4: Liberation Peak (1xMBT & 1xIFV)
+- ZKBZK: Mirak Valley (2xMBT)
 
 If you like this experience, check out the 2v2 Tanks Ladder at TWL: https://teamwarfare.net/ The ladder will open very soon!
