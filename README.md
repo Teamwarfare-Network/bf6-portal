@@ -3,14 +3,17 @@
 Compete in a curated competitive 2v2 tanks ladder experience across 7 maps, with rounds and kills tracked in a custom in-game HUD. Compete on the 2v2 Tanks ladder on teamwarfare.net, or use these experience codes to enjoy with your friends, clan mates & teams for tank practice.
 
 2v2 Tank Maps/Experience Codes Supported Today (version 0.129):
-- ZKBX5: All 7 Maps
-- ZKBXE: Blackwell Fields (2xMBT)
-- ZKBXK: Defense Nexus (2xIFV)
-- ZKBYZ: Operation Firestorm (2xMBT) 
-- ZKBYF: Manhattan Bridge (1xMBT & 1xIFV)
-- ZKBYP: Golf Course (1xMBT & 1xIFV) 
-- ZKBZ4: Liberation Peak (1xMBT & 1xIFV)
-- ZKBZK: Mirak Valley (2xMBT)
+
+| Code | Map Name | Info | Status |  Ladder 
+|---------|--------|--------|--------|-----------------|
+|   **ZKBX5** | All 7 Maps | Testing / Master | For Testing Only | N/A |
+|   **ZKBXE** | Blackwell Fields | 2xMBT | ✅ Approved | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) |
+|   **ZKBXK** | Defense Nexus | 2xIFV | ✅ Approved | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) |
+|   **ZKBYZ** | Operation Firestorm | 2xMBT | ✅ Approved | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) |
+|   **ZKBYF** | Manhattan Bridge | 1xMBT & 1xIFV | ✅ Approved | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) |
+|   **ZKBYP** | Golf Course | 1xMBT & 1xIFV | ✅ Approved | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) |
+|   **ZKBZ4** | Liberation Peak | 1xMBT & 1xIFV | ✅ Approved | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) |
+|   **ZKBZK** | Mirak Valley | 2xMBT | ✅ Approved | [bf6-2v2-tanks](https://teamwarfare.net/ladders/bf6-2v2-tanks) |
 
 **Primary features**:
 - Round and Tank destruction based scoring
