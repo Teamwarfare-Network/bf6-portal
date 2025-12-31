@@ -1,5 +1,7 @@
 # TWL BF6 Armored Warfare Modes - Playtesting Guide
 
+This is an outdated guide for previous versions - a new one will be updated soon!
+
 > **Version**: 0.2  
 > **Status**: Active playtesting  
 > **Discord**: `#battlefield-6-portal`
