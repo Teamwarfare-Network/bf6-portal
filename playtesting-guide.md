@@ -1,7 +1,5 @@
 # TWL BF6 Armored Warfare Modes - Playtesting Guide
 
-This is an outdated guide for previous versions - a new one will be updated soon!
-
 > **Version**: 0.2  
 > **Status**: Active playtesting  
 > **Discord**: `#battlefield-6-portal`
@@ -13,18 +11,6 @@ This is an outdated guide for previous versions - a new one will be updated soon
 ### Setup
 1. **Enable Chat Visibility**: Find the Chat Visibility option and cycle through until it says "Show" or "Always On" — this allows cross-team communication
 2. **Declare Home Team**: Usually whoever is hosting the server
-3. **Confirm Format in Chat**: Both teams must agree on the format (all chat agreements are binding)
-
-### Format Examples
-
-| Format | Vehicle Composition |
-|--------|---------------------|
-| 1v1 Tanks | 1 tank of your choice |
-| 2v2 Tanks | 1 MBT + 1 IFV |
-| 3v3 Tanks | 1 MBT + 1 IFV + 1 other |
-| 4v4 Tanks | 1 MBT + 1 IFV + 2 others |
-| 5v5 Tanks | 1 MBT + 1 IFV + 3 others |
-| 6v6 Tanks | 1 MBT + 1 IFV + 4 others |
 
 ### Weapon/Gadget Restrictions
 
@@ -52,8 +38,8 @@ This is an outdated guide for previous versions - a new one will be updated soon
 
 ### Team Swapping
 If you need to swap teams:
-1. Select the enemy main base spawn point
-2. Wait for team swap to complete
+1. Bring up the Ready Screen (triple tap interact)
+2. Select Change Teams
 3. Respawn after delay
 
 ### Vehicle Registration (CRITICAL)
@@ -66,9 +52,9 @@ If you need to swap teams:
 
 ### Ready Up
 1. Stay in your main base
-2. Type "Ready" in chat when prepared
-3. Wait for both teams to confirm ready
-4. One team types "Go" — only then leave main base
+2. Use "Ready Up" screen when prepared
+3. Wait for both teams to ready up
+4. Countdown confirms when round is live — only then leave main base
 
 ---
 
@@ -99,96 +85,28 @@ If you need to swap teams:
 
 ## End of Combat Round
 
-1. **Drive back** to main base (don't abandon your tank)
-2. **Repair and resupply** at main base
-3. **Vehicle swap**: Return current tank to its spawn point before taking a new one
-4. **Confirm score in chat**: e.g., "Round 2 score: 3 West, 1 East"
-5. Ready up for next round
+1. **Respawn back in your main base**
+2. **Repair and resupply** at main base if needed
+3. **Confirm score in chat if Victory screen is wrong**: e.g., "Round 2 score: 3 West, 1 East"
+4. Ready up for next round
 
-> ⚠️ Losing a registered tank at ANY time counts as a point for the enemy
-
----
-
-## Experience Codes
-
-| Experience | Code | Maps | Settings |
-|------------|------|------|----------|
-| 3 Map Rotation | `zfvxv` | Mirak Valley, Manhattan Bridge, Defense Nexus | First to 11, 15 min |
-| Manhattan Bridge | `zgzq8` | Manhattan Bridge only | First to 11, 15 min |
-| Mirak Valley | `zgzqa` | Mirak Valley only | First to 11, 15 min |
-| Defense Nexus | `zgzqb` | Defense Nexus only | First to 11, 15 min |
-
----
-
-## Map Details
-
-### Defense Nexus
-- **Size**: Small
-- **Capacity**: Up to 6v6 Tanks
-- **Vehicles**: Tanks only
-
-### Manhattan Bridge
-- **Size**: Medium
-- **Capacity**: Up to 4v4 Tanks, 2v2 or 4v4 Choppers
-- **Vehicles**: Tanks, Helicopters (Pilot/Gunner or Pilot only), optional Anti-Air
-
-### Mirak Valley
-- **Size**: Large
-- **Capacity**: Up to 8v8 Tanks (theoretically 32v32), 2v2-4v4 Choppers
-- **Vehicles**: Tanks, Helicopters, optional Anti-Air
+> ⚠️ Losing a registered tank at ANY time during a Live round counts as a point for the enemy
 
 ---
 
 ## Known Issues
 
 1. **Cannot edit vehicle configuration on entry** — Portal limitation
-2. **Spawn issues**: If you can't spawn, check your Engineer loadout (only Supply Crate and EOD Bot available as gadgets; EOD Bot is a workaround but don't use it in combat)
+2. **Spawn issues**: If you can't spawn, check your Engineer loadout
 3. **Vehicle registration intermittent**: First entry sometimes doesn't register. Second entry always works.
-
----
-
-## Feedback Requested
-
-### Mode Logic
-- Could you complete full rounds? Multiple rounds?
-- Did ammo crates resupply correctly?
-- Did all kills count?
-- Any incorrect point awards?
-- Could you swap vehicles as intended?
-- Any vehicle access issues?
-
-### Map-Specific Feedback
-
-**Defense Nexus**
-- Right vehicles available?
-- Could support more than 6v6?
-- Main base locations correct?
-- Can both teams navigate when map is destructed?
-- Allow tank access inside the building?
-- Good fight spots or too campy?
-- Where would you add obstacles?
-
-**Mirak Valley**
-- Too big? How should boundaries be constrained?
-- Main base locations correct?
-- Could support 8v8+?
-- Good fight spots or too campy?
-- Could this map be split into multiple smaller maps?
-- Viable for chopper combat?
-
-**Manhattan Bridge**
-- Too small for 4v4?
-- Good fight spots or too campy?
-- Where would you add obstacles?
-- Viable for chopper combat?
 
 ---
 
 ## Dispute Resolution
 
-- **Screenshots**: Take screenshots of chat and combat for disputes
+- **Screenshots**: Take screenshots of chat, victory screens and combat for disputes
 - **Chat agreements**: All agreements in chat are binding
-- **Score confirmation**: Always confirm scores in chat between rounds
+- **Score confirmation**: Good habit to confirm scores in chat between rounds
 
 ---
 
