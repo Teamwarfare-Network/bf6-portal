@@ -1,5 +1,7 @@
 # Contributing to TWL BF6 Portal Experiences
 
+**This guide is out of date, but will get updates soon! Below is an older version**
+
 This guide explains how to contribute new experiences or modify existing ones for TWL's Battlefield 6 Portal ladders.
 
 ## Prerequisites
