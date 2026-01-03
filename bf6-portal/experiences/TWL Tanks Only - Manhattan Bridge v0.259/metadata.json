@@ -1,0 +1,10 @@
+{
+  "id": "twl-tanks-8maps",
+  "name": "TWL Tanks Only - All 8 Maps",
+  "version": "0.259",
+  "script": "TWL_Tanks_Sandbox_Beta_Script.ts",
+  "strings": "TWL_Tanks_Sandbox_Beta_Strings.strings.json",
+  "url": "https://portal.battlefield.com/bf6/experience/publish/step-three?id=f8631840-e8d4-11f0-91cf-a424ab3a1e8e&teams=0"
+  "code": "ZMCYW",
+  "status": "Published"
+}

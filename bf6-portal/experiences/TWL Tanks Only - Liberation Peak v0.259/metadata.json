@@ -1,0 +1,10 @@
+{
+  "id": "twl-tanks-liberationpeak",
+  "name": "TWL Tanks Only - Liberation Peak",
+  "version": "0.259",
+  "script": "TWL_Tanks_Sandbox_Beta_Script.ts",
+  "strings": "TWL_Tanks_Sandbox_Beta_Strings.strings.json",
+  "url": "https://portal.battlefield.com/bf6/experience/publish/step-three?id=ed6595c0-e8f3-11f0-9110-df17685fc72e&teams=0"
+  "code": "ZMC7Y",
+  "status": "Published"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "twl-tanks-mirakvalley",
+  "name": "TWL Tanks Only - Mirak Valley",
+  "version": "0.259",
+  "script": "TWL_Tanks_Sandbox_Beta_Script.ts",
+  "strings": "TWL_Tanks_Sandbox_Beta_Strings.strings.json",
+  "url": "https://portal.battlefield.com/bf6/experience/publish/step-three?id=c8999580-e8f7-11f0-93bf-bee0dd082586&teams=0"
+  "code": "ZMC9Y",
+  "status": "Published"
+}
