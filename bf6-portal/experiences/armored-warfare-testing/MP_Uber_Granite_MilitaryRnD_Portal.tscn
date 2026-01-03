@@ -1,0 +1,106 @@
+[gd_scene load_steps=10 format=3 uid="uid://c76yqgm8e8l5q"]
+
+[ext_resource type="PackedScene" path="res://objects/Gameplay/Common/HQ_PlayerSpawner.tscn" id="1_6rkwp"]
+[ext_resource type="PackedScene" uid="uid://jv31so3xcr7p" path="res://addons/bf_portal/portal_tools/types/PolygonVolume/PolygonVolume.tscn" id="2_e5anp"]
+[ext_resource type="PackedScene" path="res://objects/entities/SpawnPoint.tscn" id="3_8lu1i"]
+[ext_resource type="PackedScene" path="res://objects/Gameplay/Common/CombatArea.tscn" id="4_5arlx"]
+[ext_resource type="PackedScene" path="res://objects/Gameplay/Common/DeployCam.tscn" id="5_k5smx"]
+[ext_resource type="PackedScene" path="res://static/MP_Granite_MilitaryRnD_Portal_Terrain.tscn" id="6_0s6ec"]
+[ext_resource type="PackedScene" path="res://static/MP_Granite_MilitaryRnD_Portal_Assets.tscn" id="7_otx4t"]
+[ext_resource type="PackedScene" path="res://objects/Gameplay/Common/AreaTrigger.tscn" id="8_e5anp"]
+[ext_resource type="PackedScene" path="res://objects/Gameplay/Common/Sector.tscn" id="9_8lu1i"]
+
+[node name="MP_Granite_MilitaryRnD_Portal" type="Node3D"]
+
+[node name="TEAM_1_HQ" parent="." node_paths=PackedStringArray("HQArea", "InfantrySpawns") instance=ExtResource("1_6rkwp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 181.327, 173.193, -399.201)
+AltTeam = 0
+ObjId = 1
+HQArea = NodePath("HQ_Team1")
+InfantrySpawns = [NodePath("SpawnPoint_1_1"), NodePath("SpawnPoint_1_2"), NodePath("SpawnPoint_1_3"), NodePath("SpawnPoint_1_4")]
+
+[node name="HQ_Team1" parent="TEAM_1_HQ" instance=ExtResource("2_e5anp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 0)
+points = PackedVector2Array(5, 5, 5, -5, -5, -5, -5, 5)
+
+[node name="SpawnPoint_1_1" parent="TEAM_1_HQ" instance=ExtResource("3_8lu1i")]
+transform = Transform3D(0.999884, 0, -0.0152535, 0, 1, 0, 0.0152535, 0, 0.999884, 0, -0.514954, -3)
+
+[node name="SpawnPoint_1_2" parent="TEAM_1_HQ" instance=ExtResource("3_8lu1i")]
+transform = Transform3D(-0.9995, 0, -0.0316198, 0, 1, 0, 0.0316198, 0, -0.9995, 3, -0.337234, 0)
+
+[node name="SpawnPoint_1_3" parent="TEAM_1_HQ" instance=ExtResource("3_8lu1i")]
+transform = Transform3D(-0.0428871, 0, 0.99908, 0, 1, 0, -0.99908, 0, -0.0428871, -3, -0.275116, 0)
+
+[node name="SpawnPoint_1_4" parent="TEAM_1_HQ" instance=ExtResource("3_8lu1i")]
+transform = Transform3D(0.0841819, 0, -0.99645, 0, 1, 0, 0.99645, 0, 0.0841819, 0, -0.485413, 3)
+
+[node name="TEAM_2_HQ" parent="." node_paths=PackedStringArray("HQArea", "InfantrySpawns") instance=ExtResource("1_6rkwp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 782.145, 177.951, -508.781)
+Team = 2
+AltTeam = 0
+ObjId = 2
+HQArea = NodePath("HQ_Team2")
+InfantrySpawns = [NodePath("SpawnPoint_2_1"), NodePath("SpawnPoint_2_2"), NodePath("SpawnPoint_2_3"), NodePath("SpawnPoint_2_4")]
+
+[node name="HQ_Team2" parent="TEAM_2_HQ" instance=ExtResource("2_e5anp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 0)
+points = PackedVector2Array(5, 5, 5, -5, -5, -5, -5, 5)
+
+[node name="SpawnPoint_2_1" parent="TEAM_2_HQ" instance=ExtResource("3_8lu1i")]
+transform = Transform3D(0.87795, 0, -0.478754, 0, 1, 0, 0.478754, 0, 0.87795, 0, -0.479156, -3)
+
+[node name="SpawnPoint_2_2" parent="TEAM_2_HQ" instance=ExtResource("3_8lu1i")]
+transform = Transform3D(-0.997604, 0, 0.0691822, 0, 1, 0, -0.0691822, 0, -0.997604, 3, -0.478043, 0)
+
+[node name="SpawnPoint_2_3" parent="TEAM_2_HQ" instance=ExtResource("3_8lu1i")]
+transform = Transform3D(0.162758, 0, 0.986666, 0, 1, 0, -0.986666, 0, 0.162758, -3, 0, 0)
+
+[node name="SpawnPoint_2_4" parent="TEAM_2_HQ" instance=ExtResource("3_8lu1i")]
+transform = Transform3D(-0.165771, 0, -0.986164, 0, 1, 0, 0.986164, 0, -0.165771, 0, -0.234436, 3)
+
+[node name="CombatArea" parent="." node_paths=PackedStringArray("CombatVolume") instance=ExtResource("4_5arlx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 535.646, 97.1329, -488.877)
+CombatVolume = NodePath("CombatVolume")
+
+[node name="CombatVolume" parent="CombatArea" instance=ExtResource("2_e5anp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.4013, 61.8267, -217.263)
+points = PackedVector2Array(-195.465, 491.43, -172.987, 469.133, -139.457, 505.018, -1.31055, 510.329, 87.9278, 470.613, 193.45, 436.209, 265.588, 372.37, 407.455, 18.3608, 410.653, -208.978, 153.59, -338.439, 42.3282, -361.699, 0.735901, -416.936, -67.773, -427.419, -136.444, -398.828, -232.472, -370.746, -319.284, -354.435, -351.847, -334.192, -355.629, -251.089, -336.932, -146.807, -355.496, 32.571, -346.254, 208.359, -347.833, 310.065, -279.36, 406.717, -240.267, 448.14)
+height = 100.0
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.101056, 0.994881, 0, -0.994881, 0.101056, 452.78, 495.994, -720.901)
+
+[node name="DeployCam" parent="Camera3D" instance=ExtResource("5_k5smx")]
+
+[node name="Static" type="Node3D" parent="."]
+
+[node name="MP_Granite_MilitaryRnD_Portal_Terrain" parent="Static" instance=ExtResource("6_0s6ec")]
+metadata/_edit_lock_ = true
+
+[node name="MP_Granite_MilitaryRnD_Portal_Assets" parent="Static" instance=ExtResource("7_otx4t")]
+metadata/_edit_lock_ = true
+
+[node name="WestAreaTrigger" parent="." node_paths=PackedStringArray("Area") instance=ExtResource("8_e5anp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 187.078, 182.393, -403.743)
+ObjId = 501
+Area = NodePath("WestOOBPolygonVolume")
+
+[node name="WestOOBPolygonVolume" parent="WestAreaTrigger" instance=ExtResource("2_e5anp")]
+transform = Transform3D(1, 0, 0, 0, 11.4715, 0, 0, 0, 1, 0, -6.87029, 0)
+points = PackedVector2Array(-13.435, -67.1437, -14.7062, 7.71268, 8.88608, 40.435, 25.3829, 40.0627, 32.5473, 26.2476, 66.5555, -35.6015, 51.4481, -48.0671, 32.1052, -59.6312, 15.3156, -66.0447)
+
+[node name="WestSector" parent="WestAreaTrigger" node_paths=PackedStringArray("SectorArea") instance=ExtResource("9_8lu1i")]
+SectorArea = NodePath("../WestOOBPolygonVolume")
+
+[node name="EastAreaTrigger" parent="." node_paths=PackedStringArray("Area") instance=ExtResource("8_e5anp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 788.921, 183.262, -513.066)
+ObjId = 500
+Area = NodePath("EastOOBPolygonVolume")
+
+[node name="EastOOBPolygonVolume" parent="EastAreaTrigger" instance=ExtResource("2_e5anp")]
+transform = Transform3D(1, 0, 0, 0, 9.47187, 0, 0, 0, 1, 0, 0, 0)
+points = PackedVector2Array(6.77905, 64.8844, 25.4971, 70.6234, 41.5488, 67.8297, 52.7068, 40.652, 69.9303, -2.98224, 11.1151, -24.2791, -17.8745, -1.3515, -15.7438, 26.0132, -6.58374, 45.2487)
+
+[node name="EastSector" parent="EastAreaTrigger" node_paths=PackedStringArray("SectorArea") instance=ExtResource("9_8lu1i")]
+SectorArea = NodePath("../EastOOBPolygonVolume")
