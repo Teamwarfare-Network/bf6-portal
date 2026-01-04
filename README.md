@@ -15,13 +15,14 @@ Tanks Only Experience Codes Supported Today (version 0.259):
 | **ZMC5P** | Golf Course | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Tanks%20Only%20-%20Golf%20Course%20v0.259) | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=3d5d4680-e8f5-11f0-91cf-a424ab3a1e8e&teams=0) |
 | **ZMC7Y** | Liberation Peak | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Tanks%20Only%20-%20Liberation%20Peak%20v0.259) | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=ed6595c0-e8f3-11f0-9110-df17685fc72e&teams=0) |
 | **ZMC9Y** | Mirak Valley | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Tanks%20Only%20-%20Mirak%20Valley%20v0.259) | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=c8999580-e8f7-11f0-93bf-bee0dd082586&teams=0) |
+| **ZMC3A** | Area 22B | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Tanks%20Only%20-%20Area%2022B%20v0.259) | [Portal URL](https://portal.battlefield.com/bf6/experience/rules/script?id=5eb320e0-e8f3-11f0-93bf-bee0dd082586&teams=0) |
 
 **Primary features**:
 - Round and Tank destruction based scoring - choose your experience configuration: 1v1, 2v2, 3v3 or 4v4
 - Only Tank Kills count when the Round is Live (no infantry guns, weapons or gadgets)
 - HUD displays Wins/Losses/Ties and Round/Total Kills with match time remaining
 - Ready up in your main base -> wait for countdown -> fight 
-    - Triple tap your interact keybind to acces the Ready Up screen
+    - Triple tap your interact keybind to access the Ready Up screen
 - Automatic respawn/resets and Round win screens
 - Automatic Map victory screen with match results summarized
 - Main-base entry/exit tracking with gadget ammo restock and pre-round "over-line" warnings.
