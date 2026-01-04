@@ -58,10 +58,13 @@ Tanks Only Experience Codes Supported Today (version 0.259):
     - If any Admin buttons are used, the final victory dialog shows this for awareness/visibility to prevent malicious or sneaky scoreboard tweaks
 
 **Forking / Copying these experiences**:
+- MIT License: https://github.com/Teamwarfare-Network/bf6-portal/blob/main/LICENSE
 - Reference the URL for the experience, then duplicate it
 - Reference the Source Code provided, and make changes locally
 
+
 If you like this experience, check out the 2v2 Tanks Ladder at TWL: https://teamwarfare.net/ The ladder is open!
+
 
 These are the outdated/old codes. Use these ONLY if the new codes up top do not work!
 | Old v0.129 Codes | Map Name
