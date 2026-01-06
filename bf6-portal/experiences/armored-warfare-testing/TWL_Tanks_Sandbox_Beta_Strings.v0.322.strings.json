@@ -1,0 +1,207 @@
+{
+  "twl": {
+    "system": {
+      "genericCounter": "{0}",
+      "slash": "/",
+      "unknownPlayer": "Unknown",
+      "unassigned": "Unassigned"
+    },
+    "hud": {
+      "branding": {
+        "title": "teamwarfare . net | TWL Tanks (v0.322)",
+        "subtitle": "Experience Code: - - - -"
+      },
+      "roundText": "ROUND",
+      "helpText": "STAND STILL! Then triple tap your interact keybind to 'Ready Up' & configure Match Settings",
+      "labels": {
+        "totalKills": "Total Kills",
+        "roundKills": "Round Kills",
+        "roundWins": "Round Wins"
+      },
+      "roundStateFormat": "{0} {1} {2}",
+      "roundStateLive": "LIVE",
+      "roundStateNotReady": "NOT READY",
+      "roundStateGameOver": "GAME OVER",
+      "roundRecordFormat": "{0} - {1} - {2}",
+      "roundLiveHelpFormat": "First to {0} Vehicle Kills Wins the Round",
+      "playersReadyFormat": "{0} / {1} PLAYERS READY",
+      "clock": {
+        "digit": "{0}",
+        "colon": ":"
+      }
+    },
+    "roundEnd": {
+      "draw": "DRAW",
+      "roundNumber": "ROUND {0}"
+    },
+    "overLine": {
+      "title": "{0} IS OVER THE LINE!",
+      "subtitle": "Everyone must return to their main base and ready back up"
+    },
+    "teams": {
+      "WEST": "WEST",
+      "EAST": "EAST",
+      "NORTH": "NORTH",
+      "SOUTH": "SOUTH"
+    },
+    "maps": {
+      "blackwellFields": "Blackwell Fields",
+      "defenseNexus": "Defense Nexus",
+      "golfCourse": "Golf Course",
+      "mirakValley": "Mirak Valley",
+      "operationFirestorm": "Operation Firestorm",
+      "liberationPeak": "Liberation Peak",
+      "manhattanBridge": "Manhattan Bridge",
+      "area22B": "Area 22B"
+    },
+    "notifications": {
+      "ammoRestocked": "Your gadget ammo is restocked",
+      "enteredMainBase": "{0} entered their main base",
+      "exitedMainBase": "{0} exited their main base",
+      "readyupReturnToBaseNotLive": "Return to main base and ready back up - Round {0} is not live!",
+      "roundEndTie": "Round ended: Tie {0}-{1}.",
+      "roundEndWin": "{0} wins {1}-{2}.",
+      "roundOverRedeploying": "Round over, redeploying to reset in {0}s...",
+      "roundStarted": "Round started.",
+      "roundWins": "Current round score is {0}-{1}",
+      "teamSwitch": "You have switched teams!",
+      "roundCleanupSpawnTimeout": "Spawn timeout after {0}s - deploying anyway.",
+      "playerReadiedUp": "{0} has readied up: {1} / {2} Players Ready"
+    },
+    "joinPrompt": {
+      "title": "Welcome to TWL Vehicles Only Combat",
+      "body": "\n\n\n\nAfter spawning in, to intiate the game mode: stand still and triple tap the interact key.\n(If you have issues on console with this, ensure your interact key is set to tap & not hold)\n - Configure the game mode settings in the top right of the Ready Up screen.\n - Change the number of vehicles which spawn or number of total rounds to play.\n - Change teams as necessary, then each player needs to 'Ready Up'.\n - Don't leave the main base before the countdown reaches 'GO!'\n - During combat only vehicle kills count! Repairing and resupplying ammo is allowed.\n - Set your chat to display when activity occurs (have fun, don't be a twat!)\n\nCompetitive BF6 Ladders now open at Teamwarfare . net",
+      "okay": "Okay",
+      "dismiss": "Dismiss",
+      "neverShowAgain": "Never Show Again"
+    },
+    "readyDialog": {
+      "header": "Everyone on both teams needs to press 'Ready' and stay inside their main base until the round starts",
+      "header2": "Only vehicle kills count! Repair vehicles with your torch & resupply vehicle ammo with supply crates",
+      "header3": "Your vehicle will slowly take damage and blow up if it's >{0}m from any player",
+      "mapLabel": "Map:",
+      "bestOfLabel": "Best of {0} Rounds",
+      "bestOfChanged": "{0} changed it to best of {1} rounds",
+      "matchupFormat": "{0} vs {1}",
+      "matchupChanged": "{0} changed matchup to {1} vs {2}",
+      "minPlayersToStartFormat": "Minimum Players to Start: {0}",
+      "targetKillsToWinFormat": "Target Kills to win Round: {0}",
+      "playerNameFormat": "{0}",
+      "status": {
+        "ready": "READY",
+        "notReady": "NOT READY"
+      },
+      "baseStatus": {
+        "in": "IN MAIN BASE",
+        "out": "NOT IN MAIN BASE"
+      },
+      "buttons": {
+        "ready": "READY",
+        "notReady": "NOT READY",
+        "swapTeams": "CHANGE TEAMS"
+      }
+    },
+    "adminPanel": {
+      "accessed": "{0} accessed the Admin Panel",
+      "actionPressed": "{0} pressed {1} in the admin panel",
+      "actionCountFormat": "({0})",
+      "actionCountVictoryFormat": "Admin Panel Buttons pressed {0} times",
+      "actions": {
+        "t1WinsInc": "T1 Wins +",
+        "t1WinsDec": "T1 Wins -",
+        "t2WinsInc": "T2 Wins +",
+        "t2WinsDec": "T2 Wins -",
+        "t1TotalKillsInc": "T1 Total Kills +",
+        "t1TotalKillsDec": "T1 Total Kills -",
+        "t2TotalKillsInc": "T2 Total Kills +",
+        "t2TotalKillsDec": "T2 Total Kills -",
+        "t1RoundKillsInc": "T1 Round Kills +",
+        "t1RoundKillsDec": "T1 Round Kills -",
+        "t2RoundKillsInc": "T2 Round Kills +",
+        "t2RoundKillsDec": "T2 Round Kills -",
+        "targetRoundKillsInc": "Target Round Kills +",
+        "targetRoundKillsDec": "Target Round Kills -",
+        "tiesInc": "Ties +",
+        "tiesDec": "Ties -",
+        "currentRoundInc": "Current Round +",
+        "currentRoundDec": "Current Round -",
+        "clockTimeInc": "Clock Time +",
+        "clockTimeDec": "Clock Time -",
+        "clockReset": "Clock Reset",
+        "roundStart": "Start Round",
+        "roundEnd": "End Round",
+        "positionDebug": "Toggle Position Debug"
+      },
+      "labels": {
+        "t1RoundKills": "T1 Round Kills",
+        "t2RoundKills": "T2 Round Kills"
+      },
+      "buttons": {
+        "panel": "Admin Panel"
+      },
+      "tester": {
+        "header": "ADMIN FUNCTIONS",
+        "buttons": {
+          "clockReset": "Reset Clock",
+          "roundEnd": "End Round",
+          "roundStart": "Start Round",
+          "positionDebug": "Toggle Position Debug"
+        },
+        "labels": {
+          "clockTime": "Clock Time -/+ 1m",
+          "currentRound": "Current Round",
+          "leftKills": "T1 Total Kills",
+          "leftWins": "T1 Wins",
+          "ties": "T1 + T2 Round Ties",
+          "rightKills": "T2 Total Kills",
+          "rightWins": "T2 Wins",
+          "roundKillsTarget": "Target Round Kills"
+        }
+      }
+    },
+    "teamSwitch": {
+      "buttons": {
+        "cancel": "CLOSE"
+      },
+      "debugTimeLimit": "{0}"
+    },
+    "ui": {
+      "plus": "+",
+      "minus": "-"
+    },
+    "victory": {
+      "draws": "DRAWS",
+      "loses": "LOSES",
+      "wins": "WINS!",
+      "restartInFormat": "Map will restart/rotate in {0}s",
+      "roundLossesFormat": "{0} Round Losses",
+      "roundTiesFormat": "{0} Round Ties",
+      "roundWinsFormat": "{0} Round Wins",
+      "roundsSummaryFormat": "{0} Rounds played in a best of {1} Rounds matchup",
+      "screenshotPrompt": "Screenshot this to record match results",
+      "teamOutcomeFormat": "{0} {1}",
+      "totalKillsFormat": "{0} Total Kills",
+      "totalMatchTimeLabel": "Total Match time:"
+    },
+    "countdown": {
+      "format": "{0}",
+      "go": "GO!"
+    },
+    "debug": {
+      "adminPos": "ADMIN POS X:{0} Y:{1} Z:{2}",
+      "adminFacing": "ADMIN FACING X:{0} Y:{1} Z:{2}"
+    },
+    "messages": {
+      "init": "Vehicle scoring initialized.",
+      "vehicleSpawned": "Vehicle spawned for {0} at X:{1}/Z:{2}",
+      "pointAwardedWithOwner": "+1 Kill for {0} - {1}'s vehicle was destroyed! ({2} Round Kills)",
+      "vehicleDestroyedNotLive": "{0}'s {1} vehicle was destroyed - but round was not live (no points awarded)",
+      "vehicleSpawnRetry": "Vehicle spawn blocked for {0}. Retrying in {1}s.",
+      "vehicleCampedInMainBase": "Vehicle was spawn camped in {0} Main Base at X:{1}",
+      "vehicleReRegistered": "Vehicle re-registered again, for {0} by {1}.",
+      "vehicleStolenRegister": "Vehicle stolen and registered for {0} by {1}.",
+      "vehicleRegisteredNew": "Vehicle registered for {0} by {1} (spawn Auto-registration failed?!).",
+      "vehicleReturned": "{0} has returned to their registered vehicle for {1}."
+    }
+  }
+}
