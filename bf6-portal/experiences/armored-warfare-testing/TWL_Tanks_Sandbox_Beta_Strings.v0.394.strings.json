@@ -1,0 +1,235 @@
+{
+  "twl": {
+    "hud": {
+      "branding": {
+        "title": "teamwarfare . net | TWL Tanks (v0.394)",
+        "subtitle": "Experience Code: - - - -"
+      },
+      "roundText": "ROUND",
+      "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
+      "spawnDisabledLive": "SPAWNING DISABLED DURING LIVE ROUND",
+      "readyText": "You are Ready",
+      "labels": {
+        "totalKills": "Total Kills",
+        "roundKills": "Round Kills",
+        "roundKillsWithRoundFormat": "Round {0} Kills",
+        "roundWins": "Round Wins"
+      },
+      "roundStateFormat": "{0} {1} {2}",
+      "roundStateLive": "LIVE",
+      "roundStateNotReady": "NOT READY",
+      "roundStateGameOver": "GAME OVER",
+      "roundRecordFormat": "{0} - {1} - {2}",
+      "roundLiveHelpFormat": "First to {0} Vehicle Kills Wins the Round",
+      "playersReadyFormat": "{0} / {1} PLAYERS READY",
+      "vehiclesAliveFormat": "{0} Vehicles Alive",
+      "clock": {
+        "digit": "{0}",
+        "colon": ":"
+      }
+    },
+    "roundEnd": {
+      "draw": "DRAW",
+      "roundNumber": "ROUND {0}"
+    },
+    "overLine": {
+      "title": "{0} IS OVER THE LINE!",
+      "subtitle": "Everyone must return to their main base and ready back up"
+    },
+    "teams": {
+      "WEST": "WEST",
+      "EAST": "EAST",
+      "NORTH": "NORTH",
+      "SOUTH": "SOUTH"
+    },
+    "maps": {
+      "blackwellFields": "Blackwell Fields",
+      "defenseNexus": "Defense Nexus",
+      "golfCourse": "Golf Course",
+      "mirakValley": "Mirak Valley",
+      "operationFirestorm": "Operation Firestorm",
+      "liberationPeak": "Liberation Peak",
+      "manhattanBridge": "Manhattan Bridge",
+      "area22B": "Area 22B"
+    },
+    "notifications": {
+      "ammoRestocked": "Your gadget ammo is restocked",
+      "enteredMainBase": "{0} entered their main base",
+      "exitedMainBase": "{0} exited their main base",
+      "readyupReturnToBaseNotLive": "Return to main base and ready back up - Round {0} is not live!",
+      "roundEndTie": "Round ended: Tie {0}-{1}.",
+      "roundEndWin": "{0} wins {1}-{2}.",
+      "roundOverRedeploying": "Round over, redeploying to reset in {0}s...",
+      "roundStarted": "Round started.",
+      "roundWins": "Current round score is {0}-{1}",
+      "teamSwitch": "You have switched teams!",
+      "roundCleanupSpawnTimeout": "Spawn timeout after {0}s - deploying anyway.",
+      "playerReadiedUp": "{0} has readied up: {1} / {2} Players Ready"
+    },
+    "joinPrompt": {
+      "title": "Welcome to TWL Vehicles Only Combat",
+      "body": {
+        "mandatory1": "IMPORTANT: to start the game...\n - While on foot: stand still! Then TRIPLE TAP YOUR INTERACT KEYBIND within 2 seconds\n - The interact keybind defaults to 'E' on PC\n - For consoles: interact defaults to 'Square' (PS5) or 'X' (X-Box)\n\nIf you have issues with this, ensure your interact keybind is set to 'tap', not 'hold':\nSettings > Controller > Infantry > Edit Settings > Infantry > Edit Control Settings > Other\n - Ensure that your \"Interact\" is set to \"Tap\".\n - If this STILL does not work for you, interact is immediately available on respawn only.\n\nThis dialog will continue to show...\n...until you successfully triple tap interact...",
+        "mandatory2": "\nThis is round based Vehicular Combat:\n - 'Ready Up' to start the game. Don't leave the main base until countdown ends...\n - Everyone gets 1 life, and 1 vehicle only!\n - Rounds are 5 minutes long.\n - It's a \"Best of X\" format, you decide how many Rounds to play (Default: 3).\n - Map victory is decided by rounds won (e.g. if you win 2 out of 3 rounds).\n - Round ties (and thus map ties) are possible due to rounds timing out.\n - Tie-breakers will be added in the future.",
+        "tip3": "This experience supports 1v1, 2v2, 3v3 and 4v4 configurations!\n - Select the desired format while the 'Ready Up' screen is visible, (upper right corner).\n - Vehicles take a moment to spawn, so wait a moment while the mode changes.\n - If you go down in size (e.g. from '3v3' to '2v2') the extra vehicles will not respawn again.\n - Vehicles are curated for these maps, use what is provided!\n - Teams get mirror match-ups, the same vehicle types spawn for both teams.",
+        "tip4": "We are limited by the inability to change vehicle loadouts mid-game:\n - Your loadout is locked once in-game; reconnect to choose a different vehicle loadout.\n - You can change your Engineer sub-class (Combat Engineer is optimal).\n - Vehicle performance and damage modeling is unchanged from vanilla BF6.",
+        "tip5": "Positioning at the round start is up to the players:\n - The opening moments of a round are impactful!\n - Position intelligently at the start to flank, or setup ambushes.\n - If you cross the main base thresholds before countdown ends, return to the main base.",
+        "tip6": "All gadgets except torch and supply crates are banned:\n - Despite what is selected, you will only get these two gadgets by design.\n - Leaving or entering your main base resupplies your vehicle ammo crates.\n - Ammo resupply boxes, if unused, will persist between rounds.",
+        "tip7": "Vehicles marked 'abandoned' slowly take damage over time:\n - This experience is curated for Vehicles only, do not stray too far from them.\n - After 5m, if no players are within this range they are classified as 'abandoned'.\n - Abandoned Vehicles take damage slowly; they can be repaired back up if needed.\n - Vehicles destroyed by abandonment still award points during a live round.",
+        "tip8": "The captain goes down with his ship:\n - Repairing your friends is allowed, as long as your vehicle is still standing.\n - If you lose your vehicle, please redeploy and let the round play out without you.\n - You can repair torch enemy vehicles but only as long as your own vehicle is still in play.",
+        "tip9": "Vehicle Registration is required for scoring accuracy:\n - If you see no 'registration' message when entering a vehicle, get out and get back in.\n - If round results are innaccurate, you can address this with the admin panel.",
+        "tip10": "Be a sportsman, not a dingus:\n - It is encouraged to set your chat to configure to display when there is activity.\n - Communicate with your opponent when you have bugs, issues, or need to pause.\n - Agreements made in chat should be binding: have fun and try different things.",
+        "tip11": "This Experience is in active development! If bugs occur...\n - Access the Admin Panel in the top right while the 'Ready Up' screen is visible.\n - The Admin panel has global audit messaging and admin action counts.\n - Opening or using the Admin panel gives a global notification for all to see.\n - If any Admin buttons are used, the victory dialog shows this for awareness / visibility.\n - The Admin panel is for fixing innocent mistakes only (avoid using it unless necessary).",
+        "tip12": "There are many experience codes available for this game mode (ZMCYW: All 8 Maps)\n - ZMC3A: Area 22B\n - ZMC44: Blackwell Fields\n - ZMC52: Defense Nexus\n - ZMC5P: Golf Course\n - ZMC7Y: Liberation Peak\n - ZMC87: Mahattan Bridge\n - ZMC9S: Operation Firestorm\n - ZMC9Y: Mirak Valley",
+        "tip13": "If extra vehicles remain in the main base from toggling down a mode.\n(e.g. going from 3v3 to 2v2)\n - It's best to blow these vehicles up before the round starts.\n - Anti-spawn camp detection protects against getting points\n - But this triggers only if they're destroyed during their origin.\n - Do not abuse this feature, that'd be a douchey thing to do.",
+        "tip14": "14-skip: remove from JOIN_PROMPT_BODY_SEQUENCE_SKIP_KEYS in order to display",
+        "tip15": "15-skip: remove from JOIN_PROMPT_BODY_SEQUENCE_SKIP_KEYS in order to display",
+        "tip16": "16-skip: remove from JOIN_PROMPT_BODY_SEQUENCE_SKIP_KEYS in order to display",
+        "tip17": "17-skip: remove from JOIN_PROMPT_BODY_SEQUENCE_SKIP_KEYS in order to display",
+        "tip18": "18-skip: remove from JOIN_PROMPT_BODY_SEQUENCE_SKIP_KEYS in order to display",
+        "tip19": "19-skip: remove from JOIN_PROMPT_BODY_SEQUENCE_SKIP_KEYS in order to display",
+        "tip20": "20-skip: remove from JOIN_PROMPT_BODY_SEQUENCE_SKIP_KEYS in order to display"
+      },
+      "dismiss": "Dismiss",
+      "dismissShowMoreTips": "Show More Tips Next Time",
+      "neverShowAgain": "Never Show Again"
+    },
+    "readyDialog": {
+      "header": "Everyone needs to press 'Ready' and stay inside their main base until the round starts. You get 1 vehicle & life per round.",
+      "header2": "Only vehicle kills award points! Repair vehicles with your torch & resupply vehicle ammo with supply crates - but stay close to your vehicles...",
+      "header3": "Vehicles will become 'abandoned' and slowly take damage over time - eventually blowing up if it's >{0}m from any player.",
+      "mapLabel": "Map:",
+      "bestOfLabel": "Best of {0} Rounds",
+      "bestOfChanged": "{0} changed it to best of {1} rounds",
+      "matchupFormat": "{0} vs {1}",
+      "matchupChanged": "{0} changed matchup to {1} vs {2}",
+      "minPlayersToStartFormat": "Minimum Players to Start: {0}",
+      "targetKillsToWinFormat": "Target Kills to win Round: {0}",
+      "playerNameFormat": "{0}",
+      "status": {
+        "ready": "READY",
+        "notReady": "NOT READY"
+      },
+      "baseStatus": {
+        "in": "IN MAIN BASE",
+        "out": "NOT IN MAIN BASE"
+      },
+      "buttons": {
+        "ready": "READY",
+        "notReady": "NOT READY",
+        "swapTeams": "CHANGE TEAMS"
+      }
+    },
+    "adminPanel": {
+      "accessed": "{0} accessed the Admin Panel",
+      "actionPressed": "{0} pressed {1} in the admin panel",
+      "actionCountFormat": "({0})",
+      "actionCountVictoryFormat": "Admin Panel Buttons pressed {0} times",
+      "actions": {
+        "t1WinsInc": "T1 Wins +",
+        "t1WinsDec": "T1 Wins -",
+        "t2WinsInc": "T2 Wins +",
+        "t2WinsDec": "T2 Wins -",
+        "t1TotalKillsInc": "T1 Total Kills +",
+        "t1TotalKillsDec": "T1 Total Kills -",
+        "t2TotalKillsInc": "T2 Total Kills +",
+        "t2TotalKillsDec": "T2 Total Kills -",
+        "t1RoundKillsInc": "T1 Round Kills +",
+        "t1RoundKillsDec": "T1 Round Kills -",
+        "t2RoundKillsInc": "T2 Round Kills +",
+        "t2RoundKillsDec": "T2 Round Kills -",
+        "targetRoundKillsInc": "Target Round Kills +",
+        "targetRoundKillsDec": "Target Round Kills -",
+        "tiesInc": "Ties +",
+        "tiesDec": "Ties -",
+        "currentRoundInc": "Current Round +",
+        "currentRoundDec": "Current Round -",
+        "clockTimeInc": "Clock Time +",
+        "clockTimeDec": "Clock Time -",
+        "clockReset": "Clock Reset",
+        "roundStart": "Start Round",
+        "roundEnd": "End Round",
+        "positionDebug": "Toggle Position Debug"
+      },
+      "labels": {
+        "t1RoundKills": "T1 Round Kills",
+        "t2RoundKills": "T2 Round Kills"
+      },
+      "buttons": {
+        "panel": "Admin Panel"
+      },
+      "tester": {
+        "header": "t1 = left team; t2 = right team",
+        "buttons": {
+          "clockReset": "Reset Clock",
+          "roundEnd": "End Round",
+          "roundStart": "Start Round",
+          "positionDebug": "Toggle Position Debug"
+        },
+        "labels": {
+          "clockTime": "Clock Time -/+ 1m",
+          "currentRound": "Current Round",
+          "leftKills": "T1 Total Kills",
+          "leftWins": "T1 Wins",
+          "ties": "T1 + T2 Round Ties",
+          "rightKills": "T2 Total Kills",
+          "rightWins": "T2 Wins",
+          "roundKillsTarget": "Target Round Kills:"
+        }
+      }
+    },
+    "teamSwitch": {
+      "buttons": {
+        "cancel": "CLOSE"
+      },
+      "debugTimeLimit": "{0}"
+    },
+    "ui": {
+      "plus": "+",
+      "minus": "-"
+    },
+    "victory": {
+      "draws": "DRAWS",
+      "loses": "LOSES",
+      "wins": "WINS!",
+      "restartInFormat": "Map will restart/rotate in {0}s",
+      "roundLossesFormat": "{0} Round Losses",
+      "roundTiesFormat": "{0} Round Ties",
+      "roundWinsFormat": "{0} Round Wins",
+      "roundsSummaryFormat": "{0} Rounds played in a best of {1} Rounds matchup",
+      "screenshotPrompt": "Screenshot this to record match results",
+      "teamOutcomeFormat": "{0} {1}",
+      "totalKillsFormat": "{0} Total Kills",
+      "totalMatchTimeLabel": "Total Match time:"
+    },
+    "countdown": {
+      "format": "{0}",
+      "go": "GO!"
+    },
+    "debug": {
+      "adminPos": "ADMIN POS X:{0} Y:{1} Z:{2}",
+      "adminFacing": "ADMIN FACING X:{0} Y:{1} Z:{2}"
+    },
+    "messages": {
+      "init": "Vehicle scoring initialized.",
+      "vehicleSpawned": "Vehicle spawned for {0} at X:{1}/Z:{2}",
+      "pointAwardedWithOwner": "+1 Kill for {0} - {1}'s vehicle was destroyed! ({2} Round Kills)",
+      "vehicleDestroyedNotLive": "{0}'s {1} vehicle was destroyed - but round was not live (no points awarded)",
+      "vehicleSpawnRetry": "Vehicle spawn blocked for {0}. Retrying in {1}s.",
+      "vehicleCampedInMainBase": "Vehicle was spawn camped in {0} Main Base at X:{1}",
+      "vehicleReRegistered": "Vehicle re-registered again, for {0} by {1}.",
+      "vehicleStolenRegister": "Vehicle stolen and registered for {0} by {1}.",
+      "vehicleRegistrationNoChange": "{0} entered a registered vehicle for {1} (no change).",
+      "vehicleRegistrationPendingTeam": "{0} entered a vehicle, registration pending team assignment.",
+      "vehicleRegisteredNew": "Vehicle registered for {0} by {1} (spawn Auto-registration failed?!).",
+      "vehicleReturned": "{0} has returned to their registered vehicle for {1}."
+    },
+        "system": {
+      "genericCounter": "{0}",
+      "slash": "/",
+      "unknownPlayer": "Unknown",
+      "unassigned": "Unassigned",
+      "debugPlaceholderName": "PLACERHOLDER_PLAYER_NAME_HERE"
+    }
+  }
+}
