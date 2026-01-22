@@ -3,7 +3,7 @@
 Compete in competitive tanks only ladder experiences across 8 maps at [TWL](https://teamwarfare.net/), with rounds and kills tracked in a custom in-game HUD. Compete on the 2v2 Tanks ladder on teamwarfare.net, or use these experience codes to enjoy with your friends, clan mates & teams for tank practice. 
 The experiences support 1v1, 2v2, 3v3 and 4v4 configurations!
 
-Tanks Only Experience Codes Supported Today (version 0.259):
+Tanks Only Experience Codes Supported Today (version 0.394):
 
 | Code | Map Name | Source Code | Portal URL |
 |-------|----------|--------|--------|
@@ -34,8 +34,6 @@ Tanks Only Experience Codes Supported Today (version 0.259):
 - Custom Portal experiences cannot edit vehicle loadouts once in-game. If needed, you should reconnect to reconfigure and then rejoin. 
     - Choose, select and activate your optimal/desired MBT, IFV and Engineer class loadouts before joining!
     - If you have issues spawning in, ensure Combat Engineer subclass is chosen when deploying
-- If you die during a live round, please wait in your main base until the round finishes.
-- If your tank blows up but you don't die, please redeploy to your main base (don't chase enemy tanks with your repair torch).
 - Tanks play as they do in Vanilla BF6 right now, we are playtesting changes to health regen or considering loadout restritions. 
     - We and are open to feedback as we playtest possible balance changes/limitations
 
