@@ -1,0 +1,2144 @@
+{
+    "Portal_Dynamic": [
+        {
+            "name": "TEAM_1_HQ",
+            "AltTeam": "TeamNeutral",
+            "ObjId": 1,
+            "InfantrySpawns": [
+                "TEAM_1_HQ/SpawnPoint_1_1",
+                "TEAM_1_HQ/SpawnPoint_1_2",
+                "TEAM_1_HQ/SpawnPoint_1_3",
+                "TEAM_1_HQ/SpawnPoint_1_4"
+            ],
+            "HQArea": "TEAM_1_HQ/HQ_Team1",
+            "type": "HQ_PlayerSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 181.327,
+                "y": 173.193,
+                "z": -399.201
+            },
+            "id": "TEAM_1_HQ",
+            "linked": [
+                "HQArea",
+                "InfantrySpawns"
+            ]
+        },
+        {
+            "name": "HQ_Team1",
+            "type": "PolygonVolume",
+            "id": "TEAM_1_HQ/HQ_Team1",
+            "height": 0,
+            "points": [
+                {
+                    "x": 186.327,
+                    "y": 178.193,
+                    "z": -394.201
+                },
+                {
+                    "x": 186.327,
+                    "y": 178.193,
+                    "z": -404.201
+                },
+                {
+                    "x": 176.327,
+                    "y": 178.193,
+                    "z": -404.201
+                },
+                {
+                    "x": 176.327,
+                    "y": 178.193,
+                    "z": -394.201
+                }
+            ]
+        },
+        {
+            "name": "SpawnPoint_1_1",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.999884,
+                "y": 0,
+                "z": 0.0152535
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.0152535,
+                "y": 0,
+                "z": 0.999884
+            },
+            "position": {
+                "x": 181.327,
+                "y": 172.678046,
+                "z": -402.201
+            },
+            "id": "TEAM_1_HQ/SpawnPoint_1_1"
+        },
+        {
+            "name": "SpawnPoint_1_2",
+            "type": "SpawnPoint",
+            "right": {
+                "x": -0.9995,
+                "y": 0,
+                "z": 0.0316198
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.0316198,
+                "y": 0,
+                "z": -0.9995
+            },
+            "position": {
+                "x": 184.327,
+                "y": 172.855766,
+                "z": -399.201
+            },
+            "id": "TEAM_1_HQ/SpawnPoint_1_2"
+        },
+        {
+            "name": "SpawnPoint_1_3",
+            "type": "SpawnPoint",
+            "right": {
+                "x": -0.0428871,
+                "y": 0,
+                "z": -0.99908
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.99908,
+                "y": 0,
+                "z": -0.0428871
+            },
+            "position": {
+                "x": 178.327,
+                "y": 172.917884,
+                "z": -399.201
+            },
+            "id": "TEAM_1_HQ/SpawnPoint_1_3"
+        },
+        {
+            "name": "SpawnPoint_1_4",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.0841819,
+                "y": 0,
+                "z": 0.99645
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.99645,
+                "y": 0,
+                "z": 0.0841819
+            },
+            "position": {
+                "x": 181.327,
+                "y": 172.707587,
+                "z": -396.201
+            },
+            "id": "TEAM_1_HQ/SpawnPoint_1_4"
+        },
+        {
+            "name": "TEAM_2_HQ",
+            "Team": "Team2",
+            "AltTeam": "TeamNeutral",
+            "ObjId": 2,
+            "InfantrySpawns": [
+                "TEAM_2_HQ/SpawnPoint_2_1",
+                "TEAM_2_HQ/SpawnPoint_2_2",
+                "TEAM_2_HQ/SpawnPoint_2_3",
+                "TEAM_2_HQ/SpawnPoint_2_4"
+            ],
+            "HQArea": "TEAM_2_HQ/HQ_Team2",
+            "type": "HQ_PlayerSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 782.145,
+                "y": 177.951,
+                "z": -508.781
+            },
+            "id": "TEAM_2_HQ",
+            "linked": [
+                "HQArea",
+                "InfantrySpawns"
+            ]
+        },
+        {
+            "name": "HQ_Team2",
+            "type": "PolygonVolume",
+            "id": "TEAM_2_HQ/HQ_Team2",
+            "height": 0,
+            "points": [
+                {
+                    "x": 787.145,
+                    "y": 182.951,
+                    "z": -503.781
+                },
+                {
+                    "x": 787.145,
+                    "y": 182.951,
+                    "z": -513.781
+                },
+                {
+                    "x": 777.145,
+                    "y": 182.951,
+                    "z": -513.781
+                },
+                {
+                    "x": 777.145,
+                    "y": 182.951,
+                    "z": -503.781
+                }
+            ]
+        },
+        {
+            "name": "SpawnPoint_2_1",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.87795,
+                "y": 0,
+                "z": 0.478754
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.478754,
+                "y": 0,
+                "z": 0.87795
+            },
+            "position": {
+                "x": 782.145,
+                "y": 177.471844,
+                "z": -511.781
+            },
+            "id": "TEAM_2_HQ/SpawnPoint_2_1"
+        },
+        {
+            "name": "SpawnPoint_2_2",
+            "type": "SpawnPoint",
+            "right": {
+                "x": -0.997604,
+                "y": 0,
+                "z": -0.0691822
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.0691822,
+                "y": 0,
+                "z": -0.997604
+            },
+            "position": {
+                "x": 785.145,
+                "y": 177.472957,
+                "z": -508.781
+            },
+            "id": "TEAM_2_HQ/SpawnPoint_2_2"
+        },
+        {
+            "name": "SpawnPoint_2_3",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.162758,
+                "y": 0,
+                "z": -0.986666
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.986666,
+                "y": 0,
+                "z": 0.162758
+            },
+            "position": {
+                "x": 779.145,
+                "y": 177.951,
+                "z": -508.781
+            },
+            "id": "TEAM_2_HQ/SpawnPoint_2_3"
+        },
+        {
+            "name": "SpawnPoint_2_4",
+            "type": "SpawnPoint",
+            "right": {
+                "x": -0.165771,
+                "y": 0,
+                "z": 0.986164
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.986164,
+                "y": 0,
+                "z": -0.165771
+            },
+            "position": {
+                "x": 782.145,
+                "y": 177.716564,
+                "z": -505.781
+            },
+            "id": "TEAM_2_HQ/SpawnPoint_2_4"
+        },
+        {
+            "name": "CombatArea",
+            "CombatVolume": "CombatArea/CombatVolume",
+            "type": "CombatArea",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 535.646,
+                "y": 97.1329,
+                "z": -488.877
+            },
+            "id": "CombatArea",
+            "linked": [
+                "CombatVolume"
+            ]
+        },
+        {
+            "name": "CombatVolume",
+            "type": "PolygonVolume",
+            "id": "CombatArea/CombatVolume",
+            "height": 100,
+            "points": [
+                {
+                    "x": 324.7797,
+                    "y": 158.9596,
+                    "z": -214.71
+                },
+                {
+                    "x": 347.2577,
+                    "y": 158.9596,
+                    "z": -237.007
+                },
+                {
+                    "x": 380.7877,
+                    "y": 158.9596,
+                    "z": -201.122
+                },
+                {
+                    "x": 518.93415,
+                    "y": 158.9596,
+                    "z": -195.811
+                },
+                {
+                    "x": 608.1725,
+                    "y": 158.9596,
+                    "z": -235.527
+                },
+                {
+                    "x": 713.6947,
+                    "y": 158.9596,
+                    "z": -269.931
+                },
+                {
+                    "x": 785.8327,
+                    "y": 158.9596,
+                    "z": -333.77
+                },
+                {
+                    "x": 927.6997,
+                    "y": 158.9596,
+                    "z": -687.7792
+                },
+                {
+                    "x": 930.8977,
+                    "y": 158.9596,
+                    "z": -915.118
+                },
+                {
+                    "x": 673.8347,
+                    "y": 158.9596,
+                    "z": -1044.579
+                },
+                {
+                    "x": 562.5729,
+                    "y": 158.9596,
+                    "z": -1067.839
+                },
+                {
+                    "x": 520.980601,
+                    "y": 158.9596,
+                    "z": -1123.076
+                },
+                {
+                    "x": 452.4717,
+                    "y": 158.9596,
+                    "z": -1133.559
+                },
+                {
+                    "x": 383.8007,
+                    "y": 158.9596,
+                    "z": -1104.968
+                },
+                {
+                    "x": 287.7727,
+                    "y": 158.9596,
+                    "z": -1076.886
+                },
+                {
+                    "x": 200.9607,
+                    "y": 158.9596,
+                    "z": -1060.575
+                },
+                {
+                    "x": 168.3977,
+                    "y": 158.9596,
+                    "z": -1040.332
+                },
+                {
+                    "x": 164.6157,
+                    "y": 158.9596,
+                    "z": -957.229
+                },
+                {
+                    "x": 183.3127,
+                    "y": 158.9596,
+                    "z": -852.947
+                },
+                {
+                    "x": 164.7487,
+                    "y": 158.9596,
+                    "z": -673.569
+                },
+                {
+                    "x": 173.9907,
+                    "y": 158.9596,
+                    "z": -497.781
+                },
+                {
+                    "x": 172.4117,
+                    "y": 158.9596,
+                    "z": -396.075
+                },
+                {
+                    "x": 240.8847,
+                    "y": 158.9596,
+                    "z": -299.423
+                },
+                {
+                    "x": 279.9777,
+                    "y": 158.9596,
+                    "z": -258
+                }
+            ]
+        },
+        {
+            "name": "DeployCam",
+            "type": "DeployCam",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 0.101056,
+                "z": -0.994881
+            },
+            "front": {
+                "x": 0,
+                "y": 0.994881,
+                "z": 0.101056
+            },
+            "position": {
+                "x": 452.78,
+                "y": 495.994,
+                "z": -720.901
+            },
+            "id": "Camera3D/DeployCam"
+        },
+        {
+            "name": "WestAreaTrigger",
+            "ObjId": 501,
+            "Area": "WestAreaTrigger/WestOOBPolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 187.078,
+                "y": 182.393,
+                "z": -403.743
+            },
+            "id": "WestAreaTrigger",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "WestOOBPolygonVolume",
+            "type": "PolygonVolume",
+            "id": "WestAreaTrigger/WestOOBPolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": 173.643,
+                    "y": 175.52271,
+                    "z": -470.8867
+                },
+                {
+                    "x": 172.3718,
+                    "y": 175.52271,
+                    "z": -396.03032
+                },
+                {
+                    "x": 195.96408,
+                    "y": 175.52271,
+                    "z": -363.308
+                },
+                {
+                    "x": 212.4609,
+                    "y": 175.52271,
+                    "z": -363.6803
+                },
+                {
+                    "x": 219.6253,
+                    "y": 175.52271,
+                    "z": -377.4954
+                },
+                {
+                    "x": 253.6335,
+                    "y": 175.52271,
+                    "z": -439.3445
+                },
+                {
+                    "x": 238.5261,
+                    "y": 175.52271,
+                    "z": -451.8101
+                },
+                {
+                    "x": 219.1832,
+                    "y": 175.52271,
+                    "z": -463.3742
+                },
+                {
+                    "x": 202.3936,
+                    "y": 175.52271,
+                    "z": -469.7877
+                }
+            ]
+        },
+        {
+            "name": "WestSector",
+            "SectorArea": "WestAreaTrigger/WestOOBPolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 187.078,
+                "y": 182.393,
+                "z": -403.743
+            },
+            "id": "WestAreaTrigger/WestSector",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "EastAreaTrigger",
+            "ObjId": 500,
+            "Area": "EastAreaTrigger/EastOOBPolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 788.921,
+                "y": 183.262,
+                "z": -513.066
+            },
+            "id": "EastAreaTrigger",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "EastOOBPolygonVolume",
+            "type": "PolygonVolume",
+            "id": "EastAreaTrigger/EastOOBPolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": 795.70005,
+                    "y": 183.262,
+                    "z": -448.1816
+                },
+                {
+                    "x": 814.4181,
+                    "y": 183.262,
+                    "z": -442.4426
+                },
+                {
+                    "x": 830.4698,
+                    "y": 183.262,
+                    "z": -445.2363
+                },
+                {
+                    "x": 841.6278,
+                    "y": 183.262,
+                    "z": -472.414
+                },
+                {
+                    "x": 858.8513,
+                    "y": 183.262,
+                    "z": -516.04824
+                },
+                {
+                    "x": 800.0361,
+                    "y": 183.262,
+                    "z": -537.3451
+                },
+                {
+                    "x": 771.0465,
+                    "y": 183.262,
+                    "z": -514.4175
+                },
+                {
+                    "x": 773.1772,
+                    "y": 183.262,
+                    "z": -487.0528
+                },
+                {
+                    "x": 782.33726,
+                    "y": 183.262,
+                    "z": -467.8173
+                }
+            ]
+        },
+        {
+            "name": "EastSector",
+            "SectorArea": "EastAreaTrigger/EastOOBPolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 788.921,
+                "y": 183.262,
+                "z": -513.066
+            },
+            "id": "EastAreaTrigger/EastSector",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "CaptureAreaTrigger A",
+            "ObjId": 200,
+            "Area": "Overtime Capture Points/CaptureAreaTrigger A/CapA PolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 693.206,
+                "y": 210.863,
+                "z": -364.519
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger A",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "CapA PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "Overtime Capture Points/CaptureAreaTrigger A/CapA PolygonVolume",
+            "height": 15,
+            "points": [
+                {
+                    "x": 643.7545,
+                    "y": 200.863,
+                    "z": -364.853564
+                },
+                {
+                    "x": 645.2907,
+                    "y": 200.863,
+                    "z": -360.1881
+                },
+                {
+                    "x": 701.41193,
+                    "y": 200.863,
+                    "z": -308.7312
+                },
+                {
+                    "x": 749.319,
+                    "y": 200.863,
+                    "z": -361.63951
+                },
+                {
+                    "x": 689.65711,
+                    "y": 200.863,
+                    "z": -415.4285
+                }
+            ]
+        },
+        {
+            "name": "Sector A",
+            "ObjId": 300,
+            "SectorArea": "Overtime Capture Points/CaptureAreaTrigger A/CapA PolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 693.206,
+                "y": 200.863,
+                "z": -364.519
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger A/Sector A",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "WorldIcon A",
+            "ObjId": 400,
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 693.206,
+                "y": 210.863,
+                "z": -364.519
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger A/WorldIcon A"
+        },
+        {
+            "name": "CapturePoint A",
+            "ObjId": 600,
+            "CaptureArea": "Overtime Capture Points/CapturePoint Sector Ordering/Dummy A Capture Point PolygonVolume",
+            "type": "CapturePoint",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 693.206,
+                "y": 220.863,
+                "z": -364.519
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger A/CapturePoint A",
+            "linked": [
+                "CaptureArea"
+            ]
+        },
+        {
+            "name": "CaptureAreaTrigger B",
+            "ObjId": 201,
+            "Area": "Overtime Capture Points/CaptureAreaTrigger B/CapB PolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 368.298,
+                "y": 192.127,
+                "z": -307.707
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger B",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "CapB PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "Overtime Capture Points/CaptureAreaTrigger B/CapB PolygonVolume",
+            "height": 15,
+            "points": [
+                {
+                    "x": 292.9279,
+                    "y": 176.8883,
+                    "z": -322.2463
+                },
+                {
+                    "x": 292.1828,
+                    "y": 176.8883,
+                    "z": -302.30887
+                },
+                {
+                    "x": 364.3334,
+                    "y": 176.8883,
+                    "z": -227.753
+                },
+                {
+                    "x": 445.787,
+                    "y": 176.8883,
+                    "z": -308.87195
+                },
+                {
+                    "x": 365.26696,
+                    "y": 176.8883,
+                    "z": -392.0809
+                }
+            ]
+        },
+        {
+            "name": "Sector B",
+            "ObjId": 301,
+            "SectorArea": "Overtime Capture Points/CaptureAreaTrigger B/CapB PolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 368.298,
+                "y": 182.1265,
+                "z": -307.707
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger B/Sector B",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "WorldIcon B",
+            "ObjId": 401,
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 368.298,
+                "y": 192.127,
+                "z": -307.707
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger B/WorldIcon B"
+        },
+        {
+            "name": "CapturePoint B",
+            "ObjId": 601,
+            "CaptureArea": "Overtime Capture Points/CapturePoint Sector Ordering/Dummy B Capture Point PolygonVolume",
+            "type": "CapturePoint",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 368.298,
+                "y": 202.127,
+                "z": -307.707
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger B/CapturePoint B",
+            "linked": [
+                "CaptureArea"
+            ]
+        },
+        {
+            "name": "CaptureAreaTrigger C",
+            "ObjId": 202,
+            "Area": "Overtime Capture Points/CaptureAreaTrigger C/CapC PolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 454.2545,
+                "y": 185.9022,
+                "z": -625.96
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger C",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "CapC PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "Overtime Capture Points/CaptureAreaTrigger C/CapC PolygonVolume",
+            "height": 15,
+            "points": [
+                {
+                    "x": 403.2597,
+                    "y": 170.664,
+                    "z": -635.998
+                },
+                {
+                    "x": 414.2744,
+                    "y": 170.664,
+                    "z": -593.5293
+                },
+                {
+                    "x": 435.2654,
+                    "y": 170.664,
+                    "z": -582.3335
+                },
+                {
+                    "x": 498.2663,
+                    "y": 170.664,
+                    "z": -602.0127
+                },
+                {
+                    "x": 479.2919,
+                    "y": 170.664,
+                    "z": -668.1077
+                },
+                {
+                    "x": 444.62831,
+                    "y": 170.664,
+                    "z": -657.3501
+                },
+                {
+                    "x": 408.7515,
+                    "y": 170.664,
+                    "z": -646.0397
+                }
+            ]
+        },
+        {
+            "name": "Sector C",
+            "ObjId": 302,
+            "SectorArea": "Overtime Capture Points/CaptureAreaTrigger C/CapC PolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 454.2545,
+                "y": 175.9022,
+                "z": -625.96
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger C/Sector C",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "WorldIcon C",
+            "ObjId": 402,
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 454.2545,
+                "y": 185.9022,
+                "z": -625.96
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger C/WorldIcon C"
+        },
+        {
+            "name": "CapturePoint C",
+            "ObjId": 602,
+            "CaptureArea": "Overtime Capture Points/CapturePoint Sector Ordering/Dummy C Capture Point PolygonVolume",
+            "type": "CapturePoint",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 454.2545,
+                "y": 195.9022,
+                "z": -625.96
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger C/CapturePoint C",
+            "linked": [
+                "CaptureArea"
+            ]
+        },
+        {
+            "name": "CaptureAreaTrigger D",
+            "ObjId": 203,
+            "Area": "Overtime Capture Points/CaptureAreaTrigger D/CapD PolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 608.6858,
+                "y": 185.9022,
+                "z": -853.053
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger D",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "CapD PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "Overtime Capture Points/CaptureAreaTrigger D/CapD PolygonVolume",
+            "height": 15,
+            "points": [
+                {
+                    "x": 578.5847,
+                    "y": 170.664,
+                    "z": -894.9165
+                },
+                {
+                    "x": 602.06819,
+                    "y": 170.664,
+                    "z": -817.3123
+                },
+                {
+                    "x": 619.883,
+                    "y": 170.664,
+                    "z": -807.8035
+                },
+                {
+                    "x": 643.8753,
+                    "y": 170.664,
+                    "z": -815.3958
+                },
+                {
+                    "x": 651.1254,
+                    "y": 170.664,
+                    "z": -829.5048
+                },
+                {
+                    "x": 629.0007,
+                    "y": 170.664,
+                    "z": -888.5449
+                },
+                {
+                    "x": 613.70612,
+                    "y": 170.664,
+                    "z": -900.6933
+                },
+                {
+                    "x": 604.44459,
+                    "y": 170.664,
+                    "z": -906.1649
+                },
+                {
+                    "x": 580.8425,
+                    "y": 170.664,
+                    "z": -899.4658
+                }
+            ]
+        },
+        {
+            "name": "Sector D",
+            "ObjId": 303,
+            "SectorArea": "Overtime Capture Points/CaptureAreaTrigger D/CapD PolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 608.6858,
+                "y": 175.9022,
+                "z": -853.053
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger D/Sector D",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "WorldIcon D",
+            "ObjId": 403,
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 608.6858,
+                "y": 185.9022,
+                "z": -853.053
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger D/WorldIcon D"
+        },
+        {
+            "name": "CapturePoint D",
+            "ObjId": 603,
+            "CaptureArea": "Overtime Capture Points/CapturePoint Sector Ordering/Dummy D Capture Point PolygonVolume",
+            "type": "CapturePoint",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 608.6858,
+                "y": 195.9022,
+                "z": -853.053
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger D/CapturePoint D",
+            "linked": [
+                "CaptureArea"
+            ]
+        },
+        {
+            "name": "CaptureAreaTrigger E",
+            "ObjId": 204,
+            "Area": "Overtime Capture Points/CaptureAreaTrigger E/CapE PolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 298.674,
+                "y": 185.9022,
+                "z": -752.551
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger E",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "CapE PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "Overtime Capture Points/CaptureAreaTrigger E/CapE PolygonVolume",
+            "height": 15,
+            "points": [
+                {
+                    "x": 264.3567,
+                    "y": 170.664,
+                    "z": -732.3562
+                },
+                {
+                    "x": 260.6047,
+                    "y": 170.664,
+                    "z": -696.258
+                },
+                {
+                    "x": 306.63082,
+                    "y": 170.664,
+                    "z": -673.1131
+                },
+                {
+                    "x": 331.3946,
+                    "y": 170.664,
+                    "z": -721.6523
+                },
+                {
+                    "x": 361.6442,
+                    "y": 170.664,
+                    "z": -781.852
+                },
+                {
+                    "x": 308.16341,
+                    "y": 170.664,
+                    "z": -808.536
+                },
+                {
+                    "x": 259.6813,
+                    "y": 170.664,
+                    "z": -801.0895
+                },
+                {
+                    "x": 244.737,
+                    "y": 170.664,
+                    "z": -773.6172
+                },
+                {
+                    "x": 260.2131,
+                    "y": 170.664,
+                    "z": -742.99802
+                }
+            ]
+        },
+        {
+            "name": "Sector E",
+            "ObjId": 304,
+            "SectorArea": "Overtime Capture Points/CaptureAreaTrigger E/CapE PolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 298.674,
+                "y": 175.9022,
+                "z": -752.551
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger E/Sector E",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "WorldIcon E",
+            "ObjId": 404,
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 298.674,
+                "y": 185.9022,
+                "z": -752.551
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger E/WorldIcon E"
+        },
+        {
+            "name": "CapturePoint E",
+            "ObjId": 604,
+            "CaptureArea": "Overtime Capture Points/CapturePoint Sector Ordering/Dummy E Capture Point PolygonVolume",
+            "type": "CapturePoint",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 298.674,
+                "y": 195.9022,
+                "z": -752.551
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger E/CapturePoint E",
+            "linked": [
+                "CaptureArea"
+            ]
+        },
+        {
+            "name": "CaptureAreaTrigger F",
+            "ObjId": 205,
+            "Area": "Overtime Capture Points/CaptureAreaTrigger F/CapF PolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 467.544,
+                "y": 198.7562,
+                "z": -798.517
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger F",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "CapF PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "Overtime Capture Points/CaptureAreaTrigger F/CapF PolygonVolume",
+            "height": 15,
+            "points": [
+                {
+                    "x": 454.3114,
+                    "y": 172.362,
+                    "z": -830.3022
+                },
+                {
+                    "x": 432.2462,
+                    "y": 172.362,
+                    "z": -789.15341
+                },
+                {
+                    "x": 486.7072,
+                    "y": 172.362,
+                    "z": -760.392
+                },
+                {
+                    "x": 496.5003,
+                    "y": 172.362,
+                    "z": -771.322
+                },
+                {
+                    "x": 503.975,
+                    "y": 172.362,
+                    "z": -785.4298
+                },
+                {
+                    "x": 508.1236,
+                    "y": 172.362,
+                    "z": -800.12815
+                }
+            ]
+        },
+        {
+            "name": "Sector F",
+            "ObjId": 305,
+            "SectorArea": "Overtime Capture Points/CaptureAreaTrigger F/CapF PolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 468.089,
+                "y": 188.7562,
+                "z": -798.178
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger F/Sector F",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "WorldIcon F",
+            "ObjId": 405,
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 467.544,
+                "y": 198.7562,
+                "z": -798.517
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger F/WorldIcon F"
+        },
+        {
+            "name": "CapturePoint F",
+            "ObjId": 605,
+            "CaptureArea": "Overtime Capture Points/CapturePoint Sector Ordering/Dummy F Capture Point PolygonVolume",
+            "type": "CapturePoint",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 467.544,
+                "y": 208.7562,
+                "z": -798.517
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger F/CapturePoint F",
+            "linked": [
+                "CaptureArea"
+            ]
+        },
+        {
+            "name": "CaptureAreaTrigger G",
+            "ObjId": 206,
+            "Area": "Overtime Capture Points/CaptureAreaTrigger G/CapG PolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 268.891,
+                "y": 227.8166,
+                "z": -996.293
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger G",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "CapG PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "Overtime Capture Points/CaptureAreaTrigger G/CapG PolygonVolume",
+            "height": 15,
+            "points": [
+                {
+                    "x": 202.8079,
+                    "y": 212.5784,
+                    "z": -978.5771
+                },
+                {
+                    "x": 214.4176,
+                    "y": 212.5784,
+                    "z": -949.5211
+                },
+                {
+                    "x": 235.0188,
+                    "y": 212.5784,
+                    "z": -934.6095
+                },
+                {
+                    "x": 268.258615,
+                    "y": 212.5784,
+                    "z": -951.0211
+                },
+                {
+                    "x": 299.2933,
+                    "y": 212.5784,
+                    "z": -971.3421
+                },
+                {
+                    "x": 327.3538,
+                    "y": 212.5784,
+                    "z": -1015.1969
+                },
+                {
+                    "x": 304.0628,
+                    "y": 212.5784,
+                    "z": -1049.9889
+                },
+                {
+                    "x": 225.1853,
+                    "y": 212.5784,
+                    "z": -1001.47849
+                }
+            ]
+        },
+        {
+            "name": "Sector G",
+            "ObjId": 306,
+            "SectorArea": "Overtime Capture Points/CaptureAreaTrigger G/CapG PolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 268.891,
+                "y": 217.8166,
+                "z": -996.293
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger G/Sector G",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "WorldIcon G",
+            "ObjId": 406,
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 268.891,
+                "y": 227.8166,
+                "z": -996.293
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger G/WorldIcon G"
+        },
+        {
+            "name": "CapturePoint G",
+            "ObjId": 606,
+            "CaptureArea": "Overtime Capture Points/CapturePoint Sector Ordering/Dummy G Capture Point PolygonVolume",
+            "type": "CapturePoint",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 268.891,
+                "y": 237.8166,
+                "z": -996.293
+            },
+            "id": "Overtime Capture Points/CaptureAreaTrigger G/CapturePoint G",
+            "linked": [
+                "CaptureArea"
+            ]
+        },
+        {
+            "name": "CapturePoint Sector Ordering",
+            "ObjId": 1000,
+            "CapturePoints": [
+                "Overtime Capture Points/CaptureAreaTrigger A/CapturePoint A",
+                "Overtime Capture Points/CaptureAreaTrigger B/CapturePoint B",
+                "Overtime Capture Points/CaptureAreaTrigger C/CapturePoint C",
+                "Overtime Capture Points/CaptureAreaTrigger D/CapturePoint D",
+                "Overtime Capture Points/CaptureAreaTrigger E/CapturePoint E",
+                "Overtime Capture Points/CaptureAreaTrigger F/CapturePoint F",
+                "Overtime Capture Points/CaptureAreaTrigger G/CapturePoint G"
+            ],
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 512.005,
+                "y": 200.863,
+                "z": -502.431
+            },
+            "id": "Overtime Capture Points/CapturePoint Sector Ordering",
+            "linked": [
+                "CapturePoints"
+            ]
+        },
+        {
+            "name": "Dummy A Capture Point PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "Overtime Capture Points/CapturePoint Sector Ordering/Dummy A Capture Point PolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -4492.995,
+                    "y": 404.203,
+                    "z": 4492.569
+                },
+                {
+                    "x": -4492.995,
+                    "y": 404.203,
+                    "z": 4502.569
+                },
+                {
+                    "x": -4482.995,
+                    "y": 404.203,
+                    "z": 4502.569
+                },
+                {
+                    "x": -4482.995,
+                    "y": 404.203,
+                    "z": 4492.569
+                }
+            ]
+        },
+        {
+            "name": "Dummy B Capture Point PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "Overtime Capture Points/CapturePoint Sector Ordering/Dummy B Capture Point PolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -4492.995,
+                    "y": 404.203,
+                    "z": 4492.569
+                },
+                {
+                    "x": -4492.995,
+                    "y": 404.203,
+                    "z": 4502.569
+                },
+                {
+                    "x": -4482.995,
+                    "y": 404.203,
+                    "z": 4502.569
+                },
+                {
+                    "x": -4482.995,
+                    "y": 404.203,
+                    "z": 4492.569
+                }
+            ]
+        },
+        {
+            "name": "Dummy C Capture Point PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "Overtime Capture Points/CapturePoint Sector Ordering/Dummy C Capture Point PolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -4492.995,
+                    "y": 404.203,
+                    "z": 4492.569
+                },
+                {
+                    "x": -4492.995,
+                    "y": 404.203,
+                    "z": 4502.569
+                },
+                {
+                    "x": -4482.995,
+                    "y": 404.203,
+                    "z": 4502.569
+                },
+                {
+                    "x": -4482.995,
+                    "y": 404.203,
+                    "z": 4492.569
+                }
+            ]
+        },
+        {
+            "name": "Dummy D Capture Point PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "Overtime Capture Points/CapturePoint Sector Ordering/Dummy D Capture Point PolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -4492.995,
+                    "y": 404.203,
+                    "z": 4492.569
+                },
+                {
+                    "x": -4492.995,
+                    "y": 404.203,
+                    "z": 4502.569
+                },
+                {
+                    "x": -4482.995,
+                    "y": 404.203,
+                    "z": 4502.569
+                },
+                {
+                    "x": -4482.995,
+                    "y": 404.203,
+                    "z": 4492.569
+                }
+            ]
+        },
+        {
+            "name": "Dummy E Capture Point PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "Overtime Capture Points/CapturePoint Sector Ordering/Dummy E Capture Point PolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -4492.995,
+                    "y": 404.203,
+                    "z": 4492.569
+                },
+                {
+                    "x": -4492.995,
+                    "y": 404.203,
+                    "z": 4502.569
+                },
+                {
+                    "x": -4482.995,
+                    "y": 404.203,
+                    "z": 4502.569
+                },
+                {
+                    "x": -4482.995,
+                    "y": 404.203,
+                    "z": 4492.569
+                }
+            ]
+        },
+        {
+            "name": "Dummy F Capture Point PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "Overtime Capture Points/CapturePoint Sector Ordering/Dummy F Capture Point PolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -4492.995,
+                    "y": 404.203,
+                    "z": 4492.569
+                },
+                {
+                    "x": -4492.995,
+                    "y": 404.203,
+                    "z": 4502.569
+                },
+                {
+                    "x": -4482.995,
+                    "y": 404.203,
+                    "z": 4502.569
+                },
+                {
+                    "x": -4482.995,
+                    "y": 404.203,
+                    "z": 4492.569
+                }
+            ]
+        },
+        {
+            "name": "Dummy G Capture Point PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "Overtime Capture Points/CapturePoint Sector Ordering/Dummy G Capture Point PolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -4492.995,
+                    "y": 404.203,
+                    "z": 4492.569
+                },
+                {
+                    "x": -4492.995,
+                    "y": 404.203,
+                    "z": 4502.569
+                },
+                {
+                    "x": -4482.995,
+                    "y": 404.203,
+                    "z": 4502.569
+                },
+                {
+                    "x": -4482.995,
+                    "y": 404.203,
+                    "z": 4492.569
+                }
+            ]
+        }
+    ],
+    "Static": [
+        {
+            "name": "MP_Granite_MilitaryRnD_Portal_Terrain",
+            "metadata/_edit_lock_": true,
+            "type": "MP_Granite_MilitaryRnD_Portal_Terrain",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "id": "Static/MP_Granite_MilitaryRnD_Portal_Terrain"
+        },
+        {
+            "name": "MP_Granite_MilitaryRnD_Portal_Assets",
+            "metadata/_edit_lock_": true,
+            "type": "MP_Granite_MilitaryRnD_Portal_Assets",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "id": "Static/MP_Granite_MilitaryRnD_Portal_Assets"
+        }
+    ]
+}
