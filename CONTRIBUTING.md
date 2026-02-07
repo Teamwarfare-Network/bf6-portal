@@ -237,6 +237,79 @@ draft ──publish──▶ testing ──verify──▶ approved
 
 ---
 
+## Modular Build: Helis Only (`dev/helis-only/`)
+
+The Helis Only experience (`TWL_Vehicles_Only_Script.ts`) is maintained as a modular TypeScript project under `dev/helis-only/`. The [bf6-portal-bundler](https://github.com/deluca-mike/bf6-portal-bundler) concatenates all modules into a single output file for upload to Portal.
+
+### Quick Start
+
+```bash
+cd dev/helis-only
+npm install
+npm run build
+```
+
+The build produces `dist/bundle.ts` (the deployable script) and `dist/bundle.strings.json` (merged strings).
+
+### Project Structure
+
+```
+dev/helis-only/
+├── package.json          # Build tooling (bf6-portal-bundler, bf6-portal-mod-types)
+├── tsconfig.json         # TypeScript config (strict, ESNext)
+├── src/
+│   ├── index.ts          # Entry point: module imports + all 16 Portal event handlers
+│   ├── types.ts          # File headers, constants, enums, type aliases
+│   ├── config.ts         # Map configurations (MAP_CONFIGS, per-map spawn data)
+│   ├── strings.ts        # Map/matchup helpers + UI widget ID constants
+│   ├── state.ts          # Gameplay helpers, GameState interface, State object
+│   ├── hud.ts            # HUD build/ensure, counters, victory/round-end dialogs
+│   ├── vehicles.ts       # Vehicle ownership, registration, spawner system
+│   ├── overtime.ts       # Overtime flag capture (zones, capture loop, HUD, stages)
+│   ├── clock.ts          # Match clock update, state, UI cache
+│   ├── team-switch.ts    # Team switch dialog, interact point, swap actions
+│   ├── round-flow.ts     # Round start/end flow and state transitions
+│   ├── ready-dialog.ts   # Ready dialog, admin panel, join prompt, countdown
+│   ├── utils.ts          # Multi-click detector, main base restock
+│   └── strings.json      # Strings file (merged into bundle.strings.json)
+└── dist/                 # Build output (gitignored)
+    ├── bundle.ts
+    └── bundle.strings.json
+```
+
+### Module Guide
+
+| Module | What to find there |
+|--------|-------------------|
+| `types.ts` | `TeamID`, `RoundPhase`, `OvertimeStage` enums; `MapConfig`, `GameState` interfaces; gameplay constants |
+| `config.ts` | `MAP_CONFIGS` with per-map spawn positions, overtime zones, aircraft ceilings |
+| `strings.ts` | `findMatchupPresetIndex`, `applyMapConfig`, `detectMapKeyFromHqs`; UI widget ID constants |
+| `state.ts` | `State` object (authoritative match/round/UI state); `safeGetPlayerId`, `isRoundLive` |
+| `hud.ts` | `ensureHudForPlayer`, `setCounterText`, victory dialog, round-end dialog builders |
+| `vehicles.ts` | `registerVehicleToTeam`, `startVehicleSpawnerSystem`, kills HUD sync |
+| `overtime.ts` | Zone config, flag selection, capture loop, overtime HUD, stage transitions |
+| `clock.ts` | `updateAllPlayersClock`, `getRemainingSeconds`, clock digit UI |
+| `team-switch.ts` | Team switch interact point, swap actions, tester panel buttons |
+| `round-flow.ts` | `startRound`, `endRound`, round-end cleanup, match-end flow |
+| `ready-dialog.ts` | Ready dialog construction, roster UI, admin panel, join prompt, pregame countdown |
+| `utils.ts` | `InteractMultiClickDetector`, `RestockGadgetAmmo`, main base area trigger helpers |
+| `index.ts` | All 16 Portal event handler exports (`OnGameModeStarted`, `OnPlayerJoinGame`, etc.) |
+
+### How the Bundler Works
+
+The `bf6-portal-bundler` resolves `import './module'` statements from `index.ts` and concatenates all files in dependency order. Import statements are stripped from the output. The result is a single flat TypeScript file equivalent to the original monolith.
+
+Each module uses `// @ts-nocheck` because cross-module references (functions, variables, types) don't resolve when files are checked individually. The bundler's output also gets `// @ts-nocheck`.
+
+### Editing Workflow
+
+1. Find the relevant module using the table above
+2. Make your changes in the module file
+3. Run `npm run build` to produce the updated bundle
+4. Copy `dist/bundle.ts` to the experience's `logic_scripts/` folder (or compare with the existing script)
+
+---
+
 ## Questions?
 
 - **Discord**: Ask in `#battlefield-6-portal` on the TWL Discord
