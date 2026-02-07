@@ -1,0 +1,2691 @@
+{
+    "Portal_Dynamic": [
+        {
+            "name": "TEAM_1_HQ",
+            "AltTeam": "TeamNeutral",
+            "ObjId": 1,
+            "InfantrySpawns": [
+                "TEAM_1_HQ/SpawnPoint_1_1",
+                "TEAM_1_HQ/SpawnPoint_1_2",
+                "TEAM_1_HQ/SpawnPoint_1_3",
+                "TEAM_1_HQ/SpawnPoint_1_4"
+            ],
+            "HQArea": "TEAM_1_HQ/HQ_Team1",
+            "type": "HQ_PlayerSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -764.508,
+                "y": 146.696,
+                "z": -856.193
+            },
+            "id": "TEAM_1_HQ",
+            "linked": [
+                "HQArea",
+                "InfantrySpawns"
+            ]
+        },
+        {
+            "name": "HQ_Team1",
+            "type": "PolygonVolume",
+            "id": "TEAM_1_HQ/HQ_Team1",
+            "height": 0,
+            "points": [
+                {
+                    "x": -759.508,
+                    "y": 151.696,
+                    "z": -851.193
+                },
+                {
+                    "x": -759.508,
+                    "y": 151.696,
+                    "z": -861.193
+                },
+                {
+                    "x": -769.508,
+                    "y": 151.696,
+                    "z": -861.193
+                },
+                {
+                    "x": -769.508,
+                    "y": 151.696,
+                    "z": -851.193
+                }
+            ]
+        },
+        {
+            "name": "SpawnPoint_1_1",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.999884,
+                "y": 0,
+                "z": 0.0152535
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.0152535,
+                "y": 0,
+                "z": 0.999884
+            },
+            "position": {
+                "x": -764.508,
+                "y": 146.696,
+                "z": -859.193
+            },
+            "id": "TEAM_1_HQ/SpawnPoint_1_1"
+        },
+        {
+            "name": "SpawnPoint_1_2",
+            "type": "SpawnPoint",
+            "right": {
+                "x": -0.9995,
+                "y": 0,
+                "z": 0.0316198
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.0316198,
+                "y": 0,
+                "z": -0.9995
+            },
+            "position": {
+                "x": -761.508,
+                "y": 146.696,
+                "z": -856.193
+            },
+            "id": "TEAM_1_HQ/SpawnPoint_1_2"
+        },
+        {
+            "name": "SpawnPoint_1_3",
+            "type": "SpawnPoint",
+            "right": {
+                "x": -0.0428871,
+                "y": 0,
+                "z": -0.99908
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.99908,
+                "y": 0,
+                "z": -0.0428871
+            },
+            "position": {
+                "x": -767.508,
+                "y": 146.696,
+                "z": -856.193
+            },
+            "id": "TEAM_1_HQ/SpawnPoint_1_3"
+        },
+        {
+            "name": "SpawnPoint_1_4",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.0841819,
+                "y": 0,
+                "z": 0.99645
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.99645,
+                "y": 0,
+                "z": 0.0841819
+            },
+            "position": {
+                "x": -764.508,
+                "y": 146.696,
+                "z": -853.193
+            },
+            "id": "TEAM_1_HQ/SpawnPoint_1_4"
+        },
+        {
+            "name": "TEAM_2_HQ",
+            "Team": "Team2",
+            "AltTeam": "TeamNeutral",
+            "ObjId": 2,
+            "InfantrySpawns": [
+                "TEAM_2_HQ/SpawnPoint_2_1",
+                "TEAM_2_HQ/SpawnPoint_2_2",
+                "TEAM_2_HQ/SpawnPoint_2_3",
+                "TEAM_2_HQ/SpawnPoint_2_4"
+            ],
+            "HQArea": "TEAM_2_HQ/HQ_Team2",
+            "type": "HQ_PlayerSpawner",
+            "right": {
+                "x": 0.983067,
+                "y": 0,
+                "z": -0.183248
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.183248,
+                "y": 0,
+                "z": 0.983067
+            },
+            "position": {
+                "x": -724.769,
+                "y": 141.317,
+                "z": -271.653
+            },
+            "id": "TEAM_2_HQ",
+            "linked": [
+                "HQArea",
+                "InfantrySpawns"
+            ]
+        },
+        {
+            "name": "HQ_Team2",
+            "type": "PolygonVolume",
+            "id": "TEAM_2_HQ/HQ_Team2",
+            "height": 0,
+            "points": [
+                {
+                    "x": -719.769,
+                    "y": 146.317,
+                    "z": -266.653
+                },
+                {
+                    "x": -719.769,
+                    "y": 146.317,
+                    "z": -276.653
+                },
+                {
+                    "x": -729.769,
+                    "y": 146.317,
+                    "z": -276.653
+                },
+                {
+                    "x": -729.769,
+                    "y": 146.317,
+                    "z": -266.653
+                }
+            ]
+        },
+        {
+            "name": "SpawnPoint_2_1",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.93160468518,
+                "y": 0,
+                "z": -0.363478581931
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.363478581931,
+                "y": 0,
+                "z": 0.93160468518
+            },
+            "position": {
+                "x": -711.1858551829,
+                "y": 141.135314,
+                "z": -284.5348175958
+            },
+            "id": "TEAM_2_HQ/SpawnPoint_2_1"
+        },
+        {
+            "name": "SpawnPoint_2_2",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.786838652032,
+                "y": 0,
+                "z": -0.617160240825
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.617160240825,
+                "y": 0,
+                "z": 0.786838652032
+            },
+            "position": {
+                "x": -714.1968471092,
+                "y": 141.135314,
+                "z": -281.54599834405
+            },
+            "id": "TEAM_2_HQ/SpawnPoint_2_2"
+        },
+        {
+            "name": "SpawnPoint_2_3",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.901885517508,
+                "y": 0,
+                "z": -0.43197550272
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.43197550272,
+                "y": 0,
+                "z": 0.901885517508
+            },
+            "position": {
+                "x": -714.1748402195,
+                "y": 141.135314,
+                "z": -287.5458803416
+            },
+            "id": "TEAM_2_HQ/SpawnPoint_2_3"
+        },
+        {
+            "name": "SpawnPoint_2_4",
+            "type": "SpawnPoint",
+            "right": {
+                "x": 0.455048482525,
+                "y": 0,
+                "z": -0.890466432779
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.890466432779,
+                "y": 0,
+                "z": 0.455048482525
+            },
+            "position": {
+                "x": -717.1857863338,
+                "y": 141.135314,
+                "z": -284.5568153231
+            },
+            "id": "TEAM_2_HQ/SpawnPoint_2_4"
+        },
+        {
+            "name": "CombatArea",
+            "CombatVolume": "CombatArea/CombatVolume",
+            "type": "CombatArea",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "id": "CombatArea",
+            "linked": [
+                "CombatVolume"
+            ]
+        },
+        {
+            "name": "CombatVolume",
+            "type": "PolygonVolume",
+            "id": "CombatArea/CombatVolume",
+            "height": 10,
+            "points": [
+                {
+                    "x": -630.799,
+                    "y": 133.931,
+                    "z": -875.55
+                },
+                {
+                    "x": -688.743,
+                    "y": 133.931,
+                    "z": -873.57
+                },
+                {
+                    "x": -771.051,
+                    "y": 133.931,
+                    "z": -867.034
+                },
+                {
+                    "x": -801.429,
+                    "y": 133.931,
+                    "z": -789.876
+                },
+                {
+                    "x": -837.332,
+                    "y": 133.931,
+                    "z": -630.553
+                },
+                {
+                    "x": -819.521,
+                    "y": 133.931,
+                    "z": -561.624
+                },
+                {
+                    "x": -814.17,
+                    "y": 133.931,
+                    "z": -483.058
+                },
+                {
+                    "x": -828.751,
+                    "y": 133.931,
+                    "z": -378.957
+                },
+                {
+                    "x": -821.864,
+                    "y": 133.931,
+                    "z": -322.833
+                },
+                {
+                    "x": -750.855,
+                    "y": 133.931,
+                    "z": -287.116
+                },
+                {
+                    "x": -713.65,
+                    "y": 133.931,
+                    "z": -259.31
+                },
+                {
+                    "x": -681.389,
+                    "y": 133.931,
+                    "z": -237.422
+                },
+                {
+                    "x": -652.959,
+                    "y": 133.931,
+                    "z": -226.497
+                },
+                {
+                    "x": -613.869,
+                    "y": 133.931,
+                    "z": -235.371
+                },
+                {
+                    "x": -565.736,
+                    "y": 133.931,
+                    "z": -240.635
+                },
+                {
+                    "x": -517.589,
+                    "y": 133.931,
+                    "z": -224.597
+                },
+                {
+                    "x": -461.328,
+                    "y": 133.931,
+                    "z": -202.462
+                },
+                {
+                    "x": -405.34,
+                    "y": 133.931,
+                    "z": -204.359
+                },
+                {
+                    "x": -342.436,
+                    "y": 133.931,
+                    "z": -246.685
+                },
+                {
+                    "x": -262.187,
+                    "y": 133.931,
+                    "z": -238.798
+                },
+                {
+                    "x": -233.957,
+                    "y": 133.931,
+                    "z": -295.795
+                },
+                {
+                    "x": -219.122,
+                    "y": 133.931,
+                    "z": -331.897
+                },
+                {
+                    "x": -182.689,
+                    "y": 133.931,
+                    "z": -379.364
+                },
+                {
+                    "x": -160.48,
+                    "y": 133.931,
+                    "z": -425.615
+                },
+                {
+                    "x": -146.753,
+                    "y": 133.931,
+                    "z": -425.674
+                },
+                {
+                    "x": -123.865,
+                    "y": 133.931,
+                    "z": -429.416
+                },
+                {
+                    "x": -111.971,
+                    "y": 133.931,
+                    "z": -453.271
+                },
+                {
+                    "x": -104.958,
+                    "y": 133.931,
+                    "z": -477.834
+                },
+                {
+                    "x": -86.6722,
+                    "y": 133.931,
+                    "z": -491.058
+                },
+                {
+                    "x": -73.8822,
+                    "y": 133.931,
+                    "z": -545.799
+                },
+                {
+                    "x": -58.6175,
+                    "y": 133.931,
+                    "z": -591.693
+                },
+                {
+                    "x": -49.3568,
+                    "y": 133.931,
+                    "z": -662.209
+                },
+                {
+                    "x": -48.6837,
+                    "y": 133.931,
+                    "z": -739.464
+                },
+                {
+                    "x": -76.8355,
+                    "y": 133.931,
+                    "z": -831.538
+                },
+                {
+                    "x": -162.63,
+                    "y": 133.931,
+                    "z": -931.665
+                },
+                {
+                    "x": -201.369,
+                    "y": 133.931,
+                    "z": -956.63
+                },
+                {
+                    "x": -274.833,
+                    "y": 133.931,
+                    "z": -984.485
+                },
+                {
+                    "x": -364.74,
+                    "y": 133.931,
+                    "z": -993.114
+                },
+                {
+                    "x": -467.486,
+                    "y": 133.931,
+                    "z": -986.437
+                },
+                {
+                    "x": -519.078,
+                    "y": 133.931,
+                    "z": -954.26
+                }
+            ]
+        },
+        {
+            "name": "DeployCam",
+            "type": "DeployCam",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 0.101056,
+                "z": -0.994881
+            },
+            "front": {
+                "x": 0,
+                "y": 0.994881,
+                "z": 0.101056
+            },
+            "position": {
+                "x": -490.88,
+                "y": 508.426,
+                "z": -598.183
+            },
+            "id": "Camera3D/DeployCam"
+        },
+        {
+            "name": "NorthBaseAreaTrigger",
+            "ObjId": 501,
+            "Area": "NorthBaseAreaTrigger/NorthBaseOOBPolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -749.659,
+                "y": 148.372,
+                "z": -843.407
+            },
+            "id": "NorthBaseAreaTrigger",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "NorthBaseOOBPolygonVolume",
+            "type": "PolygonVolume",
+            "id": "NorthBaseAreaTrigger/NorthBaseOOBPolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -772.66993,
+                    "y": 148.372,
+                    "z": -866.44902
+                },
+                {
+                    "x": -792.82443,
+                    "y": 148.372,
+                    "z": -811.11132
+                },
+                {
+                    "x": -764.69583,
+                    "y": 148.372,
+                    "z": -800.33252
+                },
+                {
+                    "x": -747.75763,
+                    "y": 148.372,
+                    "z": -806.93602
+                },
+                {
+                    "x": -740.51713,
+                    "y": 148.372,
+                    "z": -824.81872
+                },
+                {
+                    "x": -726.70353,
+                    "y": 148.372,
+                    "z": -831.22802
+                },
+                {
+                    "x": -697.72613,
+                    "y": 148.372,
+                    "z": -833.06492
+                },
+                {
+                    "x": -688.55843,
+                    "y": 148.372,
+                    "z": -873.51172
+                }
+            ]
+        },
+        {
+            "name": "NorthBaseSector",
+            "SectorArea": "NorthBaseAreaTrigger/NorthBaseOOBPolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -749.659,
+                "y": 148.372,
+                "z": -843.407
+            },
+            "id": "NorthBaseAreaTrigger/NorthBaseSector",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "SouthBaseAreaTrigger",
+            "ObjId": 500,
+            "Area": "SouthBaseAreaTrigger/SouthBaseOOBPolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -704.42,
+                "y": 148.372,
+                "z": -284.311
+            },
+            "id": "SouthBaseAreaTrigger",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "SouthBaseOOBPolygonVolume",
+            "type": "PolygonVolume",
+            "id": "SouthBaseAreaTrigger/SouthBaseOOBPolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -751.80383,
+                    "y": 137.1413,
+                    "z": -317.96132
+                },
+                {
+                    "x": -768.47363,
+                    "y": 137.1413,
+                    "z": -296.00628
+                },
+                {
+                    "x": -750.88233,
+                    "y": 137.1413,
+                    "z": -287.160916
+                },
+                {
+                    "x": -681.16223,
+                    "y": 137.1413,
+                    "z": -237.34622
+                },
+                {
+                    "x": -667.49963,
+                    "y": 137.1413,
+                    "z": -251.74972
+                },
+                {
+                    "x": -685.65563,
+                    "y": 137.1413,
+                    "z": -289.84753
+                },
+                {
+                    "x": -700.26631,
+                    "y": 137.1413,
+                    "z": -302.12712
+                },
+                {
+                    "x": -712.28871,
+                    "y": 137.1413,
+                    "z": -288.52249
+                },
+                {
+                    "x": -717.88733,
+                    "y": 137.1413,
+                    "z": -287.750698
+                }
+            ]
+        },
+        {
+            "name": "SouthBaseSector",
+            "SectorArea": "SouthBaseAreaTrigger/SouthBaseOOBPolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -704.42,
+                "y": 148.372,
+                "z": -284.311
+            },
+            "id": "SouthBaseAreaTrigger/SouthBaseSector",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "Container_02_Open_A",
+            "type": "Container_02_Open_A",
+            "right": {
+                "x": 0.720721,
+                "y": 0,
+                "z": -0.693226
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.693226,
+                "y": 0,
+                "z": 0.720721
+            },
+            "position": {
+                "x": -763.088,
+                "y": 141.569,
+                "z": -569.319
+            },
+            "id": "Container_02_Open_A"
+        },
+        {
+            "name": "Forklift_01",
+            "type": "Forklift_01",
+            "right": {
+                "x": -0.362194,
+                "y": 0,
+                "z": 0.932103
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.932103,
+                "y": 0,
+                "z": -0.362194
+            },
+            "position": {
+                "x": -764.844,
+                "y": 141.586,
+                "z": -572.414
+            },
+            "id": "Forklift_01"
+        },
+        {
+            "name": "Forklift_01_DDPF",
+            "type": "Forklift_01_DDPF",
+            "right": {
+                "x": -0.642373,
+                "y": 0,
+                "z": 0.766392
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.766392,
+                "y": 0,
+                "z": -0.642373
+            },
+            "position": {
+                "x": -768.473,
+                "y": 141.594,
+                "z": -577.48
+            },
+            "id": "Forklift_01_DDPF"
+        },
+        {
+            "name": "ScissorLift_01",
+            "type": "ScissorLift_01",
+            "right": {
+                "x": 0.708586,
+                "y": 0,
+                "z": 0.705624
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.705624,
+                "y": 0,
+                "z": 0.708586
+            },
+            "position": {
+                "x": -772.46,
+                "y": 141.629,
+                "z": -580.333
+            },
+            "id": "ScissorLift_01"
+        },
+        {
+            "name": "GTruckPickup_01",
+            "type": "GTruckPickup_01",
+            "right": {
+                "x": -0.947564,
+                "y": -0.0386366,
+                "z": 0.317223
+            },
+            "up": {
+                "x": -0.00441577,
+                "y": 0.994153,
+                "z": 0.107894
+            },
+            "front": {
+                "x": -0.319537,
+                "y": 0.100836,
+                "z": -0.942194
+            },
+            "position": {
+                "x": -784.282,
+                "y": 142.991,
+                "z": -601.897
+            },
+            "id": "GTruckPickup_01"
+        },
+        {
+            "name": "CaptureAreaTrigger G",
+            "ObjId": 206,
+            "Area": "CaptureAreaTrigger G/CapG PolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -151.27,
+                "y": 193.341,
+                "z": -520.042
+            },
+            "id": "CaptureAreaTrigger G",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "CapG PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "CaptureAreaTrigger G/CapG PolygonVolume",
+            "height": 20,
+            "points": [
+                {
+                    "x": -205.1895,
+                    "y": 176.0305,
+                    "z": -511.16123
+                },
+                {
+                    "x": -195.9059,
+                    "y": 176.0305,
+                    "z": -508.3179
+                },
+                {
+                    "x": -177.3965,
+                    "y": 176.0305,
+                    "z": -506.7026
+                },
+                {
+                    "x": -98.97,
+                    "y": 176.0305,
+                    "z": -498.7831
+                },
+                {
+                    "x": -97.6555,
+                    "y": 176.0305,
+                    "z": -513.98444
+                },
+                {
+                    "x": -95.1026,
+                    "y": 176.0305,
+                    "z": -537.0549
+                },
+                {
+                    "x": -142.80075,
+                    "y": 176.0305,
+                    "z": -542.9674
+                },
+                {
+                    "x": -200.2753,
+                    "y": 176.0305,
+                    "z": -547.2974
+                },
+                {
+                    "x": -206.9157,
+                    "y": 176.0305,
+                    "z": -541.4547
+                },
+                {
+                    "x": -210.1576,
+                    "y": 176.0305,
+                    "z": -530.9501
+                },
+                {
+                    "x": -209.1332,
+                    "y": 176.0305,
+                    "z": -517.78974
+                }
+            ]
+        },
+        {
+            "name": "Sector G",
+            "ObjId": 306,
+            "SectorArea": "CaptureAreaTrigger G/CapG PolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -151.27,
+                "y": 183.341,
+                "z": -520.042
+            },
+            "id": "CaptureAreaTrigger G/Sector G",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "WorldIcon G",
+            "ObjId": 406,
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -151.27,
+                "y": 193.341,
+                "z": -520.042
+            },
+            "id": "CaptureAreaTrigger G/WorldIcon G"
+        },
+        {
+            "name": "CapturePoint G",
+            "ObjId": 606,
+            "type": "CapturePoint",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -151.27,
+                "y": 203.341,
+                "z": -520.042
+            },
+            "id": "CaptureAreaTrigger G/CapturePoint G"
+        },
+        {
+            "name": "CaptureAreaTrigger F",
+            "ObjId": 205,
+            "Area": "CaptureAreaTrigger F/CapF PolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -405.795,
+                "y": 182.219,
+                "z": -385.562
+            },
+            "id": "CaptureAreaTrigger F",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "CapF PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "CaptureAreaTrigger F/CapF PolygonVolume",
+            "height": 20,
+            "points": [
+                {
+                    "x": -406.17592,
+                    "y": 159.8773,
+                    "z": -427.4119
+                },
+                {
+                    "x": -422.2969,
+                    "y": 159.8773,
+                    "z": -428.3064
+                },
+                {
+                    "x": -453.5396,
+                    "y": 159.8773,
+                    "z": -390.4912
+                },
+                {
+                    "x": -384.3925,
+                    "y": 159.8773,
+                    "z": -334.4094
+                },
+                {
+                    "x": -370.8838,
+                    "y": 159.8773,
+                    "z": -348.648
+                },
+                {
+                    "x": -357.7168,
+                    "y": 159.8773,
+                    "z": -366.2937
+                },
+                {
+                    "x": -361.1331,
+                    "y": 159.8773,
+                    "z": -373.4179
+                },
+                {
+                    "x": -362.5389,
+                    "y": 159.8773,
+                    "z": -388.45024
+                },
+                {
+                    "x": -363.51,
+                    "y": 159.8773,
+                    "z": -393.58837
+                }
+            ]
+        },
+        {
+            "name": "Sector F",
+            "ObjId": 305,
+            "SectorArea": "CaptureAreaTrigger F/CapF PolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -405.795,
+                "y": 172.219,
+                "z": -385.562
+            },
+            "id": "CaptureAreaTrigger F/Sector F",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "WorldIcon F",
+            "ObjId": 405,
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -405.795,
+                "y": 182.219,
+                "z": -385.562
+            },
+            "id": "CaptureAreaTrigger F/WorldIcon F"
+        },
+        {
+            "name": "CapturePoint F",
+            "ObjId": 605,
+            "type": "CapturePoint",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -405.795,
+                "y": 192.219,
+                "z": -385.562
+            },
+            "id": "CaptureAreaTrigger F/CapturePoint F"
+        },
+        {
+            "name": "CaptureAreaTrigger E",
+            "ObjId": 204,
+            "Area": "CaptureAreaTrigger E/CapE PolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -369.712,
+                "y": 199.242,
+                "z": -553.324
+            },
+            "id": "CaptureAreaTrigger E",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "CapE PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "CaptureAreaTrigger E/CapE PolygonVolume",
+            "height": 20,
+            "points": [
+                {
+                    "x": -372.14804,
+                    "y": 180.8351,
+                    "z": -506.8552
+                },
+                {
+                    "x": -359.78658,
+                    "y": 180.8351,
+                    "z": -507.6345
+                },
+                {
+                    "x": -345.5967,
+                    "y": 180.8351,
+                    "z": -513.7489
+                },
+                {
+                    "x": -323.5952,
+                    "y": 180.8351,
+                    "z": -553.531703
+                },
+                {
+                    "x": -339.1386,
+                    "y": 180.8351,
+                    "z": -559.2192
+                },
+                {
+                    "x": -332.4163,
+                    "y": 180.8351,
+                    "z": -578.0037
+                },
+                {
+                    "x": -387.403,
+                    "y": 180.8351,
+                    "z": -598.9114
+                },
+                {
+                    "x": -401.4,
+                    "y": 180.8351,
+                    "z": -603.6474
+                },
+                {
+                    "x": -411.3279,
+                    "y": 180.8351,
+                    "z": -575.1321
+                },
+                {
+                    "x": -412.4901,
+                    "y": 180.8351,
+                    "z": -560.65829
+                },
+                {
+                    "x": -411.9336,
+                    "y": 180.8351,
+                    "z": -545.89193
+                },
+                {
+                    "x": -406.8377,
+                    "y": 180.8351,
+                    "z": -532.7936
+                },
+                {
+                    "x": -398.7483,
+                    "y": 180.8351,
+                    "z": -520.2469
+                },
+                {
+                    "x": -386.0396,
+                    "y": 180.8351,
+                    "z": -509.2655
+                }
+            ]
+        },
+        {
+            "name": "Sector E",
+            "ObjId": 304,
+            "SectorArea": "CaptureAreaTrigger E/CapE PolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -369.712,
+                "y": 189.242,
+                "z": -553.324
+            },
+            "id": "CaptureAreaTrigger E/Sector E",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "WorldIcon E",
+            "ObjId": 404,
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -369.712,
+                "y": 199.242,
+                "z": -553.324
+            },
+            "id": "CaptureAreaTrigger E/WorldIcon E"
+        },
+        {
+            "name": "CapturePoint E",
+            "ObjId": 604,
+            "type": "CapturePoint",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -369.712,
+                "y": 209.242,
+                "z": -553.324
+            },
+            "id": "CaptureAreaTrigger E/CapturePoint E"
+        },
+        {
+            "name": "CaptureAreaTrigger D",
+            "ObjId": 203,
+            "Area": "CaptureAreaTrigger D/CapD PolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -334.749,
+                "y": 202.361,
+                "z": -685.476
+            },
+            "id": "CaptureAreaTrigger D",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "CapD PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "CaptureAreaTrigger D/CapD PolygonVolume",
+            "height": 15,
+            "points": [
+                {
+                    "x": -360.1556,
+                    "y": 184.4184,
+                    "z": -656.4706
+                },
+                {
+                    "x": -348.4268,
+                    "y": 184.4184,
+                    "z": -652.4517
+                },
+                {
+                    "x": -332.16077,
+                    "y": 184.4184,
+                    "z": -646.4313
+                },
+                {
+                    "x": -320.7925,
+                    "y": 184.4184,
+                    "z": -649.4995
+                },
+                {
+                    "x": -308.915,
+                    "y": 184.4184,
+                    "z": -657.1929
+                },
+                {
+                    "x": -294.296,
+                    "y": 184.4184,
+                    "z": -654.0376
+                },
+                {
+                    "x": -281.7905,
+                    "y": 184.4184,
+                    "z": -684.25585
+                },
+                {
+                    "x": -285.2047,
+                    "y": 184.4184,
+                    "z": -691.38787
+                },
+                {
+                    "x": -319.611,
+                    "y": 184.4184,
+                    "z": -705.1022
+                },
+                {
+                    "x": -333.05869,
+                    "y": 184.4184,
+                    "z": -708.2037
+                },
+                {
+                    "x": -359.2922,
+                    "y": 184.4184,
+                    "z": -717.7356
+                },
+                {
+                    "x": -374.5597,
+                    "y": 184.4184,
+                    "z": -716.0936
+                },
+                {
+                    "x": -383.6811,
+                    "y": 184.4184,
+                    "z": -700.3299
+                },
+                {
+                    "x": -379.5261,
+                    "y": 184.4184,
+                    "z": -684.8557
+                },
+                {
+                    "x": -370.2284,
+                    "y": 184.4184,
+                    "z": -677.11785
+                },
+                {
+                    "x": -366.0264,
+                    "y": 184.4184,
+                    "z": -662.1484
+                }
+            ]
+        },
+        {
+            "name": "Sector D",
+            "ObjId": 303,
+            "SectorArea": "CaptureAreaTrigger D/CapD PolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -334.749,
+                "y": 192.361,
+                "z": -685.476
+            },
+            "id": "CaptureAreaTrigger D/Sector D",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "WorldIcon D",
+            "ObjId": 403,
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -334.749,
+                "y": 202.361,
+                "z": -685.476
+            },
+            "id": "CaptureAreaTrigger D/WorldIcon D"
+        },
+        {
+            "name": "CapturePoint D",
+            "ObjId": 603,
+            "type": "CapturePoint",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -334.749,
+                "y": 212.361,
+                "z": -685.476
+            },
+            "id": "CaptureAreaTrigger D/CapturePoint D"
+        },
+        {
+            "name": "CaptureAreaTrigger C",
+            "ObjId": 202,
+            "Area": "CaptureAreaTrigger C/CapC PolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -325.129,
+                "y": 199.288,
+                "z": -851.974
+            },
+            "id": "CaptureAreaTrigger C",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "CapC PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "CaptureAreaTrigger C/CapC PolygonVolume",
+            "height": 15,
+            "points": [
+                {
+                    "x": -377.8681,
+                    "y": 184.0498,
+                    "z": -831.1066
+                },
+                {
+                    "x": -374.7796,
+                    "y": 184.0498,
+                    "z": -826.2288
+                },
+                {
+                    "x": -355.594,
+                    "y": 184.0498,
+                    "z": -812.0178
+                },
+                {
+                    "x": -350.6971,
+                    "y": 184.0498,
+                    "z": -810.3522
+                },
+                {
+                    "x": -346.8618,
+                    "y": 184.0498,
+                    "z": -810.5746
+                },
+                {
+                    "x": -327.51715,
+                    "y": 184.0498,
+                    "z": -823.0593
+                },
+                {
+                    "x": -300.0372,
+                    "y": 184.0498,
+                    "z": -840.842
+                },
+                {
+                    "x": -282.1465,
+                    "y": 184.0498,
+                    "z": -850.55328
+                },
+                {
+                    "x": -273.7792,
+                    "y": 184.0498,
+                    "z": -856.15857
+                },
+                {
+                    "x": -301.4781,
+                    "y": 184.0498,
+                    "z": -902.0948
+                },
+                {
+                    "x": -314.0201,
+                    "y": 184.0498,
+                    "z": -910.6697
+                },
+                {
+                    "x": -327.12299,
+                    "y": 184.0498,
+                    "z": -892.4821
+                },
+                {
+                    "x": -335.04608,
+                    "y": 184.0498,
+                    "z": -897.4526
+                },
+                {
+                    "x": -372.6838,
+                    "y": 184.0498,
+                    "z": -848.32489
+                },
+                {
+                    "x": -375.9887,
+                    "y": 184.0498,
+                    "z": -836.8592
+                }
+            ]
+        },
+        {
+            "name": "Sector C",
+            "ObjId": 302,
+            "SectorArea": "CaptureAreaTrigger C/CapC PolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -325.129,
+                "y": 189.288,
+                "z": -851.974
+            },
+            "id": "CaptureAreaTrigger C/Sector C",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "WorldIcon C",
+            "ObjId": 402,
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -325.129,
+                "y": 199.288,
+                "z": -851.974
+            },
+            "id": "CaptureAreaTrigger C/WorldIcon C"
+        },
+        {
+            "name": "CapturePoint C",
+            "ObjId": 602,
+            "type": "CapturePoint",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -325.129,
+                "y": 209.288,
+                "z": -851.974
+            },
+            "id": "CaptureAreaTrigger C/CapturePoint C"
+        },
+        {
+            "name": "CaptureAreaTrigger B",
+            "ObjId": 201,
+            "Area": "CaptureAreaTrigger B/CapB PolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -623.725,
+                "y": 193.212,
+                "z": -618.774
+            },
+            "id": "CaptureAreaTrigger B",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "CapB PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "CaptureAreaTrigger B/CapB PolygonVolume",
+            "height": 15,
+            "points": [
+                {
+                    "x": -656.8545,
+                    "y": 175.4591,
+                    "z": -624.53779
+                },
+                {
+                    "x": -655.4267,
+                    "y": 175.4591,
+                    "z": -607.4349
+                },
+                {
+                    "x": -649.117,
+                    "y": 175.4591,
+                    "z": -589.9707
+                },
+                {
+                    "x": -640.7712,
+                    "y": 175.4591,
+                    "z": -575.135
+                },
+                {
+                    "x": -594.7786,
+                    "y": 175.4591,
+                    "z": -574.9427
+                },
+                {
+                    "x": -595.5902,
+                    "y": 175.4591,
+                    "z": -602.3612
+                },
+                {
+                    "x": -596.0268,
+                    "y": 175.4591,
+                    "z": -624.58705
+                },
+                {
+                    "x": -596.4398,
+                    "y": 175.4591,
+                    "z": -634.7759
+                },
+                {
+                    "x": -604.4141,
+                    "y": 175.4591,
+                    "z": -663.9509
+                },
+                {
+                    "x": -604.5743,
+                    "y": 175.4591,
+                    "z": -674.4534
+                },
+                {
+                    "x": -646.4848,
+                    "y": 175.4591,
+                    "z": -674.649
+                },
+                {
+                    "x": -651.3246,
+                    "y": 175.4591,
+                    "z": -658.9707
+                },
+                {
+                    "x": -655.7926,
+                    "y": 175.4591,
+                    "z": -642.3665
+                }
+            ]
+        },
+        {
+            "name": "Sector B",
+            "ObjId": 301,
+            "SectorArea": "CaptureAreaTrigger B/CapB PolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -623.725,
+                "y": 183.212,
+                "z": -618.774
+            },
+            "id": "CaptureAreaTrigger B/Sector B",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "WorldIcon B",
+            "ObjId": 401,
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -623.725,
+                "y": 193.212,
+                "z": -618.774
+            },
+            "id": "CaptureAreaTrigger B/WorldIcon B"
+        },
+        {
+            "name": "CapturePoint B",
+            "ObjId": 601,
+            "type": "CapturePoint",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -623.725,
+                "y": 203.212,
+                "z": -618.774
+            },
+            "id": "CaptureAreaTrigger B/CapturePoint B"
+        },
+        {
+            "name": "CaptureAreaTrigger A",
+            "ObjId": 200,
+            "Area": "CaptureAreaTrigger A/CapA PolygonVolume",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -786.99,
+                "y": 150.459,
+                "z": -616.466
+            },
+            "id": "CaptureAreaTrigger A",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "CapA PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "CaptureAreaTrigger A/CapA PolygonVolume",
+            "height": 35,
+            "points": [
+                {
+                    "x": -805.4492,
+                    "y": 134.5429,
+                    "z": -595.9573
+                },
+                {
+                    "x": -763.4538,
+                    "y": 134.5429,
+                    "z": -552.1335
+                },
+                {
+                    "x": -751.0006,
+                    "y": 134.5429,
+                    "z": -562.3568
+                },
+                {
+                    "x": -742.3295,
+                    "y": 134.5429,
+                    "z": -591.8678
+                },
+                {
+                    "x": -743.348,
+                    "y": 134.5429,
+                    "z": -613.04767
+                },
+                {
+                    "x": -750.5643,
+                    "y": 134.5429,
+                    "z": -630.024
+                },
+                {
+                    "x": -758.9495,
+                    "y": 134.5429,
+                    "z": -645.5686
+                },
+                {
+                    "x": -794.39778,
+                    "y": 134.5429,
+                    "z": -654.935
+                },
+                {
+                    "x": -798.4602,
+                    "y": 134.5429,
+                    "z": -639.1266
+                },
+                {
+                    "x": -812.9039,
+                    "y": 134.5429,
+                    "z": -625.83715
+                },
+                {
+                    "x": -812.9854,
+                    "y": 134.5429,
+                    "z": -609.8186
+                }
+            ]
+        },
+        {
+            "name": "Sector A",
+            "ObjId": 300,
+            "SectorArea": "CaptureAreaTrigger A/CapA PolygonVolume",
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -786.99,
+                "y": 140.459,
+                "z": -616.466
+            },
+            "id": "CaptureAreaTrigger A/Sector A",
+            "linked": [
+                "SectorArea"
+            ]
+        },
+        {
+            "name": "WorldIcon A",
+            "ObjId": 400,
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -786.99,
+                "y": 150.459,
+                "z": -616.466
+            },
+            "id": "CaptureAreaTrigger A/WorldIcon A"
+        },
+        {
+            "name": "CapturePoint A",
+            "ObjId": 600,
+            "type": "CapturePoint",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -786.99,
+                "y": 160.459,
+                "z": -616.466
+            },
+            "id": "CaptureAreaTrigger A/CapturePoint A"
+        },
+        {
+            "name": "CapturePoint Sector Ordering",
+            "ObjId": 1000,
+            "CapturePoints": [
+                "CaptureAreaTrigger A/CapturePoint A",
+                "CaptureAreaTrigger B/CapturePoint B",
+                "CaptureAreaTrigger C/CapturePoint C",
+                "CaptureAreaTrigger D/CapturePoint D",
+                "CaptureAreaTrigger E/CapturePoint E",
+                "CaptureAreaTrigger F/CapturePoint F",
+                "CaptureAreaTrigger G/CapturePoint G"
+            ],
+            "type": "Sector",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -416.718,
+                "y": 223.655,
+                "z": -526.406
+            },
+            "id": "CapturePoint Sector Ordering",
+            "linked": [
+                "CapturePoints"
+            ]
+        },
+        {
+            "name": "Dummy A Capture Point PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "CapturePoint Sector Ordering/Dummy A Capture Point PolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -5421.718,
+                    "y": 426.995,
+                    "z": 4468.594
+                },
+                {
+                    "x": -5421.718,
+                    "y": 426.995,
+                    "z": 4478.594
+                },
+                {
+                    "x": -5411.718,
+                    "y": 426.995,
+                    "z": 4478.594
+                },
+                {
+                    "x": -5411.718,
+                    "y": 426.995,
+                    "z": 4468.594
+                }
+            ]
+        },
+        {
+            "name": "Dummy B Capture Point PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "CapturePoint Sector Ordering/Dummy B Capture Point PolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -5421.718,
+                    "y": 426.995,
+                    "z": 4468.594
+                },
+                {
+                    "x": -5421.718,
+                    "y": 426.995,
+                    "z": 4478.594
+                },
+                {
+                    "x": -5411.718,
+                    "y": 426.995,
+                    "z": 4478.594
+                },
+                {
+                    "x": -5411.718,
+                    "y": 426.995,
+                    "z": 4468.594
+                }
+            ]
+        },
+        {
+            "name": "Dummy C Capture Point PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "CapturePoint Sector Ordering/Dummy C Capture Point PolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -5421.718,
+                    "y": 426.995,
+                    "z": 4468.594
+                },
+                {
+                    "x": -5421.718,
+                    "y": 426.995,
+                    "z": 4478.594
+                },
+                {
+                    "x": -5411.718,
+                    "y": 426.995,
+                    "z": 4478.594
+                },
+                {
+                    "x": -5411.718,
+                    "y": 426.995,
+                    "z": 4468.594
+                }
+            ]
+        },
+        {
+            "name": "Dummy D Capture Point PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "CapturePoint Sector Ordering/Dummy D Capture Point PolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -5421.718,
+                    "y": 426.995,
+                    "z": 4468.594
+                },
+                {
+                    "x": -5421.718,
+                    "y": 426.995,
+                    "z": 4478.594
+                },
+                {
+                    "x": -5411.718,
+                    "y": 426.995,
+                    "z": 4478.594
+                },
+                {
+                    "x": -5411.718,
+                    "y": 426.995,
+                    "z": 4468.594
+                }
+            ]
+        },
+        {
+            "name": "Dummy E Capture Point PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "CapturePoint Sector Ordering/Dummy E Capture Point PolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -5421.718,
+                    "y": 426.995,
+                    "z": 4468.594
+                },
+                {
+                    "x": -5421.718,
+                    "y": 426.995,
+                    "z": 4478.594
+                },
+                {
+                    "x": -5411.718,
+                    "y": 426.995,
+                    "z": 4478.594
+                },
+                {
+                    "x": -5411.718,
+                    "y": 426.995,
+                    "z": 4468.594
+                }
+            ]
+        },
+        {
+            "name": "Dummy F Capture Point PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "CapturePoint Sector Ordering/Dummy F Capture Point PolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -5421.718,
+                    "y": 426.995,
+                    "z": 4468.594
+                },
+                {
+                    "x": -5421.718,
+                    "y": 426.995,
+                    "z": 4478.594
+                },
+                {
+                    "x": -5411.718,
+                    "y": 426.995,
+                    "z": 4478.594
+                },
+                {
+                    "x": -5411.718,
+                    "y": 426.995,
+                    "z": 4468.594
+                }
+            ]
+        },
+        {
+            "name": "Dummy G Capture Point PolygonVolume",
+            "type": "PolygonVolume",
+            "id": "CapturePoint Sector Ordering/Dummy G Capture Point PolygonVolume",
+            "height": 0,
+            "points": [
+                {
+                    "x": -5421.718,
+                    "y": 426.995,
+                    "z": 4468.594
+                },
+                {
+                    "x": -5421.718,
+                    "y": 426.995,
+                    "z": 4478.594
+                },
+                {
+                    "x": -5411.718,
+                    "y": 426.995,
+                    "z": 4478.594
+                },
+                {
+                    "x": -5411.718,
+                    "y": 426.995,
+                    "z": 4468.594
+                }
+            ]
+        },
+        {
+            "name": "DirtPileLarge_01",
+            "type": "DirtPileLarge_01",
+            "right": {
+                "x": 0.988825,
+                "y": 0,
+                "z": -1.73846
+            },
+            "up": {
+                "x": 0,
+                "y": 2,
+                "z": 0
+            },
+            "front": {
+                "x": 1.73846,
+                "y": 0,
+                "z": 0.988825
+            },
+            "position": {
+                "x": -709.91,
+                "y": 159.187,
+                "z": -694.743
+            },
+            "id": "DirtPileLarge_01"
+        },
+        {
+            "name": "DirtPileLarge_02",
+            "type": "DirtPileLarge_02",
+            "right": {
+                "x": 0.854432,
+                "y": 0,
+                "z": 1.8083
+            },
+            "up": {
+                "x": 0,
+                "y": 1.39363,
+                "z": 0
+            },
+            "front": {
+                "x": -1.8083,
+                "y": 0,
+                "z": 0.854432
+            },
+            "position": {
+                "x": -184.232,
+                "y": 183.156,
+                "z": -869.792
+            },
+            "id": "DirtPileLarge_02"
+        },
+        {
+            "name": "DirtPileLarge_03",
+            "type": "DirtPileLarge_03",
+            "right": {
+                "x": 1.17797,
+                "y": 0,
+                "z": 1.61629
+            },
+            "up": {
+                "x": 0,
+                "y": 1.5821,
+                "z": 0
+            },
+            "front": {
+                "x": -1.61629,
+                "y": 0,
+                "z": 1.17797
+            },
+            "position": {
+                "x": -173.606,
+                "y": 183.057,
+                "z": -875.959
+            },
+            "id": "DirtPileLarge_03"
+        },
+        {
+            "name": "DirtPileLarge_04",
+            "type": "DirtPileLarge_03",
+            "right": {
+                "x": -1.75324,
+                "y": 0,
+                "z": -0.962375
+            },
+            "up": {
+                "x": 0,
+                "y": 1.41383,
+                "z": 0
+            },
+            "front": {
+                "x": 0.962375,
+                "y": 0,
+                "z": -1.75324
+            },
+            "position": {
+                "x": -192.354,
+                "y": 183.148,
+                "z": -863.378
+            },
+            "id": "DirtPileLarge_04"
+        },
+        {
+            "name": "DirtPileLarge_05",
+            "type": "DirtPileLarge_02",
+            "right": {
+                "x": 1.7761,
+                "y": 0,
+                "z": 0.919501
+            },
+            "up": {
+                "x": 0,
+                "y": 1.20472,
+                "z": 0
+            },
+            "front": {
+                "x": -0.919501,
+                "y": 0,
+                "z": 1.7761
+            },
+            "position": {
+                "x": -466.465,
+                "y": 177.237,
+                "z": -755.234
+            },
+            "id": "DirtPileLarge_05"
+        },
+        {
+            "name": "DirtPileLarge_06",
+            "type": "DirtPileLarge_03",
+            "right": {
+                "x": 1.47609,
+                "y": 0,
+                "z": 1.34951
+            },
+            "up": {
+                "x": 0,
+                "y": 1.36764,
+                "z": 0
+            },
+            "front": {
+                "x": -1.34951,
+                "y": 0,
+                "z": 1.47609
+            },
+            "position": {
+                "x": -459.68,
+                "y": 177.13,
+                "z": -765.962
+            },
+            "id": "DirtPileLarge_06"
+        },
+        {
+            "name": "DirtPileLarge_07",
+            "type": "DirtPileLarge_03",
+            "right": {
+                "x": -1.99336,
+                "y": 0,
+                "z": 0.162834
+            },
+            "up": {
+                "x": 0,
+                "y": 1.46159,
+                "z": 0
+            },
+            "front": {
+                "x": -0.162834,
+                "y": 0,
+                "z": -1.99336
+            },
+            "position": {
+                "x": -468.357,
+                "y": 177.096,
+                "z": -743.142
+            },
+            "id": "DirtPileLarge_07"
+        }
+    ],
+    "Static": [
+        {
+            "name": "MP_Granite_ClubHouse_Portal_Terrain",
+            "metadata/_edit_lock_": true,
+            "type": "MP_Granite_ClubHouse_Portal_Terrain",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "id": "Static/MP_Granite_ClubHouse_Portal_Terrain"
+        },
+        {
+            "name": "MP_Granite_ClubHouse_Portal_Assets",
+            "metadata/_edit_lock_": true,
+            "type": "MP_Granite_ClubHouse_Portal_Assets",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "id": "Static/MP_Granite_ClubHouse_Portal_Assets"
+        }
+    ]
+}
