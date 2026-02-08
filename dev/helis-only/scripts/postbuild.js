@@ -12,6 +12,9 @@ const path = require("path");
 const bundlePath = path.resolve(__dirname, "..", "dist", "bundle.ts");
 let src = fs.readFileSync(bundlePath, "utf8");
 
+// Normalize to LF so matching works on Windows (CRLF) and Linux (LF)
+src = src.replace(/\r\n/g, "\n");
+
 // 1. Remove every `// @ts-nocheck` line (and its trailing newline)
 src = src.replace(/^\/\/ @ts-nocheck\n/gm, "");
 
