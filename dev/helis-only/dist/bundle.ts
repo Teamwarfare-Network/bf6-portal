@@ -1,8 +1,6 @@
 // --- BUNDLED TYPESCRIPT OUTPUT ---
-// @ts-nocheck
 
 // --- SOURCE: src/types.ts ---
-// @ts-nocheck
 // Module: types — File headers, constants, enums, and type aliases
 
 //#region -------------------- Versioning --------------------
@@ -277,7 +275,11 @@ mod.VehicleList.Vector       // Vector (internal or test)
 
 
 
-//#region -------------------- Modlib 
+//#region -------------------- Modlib import --------------------
+
+// If not using bundled TS project you need to use modlib import
+// @ts-ignore - ignores error on Portal webclient with importing modlib
+import * as modlib from "modlib";
 // TS project comes with local modlib functions, if using that then no need to import modlib
 // - There seems to be an error with TS template's project local modlib FilteredArray function (drops all vehicles in vehicle array?!)
 
@@ -928,7 +930,6 @@ const SMALL_MESSAGE_LAYOUT: GlobalMessageLayout = {
 
 
 // --- SOURCE: src/config.ts ---
-// @ts-nocheck
 // Module: config — Map configurations, MapKey type, and active map state
 
 //#region -------------------- Map Config (Constants + Types) --------------------
@@ -1446,7 +1447,6 @@ const MAP_DETECT_DISTANCE_METERS = 5.0;
 
 
 // --- SOURCE: src/strings.ts ---
-// @ts-nocheck
 // Module: strings — Map/matchup helpers and UI widget ID constants
 
 //#region -------------------- Map + Matchup Helpers --------------------
@@ -1786,7 +1786,6 @@ const BIG_SUBTITLE_SHADOW_WIDGET_ID = "BigSubtitleShadow_";
 
 
 // --- SOURCE: src/state.ts ---
-// @ts-nocheck
 // Module: state — Gameplay helpers, ID helpers, HUD types, GameState interface, and State object
 
 //#region -------------------- Core gameplay state helpers --------------------
@@ -2982,7 +2981,6 @@ const State: GameState = {
 
 
 // --- SOURCE: src/hud.ts ---
-// @ts-nocheck
 // Module: hud — HUD counter helpers, build/ensure, victory/round-end dialogs, update helpers
 
 //#region -------------------- HUD Counter Helpers --------------------
@@ -5863,7 +5861,6 @@ function deleteLegacyScoreRootsForAllPlayers(): void {
 
 
 // --- SOURCE: src/vehicles.ts ---
-// @ts-nocheck
 // Module: vehicles — Portal array helpers, vehicle ownership, registration, spawner, kills sync
 
 //#region -------------------- Portal Array Helpers (engine arrays) --------------------
@@ -6505,7 +6502,6 @@ function syncRoundKillsHud(force: boolean = false): void {
 
 
 // --- SOURCE: src/overtime.ts ---
-// @ts-nocheck
 // Module: overtime — Overtime flag capture system (zones, markers, capture loop, HUD, stages)
 
 //#region -------------------- Overtime Flag Capture - Zone Config + Preview Icon --------------------
@@ -8828,7 +8824,6 @@ function resolveOvertimeWinnerAtClockExpiry(): TeamID | 0 | undefined {
 
 
 // --- SOURCE: src/clock.ts ---
-// @ts-nocheck
 // Module: clock — Match clock update, state, UI build and cache helpers
 
 //#region -------------------- Match Clock - Update + State --------------------
@@ -9252,7 +9247,6 @@ function setClockColorCached(cacheEntry: ClockWidgetCacheEntry, color: any): voi
 
 
 // --- SOURCE: src/team-switch.ts ---
-// @ts-nocheck
 // Module: team-switch — Team switch data, interact point, swap actions, UI, tester panel
 
 //#region -------------------- Team Switch Data + Config --------------------
@@ -10113,7 +10107,6 @@ function teamSwitchButtonEvent(
 
 
 // --- SOURCE: src/round-flow.ts ---
-// @ts-nocheck
 // Module: round-flow — Round start/end flow and state transitions
 
 //#region -------------------- Round Start/End Flow + State --------------------
@@ -10750,7 +10743,6 @@ function endRound(_triggerPlayer?: mod.Player, freezeRemainingSeconds?: number, 
 
 
 // --- SOURCE: src/ready-dialog.ts ---
-// @ts-nocheck
 // Module: ready-dialog — Ready dialog, admin panel, join prompt, aircraft ceiling, countdown
 
 //#region -------------------- UI - Ready Up Dialog (construction) --------------------
@@ -15055,7 +15047,6 @@ function swapPlayerTeam(eventPlayer: mod.Player): void {
 
 
 // --- SOURCE: src/utils.ts ---
-// @ts-nocheck
 // Module: utils — Multi-click detector and main base restock
 
 //#region -------------------- MultiClickDetector (triple tap interact) --------------------
@@ -15163,7 +15154,6 @@ function RestockGadgetAmmo(player: mod.Player, magAmmo: number): void {
 
 
 // --- SOURCE: src/index.ts ---
-// @ts-nocheck
 
 
 

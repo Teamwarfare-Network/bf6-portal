@@ -4,19 +4,39 @@ This is a competitive helicopter game mode for BF6 Portal. The code is split int
 
 ## Prerequisites
 
-You need two things installed. If you already have them, skip to **Getting the Code**.
+You need Git, Node.js, and VS Code. If you already have them, skip to **Getting the Code**.
 
-### Install Git
+### Windows
 
-1. Go to https://git-scm.com/downloads/win
-2. Download and run the installer.
-3. Click **Next** through every screen — the defaults are fine.
+1. Install **Git** from https://git-scm.com/downloads/win — click **Next** through every screen, the defaults are fine.
+2. Install **Node.js** from https://nodejs.org/ — download the **LTS** version (big green button on the left). Defaults are fine.
+3. Install **VS Code** from https://code.visualstudio.com/ if you don't have it already.
 
-### Install Node.js
+### Linux
 
-1. Go to https://nodejs.org/
-2. Download the **LTS** version (the big green button on the left).
-3. Run the installer. Defaults are fine here too.
+Git and Node.js are available through your package manager.
+
+**Ubuntu / Debian:**
+
+```
+sudo apt update && sudo apt install git nodejs npm
+```
+
+**Fedora:**
+
+```
+sudo dnf install git nodejs npm
+```
+
+**Arch:**
+
+```
+sudo pacman -S git nodejs npm
+```
+
+If your distro ships an older Node.js (below v18), install a current LTS version via [nvm](https://github.com/nvm-sh/nvm) instead.
+
+Install **VS Code** from https://code.visualstudio.com/ or through your distro's package manager.
 
 ## Getting the Code
 
