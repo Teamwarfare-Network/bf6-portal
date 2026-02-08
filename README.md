@@ -2,7 +2,7 @@
 
 Compete in unique competitive Battlefield 6 experiences at the Team Warfare League!
 
-[TWL Web URL](https://teamwarfare.net/) | [TWL Discord URL](https://discord.gg/U3HCfAaN)
+[TWL Web URL](https://teamwarfare.net/) | [TWL Discord URL](https://teamwarfare.net/discord)
 - [Tanks Only 2v2](https://teamwarfare.net/ladders/bf6-2v2-tanks)
 - [Helis Only 2v2](https://teamwarfare.net/ladders/bf6-2v2-helicopters)
 - Jets Only 1v1 (Coming Soon!)
@@ -16,15 +16,15 @@ Experience Codes Supported Today (version 0.544)
 
 | Experience Code | Map Name | Source Code | Portal URL | Feedback in Discord |
 |-------|----------|--------|--------|--------|
-| **ZPFX9** | All Maps | [Source Code]() |  [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=d0f63730-f967-11f0-8d1d-21c1817ebb02&teams=0) |  |
-| **ZQAWE** | Blackwell Fields | [Source Code]() | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=a41db900-0442-11f1-a88d-87668c5a7fd6&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466540505402703882) |
-| **ZQAV1** | Defense Nexus | [Source Code]() | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-one?id=51977580-043e-11f1-a88d-87668c5a7fd6&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466540620465045666) |
-| **ZQAVG** | Operation Firestorm | [Source Code]() | [Portal URL](https://portal.battlefield.com/bf6/experience/rules/script?id=9fe50340-0440-11f1-ad78-609aa21912e2&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466541071918960904) |
-| **ZQAW7** | Manhattan Bridge | [Source Code]() | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=4b777740-043e-11f1-92d4-ce4268bcaaba&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466540961130610758) |
-| **ZQUAD** | Golf Course | [Source Code]() | [Portal URL](https://portal.battlefield.com/bf6/experience/settings/mode?id=2e5b6b70-043f-11f1-92d4-ce4268bcaaba&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466540730586632293) |
-| **ZQATW** | Liberation Peak | [Source Code]() | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-one?id=51977580-043e-11f1-a88d-87668c5a7fd6&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466540853177614509) |
-| **ZQAVU** | Mirak Valley | [Source Code]() | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=dd9b3dc0-0441-11f1-b487-88f1932ed19e&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466541208892477450) |
-| **ZQAVP** | Area 22B | [Source Code]() | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-one?id=1cbf23f0-0441-11f1-ad78-609aa21912e2&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466540291686142055) |
+| **ZPFX9** | All Maps | [Logic Source](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Tanks%20Only%20v0.544/logic_scripts) |  [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=d0f63730-f967-11f0-8d1d-21c1817ebb02&teams=0) |  |
+| **ZQAWE** | Blackwell Fields | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Tanks%20Only%20v0.544/full_exports/Blackwell%20Fields) | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=a41db900-0442-11f1-a88d-87668c5a7fd6&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466540505402703882) |
+| **ZQAV1** | Defense Nexus | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Tanks%20Only%20v0.544/full_exports/Defense%20Nexus) | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-one?id=51977580-043e-11f1-a88d-87668c5a7fd6&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466540620465045666) |
+| **ZQAVG** | Operation Firestorm | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Tanks%20Only%20v0.544/full_exports/Operation%20Firestorm) | [Portal URL](https://portal.battlefield.com/bf6/experience/rules/script?id=9fe50340-0440-11f1-ad78-609aa21912e2&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466541071918960904) |
+| **ZQAW7** | Manhattan Bridge | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Tanks%20Only%20v0.544/full_exports/Manhattan%20Bridge) | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=4b777740-043e-11f1-92d4-ce4268bcaaba&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466540961130610758) |
+| **ZQUAD** | Golf Course | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Tanks%20Only%20v0.544/full_exports/Golf%20Course) | [Portal URL](https://portal.battlefield.com/bf6/experience/settings/mode?id=2e5b6b70-043f-11f1-92d4-ce4268bcaaba&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466540730586632293) |
+| **ZQATW** | Liberation Peak | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Tanks%20Only%20v0.544/full_exports/Liberation%20Peak) | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-one?id=51977580-043e-11f1-a88d-87668c5a7fd6&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466540853177614509) |
+| **ZQAVU** | Mirak Valley | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Tanks%20Only%20v0.544/full_exports/Mirak%20Valley) | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=dd9b3dc0-0441-11f1-b487-88f1932ed19e&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466541208892477450) |
+| **ZQAVP** | Area 22B | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Tanks%20Only%20v0.544/full_exports/Area%2022B) | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-one?id=1cbf23f0-0441-11f1-ad78-609aa21912e2&teams=0) | [Feedback in Discord](https://discord.com/channels/148673658154516480/1466540291686142055) |
 
 
 # Helis Only
@@ -34,12 +34,12 @@ Experience Codes Supported Today (version 0.621):
 
 | Experience Code | Map Name | Source Code | Portal URL | Feedback in Discord |
 |-------|----------|--------|--------|--------|
-| **ZPVSJ** | All Maps | [Source Code]() |  [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=2a9af940-fb45-11f0-8dfe-d6936fe7f306&teams=0)  |  |
-| **ZQXDN** | Operation Firestorm | [Source Code]() | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=b9fb1080-ffa9-11f0-92d4-ce4268bcaaba&teams=0) | [Feedback in Discord]() |
-| **ZQXD4** | Manhattan Bridge | [Source Code]() | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=7f9b5930-ff96-11f0-a88d-87668c5a7fd6&teams=0) | [Feedback in Discord]() |
-| **ZQXDD** | Liberation Peak | [Source Code]() | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=63108bb0-ffa9-11f0-b487-88f1932ed19e&teams=0) | [Feedback in Discord]() |
-| **ZQXDY** | Mirak Valley | [Source Code]() | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=fbed5e20-ff96-11f0-92d4-ce4268bcaaba&teams=0) | [Feedback in Discord]() |
-| **ZQB45** | New Sobek City | [Source Code]() | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=3c00e300-044d-11f1-b487-88f1932ed19e&teams=0) | [Feedback in Discord]() |
+| **ZPVSJ** | All Maps | [Logic Source](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Helis%20Only%20v0.621/logic_scripts) |  [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=2a9af940-fb45-11f0-8dfe-d6936fe7f306&teams=0)  |  |
+| **ZQXDN** | Operation Firestorm | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Helis%20Only%20v0.621/full_exports/Operation%20Firestorm) | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=b9fb1080-ffa9-11f0-92d4-ce4268bcaaba&teams=0) | [Feedback in Discord]() |
+| **ZQXD4** | Manhattan Bridge | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Helis%20Only%20v0.621/full_exports/Manhattan%20Bridge) | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=7f9b5930-ff96-11f0-a88d-87668c5a7fd6&teams=0) | [Feedback in Discord]() |
+| **ZQXDD** | Liberation Peak | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Helis%20Only%20v0.621/full_exports/Liberation%20Peak) | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=63108bb0-ffa9-11f0-b487-88f1932ed19e&teams=0) | [Feedback in Discord]() |
+| **ZQXDY** | Mirak Valley | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Helis%20Only%20v0.621/full_exports/Mirak%20Valley) | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=fbed5e20-ff96-11f0-92d4-ce4268bcaaba&teams=0) | [Feedback in Discord]() |
+| **ZQB45** | New Sobek City | [Source Code](https://github.com/Teamwarfare-Network/bf6-portal/tree/main/bf6-portal/experiences/TWL%20Helis%20Only%20v0.621/full_exports/New%20Sobek%20City) | [Portal URL](https://portal.battlefield.com/bf6/experience/publish/step-three?id=3c00e300-044d-11f1-b487-88f1932ed19e&teams=0) | [Feedback in Discord]() |
 
 
 # [In Development] Jets Only 
@@ -121,4 +121,4 @@ This applies to Tanks Only, Helis Only, Jets Only Ladder experiences at TWL
 
 **For any and all questions about TWL, please find @Dox, @Polykatana, or @UberDuberSoldat on our Discord**
 - Team WarFare League Website: [https://teamwarfare.net/](https://teamwarfare.net/)
-- TWL Discord: [https://discord.gg/U3HCfAaN](https://discord.gg/U3HCfAaN)
+- TWL Discord: [https://discord.gg/U3HCfAaN](https://teamwarfare.net/discord)
