@@ -4,7 +4,9 @@
   "private": true,
   "description": "Modular build for TWL Helis Only v0.621 BF6 Portal experience",
   "scripts": {
-    "build": "bf6-portal-bundler --entrypoint ./src/index.ts --outDir ./dist && node scripts/postbuild.js"
+    "build": "bf6-portal-bundler --entrypoint ./src/index.ts --outDir ./dist && node scripts/postbuild.js && node scripts/verify.js",
+    "verify": "node scripts/verify.js",
+    "update": "node scripts/update.js"
   },
   "devDependencies": {
     "bf6-portal-bundler": "^1.2.0",

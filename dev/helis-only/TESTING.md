@@ -160,6 +160,18 @@ npm run build
 
 The updated `dist/` files are ready to upload.
 
+## Build Verification
+
+The build automatically verifies that `dist/bundle.ts` and `dist/bundle.strings.json` are byte-for-byte identical to the ground-truth experience files. If the output doesn't match, the build fails and shows the first differing line.
+
+To run verification without rebuilding:
+
+```
+npm run verify
+```
+
+If verification fails after a build, the postbuild script may need updating — check whether `bf6-portal-bundler` changed its output format.
+
 ## If Something Goes Wrong
 
 **Build fails:** Make sure you ran `npm install` in the `dev/helis-only` folder. If it still fails, delete the `node_modules` folder and run `npm install` again.

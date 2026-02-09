@@ -2,8 +2,12 @@
  * Post-build script: cleans bundler artifacts so the output matches
  * the original monolith format expected by the BF6 Portal editor.
  *
- * 1. Removes all `// @ts-nocheck` lines (top-level + per-module)
- * 2. Restores the full Modlib region with its import statement
+ * 1. Normalizes CRLF → LF
+ * 2. Removes all `// @ts-nocheck` lines
+ * 3. Removes bundler markers (BUNDLED header, SOURCE lines, Module comments)
+ * 4. Trims leading blank lines, collapses excessive blanks, normalizes trailing newline
+ * 5. Restores the full Modlib region with its import statement
+ * 6. Replaces bundle.strings.json with the source copy (preserves original formatting)
  */
 
 const fs = require("fs");
@@ -18,7 +22,25 @@ src = src.replace(/\r\n/g, "\n");
 // 1. Remove every `// @ts-nocheck` line (and its trailing newline)
 src = src.replace(/^\/\/ @ts-nocheck\n/gm, "");
 
-// 2. Restore the truncated Modlib region header + import.
+// 2. Remove the BUNDLED TYPESCRIPT OUTPUT header at the top of the file
+src = src.replace(/^\/\/ --- BUNDLED TYPESCRIPT OUTPUT ---\n\n/, "");
+
+// 3. Remove all `// --- SOURCE: src/*.ts ---` marker lines
+src = src.replace(/^\/\/ --- SOURCE: src\/.*\.ts ---\n/gm, "");
+
+// 4. Remove all `// Module: ...` comment lines
+src = src.replace(/^\/\/ Module: .+\n/gm, "");
+
+// 5. Trim leading blank lines
+src = src.replace(/^\n+/, "");
+
+// 6. Collapse runs of 5+ consecutive newlines down to 4 (preserves ≤3-blank-line gaps)
+src = src.replace(/\n{5,}/g, "\n\n\n\n");
+
+// 7. Ensure single trailing newline
+src = src.replace(/\n+$/, "\n");
+
+// 8. Restore the truncated Modlib region header + import.
 //    The bundler strips the import and truncates the region comment to:
 //      //#region -------------------- Modlib \n
 //    Replace it with the original block.
@@ -44,4 +66,16 @@ if (!src.includes(truncated)) {
 src = src.replace(truncated, restored);
 
 fs.writeFileSync(bundlePath, src);
-console.log("postbuild: removed @ts-nocheck lines and restored modlib import");
+console.log("postbuild: cleaned bundle.ts (removed markers, restored modlib import)");
+
+// 9. Replace bundle.strings.json with the source copy.
+//    The bundler re-serializes with 4-space indent, but the ground truth has
+//    non-standard indentation that JSON.stringify can't reproduce. Since there's
+//    only one strings.json, just copy the source file with CRLF normalized.
+const stringsPath = path.resolve(__dirname, "..", "dist", "bundle.strings.json");
+const sourceStrings = path.resolve(__dirname, "..", "src", "strings.json");
+if (fs.existsSync(stringsPath) && fs.existsSync(sourceStrings)) {
+  const stringsContent = fs.readFileSync(sourceStrings, "utf8").replace(/\r\n/g, "\n");
+  fs.writeFileSync(stringsPath, stringsContent);
+  console.log("postbuild: replaced bundle.strings.json with source copy");
+}

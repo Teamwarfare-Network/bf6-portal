@@ -1,8 +1,3 @@
-// --- BUNDLED TYPESCRIPT OUTPUT ---
-
-// --- SOURCE: src/types.ts ---
-// Module: types — File headers, constants, enums, and type aliases
-
 //#region -------------------- Versioning --------------------
 
 // version: 0.621 | Date: 02.07.26 | Time: 16:52 UTC
@@ -929,8 +924,6 @@ const SMALL_MESSAGE_LAYOUT: GlobalMessageLayout = {
 //#endregion ----------------- Constants, Enums and Types --------------------
 
 
-// --- SOURCE: src/config.ts ---
-// Module: config — Map configurations, MapKey type, and active map state
 
 //#region -------------------- Map Config (Constants + Types) --------------------
 
@@ -1446,8 +1439,6 @@ const MAP_DETECT_DISTANCE_METERS = 5.0;
 //#endregion ----------------- Map Config (Constants + Types) --------------------
 
 
-// --- SOURCE: src/strings.ts ---
-// Module: strings — Map/matchup helpers and UI widget ID constants
 
 //#region -------------------- Map + Matchup Helpers --------------------
 
@@ -1785,8 +1776,6 @@ const BIG_SUBTITLE_SHADOW_WIDGET_ID = "BigSubtitleShadow_";
 //#endregion -------------- String Variables --------------------
 
 
-// --- SOURCE: src/state.ts ---
-// Module: state — Gameplay helpers, ID helpers, HUD types, GameState interface, and State object
 
 //#region -------------------- Core gameplay state helpers --------------------
 
@@ -2980,8 +2969,6 @@ const State: GameState = {
 //#endregion ----------------- Game State Definition --------------------
 
 
-// --- SOURCE: src/hud.ts ---
-// Module: hud — HUD counter helpers, build/ensure, victory/round-end dialogs, update helpers
 
 //#region -------------------- HUD Counter Helpers --------------------
 
@@ -5860,8 +5847,6 @@ function deleteLegacyScoreRootsForAllPlayers(): void {
 //#endregion ----------------- Legacy UI Cleanup (old score_root_* containers) --------------------
 
 
-// --- SOURCE: src/vehicles.ts ---
-// Module: vehicles — Portal array helpers, vehicle ownership, registration, spawner, kills sync
 
 //#region -------------------- Portal Array Helpers (engine arrays) --------------------
 
@@ -6501,8 +6486,6 @@ function syncRoundKillsHud(force: boolean = false): void {
 //#endregion ----------------- Kills HUD Sync (GameModeScore -> HUD) --------------------
 
 
-// --- SOURCE: src/overtime.ts ---
-// Module: overtime — Overtime flag capture system (zones, markers, capture loop, HUD, stages)
 
 //#region -------------------- Overtime Flag Capture - Zone Config + Preview Icon --------------------
 
@@ -8823,8 +8806,6 @@ function resolveOvertimeWinnerAtClockExpiry(): TeamID | 0 | undefined {
 //#endregion -------------------- Overtime Flag Capture - Stage Transitions + Messaging --------------------
 
 
-// --- SOURCE: src/clock.ts ---
-// Module: clock — Match clock update, state, UI build and cache helpers
 
 //#region -------------------- Match Clock - Update + State --------------------
 
@@ -9246,8 +9227,6 @@ function setClockColorCached(cacheEntry: ClockWidgetCacheEntry, color: any): voi
 //#endregion ----------------- Match Clock - UI Build + Cache Helpers --------------------
 
 
-// --- SOURCE: src/team-switch.ts ---
-// Module: team-switch — Team switch data, interact point, swap actions, UI, tester panel
 
 //#region -------------------- Team Switch Data + Config --------------------
 
@@ -10106,8 +10085,6 @@ function teamSwitchButtonEvent(
 //#endregion ----------------- Tester Button Events --------------------
 
 
-// --- SOURCE: src/round-flow.ts ---
-// Module: round-flow — Round start/end flow and state transitions
 
 //#region -------------------- Round Start/End Flow + State --------------------
 
@@ -10742,8 +10719,6 @@ function endRound(_triggerPlayer?: mod.Player, freezeRemainingSeconds?: number, 
 //#endregion ----------------- Round Start/End Flow + State --------------------
 
 
-// --- SOURCE: src/ready-dialog.ts ---
-// Module: ready-dialog — Ready dialog, admin panel, join prompt, aircraft ceiling, countdown
 
 //#region -------------------- UI - Ready Up Dialog (construction) --------------------
 
@@ -15046,8 +15021,6 @@ function swapPlayerTeam(eventPlayer: mod.Player): void {
 //#endregion ----------------- Ready Dialog - Swap Teams Button (single toggle) --------------------
 
 
-// --- SOURCE: src/utils.ts ---
-// Module: utils — Multi-click detector and main base restock
 
 //#region -------------------- MultiClickDetector (triple tap interact) --------------------
 
@@ -15151,19 +15124,6 @@ function RestockGadgetAmmo(player: mod.Player, magAmmo: number): void {
 }
 
 //#endregion ----------------- Main Base Restock (area triggers) --------------------
-
-
-// --- SOURCE: src/index.ts ---
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -16060,4 +16020,3 @@ export function OnPlayerExitAreaTrigger(eventPlayer: mod.Player, eventAreaTrigge
 // EOF version: 0.621 | Date: 02.07.26 | Time: 16:52 UTC
 
 //#endregion -------------------- EOF Metadata --------------------
-
