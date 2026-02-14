@@ -9,5 +9,5 @@
     "noEmit": true,
     "types": ["bf6-portal-mod-types"]
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "dist/**/*.ts"]
 }
