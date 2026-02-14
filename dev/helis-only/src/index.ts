@@ -1,4 +1,5 @@
 // @ts-nocheck
+import './header-file';
 import './types';
 import './config';
 import './strings';
@@ -897,11 +898,3 @@ export function OnPlayerExitAreaTrigger(eventPlayer: mod.Player, eventAreaTrigge
 }
 
 //#endregion ----------------- Enter/Exit Triggers --------------------
-
-
-
-//#region -------------------- EOF Metadata --------------------
-
-// EOF version: 0.621 | Date: 02.07.26 | Time: 16:52 UTC
-
-//#endregion -------------------- EOF Metadata --------------------

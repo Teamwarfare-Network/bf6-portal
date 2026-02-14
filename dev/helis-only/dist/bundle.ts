@@ -1,8 +1,9 @@
 //#region -------------------- Versioning --------------------
 
-// version: 0.621 | Date: 02.07.26 | Time: 16:52 UTC
-// name of script: TWL_Vehicles_Only_Script.ts
-// name of paired strings file: TWL_Vehicles_Only_Strings.json
+// version: 0.623 | Date: 02.14.26 | Time: 20:36 UTC
+// version policy header file: src/header-file.ts
+// version policy footer file: src/footer-file.ts
+// version policy strings file: src/strings.json
 // policy: the string hud.branding.title should display this same version at the end of the title
 // policy: increment minor version on every change (UTC)
 // policy: major versions reserved for milestone feature releases (primary authors only)
@@ -65,7 +66,7 @@
 
 //#region -------------------- Changelog / History --------------------
 
-// v0.622: Version bump
+// v0.623: We're using TS Template project now, thanks to @Dox and @MikeDeluca
 // v0.621: Adjusted Aircraft Ceilings for Ladder based on feedback
 // v0.620: Helis Alpha Candidate 1.0 release for 2v2 Ladder opening
 // v0.616: Fix gamemode settings with some minor UI tweaks
@@ -16017,6 +16018,6 @@ export function OnPlayerExitAreaTrigger(eventPlayer: mod.Player, eventAreaTrigge
 
 //#region -------------------- EOF Metadata --------------------
 
-// EOF version: 0.621 | Date: 02.07.26 | Time: 16:52 UTC
+// EOF version: 0.623 | Date: 02.14.26 | Time: 20:36 UTC
 
 //#endregion -------------------- EOF Metadata --------------------

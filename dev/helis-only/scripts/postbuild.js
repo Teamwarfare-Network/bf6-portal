@@ -25,8 +25,8 @@ src = src.replace(/^\/\/ @ts-nocheck\n/gm, "");
 // 2. Remove the BUNDLED TYPESCRIPT OUTPUT header at the top of the file
 src = src.replace(/^\/\/ --- BUNDLED TYPESCRIPT OUTPUT ---\n\n/, "");
 
-// 3. Remove all `// --- SOURCE: src/*.ts ---` marker lines
-src = src.replace(/^\/\/ --- SOURCE: src\/.*\.ts ---\n/gm, "");
+// 3. Remove all `// --- SOURCE: src/*.ts ---` marker lines (supports / and \ paths)
+src = src.replace(/^\/\/ --- SOURCE: src[\\/].*\.ts ---\n/gm, "");
 
 // 4. Remove all `// Module: ...` comment lines
 src = src.replace(/^\/\/ Module: .+\n/gm, "");
@@ -65,10 +65,35 @@ if (!src.includes(truncated)) {
 
 src = src.replace(truncated, restored);
 
-fs.writeFileSync(bundlePath, src);
-console.log("postbuild: cleaned bundle.ts (removed markers, restored modlib import)");
+// 9. Ensure EOF metadata always appears at the very end of the script.
+const eofFooterRegexSingle = /\/\/#region -------------------- EOF Metadata --------------------\n[\s\S]*?\/\/#endregion -------------------- EOF Metadata --------------------\n?/m;
+const eofFooterRegexAll = /\/\/#region -------------------- EOF Metadata --------------------\n[\s\S]*?\/\/#endregion -------------------- EOF Metadata --------------------\n?/gm;
+const footerSourcePath = path.resolve(__dirname, "..", "src", "footer-file.ts");
+let eofFooterFromSource = "";
+if (fs.existsSync(footerSourcePath)) {
+  eofFooterFromSource = fs.readFileSync(footerSourcePath, "utf8").replace(/\r\n/g, "\n");
+  eofFooterFromSource = eofFooterFromSource.replace(/^\/\/ @ts-nocheck\n/gm, "");
+  eofFooterFromSource = eofFooterFromSource.replace(/^\/\/ Module: .+\n/gm, "");
+  eofFooterFromSource = eofFooterFromSource.replace(/^\n+/, "");
+  eofFooterFromSource = eofFooterFromSource.replace(/\n+$/, "\n");
+}
+const eofFooterMatch = src.match(eofFooterRegexSingle);
+const eofFooter = eofFooterMatch
+  ? eofFooterMatch[0].replace(/\n+$/, "\n")
+  : eofFooterFromSource;
+if (eofFooter) {
+  src = src.replace(eofFooterRegexAll, "");
+  // Match canonical formatting: three empty lines before EOF metadata.
+  src = src.replace(/\n+$/, "\n\n\n\n") + eofFooter;
+}
 
-// 9. Replace bundle.strings.json with the source copy.
+// 10. Ensure single trailing newline.
+src = src.replace(/\n+$/, "\n");
+
+fs.writeFileSync(bundlePath, src);
+console.log("postbuild: cleaned bundle.ts (removed markers, restored modlib import, moved EOF footer last)");
+
+// 11. Replace bundle.strings.json with the source copy.
 //    The bundler re-serializes with 4-space indent, but the ground truth has
 //    non-standard indentation that JSON.stringify can't reproduce. Since there's
 //    only one strings.json, just copy the source file with CRLF normalized.
