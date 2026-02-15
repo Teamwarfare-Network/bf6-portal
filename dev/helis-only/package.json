@@ -6,7 +6,8 @@
   "scripts": {
     "build": "bf6-portal-bundler --entrypoint ./src/index.ts --outDir ./dist && node scripts/postbuild.js && node scripts/verify.js",
     "verify": "node scripts/verify.js",
-    "update": "node scripts/update.js"
+    "update": "node scripts/update.js",
+    "bumpVersion": "node scripts/bump-version.js"
   },
   "devDependencies": {
     "bf6-portal-bundler": "^1.2.0",
