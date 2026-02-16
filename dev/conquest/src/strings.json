@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v0.019)",
+        "title": "teamwarfare . net | TWL Conquest (v0.028)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -26,22 +26,6 @@
         "gameModeDefault": "Helis Only - BF6 Vanilla",
         "valueDefault": "Default",
         "valueMapDefault": "Map Default"
-      }
-    },
-    "roundEnd": {
-      "draw": "DRAW",
-      "roundNumber": "ROUND {0}",
-      "detail": {
-        "winElimination": "WE ELIMINATED THE ENEMY TEAM",
-        "loseElimination": "THE ENEMY ELIMINATED OUR TEAM",
-        "winObjectiveCaptured": "WE SECURED THE OBJECTIVE",
-        "loseObjectiveCaptured": "THE ENEMY SECURED THE OBJECTIVE",
-        "winObjectiveProgress": "TIME OVER: WE SECURED THE MOST OBJECTIVE PROGRESS - {0}%",
-        "loseObjectiveProgress": "TIME OVER: THE ENEMY SECURED THE MOST OBJECTIVE PROGRESS - {0}%",
-        "winTimeOverKills": "TIME OVER: WE ELIMINATED MORE ENEMIES",
-        "loseTimeOverKills": "TIME OVER: THE ENEMY ELIMINATED MORE OF US",
-        "drawEvenElims": "TIME OVER: WE ARE EVEN IN ELIMINATIONS",
-        "drawNoAction": "TIME OVER: NO ONE DID ANYTHING OF NOTE"
       }
     },
     "roundStart": {
@@ -80,23 +64,6 @@
         "H": "H"
       }
     },
-    "overtime": {
-      "title": {
-        "visible": "OBJECTIVE '{0}' WAS RANDOMLY CHOSEN AS THE TIE-BREAKER!",
-        "visibleAdmin": "OBJECTIVE '{0}' WAS PICKED THROUGH AN ADMIN OVERRIDE"
-      },
-      "subtitle": {
-        "notice": "{0}:{1}{2} Remaining",
-        "unlocksIn": "IN CAPTURE RADIUS (LOCKED)",
-        "unlocksNow": "SECURE OBJECTIVE '{0}' BEFORE THE ENEMY! (OR JUST KILL THEM)"
-      }
-    },
-    "overLine": {
-      "title": "{0} IS OVER THE LINE!",
-      "subtitle": "Everyone must return to their main base and ready back up.",
-      "takeoffTitle": "{0} TOOK OFF TOO SOON!",
-      "takeoffSubtitle": "Everyone must land in their main base and ready back up."
-    },
     "teams": {
       "WEST": "WEST",
       "EAST": "EAST",
@@ -115,17 +82,14 @@
       "area22B": "Area 22B"
     },
     "notifications": {
-      "enteredMainBase": "{0} entered their main base",
-      "exitedMainBase": "{0} exited their main base",
       "readyupReturnToBaseNotLive": "Return to main base and ready back up - Round {0} is not live!",
-      "autoReadiedUp": "{0} has auto-readied up",
       "roundStarted": "Round started.",
       "teamSwitch": "You have switched teams!",
       "roundCleanupSpawnTimeout": "Spawn timeout after {0}s - deploying anyway.",
       "playerReadiedUp": "{0} has readied up: {1} / {2} Players Ready"
     },
     "joinPrompt": {
-      "title": "TWL Presents: Vehicle Only Combat",
+      "title": "TWL Presents: CONQUEST",
       "body": {
         "mandatory1": "IMPORTANT: to start the game...\n - While on foot: stand still! Then TRIPLE TAP YOUR INTERACT KEYBIND within 2 seconds\n - The interact keybind defaults to 'E' on PC\n - For consoles: interact defaults to 'Square' (PS5) or 'X' (X-Box)\n\nIf you have issues with this, ensure your interact keybind is set to 'tap', not 'hold':\nSettings > Controller > Infantry > Edit Settings > Infantry > Edit Control Settings > Other\n - Ensure that your \"Interact\" is set to \"Tap\".\n - If this STILL does not work for you, interact is immediately available on respawn only.\n\nThis dialog will continue to show...\n...until you successfully triple tap interact.",
         "mandatory2": "\nTip 2: This is round based Vehicular Combat:\n - 'Ready Up' to start the game. Don't leave the main base until countdown ends...\n - Everyone gets 1 life, and 1 vehicle only!\n - Rounds are 5 minutes long.\n - It's a \"Best of X\" format, you decide how many Rounds to play (Default: 3).\n - Map victory is decided by rounds won (e.g. if you win 2 out of 3 rounds).\n - On the last round, fight for the Objective if 1:00 remains on the Round clock.",
@@ -213,9 +177,6 @@
         "roundStart": "Start Round",
         "roundEnd": "End Round",
         "positionDebug": "Toggle Position Debug",
-        "tieBreakerModeLastRoundOnly": "Tie-Breaker Setting: Last Round ONLY",
-        "tieBreakerModeAllRounds": "Tie-Breaker Setting: All Rounds / ON",
-        "tieBreakerModeDisabled": "Tie-Breaker Setting: Disabled / OFF",
         "roundLengthDec": "Round Length -",
         "roundLengthInc": "Round Length +"
       },
@@ -255,17 +216,8 @@
       "x": "??"
     },
     "victory": {
-      "draws": "DRAWS",
-      "loses": "LOSES",
-      "wins": "WINS!",
       "restartInFormat": "Map will restart/rotate in {0}s",
-      "roundLossesFormat": "{0} Round Losses",
-      "roundTiesFormat": "{0} Round Ties",
-      "roundWinsFormat": "{0} Round Wins",
-      "roundsSummaryFormat": "{0} Rounds played in a best of {1} Rounds matchup",
       "screenshotPrompt": "Screenshot this to record match results",
-      "teamOutcomeFormat": "{0} {1}",
-      "totalKillsFormat": "{0} Total Kills",
       "totalMatchTimeLabel": "Total Match time:"
     },
     "countdown": {
@@ -274,17 +226,12 @@
     },
     "debug": {
       "adminPos": "ADMIN POS X:{0} Y:{1} Z:{2}",
-      "adminFacing": "ADMIN FACING X:{0} Y:{1} Z:{2}",
-      "cpVisReset": "CP VIS: reset -> hide all BEFORE hardReset/config",
-      "cpVisHardReset": "CP VIS: hardReset -> pulse enable/disable objectives"
+      "adminFacing": "ADMIN FACING X:{0} Y:{1} Z:{2}"
     },
     "messages": {
       "init": "Vehicle scoring initialized.",
       "vehicleSpawned": "Vehicle spawned for {0} at X:{1}/Z:{2}",
-      "vehicleSpawnRetry": "Vehicle spawn blocked for {0}. Retrying in {1}s.",
-      "vehicleStolenRegister": "Vehicle stolen and registered for {0} by {1}.",
-      "vehicleRegistrationNoChange": "{0} entered a registered vehicle for {1} (no change).",
-      "vehicleRegistrationPendingTeam": "{0} entered a vehicle, registration pending team assignment."
+      "vehicleSpawnRetry": "Vehicle spawn blocked for {0}. Retrying in {1}s."
     },
     "system": {
       "genericCounter": "{0}",

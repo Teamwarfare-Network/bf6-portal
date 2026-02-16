@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, "..");
 const headerPath = path.join(root, "src", "header-file.ts");
 const footerPath = path.join(root, "src", "footer-file.ts");
 const stringsPath = path.join(root, "src", "strings.json");
+const changelogPath = path.join(root, "src", "Changelog.ts");
 
 function readText(filePath) {
   return fs.readFileSync(filePath, "utf8");
@@ -17,7 +18,9 @@ function writeTextIfChanged(filePath, next) {
   const prev = readText(filePath);
   if (prev !== next) {
     fs.writeFileSync(filePath, next, "utf8");
+    return true;
   }
+  return false;
 }
 
 function extractVersion(src, regex, label) {
@@ -131,10 +134,74 @@ function runBuild() {
   }
 }
 
+function parseCliArgs(argv) {
+  let versionArg;
+  let commentArg;
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+
+    if (arg === "-c" || arg === "--comment") {
+      if (i + 1 >= argv.length) {
+        throw new Error(`Missing value for ${arg}.`);
+      }
+      commentArg = String(argv[i + 1]);
+      i += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--comment=")) {
+      commentArg = String(arg.slice("--comment=".length));
+      continue;
+    }
+
+    if (arg.startsWith("-c=")) {
+      commentArg = String(arg.slice(3));
+      continue;
+    }
+
+    if (arg.startsWith("-")) {
+      throw new Error(`Unknown option: ${arg}`);
+    }
+
+    if (versionArg !== undefined) {
+      throw new Error(`Unexpected extra positional argument: ${arg}`);
+    }
+    versionArg = arg;
+  }
+
+  return { versionArg, commentArg };
+}
+
+function normalizeComment(raw) {
+  if (raw === undefined || raw === null) return "";
+  const singleLine = String(raw).replace(/\r?\n+/g, " ").trim();
+  return singleLine;
+}
+
+function updateChangelogHistory(src, targetVersion, comment) {
+  if (!comment) return src;
+
+  const regionRegex =
+    /(\/\/#region -------------------- Changelog \/ History --------------------\r?\n)([\s\S]*?)(\r?\n\/\/#endregion ----------------- Changelog \/ History --------------------)/;
+  const match = src.match(regionRegex);
+  if (!match) {
+    throw new Error(`Could not locate Changelog / History region in src/Changelog.ts.`);
+  }
+
+  const currentBody = match[2].replace(/^\r?\n+/, "").replace(/\s+$/, "");
+  const newEntry = `// v${targetVersion}: ${comment}`;
+  const nextBody = `\n${newEntry}${currentBody ? `\n${currentBody}` : ""}\n`;
+
+  return src.replace(regionRegex, `$1${nextBody}$3`);
+}
+
 function main() {
+  const { versionArg, commentArg } = parseCliArgs(process.argv.slice(2));
   const header = readText(headerPath);
   const footer = readText(footerPath);
   const strings = readText(stringsPath);
+  const changelog = readText(changelogPath);
 
   const headerVersion = extractVersion(
     header,
@@ -153,7 +220,12 @@ function main() {
     );
   }
 
-  const targetVersion = resolveTargetVersion(process.argv[2], headerVersion);
+  const targetVersion = resolveTargetVersion(versionArg, headerVersion);
+  const commentFromEnv =
+    process.env.npm_config_comment ?? process.env.npm_config_c ?? process.env.npm_config_call;
+  const changelogComment = normalizeComment(
+    commentArg !== undefined ? commentArg : commentFromEnv
+  );
   const stamp = utcStamp();
 
   const nextHeader = replaceOrThrow(
@@ -171,17 +243,23 @@ function main() {
   );
 
   const nextStrings = updateStringsVersion(strings, targetVersion);
+  const nextChangelog = updateChangelogHistory(changelog, targetVersion, changelogComment);
 
-  writeTextIfChanged(headerPath, nextHeader);
-  writeTextIfChanged(footerPath, nextFooter);
-  writeTextIfChanged(stringsPath, nextStrings);
+  const changedHeader = writeTextIfChanged(headerPath, nextHeader);
+  const changedFooter = writeTextIfChanged(footerPath, nextFooter);
+  const changedStrings = writeTextIfChanged(stringsPath, nextStrings);
+  const changedChangelog = writeTextIfChanged(changelogPath, nextChangelog);
 
   console.log(`Version bumped to ${targetVersion}`);
   console.log(`UTC timestamp: ${stamp.date} ${stamp.time}`);
   console.log(`Updated:`);
-  console.log(`- ${path.relative(root, headerPath)}`);
-  console.log(`- ${path.relative(root, footerPath)}`);
-  console.log(`- ${path.relative(root, stringsPath)}`);
+  if (changedHeader) console.log(`- ${path.relative(root, headerPath)}`);
+  if (changedFooter) console.log(`- ${path.relative(root, footerPath)}`);
+  if (changedStrings) console.log(`- ${path.relative(root, stringsPath)}`);
+  if (changedChangelog) console.log(`- ${path.relative(root, changelogPath)}`);
+  if (changelogComment) {
+    console.log(`Changelog entry: // v${targetVersion}: ${changelogComment}`);
+  }
 
   console.log(`Running build...`);
   runBuild();

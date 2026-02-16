@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Module: conquest-flow -- continuous-live flow + overtime/round-flow compatibility shims.
+// Module: conquest-flow -- continuous-live flow orchestration and phase-state helpers.
 
 function bindClockExpiryForContinuousMode(): void {
     State.round.clock.expiryHandlers = [
@@ -21,6 +21,7 @@ function startRound(_triggerPlayer?: mod.Player): void {
     State.match.isEnded = false;
     State.match.victoryDialogActive = false;
     State.match.winnerTeam = undefined;
+    State.match.endElapsedSecondsSnapshot = 0;
     State.match.victoryStartElapsedSecondsSnapshot = 0;
 
     mod.EnableAllPlayerDeploy(true);
@@ -55,6 +56,7 @@ function endRound(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number,
     State.match.isEnded = true;
     State.match.victoryDialogActive = true;
     State.match.winnerTeam = winner;
+    State.match.endElapsedSecondsSnapshot = Math.floor(mod.GetMatchTimeElapsed());
     State.match.victoryStartElapsedSecondsSnapshot = Math.floor(mod.GetMatchTimeElapsed());
     State.round.clock.expiryFired = true;
 
@@ -83,6 +85,7 @@ function triggerFreshRoundSetup(_triggerPlayer?: mod.Player): void {
 
     State.match.victoryDialogActive = false;
     State.match.winnerTeam = undefined;
+    State.match.endElapsedSecondsSnapshot = 0;
     State.match.victoryStartElapsedSecondsSnapshot = 0;
 
     setRoundClockPreview(getConfiguredRoundLengthSeconds());
@@ -100,7 +103,7 @@ function triggerFreshRoundSetup(_triggerPlayer?: mod.Player): void {
 }
 
 // Compatibility shim: map/config pathways still invoke this hook.
-// Conquest cut keeps overtime disabled, so this intentionally no-ops.
+// Conquest runtime currently keeps overtime disabled, so this intentionally no-ops.
 function refreshOvertimeZonesFromMapConfig(): void { return; }
 
 function clampRoundLengthSeconds(seconds: number): number {

@@ -14,26 +14,26 @@ import * as modlib from "modlib";
 
 // Core gameplay tuning defaults (safe to edit).
 // Units: seconds unless otherwise noted.
-const DEFAULT_MAX_ROUNDS = 3; // Best-of rounds for a full match.
+const DEFAULT_MAX_ROUNDS = 3; // Legacy round-count metadata retained for Ready Dialog compatibility.
 const MAX_ROUNDS = DEFAULT_MAX_ROUNDS;
-const DEFAULT_ROUND_KILLS_TARGET = 1; // 1 for 1v1, 2 for 2v2, etc.
+const DEFAULT_ROUND_KILLS_TARGET = 1; // Legacy matchup metadata retained for preset/readout compatibility.
 const ROUND_KILLS_TARGET = DEFAULT_ROUND_KILLS_TARGET;
-const ROUND_START_SECONDS = 3 * 60; // Round clock starting time.
+const ROUND_START_SECONDS = 25 * 60; // Initial match clock duration before the live phase starts.
 const MATCH_END_DELAY_SECONDS = 45; // Victory dialog duration before match end.
-const ROUND_END_REDEPLOY_DELAY_SECONDS = 10; // Redeploy delay between rounds.
+const ROUND_END_REDEPLOY_DELAY_SECONDS = 10; // Redeploy delay used by forced undeploy flows (team switch/admin transitions).
 const ROUND_END_CLEANUP_SPAWN_TIMEOUT_SECONDS = 60; // Max wait for cleanup spawns before forcing deploy.
-const ROUND_END_POST_DEPLOY_HOLD_SECONDS = 10; // Keep round-end dialog visible after deploy.
+const ROUND_END_POST_DEPLOY_HOLD_SECONDS = 10; // Legacy cleanup hold duration (kept for compatibility paths).
 const READY_UP_MESSAGE_COOLDOWN_SECONDS = 2.0; // Throttle ready-up broadcast spam per player.
 const SHOW_HELP_TEXT_PROMPT_ON_JOIN = true; // Show the join help prompt overlay on first connect.
 const ROUND_CLOCK_DEFAULT_SECONDS = ROUND_START_SECONDS; // Source of truth for clock reset.
-const ADMIN_ROUND_LENGTH_STEP_SECONDS = 5;
+const ADMIN_ROUND_LENGTH_STEP_SECONDS = 60;
 const ADMIN_ROUND_LENGTH_MIN_SECONDS = 60;
-const ADMIN_ROUND_LENGTH_MAX_SECONDS = 10 * 60;
+const ADMIN_ROUND_LENGTH_MAX_SECONDS = (99 * 60) + 59;
 const GAMEMODE_TARGET_SCORE_SAFETY_CAP = 9999; // Prevent engine auto-end from low default targets.
 
 // Debug/gameplay message toggles:
 // - "Debug" messages are development/diagnostic UX (white log / green box).
-// - "Gameplay" messages are player-facing round/mode information.
+// - "Gameplay" messages are player-facing mode-flow information.
 const ENABLE_GAMEPLAY_MESSAGES = true; // Gameplay-critical messaging (both channels). This should be on at all times
 const ENABLE_DEBUG_NOTIFICATION_MESSAGES = false; // Green box notifications. Defaults to false.
 const ENABLE_DEBUG_HIGHLIGHTED_MESSAGES = false; // CP visibility debug logs in highlighted world log.
@@ -43,26 +43,26 @@ const DEBUG_TEST_NAMES_TEAM_2 = 0; // Display-only roster rows for Team 2 (Ready
 const DEBUG_TEST_PLACEHOLDER_NAME_KEY = mod.stringkeys.twl.system.debugPlaceholderName;
 const TEAM_ROSTER_MAX_ROWS = 16;
 
-// Overtime flag capture (tiebreaker) tuning.
+// Overtime compatibility tuning constants (retained even though conquest keeps overtime disabled).
 // - Neutral progress starts at 0.5.
 // - Base capture time is neutral -> full (0.5 distance) for 1 vehicle uncontested.
-const OVERTIME_TICK_SECONDS = 0.25; // Tick interval for overtime capture loop (0.25s = 4 updates/sec)
+const OVERTIME_TICK_SECONDS = 0.25; // Compatibility tick interval (0.25s = 4 updates/sec).
 const OVERTIME_CAPTURE_SECONDS_TO_FULL = 5;
-const OVERTIME_DECAY_SECONDS_TO_TARGET = OVERTIME_CAPTURE_SECONDS_TO_FULL; // Empty-zone drift time toward target (neutral/owned) in seconds.
+const OVERTIME_DECAY_SECONDS_TO_TARGET = OVERTIME_CAPTURE_SECONDS_TO_FULL; // Empty-zone drift time toward target (neutral/owned), in seconds.
 // Capture speed multipliers for 2/3/4 vehicle majorities.
 const OVERTIME_CAPTURE_MULTIPLIER_2X = 1.25;
 const OVERTIME_CAPTURE_MULTIPLIER_3X = 1.35;
 const OVERTIME_CAPTURE_MULTIPLIER_4X = 1.45;
-const OVERTIME_NEUTRAL_ACCELERATION_MULTIPLIER = 2; // Legacy default (half of round start); use getOvertimeVisibleSeconds().
-const OVERTIME_STAGE_ACTIVE_SECONDS = 1 * 60; // 1:30 reminder while locked.
-const OVERTIME_MEMBERSHIP_PRUNE_INTERVAL_SECONDS = 1.0; // Prune missed AreaTrigger exits.
+const OVERTIME_NEUTRAL_ACCELERATION_MULTIPLIER = 2; // Compatibility default retained.
+const OVERTIME_STAGE_ACTIVE_SECONDS = 1 * 60; // Compatibility reminder threshold while locked.
+const OVERTIME_MEMBERSHIP_PRUNE_INTERVAL_SECONDS = 1.0; // Compatibility prune interval for missed AreaTrigger exits.
 // CapturePoint suppression (marker-only usage; players should never see progress).
 const OVERTIME_CAPTURE_TIME_DISABLE_SECONDS = 999999;
 const OVERTIME_NEUTRALIZE_TIME_DISABLE_SECONDS = 999999;
-const OVERTIME_ENGINE_CAPTURE_MAX_MULTIPLIER = 0; // Engine CP capture multiplier (0 disables engine-driven capture; script owns progress).
+const OVERTIME_ENGINE_CAPTURE_MAX_MULTIPLIER = 0; // Engine CP capture multiplier (0 disables engine-driven capture).
 const OVERTIME_FLAG_ICON_COLOR = mod.CreateVector(1, 1, 1);
 
-// Overtime HUD layout + sizing (placement near round-end dialog).
+// Overtime compatibility HUD layout + sizing (retained for compatibility wiring).
 const OVERTIME_UI_OFFSET_X = 0;
 const OVERTIME_UI_OFFSET_Y = 154;
 const OVERTIME_UI_WIDTH = 360;
@@ -106,14 +106,14 @@ enum TeamID {
     Team2 = 2,
 }
 
-// Round phase for scoring + HUD state.
+// Mode phase used by Ready/Live/GameOver UI gating and flow control.
 enum RoundPhase {
     NotReady = 0,
     Live = 1,
     GameOver = 2,
 }
 
-// Round-end detail messaging categories for the round-end dialog.
+// Legacy end-detail categories retained for compatibility with shared flow/state structs.
 enum RoundEndDetailReason {
     None = 0,
     Elimination = 1,
@@ -124,7 +124,7 @@ enum RoundEndDetailReason {
     TimeOverDrawNoAction = 6,
 }
 
-// Overtime stage is derived from round clock thresholds.
+// Overtime compatibility stage enum.
 enum OvertimeStage {
     None = 0,
     Notice = 1,
@@ -137,14 +137,14 @@ enum OvertimeStage {
 const REGISTRY_TEAM1_VAR = 0;
 const REGISTRY_TEAM2_VAR = 1;
 
-// Registered vehicle arrays persist across rounds until explicitly cleared.
-// These live in engine globals (not State) and are used for scoring/registration checks.
+// Registered vehicle arrays persist across flow transitions until explicitly cleared.
+// These live in engine globals (not State) and are used for registration checks.
 const regVehiclesTeam1 = mod.GlobalVariable(REGISTRY_TEAM1_VAR);
 const regVehiclesTeam2 = mod.GlobalVariable(REGISTRY_TEAM2_VAR);
 
 // Vehicle ownership tracking (best-effort heuristic):
 // - vehIds and vehOwners are parallel arrays keyed by vehicle ObjId.
-// - getLastDriver may return undefined if no enter event was observed for the vehicle.
+// - Owner lookup may be undefined if no enter event was observed for the vehicle.
 // - Do not treat this as authoritative killer attribution; it is used only for informative messaging.
 const vehIds: number[] = [];
 const vehOwners: mod.Player[] = [];
@@ -164,9 +164,9 @@ const VEHICLE_SPAWNER_POLL_INTERVAL_SECONDS = 1.0;
 const VEHICLE_SPAWNER_BIND_DISTANCE_METERS = 7.0;
 const VEHICLE_SPAWNER_BIND_TIMEOUT_SECONDS = 2.0; // This should not be smaller than VEHICLE_SPAWNER_KEEP_ALIVE_SPAWNER_RADIUS
 
-// Main base triggers + ammo restock tuning.
+// Main base trigger + background timer tuning.
 // Trigger IDs must match the map's spatial data object IDs.
-const BACKGROUND_TIME_LIMIT_RESET_SECONDS = 60 * 60; // Extends engine time limit on round start.
+const BACKGROUND_TIME_LIMIT_RESET_SECONDS = 60 * 60; // Extends engine time limit on mode start.
 const TEAM1_MAIN_BASE_TRIGGER_ID = 501; // Do not change without updating spatial data.
 const TEAM2_MAIN_BASE_TRIGGER_ID = 500; // Do not change without updating spatial data.
 const TAKEOFF_LIMIT_HUD_OFFSET = 20; // Y offset above HUD floor that triggers takeoff-limit warning (world Y).
@@ -196,7 +196,7 @@ const COLOR_GRAY = mod.CreateVector(84 / 255, 94 / 255, 99 / 255); // #545E63
 const COLOR_GRAY_DARK = mod.CreateVector(54 / 255, 57 / 255, 60 / 255); // #36393C
 const COLOR_DARK_BLACK = mod.CreateVector(8 / 255, 11 / 255, 11 / 255); // #080B0B
 
-// Used for Mode selection, e.g. 1v1 driving 1 player per side to ready up and 1 kill to win a round.
+// Matchup preset metadata used by Ready Dialog controls/readouts.
 type MatchupPreset = {
     leftPlayers: number;
     rightPlayers: number;
@@ -231,7 +231,7 @@ type AircraftCeilingVehicleState = {
     lastNudgeAt: number;
 };
 
-// Matchup presets drive round kill targets and slot enablement; auto-start minimums are independent.
+// Matchup presets drive slot enablement/readouts; auto-start minimums are independent.
 const MATCHUP_PRESETS: MatchupPreset[] = [
     { leftPlayers: 1, rightPlayers: 1, roundKillsTarget: 1 },
     { leftPlayers: 2, rightPlayers: 2, roundKillsTarget: 2 },
@@ -239,7 +239,7 @@ const MATCHUP_PRESETS: MatchupPreset[] = [
     { leftPlayers: 4, rightPlayers: 4, roundKillsTarget: 4 },
 ];
 
-// Derive the initial preset from the default matchup + kill-target values.
+// Derive the initial preset from default matchup metadata.
 const DEFAULT_MATCHUP_PRESET_INDEX = findMatchupPresetIndex(
     DEFAULT_MATCHUP_PRESET_LEFT_PLAYERS,
     DEFAULT_MATCHUP_PRESET_RIGHT_PLAYERS,
@@ -284,7 +284,7 @@ const READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_1V1 = 1;
 const READY_DIALOG_MODE_PRESET_VEHICLE_INDEX = 0;
 let suppressReadyDialogModeAutoSwitch = false;
 
-// Pregame countdown tuning (Ready Up -> round start).
+// Pregame countdown tuning (Ready Up -> live phase start).
 // Units: seconds and UI scale units.
 const PREGAME_COUNTDOWN_INITIAL_DELAY_SECONDS = 0.5;
 const PREGAME_COUNTDOWN_STEP_SECONDS = 1.0;
@@ -356,7 +356,7 @@ const READY_DIALOG_SMALL_BUTTON_WIDTH = 26;
 const READY_DIALOG_SMALL_BUTTON_HEIGHT = 24;
 const READY_DIALOG_MAIN_BUTTON_WIDTH = 300;
 const READY_DIALOG_MAIN_BUTTON_HEIGHT = 45;
-// Split bottom-center buttons: Ready (left of center) + Auto-Ready (right of center).
+// Ready button horizontal offset relative to dialog center.
 const READY_DIALOG_READY_BUTTON_OFFSET_X = -(Math.floor(READY_DIALOG_MAIN_BUTTON_WIDTH / 2) + 10);
 const READY_DIALOG_CONFIRM_BUTTON_GAP = 8;
 const READY_DIALOG_CONFIRM_BUTTON_WIDTH = READY_DIALOG_MAIN_BUTTON_WIDTH - 40;
@@ -417,15 +417,7 @@ const VICTORY_DIALOG_ROSTER_ROW_HEIGHT = 12;
 const VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP = 4;
 const VICTORY_DIALOG_ROSTER_ROW_PADDING_BOTTOM = 4;
 const VICTORY_DIALOG_BOTTOM_PADDING = 18;
-const VICTORY_CROWN_SIZE = 16;
-const VICTORY_CROWN_OFFSET_X_LEFT = 58;
-const VICTORY_CROWN_OFFSET_X_RIGHT = -58;
-const VICTORY_CROWN_OFFSET_Y = 8;
-const VICTORY_CROWN_COLOR_RGB: [number, number, number] = [1, 252 / 255, 156 / 255];
-
 // Main base messaging string keys (Strings.json).
-const STR_ENTERED_MAIN_BASE = mod.stringkeys.twl.notifications.enteredMainBase;
-const STR_EXITED_MAIN_BASE = mod.stringkeys.twl.notifications.exitedMainBase;
 const STR_READYUP_RETURN_TO_BASE_NOT_LIVE = mod.stringkeys.twl.notifications.readyupReturnToBaseNotLive;
 const STR_PLAYER_READIED_UP = mod.stringkeys.twl.notifications.playerReadiedUp;
 const STR_JOIN_PROMPT_TITLE = mod.stringkeys.twl.joinPrompt.title;
@@ -503,8 +495,6 @@ const STR_HUD_SETTINGS_GAME_MODE_DEFAULT = mod.stringkeys.twl.hud.settings.gameM
 const STR_HUD_SETTINGS_VALUE_DEFAULT = mod.stringkeys.twl.hud.settings.valueDefault;
 const STR_HUD_SETTINGS_VALUE_MAP_DEFAULT = mod.stringkeys.twl.hud.settings.valueMapDefault;
 const STR_UI_X = mod.stringkeys.twl.ui.x;
-const STR_OVERLINE_TAKEOFF_TITLE = mod.stringkeys.twl.overLine.takeoffTitle;
-const STR_OVERLINE_TAKEOFF_SUBTITLE = mod.stringkeys.twl.overLine.takeoffSubtitle;
 const STR_FLAG_TITLE = mod.stringkeys.twl.flagCapture.title;
 const STR_FLAG_TITLE_LOCKED_FORMAT = mod.stringkeys.twl.flagCapture.lockedTitleFormat;
 const STR_FLAG_TITLE_ACTIVE_FORMAT = mod.stringkeys.twl.flagCapture.activeTitleFormat;
@@ -530,12 +520,10 @@ const STR_FLAG_LETTER_KEYS: number[] = [
     mod.stringkeys.twl.flagCapture.letters.G,
     mod.stringkeys.twl.flagCapture.letters.H,
 ];
-const STR_DEBUG_CP_VIS_RESET = mod.stringkeys.twl.debug.cpVisReset;
-const STR_DEBUG_CP_VIS_HARD_RESET = mod.stringkeys.twl.debug.cpVisHardReset;
 const STR_ROUND_START_TITLE = mod.stringkeys.twl.roundStart.title;
 const STR_ROUND_START_SUBTITLE = mod.stringkeys.twl.roundStart.subtitle;
 
-// Shared global message layout (OverLine + round start + overtime announcements).
+// Shared global message layout (OverLine + round-start announcements).
 const BIG_TITLE_SIZE = 96; // Font size in UI scale units.
 const BIG_SUBTITLE_SIZE = 28;
 const BIG_TITLE_OFFSET_Y = 160; // Position below top HUD.

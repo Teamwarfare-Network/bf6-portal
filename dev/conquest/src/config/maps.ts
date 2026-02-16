@@ -1,44 +1,6 @@
 // @ts-nocheck
-// Module: config — Map configurations, MapKey type, and active map state
+// Module: config/maps -- static map data and map-name key mappings
 
-//#region -------------------- Map Config (Constants + Types) --------------------
-
-// Support maps for this gamemode, should have a listing in MapKey, and a corresponding list of spawners in MapConfig
-type MapKey = "Blackwell_Fields" | "Defense_Nexus" | "Golf_Course" | "Mirak_Valley" | "Operation_Firestorm" | "Liberation_Peak" | "Manhattan_Bridge" | "Sobek_City" | "Area_22B";
-
-// slotNumber defines the explicit spawn priority per team (used for 1v1/2v2/3v3/4v4 enablement).
-type VehicleSpawnSpec = { slotNumber: number; pos: mod.Vector; rot: mod.Vector; vehicle: mod.VehicleList };
-
-// Overtime zones are custom capture areas anchored by AreaTriggers + Sectors + WorldIcon + CapturePoint objects.
-type OvertimeZoneSpec = { areaTriggerObjId: number; sectorId: number; worldIconObjId: number; capturePointObjId: number };
-type OvertimeZoneCandidate = OvertimeZoneSpec & { letterIndex: number };
-type OvertimeZoneLettersByMode = { tanks?: string[]; helis?: string[] };
-
-// Every map needs a team 1 and team 2 HQ object in the spatial data, so this list of vehicles can spawn and dynamically get referenced on map load
-type MapConfig = {
-    team1Base: mod.Vector;
-    team2Base: mod.Vector;
-    team1Name: number;
-    team2Name: number;
-    aircraftCeiling: number;
-    hudMaxY: number; // HUD altitude at the vanilla hard ceiling for this map.
-    hudFloorY: number; // World Y where aircraft HUD reads 0 on this map.
-    useCustomCeiling: boolean; // When true, Ladder mode applies custom ceiling on this map.
-    team1TankSpawns: VehicleSpawnSpec[];
-    team2TankSpawns: VehicleSpawnSpec[];
-    team1HeliSpawns?: VehicleSpawnSpec[];
-    team2HeliSpawns?: VehicleSpawnSpec[];
-    vehicleSpawnYawOffsetDeg: number; //This is not used anymore, but we're keeping it in case its needed in the future
-    // Optional per-map overtime zone list (AreaTrigger ObjId + Sector Id + WorldIcon ObjId + CapturePoint ObjId).
-    // Empty/undefined disables overtime on that map.
-    overtimeZones?: OvertimeZoneSpec[];
-    overtimeZoneLettersByMode?: OvertimeZoneLettersByMode;
-};
-
-// Change this MapKey to switch active map configuration for that map, only one map can be active at a time! This happens inside getMapNameKey & applyMapConfig
-let ACTIVE_MAP_KEY: MapKey = "Blackwell_Fields"; //Need to pick one to be default
-
-// Map-specific bases + spawn slots. Keep slotNumber unique within a team; Slots are parallel, e.g. Slot 2 on Team 1 and Slot 2 on Team 2 - both vehicles spawn in when the 2v2 mode is toggled
 const MAP_CONFIGS: Record<MapKey, MapConfig> = {
 
     //Badlands
@@ -485,31 +447,3 @@ const MAP_NAME_STRINGKEYS: Record<MapKey, number> = {
     Sobek_City: mod.stringkeys.twl.maps.sobekCity,
     Area_22B: mod.stringkeys.twl.maps.area22B,
 };
-
-// Expected to include team bases + at least one spawn per team, with unique slotNumber values matching per side.
-let ACTIVE_MAP_CONFIG = MAP_CONFIGS[ACTIVE_MAP_KEY];
-// Active map's curated overtime zones (AreaTrigger ObjId + Sector Id + WorldIcon ObjId + CapturePoint ObjId).
-let ACTIVE_OVERTIME_ZONES: OvertimeZoneSpec[] = (ACTIVE_MAP_CONFIG.overtimeZones ?? []).map((zone) => ({
-    areaTriggerObjId: zone.areaTriggerObjId,
-    sectorId: zone.sectorId,
-    worldIconObjId: zone.worldIconObjId,
-    capturePointObjId: zone.capturePointObjId,
-}));
-
-// Baseline team inference from static main-base anchor coordinates (Option A).
-// - Replace these vectors with exact map coordinates through MapConfig; these positions drive fallback team registration.
-// - A spawned vehicle is assigned to the nearest base anchor if within MAIN_BASE_BIND_RADIUS_METERS.
-let MAIN_BASE_TEAM1_POS = ACTIVE_MAP_CONFIG.team1Base;
-let MAIN_BASE_TEAM2_POS = ACTIVE_MAP_CONFIG.team2Base;
-const MAIN_BASE_BIND_RADIUS_METERS = 150.0;
-
-// Cached per-vehicle spawn inference for later reconciliation on seat entry (best-effort, can go stale).
-const vehicleSpawnBaseTeamByObjId: Record<number, TeamID> = {};
-
-// Vehicle spawner defaults (per-map spawn specs, selected by mode).
-let TEAM1_VEHICLE_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team1TankSpawns;
-let TEAM2_VEHICLE_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team2TankSpawns;
-let VEHICLE_SPAWN_YAW_OFFSET_DEG = ACTIVE_MAP_CONFIG.vehicleSpawnYawOffsetDeg;
-const MAP_DETECT_DISTANCE_METERS = 5.0;
-
-//#endregion ----------------- Map Config (Constants + Types) --------------------
