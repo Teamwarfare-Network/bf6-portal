@@ -3,6 +3,8 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.038: conquest is now ready to be iterated on I think...
+// v0.030: continued modularization with codex
 // v0.028: Ready for commit for conquest baseline
 // v0.023: Complete modularization and itemization of baseline functionality - testing pass for git commit
 // v0.004: Removed functions not necessary for conquest, updated versionBump script. Removed auto-ready, spawn disabling, round/wins/kills in HUD

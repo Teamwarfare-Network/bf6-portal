@@ -35,7 +35,7 @@ function updateMatchupLabelForPid(pid: number): void {
     const labelId = UI_READY_DIALOG_MATCHUP_LABEL_ID + pid;
     const labelWidget = safeFind(labelId);
     if (!labelWidget) return;
-    const showLabel = !isRoundLive();
+    const showLabel = !isMatchLive();
     mod.SetUIWidgetVisible(labelWidget, showLabel);
     if (!showLabel) return;
     const preset = MATCHUP_PRESETS[State.round.matchupPresetIndex];
@@ -70,17 +70,13 @@ function getAutoStartMinPlayerCounts(): { left: number; right: number; total: nu
 function updateMatchupReadoutsForPid(pid: number): void {
     const minPlayersWidget = safeFind(UI_READY_DIALOG_MATCHUP_MINPLAYERS_ID + pid);
     const minPlayersTotalWidget = safeFind(UI_READY_DIALOG_MATCHUP_MINPLAYERS_TOTAL_ID + pid);
-    const killsTargetWidget = safeFind(UI_READY_DIALOG_MATCHUP_KILLSTARGET_ID + pid);
     const counts = getAutoStartMinPlayerCounts();
-    const showLiveReadouts = !isRoundLive();
+    const showLiveReadouts = !isMatchLive();
     if (minPlayersWidget) {
         mod.SetUIWidgetVisible(minPlayersWidget, showLiveReadouts);
     }
     if (minPlayersTotalWidget) {
         mod.SetUIWidgetVisible(minPlayersTotalWidget, showLiveReadouts);
-    }
-    if (killsTargetWidget) {
-        mod.SetUIWidgetVisible(killsTargetWidget, showLiveReadouts);
     }
     if (!showLiveReadouts) return;
     if (minPlayersWidget) {
@@ -93,12 +89,6 @@ function updateMatchupReadoutsForPid(pid: number): void {
         mod.SetUITextLabel(
             minPlayersTotalWidget,
             mod.Message(mod.stringkeys.twl.readyDialog.minPlayersToStartFormat, counts.total)
-        );
-    }
-    if (killsTargetWidget) {
-        mod.SetUITextLabel(
-            killsTargetWidget,
-            mod.Message(mod.stringkeys.twl.readyDialog.targetKillsToWinFormat, Math.floor(State.round.killsTarget))
         );
     }
 }
@@ -153,7 +143,7 @@ function updateSettingsSummaryHudForPid(pid: number): void {
         );
     }
     if (refs.settingsVehiclesMatchupText) {
-        const showMatchupText = !isRoundLive();
+        const showMatchupText = !isMatchLive();
         mod.SetUIWidgetVisible(refs.settingsVehiclesMatchupText, showMatchupText);
         if (showMatchupText) {
             mod.SetUITextLabel(refs.settingsVehiclesMatchupText, mod.Message(STR_HUD_SETTINGS_VEHICLES_MATCHUP_FORMAT, vehiclesLeft, vehiclesRight));
@@ -188,7 +178,7 @@ function setAutoStartMinActivePlayers(value: number, eventPlayer?: mod.Player): 
             undefined,
             STR_READY_DIALOG_PLAYERS_CHANGED
         );
-        tryAutoStartRoundIfAllReady(eventPlayer);
+        tryAutoStartMatchIfAllReady(eventPlayer);
     }
 }
 
@@ -210,11 +200,10 @@ function applyMatchupPresetInternal(
     const preset = MATCHUP_PRESETS[clamped];
     State.round.matchupPresetIndex = clamped;
     State.round.lastMatchupChangeAtSeconds = now;
-    State.round.killsTarget = preset.roundKillsTarget;
 
     updateMatchupLabelForAllPlayers();
     updateMatchupReadoutsForAllPlayers();
-    setRoundStateTextForAllPlayers();
+    setMatchStateTextForAllPlayers();
 
     if (announce && eventPlayer) {
         sendHighlightedWorldLogMessage(
@@ -229,7 +218,7 @@ function applyMatchupPresetInternal(
 
     // If the new minimum is satisfied, auto-start when all active players are ready.
     if (announce && eventPlayer) {
-        tryAutoStartRoundIfAllReady(eventPlayer);
+        tryAutoStartMatchIfAllReady(eventPlayer);
     }
 }
 

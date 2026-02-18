@@ -37,7 +37,7 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     updateHelpTextVisibilityForAllPlayers();
 
     ensureHudForPlayer(eventPlayer);
-    await spawnTeamSwitchInteractPoint(eventPlayer);
+    await spawnReadyDialogInteractPoint(eventPlayer);
 }
 
 function onPlayerUndeployImpl(eventPlayer: mod.Player) {
@@ -49,12 +49,12 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     if (isPidDisconnected(pid)) return;
     State.players.deployedByPid[pid] = false;
     State.players.joinPromptTripleTapArmedByPid[pid] = false;
-    if (State.players.teamSwitchData[pid]?.dialogVisible) {
-        deleteTeamSwitchUI(eventPlayer);
+    if (State.players.readyDialogData[pid]?.dialogVisible) {
+        hideReadyDialogUI(eventPlayer);
     }
     updateHelpTextVisibilityForPid(pid);
 
-    removeTeamSwitchInteractPoint(pid);
+    removeReadyDialogInteractPoint(pid);
 
     if (shouldShowJoinPromptForPlayer(eventPlayer)) {
         createJoinPromptForPlayer(eventPlayer);

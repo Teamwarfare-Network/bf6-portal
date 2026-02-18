@@ -22,10 +22,10 @@ interface ClockWidgetCacheEntry {
     secOnes: mod.UIWidget;
 }
 
-export function ResetRoundClock(seconds: number): void {
+function resetMatchClock(seconds: number): void {
     const clampedSeconds = Math.max(0, Math.floor(seconds));
     State.round.clock.durationSeconds = clampedSeconds;
-    State.round.clock.roundLengthSeconds = clampedSeconds;
+    State.round.clock.matchLengthSeconds = clampedSeconds;
     State.round.clock.matchStartElapsedSeconds = Math.floor(mod.GetMatchTimeElapsed());
 
     State.round.clock.isPaused = false;
@@ -36,10 +36,10 @@ export function ResetRoundClock(seconds: number): void {
     State.round.clock.lastLowTimeState = undefined;
 }
 
-function setRoundClockPreview(seconds: number): void {
-    const clampedSeconds = clampRoundLengthSeconds(seconds);
+function setMatchClockPreview(seconds: number): void {
+    const clampedSeconds = clampMatchLengthSeconds(seconds);
     State.round.clock.durationSeconds = clampedSeconds;
-    State.round.clock.roundLengthSeconds = clampedSeconds;
+    State.round.clock.matchLengthSeconds = clampedSeconds;
     State.round.clock.matchStartElapsedSeconds = undefined;
     State.round.clock.isPaused = true;
     State.round.clock.pausedRemainingSeconds = clampedSeconds;
@@ -59,7 +59,7 @@ function getRemainingSeconds(): number {
     return Math.max(0, State.round.clock.durationSeconds - elapsed);
 }
 
-function adjustRoundClockBySeconds(deltaSeconds: number): void {
+function adjustMatchClockBySeconds(deltaSeconds: number): void {
     const delta = Math.floor(deltaSeconds);
 
     if (State.round.clock.isPaused) {
@@ -78,8 +78,8 @@ function adjustRoundClockBySeconds(deltaSeconds: number): void {
     State.round.clock.lastLowTimeState = undefined;
 }
 
-function resetRoundClockToDefault(): void {
-    ResetRoundClock(getConfiguredRoundLengthSeconds());
+function resetMatchClockToDefault(): void {
+    resetMatchClock(getConfiguredMatchLengthSeconds());
 }
 
 // Pushes the current match-clock state to all players' HUDs.
@@ -94,7 +94,7 @@ function resetRoundClockToDefault(): void {
  */
 
 function updateAllPlayersClock(): void {
-    const remaining = isRoundLive() ? getRemainingSeconds() : getConfiguredRoundLengthSeconds();
+    const remaining = isMatchLive() ? getRemainingSeconds() : getConfiguredMatchLengthSeconds();
 
     if (!State.round.clock.expiryFired && remaining <= 0) {
         State.round.clock.expiryFired = true;
@@ -107,7 +107,7 @@ function updateAllPlayersClock(): void {
 
     const minutes = Math.floor(remaining / 60);
     // Read the authoritative remaining seconds for the match clock.
-const seconds = remaining % 60;
+    const seconds = remaining % 60;
 
     const digits = {
         mT: Math.floor(minutes / 10),

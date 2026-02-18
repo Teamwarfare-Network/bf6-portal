@@ -33,9 +33,9 @@ function renderReadyDialogForViewer(eventPlayer: mod.Player, viewerPid: number):
  * Call whenever roster membership or per-player display state changes (ready / in-main-base / team).
  */
 function renderReadyDialogForAllVisibleViewers(): void {
-    for (const pidStr in State.players.teamSwitchData) {
+    for (const pidStr in State.players.readyDialogData) {
         const pid = Number(pidStr);
-        const state = State.players.teamSwitchData[pid];
+        const state = State.players.readyDialogData[pid];
         if (!state || !state.dialogVisible) continue;
         const viewer = safeFindPlayer(pid);
         if (!viewer) continue;

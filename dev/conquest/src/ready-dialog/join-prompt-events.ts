@@ -3,7 +3,7 @@
 
 //#region -------------------- Join Prompt - Lifecycle + Events --------------------
 
-// Respects round/cleanup locks when re-enabling deploy after dismiss.
+// Respects live-phase cleanup locks when re-enabling deploy after dismiss.
 function canEnableDeployAfterJoinPrompt(): boolean {
     if (State.round.flow.cleanupActive && !State.round.flow.cleanupAllowDeploy) return false;
     return true;

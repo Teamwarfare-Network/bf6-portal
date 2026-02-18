@@ -9,8 +9,8 @@ function swapPlayerTeam(eventPlayer: mod.Player): void {
     // Swap Teams button:: single-button team toggle (Team 1 <-> Team 2).
     // - Apply the team assignment change
     // - Undeploy (forces redeploy) so the player actually respawns on the new team
-    // - Close the dialog and broadcast the team-switch message
-    // We achieve that by reusing the retained processTeamSwitch() pathway.
+    // - Close the dialog and broadcast the team-swap message
+    // We achieve that by reusing processReadyDialogSelection().
     const pid = mod.GetObjId(eventPlayer);
     // Swapping teams must always force the player back to NOT READY.
     // This prevents a player from carrying READY status across team assignment changes.
@@ -19,7 +19,7 @@ function swapPlayerTeam(eventPlayer: mod.Player): void {
     updatePlayersReadyHudTextForAllPlayers();
     updateHelpTextVisibilityForPid(pid);
 
-    processTeamSwitch(eventPlayer);
+    processReadyDialogSelection(eventPlayer);
 
     // If other viewers have the ready dialog open, refresh their rosters so this player moves columns immediately.
     renderReadyDialogForAllVisibleViewers();

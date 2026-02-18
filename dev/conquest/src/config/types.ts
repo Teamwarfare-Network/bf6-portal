@@ -9,11 +9,6 @@ type MapKey = "Blackwell_Fields" | "Defense_Nexus" | "Golf_Course" | "Mirak_Vall
 // slotNumber defines the explicit spawn priority per team (used for 1v1/2v2/3v3/4v4 enablement).
 type VehicleSpawnSpec = { slotNumber: number; pos: mod.Vector; rot: mod.Vector; vehicle: mod.VehicleList };
 
-// Overtime compatibility zone descriptors (kept for schema compatibility).
-type OvertimeZoneSpec = { areaTriggerObjId: number; sectorId: number; worldIconObjId: number; capturePointObjId: number };
-type OvertimeZoneCandidate = OvertimeZoneSpec & { letterIndex: number };
-type OvertimeZoneLettersByMode = { tanks?: string[]; helis?: string[] };
-
 // Per-map runtime configuration: team anchors, labels, and spawn lists used by map-detect/apply logic.
 type MapConfig = {
     team1Base: mod.Vector;
@@ -29,8 +24,4 @@ type MapConfig = {
     team1HeliSpawns?: VehicleSpawnSpec[];
     team2HeliSpawns?: VehicleSpawnSpec[];
     vehicleSpawnYawOffsetDeg: number; // Reserved for future spawn orientation tuning.
-    // Optional legacy overtime zone list (kept to preserve schema compatibility).
-    // Empty/undefined means there is no legacy zone metadata for this map.
-    overtimeZones?: OvertimeZoneSpec[];
-    overtimeZoneLettersByMode?: OvertimeZoneLettersByMode;
 };

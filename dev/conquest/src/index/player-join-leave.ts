@@ -10,15 +10,6 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
 
     setUIInputModeForPlayer(player, false);
 
-    const titleShadow = safeFind(BIG_TITLE_SHADOW_WIDGET_ID + pid);
-    safeSetUIWidgetVisible(titleShadow, false);
-    const title = safeFind(BIG_TITLE_WIDGET_ID + pid);
-    safeSetUIWidgetVisible(title, false);
-    const subtitleShadow = safeFind(BIG_SUBTITLE_SHADOW_WIDGET_ID + pid);
-    safeSetUIWidgetVisible(subtitleShadow, false);
-    const subtitle = safeFind(BIG_SUBTITLE_WIDGET_ID + pid);
-    safeSetUIWidgetVisible(subtitle, false);
-
     deleteJoinPromptWidget(joinPromptButtonTextName(pid));
     deleteJoinPromptWidget(joinPromptButtonName(pid));
     deleteJoinPromptWidget(joinPromptButtonBorderName(pid));
@@ -30,11 +21,11 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
     deleteJoinPromptWidget(joinPromptPanelName(pid));
     deleteJoinPromptWidget(joinPromptRootName(pid));
 
-    deleteTeamSwitchUI(player);
+    hideReadyDialogUI(player);
 }
 
 async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
-    initTeamSwitchData(eventPlayer);
+    initReadyDialogData(eventPlayer);
     const joinPid = safeGetPlayerId(eventPlayer);
     if (joinPid !== undefined) {
         delete State.players.disconnectedByPid[joinPid];
@@ -49,7 +40,7 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     ensureHudForPlayer(eventPlayer);
     {
         const cache = ensureClockUIAndGetCache(eventPlayer);
-        if (cache) setRoundStateText(cache.roundStateText);
+        if (cache) setMatchStateText(cache.roundStateText);
     updateHelpTextVisibilityForPlayer(eventPlayer);
     }
     if (joinPid !== undefined) {
@@ -95,9 +86,9 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     if (pid === undefined) return;
 
     State.players.disconnectedByPid[pid] = true;
-    removeTeamSwitchInteractPoint(pid);
+    removeReadyDialogInteractPoint(pid);
     // Cleanup: delete cached UI widgets so we do not leak UI for disconnected players.
-    hardDeleteTeamSwitchUI(pid);
+    destroyReadyDialogUI(pid);
     // Remove any persisted per-player state so rejoin starts clean (NOT READY by default).
     delete State.players.readyByPid[pid];
     delete State.players.readyMessageCooldownByPid[pid];
@@ -112,11 +103,11 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.overTakeoffLimitByPid[pid];
     delete State.players.deployedByPid[pid];
     // Also drop dialog-visible tracking if present (viewer is gone).
-    delete State.players.teamSwitchData[pid];
+    delete State.players.readyDialogData[pid];
     clearJoinPromptForPlayerId(pid);
 
     // Refresh UI for remaining players so rosters + HUD ready counts immediately reflect the disconnect.
-    if (!isRoundLive()) {
+    if (!isMatchLive()) {
         renderReadyDialogForAllVisibleViewers();
         updatePlayersReadyHudTextForAllPlayers();
         updateHelpTextVisibilityForAllPlayers();

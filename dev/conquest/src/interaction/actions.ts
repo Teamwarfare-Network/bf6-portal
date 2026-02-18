@@ -1,9 +1,9 @@
 // @ts-nocheck
-// Module: team-switch/actions -- team swap actions and UI teardown
+// Module: interaction/actions -- ready-dialog swap action and UI teardown
 
-//#region -------------------- Team Switch Actions --------------------
+//#region -------------------- Ready Dialog Interaction Actions --------------------
 
-// Handles a player-initiated team switch.
+// Handles a player-initiated team swap.
 // This function validates the request, updates team membership,
 // and triggers any required HUD or state refresh.
 
@@ -19,8 +19,8 @@ async function forceUndeployPlayer(eventPlayer: mod.Player): Promise<void> {
     mod.UndeployPlayer(eventPlayer);
 }
 
-function processTeamSwitch(eventPlayer: mod.Player) {
-    // Shared team-switch pathway used by the ready-dialog Swap Teams action.
+function processReadyDialogSelection(eventPlayer: mod.Player) {
+    // Shared swap pathway used by the ready-dialog "Swap Teams" action.
     // Requirements:
     // - Change the player's team assignment (TeamID.Team1 <-> TeamID.Team2)
     // - Force the player back to the deploy screen on the new team (not just update UI/roster state)
@@ -30,7 +30,7 @@ function processTeamSwitch(eventPlayer: mod.Player) {
     // 2) Undeploy the player so they must redeploy on the new team.
 
     // Close dialog + restore UI input mode before team mutation/undeploy to avoid stale handle issues.
-    deleteTeamSwitchUI(eventPlayer);
+    hideReadyDialogUI(eventPlayer);
 
     const currentTeamNum = getTeamNumber(mod.GetTeam(eventPlayer));
     const newTeamNum = (currentTeamNum === TeamID.Team2) ? TeamID.Team1 : TeamID.Team2;
@@ -38,7 +38,7 @@ function processTeamSwitch(eventPlayer: mod.Player) {
 
     // Force a rapid return to the deploy screen so the player respawns on the new team.
     // Note: do not modify redeploy timers globally; we only force an undeploy so the player can choose spawn manually.
-    // Ensure team switching does not grant faster-than-normal respawn timing.
+    // Ensure team swapping does not grant faster-than-normal respawn timing.
     // Reuse the shared redeploy delay constant for consistent forced-undeploy behavior.
     mod.SetRedeployTime(eventPlayer, ROUND_END_REDEPLOY_DELAY_SECONDS);
     void forceUndeployPlayer(eventPlayer);
@@ -51,8 +51,8 @@ function processTeamSwitch(eventPlayer: mod.Player) {
     );
 }
 
-function deleteTeamSwitchUI(eventPlayer: mod.Player | number) {
-    // Deletes the Team Switch UI for the given player id and restores normal input.
+function hideReadyDialogUI(eventPlayer: mod.Player | number) {
+    // Deletes/hides the Ready Dialog UI for the given player id and restores normal input.
     // Note: When called with a player id (number) rather than a mod.Player, UI input mode cannot be toggled here.
 
     let playerId: any = eventPlayer;
@@ -62,17 +62,17 @@ function deleteTeamSwitchUI(eventPlayer: mod.Player | number) {
         playerId = mod.GetObjId(eventPlayer as mod.Player);
     }
 
-    const baseWidget = safeFind(UI_TEAMSWITCH_CONTAINER_BASE_ID + playerId);
+    const baseWidget = safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId);
     if (baseWidget) mod.SetUIWidgetVisible(baseWidget, false);
-    const borderTop = safeFind(UI_TEAMSWITCH_BORDER_TOP_ID + playerId);
+    const borderTop = safeFind(UI_READY_DIALOG_BORDER_TOP_ID + playerId);
     if (borderTop) mod.SetUIWidgetVisible(borderTop, false);
-    const borderBottom = safeFind(UI_TEAMSWITCH_BORDER_BOTTOM_ID + playerId);
+    const borderBottom = safeFind(UI_READY_DIALOG_BORDER_BOTTOM_ID + playerId);
     if (borderBottom) mod.SetUIWidgetVisible(borderBottom, false);
-    const borderLeft = safeFind(UI_TEAMSWITCH_BORDER_LEFT_ID + playerId);
+    const borderLeft = safeFind(UI_READY_DIALOG_BORDER_LEFT_ID + playerId);
     if (borderLeft) mod.SetUIWidgetVisible(borderLeft, false);
-    const borderRight = safeFind(UI_TEAMSWITCH_BORDER_RIGHT_ID + playerId);
+    const borderRight = safeFind(UI_READY_DIALOG_BORDER_RIGHT_ID + playerId);
     if (borderRight) mod.SetUIWidgetVisible(borderRight, false);
-    const debugWidget = safeFind(UI_TEAMSWITCH_DEBUG_TIMELIMIT_ID + playerId);
+    const debugWidget = safeFind(UI_READY_DIALOG_DEBUG_TIMELIMIT_ID + playerId);
     if (debugWidget) {
         mod.SetUIWidgetVisible(debugWidget, false);
     }
@@ -85,17 +85,17 @@ function deleteTeamSwitchUI(eventPlayer: mod.Player | number) {
     deleteAdminPanelUI(playerId, true);
     setAdminPanelChildWidgetsVisible(playerId, false);
 
-    if (State.players.teamSwitchData[playerId]) {
-        State.players.teamSwitchData[playerId].adminPanelVisible = false;
-        State.players.teamSwitchData[playerId].adminPanelBuilt = false;
+    if (State.players.readyDialogData[playerId]) {
+        State.players.readyDialogData[playerId].adminPanelVisible = false;
+        State.players.readyDialogData[playerId].adminPanelBuilt = false;
         // Force-hide any stray admin panel children (some engines do not cascade container visibility).
         setAdminPanelChildWidgetsVisible(playerId, false);
         // Delete any previously-built admin container so the panel will rebuild cleanly on demand.
         const existingAdminContainer = safeFind(UI_ADMIN_PANEL_CONTAINER_ID + playerId);
         if (existingAdminContainer) mod.DeleteUIWidget(existingAdminContainer);
-    State.players.teamSwitchData[playerId].adminPanelBuilt = false;
+        State.players.readyDialogData[playerId].adminPanelBuilt = false;
         // Dialog is no longer visible; stop participating in global roster refreshes.
-        State.players.teamSwitchData[playerId].dialogVisible = false;
+        State.players.readyDialogData[playerId].dialogVisible = false;
     }
 
     updateHelpTextVisibilityForPid(playerId);
@@ -108,26 +108,26 @@ function closeReadyDialogForAllPlayers(): void {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
         const pid = mod.GetObjId(p);
-        if (State.players.teamSwitchData[pid]?.dialogVisible) {
-            deleteTeamSwitchUI(p);
+        if (State.players.readyDialogData[pid]?.dialogVisible) {
+            hideReadyDialogUI(p);
         }
     }
 }
 
 // Hard delete used only for cleanup (e.g., player leaves game).
 // Normal dialog close should hide widgets to enable UI caching and faster reopen.
-function hardDeleteTeamSwitchUI(playerId: number): void {
-    const baseWidget = safeFind(UI_TEAMSWITCH_CONTAINER_BASE_ID + playerId);
+function destroyReadyDialogUI(playerId: number): void {
+    const baseWidget = safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId);
     if (baseWidget) mod.DeleteUIWidget(baseWidget);
-    const borderTop = safeFind(UI_TEAMSWITCH_BORDER_TOP_ID + playerId);
+    const borderTop = safeFind(UI_READY_DIALOG_BORDER_TOP_ID + playerId);
     if (borderTop) mod.DeleteUIWidget(borderTop);
-    const borderBottom = safeFind(UI_TEAMSWITCH_BORDER_BOTTOM_ID + playerId);
+    const borderBottom = safeFind(UI_READY_DIALOG_BORDER_BOTTOM_ID + playerId);
     if (borderBottom) mod.DeleteUIWidget(borderBottom);
-    const borderLeft = safeFind(UI_TEAMSWITCH_BORDER_LEFT_ID + playerId);
+    const borderLeft = safeFind(UI_READY_DIALOG_BORDER_LEFT_ID + playerId);
     if (borderLeft) mod.DeleteUIWidget(borderLeft);
-    const borderRight = safeFind(UI_TEAMSWITCH_BORDER_RIGHT_ID + playerId);
+    const borderRight = safeFind(UI_READY_DIALOG_BORDER_RIGHT_ID + playerId);
     if (borderRight) mod.DeleteUIWidget(borderRight);
-    const debugWidget = safeFind(UI_TEAMSWITCH_DEBUG_TIMELIMIT_ID + playerId);
+    const debugWidget = safeFind(UI_READY_DIALOG_DEBUG_TIMELIMIT_ID + playerId);
     if (debugWidget) mod.DeleteUIWidget(debugWidget);
     const mapLabel = safeFind(UI_READY_DIALOG_MAP_LABEL_ID + playerId);
     if (mapLabel) mod.DeleteUIWidget(mapLabel);
@@ -156,4 +156,4 @@ function hardDeleteTeamSwitchUI(playerId: number): void {
     if (rotY) mod.DeleteUIWidget(rotY);
 }
 
-//#endregion ----------------- Team Switch Actions --------------------
+//#endregion ----------------- Ready Dialog Interaction Actions --------------------

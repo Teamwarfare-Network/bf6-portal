@@ -1,152 +1,5 @@
 // @ts-nocheck
-// Module: ready-dialog/mode-config -- map/mode settings readout, aircraft ceiling, and preset confirmation
-
-//#region -------------------- Ready Dialog - Map/Mode Config UI Readout --------------------
-
-// Updates the Ready Dialog match-length label ("Best of {0} Rounds") for a single viewer.
-function updateBestOfRoundsLabelForPid(pid: number): void {
-    const labelId = UI_READY_DIALOG_BESTOF_LABEL_ID + pid;
-    const labelWidget = safeFind(labelId);
-    if (!labelWidget) return;
-    mod.SetUITextLabel(labelWidget, mod.Message(mod.stringkeys.twl.readyDialog.bestOfLabel, Math.floor(State.round.max)));
-}
-
-function updateBestOfRoundsLabelForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        updateBestOfRoundsLabelForPid(mod.GetObjId(p));
-    }
-}
-
-function updateReadyDialogMapLabelForPid(pid: number): void {
-    const valueId = UI_READY_DIALOG_MAP_VALUE_ID + pid;
-    const valueWidget = safeFind(valueId);
-    if (!valueWidget) return;
-    mod.SetUITextLabel(valueWidget, mod.Message(getMapNameKey(ACTIVE_MAP_KEY)));
-}
-
-function updateReadyDialogMapLabelForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        updateReadyDialogMapLabelForPid(mod.GetObjId(p));
-    }
-}
-
-function updateReadyDialogModeConfigForPid(pid: number): void {
-    const cfg = State.round.modeConfig;
-
-    const gameLabel = safeFind(UI_READY_DIALOG_MODE_GAME_LABEL_ID + pid);
-    if (gameLabel) mod.SetUITextLabel(gameLabel, mod.Message(mod.stringkeys.twl.readyDialog.gameModeLabel));
-    const gameValue = safeFind(UI_READY_DIALOG_MODE_GAME_VALUE_ID + pid);
-    if (gameValue) mod.SetUITextLabel(gameValue, mod.Message(cfg.gameMode));
-
-    const settingsLabel = safeFind(UI_READY_DIALOG_MODE_SETTINGS_LABEL_ID + pid);
-    if (settingsLabel) mod.SetUITextLabel(settingsLabel, mod.Message(mod.stringkeys.twl.readyDialog.modeSettingsLabel));
-    const settingsValue = safeFind(UI_READY_DIALOG_MODE_SETTINGS_VALUE_ID + pid);
-    if (settingsValue) {
-        const applyCustomCeiling = shouldApplyCustomCeilingForConfig(cfg.gameMode, cfg.aircraftCeilingOverridePending);
-        const ceilingValue = applyCustomCeiling
-            ? Math.floor(cfg.aircraftCeiling)
-            : STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA;
-        mod.SetUITextLabel(
-            settingsValue,
-            mod.Message(cfg.gameSettings, ceilingValue)
-        );
-    }
-
-    const vehiclesT1Label = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T1_LABEL_ID + pid);
-    if (vehiclesT1Label) {
-        mod.SetUITextLabel(
-            vehiclesT1Label,
-            mod.Message(mod.stringkeys.twl.readyDialog.vehiclesLabelFormat, getTeamNameKey(TeamID.Team1))
-        );
-    }
-    const vehiclesT1Value = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T1_VALUE_ID + pid);
-    if (vehiclesT1Value) mod.SetUITextLabel(vehiclesT1Value, mod.Message(cfg.vehiclesT1));
-
-    const vehiclesT2Label = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T2_LABEL_ID + pid);
-    if (vehiclesT2Label) {
-        mod.SetUITextLabel(
-            vehiclesT2Label,
-            mod.Message(mod.stringkeys.twl.readyDialog.vehiclesLabelFormat, getTeamNameKey(TeamID.Team2))
-        );
-    }
-    const vehiclesT2Value = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T2_VALUE_ID + pid);
-    if (vehiclesT2Value) mod.SetUITextLabel(vehiclesT2Value, mod.Message(cfg.vehiclesT2));
-}
-
-function updateReadyDialogModeConfigForAllVisibleViewers(): void {
-    for (const pidStr in State.players.teamSwitchData) {
-        const pid = Number(pidStr);
-        const state = State.players.teamSwitchData[pid];
-        if (!state || !state.dialogVisible) continue;
-        updateReadyDialogModeConfigForPid(pid);
-    }
-}
-
-//#endregion ----------------- Ready Dialog - Map/Mode Config UI Readout --------------------
-
-
-
-//#region -------------------- Aircraft Ceiling (Hard Enforcement) --------------------
-
-// Engine limiter expects a world-Y scale; convert HUD ceiling using the map's HUD floor/max offsets.
-function applyCustomAircraftCeilingHardLimiter(): void {
-    const floorY = Math.floor(State.round.aircraftCeiling.hudFloorY);
-    const baseHud = Math.max(1, Math.floor(State.round.aircraftCeiling.hudMaxY));
-    const targetHud = Math.max(1, Math.floor(State.round.modeConfig.confirmed.aircraftCeiling));
-    // Convert HUD ceiling to world Y using the map-specific HUD floor offset.
-    const baseWorldY = Math.max(1, floorY + baseHud);
-    const targetWorldY = Math.max(1, floorY + targetHud);
-    const scale = targetWorldY / baseWorldY;
-    mod.SetMaxVehicleHeightLimitScale(scale);
-}
-
-function enableCustomAircraftCeiling(): void {
-    State.round.aircraftCeiling.customEnabled = true;
-    State.round.aircraftCeiling.vehicleStates = {};
-}
-
-function disableCustomAircraftCeilingAndRestoreDefault(): void {
-    State.round.aircraftCeiling.customEnabled = false;
-    State.round.aircraftCeiling.vehicleStates = {};
-    State.round.modeConfig.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
-    State.round.modeConfig.gameSettings = mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat;
-    State.round.modeConfig.confirmed.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
-    mod.SetMaxVehicleHeightLimitScale(1.0);
-    updateReadyDialogModeConfigForAllVisibleViewers();
-}
-
-function syncAircraftCeilingFromMapConfig(): void {
-    const mapDefault = Math.max(1, Math.floor(ACTIVE_MAP_CONFIG.aircraftCeiling));
-    const mapMaxHud = Math.max(1, Math.floor(ACTIVE_MAP_CONFIG.hudMaxY));
-    const floorY = Math.floor(ACTIVE_MAP_CONFIG.hudFloorY);
-    State.round.aircraftCeiling.mapDefaultHudCeiling = mapDefault;
-    State.round.aircraftCeiling.hudMaxY = mapMaxHud;
-    State.round.aircraftCeiling.hudFloorY = floorY;
-    State.round.aircraftCeiling.customEnabled = false;
-    State.round.aircraftCeiling.vehicleStates = {};
-    // Keep the engine ceiling at vanilla scale; soft enforcement is confirm-gated.
-    mod.SetMaxVehicleHeightLimitScale(1.0);
-
-    State.round.modeConfig.aircraftCeiling = mapDefault;
-    State.round.modeConfig.aircraftCeilingOverridePending = false;
-    State.round.modeConfig.gameSettings = mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat;
-    State.round.modeConfig.confirmed.aircraftCeiling = mapDefault;
-    State.round.modeConfig.confirmed.aircraftCeilingOverrideEnabled = false;
-
-    updateReadyDialogModeConfigForAllVisibleViewers();
-}
-
-//#endregion ----------------- Aircraft Ceiling (Soft Enforcement) --------------------
-
-
+// Module: ready-dialog/mode-config-presets -- mode preset application and confirm/setters
 
 //#region -------------------- Ready Dialog - Mode Presets + Confirm --------------------
 
@@ -216,10 +69,6 @@ function ensureCustomGameModeForManualChange(): void {
 // True only when all preset values match the selected mode (match length, matchup, players, vehicles, ceiling).
 function isReadyDialogModePresetActive(gameModeKey: number): boolean {
     if (isReadyDialogGameModeCustom(gameModeKey)) return false;
-    const expectedBestOf = isReadyDialogGameModeTwlPreset(gameModeKey)
-        ? READY_DIALOG_MODE_PRESET_BEST_OF_LADDER
-        : READY_DIALOG_MODE_PRESET_BEST_OF_VANILLA;
-    if (Math.floor(State.round.max) !== expectedBestOf) return false;
     if (State.round.matchupPresetIndex !== READY_DIALOG_MODE_PRESET_MATCHUP_INDEX) return false;
     if (State.round.autoStartMinActivePlayers !== getReadyDialogPresetPlayersPerSide(gameModeKey)) return false;
     if (State.round.modeConfig.vehicleIndexT1 !== READY_DIALOG_MODE_PRESET_VEHICLE_INDEX) return false;
@@ -233,11 +82,6 @@ function applyReadyDialogModePresetForGameMode(gameModeKey: number): boolean {
     if (isReadyDialogGameModeCustom(gameModeKey)) return false;
 
     suppressReadyDialogModeAutoSwitch = true;
-    const bestOfRounds = isReadyDialogGameModeTwlPreset(gameModeKey)
-        ? READY_DIALOG_MODE_PRESET_BEST_OF_LADDER
-        : READY_DIALOG_MODE_PRESET_BEST_OF_VANILLA;
-
-    setHudRoundCountersForAllPlayers(State.round.current, bestOfRounds);
     applyMatchupPresetInternal(READY_DIALOG_MODE_PRESET_MATCHUP_INDEX, undefined, false, true);
 
     State.round.autoStartMinActivePlayers = getReadyDialogPresetPlayersPerSide(gameModeKey);
@@ -333,7 +177,6 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
         vehicleIndexT2: cfg.vehicleIndexT1,
         vehicleOverrideEnabled: !isMapDefaultVehicle,
     };
-    refreshOvertimeZonesFromMapConfig();
     // Apply custom ceiling only after the user confirms settings; enforcement runs while enabled.
     if (!applyCustomCeiling) {
         disableCustomAircraftCeilingAndRestoreDefault();

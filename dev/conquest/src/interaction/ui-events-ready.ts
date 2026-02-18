@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Module: team-switch/ui-events-ready -- ready-dialog and admin-panel toggle button handlers
+// Module: interaction/ui-events-ready -- ready-dialog and admin-panel toggle button handlers
 
 // Handles ready-dialog actions and admin panel open/close.
 // Returns true when the widget name is recognized (even if the action is gated/no-op).
@@ -9,8 +9,8 @@ function tryHandleReadyDialogButtonEvent(
     widgetName: string
 ): boolean {
     switch (widgetName) {
-        case UI_TEAMSWITCH_BUTTON_CANCEL_ID + playerId:
-            deleteTeamSwitchUI(eventPlayer);
+        case UI_READY_DIALOG_BUTTON_CANCEL_ID + playerId:
+            hideReadyDialogUI(eventPlayer);
             return true;
 
         case UI_READY_DIALOG_BUTTON_READY_ID + playerId: {
@@ -21,7 +21,7 @@ function tryHandleReadyDialogButtonEvent(
 
             // Pre-live gating: players can only set READY while in main base.
             if (!currentlyReady) {
-                if (!isRoundLive() && !inBase) {
+                if (!isMatchLive() && !inBase) {
                     return true;
                 }
                 State.players.readyByPid[pid] = true;
@@ -47,7 +47,7 @@ function tryHandleReadyDialogButtonEvent(
             renderReadyDialogForViewer(eventPlayer, playerId);
             renderReadyDialogForAllVisibleViewers();
             updatePlayersReadyHudTextForAllPlayers();
-            tryAutoStartRoundIfAllReady(eventPlayer);
+            tryAutoStartMatchIfAllReady(eventPlayer);
             return true;
         }
 
@@ -55,71 +55,38 @@ function tryHandleReadyDialogButtonEvent(
             swapPlayerTeam(eventPlayer);
             return true;
 
-        case UI_READY_DIALOG_BESTOF_DEC_ID + playerId: {
-            ensureCustomGameModeForManualChange();
-            const prevMax = State.round.max;
-            setHudRoundCountersForAllPlayers(
-                State.round.current,
-                Math.max(State.round.current, Math.max(1, State.round.max - 1))
-            );
-            if (State.round.max !== prevMax) {
-                sendHighlightedWorldLogMessage(
-                    mod.Message(mod.stringkeys.twl.readyDialog.bestOfChanged, eventPlayer, Math.floor(State.round.max)),
-                    true,
-                    undefined,
-                    mod.stringkeys.twl.readyDialog.bestOfChanged
-                );
-            }
-            return true;
-        }
-
-        case UI_READY_DIALOG_BESTOF_INC_ID + playerId: {
-            ensureCustomGameModeForManualChange();
-            const prevMax = State.round.max;
-            setHudRoundCountersForAllPlayers(State.round.current, State.round.max + 1);
-            if (State.round.max !== prevMax) {
-                sendHighlightedWorldLogMessage(
-                    mod.Message(mod.stringkeys.twl.readyDialog.bestOfChanged, eventPlayer, Math.floor(State.round.max)),
-                    true,
-                    undefined,
-                    mod.stringkeys.twl.readyDialog.bestOfChanged
-                );
-            }
-            return true;
-        }
-
         case UI_READY_DIALOG_MATCHUP_DEC_ID + playerId:
-            if (isRoundLive()) return true;
+            if (isMatchLive()) return true;
             applyMatchupPreset(Math.max(0, State.round.matchupPresetIndex - 1), eventPlayer);
             return true;
 
         case UI_READY_DIALOG_MATCHUP_INC_ID + playerId:
-            if (isRoundLive()) return true;
+            if (isMatchLive()) return true;
             applyMatchupPreset(Math.min(MATCHUP_PRESETS.length - 1, State.round.matchupPresetIndex + 1), eventPlayer);
             return true;
 
         case UI_READY_DIALOG_MINPLAYERS_DEC_ID + playerId:
-            if (isRoundLive()) return true;
+            if (isMatchLive()) return true;
             setAutoStartMinActivePlayers(State.round.autoStartMinActivePlayers - 1, eventPlayer);
             return true;
 
         case UI_READY_DIALOG_MINPLAYERS_INC_ID + playerId:
-            if (isRoundLive()) return true;
+            if (isMatchLive()) return true;
             setAutoStartMinActivePlayers(State.round.autoStartMinActivePlayers + 1, eventPlayer);
             return true;
 
         case UI_READY_DIALOG_MODE_GAME_DEC_ID + playerId:
-            if (isRoundLive()) return true;
+            if (isMatchLive()) return true;
             setReadyDialogGameModeIndex(State.round.modeConfig.gameModeIndex - 1);
             return true;
 
         case UI_READY_DIALOG_MODE_GAME_INC_ID + playerId:
-            if (isRoundLive()) return true;
+            if (isMatchLive()) return true;
             setReadyDialogGameModeIndex(State.round.modeConfig.gameModeIndex + 1);
             return true;
 
         case UI_READY_DIALOG_MODE_SETTINGS_DEC_ID + playerId:
-            if (isRoundLive()) return true;
+            if (isMatchLive()) return true;
             setReadyDialogAircraftCeiling(
                 State.round.modeConfig.aircraftCeiling - READY_DIALOG_AIRCRAFT_CEILING_STEP,
                 eventPlayer
@@ -127,7 +94,7 @@ function tryHandleReadyDialogButtonEvent(
             return true;
 
         case UI_READY_DIALOG_MODE_SETTINGS_INC_ID + playerId:
-            if (isRoundLive()) return true;
+            if (isMatchLive()) return true;
             setReadyDialogAircraftCeiling(
                 State.round.modeConfig.aircraftCeiling + READY_DIALOG_AIRCRAFT_CEILING_STEP,
                 eventPlayer
@@ -135,48 +102,48 @@ function tryHandleReadyDialogButtonEvent(
             return true;
 
         case UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_ID + playerId:
-            if (isRoundLive()) return true;
+            if (isMatchLive()) return true;
             setReadyDialogVehicleIndexT1(State.round.modeConfig.vehicleIndexT1 - 1);
             return true;
 
         case UI_READY_DIALOG_MODE_VEHICLES_T1_INC_ID + playerId:
-            if (isRoundLive()) return true;
+            if (isMatchLive()) return true;
             setReadyDialogVehicleIndexT1(State.round.modeConfig.vehicleIndexT1 + 1);
             return true;
 
         case UI_READY_DIALOG_MODE_VEHICLES_T2_DEC_ID + playerId:
-            if (isRoundLive()) return true;
+            if (isMatchLive()) return true;
             setReadyDialogVehicleIndexT2(State.round.modeConfig.vehicleIndexT2 - 1);
             return true;
 
         case UI_READY_DIALOG_MODE_VEHICLES_T2_INC_ID + playerId:
-            if (isRoundLive()) return true;
+            if (isMatchLive()) return true;
             setReadyDialogVehicleIndexT2(State.round.modeConfig.vehicleIndexT2 + 1);
             return true;
 
         case UI_READY_DIALOG_MODE_CONFIRM_ID + playerId:
-            if (isRoundLive()) return true;
+            if (isMatchLive()) return true;
             confirmReadyDialogModeConfig(eventPlayer);
             updateReadyDialogModeConfigForAllVisibleViewers();
             return true;
 
         case UI_READY_DIALOG_MODE_RESET_ID + playerId:
-            if (isRoundLive()) return true;
-            triggerFreshRoundSetup(eventPlayer);
+            if (isMatchLive()) return true;
+            triggerFreshMatchSetup(eventPlayer);
             return true;
 
         case UI_ADMIN_PANEL_BUTTON_ID + playerId: {
-            if (!State.players.teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
+            if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
             const now = mod.GetMatchTimeElapsed();
-            if (now - State.players.teamSwitchData[playerId].lastAdminPanelToggleAt < ADMIN_PANEL_TOGGLE_COOLDOWN_SECONDS) {
+            if (now - State.players.readyDialogData[playerId].lastAdminPanelToggleAt < ADMIN_PANEL_TOGGLE_COOLDOWN_SECONDS) {
                 return true;
             }
-            State.players.teamSwitchData[playerId].lastAdminPanelToggleAt = now;
+            State.players.readyDialogData[playerId].lastAdminPanelToggleAt = now;
 
-            State.players.teamSwitchData[playerId].adminPanelVisible = !State.players.teamSwitchData[playerId].adminPanelVisible;
-            if (!State.players.teamSwitchData[playerId].adminPanelVisible) {
+            State.players.readyDialogData[playerId].adminPanelVisible = !State.players.readyDialogData[playerId].adminPanelVisible;
+            if (!State.players.readyDialogData[playerId].adminPanelVisible) {
                 deleteAdminPanelUI(playerId, false);
-                State.players.teamSwitchData[playerId].adminPanelBuilt = false;
+                State.players.readyDialogData[playerId].adminPanelBuilt = false;
                 return true;
             }
 
@@ -212,7 +179,7 @@ function tryHandleReadyDialogButtonEvent(
                 return true;
             }
             buildAdminPanelWidgets(eventPlayer, adminContainer, playerId);
-            State.players.teamSwitchData[playerId].adminPanelBuilt = true;
+            State.players.readyDialogData[playerId].adminPanelBuilt = true;
             mod.SetUIWidgetVisible(adminContainer, true);
             setAdminPanelChildWidgetsVisible(playerId, true);
             return true;
@@ -221,4 +188,3 @@ function tryHandleReadyDialogButtonEvent(
 
     return false;
 }
-

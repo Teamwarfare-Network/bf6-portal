@@ -1,16 +1,16 @@
 // @ts-nocheck
-// Module: team-switch/interact-point -- deploy interact point lifecycle and spawn/remove logic
+// Module: interaction/interact-point -- deploy interact-point lifecycle and ready-dialog trigger logic
 
-//#region -------------------- Team Switch Interact Point --------------------
+//#region -------------------- Ready Dialog Interact Point --------------------
 
-async function spawnTeamSwitchInteractPoint(eventPlayer: mod.Player) {
+async function spawnReadyDialogInteractPoint(eventPlayer: mod.Player) {
     if (!isPlayerDeployed(eventPlayer)) return;
     const playerId = mod.GetObjId(eventPlayer);
-    if (!State.players.teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
+    if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
 
     if (
-        State.players.teamSwitchData[playerId].interactPoint === null &&
-        TEAMSWITCHCONFIG.enableTeamSwitch
+        State.players.readyDialogData[playerId].interactPoint === null &&
+        READY_DIALOG_INTERACT_CONFIG.enableReadyDialog
     ) {
         let isOnGround = safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsOnGround);
 
@@ -36,23 +36,23 @@ async function spawnTeamSwitchInteractPoint(eventPlayer: mod.Player) {
         );
 
         mod.EnableInteractPoint(interactPoint, true);
-        State.players.teamSwitchData[playerId].interactPoint = interactPoint;
-        State.players.teamSwitchData[playerId].lastDeployTime = mod.GetMatchTimeElapsed();
+        State.players.readyDialogData[playerId].interactPoint = interactPoint;
+        State.players.readyDialogData[playerId].lastDeployTime = mod.GetMatchTimeElapsed();
     }
 }
 
 function teamSwitchInteractPointActivated(eventPlayer: mod.Player, eventInteractPoint: mod.InteractPoint) {
     const playerId = mod.GetObjId(eventPlayer);
-    if (!State.players.teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
+    if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
 
-    if (State.players.teamSwitchData[playerId].interactPoint != null) {
-        const interactPointId = mod.GetObjId(State.players.teamSwitchData[playerId].interactPoint);
+    if (State.players.readyDialogData[playerId].interactPoint != null) {
+        const interactPointId = mod.GetObjId(State.players.readyDialogData[playerId].interactPoint);
         const eventInteractPointId = mod.GetObjId(eventInteractPoint);
         if (interactPointId === eventInteractPointId) {
             setUIInputModeForPlayer(eventPlayer, true);
-            createTeamSwitchUI(eventPlayer);
+            createReadyDialogUI(eventPlayer);
             // Track visibility so roster refreshes can target all viewers with the dialog open.
-            State.players.teamSwitchData[playerId].dialogVisible = true;
+            State.players.readyDialogData[playerId].dialogVisible = true;
             if (consumeJoinPromptTripleTapForPid(playerId)) {
                 markJoinPromptReadyDialogOpened(playerId);
             }
@@ -64,7 +64,7 @@ function teamSwitchInteractPointActivated(eventPlayer: mod.Player, eventInteract
     }
 }
 
-function removeTeamSwitchInteractPoint(eventPlayer: mod.Player | number) {
+function removeReadyDialogInteractPoint(eventPlayer: mod.Player | number) {
     let playerId: number;
 
     if (mod.IsType(eventPlayer, mod.Types.Player)) {
@@ -73,16 +73,16 @@ function removeTeamSwitchInteractPoint(eventPlayer: mod.Player | number) {
         playerId = eventPlayer as number;
     }
 
-    if (!State.players.teamSwitchData[playerId]) return;
+    if (!State.players.readyDialogData[playerId]) return;
 
-    if (State.players.teamSwitchData[playerId].interactPoint != null) {
+    if (State.players.readyDialogData[playerId].interactPoint != null) {
         try {
-            mod.EnableInteractPoint(State.players.teamSwitchData[playerId].interactPoint as mod.InteractPoint, false);
-            mod.UnspawnObject(State.players.teamSwitchData[playerId].interactPoint as mod.InteractPoint);
+            mod.EnableInteractPoint(State.players.readyDialogData[playerId].interactPoint as mod.InteractPoint, false);
+            mod.UnspawnObject(State.players.readyDialogData[playerId].interactPoint as mod.InteractPoint);
         } catch {
             // Best-effort cleanup; ignore if already despawned by the engine.
         }
-        State.players.teamSwitchData[playerId].interactPoint = null;
+        State.players.readyDialogData[playerId].interactPoint = null;
     }
 }
 
@@ -96,29 +96,29 @@ function isVelocityBeyond(threshold: number, eventPlayer: mod.Player): boolean {
     return x + y + z > threshold;
 }
 
-function checkTeamSwitchInteractPointRemoval(eventPlayer: mod.Player) {
+function checkReadyDialogInteractPointRemoval(eventPlayer: mod.Player) {
     if (!isPlayerDeployed(eventPlayer)) return;
     const isDead = safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsDead);
-    if (TEAMSWITCHCONFIG.enableTeamSwitch && !isDead) {
+    if (READY_DIALOG_INTERACT_CONFIG.enableReadyDialog && !isDead) {
         const playerId = mod.GetObjId(eventPlayer);
-        if (!State.players.teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
+        if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
 
-        if (State.players.teamSwitchData[playerId].interactPoint != null) {
-            const lifetime = mod.GetMatchTimeElapsed() - State.players.teamSwitchData[playerId].lastDeployTime;
+        if (State.players.readyDialogData[playerId].interactPoint != null) {
+            const lifetime = mod.GetMatchTimeElapsed() - State.players.readyDialogData[playerId].lastDeployTime;
 
             if (
-                isVelocityBeyond(TEAMSWITCHCONFIG.velocityThreshold, eventPlayer) ||
-                lifetime > TEAMSWITCHCONFIG.interactPointMaxLifetime
+                isVelocityBeyond(READY_DIALOG_INTERACT_CONFIG.velocityThreshold, eventPlayer) ||
+                lifetime > READY_DIALOG_INTERACT_CONFIG.interactPointMaxLifetime
             ) {
-                removeTeamSwitchInteractPoint(playerId);
+                removeReadyDialogInteractPoint(playerId);
             }
         }
     }
 }
 
-function initTeamSwitchData(eventPlayer: mod.Player) {
+function initReadyDialogData(eventPlayer: mod.Player) {
     const playerId = mod.GetObjId(eventPlayer);
-    State.players.teamSwitchData[playerId] = {
+    State.players.readyDialogData[playerId] = {
         adminPanelVisible: false,
         adminPanelBuilt: false,
         lastAdminPanelToggleAt: 0,
@@ -131,4 +131,4 @@ function initTeamSwitchData(eventPlayer: mod.Player) {
     };
 }
 
-//#endregion ----------------- Team Switch Interact Point --------------------
+//#endregion ----------------- Ready Dialog Interact Point --------------------

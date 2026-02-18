@@ -6,9 +6,9 @@
 // Starts the live phase as soon as all active players are READY.
 // Notes:
 // - Only triggers when live phase is NOT active and match is NOT ended.
-// - Uses the existing startRound() flow; we do not bypass or reimplement startup logic.
-function tryAutoStartRoundIfAllReady(triggerPlayer?: mod.Player): void {
-    if (State.match.isEnded || isRoundLive()) return;
+// - Uses the existing startMatch() flow; we do not bypass or reimplement startup logic.
+function tryAutoStartMatchIfAllReady(triggerPlayer?: mod.Player): void {
+    if (State.match.isEnded || isMatchLive()) return;
     if (!areAllActivePlayersReady()) return;
     // All players ready: run the same pregame countdown path used by manual start.
     startPregameCountdown(triggerPlayer);

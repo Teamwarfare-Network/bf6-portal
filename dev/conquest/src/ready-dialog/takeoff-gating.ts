@@ -11,7 +11,7 @@ function isPlayerInMainBaseForReady(pid: number): boolean {
 
 function checkTakeoffLimitForAllPlayers(): void {
     if (State.match.isEnded) return;
-    if (isRoundLive()) return;
+    if (isMatchLive()) return;
 
     const floorY = Math.floor(State.round.aircraftCeiling.hudFloorY);
     const limitY = floorY + TAKEOFF_LIMIT_HUD_OFFSET;
@@ -44,7 +44,7 @@ function checkTakeoffLimitForAllPlayers(): void {
                 cancelPregameCountdown();
             }
             sendHighlightedWorldLogMessage(
-                mod.Message(STR_READYUP_RETURN_TO_BASE_NOT_LIVE, Math.floor(State.round.current)),
+                mod.Message(STR_READYUP_RETURN_TO_BASE_NOT_LIVE),
                 false,
                 p,
                 STR_READYUP_RETURN_TO_BASE_NOT_LIVE

@@ -7,12 +7,6 @@
 type HudRefs = {
     pid: number;
 
-    leftWinsText?: mod.UIWidget;
-    rightWinsText?: mod.UIWidget;
-
-    leftTrendingWinnerCrown?: mod.UIWidget;
-    rightTrendingWinnerCrown?: mod.UIWidget;
-
     settingsGameModeText?: mod.UIWidget;
     settingsAircraftCeilingText?: mod.UIWidget;
     settingsVehiclesT1Text?: mod.UIWidget;

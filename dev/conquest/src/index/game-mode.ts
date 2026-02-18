@@ -63,24 +63,19 @@ async function onGameModeStartedImpl(): Promise<void> {
     // Reset HUD state
     State.match.isEnded = false;
     State.match.victoryDialogActive = false;
-    State.round.phase = RoundPhase.NotReady; // Reset phase state for a new match.
-    State.round.current = 1;
+    State.round.phase = MatchPhase.NotReady; // Reset phase state for a new match.
 
     State.match.winnerTeam = undefined;
     State.match.endElapsedSecondsSnapshot = 0;
     State.match.victoryStartElapsedSecondsSnapshot = 0;
     State.admin.actionCount = 0;
-    State.admin.tieBreakerOverrideUsed = false;
-
-    State.hudCache.lastHudScoreT1 = undefined;
-    State.hudCache.lastHudScoreT2 = undefined;
     updateAdminPanelActionCountForAllPlayers();
     // Broadcast the initial phase label (e.g., NOT READY) to all HUDs.
-    setRoundStateTextForAllPlayers();
+    setMatchStateTextForAllPlayers();
     updateHelpTextVisibilityForAllPlayers();
 
     // Clock init + loop (pregame preview, do not count down yet)
-    setRoundClockPreview(getConfiguredRoundLengthSeconds());
+    setMatchClockPreview(getConfiguredMatchLengthSeconds());
 
     // Vehicle spawners run on their own loop so they don't block the main clock loop.
     void startVehicleSpawnerSystem();

@@ -1,16 +1,16 @@
 // @ts-nocheck
-// Module: team-switch/types -- per-player team switch data and config types
+// Module: interaction/types -- per-player ready-dialog interaction data and config types
 
-//#region -------------------- Team Switch Data + Config --------------------
+//#region -------------------- Ready Dialog Interaction Data + Config --------------------
 
-interface TeamSwitchConfig {
-    enableTeamSwitch: boolean;
+interface ReadyDialogInteractConfig {
+    enableReadyDialog: boolean;
     interactPointMinLifetime: number;
     interactPointMaxLifetime: number;
     velocityThreshold: number;
 }
 
-interface teamSwitchData_t {
+interface readyDialogData_t {
     interactPoint: mod.InteractPoint | null;
     lastDeployTime: number;
     adminPanelVisible: boolean;
@@ -24,8 +24,8 @@ interface teamSwitchData_t {
 }
 
 // Per-player state lives in State.players:
-// - teamSwitchData: dialog + interact-point state per player.
+// - readyDialogData: dialog + interact-point state per player.
 // - readyByPid: READY toggle state for roster + auto-start gating.
 // - inMainBaseByPid: main-base presence for pre-live gating + UI.
 
-//#endregion ----------------- Team Switch Data + Config --------------------
+//#endregion ----------------- Ready Dialog Interaction Data + Config --------------------

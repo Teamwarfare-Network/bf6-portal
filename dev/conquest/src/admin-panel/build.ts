@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Module: ready-dialog/admin-panel-build -- admin panel layout + builder helpers
+// Module: admin-panel/build -- admin panel layout and builder helpers
 
 //#region -------------------- Admin Panel UI (Right Side) --------------------
 
@@ -54,9 +54,9 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         playerId,
         testerBaseX,
         row0Y + (buttonSizeY + rowSpacingY) * 1,
-        UI_ADMIN_ROUND_LENGTH_DEC_ID,
-        UI_ADMIN_ROUND_LENGTH_INC_ID,
-        UI_ADMIN_ROUND_LENGTH_LABEL_ID,
+        UI_ADMIN_MATCH_LENGTH_DEC_ID,
+        UI_ADMIN_MATCH_LENGTH_INC_ID,
+        UI_ADMIN_MATCH_LENGTH_LABEL_ID,
         mod.stringkeys.twl.adminPanel.labels.roundLengthFormat,
         buttonSizeX,
         buttonSizeY,
@@ -71,17 +71,17 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
 
     addTesterActionButton(eventPlayer, adminContainer, playerId, testerBaseX,
         row0Y + (buttonSizeY + rowSpacingY) * 3, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36,
-        UI_TEST_BUTTON_ROUND_START_ID, UI_TEST_ROUND_START_TEXT_ID, mod.stringkeys.twl.adminPanel.tester.buttons.roundStart);
+        UI_TEST_BUTTON_MATCH_START_ID, UI_TEST_MATCH_START_TEXT_ID, mod.stringkeys.twl.adminPanel.tester.buttons.roundStart);
 
     addTesterActionButton(eventPlayer, adminContainer, playerId, testerBaseX,
         row0Y + (buttonSizeY + rowSpacingY) * 4, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36,
-        UI_TEST_BUTTON_ROUND_END_ID, UI_TEST_ROUND_END_TEXT_ID, mod.stringkeys.twl.adminPanel.tester.buttons.roundEnd);
+        UI_TEST_BUTTON_MATCH_END_ID, UI_TEST_MATCH_END_TEXT_ID, mod.stringkeys.twl.adminPanel.tester.buttons.roundEnd);
 
     addTesterActionButton(eventPlayer, adminContainer, playerId, testerBaseX,
         row0Y + (buttonSizeY + rowSpacingY) * 5, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36,
         UI_TEST_BUTTON_POS_DEBUG_ID, UI_TEST_POS_DEBUG_TEXT_ID, mod.stringkeys.twl.adminPanel.tester.buttons.positionDebug);
 
-    syncAdminRoundLengthLabelForAllPlayers();
+    syncAdminMatchLengthLabelForAllPlayers();
 }
 
 //#endregion ----------------- Admin Panel UI (Right Side) --------------------
@@ -107,13 +107,6 @@ function addTesterRow(
     labelOffsetX: number,
     incOffsetX: number
 ): void {
-    // Steps:
-    // 1) Ensure per-player dialog root exists
-    // 2) Build left team panel widgets
-    // 3) Build right team panel widgets
-    // 4) Build admin panel widgets + bind button IDs
-    // 5) Finalize visibility / default states
-
     const decButtonId = decButtonBaseId + playerId;
     const incButtonId = incButtonBaseId + playerId;
 
@@ -344,7 +337,7 @@ function ensurePositionDebugWidgets(player: mod.Player): { x: mod.UIWidget; y: m
         return w;
     };
 
-    // The first two rows are used for formatted debug strings; the last two are hidden legacy slots.
+    // X/Y hold formatted debug strings; Z/RotY stay hidden as layout placeholders.
     let x = safeFind(xId);
     if (!x) x = makeText(xId, 0);
     let y = safeFind(yId);
@@ -361,7 +354,7 @@ function ensurePositionDebugWidgets(player: mod.Player): { x: mod.UIWidget; y: m
 async function positionDebugLoop(player: mod.Player, expectedToken: number): Promise<void> {
     const pid = mod.GetObjId(player);
     while (true) {
-        const state = State.players.teamSwitchData[pid];
+        const state = State.players.readyDialogData[pid];
         if (!state || !state.posDebugVisible || state.posDebugToken !== expectedToken) return;
         if (!mod.IsPlayerValid(player)) return;
         if (!isPlayerDeployed(player)) return;
@@ -401,7 +394,7 @@ async function positionDebugLoop(player: mod.Player, expectedToken: number): Pro
 
 function setPositionDebugVisibleForPlayer(player: mod.Player, visible: boolean): void {
     const pid = mod.GetObjId(player);
-    const state = State.players.teamSwitchData[pid];
+    const state = State.players.readyDialogData[pid];
     if (!state) return;
 
     const widgets = ensurePositionDebugWidgets(player);

@@ -7,14 +7,6 @@ let ACTIVE_MAP_KEY: MapKey = "Blackwell_Fields";
 // Expected to include team bases + at least one spawn per team, with unique slotNumber values matching per side.
 let ACTIVE_MAP_CONFIG = MAP_CONFIGS[ACTIVE_MAP_KEY];
 
-// Overtime compatibility metadata from map config (runtime currently keeps overtime disabled).
-let ACTIVE_OVERTIME_ZONES: OvertimeZoneSpec[] = (ACTIVE_MAP_CONFIG.overtimeZones ?? []).map((zone) => ({
-    areaTriggerObjId: zone.areaTriggerObjId,
-    sectorId: zone.sectorId,
-    worldIconObjId: zone.worldIconObjId,
-    capturePointObjId: zone.capturePointObjId,
-}));
-
 // Baseline team inference from static main-base anchor coordinates.
 let MAIN_BASE_TEAM1_POS = ACTIVE_MAP_CONFIG.team1Base;
 let MAIN_BASE_TEAM2_POS = ACTIVE_MAP_CONFIG.team2Base;

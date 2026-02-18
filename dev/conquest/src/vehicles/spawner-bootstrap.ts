@@ -27,7 +27,7 @@ async function startVehicleSpawnerSystem(): Promise<void> {
     // This prevents a default Abrams from persisting if it spawned before our spawners were configured.
     // Keep this one-shot and pre-live to avoid deleting player vehicles later in the match.
     // Consider Hardening with a second cleanup pass before first forced spawns if default spawns reappear after cleanup
-    if (!isRoundLive() && !State.vehicles.startupCleanupDone) {
+    if (!isMatchLive() && !State.vehicles.startupCleanupDone) {
         const vehicles = mod.AllVehicles();
         const vCount = mod.CountOf(vehicles);
         for (let v = 0; v < vCount; v++) {

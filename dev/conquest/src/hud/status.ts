@@ -3,38 +3,6 @@
 
 //#region -------------------- HUD Counter Helpers --------------------
 
-function setCounterText(widget: mod.UIWidget | undefined, value: number): void {
-    if (!widget) return;
-    safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.system.genericCounter, Math.floor(value)));
-}
-
-function getTrendingWinnerTeam(): TeamID | 0 {
-    if (State.match.winsT1 > State.match.winsT2) return TeamID.Team1;
-    if (State.match.winsT2 > State.match.winsT1) return TeamID.Team2;
-    return 0;
-}
-
-function setTrendingWinnerCrownForRefs(refs: HudRefs | undefined): void {
-    if (!refs) return;
-    const winner = getTrendingWinnerTeam();
-    const showLeft = winner === TeamID.Team1;
-    const showRight = winner === TeamID.Team2;
-    safeSetUIWidgetVisible(refs.leftTrendingWinnerCrown, showLeft);
-    safeSetUIWidgetVisible(refs.rightTrendingWinnerCrown, showRight);
-}
-
-function setTrendingWinnerCrownForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        const refs = ensureHudForPlayer(p);
-        if (!refs) continue;
-        setTrendingWinnerCrownForRefs(refs);
-    }
-}
-
 function setAdminPanelActionCountText(widget: mod.UIWidget | undefined, value: number): void {
     if (!widget) return;
     mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.adminPanel.actionCountFormat, Math.floor(value)));
@@ -46,16 +14,16 @@ function setAdminPanelActionCountText(widget: mod.UIWidget | undefined, value: n
 
 //#region -------------------- HUD Phase State + Help Text --------------------
 
-function setRoundStateText(widget: mod.UIWidget | undefined): void {
+function setMatchStateText(widget: mod.UIWidget | undefined): void {
     if (!widget) return;
 
-    if (State.round.phase === RoundPhase.GameOver) {
+    if (State.round.phase === MatchPhase.GameOver) {
         mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.roundStateGameOver));
         mod.SetUITextColor(widget, COLOR_WARNING_YELLOW);
         return;
     }
 
-    const isLive = isRoundLive();
+    const isLive = isMatchLive();
     const stateKey = isLive ? mod.stringkeys.twl.hud.roundStateLive : mod.stringkeys.twl.hud.roundStateNotReady;
     mod.SetUITextLabel(widget, mod.Message(stateKey));
 
@@ -156,14 +124,6 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
         "Container_TopMiddle_CoreUI_",
         "Container_TopLeft_CoreUI_",
         "Container_TopRight_CoreUI_",
-        "Container_TopLeft_RoundKills_",
-        "Container_TopRight_RoundKills_",
-        "RoundCounterContainer_",
-        "RoundCounterMaxContainer_",
-        "TeamLeft_Wins_Counter_",
-        "TeamRight_Wins_Counter_",
-        "TeamLeft_Kills_Counter_",
-        "TeamRight_Kills_Counter_",
     ];
 
     for (const base of reparentIds) {
@@ -206,7 +166,7 @@ function setHudHelpDepthForPid(pid: number): void {
  * - It should be called after any change that affects phase state so HUDs remain consistent.
  */
 
-function setRoundStateTextForAllPlayers(): void {
+function setMatchStateTextForAllPlayers(): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
@@ -214,7 +174,7 @@ function setRoundStateTextForAllPlayers(): void {
         if (!p || !mod.IsPlayerValid(p)) continue;
         const cache = ensureClockUIAndGetCache(p);
         if (!cache) continue;
-        setRoundStateText(cache.roundStateText);
+        setMatchStateText(cache.roundStateText);
     }
     // Keep the pre-live ready count line in sync with phase-state HUD refreshes.
     updatePlayersReadyHudTextForAllPlayers();
@@ -231,7 +191,7 @@ function setRoundStateTextForAllPlayers(): void {
  * Visibility rules:
  * - Only shown while preparing for live start (phase NOT live).
  * - Hidden during game-over / victory dialog phases.
- * - Remains visible until the phase is live (isRoundLive() === true).
+ * - Remains visible until the phase is live (isMatchLive() === true).
  * IMPORTANT: Any code path that changes State.players.readyByPid MUST also refresh:
  *   - updatePlayersReadyHudTextForAllPlayers()
  *   - renderReadyDialogForAllVisibleViewers() (if the dialog can be open)

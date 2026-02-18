@@ -3,7 +3,7 @@
 
 //#region -------------------- Vehicle Registration (team arrays) --------------------
 
-// Registers vehicles to a team registry for spawn/team inference and compatibility checks.
+// Registers vehicles to a team registry for spawn/team inference checks.
 // IMPORTANT:
 // - Vehicle ID and owning team must stay in sync
 // - Reassignments must overwrite previous ownership

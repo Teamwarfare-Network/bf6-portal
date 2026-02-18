@@ -179,35 +179,14 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
     );
     updateReadyToggleButtonForViewer(player, pid);
 
-    const cancelBorder = safeFind(UI_TEAMSWITCH_BUTTON_CANCEL_ID + pid + "_BORDER");
+    const cancelBorder = safeFind(UI_READY_DIALOG_BUTTON_CANCEL_ID + pid + "_BORDER");
     addCenteredButtonText(
-        UI_TEAMSWITCH_BUTTON_CANCEL_LABEL_ID + pid,
+        UI_READY_DIALOG_BUTTON_CANCEL_LABEL_ID + pid,
         READY_DIALOG_MAIN_BUTTON_WIDTH,
         READY_DIALOG_MAIN_BUTTON_HEIGHT,
         mod.stringkeys.twl.teamSwitch.buttons.cancel,
         player,
         cancelBorder ?? baseContainer
-    );
-
-    const bestOfDecBorder = safeFind(UI_READY_DIALOG_BESTOF_DEC_ID + pid + "_BORDER");
-    addCenteredButtonText(
-        UI_READY_DIALOG_BESTOF_DEC_LABEL_ID + pid,
-        READY_DIALOG_SMALL_BUTTON_WIDTH,
-        READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.stringkeys.twl.ui.minus,
-        player,
-        bestOfDecBorder ?? baseContainer,
-        14
-    );
-    const bestOfIncBorder = safeFind(UI_READY_DIALOG_BESTOF_INC_ID + pid + "_BORDER");
-    addCenteredButtonText(
-        UI_READY_DIALOG_BESTOF_INC_LABEL_ID + pid,
-        READY_DIALOG_SMALL_BUTTON_WIDTH,
-        READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.stringkeys.twl.ui.plus,
-        player,
-        bestOfIncBorder ?? baseContainer,
-        14
     );
 
     const matchupDecBorder = safeFind(UI_READY_DIALOG_MATCHUP_DEC_ID + pid + "_BORDER");

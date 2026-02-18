@@ -83,7 +83,7 @@ function setSpawnerSlotEnabled(slotIndex: number, enabled: boolean): boolean {
 
 // Applies matchup -> desired slot counts, in slotNumber order, and queues sequential spawns for new slots.
 function applySpawnerEnablementForMatchup(presetIndex: number, spawnOnEnable: boolean): void {
-    if (isRoundLive()) return;
+    if (isMatchLive()) return;
 
     const desired = getDesiredSpawnerCountsForPreset(presetIndex);
     const team1SlotIndices: number[] = [];

@@ -3,9 +3,17 @@
 
 //#region -------------------- Ready Dialog - Pregame Countdown Flow --------------------
 
+function cancelPregameCountdown(): void {
+    if (!State.round.countdown.isActive) return;
+    State.round.countdown.token++;
+    State.round.countdown.isActive = false;
+    State.round.countdown.isRequested = false;
+    hidePregameCountdownForAllPlayers();
+}
+
 function startPregameCountdown(triggerPlayer?: mod.Player, force?: boolean): void {
     if (State.round.countdown.isActive) return;
-    if (State.match.isEnded || isRoundLive()) return;
+    if (State.match.isEnded || isMatchLive()) return;
     if (!force && !areAllActivePlayersReady()) return;
 
     closeReadyDialogForAllPlayers();
@@ -20,7 +28,7 @@ function startPregameCountdown(triggerPlayer?: mod.Player, force?: boolean): voi
 function isPregameCountdownStillValid(expectedToken: number, force?: boolean, allowRoundActive?: boolean): boolean {
     if (expectedToken !== State.round.countdown.token) return false;
     if (State.match.isEnded) return false;
-    if (!allowRoundActive && isRoundLive()) return false;
+    if (!allowRoundActive && isMatchLive()) return false;
     if (!force && !areAllActivePlayersReady()) return false;
     return true;
 }
@@ -63,12 +71,6 @@ async function runPregameCountdown(expectedToken: number, triggerPlayer?: mod.Pl
             return;
         }
 
-        if (value === 4) {
-            // Start the round-start messaging so it ends with the GO hide.
-            const remainingSeconds = ((value + 1) * PREGAME_COUNTDOWN_STEP_SECONDS) + PREGAME_COUNTDOWN_GO_HOLD_SECONDS;
-            void showRoundStartMessageForAllPlayers(remainingSeconds);
-        }
-
         setPregameCountdownVisualForAllPlayers(
             mod.stringkeys.twl.countdown.format,
             value,
@@ -103,7 +105,7 @@ async function runPregameCountdown(expectedToken: number, triggerPlayer?: mod.Pl
         PREGAME_COUNTDOWN_SIZE_GO_START,
         true
     );
-    startRound(triggerPlayer);
+    startMatch(triggerPlayer);
 
     const ok = await animatePregameCountdownSize(
         expectedToken,

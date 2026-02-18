@@ -20,7 +20,7 @@
 //
 // Note: We intentionally do NOT filter by "deployed" state here. Some APIs expose deployment state,
 // but this codebase does not currently have a typed/portable check. Treating undeployed teammates as
-// active is safer for readiness gating and avoids edge-case mismatches during team switching.
+// active is safer for readiness gating and avoids edge-case mismatches during team swaps.
 type ActivePlayers_t = {
     all: mod.Player[];
     team1: mod.Player[];

@@ -5,15 +5,6 @@
 
 // Core gameplay helper utilities (state sync + messaging gates).
 
-function getMatchWinsTeam(teamNum: TeamID): number {
-    // Debug-only: engine GameModeScore can be transient during reconnects / team swaps.
-    return Math.floor(mod.GetGameModeScore(mod.GetTeam(teamNum)));
-}
-
-function setMatchWinsTeam(teamNum: TeamID, wins: number): void {
-    mod.SetGameModeScore(mod.GetTeam(teamNum), Math.max(0, Math.floor(wins)));
-}
-
 // Central message-gating policy: gameplay vs debug, and highlighted vs notification.
 function shouldSendMessage(isGameplay: boolean, isHighlighted: boolean): boolean {
     if (isGameplay) return ENABLE_GAMEPLAY_MESSAGES;
@@ -35,8 +26,8 @@ function noteHighlightedMessageSent(messageKey?: number): void {
 }
 
 // Phase helper for readability (avoids scattered enum comparisons).
-function isRoundLive(): boolean {
-    return State.round.phase === RoundPhase.Live;
+function isMatchLive(): boolean {
+    return State.round.phase === MatchPhase.Live;
 }
 
 // Returns true if the given team currently has at least one valid player.
@@ -57,7 +48,7 @@ function sendHighlightedWorldLogMessage(message: mod.Message, isGameplay: boolea
     if (!shouldSendMessage(isGameplay, true)) return;
     noteHighlightedMessageSent(debugKey);
     if (target) {
-        // Route to the correct overload; Team cast-as-Player can silently drop messages after team switches.
+        // Route to the correct overload; Team cast-as-Player can silently drop messages after team swaps.
         if (mod.IsType(target, mod.Types.Team)) {
             const teamTarget = target as mod.Team;
             if (!hasPlayersOnTeam(teamTarget)) return;
@@ -73,31 +64,6 @@ function sendHighlightedWorldLogMessage(message: mod.Message, isGameplay: boolea
         return;
     }
     mod.DisplayHighlightedWorldLogMessage(message);
-}
-
-
-// Synchronizes HUD win counters from authoritative match state.
-// This should be called after any admin or gameplay mutation of State.match.winsT1/T2.
-function syncWinCountersHudFromGameModeScore(): void {
-    // Debug-only: do not use for authoritative state; pulling from engine here can latch transient values.
-    const t1Wins = getMatchWinsTeam(TeamID.Team1);
-    const t2Wins = getMatchWinsTeam(TeamID.Team2);
-
-    State.match.winsT1 = t1Wins;
-    State.match.winsT2 = t2Wins;
-    syncRoundRecordHudForAllPlayers();
-    setTrendingWinnerCrownForAllPlayers();
-
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        const refs = ensureHudForPlayer(p);
-        if (!refs) continue;
-        setCounterText(refs.leftWinsText, t1Wins);
-        setCounterText(refs.rightWinsText, t2Wins);
-    }
 }
 
 function endGameModeForTeamNum(teamNum: TeamID | 0): void {

@@ -10,25 +10,25 @@
 function ongoingPlayerImpl(eventPlayer: mod.Player): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     if (isPlayerDeployed(eventPlayer)) {
-        checkTeamSwitchInteractPointRemoval(eventPlayer);
+        checkReadyDialogInteractPointRemoval(eventPlayer);
     }
 
     // UI caching warm-up: build the Ready Up dialog once per player so the first real open is snappy.
     // We build and immediately hide; the dialog becomes visible only when the player opens it via the interact point.
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
-    if (State.players.teamSwitchData[pid] && !State.players.teamSwitchData[pid].uiBuilt) {
-        createTeamSwitchUI(eventPlayer);
+    if (State.players.readyDialogData[pid] && !State.players.readyDialogData[pid].uiBuilt) {
+        createReadyDialogUI(eventPlayer);
         // Ensure the warm-up build does not count as "open" for refresh logic.
-        State.players.teamSwitchData[pid].dialogVisible = false;
-        deleteTeamSwitchUI(eventPlayer); // now hides (cached) rather than deleting
-        State.players.teamSwitchData[pid].uiBuilt = true;
+        State.players.readyDialogData[pid].dialogVisible = false;
+        hideReadyDialogUI(eventPlayer); // now hides (cached) rather than deleting
+        State.players.readyDialogData[pid].uiBuilt = true;
     }
 
     if (isPlayerDeployed(eventPlayer)) {
         if (InteractMultiClickDetector.checkMultiClick(eventPlayer)) {
             armJoinPromptTripleTapForPid(pid);
-            spawnTeamSwitchInteractPoint(eventPlayer);
+            spawnReadyDialogInteractPoint(eventPlayer);
             //mod.DisplayHighlightedWorldLogMessage(mod.Message(mod.stringkeys.twl.notifications.multiclickDetector), mod.GetTeam(eventPlayer));
         }
     }

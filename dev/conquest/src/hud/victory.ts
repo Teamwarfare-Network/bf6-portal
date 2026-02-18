@@ -88,17 +88,11 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
         const actionCount = Math.max(0, Math.floor(State.admin.actionCount));
         setWidgetVisible(refs.victoryAdminActionsText, actionCount > 0);
         if (actionCount > 0) {
-            const overrideUsed = State.admin.tieBreakerOverrideUsed; // Highlight if any override was used this match.
             safeSetUITextLabel(
                 refs.victoryAdminActionsText,
-                mod.Message(
-                    overrideUsed
-                        ? mod.stringkeys.twl.adminPanel.actionCountVictoryFormatRandomOverride
-                        : mod.stringkeys.twl.adminPanel.actionCountVictoryFormat,
-                    actionCount
-                )
+                mod.Message(mod.stringkeys.twl.adminPanel.actionCountVictoryFormat, actionCount)
             );
-            safeSetUITextColor(refs.victoryAdminActionsText, overrideUsed ? COLOR_RED : COLOR_WARNING_YELLOW);
+            safeSetUITextColor(refs.victoryAdminActionsText, COLOR_WARNING_YELLOW);
         }
     }
 

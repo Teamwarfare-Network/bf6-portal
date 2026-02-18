@@ -1,12 +1,12 @@
 // @ts-nocheck
-// Module: hud/help-visibility -- team-switch dialog visibility and top-center help/ready text visibility
+// Module: hud/help-visibility -- ready-dialog visibility and top-center help/ready text visibility
 
 //#region -------------------- HUD Build/Ensure - Dialog Open + Help Text Visibility --------------------
 
-function isTeamSwitchDialogOpenForPid(pid: number): boolean {
+function isReadyDialogOpenForPid(pid: number): boolean {
     // With UI caching, the dialog root widget may continue to exist while hidden.
     // Use the explicit per-player state flag as the source of truth for "open".
-    return !!State.players.teamSwitchData[pid]?.dialogVisible;
+    return !!State.players.readyDialogData[pid]?.dialogVisible;
 }
 
 /**
@@ -20,15 +20,15 @@ function updateHelpTextVisibilityForPid(pid: number): void {
     const refs = State.hudCache.hudByPid[pid];
     if (!refs) return;
 
-    const isDialogOpen = isTeamSwitchDialogOpenForPid(pid);
+    const isDialogOpen = isReadyDialogOpenForPid(pid);
     const isReady = !!State.players.readyByPid[pid];
     const isDeployed = !!State.players.deployedByPid[pid];
     const canShow = (!State.match.isEnded)
         && (!State.match.victoryDialogActive)
         && (!State.round.flow.cleanupActive)
         && (isDeployed);
-    const showHelp = canShow && (!isRoundLive()) && (!isReady) && (!isDialogOpen);
-    const showReady = canShow && (!isRoundLive()) && (isReady) && (!isDialogOpen);
+    const showHelp = canShow && (!isMatchLive()) && (!isReady) && (!isDialogOpen);
+    const showReady = canShow && (!isMatchLive()) && (isReady) && (!isDialogOpen);
 
     const helpContainer = refs.helpTextContainer ?? safeFind(`Container_HelpText_${pid}`);
     if (helpContainer) {

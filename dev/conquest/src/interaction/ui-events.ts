@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Module: team-switch/ui-events -- dispatcher for ready-dialog and admin/tester button handlers
+// Module: interaction/ui-events -- dispatcher for ready-dialog and admin-panel button handlers
 
 function teamSwitchButtonEvent(
     eventPlayer: mod.Player,
@@ -12,4 +12,3 @@ function teamSwitchButtonEvent(
     if (tryHandleReadyDialogButtonEvent(eventPlayer, playerId, widgetName)) return;
     if (tryHandleAdminTesterButtonEvent(eventPlayer, playerId, widgetName)) return;
 }
-

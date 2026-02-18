@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v0.028)",
+        "title": "teamwarfare . net | TWL Conquest (v0.038)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -11,7 +11,6 @@
       "roundStateLive": "LIVE",
       "roundStateNotReady": "NOT READY",
       "roundStateGameOver": "GAME OVER",
-      "roundRecordFormat": "{0} - {1} - {2}",
       "playersReadyFormat": "{0} / {1} PLAYERS READY",
       "clock": {
         "digit": "{0}",
@@ -24,44 +23,7 @@
         "vehiclesMatchupFormat": "Vehicles: {0}v{1}",
         "playersFormat": "Players: {0}v{1}",
         "gameModeDefault": "Helis Only - BF6 Vanilla",
-        "valueDefault": "Default",
-        "valueMapDefault": "Map Default"
-      }
-    },
-    "roundStart": {
-      "title": "ELIMINATE THE ENEMY TEAM",
-      "subtitle": "NO VEHICLE REDEPLOYS - ONE VEHICLE PER ROUND"
-    },
-    "flagCapture": {
-      "title": "OBJECTIVE",
-      "lockedTitleFormat": "OBJECTIVE {0} - UNLOCKS IN {1}S",
-      "activeTitleFormat": "OBJECTIVE {0}",
-      "activatesInFormat": "INSIDE OBJECTIVE - LOCKED",
-      "status": {
-        "capturing": "WINNING",
-        "losing": "LOSING",
-        "stalled": "CONTESTED",
-        "resetting": "RESETTING"
-      },
-      "counts": {
-        "leftFormat": "{0}",
-        "rightFormat": "{0}"
-      },
-      "progress": {
-        "format": "{0}%"
-      },
-      "previewActiveFormat": "CAPTURE",
-      "vehicleRequired": "Vehicle needed to capture objective!",
-      "letters": {
-        "unknown": "?",
-        "A": "A",
-        "B": "B",
-        "C": "C",
-        "D": "D",
-        "E": "E",
-        "F": "F",
-        "G": "G",
-        "H": "H"
+        "valueDefault": "Default"
       }
     },
     "teams": {
@@ -82,10 +44,9 @@
       "area22B": "Area 22B"
     },
     "notifications": {
-      "readyupReturnToBaseNotLive": "Return to main base and ready back up - Round {0} is not live!",
-      "roundStarted": "Round started.",
+      "readyupReturnToBaseNotLive": "Return to main base and ready back up - Match is not live!",
+      "roundStarted": "Match started.",
       "teamSwitch": "You have switched teams!",
-      "roundCleanupSpawnTimeout": "Spawn timeout after {0}s - deploying anyway.",
       "playerReadiedUp": "{0} has readied up: {1} / {2} Players Ready"
     },
     "joinPrompt": {
@@ -117,8 +78,8 @@
       "neverShowAgain": "Never Show Again"
     },
     "readyDialog": {
-      "header": "Everyone needs to press 'Ready' and stay inside their main base until the round starts.",
-      "header2": "You get ONE vehicle & ONE life per round. Only vehicle kills award points!",
+      "header": "Everyone needs to press 'Ready' and stay inside their main base until the match starts.",
+      "header2": "You get ONE vehicle & ONE life per live match. No vehicle redeploys.",
       "header3": "Repair vehicles with your torch & resupply vehicle ammo with supply crates as needed.",
       "header4": "Stay close to your vehicles... Vehicles will become 'abandoned' if it's >{0}m from any player.",
       "header5": "Abandoned vehicles take damage over time, even becoming destroyed.",
@@ -139,8 +100,6 @@
       "vehicleOptionPanthera": "Panthera KHT (Euro)",
       "vehicleOptionBlackHawk": "UH-60 Black Hawk",
       "vehicleOptionMapDefault": "Map Default",
-      "bestOfLabel": "Best of {0} Rounds",
-      "bestOfChanged": "{0} changed it to best of {1} rounds",
       "matchupFormat": "Vehicles: {0} vs {1}",
       "matchupChanged": "{0} changed vehicles matchup to {1} vs {2}",
       "gameModeChanged": "{0} changed game mode to {1}",
@@ -148,7 +107,6 @@
       "playersChanged": "{0} changed players minimum to {1} vs {2}",
       "playersFormat": "Players: {0} vs {1}",
       "minPlayersToStartFormat": "Minimum Players to Start: {0}",
-      "targetKillsToWinFormat": "Target Kills to win Round: {0}",
       "playerNameFormat": "{0}",
       "status": {
         "ready": "READY",
@@ -169,22 +127,18 @@
       "actionPressed": "{0} pressed {1} in the admin panel",
       "actionCountFormat": "({0})",
       "actionCountVictoryFormat": "Admin Panel Buttons used {0} times",
-      "actionCountVictoryFormatRandomOverride": "Admin Panel Buttons used {0} times with a Random Override!",
       "actions": {
         "clockTimeInc": "Clock Time +",
         "clockTimeDec": "Clock Time -",
         "clockReset": "Clock Reset",
-        "roundStart": "Start Round",
-        "roundEnd": "End Round",
+        "roundStart": "Start Match",
+        "roundEnd": "End Match",
         "positionDebug": "Toggle Position Debug",
-        "roundLengthDec": "Round Length -",
-        "roundLengthInc": "Round Length +"
+        "roundLengthDec": "Match Length -",
+        "roundLengthInc": "Match Length +"
       },
       "labels": {
-        "tieBreakerModeLastRoundOnly": "Last Round ONLY",
-        "tieBreakerModeAllRounds": "All Rounds / ON",
-        "tieBreakerModeDisabled": "Disabled / OFF",
-        "roundLengthFormat": "Round Length: {0}:{1}{2}"
+        "roundLengthFormat": "Match Length: {0}:{1}{2}"
       },
       "buttons": {
         "panel": "Admin Panel"
@@ -193,8 +147,8 @@
         "header": "t1 = left team; t2 = right team",
         "buttons": {
           "clockReset": "Reset Clock",
-          "roundEnd": "End Round",
-          "roundStart": "Start Round",
+          "roundEnd": "End Match",
+          "roundStart": "Start Match",
           "positionDebug": "Toggle Position Debug"
         },
         "labels": {
@@ -212,13 +166,12 @@
       "plus": "+",
       "minus": "-",
       "left": "<",
-      "right": ">",
-      "x": "??"
+      "right": ">"
     },
     "victory": {
       "restartInFormat": "Map will restart/rotate in {0}s",
       "screenshotPrompt": "Screenshot this to record match results",
-      "totalMatchTimeLabel": "Total Match time:"
+      "totalMatchTimeLabel": "Total Match Time:"
     },
     "countdown": {
       "format": "{0}",
@@ -229,7 +182,7 @@
       "adminFacing": "ADMIN FACING X:{0} Y:{1} Z:{2}"
     },
     "messages": {
-      "init": "Vehicle scoring initialized.",
+      "init": "Conquest systems initialized.",
       "vehicleSpawned": "Vehicle spawned for {0} at X:{1}/Z:{2}",
       "vehicleSpawnRetry": "Vehicle spawn blocked for {0}. Retrying in {1}s."
     },
@@ -238,7 +191,7 @@
       "slash": "/",
       "unknownPlayer": "Unknown",
       "unassigned": "Unassigned",
-      "debugPlaceholderName": "PLACERHOLDER_PLAYER_NAME_HERE"
+      "debugPlaceholderName": "PLACEHOLDER_PLAYER_NAME_HERE"
     }
   }
 }

@@ -4,20 +4,19 @@
 function bindClockExpiryForContinuousMode(): void {
     State.round.clock.expiryHandlers = [
         () => {
-            endRound(undefined, 0, 0);
+            endMatch(undefined, 0, 0);
         },
     ];
 }
 
-function startRound(_triggerPlayer?: mod.Player): void {
+function startMatch(_triggerPlayer?: mod.Player): void {
     if (State.match.isEnded) return;
-    if (isRoundLive()) return;
+    if (isMatchLive()) return;
 
     bindClockExpiryForContinuousMode();
 
     State.round.countdown.isRequested = false;
-    State.round.phase = RoundPhase.Live;
-    State.round.flow.roundEndUiLockdown = false;
+    State.round.phase = MatchPhase.Live;
     State.match.isEnded = false;
     State.match.victoryDialogActive = false;
     State.match.winnerTeam = undefined;
@@ -26,14 +25,14 @@ function startRound(_triggerPlayer?: mod.Player): void {
 
     mod.EnableAllPlayerDeploy(true);
 
-    setRoundStateTextForAllPlayers();
+    setMatchStateTextForAllPlayers();
     updateHelpTextVisibilityForAllPlayers();
     updatePlayersReadyHudTextForAllPlayers();
     updateSettingsSummaryHudForAllPlayers();
     updateMatchupLabelForAllPlayers();
     updateMatchupReadoutsForAllPlayers();
 
-    ResetRoundClock(getConfiguredRoundLengthSeconds());
+    resetMatchClock(getConfiguredMatchLengthSeconds());
     updateAllPlayersClock();
 
     sendHighlightedWorldLogMessage(
@@ -44,15 +43,14 @@ function startRound(_triggerPlayer?: mod.Player): void {
     );
 }
 
-function endRound(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number, overrideWinnerTeamNum?: TeamID | 0): void {
+function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number, overrideWinnerTeamNum?: TeamID | 0): void {
     if (State.match.victoryDialogActive) return;
 
     const winner = (overrideWinnerTeamNum === TeamID.Team1 || overrideWinnerTeamNum === TeamID.Team2)
         ? overrideWinnerTeamNum
         : 0;
 
-    State.round.phase = RoundPhase.GameOver;
-    State.round.flow.roundEndUiLockdown = true;
+    State.round.phase = MatchPhase.GameOver;
     State.match.isEnded = true;
     State.match.victoryDialogActive = true;
     State.match.winnerTeam = winner;
@@ -62,7 +60,7 @@ function endRound(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number,
 
     mod.EnableAllPlayerDeploy(true);
 
-    setRoundStateTextForAllPlayers();
+    setMatchStateTextForAllPlayers();
     updateHelpTextVisibilityForAllPlayers();
     updateVictoryDialogForAllPlayers(MATCH_END_DELAY_SECONDS);
     updateSettingsSummaryHudForAllPlayers();
@@ -70,27 +68,23 @@ function endRound(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number,
     updateMatchupReadoutsForAllPlayers();
 }
 
-function triggerFreshRoundSetup(_triggerPlayer?: mod.Player): void {
+function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     if (State.match.isEnded) return;
-    if (isRoundLive()) return;
+    if (isMatchLive()) return;
 
     cancelPregameCountdown();
     resetReadyStateForAllPlayers();
 
-    State.round.phase = RoundPhase.NotReady;
-    State.round.lastWinnerTeam = 0;
-    State.round.lastEndDetailReason = RoundEndDetailReason.None;
-    State.round.lastObjectiveProgress = 0.5;
-    State.round.flow.roundEndUiLockdown = false;
+    State.round.phase = MatchPhase.NotReady;
 
     State.match.victoryDialogActive = false;
     State.match.winnerTeam = undefined;
     State.match.endElapsedSecondsSnapshot = 0;
     State.match.victoryStartElapsedSecondsSnapshot = 0;
 
-    setRoundClockPreview(getConfiguredRoundLengthSeconds());
+    setMatchClockPreview(getConfiguredMatchLengthSeconds());
     updateAllPlayersClock();
-    setRoundStateTextForAllPlayers();
+    setMatchStateTextForAllPlayers();
     updateHelpTextVisibilityForAllPlayers();
     updatePlayersReadyHudTextForAllPlayers();
     updateSettingsSummaryHudForAllPlayers();
@@ -102,25 +96,21 @@ function triggerFreshRoundSetup(_triggerPlayer?: mod.Player): void {
     }
 }
 
-// Compatibility shim: map/config pathways still invoke this hook.
-// Conquest runtime currently keeps overtime disabled, so this intentionally no-ops.
-function refreshOvertimeZonesFromMapConfig(): void { return; }
-
-function clampRoundLengthSeconds(seconds: number): number {
+function clampMatchLengthSeconds(seconds: number): number {
     return Math.max(
-        ADMIN_ROUND_LENGTH_MIN_SECONDS,
-        Math.min(ADMIN_ROUND_LENGTH_MAX_SECONDS, Math.floor(seconds))
+        ADMIN_MATCH_LENGTH_MIN_SECONDS,
+        Math.min(ADMIN_MATCH_LENGTH_MAX_SECONDS, Math.floor(seconds))
     );
 }
 
-function getConfiguredRoundLengthSeconds(): number {
-    return clampRoundLengthSeconds(State.round.clock.roundLengthSeconds ?? ROUND_CLOCK_DEFAULT_SECONDS);
+function getConfiguredMatchLengthSeconds(): number {
+    return clampMatchLengthSeconds(State.round.clock.matchLengthSeconds ?? ROUND_CLOCK_DEFAULT_SECONDS);
 }
 
-function syncAdminRoundLengthLabelForAllPlayers(): void {
+function syncAdminMatchLengthLabelForAllPlayers(): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
-    const totalSeconds = getConfiguredRoundLengthSeconds();
+    const totalSeconds = getConfiguredMatchLengthSeconds();
     const time = getClockTimeParts(totalSeconds);
     const label = mod.Message(
         mod.stringkeys.twl.adminPanel.labels.roundLengthFormat,
@@ -134,7 +124,7 @@ function syncAdminRoundLengthLabelForAllPlayers(): void {
         if (!player || !mod.IsPlayerValid(player)) continue;
         const pid = safeGetPlayerId(player);
         if (pid === undefined || isPidDisconnected(pid)) continue;
-        const widget = safeFind(UI_ADMIN_ROUND_LENGTH_LABEL_ID + pid);
+        const widget = safeFind(UI_ADMIN_MATCH_LENGTH_LABEL_ID + pid);
         safeSetUITextLabel(widget, label);
     }
 }

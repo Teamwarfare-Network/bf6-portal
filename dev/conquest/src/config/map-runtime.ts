@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Module: strings/map-runtime -- map detection/apply + spawn preset helpers
+// Module: config/map-runtime -- map detection/apply and spawn-preset helpers
 
 //#region -------------------- Map + Matchup Helpers --------------------
 
@@ -99,14 +99,6 @@ function applyMapConfig(mapKey: MapKey): void {
     MAIN_BASE_TEAM2_POS = ACTIVE_MAP_CONFIG.team2Base;
     refreshVehicleSpawnSpecsFromModeConfig();
     VEHICLE_SPAWN_YAW_OFFSET_DEG = ACTIVE_MAP_CONFIG.vehicleSpawnYawOffsetDeg;
-    ACTIVE_OVERTIME_ZONES = (ACTIVE_MAP_CONFIG.overtimeZones ?? []).map((zone) => ({
-        areaTriggerObjId: zone.areaTriggerObjId,
-        sectorId: zone.sectorId,
-        worldIconObjId: zone.worldIconObjId,
-        capturePointObjId: zone.capturePointObjId,
-    }));
-    // Compatibility no-op: keeps legacy overtime metadata refresh wiring intact.
-    refreshOvertimeZonesFromMapConfig();
     // Apply the map's default aircraft ceiling, unless a custom override is active.
     syncAircraftCeilingFromMapConfig();
 
@@ -138,14 +130,13 @@ function detectMapKeyFromHqs(): MapKey | undefined {
     return undefined;
 }
 
-// Finds the preset index matching left/right players + target value; returns 0 if no exact match.
-function findMatchupPresetIndex(leftPlayers: number, rightPlayers: number, roundKillsTarget: number): number {
+// Finds the preset index matching left/right players; returns 0 if no exact match.
+function findMatchupPresetIndex(leftPlayers: number, rightPlayers: number): number {
     for (let i = 0; i < MATCHUP_PRESETS.length; i++) {
         const preset = MATCHUP_PRESETS[i];
         if (
             preset.leftPlayers === leftPlayers &&
-            preset.rightPlayers === rightPlayers &&
-            preset.roundKillsTarget === roundKillsTarget
+            preset.rightPlayers === rightPlayers
         ) {
             return i;
         }
