@@ -3,7 +3,7 @@
 
 //#region -------------------- Versioning --------------------
 
-// version: 0.623 | Date: 02.14.26 | Time: 20:36 UTC
+// version: 0.625 | Date: 02.15.26 | Time: 00:52 UTC
 // version policy header file: src/header-file.ts
 // version policy footer file: src/footer-file.ts
 // version policy strings file: src/strings.json
@@ -188,7 +188,6 @@
  * --- Code Cleanup: Address things like renderReadyDialogForAllVisibleViewers vs refreshReadyDialogForAllVisibleViewers (overlap/duplication?)
  * --- Code Cleanup: The UI patterns are bonkers. We dont need unique functions for single message strings? can we simplify this type of pattern: NotifyAmmoRestocked(eventPlayer);
  * --- Code Cleanup: There are many various functions which generally do the same thing, can we consider how to unify UI updates/refreshes or use TS template UI library (major refactor)
- * --- Code Cleanup: Embrace TS Template project and break mega file into modular files...
  * 
  * List of Nice to Haves (for only humans and not LLMs, CODEX or GPT to design and implement):
  * - UI Polish: Add "Respawn in 10s..." message synced with clock to appear in place at top in yellow instead of "ready up" dialog, during the window of round ending
