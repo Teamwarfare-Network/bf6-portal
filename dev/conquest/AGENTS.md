@@ -60,7 +60,7 @@ Prompting examples:
 1. Start from `./design_doc/TWL_Conquest_Design.md` to understand requirements and intended behavior.
 2. Use `./reference_design_documentation` for supporting analysis context.
 3. Do not use `./reference_design_documentation/archive` unless explicitly requested by the user.
-4. Read methodology references under `reference_implementations` for approach ideas only.
+4. Read methodology references under `./reference_implementations` for approach ideas only.
 5. Validate every planned API call via `../reference_bf6_core/00-api-reference-index.md`.
 6. Locate specific symbol docs via `../reference_bf6_core/mod/00-api-index.md` or `../reference_bf6_core/modlib/00-api-index.md`.
 7. Open exact symbol files before writing or changing code.
