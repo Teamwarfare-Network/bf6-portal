@@ -3,19 +3,23 @@ import './header-file';
 import './Changelog';
 import './types';
 import './config/types';
+import './config/conquest-constants';
 import './config/maps';
 import './config/runtime';
 import './config/map-runtime';
 import './strings/ui-ids';
 import './state/core';
+import './state/lifecycle-guardrails';
 import './state/id-helpers';
 import './state/ui-helpers';
 import './state/player-lookup';
 import './state/hud-cache-types';
 import './state/runtime';
+import './state/spawn-charge';
 import './hud/status';
 import './hud/victory';
 import './hud/help-visibility';
+import './hud/conquest-scaffold';
 import './hud/build-victory-dialog';
 import './hud/build';
 import './hud/update-helpers';
@@ -31,6 +35,7 @@ import './clock/ui';
 import './interaction/types';
 import './interaction/interact-point';
 import './interaction/actions';
+import './interaction/spawn-selector';
 import './interaction/ui-events-ready';
 import './admin-panel/events';
 import './interaction/ui-events';
@@ -60,6 +65,8 @@ import './utils/multi-click';
 import './utils/main-base';
 
 import './index/game-mode';
+import './index/conquest-scaffold';
+import './index/capture-tickets';
 import './index/player-join-leave';
 import './index/player-deploy';
 import './index/player-loop-inputs';
@@ -121,6 +128,14 @@ export async function OnVehicleDestroyed(eventVehicle: mod.Vehicle): Promise<voi
 
 export function OngoingCapturePoint(eventCapturePoint: mod.CapturePoint): void {
     ongoingCapturePointImpl(eventCapturePoint);
+}
+
+export function OnCapturePointLost(eventCapturePoint: mod.CapturePoint): void {
+    onCapturePointLostImpl(eventCapturePoint);
+}
+
+export function OnCapturePointCaptured(eventCapturePoint: mod.CapturePoint): void {
+    onCapturePointCapturedImpl(eventCapturePoint);
 }
 
 export function OnPlayerEnterAreaTrigger(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger): void {

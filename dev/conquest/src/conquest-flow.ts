@@ -4,7 +4,7 @@
 function bindClockExpiryForContinuousMode(): void {
     State.round.clock.expiryHandlers = [
         () => {
-            endMatch(undefined, 0, 0);
+            conquestPhase2ACheckEndCondition();
         },
     ];
 }
@@ -16,12 +16,9 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     bindClockExpiryForContinuousMode();
 
     State.round.countdown.isRequested = false;
-    State.round.phase = MatchPhase.Live;
-    State.match.isEnded = false;
-    State.match.victoryDialogActive = false;
-    State.match.winnerTeam = undefined;
-    State.match.endElapsedSecondsSnapshot = 0;
-    State.match.victoryStartElapsedSecondsSnapshot = 0;
+    lifecycleSetLiveBaseline("pregame-start-match");
+    conquestPhase2AResetLiveState();
+    conquestPhase2BOnMatchLiveStart();
 
     mod.EnableAllPlayerDeploy(true);
 
@@ -44,18 +41,23 @@ function startMatch(_triggerPlayer?: mod.Player): void {
 }
 
 function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number, overrideWinnerTeamNum?: TeamID | 0): void {
-    if (State.match.victoryDialogActive) return;
-
     const winner = (overrideWinnerTeamNum === TeamID.Team1 || overrideWinnerTeamNum === TeamID.Team2)
         ? overrideWinnerTeamNum
         : 0;
 
-    State.round.phase = MatchPhase.GameOver;
-    State.match.isEnded = true;
-    State.match.victoryDialogActive = true;
-    State.match.winnerTeam = winner;
-    State.match.endElapsedSecondsSnapshot = Math.floor(mod.GetMatchTimeElapsed());
-    State.match.victoryStartElapsedSecondsSnapshot = Math.floor(mod.GetMatchTimeElapsed());
+    if (!State.conquest.endRace.endLatched) {
+        State.conquest.lifecyclePhase = "POST_MATCH";
+        State.conquest.endRace.endLatched = true;
+        State.conquest.endRace.endReason = "admin";
+        State.conquest.endRace.endSnapshot = {
+            team1Tickets: State.conquest.tickets.team1,
+            team2Tickets: State.conquest.tickets.team2,
+            elapsedSeconds: Math.floor(mod.GetMatchTimeElapsed()),
+            winnerTeam: winner,
+        };
+    }
+
+    if (!lifecycleTrySetGameOver("pregame-end-match", winner)) return;
     State.round.clock.expiryFired = true;
 
     mod.EnableAllPlayerDeploy(true);
@@ -75,12 +77,9 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     cancelPregameCountdown();
     resetReadyStateForAllPlayers();
 
-    State.round.phase = MatchPhase.NotReady;
-
-    State.match.victoryDialogActive = false;
-    State.match.winnerTeam = undefined;
-    State.match.endElapsedSecondsSnapshot = 0;
-    State.match.victoryStartElapsedSecondsSnapshot = 0;
+    lifecycleSetNotReadyBaseline("fresh-setup");
+    conquestPhase2AResetNotLiveState();
+    conquestPhase2BOnNotLiveReset();
 
     setMatchClockPreview(getConfiguredMatchLengthSeconds());
     updateAllPlayersClock();

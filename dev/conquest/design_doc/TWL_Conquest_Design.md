@@ -13,6 +13,7 @@ Workflow for this document:
 3. Mark open items
 4. Start only the phases whose required clarifications are fully resolved
 5. Repeat with expert challenge rounds until no open blockers remain
+6. Begin implementation Phase by Phase with guidance
 
 ## Notes Before Implementation Phases
 
@@ -29,6 +30,7 @@ These sections define architecture constraints, divergence decisions, and implem
 - Event-driven first, low-frequency loops second.
 - Keep hot paths minimal (`OngoingPlayer` must remain lightweight).
 - ObjIds and map-specific wiring belong in config, not scattered in runtime logic.
+- Readability requirement: every newly added function must include a concise header comment describing purpose and critical maintenance constraints/side effects.
 
 ## UI/Color Contract (Locked)
 
@@ -60,8 +62,8 @@ Source:
 Status:
 
 - Contract is accepted as future direction.
-- Implementation is explicitly deferred to a final follow-on phase (after Phases 1-9).
-- Phase 7 remains basic/random spawn behavior with low overhead.
+- Implementation is explicitly deferred to a final follow-on phase (after Phases 1-10).
+- Phase 6 remains basic/random spawn behavior with low overhead.
 
 Contract summary (future implementation target):
 
@@ -207,7 +209,7 @@ These names are planning anchors for implementation/review and can be adjusted d
 - `spawnBasic_Select(teamId: number, context: unknown)`
 - `spawnBasic_Deploy(player: mod.Player, selectedSpawn: unknown)`
 - `spawnBasic_ResolveFallbackChain(teamId: number, objectiveContext: unknown)`
-- `spawnAdvanced_EvaluateNodeRisk(nodeId: number, teamId: number)` // reserved for post-core Phase 10
+- `spawnAdvanced_EvaluateNodeRisk(nodeId: number, teamId: number)` // reserved for post-core Phase 11
 
 ### 6) Map Configuration and Validation
 
@@ -267,7 +269,7 @@ Player-impact telemetry additions:
 - `CF-88` Admin/test controls must route through authoritative gameplay paths. Admin panel actions are request triggers only; they must not maintain separate end/start logic branches.
 - `CF-97` Lifecycle authority proof gate: before Phase 2A signoff, document and verify that only conquest lifecycle paths can mutate live/end/reset state (legacy round authority removed or fully isolated).
 - `CF-01` Starting tickets: `350`.
-- `CF-02` Bleed formula: flag differential only; neutral flags excluded; initial rate `1 ticket * differential / second` (constant-driven).
+- `CF-02` Bleed formula: flag differential only; neutral flags excluded; initial rate `1 ticket * differential / 3 seconds` (constant-driven, implemented as `perDiffPerSecond = 1/3` with fractional carry).
 - `CF-03` Bleed suspension: bleed requires positive differential only (no positive differential => no bleed).
 - `CF-04` Infantry ticket loss: `1 ticket` on spawn-in (not death event), but not on the first spawn after round start.
 - `CF-05` Vehicle ticket penalties: none.
@@ -313,7 +315,7 @@ Player-impact telemetry additions:
 
 ### B) Capture Mechanics
 
-- `CF-09` Capture/neutralize times: use engine defaults in V1.
+- `CF-09` Capture/neutralize times: engine-configured in V1 via capture-point timing APIs (`capture = 10s`, `neutralize = 15s`).
 - `CF-10` Contested logic: team-count weighted behavior.
 - `CF-11` Capture multipliers: constant-driven ladder (`1.15` to `2.0` cap); assault counts as 2 players via constant.
 - `CF-12` Per-flag exceptions: supported via per-flag tuning constants; exception state must be visible in UI.
@@ -361,6 +363,7 @@ Player-impact telemetry additions:
 - `CF-104` Mode identity gate policy: string identity is not a Phase 2 blocker under current plan; prioritize cleanup as systems are touched/refactored.
 - `CF-112` Conquest string pass/fail scope (current policy): no strict phase-entry gate; maintain an explicit rolling audit list of active legacy copy and clean it incrementally.
 - `CF-116` String policy precedence decision: `CF-104` + `CF-112` non-blocking policy is authoritative. Conquest string cleanup is iterative and does not block phase entry/signoff.
+- `CF-118` String edit authorization gate: any player-facing string change requires explicit human approval before edits are made. Without explicit approval, string changes must be deferred and presented as proposed diffs only.
 - `CF-95` Post-match freeze point: freeze tickets/KPIs/team-averages at the first successful `end_CheckAndEndMatch(...)` latch (ticket-zero or clock-zero path), then render post-match from frozen snapshot only.
 
 ### D) Sound Behavior
@@ -374,7 +377,7 @@ Player-impact telemetry additions:
 - `CF-20` Vehicle timer HUD scope: all vehicle timers in HUD, targeted for V2+.
 - `CF-21` Vehicle respawn times: defined per map config.
 - `CF-22` Disabled vehicle slots: hidden.
-- `CF-96` Vehicle refactor timing policy: keep current vehicle spawner behavior as baseline through Phases 1-5; refactor to timer-contract structure in Phase 6 unless a blocker bug/perf issue requires earlier minimal intervention.
+- `CF-96` Vehicle refactor timing policy: keep current vehicle spawner behavior as baseline through Phases 1-4; refactor to timer-contract structure in Phase 5 unless a blocker bug/perf issue requires earlier minimal intervention.
 - `PD-02` V1 onboarding/vehicle scope decision: keep current onboarding UX for V1 and preserve existing vehicle spawn systems as baseline behavior.
 
 ### F) Basic Spawn Policy
@@ -402,7 +405,7 @@ Player-impact telemetry additions:
   - aircraft boundaries
   - sectors/objectives
 - `CF-29` Map readiness validation owner/process: human validation using provided Godot spatial data references.
-- `CF-63` Spawn-schema readiness gate: `teamSpawnSets`, `flagSpawnSets`, and `fallbackSpawns` are optional before Phase 7 and mandatory at Phase 7 entry.
+- `CF-63` Spawn-schema readiness gate: `teamSpawnSets`, `flagSpawnSets`, and `fallbackSpawns` are optional before Phase 6 and mandatory at Phase 6 entry.
 - `CF-73` Runtime map validation guardrails:
   - configured ObjIds must resolve at runtime
   - expected object types must match usage (capture point/trigger/spawner)
@@ -475,7 +478,7 @@ Player-impact telemetry additions:
   - no pseudo/invented API calls are permitted
   - unknown calls must be replaced or removed before phase signoff
 - `CF-62` API checklist ownership:
-  - checklist location: `bf6-portal/dev/conquest/reference_design_documentation/api_checklist.md`
+  - checklist location: `bf6-portal/dev/conquest/design_doc/api_checklist.md`
   - required artifact timing: `api_checklist.md` is mandatory by Phase 1 exit (minimum scaffold + initial statuses)
   - source split: `reference_bf6_core` is the API catalog/source-of-truth for available symbols; `api_checklist.md` is this project's proof ledger for required symbols and status (`Confirmed`/`Replaced`/`Deferred`)
   - Phase 1 artifact format requirements:
@@ -485,7 +488,7 @@ Player-impact telemetry additions:
   - signoff: human owner plus one expert reviewer
 - `CF-114` API checklist artifact decision: keep `api_checklist.md` as required project signoff evidence, not as a replacement for API catalog docs.
 - `CF-94` API confirmation policy for KPI/capture attribution: unknown attribution APIs are placeholder-approved only until phase entry gates.
-  - Required gate: before Phase 4 implementation/signoff, `api_checklist.md` must explicitly mark kill/death/assist/permanent-death/capture event paths as `Confirmed` or `Replaced`.
+  - Required gate: before Phase 7 implementation/signoff, `api_checklist.md` must explicitly mark kill/death/assist/permanent-death/capture event paths as `Confirmed` or `Replaced`.
   - If an API path is not confirmed, related KPI behavior must be downgraded/disabled explicitly (no invented calls).
 - `CF-54` UI update discipline:
   - conquest HUD/scoreboard updates are dirty/signature-driven
@@ -564,7 +567,7 @@ Player-impact telemetry additions:
   - V1 policy: vehicle-seat occupants are eligible for capture credit if within capture radius at cap tick
   - player must still satisfy `CF-77` alive + capturing-team conditions
 - `CF-47` Scoreboard/post-match formatting precision: `0.1` (tenths) precision for KDR and team-average displays.
-- `PD-05` KPI scope gating decision: KPI scope finalization does not gate Phases 1-3; lock mandatory V1 KPI subset near Phase 4 entry when API confidence is higher.
+- `PD-05` KPI scope gating decision: KPI scope finalization does not gate Phases 1-3A/3B; lock mandatory V1 KPI subset near Phase 7 entry when API confidence is higher.
 
 ## Implementation Phases
 
@@ -587,7 +590,7 @@ Deliverables:
 
 Mapped clarifications:
 
-- `CF-13`, `CF-26`, `CF-29`, `CF-30`, `CF-31`, `CF-33`, `CF-36`, `CF-52`, `CF-53`, `CF-54`, `CF-57`, `CF-62`, `CF-66`, `CF-69`, `CF-70`, `CF-74`, `CF-78`, `CF-97`, `CF-100`, `CF-103`, `CF-104`, `CF-109`, `CF-111`, `CF-112`, `CF-114`, `CF-115`, `CF-116`, `PD-01`
+- `CF-13`, `CF-26`, `CF-29`, `CF-30`, `CF-31`, `CF-33`, `CF-36`, `CF-52`, `CF-53`, `CF-54`, `CF-57`, `CF-62`, `CF-66`, `CF-69`, `CF-70`, `CF-74`, `CF-78`, `CF-97`, `CF-100`, `CF-103`, `CF-104`, `CF-109`, `CF-111`, `CF-112`, `CF-114`, `CF-115`, `CF-116`, `CF-118`, `PD-01`
 
 Godot/map prerequisites:
 
@@ -599,6 +602,7 @@ Verification:
 - startup smoke in-game with no regressions to existing HUD/clock/vehicle systems
 - API checklist sanity pass (all planned calls known/supported or explicitly replaced)
 - conquest string sanity pass (best-effort, non-blocking cleanup audit)
+- string-authorization audit: each string edit has explicit human approval logged in implementation notes
 - initial stop-the-line evidence capture:
   - capture API proof log
   - lifecycle authority proof
@@ -607,19 +611,23 @@ Verification:
 
 Codex To-Do Checklist:
 
-- [ ] Create and populate `reference_design_documentation/api_checklist.md` baseline (`Confirmed`/`Replaced`/`Deferred` statuses).
-- [ ] Implement conquest scaffolding in existing domains (`config/state/index/hud/interaction`) without gameplay behavior changes.
-- [ ] Implement lifecycle owner guardrails and remove/reroute legacy direct lifecycle mutators (`CF-97`, `CF-109`).
-- [ ] Produce Phase 1 evidence artifacts for capture API proof, lifecycle authority proof, and validator capability matrix.
-- [ ] Run verification list and record pass/fail notes for Phase 1 signoff.
+- [x] Create and populate `design_doc/api_checklist.md` baseline (`Confirmed`/`Replaced`/`Deferred` statuses).
+- [x] Implement conquest scaffolding in existing domains (`config/state/index/hud/interaction`) without gameplay behavior changes.
+- [x] Implement lifecycle owner guardrails and remove/reroute legacy direct lifecycle mutators (`CF-97`, `CF-109`).
+- [x] Enforce `CF-118`: do not apply string edits without explicit human approval; log approval reference when string edits are authorized.
+- [x] Produce Phase 1 evidence artifacts for capture API proof, lifecycle authority proof, and validator capability matrix.
+- [x] Run verification list and record pass/fail notes for Phase 1 signoff.
 
 Phase Changelog:
 
 - `Log policy`: append-only; newest entry first.
-- `Current status`: `not_started`
+- `Current status`: `in_progress`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
-- `Entries`: `None yet`
+- `Entries`:
+  - `2026-03-01 | Phase 1 verification tracking | Moved Phase 1 evidence artifacts under design_doc for source control tracking and reverted temporary .gitignore changes | Phase 1 | in_progress | design_doc/phase1_verification_notes.md + .gitignore rollback`
+  - `2026-03-01 | String-governance request | Added explicit human-approval gate for player-facing string edits | CF-118, Phase 1 | accepted | AGENTS policy + Phase 1 mapped clarifications/verification/checklist updated`
+  - `2026-03-01 | Phase 1 kickoff | Added Phase 1 scaffolding + API/evidence artifacts baseline | Phase 1 | in_progress | api_checklist + capture/lifecycle/validator evidence docs`
 
 ### Phase 2A: Capture Backbone + Tickets Core
 
@@ -648,21 +656,28 @@ Verification:
 - capture authority matrix conformance checks (no script-owned capture speed/state math)
 - simultaneous ticket-zero + clock-zero race checks with single-branch end latch assertion
 
+Current Verification Limits (as of 2026-03-01):
+
+- multiplayer validation pending (solo/local verification only so far)
+- winner/draw outcome is latched in conquest state but not yet explicitly rendered in current victory UI, limiting direct visual result verification
+
 Codex To-Do Checklist:
 
-- [ ] Validate and log required capture owner/progress symbols in `api_checklist.md` before implementation.
-- [ ] Wire capture routing from engine events to mapped ObjId config entries with explicit unmapped-point diagnostics.
-- [ ] Implement ticket/bleed/end-condition flow with `CF-101`/`CF-110` single-latch contract.
-- [ ] Add temporary debug HUD for ownership/progress/ticket parity against authoritative state.
+- [x] Validate and log required capture owner/progress symbols in `api_checklist.md` before implementation.
+- [x] Wire capture routing from engine events to mapped ObjId config entries with explicit unmapped-point diagnostics.
+- [x] Implement ticket/bleed/end-condition flow with `CF-101`/`CF-110` single-latch contract.
+- [x] Add temporary debug HUD for ownership/progress/ticket parity against authoritative state.
 - [ ] Execute race-condition verification (ticket-zero vs clock-zero) and archive evidence for Phase 2 gate.
 
 Phase Changelog:
 
 - `Log policy`: append-only; newest entry first.
-- `Current status`: `not_started`
+- `Current status`: `in_progress`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
-- `Entries`: `None yet`
+- `Entries`:
+  - `2026-03-01 | Verification scope update after solo validation pass | Added explicit Phase 2A verification limits (no multiplayer pass yet; winner/draw not yet explicitly rendered in victory UI) | Phase 2A | accepted | No API/schema change; implementation follow-up tracked in later phases`
+  - `2026-03-01 | Phase 2A kickoff implementation | Added capture tick routing, ticket bleed/end-latch flow, engine score mirroring, and temporary numeric debug HUD output | Phase 2A | in_progress | src/index/capture-tickets.ts + area-triggers/game-mode/conquest-flow wiring + HUD/cache updates`
 
 ### Phase 2B: Spawn-Charge Matrix and Diagnostics
 
@@ -690,26 +705,29 @@ Verification:
 
 Codex To-Do Checklist:
 
-- [ ] Implement spawn-charge reason matrix and per-reason debug counters for all live-phase deploy paths.
-- [ ] Implement per-player deploy transaction tracking and duplicate-charge suspicion diagnostics.
-- [ ] Enforce `CF-113` exemption behavior (round-start only; no reconnect/team-switch/admin-move refresh).
-- [ ] Enforce session-scoped identity policy (`CF-99`, `CF-107`, `CF-108`) and document fairness tradeoff in diagnostics.
+- [x] Implement spawn-charge reason matrix and per-reason debug counters for all live-phase deploy paths.
+- [x] Implement per-player deploy transaction tracking and duplicate-charge suspicion diagnostics.
+- [x] Enforce `CF-113` exemption behavior (round-start only; no reconnect/team-switch/admin-move refresh).
+- [x] Enforce session-scoped identity policy (`CF-99`, `CF-107`, `CF-108`) and document fairness tradeoff in diagnostics.
 - [ ] Run full redeploy/reconnect/admin-move matrix tests and attach invariant proof output.
 
 Phase Changelog:
 
 - `Log policy`: append-only; newest entry first.
-- `Current status`: `not_started`
+- `Current status`: `in_progress`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
-- `Entries`: `None yet`
+- `Entries`:
+  - `2026-03-01 | Phase 2B identity fallback hardening | Enforced session-scoped pid reset behavior and added reconnect fairness diagnostics counters to spawn-charge debug snapshots | CF-99, CF-107, CF-108, Phase 2B | accepted | src/state/spawn-charge.ts + src/state/runtime-types.ts + src/state/runtime-state.ts + src/index/conquest-scaffold.ts`
+  - `2026-03-01 | Phase 2B kickoff implementation | Added live-phase spawn-charge reason matrix counters, per-player deploy transaction tracking, duplicate-charge suspicion diagnostics, round-start exemption seeding, and reconnect/session cleanup hooks | Phase 2B | in_progress | src/state/spawn-charge.ts + runtime type/state extensions + deploy/join/leave/team-switch/conquest-flow wiring`
 
-### Phase 3: Flag UI + Color Contract
+### Phase 3A: Flag UI + Color Contract (Functional)
 
 Deliverables:
 
 - flag ownership/progress HUD
 - enforced left-blue/right-red policy
+- functional/readable baseline layout (polish deferred to Phase 3B)
 
 Mapped clarifications:
 
@@ -726,61 +744,117 @@ Verification:
 
 Codex To-Do Checklist:
 
-- [ ] Implement or update flag HUD build/update paths with event-first dirty rendering.
-- [ ] Enforce UI perspective contract everywhere (friendly left/blue, enemy right/red).
-- [ ] Bind display ordering to stable flag ObjId mapping from config.
+- [x] Implement or update flag HUD build/update paths with event-first dirty rendering.
+- [x] Enforce UI perspective contract everywhere (friendly left/blue, enemy right/red).
+- [x] Bind display ordering to stable flag ObjId mapping from config.
 - [ ] Validate HUD behavior across join/leave/redeploy/team-swap transitions.
-- [ ] Capture before/after evidence for UI parity and regression checks.
 
 Phase Changelog:
 
 - `Log policy`: append-only; newest entry first.
-- `Current status`: `not_started`
+- `Current status`: `in_progress`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
-- `Entries`: `None yet`
+- `Entries`:
+  - `2026-03-01 | Phase structure refinement request | Split prior Phase 3 into Phase 3A (functional baseline) and Phase 3B (polish pass: shapes/shading/animations) to isolate completion criteria and reduce UI churn risk | Phase 3A, Phase 3B | accepted | design_doc phase structure + checklists + changelogs updated`
+  - `2026-03-01 | Phase 3A HUD tuning + recapture visibility follow-up | Increased conquest ticket/flag HUD size and moved block further down; adjusted friendly/enemy projection logic so contested recaptures visibly update during ownership transitions | Phase 3A, CF-13, CF-14, CF-15 | accepted | src/hud/build.ts + src/index/capture-tickets.ts`
+  - `2026-03-01 | Phase 3A kickoff implementation | Added per-flag conquest HUD rows, event-first dirty rendering, per-viewer friendly-left/blue vs enemy-right/red mapping, and stable ObjId row ordering with join/deploy forced refresh hooks | Phase 3A, CF-13, CF-14, CF-15 | in_progress | src/hud/build.ts + src/index/capture-tickets.ts + src/state/hud-cache-types.ts + src/state/runtime-types.ts + src/state/runtime-state.ts + src/index/player-join-leave.ts + src/index/player-deploy.ts`
 
-### Phase 4: Custom Tab Scoreboard + KPI Tracking
+### Phase 3B: Polished UI Pass (Shapes, Shading, Animation)
 
 Deliverables:
 
-- soldier KPI tracking
-- custom tab scoreboard rendering and updates
-- post-match aggregation hooks
+- polished conquest HUD visual treatment (shape/backplate pass for tickets + flag rows)
+- shading/contrast pass for readability across varied scene lighting
+- controlled animation pass for intro/state-change transitions (no perpetual loop spam)
+- final overlap-safe alignment with clock/help/ready/victory HUD layers
+- stabilized polish baseline that is safe to iterate during ongoing playtests
+
+Implementation slices:
+
+- `3B.1` Static visual polish baseline:
+  - finalize ticket/flag container shapes, border styling, fill/alpha treatment, and readability contrast
+  - finalize default placement/alignment contract against top HUD anchors
+- `3B.2` Motion polish:
+  - add bounded entry/update transitions for ticket/flag widgets (fade/slide or equivalent)
+  - keep transitions event-driven and rate-limited (no continuous animation loops)
+- `3B.3` Integration tune:
+  - resolve overlap/depth collisions with clock/help/ready/victory widgets
+  - verify readability across map lighting/background variance and adjust shading/layout constants
+
+HUD lifecycle guardrails (sticking/overdraw prevention):
+
+- Parent ownership rule: all conquest HUD children (tickets, bars, flags, borders, crowns) must be attached to conquest-owned roots only; do not parent conquest children directly to global `UIRoot`.
+- Rebuild rule: if conquest roots are missing/invalid, clear conquest HUD cache and perform one controlled rebuild pass before normal updates continue.
+- Update rule: steady-state update paths mutate existing conquest widgets only; widget creation is restricted to explicit build/rebuild paths.
+- Team-switch redraw rule: team swap/join/leave must force one authoritative conquest HUD refresh from state, and must not schedule overlapping rebuild paths in the same window.
+- State-authority rule: border/crown/ownership colors and visibility are recomputed from current authoritative conquest state every update; no persistent visual state may exist outside tracked script state.
+- Verification rule: any UI move/tune change must include explicit team-switch regression checks for duplicate widgets, upper-left fallback draws, stale crown/border carryover, and color-order mismatches.
+
+Out of scope in Phase 3B:
+
+- scoreboard/KPI feature work (Phase 7)
+- capture/ticket gameplay-rule changes
+- sound, spawn, or vehicle system behavior changes
+- new player-facing copy without explicit human string approval
 
 Mapped clarifications:
 
-- `CF-37`, `CF-38`, `CF-39`, `CF-40`, `CF-41`, `CF-44`, `CF-45`, `CF-46`, `CF-47`, `CF-54`, `CF-64`, `CF-65`, `CF-77`, `CF-79`
+- `CF-13`, `CF-14`, `CF-15`
 
 Godot/map prerequisites:
 
-- none additional for base KPI tracking
-- capture credit path from Phase 2 must be stable
+- stable top-HUD anchor/depth layering with clock/help/ready/victory widgets
+- per-map readability sanity for the final polished layout
+- manual HUD anchor package from human tester:
+  - provide target `position`/`anchor`/`depth` for `MatchTimerRoot`, help/ready banners, ticket root, and flag root
+  - include one reference screenshot with intended final alignment
 
 Verification:
 
 - `npm run verify`
-- event-to-KPI correctness tests (kill/death/assist/capture/revive)
-- scoreboard stability during reconnect/redeploy
-- scoreboard update-throttle checks (no blind refresh spam when values unchanged)
+- visual overlap checks against clock/help/ready/victory in join/leave/redeploy/team-swap flows
+- animation behavior checks (state-change cadence, no flicker/no jitter)
+- readability checks (contrast/size) on bright and dark map regions
+- UI update-rate sanity (no unnecessary refresh spam caused by polish effects)
+- singleplayer iteration loop:
+  - run one baseline pass, one motion pass, one integration pass, validating each independently before stacking changes
+
+Current Verification Limits (as of 2026-03-01):
+
+- multiplayer validation is still pending; current Phase 3B entry work is singleplayer-first
+- polish decisions remain provisional until multiplayer visibility/readability checks are available
+
+Acceptance criteria (Phase 3B functional completion):
+
+- no persistent overlap with clock/help/ready/victory widgets during normal lifecycle transitions
+- ticket/flag widgets remain readable under high-contrast and low-contrast scene backgrounds
+- animation transitions are event-bounded, smooth, and do not introduce flicker/jitter spam
+- polish changes do not regress Phase 3A data correctness (color contract, ordering, update behavior)
 
 Codex To-Do Checklist:
 
-- [ ] Confirm KPI event APIs in `api_checklist.md` as `Confirmed` or `Replaced` before enabling each KPI path.
-- [ ] Implement KPI state mutations and derived-score/KDR math according to CF scoreboard rules.
-- [ ] Implement scoreboard render/update with dirty/signature discipline (no blind refresh loops).
-- [ ] Validate reconnect/redeploy behavior and stat continuity expectations for V1 policy.
-- [ ] Run event-to-KPI accuracy tests and log gating results for Phase 4 signoff.
+- [ ] Manual input step (human): provide desired HUD anchor package (clock/help/ready/tickets/flags positions + depth expectations) for Phase 3B implementation.
+- [ ] Complete `3B.1` static visual baseline (shape/backplate + shading constants) and lock initial layout contract.
+- [ ] Complete `3B.2` motion hooks with bounded/event-driven transitions and refresh-rate guardrails.
+- [ ] Complete `3B.3` integration tune for depth/overlap/readability across lifecycle transitions.
+- [ ] Run Phase 3B singleplayer iteration loop (baseline -> motion -> integration) and record pass/fail notes.
+- [ ] Keep string-governance policy enforced; no player-facing string edits without explicit human approval.
+- [x] Document and enforce HUD lifecycle guardrails to prevent team-switch sticking/overdraw artifacts.
 
 Phase Changelog:
 
 - `Log policy`: append-only; newest entry first.
-- `Current status`: `not_started`
+- `Current status`: `in_progress`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
-- `Entries`: `None yet`
+- `Entries`:
+  - `2026-03-02 | HUD persistence issue closure rule | Added explicit Phase 3B HUD lifecycle guardrails covering parent ownership, controlled rebuilds, team-switch authoritative refresh, and anti-overdraw verification checks | Phase 3B | accepted | design_doc/Phase 3B guardrail block + checklist updated`
+  - `2026-03-01 | Phase 3B anchor-package application | Applied HUD anchor positions from ui_location_starter reference package: tickets flanking clock line and 7-slot horizontal capture-point clusters; retained existing data wiring and color contract | Phase 3B | in_progress | src/hud/build.ts`
+  - `2026-03-01 | Phase 3B manual-input gate request | Added explicit human-provided HUD anchor/position package step before further Phase 3B polish movement and animation work | Phase 3B | accepted | design_doc/Phase 3B prerequisites + checklist updated`
+  - `2026-03-01 | Phase 3B scope-definition pass | Expanded Phase 3B with implementation slices, out-of-scope boundaries, singleplayer-first verification limits, and explicit acceptance criteria for polish completion | Phase 3B | accepted | design_doc/Phase 3B section updated`
 
-### Phase 5: Capture Sounds
+### Phase 4: Capture Sounds
 
 Deliverables:
 
@@ -815,7 +889,7 @@ Phase Changelog:
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`: `None yet`
 
-### Phase 6: Vehicle Respawn Timers (V2+)
+### Phase 5: Vehicle Respawn Timers (V2+)
 
 Deliverables:
 
@@ -850,7 +924,7 @@ Phase Changelog:
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`: `None yet`
 
-### Phase 7: Basic Spawn System
+### Phase 6: Basic Spawn System
 
 Deliverables:
 
@@ -869,7 +943,7 @@ Verification:
 
 - `npm run verify`
 - spawn validity and restriction checks
-- confirm no advanced node/LOS/heatmap logic is active in Phase 7
+- confirm no advanced node/LOS/heatmap logic is active in Phase 6
 
 Codex To-Do Checklist:
 
@@ -878,6 +952,46 @@ Codex To-Do Checklist:
 - [ ] Add clear diagnostics for missing/invalid spawn sets per validator policy.
 - [ ] Keep advanced node-risk/LOS/heatmap logic disabled in this phase.
 - [ ] Run spawn restriction and fallback tests across team swap/redeploy scenarios.
+
+Phase Changelog:
+
+- `Log policy`: append-only; newest entry first.
+- `Current status`: `not_started`
+- `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
+- `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
+- `Entries`: `None yet`
+
+### Phase 7: Custom Tab Scoreboard + KPI Tracking
+
+Deliverables:
+
+- soldier KPI tracking
+- custom tab scoreboard rendering and updates
+- post-match aggregation hooks
+
+Mapped clarifications:
+
+- `CF-37`, `CF-38`, `CF-39`, `CF-40`, `CF-41`, `CF-44`, `CF-45`, `CF-46`, `CF-47`, `CF-54`, `CF-64`, `CF-65`, `CF-77`, `CF-79`
+
+Godot/map prerequisites:
+
+- none additional for base KPI tracking
+- capture credit path from Phase 2 must be stable
+
+Verification:
+
+- `npm run verify`
+- event-to-KPI correctness tests (kill/death/assist/capture/revive)
+- scoreboard stability during reconnect/redeploy
+- scoreboard update-throttle checks (no blind refresh spam when values unchanged)
+
+Codex To-Do Checklist:
+
+- [ ] Confirm KPI event APIs in `api_checklist.md` as `Confirmed` or `Replaced` before enabling each KPI path.
+- [ ] Implement KPI state mutations and derived-score/KDR math according to CF scoreboard rules.
+- [ ] Implement scoreboard render/update with dirty/signature discipline (no blind refresh loops).
+- [ ] Validate reconnect/redeploy behavior and stat continuity expectations for V1 policy.
+- [ ] Run event-to-KPI accuracy tests and log gating results for Phase 7 signoff.
 
 Phase Changelog:
 
@@ -912,7 +1026,6 @@ Codex To-Do Checklist:
 - [ ] Enforce single end transition path through end latch (no duplicate finalize paths).
 - [ ] Validate winner/result/ticket/elapsed accuracy against authoritative snapshot.
 - [ ] Validate delayed finalize/end flow under normal and edge-case match endings.
-- [ ] Capture signoff evidence showing no post-latch mutation of displayed results.
 
 Phase Changelog:
 
@@ -922,7 +1035,54 @@ Phase Changelog:
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`: `None yet`
 
-### Phase 9: AI/Bot Simulation and Spawn-Balance Validation (Future)
+### Phase 9: Iteration, Playtesting, and Polish (Open-Ended)
+
+Deliverables:
+
+- open-ended multiplayer playtesting cadence across all implemented core systems
+- prioritized polish/iteration pass for UX, readability, flow consistency, and balance tuning
+- consolidated defect burn-down for blockers/high-impact regressions before future-phase expansion
+
+Mapped clarifications:
+
+- all implemented-phase clarifications under active validation scope (`CF`/`PD` carry-forward)
+
+Godot/map prerequisites:
+
+- testable map/spatial baselines for all intended playtest maps
+- access to representative multiplayer test conditions
+
+Verification:
+
+- `npm run verify`
+- repeated playtest loops across join/leave/redeploy/team-swap/capture/end-flow scenarios
+- regression sweep after each polish batch
+- explicit blocker triage and close/retest cycle
+
+Codex To-Do Checklist:
+
+- [ ] Maintain a live prioritized playtest/polish backlog (blockers first, then major UX issues).
+- [ ] Execute iterative fix/tune passes with short validation loops after each batch.
+- [ ] Re-test previously fixed issues to prevent regressions.
+- [ ] Keep this phase open-ended until explicit human signoff to proceed.
+- [ ] Record accepted tuning/polish decisions in phase changelog entries.
+- [ ] Re-add conquest flag ownership borders only after a single script-authoritative visual-state path is verified for neutralize->neutral->recapture transitions in multiplayer (no mixed owner/progress fallbacks in render decisions).
+- [ ] Add a focused border reintroduction test pass.
+- [ ] Validate neutralization edge (owner drained to neutral) never leaves stale enemy border.
+- [ ] Validate neutral capture progression continues without leaving/re-entering radius.
+- [ ] Validate recapture completion switches visuals exactly once with no stale overlays.
+
+Phase Changelog:
+
+- `Log policy`: append-only; newest entry first.
+- `Current status`: `in_progress`
+- `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
+- `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
+- `Entries`:
+  - `2026-03-02 | Repeated neutralization-border regression during Phase 3 implementation/testing | Deferred flag border feature to Phase 9 polish; remove border feature from active implementation until a single authoritative visual-state path is validated | Phase 3B, Phase 9 | accepted | Added Phase 9 to-do + explicit border reintroduction validation criteria`
+  - `2026-03-01 | Phase sequence update request | Added open-ended iteration/playtesting/polish phase before bot simulation and bumped downstream phase numbering | Phase 9, Phase 10, Phase 11, Phase 12 | accepted | design_doc phase ordering + numbering updated`
+
+### Phase 10: AI/Bot Simulation and Spawn-Balance Validation (Future)
 
 Deliverables:
 
@@ -962,11 +1122,11 @@ Phase Changelog:
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`: `None yet`
 
-### Phase 10: Advanced Spawn Contract Integration (Post-Core Only)
+### Phase 11: Advanced Spawn Contract Integration (Post-Core Only)
 
 Hard gate:
 
-- Phase 10 starts only after Phases 1-9 are implemented, verified, and stable.
+- Phase 11 starts only after Phases 1-10 are implemented, verified, and stable.
 
 Deliverables:
 
@@ -1019,11 +1179,11 @@ Phase Changelog:
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`: `None yet`
 
-### Phase 11: Spawn Design Documentation and Contract Analysis (Integrated)
+### Phase 12: Spawn Design Documentation and Contract Analysis (Integrated)
 
 Hard gate:
 
-- Phase 11 starts after Phase 10 implementation baseline is stable.
+- Phase 12 starts after Phase 11 implementation baseline is stable.
 
 Purpose:
 
@@ -1203,7 +1363,7 @@ Deliverables:
 
 Mapped clarifications:
 
-- `CF-86` plus Phase 10 spawn-contract clarifications.
+- `CF-86` plus Phase 11 spawn-contract clarifications.
 
 Godot/map prerequisites:
 
@@ -1224,7 +1384,7 @@ Codex To-Do Checklist:
 - [ ] Keep this phase as documentation/analysis integration only (no production spawn algorithm copy-paste).
 - [ ] Consolidate spawn contract language into implementation-ready guidance for future phases.
 - [ ] Validate checklist coverage for data model, rejection reasons, fallback, and tunable scoring.
-- [ ] Ensure Phase 10 implementation learnings are reflected in this analysis section.
+- [ ] Ensure Phase 11 implementation learnings are reflected in this analysis section.
 - [ ] Record any new clarifications as CF/PD updates before additional spawn-system refactors.
 
 Phase Changelog:

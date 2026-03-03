@@ -49,6 +49,20 @@ function updateHelpTextVisibilityForPid(pid: number): void {
     if (readyText) {
         mod.SetUITextLabel(readyText, mod.Message(mod.stringkeys.twl.hud.readyText));
     }
+
+    // Keep pre-live banners readable by hiding phase/ready lines when help or ready strips are active.
+    const showStateLines = !showHelp && !showReady;
+    const roundStateText = safeFind(`RoundStateText_${pid}`);
+    if (roundStateText) {
+        safeSetUIWidgetVisible(roundStateText, showStateLines);
+    }
+
+    if (!showStateLines) {
+        const playersReadyText = safeFind(`PlayersReadyText_${pid}`);
+        if (playersReadyText) {
+            safeSetUIWidgetVisible(playersReadyText, false);
+        }
+    }
 }
 
 function updateHelpTextVisibilityForPlayer(player: mod.Player): void {

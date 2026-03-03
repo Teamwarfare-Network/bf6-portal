@@ -6,6 +6,22 @@ let ACTIVE_MAP_KEY: MapKey = "Blackwell_Fields";
 
 // Expected to include team bases + at least one spawn per team, with unique slotNumber values matching per side.
 let ACTIVE_MAP_CONFIG = MAP_CONFIGS[ACTIVE_MAP_KEY];
+let ACTIVE_CAPTURE_POINT_CONFIGS: CapturePointConfig[] = ACTIVE_MAP_CONFIG.capturePoints ?? [];
+const ACTIVE_CAPTURE_POINT_CONFIG_BY_OBJ_ID: Record<number, CapturePointConfig> = {};
+
+function rebuildActiveCapturePointConfigIndex(): void {
+    for (const key of Object.keys(ACTIVE_CAPTURE_POINT_CONFIG_BY_OBJ_ID)) {
+        delete ACTIVE_CAPTURE_POINT_CONFIG_BY_OBJ_ID[Number(key)];
+    }
+    for (let i = 0; i < ACTIVE_CAPTURE_POINT_CONFIGS.length; i++) {
+        const cp = ACTIVE_CAPTURE_POINT_CONFIGS[i];
+        ACTIVE_CAPTURE_POINT_CONFIG_BY_OBJ_ID[cp.objId] = cp;
+    }
+}
+
+function getActiveCapturePointConfigByObjId(objId: number): CapturePointConfig | undefined {
+    return ACTIVE_CAPTURE_POINT_CONFIG_BY_OBJ_ID[objId];
+}
 
 // Baseline team inference from static main-base anchor coordinates.
 let MAIN_BASE_TEAM1_POS = ACTIVE_MAP_CONFIG.team1Base;
@@ -20,3 +36,5 @@ let TEAM1_VEHICLE_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team1TankSpawns;
 let TEAM2_VEHICLE_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team2TankSpawns;
 let VEHICLE_SPAWN_YAW_OFFSET_DEG = ACTIVE_MAP_CONFIG.vehicleSpawnYawOffsetDeg;
 const MAP_DETECT_DISTANCE_METERS = 5.0;
+
+rebuildActiveCapturePointConfigIndex();

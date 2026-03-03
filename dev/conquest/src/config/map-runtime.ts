@@ -95,6 +95,8 @@ function applyVehicleSpawnSpecsToExistingSlots(): void {
 function applyMapConfig(mapKey: MapKey): void {
     ACTIVE_MAP_KEY = mapKey;
     ACTIVE_MAP_CONFIG = MAP_CONFIGS[ACTIVE_MAP_KEY];
+    ACTIVE_CAPTURE_POINT_CONFIGS = ACTIVE_MAP_CONFIG.capturePoints ?? [];
+    rebuildActiveCapturePointConfigIndex();
     MAIN_BASE_TEAM1_POS = ACTIVE_MAP_CONFIG.team1Base;
     MAIN_BASE_TEAM2_POS = ACTIVE_MAP_CONFIG.team2Base;
     refreshVehicleSpawnSpecsFromModeConfig();

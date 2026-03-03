@@ -21,6 +21,117 @@ type VehicleSpawnerSlot = {
     spawnRetryScheduled: boolean;
 };
 
+type ConquestLifecyclePhase = "NOT_READY" | "PRE_MATCH" | "LIVE_MATCH" | "POST_MATCH" | "RESET";
+
+type ConquestCapturePointRuntimeState = {
+    objId: number;
+    label: string;
+    order: number;
+    mapped: boolean;
+    // Authoritative owner latch after capture/loss edges; prevents stale engine echoes from reverting state.
+    ownerLatchedByEvent: boolean;
+    ownerTeam: TeamID | 0;
+    ownerProgressTeam: TeamID | 0;
+    progress01: number;
+    onPointTeam1: number;
+    onPointTeam2: number;
+    lastUpdatedAtSeconds: number;
+};
+
+type ConquestFlagVisualPhase =
+    | "NEUTRAL_IDLE"
+    | "NEUTRAL_CAPTURING"
+    | "OWNED_STABLE"
+    | "OWNED_CONTESTED_DRAIN"
+    | "OWNED_CONTESTED_RECOVER"
+    | "NEUTRALIZED_LATCH";
+
+type ConquestFlagVisualRuntimeState = {
+    phase: ConquestFlagVisualPhase;
+    ownerTeam: TeamID | 0;
+    activeTeam: TeamID | 0;
+    progress01: number;
+    ownerRemaining01: number;
+    // Holds owner visuals off after a neutralization edge until a new full ownership confirmation arrives.
+    suppressOwnerUntilRecaptured: boolean;
+    neutralizationLatchUntilTick: number;
+    lastPhase: ConquestFlagVisualPhase;
+    lastPhaseChangeTick: number;
+    sampleTick: number;
+};
+
+type ConquestSpawnChargeReason =
+    | "deploy"
+    | "forced_redeploy"
+    | "team_switch"
+    | "admin_move"
+    | "phase_transition"
+    | "reconnect";
+
+type ConquestSpawnChargeTxnState = {
+    deploySeq: number;
+    lastChargedDeploySeq: number;
+    lastChargeAtSeconds: number;
+    lastReason: ConquestSpawnChargeReason | "none";
+};
+
+type ConquestSpawnChargeReasonCounters = Record<ConquestSpawnChargeReason, number>;
+
+type ConquestRuntimeScaffold = {
+    lifecyclePhase: ConquestLifecyclePhase;
+    tickets: {
+        team1: number;
+        team2: number;
+    };
+    bleed: {
+        enabled: boolean;
+        lastTickSeconds: number;
+        perDiffPerSecond: number;
+        carryTeam1: number;
+        carryTeam2: number;
+    };
+    capture: {
+        byObjId: Record<number, ConquestCapturePointRuntimeState>;
+        mappedObjIdsInOrder: number[];
+        lastUnmappedObjId?: number;
+        unmappedSeenCount: number;
+        visualByObjId: Record<number, ConquestFlagVisualRuntimeState>;
+        engagedObjIdByPid: Record<number, number>;
+    };
+    spawnCharge: {
+        enabled: boolean;
+        chargePerDeploy: number;
+        firstLiveSpawnExemptByPid: Record<number, boolean>;
+        deployTxnByPid: Record<number, ConquestSpawnChargeTxnState>;
+        pendingReasonByPid: Record<number, ConquestSpawnChargeReason>;
+        deployCountByReason: ConquestSpawnChargeReasonCounters;
+        chargedCountByReason: ConquestSpawnChargeReasonCounters;
+        duplicateChargeSuspicionCount: number;
+        sessionIdentityResetCount: number;
+        reconnectContinuityDropCount: number;
+        lastDebugEmitAtSeconds: number;
+    };
+    endRace: {
+        endLatched: boolean;
+        endReason?: "tickets" | "clock" | "admin";
+        endSnapshot?: {
+            team1Tickets: number;
+            team2Tickets: number;
+            elapsedSeconds: number;
+            winnerTeam: TeamID | 0;
+        };
+    };
+    debug: {
+        hudEnabled: boolean;
+        hudLastUpdatedAtSeconds: number;
+        hudDirty: boolean;
+        ticketLeaderTeam: TeamID | 0;
+        teamSwapRefreshTokenByPid: Record<number, number>;
+        perspectiveTeamByPid: Record<number, TeamID | 0>;
+        teamSwapPerspectiveLockUntilByPid: Record<number, number>;
+    };
+};
+
 // GameState centralizes all mutable mode/UI state so writes are explicit and searchable.
 interface GameState {
     round: {
@@ -59,6 +170,7 @@ interface GameState {
             vehicleStates: Record<number, AircraftCeilingVehicleState>;
         };
     };
+    conquest: ConquestRuntimeScaffold;
     match: {
         isEnded: boolean;
         victoryDialogActive: boolean;

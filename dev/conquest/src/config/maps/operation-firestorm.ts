@@ -12,6 +12,11 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
         hudFloorY: 132,
         useCustomCeiling: true,
         vehicleSpawnYawOffsetDeg: 0,
+        capturePoints: [
+            { objId: 600, label: "A", order: 1 },
+            { objId: 601, label: "B", order: 2 },
+            { objId: 602, label: "C", order: 3 },
+        ],
 
         team1TankSpawns: [                        //posX      posY      posZ                             rotX      rotY      rotZ
             { slotNumber: 1, pos: mod.CreateVector(-790.837,  132.971,  244.616), rot: mod.CreateVector( 0.0,      143.849,  0.0),       vehicle: mod.VehicleList.Abrams       },

@@ -1,7 +1,9 @@
 // @ts-nocheck
-// Module: interaction/actions -- ready-dialog swap action and UI teardown
+// Module: interaction/actions -- ready-dialog swap action and HUD refresh
 
 //#region -------------------- Ready Dialog Interaction Actions --------------------
+
+const TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS = 0.6;
 
 // Handles a player-initiated team swap.
 // This function validates the request, updates team membership,
@@ -9,14 +11,40 @@
 
 // Performs an undeploy with a short delay to ensure the engine has applied a prior SetTeam() before changing deploy state.
 // This intentionally does NOT re-deploy the player; the player is expected to choose a spawn point manually.
-async function forceUndeployPlayer(eventPlayer: mod.Player): Promise<void> {
+async function forceUndeployPlayer(
+    eventPlayer: mod.Player,
+    deployReason: ConquestSpawnChargeReason = "forced_redeploy"
+): Promise<void> {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    const pid = safeGetPlayerId(eventPlayer);
+    if (pid !== undefined) conquestPhase2BMarkNextDeployReason(pid, deployReason);
     // Undeploy immediately so the player is forced to the deploy screen right away.
     // Then retry once with a short delay for robustness across transient engine timing.
     mod.UndeployPlayer(eventPlayer);
     await mod.Wait(0.05);
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     mod.UndeployPlayer(eventPlayer);
+}
+
+// Forces conquest HUD to reproject after team assignment changes without tearing down roots.
+// Use one authoritative redraw pass after SetTeam() settles to avoid multi-pass repaint drift.
+async function refreshConquestHudAfterTeamSwap(eventPlayer: mod.Player): Promise<void> {
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    const pid = safeGetPlayerId(eventPlayer);
+    if (pid === undefined) return;
+
+    const nextToken = (State.conquest.debug.teamSwapRefreshTokenByPid[pid] ?? 0) + 1;
+    State.conquest.debug.teamSwapRefreshTokenByPid[pid] = nextToken;
+
+    // Team assignment can settle asynchronously after SetTeam().
+    // A single delayed pass prevents "correct frame then overwritten frame" behavior from stacked refreshes.
+    await mod.Wait(0.12);
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if ((State.conquest.debug.teamSwapRefreshTokenByPid[pid] ?? 0) !== nextToken) return;
+
+    ensureHudForPlayer(eventPlayer);
+    conquestPhase3MarkHudDirty();
+    updateConquestPhase2ADebugHudForAllPlayers(true);
 }
 
 function processReadyDialogSelection(eventPlayer: mod.Player) {
@@ -32,16 +60,37 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
     // Close dialog + restore UI input mode before team mutation/undeploy to avoid stale handle issues.
     hideReadyDialogUI(eventPlayer);
 
+    const pid = safeGetPlayerId(eventPlayer);
     const currentTeamNum = getTeamNumber(mod.GetTeam(eventPlayer));
     const newTeamNum = (currentTeamNum === TeamID.Team2) ? TeamID.Team1 : TeamID.Team2;
+    if (pid !== undefined) {
+        // Treat swap as immediately undeployed for HUD authority until the engine undeploy callback lands.
+        State.players.deployedByPid[pid] = false;
+        // Team swap must invalidate any in-progress engage row for this viewer before redraw.
+        // Otherwise the old on-flag panel can persist for one pass with stale ownership context.
+        delete State.conquest.capture.engagedObjIdByPid[pid];
+        // Force one clean HUD rebuild after swap to prevent duplicate ticket widgets from cache drift.
+        delete State.hudCache.hudByPid[pid];
+        // Pre-seed swap perspective so post-SetTeam transient reads cannot repaint as Team1 fallback.
+        State.conquest.debug.perspectiveTeamByPid[pid] = newTeamNum;
+        // Hold perspective to the target team briefly so redraw cannot sample stale pre-swap engine team for one frame.
+        State.conquest.debug.teamSwapPerspectiveLockUntilByPid[pid] = mod.GetMatchTimeElapsed() + TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS;
+        // Hide current conquest HUD immediately so old-team colors do not linger during swap settle.
+        const swapRefs = ensureHudForPlayer(eventPlayer);
+        if (swapRefs) conquestPhase3ForceHideAllV2Widgets(pid, swapRefs);
+    }
     mod.SetTeam(eventPlayer, mod.GetTeam(newTeamNum));
+    // Immediate script-authoritative redraw using locked perspective, then a delayed settle pass.
+    conquestPhase3MarkHudDirty();
+    updateConquestPhase2ADebugHudForAllPlayers(true);
+    void refreshConquestHudAfterTeamSwap(eventPlayer);
 
     // Force a rapid return to the deploy screen so the player respawns on the new team.
     // Note: do not modify redeploy timers globally; we only force an undeploy so the player can choose spawn manually.
     // Ensure team swapping does not grant faster-than-normal respawn timing.
     // Reuse the shared redeploy delay constant for consistent forced-undeploy behavior.
     mod.SetRedeployTime(eventPlayer, ROUND_END_REDEPLOY_DELAY_SECONDS);
-    void forceUndeployPlayer(eventPlayer);
+    void forceUndeployPlayer(eventPlayer, "team_switch");
 
     sendHighlightedWorldLogMessage(
         mod.Message(mod.stringkeys.twl.notifications.teamSwitch),

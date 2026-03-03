@@ -24,6 +24,9 @@ async function onGameModeStartedImpl(): Promise<void> {
         applyMapConfig(detectedMapKey);
     }
     State.vehicles.configReady = true;
+    initializeConquestPhase1Scaffold();
+    conquestPhase2AResetNotLiveState();
+    conquestPhase2BOnNotLiveReset();
 
     // Apply initial engine variables/settings used by the mode (authoritative baseline).
     mod.SetGameModeTargetScore(GAMEMODE_TARGET_SCORE_SAFETY_CAP);
@@ -60,18 +63,13 @@ async function onGameModeStartedImpl(): Promise<void> {
         }
     }
 
-    // Reset HUD state
-    State.match.isEnded = false;
-    State.match.victoryDialogActive = false;
-    State.round.phase = MatchPhase.NotReady; // Reset phase state for a new match.
-
-    State.match.winnerTeam = undefined;
-    State.match.endElapsedSecondsSnapshot = 0;
-    State.match.victoryStartElapsedSecondsSnapshot = 0;
+    // Reset HUD state through the lifecycle mutator owner.
+    lifecycleSetNotReadyBaseline("game-mode-start");
     State.admin.actionCount = 0;
     updateAdminPanelActionCountForAllPlayers();
     // Broadcast the initial phase label (e.g., NOT READY) to all HUDs.
     setMatchStateTextForAllPlayers();
+    refreshConquestScaffoldHudForAllPlayers();
     updateHelpTextVisibilityForAllPlayers();
 
     // Clock init + loop (pregame preview, do not count down yet)
@@ -81,6 +79,9 @@ async function onGameModeStartedImpl(): Promise<void> {
     void startVehicleSpawnerSystem();
 
     while (true) {
+        if (isMatchLive() && !State.match.victoryDialogActive) {
+            conquestPhase2AOnLiveTick();
+        }
         // Push the initial clock display so every HUD shows the same starting time.
         updateAllPlayersClock();
         checkTakeoffLimitForAllPlayers();

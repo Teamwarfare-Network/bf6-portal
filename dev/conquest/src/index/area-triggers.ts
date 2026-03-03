@@ -3,9 +3,19 @@
 
 //#region -------------------- Enter/Exit Triggers --------------------
 
-// CapturePoint tick: keep engine capture suppressed while we use CPs as markers only.
+// CapturePoint tick: Phase 2A reads engine capture ownership/progress and routes to ticket/debug state.
 function ongoingCapturePointImpl(eventCapturePoint: mod.CapturePoint): void {
-    return;
+    conquestPhase2AOnCapturePointTick(eventCapturePoint);
+}
+
+// CapturePoint lost edge: ownership has dropped to neutral.
+function onCapturePointLostImpl(eventCapturePoint: mod.CapturePoint): void {
+    conquestPhase2AOnCapturePointLost(eventCapturePoint);
+}
+
+// CapturePoint captured edge: a team has fully acquired ownership.
+function onCapturePointCapturedImpl(eventCapturePoint: mod.CapturePoint): void {
+    conquestPhase2AOnCapturePointCaptured(eventCapturePoint);
 }
 
 function onPlayerEnterAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger) {

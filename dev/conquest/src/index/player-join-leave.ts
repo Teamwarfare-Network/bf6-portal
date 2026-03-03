@@ -3,6 +3,7 @@
 
 //#region -------------------- Exported Event Handlers - Player Join + Leave --------------------
 
+// Clears residual modal/UI state for a joining player before rebuilding HUD/dialog surfaces.
 function resetUiForPlayerOnJoin(player: mod.Player): void {
     if (!player || !mod.IsPlayerValid(player)) return;
     const pid = safeGetPlayerId(player);
@@ -24,12 +25,118 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
     hideReadyDialogUI(player);
 }
 
+// Deletes all known per-player HUD roots and cache entries for disconnect/reconnect safety.
+// This prevents duplicate HUD instances if the engine keeps stale widgets alive across leave/swap churn.
+function cleanupHudForPid(pid: number): void {
+    const deleteAllByName = (name: string, maxPasses: number = 128): void => {
+        for (let i = 0; i < maxPasses; i++) {
+            const widget = safeFind(name);
+            if (!widget) return;
+            try {
+                mod.DeleteUIWidget(widget);
+            } catch {
+                return;
+            }
+        }
+    };
+
+    const rootNames = [
+        `ConquestTicketsHudRoot_${pid}`,
+        `ConquestFlagsHudRoot_${pid}`,
+        `ConquestTicketsDebugRoot_${pid}`,
+        `ConquestFlagsDebugRoot_${pid}`,
+        `ConquestTicketsHudTeam1_${pid}`,
+        `ConquestTicketsHudTeam2_${pid}`,
+        `ConquestTicketsHudSlash_${pid}`,
+        `ConquestTicketsHudLeftBarTrack_${pid}`,
+        `ConquestTicketsHudLeftBarFill_${pid}`,
+        `ConquestTicketsHudRightBarTrack_${pid}`,
+        `ConquestTicketsHudRightBarFill_${pid}`,
+        `ConquestTicketsHudLeadBorderLeft_${pid}`,
+        `ConquestTicketsHudLeadBorderRight_${pid}`,
+        `ConquestTicketsHudLeadCrownLeft_${pid}`,
+        `ConquestTicketsHudLeadCrownRight_${pid}`,
+        `ConquestTicketsHudBleedChevronLeft1_${pid}`,
+        `ConquestTicketsHudBleedChevronLeft2_${pid}`,
+        `ConquestTicketsHudBleedChevronLeft3_${pid}`,
+        `ConquestTicketsHudBleedChevronRight1_${pid}`,
+        `ConquestTicketsHudBleedChevronRight2_${pid}`,
+        `ConquestTicketsHudBleedChevronRight3_${pid}`,
+        `ConquestFlagHudEngageRoot_${pid}`,
+        `ConquestFlagHudEngageTrack_${pid}`,
+        `ConquestFlagHudEngageFriendlyFill_${pid}`,
+        `ConquestFlagHudEngageEnemyFill_${pid}`,
+        `ConquestFlagHudEngageFriendlyCount_${pid}`,
+        `ConquestFlagHudEngageEnemyCount_${pid}`,
+        `ConquestFlagHudEngageStatus_${pid}`,
+        `TopHudRoot_${pid}`,
+        `Container_TopMiddle_CoreUI_${pid}`,
+        `Container_TopLeft_CoreUI_${pid}`,
+        `Container_TopRight_CoreUI_${pid}`,
+        `Upper_Left_Container_${pid}`,
+        `Upper_Left_Settings_${pid}`,
+        `AdminPanelActionCount_${pid}`,
+        `VictoryDialogRoot_${pid}`,
+        `MatchTimerRoot_${pid}`,
+        `RoundStateRoot_${pid}`,
+        `PregameCountdownText_${pid}`,
+    ];
+    for (const name of rootNames) {
+        deleteAllByName(name);
+    }
+    for (let i = 0; i < 7; i++) {
+        deleteAllByName(`ConquestFlagHudSlot_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudBorder_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudFill_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudLabelShadowRight_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudLabelShadowLeft_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudLabelShadowUp_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudLabelShadowDown_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudLabelShadowUpLeft_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudLabelShadowUpRight_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudLabelShadowDownRight_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudLabelShadowDownLeft_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudLabelShadowInner_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudLabelShadowInnerDeep_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudLabelShadowCenter_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudPercentRoot_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudPercentShadowRight_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudPercentShadowLeft_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudPercentShadowUp_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudPercentShadowDown_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudPercentShadowUpLeft_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudPercentShadowUpRight_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudPercentShadowDownRight_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudPercentShadowDownLeft_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudPercentShadowInner_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudPercentText_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagHudLabel_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagFriendly_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagCenter_${pid}_${i}`);
+        deleteAllByName(`ConquestFlagEnemy_${pid}_${i}`);
+    }
+
+    delete State.hudCache.hudByPid[pid];
+    delete State.hudCache.clockWidgetCache[pid];
+    delete State.hudCache.countdownWidgetCache[pid];
+    delete State.conquest.debug.teamSwapRefreshTokenByPid[pid];
+    delete State.conquest.debug.perspectiveTeamByPid[pid];
+    delete State.conquest.debug.teamSwapPerspectiveLockUntilByPid[pid];
+}
+
+// Join entrypoint: initializes per-player state, rebuilds HUD, and re-syncs shared UI projections.
 async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     initReadyDialogData(eventPlayer);
     const joinPid = safeGetPlayerId(eventPlayer);
+    const wasDisconnected = joinPid !== undefined && State.players.disconnectedByPid[joinPid] === true;
     if (joinPid !== undefined) {
         delete State.players.disconnectedByPid[joinPid];
         State.players.deployedByPid[joinPid] = false;
+        const joinTeamNum = safeGetTeamNumberFromPlayer(eventPlayer, 0);
+        if (joinTeamNum === TeamID.Team1 || joinTeamNum === TeamID.Team2) {
+            State.conquest.debug.perspectiveTeamByPid[joinPid] = joinTeamNum;
+        }
+        conquestPhase2BOnPlayerJoin(joinPid, wasDisconnected);
     }
 
     await mod.Wait(0.1);
@@ -38,6 +145,8 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     resetUiForPlayerOnJoin(eventPlayer);
 
     ensureHudForPlayer(eventPlayer);
+    // Force a conquest HUD refresh so late joiners immediately receive current tickets/flag state.
+    updateConquestPhase2ADebugHudForAllPlayers(true);
     {
         const cache = ensureClockUIAndGetCache(eventPlayer);
         if (cache) setMatchStateText(cache.roundStateText);
@@ -87,6 +196,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
 
     State.players.disconnectedByPid[pid] = true;
     removeReadyDialogInteractPoint(pid);
+    cleanupHudForPid(pid);
     // Cleanup: delete cached UI widgets so we do not leak UI for disconnected players.
     destroyReadyDialogUI(pid);
     // Remove any persisted per-player state so rejoin starts clean (NOT READY by default).
@@ -102,6 +212,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.inMainBaseByPid[pid];
     delete State.players.overTakeoffLimitByPid[pid];
     delete State.players.deployedByPid[pid];
+    conquestPhase2BOnPlayerLeave(pid);
     // Also drop dialog-visible tracking if present (viewer is gone).
     delete State.players.readyDialogData[pid];
     clearJoinPromptForPlayerId(pid);

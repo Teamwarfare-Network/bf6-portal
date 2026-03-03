@@ -73,6 +73,24 @@ function safeSetUITextColor(widget: mod.UIWidget | undefined, color: mod.Vector)
     }
 }
 
+function safeSetUIWidgetBgColor(widget: mod.UIWidget | undefined, color: mod.Vector): void {
+    if (!widget) return;
+    try {
+        mod.SetUIWidgetBgColor(widget, color);
+    } catch {
+        return;
+    }
+}
+
+function safeSetUIWidgetBgAlpha(widget: mod.UIWidget | undefined, alpha: number): void {
+    if (!widget) return;
+    try {
+        mod.SetUIWidgetBgAlpha(widget, alpha);
+    } catch {
+        return;
+    }
+}
+
 function safeSetUIWidgetDepth(widget: mod.UIWidget | undefined, depth: mod.UIDepth): void {
     if (!widget) return;
     try {
@@ -86,6 +104,15 @@ function safeSetUIWidgetSize(widget: mod.UIWidget | undefined, size: mod.Vector)
     if (!widget) return;
     try {
         mod.SetUIWidgetSize(widget, size);
+    } catch {
+        return;
+    }
+}
+
+function safeSetUIWidgetPosition(widget: mod.UIWidget | undefined, position: mod.Vector): void {
+    if (!widget) return;
+    try {
+        mod.SetUIWidgetPosition(widget, position);
     } catch {
         return;
     }
@@ -209,7 +236,7 @@ function updatePlayersReadyHudTextForAllPlayers(): void {
         if (State.players.readyByPid[pid]) readyCount++;
     }
 
-    const shouldShow = !State.match.victoryDialogActive;
+    const shouldShow = (!State.match.victoryDialogActive) && (!isMatchLive());
 
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -219,9 +246,21 @@ function updatePlayersReadyHudTextForAllPlayers(): void {
         const cache = ensureClockUIAndGetCache(p);
         if (!cache || !cache.playersReadyText) continue;
 
+        const pid = mod.GetObjId(p);
+        const isDialogOpen = !!State.players.readyDialogData[pid]?.dialogVisible;
+        const isReady = !!State.players.readyByPid[pid];
+        const isDeployed = !!State.players.deployedByPid[pid];
+        const canShowHelp = (!State.match.isEnded)
+            && (!State.match.victoryDialogActive)
+            && (!State.round.flow.cleanupActive)
+            && (isDeployed);
+        const showHelp = canShowHelp && (!isMatchLive()) && (!isReady) && (!isDialogOpen);
+        const showReady = canShowHelp && (!isMatchLive()) && (isReady) && (!isDialogOpen);
+        const showReadyLine = shouldShow && (!showHelp) && (!showReady);
+
         // Toggle visibility first so we can avoid unnecessary label churn when hidden.
-        safeSetUIWidgetVisible(cache.playersReadyText, shouldShow);
-        if (!shouldShow) continue;
+        safeSetUIWidgetVisible(cache.playersReadyText, showReadyLine);
+        if (!showReadyLine) continue;
 
         const label = mod.Message(mod.stringkeys.twl.hud.playersReadyFormat, readyCount, total);
         mod.SetUITextLabel(cache.playersReadyText, label);

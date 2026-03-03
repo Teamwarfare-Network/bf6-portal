@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v0.038)",
+        "title": "teamwarfare . net | TWL Conquest (v0.178)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -22,8 +22,29 @@
         "vehiclesTeamFormat": "Vehicles {0}: {1}",
         "vehiclesMatchupFormat": "Vehicles: {0}v{1}",
         "playersFormat": "Players: {0}v{1}",
-        "gameModeDefault": "Helis Only - BF6 Vanilla",
+        "gameModeDefault": "Conquest - Vanilla Preset",
         "valueDefault": "Default"
+      },
+      "conquest": {
+        "bleedStarted": "Your team controls more objectives. Enemy tickets are bleeding.",
+        "bleedStopped": "Objective control is even. Enemy ticket bleed has stopped.",
+        "bleedChevron": "v",
+        "flagLetters": {
+          "A": "A",
+          "B": "B",
+          "C": "C",
+          "D": "D",
+          "E": "E",
+          "F": "F",
+          "G": "G",
+          "unknown": "?"
+        },
+        "captureStatus": {
+          "defend": "DEFEND",
+          "neutralizing": "NEUTRALIZING",
+          "contesting": "CONTESTED",
+          "capturing": "CAPTURING"
+        }
       }
     },
     "teams": {
@@ -53,8 +74,8 @@
       "title": "TWL Presents: CONQUEST",
       "body": {
         "mandatory1": "IMPORTANT: to start the game...\n - While on foot: stand still! Then TRIPLE TAP YOUR INTERACT KEYBIND within 2 seconds\n - The interact keybind defaults to 'E' on PC\n - For consoles: interact defaults to 'Square' (PS5) or 'X' (X-Box)\n\nIf you have issues with this, ensure your interact keybind is set to 'tap', not 'hold':\nSettings > Controller > Infantry > Edit Settings > Infantry > Edit Control Settings > Other\n - Ensure that your \"Interact\" is set to \"Tap\".\n - If this STILL does not work for you, interact is immediately available on respawn only.\n\nThis dialog will continue to show...\n...until you successfully triple tap interact.",
-        "mandatory2": "\nTip 2: This is round based Vehicular Combat:\n - 'Ready Up' to start the game. Don't leave the main base until countdown ends...\n - Everyone gets 1 life, and 1 vehicle only!\n - Rounds are 5 minutes long.\n - It's a \"Best of X\" format, you decide how many Rounds to play (Default: 3).\n - Map victory is decided by rounds won (e.g. if you win 2 out of 3 rounds).\n - On the last round, fight for the Objective if 1:00 remains on the Round clock.",
-        "tip3": "Tip 3: Tie-Breaker Objective (H) is visible before Rounds:\n - This one Tie-Breaker Objective by default only appears in the LAST ROUND.\n - The objective unlocks with 1:00 remaining and becomes capturable.\n    - Capturing awards a Round win if both teams are still alive.\n - Vehicles are required to capture the Tie-Breaker Objective.\n - If the Round clock ends at 0:00, results with Tie-Breakers are:\n     1: More objective progress (indicated by progress bar and crown icon).\n     2: If equal objective progress: whoever has more kills.\n     3: If equal objective progress and kills are tied: Round Draw.",
+        "mandatory2": "\nTip 2: This experience is Conquest-focused:\n - Use 'Ready Up' to start and synchronize setup.\n - Stay in the main base until countdown ends.\n - Match settings support 1v1, 2v2, 3v3, and 4v4.\n - Objective/capture/ticket systems are being implemented phase by phase.",
+        "tip3": "Tip 3: Objective behavior evolves with Conquest implementation phases:\n - Capture-point and ticket behavior may change as new phases are enabled.\n - Use current HUD/debug output and release notes to confirm active rules.",
         "tip4": "Tip 4: This experience supports 1v1, 2v2, 3v3 and 4v4 configurations!\n - Select the desired format while the 'Ready Up' screen is visible, (upper right corner).\n - Vehicles take a moment to spawn, so wait a moment while the mode changes.\n - If you go down in size (e.g. from '3v3' to '2v2') the extra vehicles will not respawn again.\n - Vehicles are curated for these maps, use what is provided!\n - Teams get mirror match-ups, the same vehicle types spawn for both teams.",
         "tip5": "Tip 5: We are limited by the inability to change vehicle loadouts mid-game:\n - Your loadout is locked once in-game; reconnect to choose a different vehicle loadout.\n - You can change your Engineer sub-class (Combat Engineer is optimal).\n - Vehicle performance and damage modeling is unchanged from vanilla BF6.",
         "tip6": "Tip 6: Positioning at the round start is up to the players:\n - The opening moments of a round are impactful!\n - Position intelligently at the start to flank, or setup ambushes.\n - If you cross the main base thresholds before countdown ends, return to the main base.",
@@ -79,7 +100,7 @@
     },
     "readyDialog": {
       "header": "Everyone needs to press 'Ready' and stay inside their main base until the match starts.",
-      "header2": "You get ONE vehicle & ONE life per live match. No vehicle redeploys.",
+      "header2": "Vehicle availability depends on selected matchup and map setup.",
       "header3": "Repair vehicles with your torch & resupply vehicle ammo with supply crates as needed.",
       "header4": "Stay close to your vehicles... Vehicles will become 'abandoned' if it's >{0}m from any player.",
       "header5": "Abandoned vehicles take damage over time, even becoming destroyed.",
@@ -90,10 +111,10 @@
       "vehiclesLabelFormat": "Vehicles {0}:",
       "confirmSettingsLabel": "CONFIRM & APPLY MODE CHANGES",
       "resetSettingsLabel": "RESTART / FRESH SETUP",
-      "gameModeHelisLadder": "Helis Only - TWL 2v2",
-      "gameModeHelisTwl1v1": "Helis Only - TWL 1v1",
-      "gameModeHelisPractice": "Helis Only - BF6 Vanilla",
-      "gameModeHelisCustom": "Helis Only - Custom",
+      "gameModeHelisLadder": "Conquest - TWL 2v2 Preset",
+      "gameModeHelisTwl1v1": "Conquest - TWL 1v1 Preset",
+      "gameModeHelisPractice": "Conquest - Vanilla Preset",
+      "gameModeHelisCustom": "Conquest - Custom Preset",
       "aircraftCeilingVanilla": "Vanilla",
       "modeSettingAircraftCeilingFormat": "Aircraft Ceiling: {0}",
       "vehicleOptionFalchion": "M77E Falchion (Apache)",
@@ -188,6 +209,7 @@
     },
     "system": {
       "genericCounter": "{0}",
+      "genericPercent": "{0}%",
       "slash": "/",
       "unknownPlayer": "Unknown",
       "unassigned": "Unassigned",

@@ -8,6 +8,7 @@ type MapKey = "Blackwell_Fields" | "Defense_Nexus" | "Golf_Course" | "Mirak_Vall
 
 // slotNumber defines the explicit spawn priority per team (used for 1v1/2v2/3v3/4v4 enablement).
 type VehicleSpawnSpec = { slotNumber: number; pos: mod.Vector; rot: mod.Vector; vehicle: mod.VehicleList };
+type CapturePointConfig = { objId: number; label: string; order: number };
 
 // Per-map runtime configuration: team anchors, labels, and spawn lists used by map-detect/apply logic.
 type MapConfig = {
@@ -21,6 +22,7 @@ type MapConfig = {
     useCustomCeiling: boolean; // When true, Ladder mode applies custom ceiling on this map.
     team1TankSpawns: VehicleSpawnSpec[];
     team2TankSpawns: VehicleSpawnSpec[];
+    capturePoints?: CapturePointConfig[];
     team1HeliSpawns?: VehicleSpawnSpec[];
     team2HeliSpawns?: VehicleSpawnSpec[];
     vehicleSpawnYawOffsetDeg: number; // Reserved for future spawn orientation tuning.
