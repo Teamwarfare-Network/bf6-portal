@@ -10,14 +10,15 @@
 function Multiply(number0, number1): number;
 ```
 
-Defined in: [mod/index.d.ts:21776](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21776)
+Defined in:
+[mod/index.d.ts:21776](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21776)
 
 Returns the product of two number values or the product of a vector and number value.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
+| Parameter | Type     |
+| --------- | -------- |
 | `number0` | `number` |
 | `number1` | `number` |
 
@@ -31,16 +32,17 @@ Returns the product of two number values or the product of a vector and number v
 function Multiply(vector, number): Vector;
 ```
 
-Defined in: [mod/index.d.ts:21779](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21779)
+Defined in:
+[mod/index.d.ts:21779](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21779)
 
 Returns the product of two number values or the product of a vector and number value.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `vector` | [`Vector`](../Vector/_index.md) |
-| `number` | `number` |
+| Parameter | Type                            |
+| --------- | ------------------------------- |
+| `vector`  | [`Vector`](../Vector/_index.md) |
+| `number`  | `number`                        |
 
 ### Returns
 

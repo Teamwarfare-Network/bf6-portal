@@ -10,15 +10,16 @@
 function ClearCustomNotificationMessage(slot): void;
 ```
 
-Defined in: [mod/index.d.ts:20731](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20731)
+Defined in:
+[mod/index.d.ts:20731](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20731)
 
 Clears the custom notification slot associated with the given slots for the specified team or player.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `slot` | [`CustomNotificationSlots`](../CustomNotificationSlots/_index.md) |
+| Parameter | Type                                                              |
+| --------- | ----------------------------------------------------------------- |
+| `slot`    | [`CustomNotificationSlots`](../CustomNotificationSlots/_index.md) |
 
 ### Returns
 
@@ -30,16 +31,17 @@ Clears the custom notification slot associated with the given slots for the spec
 function ClearCustomNotificationMessage(slot, target): void;
 ```
 
-Defined in: [mod/index.d.ts:20734](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20734)
+Defined in:
+[mod/index.d.ts:20734](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20734)
 
 Clears the custom notification slot associated with the given slots for the specified team or player.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `slot` | [`CustomNotificationSlots`](../CustomNotificationSlots/_index.md) |
-| `target` | [`Player`](../Player/_index.md) |
+| Parameter | Type                                                              |
+| --------- | ----------------------------------------------------------------- |
+| `slot`    | [`CustomNotificationSlots`](../CustomNotificationSlots/_index.md) |
+| `target`  | [`Player`](../Player/_index.md)                                   |
 
 ### Returns
 
@@ -51,16 +53,17 @@ Clears the custom notification slot associated with the given slots for the spec
 function ClearCustomNotificationMessage(slot, target): void;
 ```
 
-Defined in: [mod/index.d.ts:20737](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20737)
+Defined in:
+[mod/index.d.ts:20737](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20737)
 
 Clears the custom notification slot associated with the given slots for the specified team or player.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `slot` | [`CustomNotificationSlots`](../CustomNotificationSlots/_index.md) |
-| `target` | [`Team`](../Team/_index.md) |
+| Parameter | Type                                                              |
+| --------- | ----------------------------------------------------------------- |
+| `slot`    | [`CustomNotificationSlots`](../CustomNotificationSlots/_index.md) |
+| `target`  | [`Team`](../Team/_index.md)                                       |
 
 ### Returns
 

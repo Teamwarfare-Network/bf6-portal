@@ -81,7 +81,7 @@ const State: GameState = {
         },
     },
     conquest: {
-        lifecyclePhase: "NOT_READY",
+        lifecyclePhase: 'NOT_READY',
         tickets: {
             team1: CONQUEST_STARTING_TICKETS,
             team2: CONQUEST_STARTING_TICKETS,

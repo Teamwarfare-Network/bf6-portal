@@ -35,4 +35,3 @@ const MAP_NAME_STRINGKEYS: Record<MapKey, number> = {
     Sobek_City: mod.stringkeys.twl.maps.sobekCity,
     Area_22B: mod.stringkeys.twl.maps.area22B,
 };
-

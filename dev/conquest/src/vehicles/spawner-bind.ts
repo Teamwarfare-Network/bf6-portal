@@ -5,7 +5,7 @@ async function applySpawnYawToVehicle(eventVehicle: mod.Vehicle, slot: VehicleSp
     // Enforce the desired spawn yaw on the vehicle after it exists (map-specific spawner yaw can drift).
     const pos = slot.spawnPos;
     const yawDeg = mod.YComponentOf(slot.spawnRot);
-    const yawRad = yawDeg * Math.PI / 180;
+    const yawRad = (yawDeg * Math.PI) / 180;
     mod.Teleport(eventVehicle, pos, yawRad);
     await mod.Wait(0);
     mod.Teleport(eventVehicle, pos, yawRad);
@@ -21,10 +21,15 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
     const activeAt = State.vehicles.activeSpawnRequestedAtSeconds;
     if (activeIndex !== undefined && activeToken !== undefined && activeAt !== undefined) {
         const now = Math.floor(mod.GetMatchTimeElapsed());
-        const expired = (now - activeAt) > VEHICLE_SPAWNER_BIND_TIMEOUT_SECONDS;
+        const expired = now - activeAt > VEHICLE_SPAWNER_BIND_TIMEOUT_SECONDS;
         if (!expired) {
             const activeSlot = State.vehicles.slots[activeIndex];
-            if (activeSlot && activeSlot.enabled && activeSlot.expectingSpawn && activeSlot.spawnRequestToken === activeToken) {
+            if (
+                activeSlot &&
+                activeSlot.enabled &&
+                activeSlot.expectingSpawn &&
+                activeSlot.spawnRequestToken === activeToken
+            ) {
                 activeSlot.expectingSpawn = false;
                 activeSlot.vehicleId = vehicleObjId;
                 activeSlot.respawnRunning = false;
@@ -55,7 +60,10 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
             slot.respawnRunning = false;
             slot.spawnRetryScheduled = false;
             State.vehicles.vehicleToSlot[vehicleObjId] = i;
-            if (State.vehicles.activeSpawnSlotIndex === i && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
+            if (
+                State.vehicles.activeSpawnSlotIndex === i &&
+                State.vehicles.activeSpawnToken === slot.spawnRequestToken
+            ) {
                 State.vehicles.activeSpawnSlotIndex = undefined;
                 State.vehicles.activeSpawnToken = undefined;
                 State.vehicles.activeSpawnRequestedAtSeconds = undefined;
@@ -79,4 +87,3 @@ function findSpawnerSlotByPosition(spawnPos: mod.Vector): number {
     }
     return -1;
 }
-

@@ -35,7 +35,8 @@ bf6-portal/
 
 - Root is ESM (`"type": "module"`). Experience dirs have their own package.json (CommonJS for build scripts).
 - Each experience has its own bundler/mod-types versions in its package.json.
-- Shared tooling (deploy, lint, prettier) lives at root. Experience-specific build scripts live in `dev/<name>/scripts/`.
+- Shared tooling (deploy, lint, prettier) lives at root. Experience-specific build scripts live in
+  `dev/<name>/scripts/`.
 - Deploy: `npm run deploy -- --experience helis-only` (from root) or `npm run deploy` (from experience dir).
 - Build: `cd dev/helis-only && npm run build` (experience-specific).
 
@@ -63,8 +64,10 @@ bf6-portal/
 
 - **Injected API**: `mod` is an injected namespace provided by the Portal runtime. It is NOT imported.
 - **Type reference**: Use `bf6-portal-mod-types` package (`index.d.ts`) for type definitions.
-- **Opaque types**: Custom `mod` types (vectors, object refs) are opaque. Compare with `mod.Equals(a, b)` or `mod.GetObjId(a) == mod.GetObjId(b)`.
-- **User-facing strings**: Use `mod.Message(stringKey, ...substitutions)` with keys from `mod.stringkeys` (mapped to `strings.json`).
+- **Opaque types**: Custom `mod` types (vectors, object refs) are opaque. Compare with `mod.Equals(a, b)` or
+  `mod.GetObjId(a) == mod.GetObjId(b)`.
+- **User-facing strings**: Use `mod.Message(stringKey, ...substitutions)` with keys from `mod.stringkeys` (mapped to
+  `strings.json`).
 
 ---
 

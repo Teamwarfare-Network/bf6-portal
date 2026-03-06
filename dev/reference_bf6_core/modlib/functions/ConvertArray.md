@@ -8,13 +8,14 @@
 function ConvertArray(array): any[];
 ```
 
-Defined in: [modlib/index.ts:33](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L33)
+Defined in:
+[modlib/index.ts:33](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L33)
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `array` | [`Array`](../../mod/mod/Array/_index.md) |
+| Parameter | Type                                     |
+| --------- | ---------------------------------------- |
+| `array`   | [`Array`](../../mod/mod/Array/_index.md) |
 
 ## Returns
 

@@ -187,7 +187,7 @@ function buildReadyDialogMatchupAndPlayersSection(
         mod.CreateVector(matchupLabelSizeX, bestOfLabelSizeY, 0),
         mod.UIAnchor.TopRight,
         isMatchLive()
-            ? mod.Message(mod.stringkeys.twl.system.genericCounter, "")
+            ? mod.Message(mod.stringkeys.twl.system.genericCounter, '')
             : mod.Message(mod.stringkeys.twl.readyDialog.matchupFormat, 1, 0),
         eventPlayer
     );

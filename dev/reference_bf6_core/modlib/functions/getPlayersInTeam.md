@@ -8,13 +8,14 @@
 function getPlayersInTeam(team): Player[];
 ```
 
-Defined in: [modlib/index.ts:200](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L200)
+Defined in:
+[modlib/index.ts:200](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L200)
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `team` | [`Team`](../../mod/mod/Team/_index.md) |
+| Parameter | Type                                   |
+| --------- | -------------------------------------- |
+| `team`    | [`Team`](../../mod/mod/Team/_index.md) |
 
 ## Returns
 

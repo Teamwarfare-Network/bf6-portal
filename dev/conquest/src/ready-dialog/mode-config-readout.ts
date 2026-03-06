@@ -36,10 +36,7 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
         const ceilingValue = applyCustomCeiling
             ? Math.floor(cfg.aircraftCeiling)
             : STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA;
-        mod.SetUITextLabel(
-            settingsValue,
-            mod.Message(cfg.gameSettings, ceilingValue)
-        );
+        mod.SetUITextLabel(settingsValue, mod.Message(cfg.gameSettings, ceilingValue));
     }
 
     const vehiclesT1Label = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T1_LABEL_ID + pid);

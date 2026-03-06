@@ -8,7 +8,7 @@
 const PlayerSymbol: unique symbol;
 ```
 
-Defined in: [mod/index.d.ts:69](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L69)
+Defined in:
+[mod/index.d.ts:69](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L69)
 
-export type Player = never;
-export type Player = Any;
+export type Player = never; export type Player = Any;

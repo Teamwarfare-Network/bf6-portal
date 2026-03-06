@@ -2,12 +2,12 @@
 // Module: interaction/spawn-selector -- Phase 1 seam for future conquest spawn selection policy
 
 type ConquestSpawnSelectionReason =
-    | "deploy"
-    | "forced_redeploy"
-    | "team_switch"
-    | "admin_move"
-    | "phase_transition"
-    | "reconnect";
+    | 'deploy'
+    | 'forced_redeploy'
+    | 'team_switch'
+    | 'admin_move'
+    | 'phase_transition'
+    | 'reconnect';
 
 type ConquestSpawnSelectorInput = {
     pid: number;
@@ -30,6 +30,6 @@ function conquestSelectSpawnPoint(_input: ConquestSpawnSelectorInput): ConquestS
         denied: true,
         fallbackUsed: false,
         selectedSpawnObjId: undefined,
-        reason: "phase1_scaffold_no_custom_spawn_selection",
+        reason: 'phase1_scaffold_no_custom_spawn_selection',
     };
 }

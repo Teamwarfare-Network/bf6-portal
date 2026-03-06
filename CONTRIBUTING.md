@@ -52,6 +52,7 @@ experiences/
 ```
 
 **Ladder slugs** must match the URL path on teamwarfare.net:
+
 - `https://teamwarfare.net/ladders/bf6-2v2-tanks` → `bf6-2v2-tanks`
 - `https://teamwarfare.net/ladders/bf6-4v4-vehicles` → `bf6-4v4-vehicles`
 
@@ -63,10 +64,10 @@ experiences/
 2. Go to **Rules Editor** tab
 3. Click **Export to Script** (if using blocks) or copy the script
 4. For the full experience config, use browser dev tools:
-   - Open Network tab
-   - Save your experience
-   - Find the PUT/POST request to the experiences API
-   - Copy the JSON payload
+    - Open Network tab
+    - Save your experience
+    - Find the PUT/POST request to the experiences API
+    - Copy the JSON payload
 5. Save as `logic.json` in your experience folder
 
 #### Spatial JSON (Map Edits)
@@ -82,48 +83,48 @@ If your experience uses multiple maps with spatial edits, include one file per m
 
 ```json
 {
-  "name": "Armored Warfare - 3 Map Rotation",
-  "description": "First to 11 kills, 15 minute rounds, rotating between Defense Nexus, Manhattan Bridge, and Mirak Valley",
-  "ladder": "bf6-2v2-tanks",
-  "ladderUrl": "https://teamwarfare.net/ladders/bf6-2v2-tanks",
-  "status": "draft",
-  "experienceCode": null,
-  "portalUrl": null,
-  "version": "0.1.0",
-  "authors": ["uberdubersoldat"],
-  "maps": [
-    {
-      "name": "Defense Nexus",
-      "internalName": "MP_DefenseNexus",
-      "hasSpatialEdit": true
+    "name": "Armored Warfare - 3 Map Rotation",
+    "description": "First to 11 kills, 15 minute rounds, rotating between Defense Nexus, Manhattan Bridge, and Mirak Valley",
+    "ladder": "bf6-2v2-tanks",
+    "ladderUrl": "https://teamwarfare.net/ladders/bf6-2v2-tanks",
+    "status": "draft",
+    "experienceCode": null,
+    "portalUrl": null,
+    "version": "0.1.0",
+    "authors": ["uberdubersoldat"],
+    "maps": [
+        {
+            "name": "Defense Nexus",
+            "internalName": "MP_DefenseNexus",
+            "hasSpatialEdit": true
+        },
+        {
+            "name": "Manhattan Bridge",
+            "internalName": "MP_ManhattanBridge",
+            "hasSpatialEdit": true
+        },
+        {
+            "name": "Mirak Valley",
+            "internalName": "MP_MirakValley",
+            "hasSpatialEdit": true
+        }
+    ],
+    "settings": {
+        "maxPlayers": 12,
+        "scoreLimit": 11,
+        "timeLimit": 15
     },
-    {
-      "name": "Manhattan Bridge", 
-      "internalName": "MP_ManhattanBridge",
-      "hasSpatialEdit": true
-    },
-    {
-      "name": "Mirak Valley",
-      "internalName": "MP_MirakValley", 
-      "hasSpatialEdit": true
-    }
-  ],
-  "settings": {
-    "maxPlayers": 12,
-    "scoreLimit": 11,
-    "timeLimit": 15
-  },
-  "created": "2025-12-01",
-  "lastUpdated": "2025-12-01"
+    "created": "2025-12-01",
+    "lastUpdated": "2025-12-01"
 }
 ```
 
 #### Status Values
 
-| Status | When to Use |
-|--------|-------------|
-| `draft` | Initial development, not ready for others to test |
-| `testing` | Published to Portal, ready for playtesting feedback |
+| Status     | When to Use                                            |
+| ---------- | ------------------------------------------------------ |
+| `draft`    | Initial development, not ready for others to test      |
+| `testing`  | Published to Portal, ready for playtesting feedback    |
 | `approved` | Verified working, approved for official ladder matches |
 
 #### Experience Code
@@ -142,6 +143,7 @@ All notable changes to this experience.
 ## [0.1.0] - 2025-12-01
 
 ### Added
+
 - Initial release
 - Defense Nexus, Manhattan Bridge, Mirak Valley map support
 - Vehicle registration system
@@ -162,10 +164,10 @@ git push origin add/experience-name
 1. Go to the repository on GitHub
 2. Click "Compare & pull request"
 3. Fill in the PR template with:
-   - What the experience does
-   - Which ladder it's for
-   - Current status (draft/testing/approved)
-   - Any known issues
+    - What the experience does
+    - Which ladder it's for
+    - Current status (draft/testing/approved)
+    - Any known issues
 4. Request review from another contributor
 
 ---
@@ -181,6 +183,7 @@ git checkout -b fix/experience-name-description
 ```
 
 Branch naming:
+
 - `fix/` for bug fixes
 - `update/` for feature additions
 - `refactor/` for reorganization without functionality changes
@@ -189,14 +192,15 @@ Branch naming:
 
 1. Update the relevant JSON files
 2. Update `metadata.json`:
-   - Increment the `version` (use [semver](https://semver.org/))
-   - Update `lastUpdated` date
-   - Change `status` if needed (e.g., back to `testing` if significant changes)
+    - Increment the `version` (use [semver](https://semver.org/))
+    - Update `lastUpdated` date
+    - Change `status` if needed (e.g., back to `testing` if significant changes)
 3. Add entry to `CHANGELOG.md`
 
 ### Step 3: Sync Changes to Portal
 
 After merging, the experience owner should:
+
 1. Upload updated files to Portal Builder
 2. Save/republish the experience
 3. Verify the Experience Code is still valid (or update if it changed)
@@ -227,19 +231,21 @@ draft ──publish──▶ testing ──verify──▶ approved
 
 ## File Naming Conventions
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Experience folder | `kebab-case` | `armored-warfare-rotation` |
-| Logic file | `logic.json` | `logic.json` |
-| Spatial files | `{map-name}.spatial.json` | `defense-nexus.spatial.json` |
-| Metadata | `metadata.json` | `metadata.json` |
-| Changelog | `CHANGELOG.md` | `CHANGELOG.md` |
+| Type              | Convention                | Example                      |
+| ----------------- | ------------------------- | ---------------------------- |
+| Experience folder | `kebab-case`              | `armored-warfare-rotation`   |
+| Logic file        | `logic.json`              | `logic.json`                 |
+| Spatial files     | `{map-name}.spatial.json` | `defense-nexus.spatial.json` |
+| Metadata          | `metadata.json`           | `metadata.json`              |
+| Changelog         | `CHANGELOG.md`            | `CHANGELOG.md`               |
 
 ---
 
 ## Modular Build: Helis Only (`dev/helis-only/`)
 
-The Helis Only experience (`TWL_Vehicles_Only_Script.ts`) is maintained as a modular TypeScript project under `dev/helis-only/`. The [bf6-portal-bundler](https://github.com/deluca-mike/bf6-portal-bundler) concatenates all modules into a single output file for upload to Portal.
+The Helis Only experience (`TWL_Vehicles_Only_Script.ts`) is maintained as a modular TypeScript project under
+`dev/helis-only/`. The [bf6-portal-bundler](https://github.com/deluca-mike/bf6-portal-bundler) concatenates all modules
+into a single output file for upload to Portal.
 
 ### Quick Start
 
@@ -279,27 +285,30 @@ dev/helis-only/
 
 ### Module Guide
 
-| Module | What to find there |
-|--------|-------------------|
-| `types.ts` | `TeamID`, `RoundPhase`, `OvertimeStage` enums; `MapConfig`, `GameState` interfaces; gameplay constants |
-| `config.ts` | `MAP_CONFIGS` with per-map spawn positions, overtime zones, aircraft ceilings |
-| `strings.ts` | `findMatchupPresetIndex`, `applyMapConfig`, `detectMapKeyFromHqs`; UI widget ID constants |
-| `state.ts` | `State` object (authoritative match/round/UI state); `safeGetPlayerId`, `isRoundLive` |
-| `hud.ts` | `ensureHudForPlayer`, `setCounterText`, victory dialog, round-end dialog builders |
-| `vehicles.ts` | `registerVehicleToTeam`, `startVehicleSpawnerSystem`, kills HUD sync |
-| `overtime.ts` | Zone config, flag selection, capture loop, overtime HUD, stage transitions |
-| `clock.ts` | `updateAllPlayersClock`, `getRemainingSeconds`, clock digit UI |
-| `team-switch.ts` | Team switch interact point, swap actions, tester panel buttons |
-| `round-flow.ts` | `startRound`, `endRound`, round-end cleanup, match-end flow |
-| `ready-dialog.ts` | Ready dialog construction, roster UI, admin panel, join prompt, pregame countdown |
-| `utils.ts` | `InteractMultiClickDetector`, `RestockGadgetAmmo`, main base area trigger helpers |
-| `index.ts` | All 16 Portal event handler exports (`OnGameModeStarted`, `OnPlayerJoinGame`, etc.) |
+| Module            | What to find there                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------ |
+| `types.ts`        | `TeamID`, `RoundPhase`, `OvertimeStage` enums; `MapConfig`, `GameState` interfaces; gameplay constants |
+| `config.ts`       | `MAP_CONFIGS` with per-map spawn positions, overtime zones, aircraft ceilings                          |
+| `strings.ts`      | `findMatchupPresetIndex`, `applyMapConfig`, `detectMapKeyFromHqs`; UI widget ID constants              |
+| `state.ts`        | `State` object (authoritative match/round/UI state); `safeGetPlayerId`, `isRoundLive`                  |
+| `hud.ts`          | `ensureHudForPlayer`, `setCounterText`, victory dialog, round-end dialog builders                      |
+| `vehicles.ts`     | `registerVehicleToTeam`, `startVehicleSpawnerSystem`, kills HUD sync                                   |
+| `overtime.ts`     | Zone config, flag selection, capture loop, overtime HUD, stage transitions                             |
+| `clock.ts`        | `updateAllPlayersClock`, `getRemainingSeconds`, clock digit UI                                         |
+| `team-switch.ts`  | Team switch interact point, swap actions, tester panel buttons                                         |
+| `round-flow.ts`   | `startRound`, `endRound`, round-end cleanup, match-end flow                                            |
+| `ready-dialog.ts` | Ready dialog construction, roster UI, admin panel, join prompt, pregame countdown                      |
+| `utils.ts`        | `InteractMultiClickDetector`, `RestockGadgetAmmo`, main base area trigger helpers                      |
+| `index.ts`        | All 16 Portal event handler exports (`OnGameModeStarted`, `OnPlayerJoinGame`, etc.)                    |
 
 ### How the Bundler Works
 
-The `bf6-portal-bundler` resolves `import './module'` statements from `index.ts` and concatenates all files in dependency order. Import statements are stripped from the output. The result is a single flat TypeScript file equivalent to the original monolith.
+The `bf6-portal-bundler` resolves `import './module'` statements from `index.ts` and concatenates all files in
+dependency order. Import statements are stripped from the output. The result is a single flat TypeScript file equivalent
+to the original monolith.
 
-Each module uses `// @ts-nocheck` because cross-module references (functions, variables, types) don't resolve when files are checked individually. The bundler's output also gets `// @ts-nocheck`.
+Each module uses `// @ts-nocheck` because cross-module references (functions, variables, types) don't resolve when files
+are checked individually. The bundler's output also gets `// @ts-nocheck`.
 
 ### Editing Workflow
 
@@ -326,9 +335,9 @@ This installs the deploy client (`@bf6mods/portal`), ESLint, Prettier, and other
 ### Environment Setup (Deploy)
 
 1. Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
+    ```bash
+    cp .env.example .env
+    ```
 2. Get your `SESSION_ID` from the Portal web editor (browser dev tools → Application → Cookies → `sessionId`).
 3. Paste it into `.env`.
 4. Set `modId` in each experience's `package.json` (the Portal experience ID from the URL).
@@ -352,6 +361,7 @@ npm run deploy
 ```
 
 The deploy script:
+
 1. Builds the experience (unless `--no-build`)
 2. Bumps the version in the experience's `package.json`
 3. Uploads `dist/bundle.ts` and `dist/bundle.strings.json` to Portal

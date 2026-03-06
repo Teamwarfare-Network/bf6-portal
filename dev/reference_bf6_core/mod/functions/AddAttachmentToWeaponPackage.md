@@ -8,16 +8,18 @@
 function AddAttachmentToWeaponPackage(attachment, weaponPackage): void;
 ```
 
-Defined in: [mod/index.d.ts:20560](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20560)
+Defined in:
+[mod/index.d.ts:20560](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20560)
 
-Adds an Attachment to a Weapon Package created through CreateWeaponPackage. Will replace existing Attachments of the same type
+Adds an Attachment to a Weapon Package created through CreateWeaponPackage. Will replace existing Attachments of the
+same type
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `attachment` | [`WeaponAttachments`](../WeaponAttachments/_index.md) |
-| `weaponPackage` | [`WeaponPackage`](../WeaponPackage/_index.md) |
+| Parameter       | Type                                                  |
+| --------------- | ----------------------------------------------------- |
+| `attachment`    | [`WeaponAttachments`](../WeaponAttachments/_index.md) |
+| `weaponPackage` | [`WeaponPackage`](../WeaponPackage/_index.md)         |
 
 ## Returns
 

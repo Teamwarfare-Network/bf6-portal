@@ -10,17 +10,18 @@
 function GetScreenEffect(arg0): ScreenEffect;
 ```
 
-Defined in: [mod/index.d.ts:21541](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21541)
+Defined in:
+[mod/index.d.ts:21541](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21541)
 
-Returns the screen effect object corresponding to the provided id.
-**
-*
+Returns the screen effect object corresponding to the provided id. \*\*
+
+-
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `arg0` | [`PortalEnum`](../PortalEnum/_index.md) |
+| Parameter | Type                                    |
+| --------- | --------------------------------------- |
+| `arg0`    | [`PortalEnum`](../PortalEnum/_index.md) |
 
 ### Returns
 
@@ -28,8 +29,7 @@ Returns the screen effect object corresponding to the provided id.
 
 ### Deprecated
 
-The method should not be used
-*/
+The method should not be used \*/
 
 ## Call Signature
 
@@ -37,17 +37,18 @@ The method should not be used
 function GetScreenEffect(number): ScreenEffect;
 ```
 
-Defined in: [mod/index.d.ts:21547](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21547)
+Defined in:
+[mod/index.d.ts:21547](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21547)
 
-Returns the screen effect object corresponding to the provided id.
-**
-*
+Returns the screen effect object corresponding to the provided id. \*\*
+
+-
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `number` | `number` |
+| Parameter | Type     |
+| --------- | -------- |
+| `number`  | `number` |
 
 ### Returns
 
@@ -55,5 +56,4 @@ Returns the screen effect object corresponding to the provided id.
 
 ### Deprecated
 
-The method should not be used
-*/
+The method should not be used \*/

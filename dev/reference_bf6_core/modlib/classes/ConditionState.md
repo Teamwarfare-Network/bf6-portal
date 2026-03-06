@@ -4,7 +4,8 @@
 
 # Class: ConditionState
 
-Defined in: [modlib/index.ts:112](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L112)
+Defined in:
+[modlib/index.ts:112](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L112)
 
 ## Constructors
 
@@ -14,7 +15,8 @@ Defined in: [modlib/index.ts:112](https://github.com/battlefield-portal-communit
 new ConditionState(): ConditionState;
 ```
 
-Defined in: [modlib/index.ts:115](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L115)
+Defined in:
+[modlib/index.ts:115](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L115)
 
 #### Returns
 
@@ -22,8 +24,8 @@ Defined in: [modlib/index.ts:115](https://github.com/battlefield-portal-communit
 
 ## Properties
 
-| Property | Type | Defined in |
-| ------ | ------ | ------ |
+| Property                           | Type      | Defined in                                                                                                                                                                |
+| ---------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <a id="laststate"></a> `lastState` | `boolean` | [modlib/index.ts:113](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L113) |
 
 ## Methods
@@ -34,12 +36,13 @@ Defined in: [modlib/index.ts:115](https://github.com/battlefield-portal-communit
 update(newState): boolean;
 ```
 
-Defined in: [modlib/index.ts:119](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L119)
+Defined in:
+[modlib/index.ts:119](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L119)
 
 #### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
+| Parameter  | Type      |
+| ---------- | --------- |
 | `newState` | `boolean` |
 
 #### Returns

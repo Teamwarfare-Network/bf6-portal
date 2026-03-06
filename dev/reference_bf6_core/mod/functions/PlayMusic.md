@@ -10,14 +10,15 @@
 function PlayMusic(musicEvent): void;
 ```
 
-Defined in: [mod/index.d.ts:19995](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L19995)
+Defined in:
+[mod/index.d.ts:19995](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L19995)
 
 Triggers a music event.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
+| Parameter    | Type                                      |
+| ------------ | ----------------------------------------- |
 | `musicEvent` | [`MusicEvents`](../MusicEvents/_index.md) |
 
 ### Returns
@@ -30,16 +31,17 @@ Triggers a music event.
 function PlayMusic(musicEvent, team): void;
 ```
 
-Defined in: [mod/index.d.ts:19998](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L19998)
+Defined in:
+[mod/index.d.ts:19998](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L19998)
 
 Triggers a music event.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
+| Parameter    | Type                                      |
+| ------------ | ----------------------------------------- |
 | `musicEvent` | [`MusicEvents`](../MusicEvents/_index.md) |
-| `team` | [`Team`](../Team/_index.md) |
+| `team`       | [`Team`](../Team/_index.md)               |
 
 ### Returns
 
@@ -51,16 +53,17 @@ Triggers a music event.
 function PlayMusic(musicEvent, squad): void;
 ```
 
-Defined in: [mod/index.d.ts:20001](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20001)
+Defined in:
+[mod/index.d.ts:20001](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20001)
 
 Triggers a music event.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
+| Parameter    | Type                                      |
+| ------------ | ----------------------------------------- |
 | `musicEvent` | [`MusicEvents`](../MusicEvents/_index.md) |
-| `squad` | [`Squad`](../Squad/_index.md) |
+| `squad`      | [`Squad`](../Squad/_index.md)             |
 
 ### Returns
 
@@ -72,16 +75,17 @@ Triggers a music event.
 function PlayMusic(musicEvent, player): void;
 ```
 
-Defined in: [mod/index.d.ts:20004](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20004)
+Defined in:
+[mod/index.d.ts:20004](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20004)
 
 Triggers a music event.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
+| Parameter    | Type                                      |
+| ------------ | ----------------------------------------- |
 | `musicEvent` | [`MusicEvents`](../MusicEvents/_index.md) |
-| `player` | [`Player`](../Player/_index.md) |
+| `player`     | [`Player`](../Player/_index.md)           |
 
 ### Returns
 

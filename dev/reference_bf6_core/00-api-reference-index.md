@@ -2,8 +2,8 @@
 
 - Generated at (UTC): `2026-03-01 01:48:16 UTC`
 - Sources:
-  - `https://docs.bfportal.gg/santiago/scripting/mod`
-  - `https://docs.bfportal.gg/santiago/scripting/modlib`
+    - `https://docs.bfportal.gg/santiago/scripting/mod`
+    - `https://docs.bfportal.gg/santiago/scripting/modlib`
 
 ## Sections
 

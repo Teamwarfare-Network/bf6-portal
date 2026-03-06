@@ -8,12 +8,13 @@
 function And(...rest): boolean;
 ```
 
-Defined in: [modlib/index.ts:7](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L7)
+Defined in:
+[modlib/index.ts:7](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L7)
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
+| Parameter | Type        |
+| --------- | ----------- |
 | ...`rest` | `boolean`[] |
 
 ## Returns

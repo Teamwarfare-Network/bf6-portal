@@ -8,16 +8,17 @@
 function EnableWorldIconImage(worldIcon, enableImage): void;
 ```
 
-Defined in: [mod/index.d.ts:20698](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20698)
+Defined in:
+[mod/index.d.ts:20698](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20698)
 
 Enables or disables showing the image of a world icon.
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `worldIcon` | [`WorldIcon`](../WorldIcon/_index.md) |
-| `enableImage` | `boolean` |
+| Parameter     | Type                                  |
+| ------------- | ------------------------------------- |
+| `worldIcon`   | [`WorldIcon`](../WorldIcon/_index.md) |
+| `enableImage` | `boolean`                             |
 
 ## Returns
 

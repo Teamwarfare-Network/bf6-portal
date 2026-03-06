@@ -8,10 +8,11 @@
 type VehicleSpawner = object;
 ```
 
-Defined in: [mod/index.d.ts:160](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L160)
+Defined in:
+[mod/index.d.ts:160](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L160)
 
 ## Properties
 
-| Property | Type | Defined in |
-| ------ | ------ | ------ |
-| <a id="_opaque"></a> `_opaque` | *typeof* [`VehicleSpawnerSymbol`](../VehicleSpawnerSymbol/_index.md) | [mod/index.d.ts:160](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L160) |
+| Property                       | Type                                                                 | Defined in                                                                                                                                                              |
+| ------------------------------ | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <a id="_opaque"></a> `_opaque` | _typeof_ [`VehicleSpawnerSymbol`](../VehicleSpawnerSymbol/_index.md) | [mod/index.d.ts:160](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L160) |

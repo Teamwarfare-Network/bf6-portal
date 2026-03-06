@@ -7,29 +7,24 @@
 ## Call Signature
 
 ```ts
-function AddUIGadgetImage(
-   name, 
-   position, 
-   size, 
-   anchor, 
-   gadget, 
-   parent): void;
+function AddUIGadgetImage(name, position, size, anchor, gadget, parent): void;
 ```
 
-Defined in: [mod/index.d.ts:21072](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21072)
+Defined in:
+[mod/index.d.ts:21072](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21072)
 
 Creates a new UI Image Widget based on a Gadget.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `name` | `string` |
-| `position` | [`Vector`](../Vector/_index.md) |
-| `size` | [`Vector`](../Vector/_index.md) |
-| `anchor` | [`UIAnchor`](../UIAnchor/_index.md) |
-| `gadget` | [`Gadgets`](../Gadgets/_index.md) |
-| `parent` | [`UIWidget`](../UIWidget/_index.md) |
+| Parameter  | Type                                |
+| ---------- | ----------------------------------- |
+| `name`     | `string`                            |
+| `position` | [`Vector`](../Vector/_index.md)     |
+| `size`     | [`Vector`](../Vector/_index.md)     |
+| `anchor`   | [`UIAnchor`](../UIAnchor/_index.md) |
+| `gadget`   | [`Gadgets`](../Gadgets/_index.md)   |
+| `parent`   | [`UIWidget`](../UIWidget/_index.md) |
 
 ### Returns
 
@@ -38,30 +33,24 @@ Creates a new UI Image Widget based on a Gadget.
 ## Call Signature
 
 ```ts
-function AddUIGadgetImage(
-   name, 
-   position, 
-   size, 
-   anchor, 
-   gadget, 
-   parent, 
-   visibility): void;
+function AddUIGadgetImage(name, position, size, anchor, gadget, parent, visibility): void;
 ```
 
-Defined in: [mod/index.d.ts:21082](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21082)
+Defined in:
+[mod/index.d.ts:21082](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21082)
 
 Creates a new UI Image Widget based on a Gadget.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `name` | `string` |
-| `position` | [`Vector`](../Vector/_index.md) |
-| `size` | [`Vector`](../Vector/_index.md) |
-| `anchor` | [`UIAnchor`](../UIAnchor/_index.md) |
-| `gadget` | [`Gadgets`](../Gadgets/_index.md) |
-| `parent` | [`UIWidget`](../UIWidget/_index.md) |
+| Parameter    | Type                                                           |
+| ------------ | -------------------------------------------------------------- |
+| `name`       | `string`                                                       |
+| `position`   | [`Vector`](../Vector/_index.md)                                |
+| `size`       | [`Vector`](../Vector/_index.md)                                |
+| `anchor`     | [`UIAnchor`](../UIAnchor/_index.md)                            |
+| `gadget`     | [`Gadgets`](../Gadgets/_index.md)                              |
+| `parent`     | [`UIWidget`](../UIWidget/_index.md)                            |
 | `visibility` | [`Player`](../Player/_index.md) \| [`Team`](../Team/_index.md) |
 
 ### Returns

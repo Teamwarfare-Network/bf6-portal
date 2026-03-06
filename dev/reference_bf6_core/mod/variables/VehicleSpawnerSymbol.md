@@ -8,7 +8,7 @@
 const VehicleSpawnerSymbol: unique symbol;
 ```
 
-Defined in: [mod/index.d.ts:159](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L159)
+Defined in:
+[mod/index.d.ts:159](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L159)
 
-export type VehicleSpawner = never;
-export type VehicleSpawner = Any;
+export type VehicleSpawner = never; export type VehicleSpawner = Any;

@@ -64,7 +64,7 @@ async function onGameModeStartedImpl(): Promise<void> {
     }
 
     // Reset HUD state through the lifecycle mutator owner.
-    lifecycleSetNotReadyBaseline("game-mode-start");
+    lifecycleSetNotReadyBaseline('game-mode-start');
     State.admin.actionCount = 0;
     updateAdminPanelActionCountForAllPlayers();
     // Broadcast the initial phase label (e.g., NOT READY) to all HUDs.
@@ -86,7 +86,8 @@ async function onGameModeStartedImpl(): Promise<void> {
         updateAllPlayersClock();
         checkTakeoffLimitForAllPlayers();
         if (State.match.victoryDialogActive) {
-            const elapsedSinceVictory = Math.floor(mod.GetMatchTimeElapsed()) - Math.floor(State.match.victoryStartElapsedSecondsSnapshot);
+            const elapsedSinceVictory =
+                Math.floor(mod.GetMatchTimeElapsed()) - Math.floor(State.match.victoryStartElapsedSecondsSnapshot);
             const remaining = MATCH_END_DELAY_SECONDS - elapsedSinceVictory;
             updateVictoryDialogForAllPlayers(Math.max(0, Math.floor(remaining)));
             if (remaining <= 0) {

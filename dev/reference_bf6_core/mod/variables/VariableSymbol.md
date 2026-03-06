@@ -8,7 +8,7 @@
 const VariableSymbol: unique symbol;
 ```
 
-Defined in: [mod/index.d.ts:144](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L144)
+Defined in:
+[mod/index.d.ts:144](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L144)
 
-export type Variable = never;
-export type Variable = Any;
+export type Variable = never; export type Variable = Any;

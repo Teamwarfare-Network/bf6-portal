@@ -8,16 +8,17 @@
 function SetUIButtonColorHover(widget, value): void;
 ```
 
-Defined in: [mod/index.d.ts:21360](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21360)
+Defined in:
+[mod/index.d.ts:21360](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21360)
 
 Changes the color of an UI Button Widget when it is hovered.
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `widget` | [`UIWidget`](../UIWidget/_index.md) |
-| `value` | [`Vector`](../Vector/_index.md) |
+| Parameter | Type                                |
+| --------- | ----------------------------------- |
+| `widget`  | [`UIWidget`](../UIWidget/_index.md) |
+| `value`   | [`Vector`](../Vector/_index.md)     |
 
 ## Returns
 

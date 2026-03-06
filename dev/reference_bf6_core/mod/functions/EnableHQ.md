@@ -8,16 +8,17 @@
 function EnableHQ(hq, enable): void;
 ```
 
-Defined in: [mod/index.d.ts:20520](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20520)
+Defined in:
+[mod/index.d.ts:20520](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20520)
 
 Enables or disables a headquater.
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `hq` | [`HQ`](../HQ/_index.md) |
-| `enable` | `boolean` |
+| Parameter | Type                    |
+| --------- | ----------------------- |
+| `hq`      | [`HQ`](../HQ/_index.md) |
+| `enable`  | `boolean`               |
 
 ## Returns
 

@@ -10,15 +10,16 @@
 function AIEnableShooting(player): void;
 ```
 
-Defined in: [mod/index.d.ts:20087](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20087)
+Defined in:
+[mod/index.d.ts:20087](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20087)
 
 Enables or disables shooting for AI. (Only works for AI players)
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `player` | [`Player`](../Player/_index.md) |
+| Parameter | Type                            |
+| --------- | ------------------------------- |
+| `player`  | [`Player`](../Player/_index.md) |
 
 ### Returns
 
@@ -30,16 +31,17 @@ Enables or disables shooting for AI. (Only works for AI players)
 function AIEnableShooting(player, enable): void;
 ```
 
-Defined in: [mod/index.d.ts:20090](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20090)
+Defined in:
+[mod/index.d.ts:20090](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20090)
 
 Enables or disables shooting for AI. (Only works for AI players)
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `player` | [`Player`](../Player/_index.md) |
-| `enable` | `boolean` |
+| Parameter | Type                            |
+| --------- | ------------------------------- |
+| `player`  | [`Player`](../Player/_index.md) |
+| `enable`  | `boolean`                       |
 
 ### Returns
 

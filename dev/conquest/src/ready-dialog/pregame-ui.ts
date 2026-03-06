@@ -12,7 +12,7 @@ interface CountdownWidgetCacheEntry {
 function ensureCountdownUIAndGetWidget(player: mod.Player): mod.UIWidget | undefined {
     if (!player || !mod.IsPlayerValid(player)) return undefined;
     const pid = mod.GetObjId(player);
-    const rootName = "PregameCountdownText_" + pid;
+    const rootName = 'PregameCountdownText_' + pid;
 
     const cached = State.hudCache.countdownWidgetCache[pid];
     if (cached) {
@@ -27,7 +27,7 @@ function ensureCountdownUIAndGetWidget(player: mod.Player): mod.UIWidget | undef
 
     modlib.ParseUI({
         name: rootName,
-        type: "Text",
+        type: 'Text',
         playerId: player,
         position: [0, 0],
         size: [320, 140],
@@ -66,9 +66,7 @@ function setPregameCountdownVisualForAllPlayers(
 
         mod.SetUIWidgetVisible(w, visible);
         if (visible) {
-            const message = (labelValue !== undefined)
-                ? mod.Message(labelKey, labelValue)
-                : mod.Message(labelKey);
+            const message = labelValue !== undefined ? mod.Message(labelKey, labelValue) : mod.Message(labelKey);
             mod.SetUITextLabel(w, message);
             mod.SetUITextColor(w, color);
             mod.SetUITextSize(w, size);

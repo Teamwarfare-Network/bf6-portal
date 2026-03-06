@@ -8,10 +8,11 @@
 type VFX = object;
 ```
 
-Defined in: [mod/index.d.ts:135](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L135)
+Defined in:
+[mod/index.d.ts:135](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L135)
 
 ## Properties
 
-| Property | Type | Defined in |
-| ------ | ------ | ------ |
-| <a id="_opaque"></a> `_opaque` | *typeof* [`VFXSymbol`](../VFXSymbol/_index.md) | [mod/index.d.ts:135](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L135) |
+| Property                       | Type                                           | Defined in                                                                                                                                                              |
+| ------------------------------ | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <a id="_opaque"></a> `_opaque` | _typeof_ [`VFXSymbol`](../VFXSymbol/_index.md) | [mod/index.d.ts:135](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L135) |

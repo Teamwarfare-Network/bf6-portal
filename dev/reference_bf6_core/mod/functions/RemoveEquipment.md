@@ -10,15 +10,16 @@
 function RemoveEquipment(player, inventorySlot): void;
 ```
 
-Defined in: [mod/index.d.ts:20592](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20592)
+Defined in:
+[mod/index.d.ts:20592](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20592)
 
 Removes a Weapon or Gadget from a Soldier's loadout.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `player` | [`Player`](../Player/_index.md) |
+| Parameter       | Type                                            |
+| --------------- | ----------------------------------------------- |
+| `player`        | [`Player`](../Player/_index.md)                 |
 | `inventorySlot` | [`InventorySlots`](../InventorySlots/_index.md) |
 
 ### Returns
@@ -31,16 +32,17 @@ Removes a Weapon or Gadget from a Soldier's loadout.
 function RemoveEquipment(arg0, weapon): void;
 ```
 
-Defined in: [mod/index.d.ts:20595](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20595)
+Defined in:
+[mod/index.d.ts:20595](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20595)
 
 Removes a Weapon or Gadget from a Soldier's loadout.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `arg0` | [`Player`](../Player/_index.md) |
-| `weapon` | [`Weapons`](../Weapons/_index.md) |
+| Parameter | Type                              |
+| --------- | --------------------------------- |
+| `arg0`    | [`Player`](../Player/_index.md)   |
+| `weapon`  | [`Weapons`](../Weapons/_index.md) |
 
 ### Returns
 
@@ -52,16 +54,17 @@ Removes a Weapon or Gadget from a Soldier's loadout.
 function RemoveEquipment(arg0, gadget): void;
 ```
 
-Defined in: [mod/index.d.ts:20598](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20598)
+Defined in:
+[mod/index.d.ts:20598](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20598)
 
 Removes a Weapon or Gadget from a Soldier's loadout.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `arg0` | [`Player`](../Player/_index.md) |
-| `gadget` | [`Gadgets`](../Gadgets/_index.md) |
+| Parameter | Type                              |
+| --------- | --------------------------------- |
+| `arg0`    | [`Player`](../Player/_index.md)   |
+| `gadget`  | [`Gadgets`](../Gadgets/_index.md) |
 
 ### Returns
 

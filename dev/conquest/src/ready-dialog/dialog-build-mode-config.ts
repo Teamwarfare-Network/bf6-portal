@@ -165,7 +165,10 @@ function buildReadyDialogModeConfigSection(
         mod.CreateVector(leftSectionValueX, modeSettingsY, 0),
         mod.CreateVector(leftSectionValueWidth, bestOfLabelSizeY, 0),
         mod.UIAnchor.TopRight,
-        mod.Message(mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat, Math.floor(State.round.modeConfig.aircraftCeiling)),
+        mod.Message(
+            mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat,
+            Math.floor(State.round.modeConfig.aircraftCeiling)
+        ),
         eventPlayer
     );
     const modeSettingsValue = mod.FindUIWidgetWithName(modeSettingsValueId, mod.GetUIRoot());

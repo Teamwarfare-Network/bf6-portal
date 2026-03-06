@@ -8,16 +8,17 @@
 function EnableAllInputRestrictions(player, restrictInput): void;
 ```
 
-Defined in: [mod/index.d.ts:20550](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20550)
+Defined in:
+[mod/index.d.ts:20550](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20550)
 
 Enables or disables all keyboard and mouse inputs - such as movement, firing, and turning - for a target player.
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `player` | [`Player`](../Player/_index.md) |
-| `restrictInput` | `boolean` |
+| Parameter       | Type                            |
+| --------------- | ------------------------------- |
+| `player`        | [`Player`](../Player/_index.md) |
+| `restrictInput` | `boolean`                       |
 
 ## Returns
 

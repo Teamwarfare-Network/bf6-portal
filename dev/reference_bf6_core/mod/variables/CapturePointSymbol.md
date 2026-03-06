@@ -8,7 +8,7 @@
 const CapturePointSymbol: unique symbol;
 ```
 
-Defined in: [mod/index.d.ts:24](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L24)
+Defined in:
+[mod/index.d.ts:24](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L24)
 
-export type CapturePoint = never;
-export type CapturePoint = Any;
+export type CapturePoint = never; export type CapturePoint = Any;

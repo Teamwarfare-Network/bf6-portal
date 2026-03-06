@@ -8,14 +8,15 @@
 function Concat(string0, string1): string;
 ```
 
-Defined in: [mod/index.d.ts:21692](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21692)
+Defined in:
+[mod/index.d.ts:21692](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21692)
 
 Returns a string containing the concatenation of two strings.
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
+| Parameter | Type     |
+| --------- | -------- |
 | `string0` | `string` |
 | `string1` | `string` |
 

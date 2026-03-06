@@ -8,16 +8,17 @@
 function SetUIWidgetVisible(widget, visible): void;
 ```
 
-Defined in: [mod/index.d.ts:21423](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21423)
+Defined in:
+[mod/index.d.ts:21423](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21423)
 
 Determines if an UI Widget is visible or not.
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `widget` | [`UIWidget`](../UIWidget/_index.md) |
-| `visible` | `boolean` |
+| Parameter | Type                                |
+| --------- | ----------------------------------- |
+| `widget`  | [`UIWidget`](../UIWidget/_index.md) |
+| `visible` | `boolean`                           |
 
 ## Returns
 

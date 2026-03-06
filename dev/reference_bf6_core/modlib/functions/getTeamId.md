@@ -8,13 +8,14 @@
 function getTeamId(team): number;
 ```
 
-Defined in: [modlib/index.ts:29](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L29)
+Defined in:
+[modlib/index.ts:29](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L29)
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `team` | [`Team`](../../mod/mod/Team/_index.md) |
+| Parameter | Type                                   |
+| --------- | -------------------------------------- |
+| `team`    | [`Team`](../../mod/mod/Team/_index.md) |
 
 ## Returns
 

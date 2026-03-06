@@ -49,7 +49,6 @@ async function startVehicleSpawnerSystem(): Promise<void> {
         State.vehicles.startupCleanupDone = true;
     }
 
-
     // Extra short wait reduces the chance of a default spawn appearing after cleanup.
     await mod.Wait(0.1);
     // Apply enablement before spawning so only the desired slots can spawn.

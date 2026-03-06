@@ -5,27 +5,25 @@
 # Function: IfThenElse()
 
 ```ts
-function IfThenElse<T>(
-   condition, 
-   ifTrue, 
-   ifFalse): T;
+function IfThenElse<T>(condition, ifTrue, ifFalse): T;
 ```
 
-Defined in: [modlib/index.ts:64](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L64)
+Defined in:
+[modlib/index.ts:64](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L64)
 
 ## Type Parameters
 
 | Type Parameter |
-| ------ |
-| `T` |
+| -------------- |
+| `T`            |
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
+| Parameter   | Type      |
+| ----------- | --------- |
 | `condition` | `boolean` |
-| `ifTrue` | () => `T` |
-| `ifFalse` | () => `T` |
+| `ifTrue`    | () => `T` |
+| `ifFalse`   | () => `T` |
 
 ## Returns
 

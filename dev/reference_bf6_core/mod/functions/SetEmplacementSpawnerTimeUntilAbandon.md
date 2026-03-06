@@ -8,16 +8,17 @@
 function SetEmplacementSpawnerTimeUntilAbandon(emplacementSpawner, timeUntilAbandon): void;
 ```
 
-Defined in: [mod/index.d.ts:20338](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20338)
+Defined in:
+[mod/index.d.ts:20338](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20338)
 
 Sets the time left idle before an emplacement is considered abandoned.
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
+| Parameter            | Type                                                    |
+| -------------------- | ------------------------------------------------------- |
 | `emplacementSpawner` | [`EmplacementSpawner`](../EmplacementSpawner/_index.md) |
-| `timeUntilAbandon` | `number` |
+| `timeUntilAbandon`   | `number`                                                |
 
 ## Returns
 

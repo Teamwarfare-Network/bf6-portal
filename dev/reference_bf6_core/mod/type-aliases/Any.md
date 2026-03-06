@@ -8,6 +8,7 @@
 type Any = any;
 ```
 
-Defined in: [mod/index.d.ts:10](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L10)
+Defined in:
+[mod/index.d.ts:10](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L10)
 
 eslint-disable-next-line @typescript-eslint/no-explicit-any

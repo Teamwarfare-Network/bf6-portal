@@ -28,7 +28,9 @@ Default local skill directory:
 1. Create the three skill folders in `%USERPROFILE%/.codex/skills/`.
 2. Add a `SKILL.md` in each folder with the same skill names listed above.
 3. In each `SKILL.md`, set reference paths to your local `<repo-root>` absolute path.
-4. Enforce API validation behavior in each skill: verify every `mod.*` or `modlib.*` symbol against files in `reference_bf6_core`, do not present unverified symbols as valid API calls, and cite exact local reference files used.
+4. Enforce API validation behavior in each skill: verify every `mod.*` or `modlib.*` symbol against files in
+   `reference_bf6_core`, do not present unverified symbols as valid API calls, and cite exact local reference files
+   used.
 
 ## API Source of Truth
 

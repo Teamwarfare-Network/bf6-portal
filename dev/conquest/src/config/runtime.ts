@@ -2,7 +2,7 @@
 // Module: config/runtime -- active map state, derived spawn specs, and runtime map constants
 
 // Change this MapKey to switch active map configuration for that map, only one map can be active at a time.
-let ACTIVE_MAP_KEY: MapKey = "Blackwell_Fields";
+let ACTIVE_MAP_KEY: MapKey = 'Blackwell_Fields';
 
 // Expected to include team bases + at least one spawn per team, with unique slotNumber values matching per side.
 let ACTIVE_MAP_CONFIG = MAP_CONFIGS[ACTIVE_MAP_KEY];

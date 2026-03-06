@@ -8,15 +8,17 @@
 function GetArgument(subroutineArgIndex): any;
 ```
 
-Defined in: [mod/index.d.ts:21484](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21484)
+Defined in:
+[mod/index.d.ts:21484](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21484)
 
-------------------------
+---
+
 Get argument of subroutine at given index.
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
+| Parameter            | Type     |
+| -------------------- | -------- |
 | `subroutineArgIndex` | `number` |
 
 ## Returns

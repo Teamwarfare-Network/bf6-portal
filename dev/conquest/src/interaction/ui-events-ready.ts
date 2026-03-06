@@ -3,11 +3,7 @@
 
 // Handles ready-dialog actions and admin panel open/close.
 // Returns true when the widget name is recognized (even if the action is gated/no-op).
-function tryHandleReadyDialogButtonEvent(
-    eventPlayer: mod.Player,
-    playerId: number,
-    widgetName: string
-): boolean {
+function tryHandleReadyDialogButtonEvent(eventPlayer: mod.Player, playerId: number, widgetName: string): boolean {
     switch (widgetName) {
         case UI_READY_DIALOG_BUTTON_CANCEL_ID + playerId:
             hideReadyDialogUI(eventPlayer);
@@ -135,12 +131,16 @@ function tryHandleReadyDialogButtonEvent(
         case UI_ADMIN_PANEL_BUTTON_ID + playerId: {
             if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
             const now = mod.GetMatchTimeElapsed();
-            if (now - State.players.readyDialogData[playerId].lastAdminPanelToggleAt < ADMIN_PANEL_TOGGLE_COOLDOWN_SECONDS) {
+            if (
+                now - State.players.readyDialogData[playerId].lastAdminPanelToggleAt <
+                ADMIN_PANEL_TOGGLE_COOLDOWN_SECONDS
+            ) {
                 return true;
             }
             State.players.readyDialogData[playerId].lastAdminPanelToggleAt = now;
 
-            State.players.readyDialogData[playerId].adminPanelVisible = !State.players.readyDialogData[playerId].adminPanelVisible;
+            State.players.readyDialogData[playerId].adminPanelVisible =
+                !State.players.readyDialogData[playerId].adminPanelVisible;
             if (!State.players.readyDialogData[playerId].adminPanelVisible) {
                 deleteAdminPanelUI(playerId, false);
                 State.players.readyDialogData[playerId].adminPanelBuilt = false;
@@ -159,8 +159,8 @@ function tryHandleReadyDialogButtonEvent(
                 UI_ADMIN_PANEL_CONTAINER_ID + playerId,
                 mod.CreateVector(ADMIN_PANEL_OFFSET_X, ADMIN_PANEL_OFFSET_Y, 0),
                 mod.CreateVector(
-                    ADMIN_PANEL_CONTENT_WIDTH + (ADMIN_PANEL_PADDING * 2),
-                    ADMIN_PANEL_HEIGHT + (ADMIN_PANEL_PADDING * 2),
+                    ADMIN_PANEL_CONTENT_WIDTH + ADMIN_PANEL_PADDING * 2,
+                    ADMIN_PANEL_HEIGHT + ADMIN_PANEL_PADDING * 2,
                     0
                 ),
                 mod.UIAnchor.TopRight,

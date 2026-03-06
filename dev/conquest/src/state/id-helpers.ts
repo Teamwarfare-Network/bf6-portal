@@ -36,10 +36,7 @@ function getTeamNumber(team: mod.Team): TeamID | 0 {
     return 0;
 }
 
-function safeGetTeamNumberFromPlayer(
-    player: mod.Player | null | undefined,
-    fallback: TeamID | 0 = 0
-): TeamID | 0 {
+function safeGetTeamNumberFromPlayer(player: mod.Player | null | undefined, fallback: TeamID | 0 = 0): TeamID | 0 {
     if (!player || !mod.IsPlayerValid(player)) return fallback;
     try {
         return getTeamNumber(mod.GetTeam(player));

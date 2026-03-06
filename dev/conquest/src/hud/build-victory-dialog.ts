@@ -4,7 +4,7 @@
 function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRefs): void {
     const modal = modlib.ParseUI({
         name: `VictoryDialogRoot_${pid}`,
-        type: "Container",
+        type: 'Container',
         playerId: player,
         position: [0, 135],
         size: [VICTORY_DIALOG_WIDTH, VICTORY_DIALOG_HEIGHT],
@@ -17,7 +17,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
         children: [
             {
                 name: `VictoryDialog_Header1_${pid}`,
-                type: "Text",
+                type: 'Text',
                 position: [0, 14],
                 size: [340, 22],
                 anchor: mod.UIAnchor.TopCenter,
@@ -33,7 +33,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
             },
             {
                 name: `VictoryDialog_Header2_${pid}`,
-                type: "Text",
+                type: 'Text',
                 position: [0, 36],
                 size: [340, 22],
                 anchor: mod.UIAnchor.TopCenter,
@@ -49,7 +49,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
             },
             {
                 name: `VictoryDialog_Screenshot_${pid}`,
-                type: "Text",
+                type: 'Text',
                 position: [0, 62],
                 size: [340, 16],
                 anchor: mod.UIAnchor.TopCenter,
@@ -65,7 +65,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
             },
             {
                 name: `VictoryDialog_Restart_${pid}`,
-                type: "Text",
+                type: 'Text',
                 position: [0, 82],
                 size: [340, 16],
                 anchor: mod.UIAnchor.TopCenter,
@@ -81,7 +81,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
             },
             {
                 name: `VictoryDialog_TotalTimeRow_${pid}`,
-                type: "Container",
+                type: 'Container',
                 position: [0, 102],
                 size: [340, 16],
                 anchor: mod.UIAnchor.TopCenter,
@@ -92,7 +92,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
                 children: [
                     {
                         name: `VictoryDialog_TotalTimeLabel_${pid}`,
-                        type: "Text",
+                        type: 'Text',
                         position: [-45, 0],
                         size: [130, 16],
                         anchor: mod.UIAnchor.Center,
@@ -108,7 +108,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
                     },
                     {
                         name: `VictoryDialog_TotalTimeDigits_${pid}`,
-                        type: "Container",
+                        type: 'Container',
                         position: [55, 0],
                         size: [120, 16],
                         anchor: mod.UIAnchor.Center,
@@ -119,7 +119,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
                         children: [
                             {
                                 name: `VictoryDialog_TimeHT_${pid}`,
-                                type: "Text",
+                                type: 'Text',
                                 position: [-45, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -135,7 +135,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
                             },
                             {
                                 name: `VictoryDialog_TimeHO_${pid}`,
-                                type: "Text",
+                                type: 'Text',
                                 position: [-35, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -151,7 +151,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
                             },
                             {
                                 name: `VictoryDialog_TimeC1_${pid}`,
-                                type: "Text",
+                                type: 'Text',
                                 position: [-25, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -167,7 +167,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
                             },
                             {
                                 name: `VictoryDialog_TimeMT_${pid}`,
-                                type: "Text",
+                                type: 'Text',
                                 position: [-15, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -183,7 +183,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
                             },
                             {
                                 name: `VictoryDialog_TimeMO_${pid}`,
-                                type: "Text",
+                                type: 'Text',
                                 position: [-5, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -199,7 +199,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
                             },
                             {
                                 name: `VictoryDialog_TimeC2_${pid}`,
-                                type: "Text",
+                                type: 'Text',
                                 position: [5, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -215,7 +215,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
                             },
                             {
                                 name: `VictoryDialog_TimeST_${pid}`,
-                                type: "Text",
+                                type: 'Text',
                                 position: [15, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -231,7 +231,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
                             },
                             {
                                 name: `VictoryDialog_TimeSO_${pid}`,
-                                type: "Text",
+                                type: 'Text',
                                 position: [25, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -251,7 +251,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
             },
             {
                 name: `VictoryDialog_AdminActions_${pid}`,
-                type: "Text",
+                type: 'Text',
                 position: [0, 122],
                 size: [340, 16],
                 anchor: mod.UIAnchor.TopCenter,
@@ -267,7 +267,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
             },
             {
                 name: `VictoryDialog_RosterRow_${pid}`,
-                type: "Container",
+                type: 'Container',
                 position: [0, VICTORY_DIALOG_ROSTER_ROW_Y],
                 size: [VICTORY_DIALOG_ROSTER_ROW_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT_MAX],
                 anchor: mod.UIAnchor.TopCenter,
@@ -278,7 +278,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
                 children: [
                     {
                         name: `VictoryDialog_RosterLeft_${pid}`,
-                        type: "Container",
+                        type: 'Container',
                         position: [-85, 0],
                         size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT_MAX],
                         anchor: mod.UIAnchor.TopCenter,
@@ -292,16 +292,23 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
                             for (let i = 0; i < TEAM_ROSTER_MAX_ROWS; i++) {
                                 rows.push({
                                     name: `VictoryDialog_LeftRoster_${pid}_${i}`,
-                                    type: "Text",
-                                    position: [0, VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP + i * VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
+                                    type: 'Text',
+                                    position: [
+                                        0,
+                                        VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP + i * VICTORY_DIALOG_ROSTER_ROW_HEIGHT,
+                                    ],
                                     size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
                                     anchor: mod.UIAnchor.TopCenter,
                                     visible: true,
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
-                                    textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
+                                    textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
+                                    textColor: [
+                                        VICTORY_TEAM1_TEXT_RGB[0],
+                                        VICTORY_TEAM1_TEXT_RGB[1],
+                                        VICTORY_TEAM1_TEXT_RGB[2],
+                                    ],
                                     textAlpha: 1,
                                     textSize: 11,
                                     textAnchor: mod.UIAnchor.Center,
@@ -312,7 +319,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
                     },
                     {
                         name: `VictoryDialog_RosterRight_${pid}`,
-                        type: "Container",
+                        type: 'Container',
                         position: [85, 0],
                         size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT_MAX],
                         anchor: mod.UIAnchor.TopCenter,
@@ -326,16 +333,23 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
                             for (let i = 0; i < TEAM_ROSTER_MAX_ROWS; i++) {
                                 rows.push({
                                     name: `VictoryDialog_RightRoster_${pid}_${i}`,
-                                    type: "Text",
-                                    position: [0, VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP + i * VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
+                                    type: 'Text',
+                                    position: [
+                                        0,
+                                        VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP + i * VICTORY_DIALOG_ROSTER_ROW_HEIGHT,
+                                    ],
                                     size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
                                     anchor: mod.UIAnchor.TopCenter,
                                     visible: true,
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
-                                    textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
+                                    textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
+                                    textColor: [
+                                        VICTORY_TEAM2_TEXT_RGB[0],
+                                        VICTORY_TEAM2_TEXT_RGB[1],
+                                        VICTORY_TEAM2_TEXT_RGB[2],
+                                    ],
                                     textAlpha: 1,
                                     textSize: 11,
                                     textAnchor: mod.UIAnchor.Center,

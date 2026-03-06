@@ -10,15 +10,16 @@
 function Kill(player): void;
 ```
 
-Defined in: [mod/index.d.ts:20470](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20470)
+Defined in:
+[mod/index.d.ts:20470](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20470)
 
 Kills a target player (skips the Mandown state).
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `player` | [`Player`](../Player/_index.md) |
+| Parameter | Type                            |
+| --------- | ------------------------------- |
+| `player`  | [`Player`](../Player/_index.md) |
 
 ### Returns
 
@@ -30,14 +31,15 @@ Kills a target player (skips the Mandown state).
 function Kill(vehicle): void;
 ```
 
-Defined in: [mod/index.d.ts:20473](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20473)
+Defined in:
+[mod/index.d.ts:20473](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20473)
 
 Kills a target player (skips the Mandown state).
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
+| Parameter | Type                              |
+| --------- | --------------------------------- |
 | `vehicle` | [`Vehicle`](../Vehicle/_index.md) |
 
 ### Returns

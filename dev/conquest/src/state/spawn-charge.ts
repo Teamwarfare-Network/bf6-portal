@@ -23,22 +23,24 @@ function conquestPhase2BIncrementReasonCounter(
 
 // Encodes reason keys as compact numeric IDs for no-string debug projection.
 function conquestPhase2BGetReasonCode(reason: ConquestSpawnChargeReason): number {
-    if (reason === "deploy") return 1;
-    if (reason === "forced_redeploy") return 2;
-    if (reason === "team_switch") return 3;
-    if (reason === "admin_move") return 4;
-    if (reason === "phase_transition") return 5;
+    if (reason === 'deploy') return 1;
+    if (reason === 'forced_redeploy') return 2;
+    if (reason === 'team_switch') return 3;
+    if (reason === 'admin_move') return 4;
+    if (reason === 'phase_transition') return 5;
     return 6; // reconnect
 }
 
 // Computes total count across all reason buckets in a counter map.
 function conquestPhase2BGetReasonCounterTotal(counters: ConquestSpawnChargeReasonCounters): number {
-    return counters.deploy
-        + counters.forced_redeploy
-        + counters.team_switch
-        + counters.admin_move
-        + counters.phase_transition
-        + counters.reconnect;
+    return (
+        counters.deploy +
+        counters.forced_redeploy +
+        counters.team_switch +
+        counters.admin_move +
+        counters.phase_transition +
+        counters.reconnect
+    );
 }
 
 // Emits gated debug-world-log snapshots (using existing debug format keys, no new strings).
@@ -98,7 +100,7 @@ function conquestPhase2BEnsureDeployTxn(pid: number): ConquestSpawnChargeTxnStat
         deploySeq: 0,
         lastChargedDeploySeq: -1,
         lastChargeAtSeconds: -1,
-        lastReason: "none",
+        lastReason: 'none',
     };
     State.conquest.spawnCharge.deployTxnByPid[pid] = created;
     return created;
@@ -111,7 +113,7 @@ function conquestPhase2BResolvePendingReason(pid: number): ConquestSpawnChargeRe
         delete State.conquest.spawnCharge.pendingReasonByPid[pid];
         return pending;
     }
-    return "deploy";
+    return 'deploy';
 }
 
 // Marks the next deploy reason for a player (team switch/reconnect/etc).
@@ -174,16 +176,16 @@ function conquestPhase2BOnNotLiveReset(): void {
 // Join hook: always starts a fresh pid session; reconnects never retain prior exemption/txn continuity.
 function conquestPhase2BOnPlayerJoin(pid: number, wasDisconnected: boolean): void {
     const hadSessionState =
-        State.conquest.spawnCharge.firstLiveSpawnExemptByPid[pid] !== undefined
-        || State.conquest.spawnCharge.deployTxnByPid[pid] !== undefined
-        || State.conquest.spawnCharge.pendingReasonByPid[pid] !== undefined;
+        State.conquest.spawnCharge.firstLiveSpawnExemptByPid[pid] !== undefined ||
+        State.conquest.spawnCharge.deployTxnByPid[pid] !== undefined ||
+        State.conquest.spawnCharge.pendingReasonByPid[pid] !== undefined;
     conquestPhase2BClearPidSessionState(pid);
     conquestPhase2BTrackIdentityFallbackCounters(hadSessionState, wasDisconnected);
     if (isMatchLive()) {
         if (wasDisconnected) {
             // Reconnect deploys are chargeable and do not regain first-live-spawn exemption in this match.
-            conquestPhase2BMarkNextDeployReason(pid, "reconnect");
-            conquestPhase2BMaybeEmitDebugSnapshot("reconnect");
+            conquestPhase2BMarkNextDeployReason(pid, 'reconnect');
+            conquestPhase2BMaybeEmitDebugSnapshot('reconnect');
         }
     }
 }

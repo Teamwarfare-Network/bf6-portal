@@ -8,14 +8,15 @@
 function GetVariable(variable): any;
 ```
 
-Defined in: [mod/index.d.ts:21487](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21487)
+Defined in:
+[mod/index.d.ts:21487](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21487)
 
 Returns the value of a variable.
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
+| Parameter  | Type                                |
+| ---------- | ----------------------------------- |
 | `variable` | [`Variable`](../Variable/_index.md) |
 
 ## Returns

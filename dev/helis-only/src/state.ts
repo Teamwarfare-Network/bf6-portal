@@ -75,7 +75,12 @@ function sendNotificationMessage(message: mod.Message, isGameplay: boolean, targ
 }
 
 // World-log wrapper; respects gameplay/debug gates and optional target.
-function sendHighlightedWorldLogMessage(message: mod.Message, isGameplay: boolean, target?: mod.Player | mod.Team, debugKey?: number): void {
+function sendHighlightedWorldLogMessage(
+    message: mod.Message,
+    isGameplay: boolean,
+    target?: mod.Player | mod.Team,
+    debugKey?: number
+): void {
     if (!shouldSendMessage(isGameplay, true)) return;
     noteHighlightedMessageSent(debugKey);
     if (target) {
@@ -97,16 +102,10 @@ function sendHighlightedWorldLogMessage(message: mod.Message, isGameplay: boolea
     mod.DisplayHighlightedWorldLogMessage(message);
 }
 
-
 // CP visibility debug helper (highlighted world log).
 function logCapturePointVisibilityDebug(messageKey: number): void {
     if (!ENABLE_CP_VIS_DEBUG) return;
-    sendHighlightedWorldLogMessage(
-        mod.Message(messageKey),
-        true,
-        undefined,
-        messageKey
-    );
+    sendHighlightedWorldLogMessage(mod.Message(messageKey), true, undefined, messageKey);
 }
 
 // Synchronizes HUD win counters from authoritative match state.
@@ -143,8 +142,6 @@ function endGameModeForTeamNum(teamNum: TeamID | 0): void {
 
 //#endregion ----------------- Core gameplay state helpers --------------------
 
-
-
 //#region -------------------- Shared ID helpers --------------------
 
 function getObjId(obj: any): number {
@@ -180,10 +177,7 @@ function getTeamNumber(team: mod.Team): TeamID | 0 {
     return 0;
 }
 
-function safeGetTeamNumberFromPlayer(
-    player: mod.Player | null | undefined,
-    fallback: TeamID | 0 = 0
-): TeamID | 0 {
+function safeGetTeamNumberFromPlayer(player: mod.Player | null | undefined, fallback: TeamID | 0 = 0): TeamID | 0 {
     if (!player || !mod.IsPlayerValid(player)) return fallback;
     try {
         return getTeamNumber(mod.GetTeam(player));
@@ -265,8 +259,8 @@ function addOutlinedButton(
     borderPadding: number = BUTTON_BORDER_PADDING
 ): mod.UIWidget | undefined {
     const borderId = `${buttonId}_BORDER`;
-    const borderSizeX = sizeX + (borderPadding * 2);
-    const borderSizeY = sizeY + (borderPadding * 2);
+    const borderSizeX = sizeX + borderPadding * 2;
+    const borderSizeY = sizeY + borderPadding * 2;
 
     mod.AddUIContainer(
         borderId,
@@ -334,7 +328,7 @@ function addCenteredButtonText(
 
     const config: any = {
         name: labelId,
-        type: "Text",
+        type: 'Text',
         playerId: player,
         position: [0, 0],
         size: [sizeX, sizeY],
@@ -348,7 +342,7 @@ function addCenteredButtonText(
         textAlpha: 1,
         textAnchor: mod.UIAnchor.Center,
     };
-    if (typeof textSize === "number") {
+    if (typeof textSize === 'number') {
         config.textSize = textSize;
     }
 
@@ -358,7 +352,7 @@ function addCenteredButtonText(
     if (widget) {
         mod.SetUIWidgetParent(widget, parent);
         mod.SetUIWidgetPosition(widget, mod.CreateVector(0, 0, 0));
-        if (typeof textSize === "number") {
+        if (typeof textSize === 'number') {
             mod.SetUITextSize(widget, textSize);
         }
     }
@@ -379,7 +373,7 @@ function addRightAlignedLabel(
 ): mod.UIWidget | undefined {
     const widget = modlib.ParseUI({
         name: labelId,
-        type: "Text",
+        type: 'Text',
         playerId: player,
         position: [posX, posY],
         size: [sizeX, sizeY],
@@ -410,7 +404,7 @@ function applyAdminPanelLabelTextColor(widget?: mod.UIWidget): void {
 }
 
 function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, baseContainer: mod.UIWidget): void {
-    const swapBorder = safeFind(UI_READY_DIALOG_BUTTON_SWAP_ID + pid + "_BORDER");
+    const swapBorder = safeFind(UI_READY_DIALOG_BUTTON_SWAP_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_BUTTON_SWAP_LABEL_ID + pid,
         READY_DIALOG_MAIN_BUTTON_WIDTH,
@@ -420,7 +414,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         swapBorder ?? baseContainer
     );
 
-    const readyBorder = safeFind(UI_READY_DIALOG_BUTTON_READY_ID + pid + "_BORDER");
+    const readyBorder = safeFind(UI_READY_DIALOG_BUTTON_READY_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_BUTTON_READY_LABEL_ID + pid,
         READY_DIALOG_MAIN_BUTTON_WIDTH,
@@ -431,7 +425,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
     );
     updateReadyToggleButtonForViewer(player, pid);
 
-    const autoReadyBorder = safeFind(UI_READY_DIALOG_BUTTON_AUTO_READY_ID + pid + "_BORDER");
+    const autoReadyBorder = safeFind(UI_READY_DIALOG_BUTTON_AUTO_READY_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_BUTTON_AUTO_READY_LABEL_ID + pid,
         READY_DIALOG_MAIN_BUTTON_WIDTH,
@@ -442,7 +436,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
     );
     updateAutoReadyToggleButtonForViewer(player, pid);
 
-    const cancelBorder = safeFind(UI_TEAMSWITCH_BUTTON_CANCEL_ID + pid + "_BORDER");
+    const cancelBorder = safeFind(UI_TEAMSWITCH_BUTTON_CANCEL_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_TEAMSWITCH_BUTTON_CANCEL_LABEL_ID + pid,
         READY_DIALOG_MAIN_BUTTON_WIDTH,
@@ -452,7 +446,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         cancelBorder ?? baseContainer
     );
 
-    const bestOfDecBorder = safeFind(UI_READY_DIALOG_BESTOF_DEC_ID + pid + "_BORDER");
+    const bestOfDecBorder = safeFind(UI_READY_DIALOG_BESTOF_DEC_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_BESTOF_DEC_LABEL_ID + pid,
         READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -462,7 +456,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         bestOfDecBorder ?? baseContainer,
         14
     );
-    const bestOfIncBorder = safeFind(UI_READY_DIALOG_BESTOF_INC_ID + pid + "_BORDER");
+    const bestOfIncBorder = safeFind(UI_READY_DIALOG_BESTOF_INC_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_BESTOF_INC_LABEL_ID + pid,
         READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -473,7 +467,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         14
     );
 
-    const matchupDecBorder = safeFind(UI_READY_DIALOG_MATCHUP_DEC_ID + pid + "_BORDER");
+    const matchupDecBorder = safeFind(UI_READY_DIALOG_MATCHUP_DEC_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_MATCHUP_DEC_LABEL_ID + pid,
         READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -483,7 +477,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         matchupDecBorder ?? baseContainer,
         14
     );
-    const matchupIncBorder = safeFind(UI_READY_DIALOG_MATCHUP_INC_ID + pid + "_BORDER");
+    const matchupIncBorder = safeFind(UI_READY_DIALOG_MATCHUP_INC_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_MATCHUP_INC_LABEL_ID + pid,
         READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -494,7 +488,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         14
     );
 
-    const minPlayersDecBorder = safeFind(UI_READY_DIALOG_MINPLAYERS_DEC_ID + pid + "_BORDER");
+    const minPlayersDecBorder = safeFind(UI_READY_DIALOG_MINPLAYERS_DEC_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_MINPLAYERS_DEC_LABEL_ID + pid,
         READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -504,7 +498,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         minPlayersDecBorder ?? baseContainer,
         14
     );
-    const minPlayersIncBorder = safeFind(UI_READY_DIALOG_MINPLAYERS_INC_ID + pid + "_BORDER");
+    const minPlayersIncBorder = safeFind(UI_READY_DIALOG_MINPLAYERS_INC_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_MINPLAYERS_INC_LABEL_ID + pid,
         READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -515,7 +509,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         14
     );
 
-    const modeGameDecBorder = safeFind(UI_READY_DIALOG_MODE_GAME_DEC_ID + pid + "_BORDER");
+    const modeGameDecBorder = safeFind(UI_READY_DIALOG_MODE_GAME_DEC_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_MODE_GAME_DEC_LABEL_ID + pid,
         READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -525,7 +519,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         modeGameDecBorder ?? baseContainer,
         14
     );
-    const modeGameIncBorder = safeFind(UI_READY_DIALOG_MODE_GAME_INC_ID + pid + "_BORDER");
+    const modeGameIncBorder = safeFind(UI_READY_DIALOG_MODE_GAME_INC_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_MODE_GAME_INC_LABEL_ID + pid,
         READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -536,7 +530,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         14
     );
 
-    const modeSettingsDecBorder = safeFind(UI_READY_DIALOG_MODE_SETTINGS_DEC_ID + pid + "_BORDER");
+    const modeSettingsDecBorder = safeFind(UI_READY_DIALOG_MODE_SETTINGS_DEC_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_MODE_SETTINGS_DEC_LABEL_ID + pid,
         READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -546,7 +540,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         modeSettingsDecBorder ?? baseContainer,
         14
     );
-    const modeSettingsIncBorder = safeFind(UI_READY_DIALOG_MODE_SETTINGS_INC_ID + pid + "_BORDER");
+    const modeSettingsIncBorder = safeFind(UI_READY_DIALOG_MODE_SETTINGS_INC_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_MODE_SETTINGS_INC_LABEL_ID + pid,
         READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -557,7 +551,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         14
     );
 
-    const vehiclesT1DecBorder = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_ID + pid + "_BORDER");
+    const vehiclesT1DecBorder = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_LABEL_ID + pid,
         READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -567,7 +561,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         vehiclesT1DecBorder ?? baseContainer,
         14
     );
-    const vehiclesT1IncBorder = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T1_INC_ID + pid + "_BORDER");
+    const vehiclesT1IncBorder = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T1_INC_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_MODE_VEHICLES_T1_INC_LABEL_ID + pid,
         READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -578,7 +572,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         14
     );
 
-    const vehiclesT2DecBorder = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T2_DEC_ID + pid + "_BORDER");
+    const vehiclesT2DecBorder = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T2_DEC_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_MODE_VEHICLES_T2_DEC_LABEL_ID + pid,
         READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -588,7 +582,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         vehiclesT2DecBorder ?? baseContainer,
         14
     );
-    const vehiclesT2IncBorder = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T2_INC_ID + pid + "_BORDER");
+    const vehiclesT2IncBorder = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T2_INC_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_MODE_VEHICLES_T2_INC_LABEL_ID + pid,
         READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -599,7 +593,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         14
     );
 
-    const confirmBorder = safeFind(UI_READY_DIALOG_MODE_CONFIRM_ID + pid + "_BORDER");
+    const confirmBorder = safeFind(UI_READY_DIALOG_MODE_CONFIRM_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_MODE_CONFIRM_LABEL_ID + pid,
         READY_DIALOG_CONFIRM_BUTTON_WIDTH,
@@ -609,7 +603,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         confirmBorder ?? baseContainer,
         12
     );
-    const resetBorder = safeFind(UI_READY_DIALOG_MODE_RESET_ID + pid + "_BORDER");
+    const resetBorder = safeFind(UI_READY_DIALOG_MODE_RESET_ID + pid + '_BORDER');
     addCenteredButtonText(
         UI_READY_DIALOG_MODE_RESET_LABEL_ID + pid,
         READY_DIALOG_RESET_BUTTON_WIDTH,
@@ -629,17 +623,15 @@ function safeFindPlayer(pid: number): mod.Player | undefined {
         for (let i = 0; i < count; i++) {
             const p = mod.ValueInArray(players, i) as mod.Player;
             if (!p || !mod.IsPlayerValid(p)) continue;
-        if (mod.GetObjId(p) === pid) return p;
-    }
-    return undefined;
+            if (mod.GetObjId(p) === pid) return p;
+        }
+        return undefined;
     } catch {
         return undefined;
     }
 }
 
 //#endregion ----------------- Shared ID helpers --------------------
-
-
 
 //#region -------------------- HUD Types + Caches --------------------
 
@@ -728,8 +720,6 @@ type HudRefs = {
 };
 
 //#endregion ----------------- HUD Types + Caches --------------------
-
-
 
 //#region -------------------- Game State Definition --------------------
 

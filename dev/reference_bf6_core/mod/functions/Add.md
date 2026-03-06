@@ -10,14 +10,15 @@
 function Add(number0, number1): number;
 ```
 
-Defined in: [mod/index.d.ts:21698](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21698)
+Defined in:
+[mod/index.d.ts:21698](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21698)
 
 Returns the sum of two numbers or two vector values.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
+| Parameter | Type     |
+| --------- | -------- |
 | `number0` | `number` |
 | `number1` | `number` |
 
@@ -31,14 +32,15 @@ Returns the sum of two numbers or two vector values.
 function Add(vector0, vector1): Vector;
 ```
 
-Defined in: [mod/index.d.ts:21701](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21701)
+Defined in:
+[mod/index.d.ts:21701](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21701)
 
 Returns the sum of two numbers or two vector values.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
+| Parameter | Type                            |
+| --------- | ------------------------------- |
 | `vector0` | [`Vector`](../Vector/_index.md) |
 | `vector1` | [`Vector`](../Vector/_index.md) |
 

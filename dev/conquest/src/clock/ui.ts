@@ -3,8 +3,6 @@
 
 //#region -------------------- Match Clock - UI Build + Cache Helpers --------------------
 
-
-
 /**
  * Ensures the clock UI widgets exist for a given player and returns the cached references.
  * Responsibilities:
@@ -16,9 +14,9 @@
 
 function ensureClockUIAndGetCache(player: mod.Player): ClockWidgetCacheEntry | undefined {
     // Clock widgets are stored per-player; derive pid for cache lookup.
-const pid = mod.GetObjId(player);
-    const rootName = "MatchTimerRoot_" + pid;
-    const roundStateRootName = "RoundStateRoot_" + pid;
+    const pid = mod.GetObjId(player);
+    const rootName = 'MatchTimerRoot_' + pid;
+    const roundStateRootName = 'RoundStateRoot_' + pid;
     // Keep digit/colon spacing tied to the original visual clock lane, independent of the widened container.
     const digitLayoutWidth = 99.01;
     const digitWidth = digitLayoutWidth * 0.22;
@@ -81,8 +79,14 @@ const pid = mod.GetObjId(player);
             if (cached.playersReadyText) {
                 mod.SetUIWidgetParent(cached.playersReadyText, mod.GetUIRoot());
                 mod.SetUIWidgetAnchor(cached.playersReadyText, mod.UIAnchor.TopLeft);
-                mod.SetUIWidgetPosition(cached.playersReadyText, mod.CreateVector(playersReadyLeftX, playersReadyLeftY, 0));
-                mod.SetUIWidgetSize(cached.playersReadyText, mod.CreateVector(playersReadyWidth, playersReadyHeight, 0));
+                mod.SetUIWidgetPosition(
+                    cached.playersReadyText,
+                    mod.CreateVector(playersReadyLeftX, playersReadyLeftY, 0)
+                );
+                mod.SetUIWidgetSize(
+                    cached.playersReadyText,
+                    mod.CreateVector(playersReadyWidth, playersReadyHeight, 0)
+                );
             }
             setHudHelpDepthForPid(pid);
             return cached;
@@ -93,17 +97,17 @@ const pid = mod.GetObjId(player);
     // remove stale clock/status widgets from previous reloads so the rebuilt hierarchy is deterministic.
     deleteAllByName(rootName);
     deleteAllByName(roundStateRootName);
-    deleteAllByName("MatchTimerMinTens_" + pid);
-    deleteAllByName("MatchTimerMinOnes_" + pid);
-    deleteAllByName("MatchTimerColon_" + pid);
-    deleteAllByName("MatchTimerSecTens_" + pid);
-    deleteAllByName("MatchTimerSecOnes_" + pid);
-    deleteAllByName("RoundStateText_" + pid);
-    deleteAllByName("PlayersReadyText_" + pid);
+    deleteAllByName('MatchTimerMinTens_' + pid);
+    deleteAllByName('MatchTimerMinOnes_' + pid);
+    deleteAllByName('MatchTimerColon_' + pid);
+    deleteAllByName('MatchTimerSecTens_' + pid);
+    deleteAllByName('MatchTimerSecOnes_' + pid);
+    deleteAllByName('RoundStateText_' + pid);
+    deleteAllByName('PlayersReadyText_' + pid);
 
     modlib.ParseUI({
         name: rootName,
-        type: "Container",
+        type: 'Container',
         playerId: player,
         anchor: mod.UIAnchor.TopCenter,
         // position: [x, y] offset; direction depends on anchor, so verify visually in-game
@@ -113,14 +117,14 @@ const pid = mod.GetObjId(player);
         bgAlpha: 0,
         children: [
             // Slow path: create digit widgets once per player, then cache refs for future updates.
-            buildDigit("MinTens", pid, xOffsets.minTens, digitWidth),
-            buildDigit("MinOnes", pid, xOffsets.minOnes, digitWidth),
+            buildDigit('MinTens', pid, xOffsets.minTens, digitWidth),
+            buildDigit('MinOnes', pid, xOffsets.minOnes, digitWidth),
             buildColon(pid, xOffsets.colon, colonWidth),
-            buildDigit("SecTens", pid, xOffsets.secTens, digitWidth),
-            buildDigit("SecOnes", pid, xOffsets.secOnes, digitWidth),
+            buildDigit('SecTens', pid, xOffsets.secTens, digitWidth),
+            buildDigit('SecOnes', pid, xOffsets.secOnes, digitWidth),
             {
                 name: roundStateRootName,
-                type: "Container",
+                type: 'Container',
                 anchor: mod.UIAnchor.TopCenter,
                 // Nested inside clock root so round-state labels travel with the clock container.
                 position: [0, roundStateOffsetY],
@@ -131,8 +135,8 @@ const pid = mod.GetObjId(player);
                 bgFill: mod.UIBgFill.None,
                 children: [
                     {
-                        name: "RoundStateText_" + pid,
-                        type: "Text",
+                        name: 'RoundStateText_' + pid,
+                        type: 'Text',
                         anchor: mod.UIAnchor.TopCenter,
                         // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                         position: [0, 0],
@@ -148,8 +152,8 @@ const pid = mod.GetObjId(player);
                         textAnchor: mod.UIAnchor.Center,
                     },
                     {
-                        name: "PlayersReadyText_" + pid,
-                        type: "Text",
+                        name: 'PlayersReadyText_' + pid,
+                        type: 'Text',
                         anchor: mod.UIAnchor.TopCenter,
                         // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                         position: [0, 14],
@@ -159,7 +163,7 @@ const pid = mod.GetObjId(player);
                         bgAlpha: 0,
                         bgFill: mod.UIBgFill.None,
                         // Placeholder label; runtime will set full "{X} / {Y} PLAYERS READY" format.
-                        textLabel: "",
+                        textLabel: '',
                         // Yellow, matching other important HUD callouts.
                         textColor: [1, 1, 0],
                         textAlpha: 1,
@@ -174,13 +178,13 @@ const pid = mod.GetObjId(player);
     const entry: ClockWidgetCacheEntry = {
         rootName: rootName,
         roundStateRootName: roundStateRootName,
-        minTens: safeFind("MatchTimerMinTens_" + pid) as mod.UIWidget,
-        minOnes: safeFind("MatchTimerMinOnes_" + pid) as mod.UIWidget,
-        colon: safeFind("MatchTimerColon_" + pid) as mod.UIWidget,
-        secTens: safeFind("MatchTimerSecTens_" + pid) as mod.UIWidget,
-        secOnes: safeFind("MatchTimerSecOnes_" + pid) as mod.UIWidget,
-        roundStateText: safeFind("RoundStateText_" + pid) as mod.UIWidget,
-        playersReadyText: safeFind("PlayersReadyText_" + pid) as mod.UIWidget,
+        minTens: safeFind('MatchTimerMinTens_' + pid) as mod.UIWidget,
+        minOnes: safeFind('MatchTimerMinOnes_' + pid) as mod.UIWidget,
+        colon: safeFind('MatchTimerColon_' + pid) as mod.UIWidget,
+        secTens: safeFind('MatchTimerSecTens_' + pid) as mod.UIWidget,
+        secOnes: safeFind('MatchTimerSecOnes_' + pid) as mod.UIWidget,
+        roundStateText: safeFind('RoundStateText_' + pid) as mod.UIWidget,
+        playersReadyText: safeFind('PlayersReadyText_' + pid) as mod.UIWidget,
     };
 
     if (
@@ -207,7 +211,7 @@ const pid = mod.GetObjId(player);
             mod.SetUIWidgetPosition(probeState, mod.CreateVector(0, roundStateOffsetY, 0));
             mod.SetUIWidgetSize(probeState, mod.CreateVector(roundStateWidth, roundStateHeight, 0));
         }
-        const roundStateText = safeFind("RoundStateText_" + pid);
+        const roundStateText = safeFind('RoundStateText_' + pid);
         if (probeClock && roundStateText) {
             // Keep the runtime label directly under the clock digits regardless of legacy container state.
             mod.SetUIWidgetParent(roundStateText, probeClock);
@@ -215,7 +219,7 @@ const pid = mod.GetObjId(player);
             mod.SetUIWidgetPosition(roundStateText, mod.CreateVector(0, roundStateTextOffsetY, 0));
             mod.SetUIWidgetSize(roundStateText, mod.CreateVector(roundStateWidth, roundStateHeight, 0));
         }
-        const playersReady = safeFind("PlayersReadyText_" + pid);
+        const playersReady = safeFind('PlayersReadyText_' + pid);
         if (playersReady) {
             mod.SetUIWidgetParent(playersReady, mod.GetUIRoot());
             mod.SetUIWidgetAnchor(playersReady, mod.UIAnchor.TopLeft);
@@ -234,8 +238,8 @@ const pid = mod.GetObjId(player);
 
 function buildDigit(part: string, pid: number, x: number, width: number) {
     return {
-        name: "MatchTimer" + part + "_" + pid,
-        type: "Text",
+        name: 'MatchTimer' + part + '_' + pid,
+        type: 'Text',
         anchor: mod.UIAnchor.Center,
         // position: [x, y] offset; direction depends on anchor, so verify visually in-game
         position: [x, CLOCK_TEXT_OFFSET_Y],
@@ -250,8 +254,8 @@ function buildDigit(part: string, pid: number, x: number, width: number) {
 
 function buildColon(pid: number, x: number, width: number) {
     return {
-        name: "MatchTimerColon_" + pid,
-        type: "Text",
+        name: 'MatchTimerColon_' + pid,
+        type: 'Text',
         anchor: mod.UIAnchor.Center,
         // position: [x, y] offset; direction depends on anchor, so verify visually in-game
         position: [x, CLOCK_TEXT_OFFSET_Y],

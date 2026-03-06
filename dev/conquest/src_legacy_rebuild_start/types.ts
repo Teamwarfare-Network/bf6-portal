@@ -2,13 +2,11 @@
 
 // If not using bundled TS project you need to use modlib import
 // @ts-ignore - ignores error on Portal webclient with importing modlib
-import * as modlib from "modlib";
+import * as modlib from 'modlib';
 // TS project comes with local modlib functions, if using that then no need to import modlib
 // - There seems to be an error with TS template's project local modlib FilteredArray function (drops all vehicles in vehicle array?!)
 
 //#endregion ----------------- Modlib import --------------------
-
-
 
 //#region -------------------- Constant, Enums and Types --------------------
 
@@ -81,16 +79,17 @@ const OVERTIME_COUNT_TEXT_SIZE = 18;
 const OVERTIME_PERCENT_TEXT_WIDTH = 32;
 const OVERTIME_PERCENT_TEXT_HEIGHT = 16;
 const OVERTIME_PERCENT_TEXT_SIZE = OVERTIME_COUNT_TEXT_SIZE;
-const OVERTIME_COUNT_OFFSET_X = (OVERTIME_BAR_WIDTH / 2) + 27;
+const OVERTIME_COUNT_OFFSET_X = OVERTIME_BAR_WIDTH / 2 + 27;
 const OVERTIME_COUNT_OFFSET_Y = OVERTIME_BAR_OFFSET_Y - 8;
 const OVERTIME_PERCENT_GAP = 0;
 const OVERTIME_PERCENT_OFFSET_NUDGE = 8;
 const OVERTIME_PERCENT_TEXT_NUDGE = 3;
-const OVERTIME_PERCENT_OFFSET_X = OVERTIME_COUNT_OFFSET_X
-    + (OVERTIME_COUNT_TEXT_WIDTH / 2)
-    + OVERTIME_PERCENT_GAP
-    + (OVERTIME_PERCENT_TEXT_WIDTH / 2)
-    + OVERTIME_PERCENT_OFFSET_NUDGE;
+const OVERTIME_PERCENT_OFFSET_X =
+    OVERTIME_COUNT_OFFSET_X +
+    OVERTIME_COUNT_TEXT_WIDTH / 2 +
+    OVERTIME_PERCENT_GAP +
+    OVERTIME_PERCENT_TEXT_WIDTH / 2 +
+    OVERTIME_PERCENT_OFFSET_NUDGE;
 const OVERTIME_PERCENT_OFFSET_Y = OVERTIME_COUNT_OFFSET_Y + 2;
 const OVERTIME_COUNT_BG_ALPHA = 0.6;
 const OVERTIME_COUNT_BORDER_ALPHA = 1.0;
@@ -299,7 +298,7 @@ const READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_1V1 = 1;
 const READY_DIALOG_MODE_PRESET_VEHICLE_INDEX = 0;
 let suppressReadyDialogModeAutoSwitch = false;
 // Aircraft ceiling enforcement mode (hard = engine limiter only, soft = scripted nudges).
-const AIRCRAFT_CEILING_ENFORCEMENT_MODE: "hard" | "soft" = "hard";
+const AIRCRAFT_CEILING_ENFORCEMENT_MODE: 'hard' | 'soft' = 'hard';
 // Soft ceiling enforcement: keep the engine's hard limiter above gameplay to avoid sticky flight.
 const AIRCRAFT_SOFT_CEILING_HARD_BUFFER = 100; // Adjustable buffer above the soft ceiling (world Y units).
 const AIRCRAFT_SOFT_CEILING_ENTER_BUFFER = 10; // Start enforcing once above soft+buffer.
@@ -375,7 +374,7 @@ const BUTTON_OPACITY_SELECTED = 0.75;
 const COLOR_BUTTON_PRESSED = COLOR_WHITE;
 const BUTTON_OPACITY_PRESSED = 0.75;
 const COLOR_BUTTON_BORDER = COLOR_GRAY;
-const BUTTON_BORDER_OPACITY = 0.50;
+const BUTTON_BORDER_OPACITY = 0.5;
 const BUTTON_BORDER_PADDING = 0;
 
 // Ready Dialog
@@ -390,9 +389,9 @@ const READY_DIALOG_CONFIRM_BUTTON_GAP = 8;
 const READY_DIALOG_CONFIRM_BUTTON_WIDTH = READY_DIALOG_MAIN_BUTTON_WIDTH - 40;
 const READY_DIALOG_RESET_BUTTON_WIDTH = Math.floor((READY_DIALOG_MAIN_BUTTON_WIDTH - 40) / 2);
 const READY_DIALOG_RESET_BUTTON_OFFSET_X = 0;
-const READY_PANEL_T1_BG_COLOR = mod.CreateVector(0.10, 0.25, 0.70);
-const READY_PANEL_T2_BG_COLOR = mod.CreateVector(0.70, 0.15, 0.15);
-const READY_PANEL_BG_ALPHA = 0.20;
+const READY_PANEL_T1_BG_COLOR = mod.CreateVector(0.1, 0.25, 0.7);
+const READY_PANEL_T2_BG_COLOR = mod.CreateVector(0.7, 0.15, 0.15);
+const READY_PANEL_BG_ALPHA = 0.2;
 const READY_DIALOG_BUTTON_TEXT_COLOR_RGB: [number, number, number] = [1, 1, 1];
 const READY_DIALOG_LABEL_TEXT_COLOR = COLOR_WHITE;
 const READY_DIALOG_BORDER_COLOR = COLOR_GRAY;
@@ -411,7 +410,7 @@ const ADMIN_PANEL_TOGGLE_HEIGHT = 24;
 const ADMIN_PANEL_BUTTON_SIZE_X = 48;
 const ADMIN_PANEL_BUTTON_SIZE_Y = 30;
 const ADMIN_PANEL_LABEL_SIZE_X = 130;
-const ADMIN_PANEL_CONTENT_WIDTH = (ADMIN_PANEL_BUTTON_SIZE_X * 2) + ADMIN_PANEL_LABEL_SIZE_X + 16;
+const ADMIN_PANEL_CONTENT_WIDTH = ADMIN_PANEL_BUTTON_SIZE_X * 2 + ADMIN_PANEL_LABEL_SIZE_X + 16;
 const ADMIN_PANEL_ROW_SPACING_Y = 4;
 const ADMIN_PANEL_VALUE_SIZE_X = 46;
 const ADMIN_PANEL_TIEBREAKER_LABEL_HEIGHT = 16;
@@ -423,10 +422,10 @@ const ADMIN_PANEL_BG_FILL = mod.UIBgFill.Blur;
 const ADMIN_PANEL_LABEL_TEXT_COLOR_RGB: [number, number, number] = [1, 1, 1];
 const ADMIN_PANEL_BUTTON_TEXT_COLOR = COLOR_WHITE;
 const ADMIN_PANEL_LABEL_TEXT_COLOR = COLOR_WHITE;
-const ADMIN_TIEBREAKER_OVERRIDE_LETTERS = ["A", "B", "C", "D", "E", "F", "G"];
-const OVERTIME_FLAG_LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H"];
-const OVERTIME_TANK_ZONE_LETTERS = ["A", "B", "C", "D", "E", "F", "G"];
-const OVERTIME_HELI_ZONE_LETTERS = ["H"];
+const ADMIN_TIEBREAKER_OVERRIDE_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+const OVERTIME_FLAG_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+const OVERTIME_TANK_ZONE_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+const OVERTIME_HELI_ZONE_LETTERS = ['H'];
 const ADMIN_TIEBREAKER_MODE_OPTIONS = [
     mod.stringkeys.twl.adminPanel.labels.tieBreakerModeLastRoundOnly,
     mod.stringkeys.twl.adminPanel.labels.tieBreakerModeAllRounds,

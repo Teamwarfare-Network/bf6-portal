@@ -8,16 +8,17 @@
 function SetRingOfFireStableTime(ringOfFireId, ringOfFireStableTime): void;
 ```
 
-Defined in: [mod/index.d.ts:20404](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20404)
+Defined in:
+[mod/index.d.ts:20404](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20404)
 
 Sets the duration the RingOfFire remains stable before Shrinking again.
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `ringOfFireId` | [`RingOfFire`](../RingOfFire/_index.md) |
-| `ringOfFireStableTime` | `number` |
+| Parameter              | Type                                    |
+| ---------------------- | --------------------------------------- |
+| `ringOfFireId`         | [`RingOfFire`](../RingOfFire/_index.md) |
+| `ringOfFireStableTime` | `number`                                |
 
 ## Returns
 

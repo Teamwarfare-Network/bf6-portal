@@ -29,7 +29,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_TICKETS_TEAM_RIGHT_X = 461.39;
     const CONQUEST_TICKETS_ROW_Y = 0;
     const CONQUEST_TICKETS_LEFT_BAR_X = 103.39;
-    const CONQUEST_TICKETS_RIGHT_BAR_X = 284.90;
+    const CONQUEST_TICKETS_RIGHT_BAR_X = 284.9;
     const CONQUEST_TICKETS_BAR_Y = 31.82;
     const CONQUEST_TICKETS_TEAM_WIDTH = 60 + CONQUEST_TICKETS_TEAM_OUTER_EXPAND;
     const CONQUEST_TICKETS_TEAM_HEIGHT = 28;
@@ -44,19 +44,34 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_TICKETS_TEAM_RIGHT_ABS_X = 1140.54;
     const CONQUEST_TICKETS_TEAM_ABS_Y = 69.85;
     const CONQUEST_TICKETS_BLEED_LEFT_X = CONQUEST_TICKETS_TEAM_LEFT_X + CONQUEST_HUD_TICKET_BLEED_CHEVRON_GAP_X;
-    const CONQUEST_TICKETS_BLEED_RIGHT_X = CONQUEST_TICKETS_TEAM_RIGHT_X + CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_BLEED_CHEVRON_GAP_X - CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH;
+    const CONQUEST_TICKETS_BLEED_RIGHT_X =
+        CONQUEST_TICKETS_TEAM_RIGHT_X +
+        CONQUEST_TICKETS_TEAM_WIDTH -
+        CONQUEST_HUD_TICKET_BLEED_CHEVRON_GAP_X -
+        CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH;
     const CONQUEST_TICKETS_BLEED_START_Y = CONQUEST_TICKETS_ROW_Y + CONQUEST_HUD_TICKET_BLEED_CHEVRON_START_OFFSET_Y;
-    const CONQUEST_TICKETS_BLEED_LEFT_ABS_X = CONQUEST_TICKETS_TEAM_LEFT_ABS_X + CONQUEST_HUD_TICKET_BLEED_CHEVRON_GAP_X;
-    const CONQUEST_TICKETS_BLEED_RIGHT_ABS_X = CONQUEST_TICKETS_TEAM_RIGHT_ABS_X + CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_BLEED_CHEVRON_GAP_X - CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH;
-    const CONQUEST_TICKETS_BLEED_ABS_START_Y = CONQUEST_TICKETS_TEAM_ABS_Y + CONQUEST_HUD_TICKET_BLEED_CHEVRON_START_OFFSET_Y;
-    const CONQUEST_TICKETS_LEAD_LEFT_BORDER_ABS_X = CONQUEST_TICKETS_TEAM_LEFT_ABS_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW;
-    const CONQUEST_TICKETS_LEAD_RIGHT_BORDER_ABS_X = CONQUEST_TICKETS_TEAM_RIGHT_ABS_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW;
+    const CONQUEST_TICKETS_BLEED_LEFT_ABS_X =
+        CONQUEST_TICKETS_TEAM_LEFT_ABS_X + CONQUEST_HUD_TICKET_BLEED_CHEVRON_GAP_X;
+    const CONQUEST_TICKETS_BLEED_RIGHT_ABS_X =
+        CONQUEST_TICKETS_TEAM_RIGHT_ABS_X +
+        CONQUEST_TICKETS_TEAM_WIDTH -
+        CONQUEST_HUD_TICKET_BLEED_CHEVRON_GAP_X -
+        CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH;
+    const CONQUEST_TICKETS_BLEED_ABS_START_Y =
+        CONQUEST_TICKETS_TEAM_ABS_Y + CONQUEST_HUD_TICKET_BLEED_CHEVRON_START_OFFSET_Y;
+    const CONQUEST_TICKETS_LEAD_LEFT_BORDER_ABS_X =
+        CONQUEST_TICKETS_TEAM_LEFT_ABS_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW;
+    const CONQUEST_TICKETS_LEAD_RIGHT_BORDER_ABS_X =
+        CONQUEST_TICKETS_TEAM_RIGHT_ABS_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW;
     const CONQUEST_TICKETS_LEAD_BORDER_ABS_Y = CONQUEST_TICKETS_TEAM_ABS_Y - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW;
-    const CONQUEST_TICKETS_LEAD_BORDER_WIDTH = CONQUEST_TICKETS_TEAM_WIDTH + (CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2);
-    const CONQUEST_TICKETS_LEAD_BORDER_HEIGHT = CONQUEST_TICKETS_TEAM_HEIGHT + (CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2);
-    const CONQUEST_TICKETS_LEAD_LEFT_CROWN_ABS_X = CONQUEST_TICKETS_TEAM_LEFT_ABS_X + ((CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2);
-    const CONQUEST_TICKETS_LEAD_RIGHT_CROWN_ABS_X = CONQUEST_TICKETS_TEAM_RIGHT_ABS_X + ((CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2);
-    const CONQUEST_TICKETS_LEAD_CROWN_ABS_Y = CONQUEST_TICKETS_TEAM_ABS_Y - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE - CONQUEST_HUD_TICKET_LEAD_CROWN_GAP_Y;
+    const CONQUEST_TICKETS_LEAD_BORDER_WIDTH = CONQUEST_TICKETS_TEAM_WIDTH + CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2;
+    const CONQUEST_TICKETS_LEAD_BORDER_HEIGHT = CONQUEST_TICKETS_TEAM_HEIGHT + CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2;
+    const CONQUEST_TICKETS_LEAD_LEFT_CROWN_ABS_X =
+        CONQUEST_TICKETS_TEAM_LEFT_ABS_X + (CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2;
+    const CONQUEST_TICKETS_LEAD_RIGHT_CROWN_ABS_X =
+        CONQUEST_TICKETS_TEAM_RIGHT_ABS_X + (CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2;
+    const CONQUEST_TICKETS_LEAD_CROWN_ABS_Y =
+        CONQUEST_TICKETS_TEAM_ABS_Y - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE - CONQUEST_HUD_TICKET_LEAD_CROWN_GAP_Y;
     const CONQUEST_TICKETS_LEFT_BAR_ABS_X = 782.54;
     const CONQUEST_TICKETS_RIGHT_BAR_ABS_X = 964.05;
     const CONQUEST_TICKETS_BAR_ABS_Y = 79.55;
@@ -64,25 +79,25 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_TICKETS_SLASH_ABS_Y = 47.73;
     const CONQUEST_FLAGS_SLOT_ABS_Y = 91.86;
     const CONQUEST_FLAGS_SLOT_ABS_X: number[] = [
-        840.50, // Capture Point 1
-        875.50, // Capture Point 2
-        910.50, // Capture Point 3
-        945.50, // Capture Point 4
-        980.50, // Capture Point 5
-        1015.50, // Capture Point 6
-        1050.50, // Capture Point 7
+        840.5, // Capture Point 1
+        875.5, // Capture Point 2
+        910.5, // Capture Point 3
+        945.5, // Capture Point 4
+        980.5, // Capture Point 5
+        1015.5, // Capture Point 6
+        1050.5, // Capture Point 7
     ];
-    const CONQUEST_FLAGS_ENGAGE_ABS_X = 884.00;
-    const CONQUEST_FLAGS_ENGAGE_ABS_Y = 133.00;
-    const CONQUEST_HELP_CONTAINER_X = -223.60;
-    const CONQUEST_HELP_CONTAINER_Y = 81.10;
+    const CONQUEST_FLAGS_ENGAGE_ABS_X = 884.0;
+    const CONQUEST_FLAGS_ENGAGE_ABS_Y = 133.0;
+    const CONQUEST_HELP_CONTAINER_X = -223.6;
+    const CONQUEST_HELP_CONTAINER_Y = 81.1;
     const CONQUEST_HELP_CONTAINER_WIDTH = 561.77;
     const CONQUEST_HELP_CONTAINER_HEIGHT = 38.31;
     const CONQUEST_HELP_TEXT_OFFSET_Y = 10;
     const CONQUEST_HELP_TEXT_HEIGHT = 18;
     // "You are Ready" lane: left HUD stack under branding/settings.
-    const CONQUEST_READY_CONTAINER_X = -905.00;
-    const CONQUEST_READY_CONTAINER_Y = 81.10;
+    const CONQUEST_READY_CONTAINER_X = -905.0;
+    const CONQUEST_READY_CONTAINER_Y = 81.1;
     const CONQUEST_READY_CONTAINER_WIDTH = 200.0;
     const CONQUEST_READY_CONTAINER_HEIGHT = 20.0;
     const CONQUEST_READY_TEXT_OFFSET_Y = 1;
@@ -91,13 +106,13 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_READY_ABS_Y = 131.0;
     const CONQUEST_FLAGS_MAX_ROWS = 7;
     const CONQUEST_FLAGS_SLOT_X: number[] = [
-        0,      // Capture Point 1 (x=840.51, w=29)
-        35.00,  // Capture Point 2 (x=875.50, w=29)
-        70.00,  // Capture Point 3 (x=910.50, w=29)
-        105.00, // Capture Point 4 (x=945.50, w=29)
-        140.00, // Capture Point 5 (x=980.50, w=29)
-        175.00, // Capture Point 6 (x=1015.50, w=29)
-        210.00, // Capture Point 7 (x=1050.50, w=29)
+        0, // Capture Point 1 (x=840.51, w=29)
+        35.0, // Capture Point 2 (x=875.50, w=29)
+        70.0, // Capture Point 3 (x=910.50, w=29)
+        105.0, // Capture Point 4 (x=945.50, w=29)
+        140.0, // Capture Point 5 (x=980.50, w=29)
+        175.0, // Capture Point 6 (x=1015.50, w=29)
+        210.0, // Capture Point 7 (x=1050.50, w=29)
     ];
     // Hides legacy triplet-row flag widgets left behind by prior HUD layouts.
     const hideLegacyFlagTripletRows = (): void => {
@@ -150,8 +165,14 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 // Best-effort anchor normalization only.
             }
             mod.SetUIWidgetParent(ticketT1Container, ticketsParent);
-            mod.SetUIWidgetPosition(ticketT1Container, mod.CreateVector(CONQUEST_TICKETS_TEAM_LEFT_ABS_X, CONQUEST_TICKETS_TEAM_ABS_Y, 0));
-            mod.SetUIWidgetSize(ticketT1Container, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
+            mod.SetUIWidgetPosition(
+                ticketT1Container,
+                mod.CreateVector(CONQUEST_TICKETS_TEAM_LEFT_ABS_X, CONQUEST_TICKETS_TEAM_ABS_Y, 0)
+            );
+            mod.SetUIWidgetSize(
+                ticketT1Container,
+                mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0)
+            );
         }
         const ticketT1 = refsForPid?.conquestTicketsDebugTeam1 ?? safeFind(`ConquestTicketsHudTeam1_${pid}`);
         if (ticketT1) {
@@ -167,7 +188,10 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     ? mod.CreateVector(CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X, 0, 0)
                     : mod.CreateVector(CONQUEST_TICKETS_TEAM_LEFT_ABS_X, CONQUEST_TICKETS_TEAM_ABS_Y, 0)
             );
-            mod.SetUIWidgetSize(ticketT1, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
+            mod.SetUIWidgetSize(
+                ticketT1,
+                mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0)
+            );
         }
         const ticketT2Container = safeFind(`ConquestTicketsHudTeam2Container_${pid}`);
         if (ticketT2Container) {
@@ -177,8 +201,14 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 // Best-effort anchor normalization only.
             }
             mod.SetUIWidgetParent(ticketT2Container, ticketsParent);
-            mod.SetUIWidgetPosition(ticketT2Container, mod.CreateVector(CONQUEST_TICKETS_TEAM_RIGHT_ABS_X, CONQUEST_TICKETS_TEAM_ABS_Y, 0));
-            mod.SetUIWidgetSize(ticketT2Container, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
+            mod.SetUIWidgetPosition(
+                ticketT2Container,
+                mod.CreateVector(CONQUEST_TICKETS_TEAM_RIGHT_ABS_X, CONQUEST_TICKETS_TEAM_ABS_Y, 0)
+            );
+            mod.SetUIWidgetSize(
+                ticketT2Container,
+                mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0)
+            );
         }
         const ticketT2 = refsForPid?.conquestTicketsDebugTeam2 ?? safeFind(`ConquestTicketsHudTeam2_${pid}`);
         if (ticketT2) {
@@ -194,10 +224,14 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     ? mod.CreateVector(CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X, 0, 0)
                     : mod.CreateVector(CONQUEST_TICKETS_TEAM_RIGHT_ABS_X, CONQUEST_TICKETS_TEAM_ABS_Y, 0)
             );
-            mod.SetUIWidgetSize(ticketT2, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
+            mod.SetUIWidgetSize(
+                ticketT2,
+                mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0)
+            );
         }
 
-        const leadLeftBorder = refsForPid?.conquestTicketsLeadLeftBorder ?? safeFind(`ConquestTicketsHudLeadBorderLeft_${pid}`);
+        const leadLeftBorder =
+            refsForPid?.conquestTicketsLeadLeftBorder ?? safeFind(`ConquestTicketsHudLeadBorderLeft_${pid}`);
         if (leadLeftBorder) {
             try {
                 mod.SetUIWidgetAnchor(leadLeftBorder, mod.UIAnchor.TopLeft);
@@ -205,10 +239,17 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 // Best-effort anchor normalization only.
             }
             mod.SetUIWidgetParent(leadLeftBorder, ticketsParent);
-            mod.SetUIWidgetPosition(leadLeftBorder, mod.CreateVector(CONQUEST_TICKETS_LEAD_LEFT_BORDER_ABS_X, CONQUEST_TICKETS_LEAD_BORDER_ABS_Y, 0));
-            mod.SetUIWidgetSize(leadLeftBorder, mod.CreateVector(CONQUEST_TICKETS_LEAD_BORDER_WIDTH, CONQUEST_TICKETS_LEAD_BORDER_HEIGHT, 0));
+            mod.SetUIWidgetPosition(
+                leadLeftBorder,
+                mod.CreateVector(CONQUEST_TICKETS_LEAD_LEFT_BORDER_ABS_X, CONQUEST_TICKETS_LEAD_BORDER_ABS_Y, 0)
+            );
+            mod.SetUIWidgetSize(
+                leadLeftBorder,
+                mod.CreateVector(CONQUEST_TICKETS_LEAD_BORDER_WIDTH, CONQUEST_TICKETS_LEAD_BORDER_HEIGHT, 0)
+            );
         }
-        const leadRightBorder = refsForPid?.conquestTicketsLeadRightBorder ?? safeFind(`ConquestTicketsHudLeadBorderRight_${pid}`);
+        const leadRightBorder =
+            refsForPid?.conquestTicketsLeadRightBorder ?? safeFind(`ConquestTicketsHudLeadBorderRight_${pid}`);
         if (leadRightBorder) {
             try {
                 mod.SetUIWidgetAnchor(leadRightBorder, mod.UIAnchor.TopLeft);
@@ -216,11 +257,18 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 // Best-effort anchor normalization only.
             }
             mod.SetUIWidgetParent(leadRightBorder, ticketsParent);
-            mod.SetUIWidgetPosition(leadRightBorder, mod.CreateVector(CONQUEST_TICKETS_LEAD_RIGHT_BORDER_ABS_X, CONQUEST_TICKETS_LEAD_BORDER_ABS_Y, 0));
-            mod.SetUIWidgetSize(leadRightBorder, mod.CreateVector(CONQUEST_TICKETS_LEAD_BORDER_WIDTH, CONQUEST_TICKETS_LEAD_BORDER_HEIGHT, 0));
+            mod.SetUIWidgetPosition(
+                leadRightBorder,
+                mod.CreateVector(CONQUEST_TICKETS_LEAD_RIGHT_BORDER_ABS_X, CONQUEST_TICKETS_LEAD_BORDER_ABS_Y, 0)
+            );
+            mod.SetUIWidgetSize(
+                leadRightBorder,
+                mod.CreateVector(CONQUEST_TICKETS_LEAD_BORDER_WIDTH, CONQUEST_TICKETS_LEAD_BORDER_HEIGHT, 0)
+            );
         }
 
-        const leadLeftCrown = refsForPid?.conquestTicketsLeadLeftCrown ?? safeFind(`ConquestTicketsHudLeadCrownLeft_${pid}`);
+        const leadLeftCrown =
+            refsForPid?.conquestTicketsLeadLeftCrown ?? safeFind(`ConquestTicketsHudLeadCrownLeft_${pid}`);
         if (leadLeftCrown) {
             try {
                 mod.SetUIWidgetAnchor(leadLeftCrown, mod.UIAnchor.TopLeft);
@@ -228,10 +276,17 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 // Best-effort anchor normalization only.
             }
             mod.SetUIWidgetParent(leadLeftCrown, ticketsParent);
-            mod.SetUIWidgetPosition(leadLeftCrown, mod.CreateVector(CONQUEST_TICKETS_LEAD_LEFT_CROWN_ABS_X, CONQUEST_TICKETS_LEAD_CROWN_ABS_Y, 0));
-            mod.SetUIWidgetSize(leadLeftCrown, mod.CreateVector(CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE, 0));
+            mod.SetUIWidgetPosition(
+                leadLeftCrown,
+                mod.CreateVector(CONQUEST_TICKETS_LEAD_LEFT_CROWN_ABS_X, CONQUEST_TICKETS_LEAD_CROWN_ABS_Y, 0)
+            );
+            mod.SetUIWidgetSize(
+                leadLeftCrown,
+                mod.CreateVector(CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE, 0)
+            );
         }
-        const leadRightCrown = refsForPid?.conquestTicketsLeadRightCrown ?? safeFind(`ConquestTicketsHudLeadCrownRight_${pid}`);
+        const leadRightCrown =
+            refsForPid?.conquestTicketsLeadRightCrown ?? safeFind(`ConquestTicketsHudLeadCrownRight_${pid}`);
         if (leadRightCrown) {
             try {
                 mod.SetUIWidgetAnchor(leadRightCrown, mod.UIAnchor.TopLeft);
@@ -239,15 +294,24 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 // Best-effort anchor normalization only.
             }
             mod.SetUIWidgetParent(leadRightCrown, ticketsParent);
-            mod.SetUIWidgetPosition(leadRightCrown, mod.CreateVector(CONQUEST_TICKETS_LEAD_RIGHT_CROWN_ABS_X, CONQUEST_TICKETS_LEAD_CROWN_ABS_Y, 0));
-            mod.SetUIWidgetSize(leadRightCrown, mod.CreateVector(CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE, 0));
+            mod.SetUIWidgetPosition(
+                leadRightCrown,
+                mod.CreateVector(CONQUEST_TICKETS_LEAD_RIGHT_CROWN_ABS_X, CONQUEST_TICKETS_LEAD_CROWN_ABS_Y, 0)
+            );
+            mod.SetUIWidgetSize(
+                leadRightCrown,
+                mod.CreateVector(CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE, 0)
+            );
         }
 
         const leftBleedChevrons = refsForPid?.conquestTicketsBleedLeftChevrons ?? [];
         const rightBleedChevrons = refsForPid?.conquestTicketsBleedRightChevrons ?? [];
         for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
-            const rowOffsetY = CONQUEST_TICKETS_BLEED_ABS_START_Y + (chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y);
-            const leftChevron = leftBleedChevrons[chevronIndex] ?? safeFind(`ConquestTicketsHudBleedChevronLeft${chevronIndex + 1}_${pid}`);
+            const rowOffsetY =
+                CONQUEST_TICKETS_BLEED_ABS_START_Y + chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y;
+            const leftChevron =
+                leftBleedChevrons[chevronIndex] ??
+                safeFind(`ConquestTicketsHudBleedChevronLeft${chevronIndex + 1}_${pid}`);
             if (leftChevron) {
                 try {
                     mod.SetUIWidgetAnchor(leftChevron, mod.UIAnchor.TopLeft);
@@ -255,14 +319,23 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     // Best-effort anchor normalization only.
                 }
                 mod.SetUIWidgetParent(leftChevron, ticketsParent);
-                mod.SetUIWidgetPosition(leftChevron, mod.CreateVector(CONQUEST_TICKETS_BLEED_LEFT_ABS_X, rowOffsetY, 0));
+                mod.SetUIWidgetPosition(
+                    leftChevron,
+                    mod.CreateVector(CONQUEST_TICKETS_BLEED_LEFT_ABS_X, rowOffsetY, 0)
+                );
                 mod.SetUIWidgetSize(
                     leftChevron,
-                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
+                    mod.CreateVector(
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH,
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT,
+                        0
+                    )
                 );
             }
 
-            const rightChevron = rightBleedChevrons[chevronIndex] ?? safeFind(`ConquestTicketsHudBleedChevronRight${chevronIndex + 1}_${pid}`);
+            const rightChevron =
+                rightBleedChevrons[chevronIndex] ??
+                safeFind(`ConquestTicketsHudBleedChevronRight${chevronIndex + 1}_${pid}`);
             if (rightChevron) {
                 try {
                     mod.SetUIWidgetAnchor(rightChevron, mod.UIAnchor.TopLeft);
@@ -270,10 +343,17 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     // Best-effort anchor normalization only.
                 }
                 mod.SetUIWidgetParent(rightChevron, ticketsParent);
-                mod.SetUIWidgetPosition(rightChevron, mod.CreateVector(CONQUEST_TICKETS_BLEED_RIGHT_ABS_X, rowOffsetY, 0));
+                mod.SetUIWidgetPosition(
+                    rightChevron,
+                    mod.CreateVector(CONQUEST_TICKETS_BLEED_RIGHT_ABS_X, rowOffsetY, 0)
+                );
                 mod.SetUIWidgetSize(
                     rightChevron,
-                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
+                    mod.CreateVector(
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH,
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT,
+                        0
+                    )
                 );
             }
         }
@@ -286,12 +366,17 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 // Best-effort anchor normalization only.
             }
             mod.SetUIWidgetParent(ticketSlash, ticketsParent);
-            mod.SetUIWidgetPosition(ticketSlash, mod.CreateVector(CONQUEST_TICKETS_SLASH_ABS_X, CONQUEST_TICKETS_SLASH_ABS_Y, 0));
+            mod.SetUIWidgetPosition(
+                ticketSlash,
+                mod.CreateVector(CONQUEST_TICKETS_SLASH_ABS_X, CONQUEST_TICKETS_SLASH_ABS_Y, 0)
+            );
             mod.SetUIWidgetVisible(ticketSlash, false);
         }
 
-        const leftTrack = refsForPid?.conquestTicketsDebugLeftBarTrack ?? safeFind(`ConquestTicketsHudLeftBarTrack_${pid}`);
-        const leftFill = refsForPid?.conquestTicketsDebugLeftBarFill ?? safeFind(`ConquestTicketsHudLeftBarFill_${pid}`);
+        const leftTrack =
+            refsForPid?.conquestTicketsDebugLeftBarTrack ?? safeFind(`ConquestTicketsHudLeftBarTrack_${pid}`);
+        const leftFill =
+            refsForPid?.conquestTicketsDebugLeftBarFill ?? safeFind(`ConquestTicketsHudLeftBarFill_${pid}`);
         if (leftTrack) {
             try {
                 mod.SetUIWidgetAnchor(leftTrack, mod.UIAnchor.TopLeft);
@@ -299,19 +384,30 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 // Best-effort anchor normalization only.
             }
             mod.SetUIWidgetParent(leftTrack, ticketsParent);
-            mod.SetUIWidgetPosition(leftTrack, mod.CreateVector(CONQUEST_TICKETS_LEFT_BAR_ABS_X, CONQUEST_TICKETS_BAR_ABS_Y, 0));
-            mod.SetUIWidgetSize(leftTrack, mod.CreateVector(CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT, 0));
+            mod.SetUIWidgetPosition(
+                leftTrack,
+                mod.CreateVector(CONQUEST_TICKETS_LEFT_BAR_ABS_X, CONQUEST_TICKETS_BAR_ABS_Y, 0)
+            );
+            mod.SetUIWidgetSize(
+                leftTrack,
+                mod.CreateVector(CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT, 0)
+            );
         }
         if (leftFill && leftTrack) {
             mod.SetUIWidgetParent(leftFill, leftTrack);
             mod.SetUIWidgetPosition(leftFill, mod.CreateVector(0, 0, 0));
             if (resetDynamicFillGeometry) {
-                mod.SetUIWidgetSize(leftFill, mod.CreateVector(CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT, 0));
+                mod.SetUIWidgetSize(
+                    leftFill,
+                    mod.CreateVector(CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT, 0)
+                );
             }
         }
 
-        const rightTrack = refsForPid?.conquestTicketsDebugRightBarTrack ?? safeFind(`ConquestTicketsHudRightBarTrack_${pid}`);
-        const rightFill = refsForPid?.conquestTicketsDebugRightBarFill ?? safeFind(`ConquestTicketsHudRightBarFill_${pid}`);
+        const rightTrack =
+            refsForPid?.conquestTicketsDebugRightBarTrack ?? safeFind(`ConquestTicketsHudRightBarTrack_${pid}`);
+        const rightFill =
+            refsForPid?.conquestTicketsDebugRightBarFill ?? safeFind(`ConquestTicketsHudRightBarFill_${pid}`);
         if (rightTrack) {
             try {
                 mod.SetUIWidgetAnchor(rightTrack, mod.UIAnchor.TopLeft);
@@ -319,14 +415,23 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 // Best-effort anchor normalization only.
             }
             mod.SetUIWidgetParent(rightTrack, ticketsParent);
-            mod.SetUIWidgetPosition(rightTrack, mod.CreateVector(CONQUEST_TICKETS_RIGHT_BAR_ABS_X, CONQUEST_TICKETS_BAR_ABS_Y, 0));
-            mod.SetUIWidgetSize(rightTrack, mod.CreateVector(CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT, 0));
+            mod.SetUIWidgetPosition(
+                rightTrack,
+                mod.CreateVector(CONQUEST_TICKETS_RIGHT_BAR_ABS_X, CONQUEST_TICKETS_BAR_ABS_Y, 0)
+            );
+            mod.SetUIWidgetSize(
+                rightTrack,
+                mod.CreateVector(CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT, 0)
+            );
         }
         if (rightFill && rightTrack) {
             mod.SetUIWidgetParent(rightFill, rightTrack);
             mod.SetUIWidgetPosition(rightFill, mod.CreateVector(0, 0, 0));
             if (resetDynamicFillGeometry) {
-                mod.SetUIWidgetSize(rightFill, mod.CreateVector(CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT, 0));
+                mod.SetUIWidgetSize(
+                    rightFill,
+                    mod.CreateVector(CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT, 0)
+                );
             }
         }
 
@@ -359,29 +464,44 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             const slot = slotRoots[i] ?? safeFind(`ConquestFlagHudSlot_${pid}_${i}`);
             const border = slotBorders[i] ?? safeFind(`ConquestFlagHudBorder_${pid}_${i}`);
             const fill = slotFills[i] ?? safeFind(`ConquestFlagHudFill_${pid}_${i}`);
-            const labelShadowRight = slotLabelShadowsRight[i] ?? safeFind(`ConquestFlagHudLabelShadowRight_${pid}_${i}`);
+            const labelShadowRight =
+                slotLabelShadowsRight[i] ?? safeFind(`ConquestFlagHudLabelShadowRight_${pid}_${i}`);
             const labelShadowLeft = slotLabelShadowsLeft[i] ?? safeFind(`ConquestFlagHudLabelShadowLeft_${pid}_${i}`);
             const labelShadowUp = slotLabelShadowsUp[i] ?? safeFind(`ConquestFlagHudLabelShadowUp_${pid}_${i}`);
             const labelShadowDown = slotLabelShadowsDown[i] ?? safeFind(`ConquestFlagHudLabelShadowDown_${pid}_${i}`);
-            const labelShadowUpLeft = slotLabelShadowsUpLeft[i] ?? safeFind(`ConquestFlagHudLabelShadowUpLeft_${pid}_${i}`);
-            const labelShadowUpRight = slotLabelShadowsUpRight[i] ?? safeFind(`ConquestFlagHudLabelShadowUpRight_${pid}_${i}`);
-            const labelShadowDownRight = slotLabelShadowsDownRight[i] ?? safeFind(`ConquestFlagHudLabelShadowDownRight_${pid}_${i}`);
-            const labelShadowDownLeft = slotLabelShadowsDownLeft[i] ?? safeFind(`ConquestFlagHudLabelShadowDownLeft_${pid}_${i}`);
-            const labelShadowInner = slotLabelShadowsInner[i] ?? safeFind(`ConquestFlagHudLabelShadowInner_${pid}_${i}`);
-            const labelShadowInnerDeep = slotLabelShadowsInnerDeep[i] ?? safeFind(`ConquestFlagHudLabelShadowInnerDeep_${pid}_${i}`);
+            const labelShadowUpLeft =
+                slotLabelShadowsUpLeft[i] ?? safeFind(`ConquestFlagHudLabelShadowUpLeft_${pid}_${i}`);
+            const labelShadowUpRight =
+                slotLabelShadowsUpRight[i] ?? safeFind(`ConquestFlagHudLabelShadowUpRight_${pid}_${i}`);
+            const labelShadowDownRight =
+                slotLabelShadowsDownRight[i] ?? safeFind(`ConquestFlagHudLabelShadowDownRight_${pid}_${i}`);
+            const labelShadowDownLeft =
+                slotLabelShadowsDownLeft[i] ?? safeFind(`ConquestFlagHudLabelShadowDownLeft_${pid}_${i}`);
+            const labelShadowInner =
+                slotLabelShadowsInner[i] ?? safeFind(`ConquestFlagHudLabelShadowInner_${pid}_${i}`);
+            const labelShadowInnerDeep =
+                slotLabelShadowsInnerDeep[i] ?? safeFind(`ConquestFlagHudLabelShadowInnerDeep_${pid}_${i}`);
             const label = slotLabels[i] ?? safeFind(`ConquestFlagHudLabel_${pid}_${i}`);
             const percentRoot = slotPercentRoots[i] ?? safeFind(`ConquestFlagHudPercentRoot_${pid}_${i}`);
-            const percentShadowRight = slotPercentShadowsRight[i] ?? safeFind(`ConquestFlagHudPercentShadowRight_${pid}_${i}`);
-            const percentShadowLeft = slotPercentShadowsLeft[i] ?? safeFind(`ConquestFlagHudPercentShadowLeft_${pid}_${i}`);
+            const percentShadowRight =
+                slotPercentShadowsRight[i] ?? safeFind(`ConquestFlagHudPercentShadowRight_${pid}_${i}`);
+            const percentShadowLeft =
+                slotPercentShadowsLeft[i] ?? safeFind(`ConquestFlagHudPercentShadowLeft_${pid}_${i}`);
             const percentShadowUp = slotPercentShadowsUp[i] ?? safeFind(`ConquestFlagHudPercentShadowUp_${pid}_${i}`);
-            const percentShadowDown = slotPercentShadowsDown[i] ?? safeFind(`ConquestFlagHudPercentShadowDown_${pid}_${i}`);
-            const percentShadowUpLeft = slotPercentShadowsUpLeft[i] ?? safeFind(`ConquestFlagHudPercentShadowUpLeft_${pid}_${i}`);
-            const percentShadowUpRight = slotPercentShadowsUpRight[i] ?? safeFind(`ConquestFlagHudPercentShadowUpRight_${pid}_${i}`);
-            const percentShadowDownRight = slotPercentShadowsDownRight[i] ?? safeFind(`ConquestFlagHudPercentShadowDownRight_${pid}_${i}`);
-            const percentShadowDownLeft = slotPercentShadowsDownLeft[i] ?? safeFind(`ConquestFlagHudPercentShadowDownLeft_${pid}_${i}`);
-            const percentShadowInner = slotPercentShadowsInner[i] ?? safeFind(`ConquestFlagHudPercentShadowInner_${pid}_${i}`);
+            const percentShadowDown =
+                slotPercentShadowsDown[i] ?? safeFind(`ConquestFlagHudPercentShadowDown_${pid}_${i}`);
+            const percentShadowUpLeft =
+                slotPercentShadowsUpLeft[i] ?? safeFind(`ConquestFlagHudPercentShadowUpLeft_${pid}_${i}`);
+            const percentShadowUpRight =
+                slotPercentShadowsUpRight[i] ?? safeFind(`ConquestFlagHudPercentShadowUpRight_${pid}_${i}`);
+            const percentShadowDownRight =
+                slotPercentShadowsDownRight[i] ?? safeFind(`ConquestFlagHudPercentShadowDownRight_${pid}_${i}`);
+            const percentShadowDownLeft =
+                slotPercentShadowsDownLeft[i] ?? safeFind(`ConquestFlagHudPercentShadowDownLeft_${pid}_${i}`);
+            const percentShadowInner =
+                slotPercentShadowsInner[i] ?? safeFind(`ConquestFlagHudPercentShadowInner_${pid}_${i}`);
             const percentText = slotPercentTexts[i] ?? safeFind(`ConquestFlagHudPercentText_${pid}_${i}`);
-            const slotAbsX = CONQUEST_FLAGS_SLOT_ABS_X[i] ?? (840.50 + (i * 35.0));
+            const slotAbsX = CONQUEST_FLAGS_SLOT_ABS_X[i] ?? 840.5 + i * 35.0;
             if (slot) {
                 try {
                     mod.SetUIWidgetAnchor(slot, mod.UIAnchor.TopLeft);
@@ -390,74 +510,196 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 }
                 mod.SetUIWidgetParent(slot, flagsParent);
                 mod.SetUIWidgetPosition(slot, mod.CreateVector(slotAbsX, CONQUEST_FLAGS_SLOT_ABS_Y, 0));
-                mod.SetUIWidgetSize(slot, mod.CreateVector(CONQUEST_HUD_FLAG_SLOT_WIDTH, CONQUEST_HUD_FLAG_SLOT_HEIGHT, 0));
+                mod.SetUIWidgetSize(
+                    slot,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_SLOT_WIDTH, CONQUEST_HUD_FLAG_SLOT_HEIGHT, 0)
+                );
             }
             if (fill && slot) {
                 mod.SetUIWidgetParent(fill, slot);
                 if (resetDynamicFillGeometry) {
-                    mod.SetUIWidgetPosition(fill, mod.CreateVector(CONQUEST_HUD_FLAG_FILL_INSET_X, CONQUEST_HUD_FLAG_FILL_INSET_Y, 0));
-                    mod.SetUIWidgetSize(fill, mod.CreateVector(CONQUEST_HUD_FLAG_FILL_MAX_WIDTH, CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT, 0));
+                    mod.SetUIWidgetPosition(
+                        fill,
+                        mod.CreateVector(CONQUEST_HUD_FLAG_FILL_INSET_X, CONQUEST_HUD_FLAG_FILL_INSET_Y, 0)
+                    );
+                    mod.SetUIWidgetSize(
+                        fill,
+                        mod.CreateVector(CONQUEST_HUD_FLAG_FILL_MAX_WIDTH, CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT, 0)
+                    );
                 }
             }
             if (border && slot) {
                 mod.SetUIWidgetParent(border, slot);
                 mod.SetUIWidgetPosition(border, mod.CreateVector(0, 0, 0));
-                mod.SetUIWidgetSize(border, mod.CreateVector(CONQUEST_HUD_FLAG_SLOT_WIDTH, CONQUEST_HUD_FLAG_SLOT_HEIGHT, 0));
+                mod.SetUIWidgetSize(
+                    border,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_SLOT_WIDTH, CONQUEST_HUD_FLAG_SLOT_HEIGHT, 0)
+                );
             }
             if (labelShadowRight && slot) {
                 mod.SetUIWidgetParent(labelShadowRight, slot);
-                mod.SetUIWidgetPosition(labelShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(labelShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowRight,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowRight,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
             }
             if (labelShadowLeft && slot) {
                 mod.SetUIWidgetParent(labelShadowLeft, slot);
-                mod.SetUIWidgetPosition(labelShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(labelShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowLeft,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowLeft,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
             }
             if (labelShadowUp && slot) {
                 mod.SetUIWidgetParent(labelShadowUp, slot);
-                mod.SetUIWidgetPosition(labelShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowUp,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowUp,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
             }
             if (labelShadowDown && slot) {
                 mod.SetUIWidgetParent(labelShadowDown, slot);
-                mod.SetUIWidgetPosition(labelShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowDown,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowDown,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
             }
             if (labelShadowUpLeft && slot) {
                 mod.SetUIWidgetParent(labelShadowUpLeft, slot);
-                mod.SetUIWidgetPosition(labelShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowUpLeft,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowUpLeft,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
             }
             if (labelShadowUpRight && slot) {
                 mod.SetUIWidgetParent(labelShadowUpRight, slot);
-                mod.SetUIWidgetPosition(labelShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowUpRight,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowUpRight,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
             }
             if (labelShadowDownRight && slot) {
                 mod.SetUIWidgetParent(labelShadowDownRight, slot);
-                mod.SetUIWidgetPosition(labelShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowDownRight,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowDownRight,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
             }
             if (labelShadowDownLeft && slot) {
                 mod.SetUIWidgetParent(labelShadowDownLeft, slot);
-                mod.SetUIWidgetPosition(labelShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowDownLeft,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowDownLeft,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
             }
             if (labelShadowInner && slot) {
                 mod.SetUIWidgetParent(labelShadowInner, slot);
-                mod.SetUIWidgetPosition(labelShadowInner, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(labelShadowInner, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowInner,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowInner,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
             }
             if (labelShadowInnerDeep && slot) {
                 mod.SetUIWidgetParent(labelShadowInnerDeep, slot);
-                mod.SetUIWidgetPosition(labelShadowInnerDeep, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(labelShadowInnerDeep, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowInnerDeep,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowInnerDeep,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
             }
             if (label && slot) {
                 mod.SetUIWidgetParent(label, slot);
-                mod.SetUIWidgetPosition(label, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(label, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    label,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    label,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
             }
             if (percentRoot) {
                 try {
@@ -466,77 +708,206 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     // Best-effort anchor normalization only.
                 }
                 mod.SetUIWidgetParent(percentRoot, flagsParent);
-                mod.SetUIWidgetPosition(percentRoot, mod.CreateVector(slotAbsX + CONQUEST_HUD_FLAG_PERCENT_OFFSET_X, CONQUEST_FLAGS_SLOT_ABS_Y + CONQUEST_HUD_FLAG_PERCENT_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(percentRoot, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_ROOT_WIDTH, CONQUEST_HUD_FLAG_PERCENT_ROOT_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentRoot,
+                    mod.CreateVector(
+                        slotAbsX + CONQUEST_HUD_FLAG_PERCENT_OFFSET_X,
+                        CONQUEST_FLAGS_SLOT_ABS_Y + CONQUEST_HUD_FLAG_PERCENT_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentRoot,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_ROOT_WIDTH, CONQUEST_HUD_FLAG_PERCENT_ROOT_HEIGHT, 0)
+                );
             }
             if (percentShadowRight && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowRight, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(percentShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowRight,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowRight,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
             }
             if (percentShadowLeft && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowLeft, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(percentShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowLeft,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowLeft,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
             }
             if (percentShadowUp && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowUp, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowUp,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowUp,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
             }
             if (percentShadowDown && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowDown, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowDown,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowDown,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
             }
             if (percentShadowUpLeft && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowUpLeft, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowUpLeft,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowUpLeft,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
             }
             if (percentShadowUpRight && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowUpRight, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowUpRight,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowUpRight,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
             }
             if (percentShadowDownRight && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowDownRight, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowDownRight,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowDownRight,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
             }
             if (percentShadowDownLeft && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowDownLeft, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowDownLeft,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowDownLeft,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
             }
             if (percentShadowInner && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowInner, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowInner, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(percentShadowInner, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowInner,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowInner,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
             }
             if (percentText && percentRoot) {
                 mod.SetUIWidgetParent(percentText, percentRoot);
-                mod.SetUIWidgetPosition(percentText, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(percentText, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentText,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentText,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
             }
         }
 
         const engageRoot = refsForPid?.conquestFlagsEngageRoot ?? safeFind(`ConquestFlagHudEngageRoot_${pid}`);
         const engageTrack = refsForPid?.conquestFlagsEngageTrack ?? safeFind(`ConquestFlagHudEngageTrack_${pid}`);
-        const engageFriendlyFill = refsForPid?.conquestFlagsEngageFriendlyFill ?? safeFind(`ConquestFlagHudEngageFriendlyFill_${pid}`);
-        const engageEnemyFill = refsForPid?.conquestFlagsEngageEnemyFill ?? safeFind(`ConquestFlagHudEngageEnemyFill_${pid}`);
-        const engageFriendlyCountBg = refsForPid?.conquestFlagsEngageFriendlyCountBg ?? safeFind(`ConquestFlagHudEngageFriendlyCountBg_${pid}`);
-        const engageEnemyCountBg = refsForPid?.conquestFlagsEngageEnemyCountBg ?? safeFind(`ConquestFlagHudEngageEnemyCountBg_${pid}`);
-        const engageFriendlyCount = refsForPid?.conquestFlagsEngageFriendlyCount ?? safeFind(`ConquestFlagHudEngageFriendlyCount_${pid}`);
-        const engageEnemyCount = refsForPid?.conquestFlagsEngageEnemyCount ?? safeFind(`ConquestFlagHudEngageEnemyCount_${pid}`);
-        const engageStatusShadowRight = refsForPid?.conquestFlagsEngageStatusShadowRight ?? safeFind(`ConquestFlagHudEngageStatusShadowRight_${pid}`);
-        const engageStatusShadowLeft = refsForPid?.conquestFlagsEngageStatusShadowLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowLeft_${pid}`);
-        const engageStatusShadowUp = refsForPid?.conquestFlagsEngageStatusShadowUp ?? safeFind(`ConquestFlagHudEngageStatusShadowUp_${pid}`);
-        const engageStatusShadowDown = refsForPid?.conquestFlagsEngageStatusShadowDown ?? safeFind(`ConquestFlagHudEngageStatusShadowDown_${pid}`);
-        const engageStatusShadowUpLeft = refsForPid?.conquestFlagsEngageStatusShadowUpLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowUpLeft_${pid}`);
-        const engageStatusShadowUpRight = refsForPid?.conquestFlagsEngageStatusShadowUpRight ?? safeFind(`ConquestFlagHudEngageStatusShadowUpRight_${pid}`);
-        const engageStatusShadowDownRight = refsForPid?.conquestFlagsEngageStatusShadowDownRight ?? safeFind(`ConquestFlagHudEngageStatusShadowDownRight_${pid}`);
-        const engageStatusShadowDownLeft = refsForPid?.conquestFlagsEngageStatusShadowDownLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowDownLeft_${pid}`);
+        const engageFriendlyFill =
+            refsForPid?.conquestFlagsEngageFriendlyFill ?? safeFind(`ConquestFlagHudEngageFriendlyFill_${pid}`);
+        const engageEnemyFill =
+            refsForPid?.conquestFlagsEngageEnemyFill ?? safeFind(`ConquestFlagHudEngageEnemyFill_${pid}`);
+        const engageFriendlyCountBg =
+            refsForPid?.conquestFlagsEngageFriendlyCountBg ?? safeFind(`ConquestFlagHudEngageFriendlyCountBg_${pid}`);
+        const engageEnemyCountBg =
+            refsForPid?.conquestFlagsEngageEnemyCountBg ?? safeFind(`ConquestFlagHudEngageEnemyCountBg_${pid}`);
+        const engageFriendlyCount =
+            refsForPid?.conquestFlagsEngageFriendlyCount ?? safeFind(`ConquestFlagHudEngageFriendlyCount_${pid}`);
+        const engageEnemyCount =
+            refsForPid?.conquestFlagsEngageEnemyCount ?? safeFind(`ConquestFlagHudEngageEnemyCount_${pid}`);
+        const engageStatusShadowRight =
+            refsForPid?.conquestFlagsEngageStatusShadowRight ??
+            safeFind(`ConquestFlagHudEngageStatusShadowRight_${pid}`);
+        const engageStatusShadowLeft =
+            refsForPid?.conquestFlagsEngageStatusShadowLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowLeft_${pid}`);
+        const engageStatusShadowUp =
+            refsForPid?.conquestFlagsEngageStatusShadowUp ?? safeFind(`ConquestFlagHudEngageStatusShadowUp_${pid}`);
+        const engageStatusShadowDown =
+            refsForPid?.conquestFlagsEngageStatusShadowDown ?? safeFind(`ConquestFlagHudEngageStatusShadowDown_${pid}`);
+        const engageStatusShadowUpLeft =
+            refsForPid?.conquestFlagsEngageStatusShadowUpLeft ??
+            safeFind(`ConquestFlagHudEngageStatusShadowUpLeft_${pid}`);
+        const engageStatusShadowUpRight =
+            refsForPid?.conquestFlagsEngageStatusShadowUpRight ??
+            safeFind(`ConquestFlagHudEngageStatusShadowUpRight_${pid}`);
+        const engageStatusShadowDownRight =
+            refsForPid?.conquestFlagsEngageStatusShadowDownRight ??
+            safeFind(`ConquestFlagHudEngageStatusShadowDownRight_${pid}`);
+        const engageStatusShadowDownLeft =
+            refsForPid?.conquestFlagsEngageStatusShadowDownLeft ??
+            safeFind(`ConquestFlagHudEngageStatusShadowDownLeft_${pid}`);
         const engageStatus = refsForPid?.conquestFlagsEngageStatus ?? safeFind(`ConquestFlagHudEngageStatus_${pid}`);
         if (engageRoot) {
             try {
@@ -545,8 +916,14 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 // Best-effort anchor normalization only.
             }
             mod.SetUIWidgetParent(engageRoot, flagsParent);
-            mod.SetUIWidgetPosition(engageRoot, mod.CreateVector(CONQUEST_FLAGS_ENGAGE_ABS_X, CONQUEST_FLAGS_ENGAGE_ABS_Y, 0));
-            mod.SetUIWidgetSize(engageRoot, mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_ROOT_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_ROOT_HEIGHT, 0));
+            mod.SetUIWidgetPosition(
+                engageRoot,
+                mod.CreateVector(CONQUEST_FLAGS_ENGAGE_ABS_X, CONQUEST_FLAGS_ENGAGE_ABS_Y, 0)
+            );
+            mod.SetUIWidgetSize(
+                engageRoot,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_ROOT_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_ROOT_HEIGHT, 0)
+            );
         }
         if (engageTrack && engageRoot) {
             mod.SetUIWidgetParent(engageTrack, engageRoot);
@@ -565,7 +942,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             if (resetDynamicFillGeometry) {
                 mod.SetUIWidgetSize(
                     engageFriendlyFill,
-                    mod.CreateVector(Math.floor(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH / 2), CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT, 0)
+                    mod.CreateVector(
+                        Math.floor(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH / 2),
+                        CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT,
+                        0
+                    )
                 );
             }
         }
@@ -576,7 +957,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 mod.SetUIWidgetPosition(engageEnemyFill, mod.CreateVector(halfTrack, 0, 0));
                 mod.SetUIWidgetSize(
                     engageEnemyFill,
-                    mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH - halfTrack, CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT, 0)
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH - halfTrack,
+                        CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT,
+                        0
+                    )
                 );
             }
         }
@@ -650,7 +1035,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetParent(engageStatusShadowUp, engageRoot);
             mod.SetUIWidgetPosition(
                 engageStatusShadowUp,
-                mod.CreateVector(0, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
+                mod.CreateVector(
+                    0,
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    0
+                )
             );
             mod.SetUIWidgetSize(
                 engageStatusShadowUp,
@@ -661,7 +1050,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetParent(engageStatusShadowDown, engageRoot);
             mod.SetUIWidgetPosition(
                 engageStatusShadowDown,
-                mod.CreateVector(0, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
+                mod.CreateVector(
+                    0,
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    0
+                )
             );
             mod.SetUIWidgetSize(
                 engageStatusShadowDown,
@@ -672,7 +1065,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetParent(engageStatusShadowUpLeft, engageRoot);
             mod.SetUIWidgetPosition(
                 engageStatusShadowUpLeft,
-                mod.CreateVector(-CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
+                mod.CreateVector(
+                    -CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    0
+                )
             );
             mod.SetUIWidgetSize(
                 engageStatusShadowUpLeft,
@@ -683,7 +1080,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetParent(engageStatusShadowUpRight, engageRoot);
             mod.SetUIWidgetPosition(
                 engageStatusShadowUpRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    0
+                )
             );
             mod.SetUIWidgetSize(
                 engageStatusShadowUpRight,
@@ -694,7 +1095,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetParent(engageStatusShadowDownRight, engageRoot);
             mod.SetUIWidgetPosition(
                 engageStatusShadowDownRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    0
+                )
             );
             mod.SetUIWidgetSize(
                 engageStatusShadowDownRight,
@@ -705,7 +1110,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetParent(engageStatusShadowDownLeft, engageRoot);
             mod.SetUIWidgetPosition(
                 engageStatusShadowDownLeft,
-                mod.CreateVector(-CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
+                mod.CreateVector(
+                    -CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    0
+                )
             );
             mod.SetUIWidgetSize(
                 engageStatusShadowDownLeft,
@@ -730,7 +1139,10 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const hasCachedHudRefs = Object.prototype.hasOwnProperty.call(State.hudCache.hudByPid, pid);
     let cached: HudRefs | undefined = hasCachedHudRefs ? State.hudCache.hudByPid[pid] : undefined;
     const CONQUEST_HUD_SCHEMA_VERSION = 2;
-    const conquestHudSchemaByPid = ((State.conquest.debug as any).hudSchemaVersionByPid ??= {}) as Record<number, number>;
+    const conquestHudSchemaByPid = ((State.conquest.debug as any).hudSchemaVersionByPid ??= {}) as Record<
+        number,
+        number
+    >;
     if (conquestHudSchemaByPid[pid] !== CONQUEST_HUD_SCHEMA_VERSION) {
         // Force one clean rebuild when HUD schema changes to purge stale duplicate widgets.
         delete State.hudCache.hudByPid[pid];
@@ -853,13 +1265,22 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         ensureTopHudRootForPid(pid, player);
         const helpContainer = safeFind(`Container_HelpText_${pid}`);
         if (helpContainer) {
-            mod.SetUIWidgetPosition(helpContainer, mod.CreateVector(CONQUEST_HELP_CONTAINER_X, CONQUEST_HELP_CONTAINER_Y, 0));
-            mod.SetUIWidgetSize(helpContainer, mod.CreateVector(CONQUEST_HELP_CONTAINER_WIDTH, CONQUEST_HELP_CONTAINER_HEIGHT, 0));
+            mod.SetUIWidgetPosition(
+                helpContainer,
+                mod.CreateVector(CONQUEST_HELP_CONTAINER_X, CONQUEST_HELP_CONTAINER_Y, 0)
+            );
+            mod.SetUIWidgetSize(
+                helpContainer,
+                mod.CreateVector(CONQUEST_HELP_CONTAINER_WIDTH, CONQUEST_HELP_CONTAINER_HEIGHT, 0)
+            );
         }
         const helpText = safeFind(`HelpText_${pid}`);
         if (helpText) {
             mod.SetUIWidgetPosition(helpText, mod.CreateVector(0, CONQUEST_HELP_TEXT_OFFSET_Y, 0));
-            mod.SetUIWidgetSize(helpText, mod.CreateVector(CONQUEST_HELP_CONTAINER_WIDTH, CONQUEST_HELP_TEXT_HEIGHT, 0));
+            mod.SetUIWidgetSize(
+                helpText,
+                mod.CreateVector(CONQUEST_HELP_CONTAINER_WIDTH, CONQUEST_HELP_TEXT_HEIGHT, 0)
+            );
         }
         const readyContainer = safeFind(`Container_ReadyStatus_${pid}`);
         if (readyContainer) {
@@ -871,13 +1292,19 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             }
             mod.SetUIWidgetParent(readyContainer, topHudRoot);
             mod.SetUIWidgetPosition(readyContainer, mod.CreateVector(CONQUEST_READY_ABS_X, CONQUEST_READY_ABS_Y, 0));
-            mod.SetUIWidgetSize(readyContainer, mod.CreateVector(CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_CONTAINER_HEIGHT, 0));
+            mod.SetUIWidgetSize(
+                readyContainer,
+                mod.CreateVector(CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_CONTAINER_HEIGHT, 0)
+            );
         }
         const readyText = safeFind(`ReadyStatusText_${pid}`);
         if (readyText && readyContainer) {
             mod.SetUIWidgetParent(readyText, readyContainer);
             mod.SetUIWidgetPosition(readyText, mod.CreateVector(0, CONQUEST_READY_TEXT_OFFSET_Y, 0));
-            mod.SetUIWidgetSize(readyText, mod.CreateVector(CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_TEXT_HEIGHT, 0));
+            mod.SetUIWidgetSize(
+                readyText,
+                mod.CreateVector(CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_TEXT_HEIGHT, 0)
+            );
         }
         const adminActionCounter = safeFind(`AdminPanelActionCount_${pid}`);
         if (adminActionCounter) {
@@ -897,39 +1324,68 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         updateSettingsSummaryHudForPid(pid);
         // Keep cached refs stable once established.
         // Re-binding from global name lookups each tick can target stale duplicates and cause color/overlay drift.
-        cached.conquestTicketsDebugLeftBarTrack = cached.conquestTicketsDebugLeftBarTrack ?? safeFind(`ConquestTicketsHudLeftBarTrack_${pid}`);
-        cached.conquestTicketsDebugLeftBarFill = cached.conquestTicketsDebugLeftBarFill ?? safeFind(`ConquestTicketsHudLeftBarFill_${pid}`);
-        cached.conquestTicketsDebugRightBarTrack = cached.conquestTicketsDebugRightBarTrack ?? safeFind(`ConquestTicketsHudRightBarTrack_${pid}`);
-        cached.conquestTicketsDebugRightBarFill = cached.conquestTicketsDebugRightBarFill ?? safeFind(`ConquestTicketsHudRightBarFill_${pid}`);
-        cached.conquestTicketsLeadLeftBorder = cached.conquestTicketsLeadLeftBorder ?? safeFind(`ConquestTicketsHudLeadBorderLeft_${pid}`);
-        cached.conquestTicketsLeadRightBorder = cached.conquestTicketsLeadRightBorder ?? safeFind(`ConquestTicketsHudLeadBorderRight_${pid}`);
-        cached.conquestTicketsLeadLeftCrown = cached.conquestTicketsLeadLeftCrown ?? safeFind(`ConquestTicketsHudLeadCrownLeft_${pid}`);
-        cached.conquestTicketsLeadRightCrown = cached.conquestTicketsLeadRightCrown ?? safeFind(`ConquestTicketsHudLeadCrownRight_${pid}`);
+        cached.conquestTicketsDebugLeftBarTrack =
+            cached.conquestTicketsDebugLeftBarTrack ?? safeFind(`ConquestTicketsHudLeftBarTrack_${pid}`);
+        cached.conquestTicketsDebugLeftBarFill =
+            cached.conquestTicketsDebugLeftBarFill ?? safeFind(`ConquestTicketsHudLeftBarFill_${pid}`);
+        cached.conquestTicketsDebugRightBarTrack =
+            cached.conquestTicketsDebugRightBarTrack ?? safeFind(`ConquestTicketsHudRightBarTrack_${pid}`);
+        cached.conquestTicketsDebugRightBarFill =
+            cached.conquestTicketsDebugRightBarFill ?? safeFind(`ConquestTicketsHudRightBarFill_${pid}`);
+        cached.conquestTicketsLeadLeftBorder =
+            cached.conquestTicketsLeadLeftBorder ?? safeFind(`ConquestTicketsHudLeadBorderLeft_${pid}`);
+        cached.conquestTicketsLeadRightBorder =
+            cached.conquestTicketsLeadRightBorder ?? safeFind(`ConquestTicketsHudLeadBorderRight_${pid}`);
+        cached.conquestTicketsLeadLeftCrown =
+            cached.conquestTicketsLeadLeftCrown ?? safeFind(`ConquestTicketsHudLeadCrownLeft_${pid}`);
+        cached.conquestTicketsLeadRightCrown =
+            cached.conquestTicketsLeadRightCrown ?? safeFind(`ConquestTicketsHudLeadCrownRight_${pid}`);
         if (!cached.conquestTicketsBleedLeftChevrons) cached.conquestTicketsBleedLeftChevrons = [];
         if (!cached.conquestTicketsBleedRightChevrons) cached.conquestTicketsBleedRightChevrons = [];
         for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
-            cached.conquestTicketsBleedLeftChevrons[chevronIndex] = cached.conquestTicketsBleedLeftChevrons[chevronIndex]
-                ?? safeFind(`ConquestTicketsHudBleedChevronLeft${chevronIndex + 1}_${pid}`);
-            cached.conquestTicketsBleedRightChevrons[chevronIndex] = cached.conquestTicketsBleedRightChevrons[chevronIndex]
-                ?? safeFind(`ConquestTicketsHudBleedChevronRight${chevronIndex + 1}_${pid}`);
+            cached.conquestTicketsBleedLeftChevrons[chevronIndex] =
+                cached.conquestTicketsBleedLeftChevrons[chevronIndex] ??
+                safeFind(`ConquestTicketsHudBleedChevronLeft${chevronIndex + 1}_${pid}`);
+            cached.conquestTicketsBleedRightChevrons[chevronIndex] =
+                cached.conquestTicketsBleedRightChevrons[chevronIndex] ??
+                safeFind(`ConquestTicketsHudBleedChevronRight${chevronIndex + 1}_${pid}`);
         }
         cached.conquestFlagsEngageRoot = cached.conquestFlagsEngageRoot ?? safeFind(`ConquestFlagHudEngageRoot_${pid}`);
-        cached.conquestFlagsEngageTrack = cached.conquestFlagsEngageTrack ?? safeFind(`ConquestFlagHudEngageTrack_${pid}`);
-        cached.conquestFlagsEngageFriendlyFill = cached.conquestFlagsEngageFriendlyFill ?? safeFind(`ConquestFlagHudEngageFriendlyFill_${pid}`);
-        cached.conquestFlagsEngageEnemyFill = cached.conquestFlagsEngageEnemyFill ?? safeFind(`ConquestFlagHudEngageEnemyFill_${pid}`);
-        cached.conquestFlagsEngageFriendlyCountBg = cached.conquestFlagsEngageFriendlyCountBg ?? safeFind(`ConquestFlagHudEngageFriendlyCountBg_${pid}`);
-        cached.conquestFlagsEngageEnemyCountBg = cached.conquestFlagsEngageEnemyCountBg ?? safeFind(`ConquestFlagHudEngageEnemyCountBg_${pid}`);
-        cached.conquestFlagsEngageFriendlyCount = cached.conquestFlagsEngageFriendlyCount ?? safeFind(`ConquestFlagHudEngageFriendlyCount_${pid}`);
-        cached.conquestFlagsEngageEnemyCount = cached.conquestFlagsEngageEnemyCount ?? safeFind(`ConquestFlagHudEngageEnemyCount_${pid}`);
-        cached.conquestFlagsEngageStatusShadowRight = cached.conquestFlagsEngageStatusShadowRight ?? safeFind(`ConquestFlagHudEngageStatusShadowRight_${pid}`);
-        cached.conquestFlagsEngageStatusShadowLeft = cached.conquestFlagsEngageStatusShadowLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowLeft_${pid}`);
-        cached.conquestFlagsEngageStatusShadowUp = cached.conquestFlagsEngageStatusShadowUp ?? safeFind(`ConquestFlagHudEngageStatusShadowUp_${pid}`);
-        cached.conquestFlagsEngageStatusShadowDown = cached.conquestFlagsEngageStatusShadowDown ?? safeFind(`ConquestFlagHudEngageStatusShadowDown_${pid}`);
-        cached.conquestFlagsEngageStatusShadowUpLeft = cached.conquestFlagsEngageStatusShadowUpLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowUpLeft_${pid}`);
-        cached.conquestFlagsEngageStatusShadowUpRight = cached.conquestFlagsEngageStatusShadowUpRight ?? safeFind(`ConquestFlagHudEngageStatusShadowUpRight_${pid}`);
-        cached.conquestFlagsEngageStatusShadowDownRight = cached.conquestFlagsEngageStatusShadowDownRight ?? safeFind(`ConquestFlagHudEngageStatusShadowDownRight_${pid}`);
-        cached.conquestFlagsEngageStatusShadowDownLeft = cached.conquestFlagsEngageStatusShadowDownLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowDownLeft_${pid}`);
-        cached.conquestFlagsEngageStatus = cached.conquestFlagsEngageStatus ?? safeFind(`ConquestFlagHudEngageStatus_${pid}`);
+        cached.conquestFlagsEngageTrack =
+            cached.conquestFlagsEngageTrack ?? safeFind(`ConquestFlagHudEngageTrack_${pid}`);
+        cached.conquestFlagsEngageFriendlyFill =
+            cached.conquestFlagsEngageFriendlyFill ?? safeFind(`ConquestFlagHudEngageFriendlyFill_${pid}`);
+        cached.conquestFlagsEngageEnemyFill =
+            cached.conquestFlagsEngageEnemyFill ?? safeFind(`ConquestFlagHudEngageEnemyFill_${pid}`);
+        cached.conquestFlagsEngageFriendlyCountBg =
+            cached.conquestFlagsEngageFriendlyCountBg ?? safeFind(`ConquestFlagHudEngageFriendlyCountBg_${pid}`);
+        cached.conquestFlagsEngageEnemyCountBg =
+            cached.conquestFlagsEngageEnemyCountBg ?? safeFind(`ConquestFlagHudEngageEnemyCountBg_${pid}`);
+        cached.conquestFlagsEngageFriendlyCount =
+            cached.conquestFlagsEngageFriendlyCount ?? safeFind(`ConquestFlagHudEngageFriendlyCount_${pid}`);
+        cached.conquestFlagsEngageEnemyCount =
+            cached.conquestFlagsEngageEnemyCount ?? safeFind(`ConquestFlagHudEngageEnemyCount_${pid}`);
+        cached.conquestFlagsEngageStatusShadowRight =
+            cached.conquestFlagsEngageStatusShadowRight ?? safeFind(`ConquestFlagHudEngageStatusShadowRight_${pid}`);
+        cached.conquestFlagsEngageStatusShadowLeft =
+            cached.conquestFlagsEngageStatusShadowLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowLeft_${pid}`);
+        cached.conquestFlagsEngageStatusShadowUp =
+            cached.conquestFlagsEngageStatusShadowUp ?? safeFind(`ConquestFlagHudEngageStatusShadowUp_${pid}`);
+        cached.conquestFlagsEngageStatusShadowDown =
+            cached.conquestFlagsEngageStatusShadowDown ?? safeFind(`ConquestFlagHudEngageStatusShadowDown_${pid}`);
+        cached.conquestFlagsEngageStatusShadowUpLeft =
+            cached.conquestFlagsEngageStatusShadowUpLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowUpLeft_${pid}`);
+        cached.conquestFlagsEngageStatusShadowUpRight =
+            cached.conquestFlagsEngageStatusShadowUpRight ??
+            safeFind(`ConquestFlagHudEngageStatusShadowUpRight_${pid}`);
+        cached.conquestFlagsEngageStatusShadowDownRight =
+            cached.conquestFlagsEngageStatusShadowDownRight ??
+            safeFind(`ConquestFlagHudEngageStatusShadowDownRight_${pid}`);
+        cached.conquestFlagsEngageStatusShadowDownLeft =
+            cached.conquestFlagsEngageStatusShadowDownLeft ??
+            safeFind(`ConquestFlagHudEngageStatusShadowDownLeft_${pid}`);
+        cached.conquestFlagsEngageStatus =
+            cached.conquestFlagsEngageStatus ?? safeFind(`ConquestFlagHudEngageStatus_${pid}`);
         if (!cached.conquestFlagsDebugSlotRoots) cached.conquestFlagsDebugSlotRoots = [];
         if (!cached.conquestFlagsDebugBorderRows) cached.conquestFlagsDebugBorderRows = [];
         if (!cached.conquestFlagsDebugFillRows) cached.conquestFlagsDebugFillRows = [];
@@ -951,36 +1407,81 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         if (!cached.conquestFlagsDebugPercentShadowDownRows) cached.conquestFlagsDebugPercentShadowDownRows = [];
         if (!cached.conquestFlagsDebugPercentShadowUpLeftRows) cached.conquestFlagsDebugPercentShadowUpLeftRows = [];
         if (!cached.conquestFlagsDebugPercentShadowUpRightRows) cached.conquestFlagsDebugPercentShadowUpRightRows = [];
-        if (!cached.conquestFlagsDebugPercentShadowDownRightRows) cached.conquestFlagsDebugPercentShadowDownRightRows = [];
-        if (!cached.conquestFlagsDebugPercentShadowDownLeftRows) cached.conquestFlagsDebugPercentShadowDownLeftRows = [];
+        if (!cached.conquestFlagsDebugPercentShadowDownRightRows)
+            cached.conquestFlagsDebugPercentShadowDownRightRows = [];
+        if (!cached.conquestFlagsDebugPercentShadowDownLeftRows)
+            cached.conquestFlagsDebugPercentShadowDownLeftRows = [];
         if (!cached.conquestFlagsDebugPercentShadowInnerRows) cached.conquestFlagsDebugPercentShadowInnerRows = [];
         if (!cached.conquestFlagsDebugPercentTextRows) cached.conquestFlagsDebugPercentTextRows = [];
         for (let i = 0; i < CONQUEST_FLAGS_MAX_ROWS; i++) {
-            cached.conquestFlagsDebugSlotRoots[i] = cached.conquestFlagsDebugSlotRoots[i] ?? safeFind(`ConquestFlagHudSlot_${pid}_${i}`);
-            cached.conquestFlagsDebugBorderRows[i] = cached.conquestFlagsDebugBorderRows[i] ?? safeFind(`ConquestFlagHudBorder_${pid}_${i}`);
-            cached.conquestFlagsDebugFillRows[i] = cached.conquestFlagsDebugFillRows[i] ?? safeFind(`ConquestFlagHudFill_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowRightRows[i] = cached.conquestFlagsDebugLabelShadowRightRows[i] ?? safeFind(`ConquestFlagHudLabelShadowRight_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowLeftRows[i] = cached.conquestFlagsDebugLabelShadowLeftRows[i] ?? safeFind(`ConquestFlagHudLabelShadowLeft_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowUpRows[i] = cached.conquestFlagsDebugLabelShadowUpRows[i] ?? safeFind(`ConquestFlagHudLabelShadowUp_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowDownRows[i] = cached.conquestFlagsDebugLabelShadowDownRows[i] ?? safeFind(`ConquestFlagHudLabelShadowDown_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowUpLeftRows[i] = cached.conquestFlagsDebugLabelShadowUpLeftRows[i] ?? safeFind(`ConquestFlagHudLabelShadowUpLeft_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowUpRightRows[i] = cached.conquestFlagsDebugLabelShadowUpRightRows[i] ?? safeFind(`ConquestFlagHudLabelShadowUpRight_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowDownRightRows[i] = cached.conquestFlagsDebugLabelShadowDownRightRows[i] ?? safeFind(`ConquestFlagHudLabelShadowDownRight_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowDownLeftRows[i] = cached.conquestFlagsDebugLabelShadowDownLeftRows[i] ?? safeFind(`ConquestFlagHudLabelShadowDownLeft_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowInnerRows[i] = cached.conquestFlagsDebugLabelShadowInnerRows[i] ?? safeFind(`ConquestFlagHudLabelShadowInner_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowInnerDeepRows[i] = cached.conquestFlagsDebugLabelShadowInnerDeepRows[i] ?? safeFind(`ConquestFlagHudLabelShadowInnerDeep_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelRows[i] = cached.conquestFlagsDebugLabelRows[i] ?? safeFind(`ConquestFlagHudLabel_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentRoots[i] = cached.conquestFlagsDebugPercentRoots[i] ?? safeFind(`ConquestFlagHudPercentRoot_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowRightRows[i] = cached.conquestFlagsDebugPercentShadowRightRows[i] ?? safeFind(`ConquestFlagHudPercentShadowRight_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowLeftRows[i] = cached.conquestFlagsDebugPercentShadowLeftRows[i] ?? safeFind(`ConquestFlagHudPercentShadowLeft_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowUpRows[i] = cached.conquestFlagsDebugPercentShadowUpRows[i] ?? safeFind(`ConquestFlagHudPercentShadowUp_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowDownRows[i] = cached.conquestFlagsDebugPercentShadowDownRows[i] ?? safeFind(`ConquestFlagHudPercentShadowDown_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowUpLeftRows[i] = cached.conquestFlagsDebugPercentShadowUpLeftRows[i] ?? safeFind(`ConquestFlagHudPercentShadowUpLeft_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowUpRightRows[i] = cached.conquestFlagsDebugPercentShadowUpRightRows[i] ?? safeFind(`ConquestFlagHudPercentShadowUpRight_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowDownRightRows[i] = cached.conquestFlagsDebugPercentShadowDownRightRows[i] ?? safeFind(`ConquestFlagHudPercentShadowDownRight_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowDownLeftRows[i] = cached.conquestFlagsDebugPercentShadowDownLeftRows[i] ?? safeFind(`ConquestFlagHudPercentShadowDownLeft_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowInnerRows[i] = cached.conquestFlagsDebugPercentShadowInnerRows[i] ?? safeFind(`ConquestFlagHudPercentShadowInner_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentTextRows[i] = cached.conquestFlagsDebugPercentTextRows[i] ?? safeFind(`ConquestFlagHudPercentText_${pid}_${i}`);
+            cached.conquestFlagsDebugSlotRoots[i] =
+                cached.conquestFlagsDebugSlotRoots[i] ?? safeFind(`ConquestFlagHudSlot_${pid}_${i}`);
+            cached.conquestFlagsDebugBorderRows[i] =
+                cached.conquestFlagsDebugBorderRows[i] ?? safeFind(`ConquestFlagHudBorder_${pid}_${i}`);
+            cached.conquestFlagsDebugFillRows[i] =
+                cached.conquestFlagsDebugFillRows[i] ?? safeFind(`ConquestFlagHudFill_${pid}_${i}`);
+            cached.conquestFlagsDebugLabelShadowRightRows[i] =
+                cached.conquestFlagsDebugLabelShadowRightRows[i] ??
+                safeFind(`ConquestFlagHudLabelShadowRight_${pid}_${i}`);
+            cached.conquestFlagsDebugLabelShadowLeftRows[i] =
+                cached.conquestFlagsDebugLabelShadowLeftRows[i] ??
+                safeFind(`ConquestFlagHudLabelShadowLeft_${pid}_${i}`);
+            cached.conquestFlagsDebugLabelShadowUpRows[i] =
+                cached.conquestFlagsDebugLabelShadowUpRows[i] ?? safeFind(`ConquestFlagHudLabelShadowUp_${pid}_${i}`);
+            cached.conquestFlagsDebugLabelShadowDownRows[i] =
+                cached.conquestFlagsDebugLabelShadowDownRows[i] ??
+                safeFind(`ConquestFlagHudLabelShadowDown_${pid}_${i}`);
+            cached.conquestFlagsDebugLabelShadowUpLeftRows[i] =
+                cached.conquestFlagsDebugLabelShadowUpLeftRows[i] ??
+                safeFind(`ConquestFlagHudLabelShadowUpLeft_${pid}_${i}`);
+            cached.conquestFlagsDebugLabelShadowUpRightRows[i] =
+                cached.conquestFlagsDebugLabelShadowUpRightRows[i] ??
+                safeFind(`ConquestFlagHudLabelShadowUpRight_${pid}_${i}`);
+            cached.conquestFlagsDebugLabelShadowDownRightRows[i] =
+                cached.conquestFlagsDebugLabelShadowDownRightRows[i] ??
+                safeFind(`ConquestFlagHudLabelShadowDownRight_${pid}_${i}`);
+            cached.conquestFlagsDebugLabelShadowDownLeftRows[i] =
+                cached.conquestFlagsDebugLabelShadowDownLeftRows[i] ??
+                safeFind(`ConquestFlagHudLabelShadowDownLeft_${pid}_${i}`);
+            cached.conquestFlagsDebugLabelShadowInnerRows[i] =
+                cached.conquestFlagsDebugLabelShadowInnerRows[i] ??
+                safeFind(`ConquestFlagHudLabelShadowInner_${pid}_${i}`);
+            cached.conquestFlagsDebugLabelShadowInnerDeepRows[i] =
+                cached.conquestFlagsDebugLabelShadowInnerDeepRows[i] ??
+                safeFind(`ConquestFlagHudLabelShadowInnerDeep_${pid}_${i}`);
+            cached.conquestFlagsDebugLabelRows[i] =
+                cached.conquestFlagsDebugLabelRows[i] ?? safeFind(`ConquestFlagHudLabel_${pid}_${i}`);
+            cached.conquestFlagsDebugPercentRoots[i] =
+                cached.conquestFlagsDebugPercentRoots[i] ?? safeFind(`ConquestFlagHudPercentRoot_${pid}_${i}`);
+            cached.conquestFlagsDebugPercentShadowRightRows[i] =
+                cached.conquestFlagsDebugPercentShadowRightRows[i] ??
+                safeFind(`ConquestFlagHudPercentShadowRight_${pid}_${i}`);
+            cached.conquestFlagsDebugPercentShadowLeftRows[i] =
+                cached.conquestFlagsDebugPercentShadowLeftRows[i] ??
+                safeFind(`ConquestFlagHudPercentShadowLeft_${pid}_${i}`);
+            cached.conquestFlagsDebugPercentShadowUpRows[i] =
+                cached.conquestFlagsDebugPercentShadowUpRows[i] ??
+                safeFind(`ConquestFlagHudPercentShadowUp_${pid}_${i}`);
+            cached.conquestFlagsDebugPercentShadowDownRows[i] =
+                cached.conquestFlagsDebugPercentShadowDownRows[i] ??
+                safeFind(`ConquestFlagHudPercentShadowDown_${pid}_${i}`);
+            cached.conquestFlagsDebugPercentShadowUpLeftRows[i] =
+                cached.conquestFlagsDebugPercentShadowUpLeftRows[i] ??
+                safeFind(`ConquestFlagHudPercentShadowUpLeft_${pid}_${i}`);
+            cached.conquestFlagsDebugPercentShadowUpRightRows[i] =
+                cached.conquestFlagsDebugPercentShadowUpRightRows[i] ??
+                safeFind(`ConquestFlagHudPercentShadowUpRight_${pid}_${i}`);
+            cached.conquestFlagsDebugPercentShadowDownRightRows[i] =
+                cached.conquestFlagsDebugPercentShadowDownRightRows[i] ??
+                safeFind(`ConquestFlagHudPercentShadowDownRight_${pid}_${i}`);
+            cached.conquestFlagsDebugPercentShadowDownLeftRows[i] =
+                cached.conquestFlagsDebugPercentShadowDownLeftRows[i] ??
+                safeFind(`ConquestFlagHudPercentShadowDownLeft_${pid}_${i}`);
+            cached.conquestFlagsDebugPercentShadowInnerRows[i] =
+                cached.conquestFlagsDebugPercentShadowInnerRows[i] ??
+                safeFind(`ConquestFlagHudPercentShadowInner_${pid}_${i}`);
+            cached.conquestFlagsDebugPercentTextRows[i] =
+                cached.conquestFlagsDebugPercentTextRows[i] ?? safeFind(`ConquestFlagHudPercentText_${pid}_${i}`);
         }
         applyConquestAbsoluteLayout(cached, false);
 
@@ -991,8 +1492,6 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
     //#endregion -------------------- HUD Build/Ensure Function Start --------------------
 
-
-
     //#region -------------------- HUD Build/Ensure - Upper-Left HUD --------------------
 
     // --- Static HUD: Upper-left small box ---
@@ -1000,7 +1499,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         const rootName = `Upper_Left_Container_${pid}`;
         const upperLeft = modlib.ParseUI({
             name: rootName,
-            type: "Container",
+            type: 'Container',
             playerId: player,
             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
             position: [5, 5 + TOP_HUD_OFFSET_Y],
@@ -1015,7 +1514,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // UI element: Upper_Left_Text_${pid}
                     name: `Upper_Left_Text_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [5, -5.5],
                     size: [200, 17],
@@ -1034,7 +1533,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // UI element: Upper_Left_Text_2_${pid}
                     name: `Upper_Left_Text_2_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [7.25, 12.5],
                     size: [200, 16.5],
@@ -1066,7 +1565,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
         const settingsSummary = modlib.ParseUI({
             name: `Upper_Left_Settings_${pid}`,
-            type: "Container",
+            type: 'Container',
             playerId: player,
             position: [SETTINGS_CONTAINER_X, SETTINGS_CONTAINER_Y],
             size: [SETTINGS_TEXT_WIDTH, SETTINGS_LINE_HEIGHT * 6],
@@ -1079,7 +1578,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             children: [
                 {
                     name: `Settings_GameMode_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [6, 0],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1095,7 +1594,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `Settings_Ceiling_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [6, SETTINGS_LINE_HEIGHT],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1103,7 +1602,10 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT, STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA),
+                    textLabel: mod.Message(
+                        STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT,
+                        STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA
+                    ),
                     textColor: SETTINGS_TEXT_COLOR,
                     textAlpha: 1,
                     textSize: SETTINGS_TEXT_SIZE,
@@ -1111,7 +1613,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `Settings_VehiclesT1_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [6, SETTINGS_LINE_HEIGHT * 2],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1131,7 +1633,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `Settings_VehiclesT2_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [6, SETTINGS_LINE_HEIGHT * 3],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1151,7 +1653,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `Settings_VehiclesMatchup_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [6, SETTINGS_LINE_HEIGHT * 4],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1167,7 +1669,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `Settings_Players_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [6, SETTINGS_LINE_HEIGHT * 5],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1187,8 +1689,6 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     }
 
     //#endregion ----------------- HUD Build/Ensure - Upper-Left HUD --------------------
-
-
 
     //#region -------------------- HUD Build/Ensure - Top-Center Panels --------------------
 
@@ -1211,7 +1711,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         const mid = modlib.ParseUI({
             // UI element: Container_TopMiddle_CoreUI_${pid}
             name: `Container_TopMiddle_CoreUI_${pid}`,
-            type: "Container",
+            type: 'Container',
             playerId: player,
             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
             position: [MID_PANEL_X, TOP_PANEL_Y],
@@ -1226,7 +1726,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // Help/instructions text shown when enabled for this player
                     name: `Container_HelpText_${pid}`,
-                    type: "Container",
+                    type: 'Container',
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [CONQUEST_HELP_CONTAINER_X, CONQUEST_HELP_CONTAINER_Y],
                     size: [CONQUEST_HELP_CONTAINER_WIDTH, CONQUEST_HELP_CONTAINER_HEIGHT],
@@ -1240,7 +1740,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                         {
                             // Help/instructions text shown when enabled for this player
                             name: `HelpText_${pid}`,
-                            type: "Text",
+                            type: 'Text',
                             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [0, CONQUEST_HELP_TEXT_OFFSET_Y],
                             size: [CONQUEST_HELP_CONTAINER_WIDTH, CONQUEST_HELP_TEXT_HEIGHT],
@@ -1261,7 +1761,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // Ready status text shown when the player is READY and the match is not live.
                     name: `Container_ReadyStatus_${pid}`,
-                    type: "Container",
+                    type: 'Container',
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [CONQUEST_READY_CONTAINER_X, CONQUEST_READY_CONTAINER_Y],
                     size: [CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_CONTAINER_HEIGHT],
@@ -1274,7 +1774,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                         {
                             // Ready status text shown when enabled for this player
                             name: `ReadyStatusText_${pid}`,
-                            type: "Text",
+                            type: 'Text',
                             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [0, CONQUEST_READY_TEXT_OFFSET_Y],
                             size: [CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_TEXT_HEIGHT],
@@ -1298,15 +1798,13 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
     //#endregion ----------------- HUD Build/Ensure - Top-Center Panels --------------------
 
-
-
     //#region -------------------- HUD Build/Ensure - Admin Action Counter --------------------
 
     {
         // Admin action audit counter (top-right)
         const auditCounter = modlib.ParseUI({
             name: `AdminPanelActionCount_${pid}`,
-            type: "Text",
+            type: 'Text',
             playerId: player,
             // position: [x, y] offset; increase X to move right, increase Y to move down
             position: [20, 22],
@@ -1330,7 +1828,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     {
         const conquestTickets = modlib.ParseUI({
             name: `ConquestTicketsHudRoot_${pid}`,
-            type: "Container",
+            type: 'Container',
             playerId: player,
             position: [CONQUEST_TICKETS_ROOT_X, CONQUEST_TICKETS_ROOT_Y],
             size: [CONQUEST_TICKETS_ROOT_WIDTH, CONQUEST_TICKETS_ROOT_HEIGHT],
@@ -1342,7 +1840,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             children: [
                 {
                     name: `ConquestTicketsHudLeftBarTrack_${pid}`,
-                    type: "Container",
+                    type: 'Container',
                     position: [CONQUEST_TICKETS_LEFT_BAR_X, CONQUEST_TICKETS_BAR_Y],
                     size: [CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1358,7 +1856,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     children: [
                         {
                             name: `ConquestTicketsHudLeftBarFill_${pid}`,
-                            type: "Container",
+                            type: 'Container',
                             position: [0, 0],
                             size: [CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT],
                             anchor: mod.UIAnchor.TopLeft,
@@ -1376,7 +1874,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestTicketsHudRightBarTrack_${pid}`,
-                    type: "Container",
+                    type: 'Container',
                     position: [CONQUEST_TICKETS_RIGHT_BAR_X, CONQUEST_TICKETS_BAR_Y],
                     size: [CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1392,7 +1890,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     children: [
                         {
                             name: `ConquestTicketsHudRightBarFill_${pid}`,
-                            type: "Container",
+                            type: 'Container',
                             position: [0, 0],
                             size: [CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT],
                             anchor: mod.UIAnchor.TopLeft,
@@ -1411,11 +1909,14 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // Lead border for the left ticket counter (shown only while this side leads).
                     name: `ConquestTicketsHudLeadBorderLeft_${pid}`,
-                    type: "Container",
-                    position: [CONQUEST_TICKETS_TEAM_LEFT_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW, CONQUEST_TICKETS_ROW_Y - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW],
+                    type: 'Container',
+                    position: [
+                        CONQUEST_TICKETS_TEAM_LEFT_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW,
+                        CONQUEST_TICKETS_ROW_Y - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW,
+                    ],
                     size: [
-                        CONQUEST_TICKETS_TEAM_WIDTH + (CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2),
-                        CONQUEST_TICKETS_TEAM_HEIGHT + (CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2),
+                        CONQUEST_TICKETS_TEAM_WIDTH + CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2,
+                        CONQUEST_TICKETS_TEAM_HEIGHT + CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2,
                     ],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: false,
@@ -1431,11 +1932,14 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // Lead border for the right ticket counter (shown only while this side leads).
                     name: `ConquestTicketsHudLeadBorderRight_${pid}`,
-                    type: "Container",
-                    position: [CONQUEST_TICKETS_TEAM_RIGHT_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW, CONQUEST_TICKETS_ROW_Y - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW],
+                    type: 'Container',
+                    position: [
+                        CONQUEST_TICKETS_TEAM_RIGHT_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW,
+                        CONQUEST_TICKETS_ROW_Y - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW,
+                    ],
                     size: [
-                        CONQUEST_TICKETS_TEAM_WIDTH + (CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2),
-                        CONQUEST_TICKETS_TEAM_HEIGHT + (CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2),
+                        CONQUEST_TICKETS_TEAM_WIDTH + CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2,
+                        CONQUEST_TICKETS_TEAM_HEIGHT + CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2,
                     ],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: false,
@@ -1451,9 +1955,10 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // Lead crown for the left ticket counter (shown only while this side leads).
                     name: `ConquestTicketsHudLeadCrownLeft_${pid}`,
-                    type: "Image",
+                    type: 'Image',
                     position: [
-                        CONQUEST_TICKETS_TEAM_LEFT_X + ((CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2),
+                        CONQUEST_TICKETS_TEAM_LEFT_X +
+                            (CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2,
                         -(CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE + CONQUEST_HUD_TICKET_LEAD_CROWN_GAP_Y),
                     ],
                     size: [CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE],
@@ -1473,9 +1978,10 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // Lead crown for the right ticket counter (shown only while this side leads).
                     name: `ConquestTicketsHudLeadCrownRight_${pid}`,
-                    type: "Image",
+                    type: 'Image',
                     position: [
-                        CONQUEST_TICKETS_TEAM_RIGHT_X + ((CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2),
+                        CONQUEST_TICKETS_TEAM_RIGHT_X +
+                            (CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2,
                         -(CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE + CONQUEST_HUD_TICKET_LEAD_CROWN_GAP_Y),
                     ],
                     size: [CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE],
@@ -1494,7 +2000,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestTicketsHudBleedChevronLeft1_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [CONQUEST_TICKETS_BLEED_LEFT_X, CONQUEST_TICKETS_BLEED_START_Y],
                     size: [CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1514,8 +2020,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestTicketsHudBleedChevronLeft2_${pid}`,
-                    type: "Text",
-                    position: [CONQUEST_TICKETS_BLEED_LEFT_X, CONQUEST_TICKETS_BLEED_START_Y + CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y],
+                    type: 'Text',
+                    position: [
+                        CONQUEST_TICKETS_BLEED_LEFT_X,
+                        CONQUEST_TICKETS_BLEED_START_Y + CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y,
+                    ],
                     size: [CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: false,
@@ -1534,8 +2043,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestTicketsHudBleedChevronLeft3_${pid}`,
-                    type: "Text",
-                    position: [CONQUEST_TICKETS_BLEED_LEFT_X, CONQUEST_TICKETS_BLEED_START_Y + (CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y * 2)],
+                    type: 'Text',
+                    position: [
+                        CONQUEST_TICKETS_BLEED_LEFT_X,
+                        CONQUEST_TICKETS_BLEED_START_Y + CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y * 2,
+                    ],
                     size: [CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: false,
@@ -1554,7 +2066,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestTicketsHudBleedChevronRight1_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [CONQUEST_TICKETS_BLEED_RIGHT_X, CONQUEST_TICKETS_BLEED_START_Y],
                     size: [CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1574,8 +2086,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestTicketsHudBleedChevronRight2_${pid}`,
-                    type: "Text",
-                    position: [CONQUEST_TICKETS_BLEED_RIGHT_X, CONQUEST_TICKETS_BLEED_START_Y + CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y],
+                    type: 'Text',
+                    position: [
+                        CONQUEST_TICKETS_BLEED_RIGHT_X,
+                        CONQUEST_TICKETS_BLEED_START_Y + CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y,
+                    ],
                     size: [CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: false,
@@ -1594,8 +2109,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestTicketsHudBleedChevronRight3_${pid}`,
-                    type: "Text",
-                    position: [CONQUEST_TICKETS_BLEED_RIGHT_X, CONQUEST_TICKETS_BLEED_START_Y + (CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y * 2)],
+                    type: 'Text',
+                    position: [
+                        CONQUEST_TICKETS_BLEED_RIGHT_X,
+                        CONQUEST_TICKETS_BLEED_START_Y + CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y * 2,
+                    ],
                     size: [CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: false,
@@ -1614,23 +2132,19 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestTicketsHudTeam1Container_${pid}`,
-                    type: "Container",
+                    type: 'Container',
                     position: [CONQUEST_TICKETS_TEAM_LEFT_X, CONQUEST_TICKETS_ROW_Y],
                     size: [CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: true,
                     padding: 0,
-                    bgColor: [
-                        CONQUEST_TICKETS_BG_RGB[0],
-                        CONQUEST_TICKETS_BG_RGB[1],
-                        CONQUEST_TICKETS_BG_RGB[2],
-                    ],
+                    bgColor: [CONQUEST_TICKETS_BG_RGB[0], CONQUEST_TICKETS_BG_RGB[1], CONQUEST_TICKETS_BG_RGB[2]],
                     bgAlpha: CONQUEST_TICKETS_BG_ALPHA,
                     bgFill: mod.UIBgFill.Blur,
                     children: [
                         {
                             name: `ConquestTicketsHudTeam1_${pid}`,
-                            type: "Text",
+                            type: 'Text',
                             position: [CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X, 0],
                             size: [CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT],
                             anchor: mod.UIAnchor.TopLeft,
@@ -1652,7 +2166,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestTicketsHudSlash_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [272, CONQUEST_TICKETS_ROW_Y],
                     size: [16, 24],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1672,23 +2186,19 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestTicketsHudTeam2Container_${pid}`,
-                    type: "Container",
+                    type: 'Container',
                     position: [CONQUEST_TICKETS_TEAM_RIGHT_X, CONQUEST_TICKETS_ROW_Y],
                     size: [CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: true,
                     padding: 0,
-                    bgColor: [
-                        CONQUEST_TICKETS_BG_RGB[0],
-                        CONQUEST_TICKETS_BG_RGB[1],
-                        CONQUEST_TICKETS_BG_RGB[2],
-                    ],
+                    bgColor: [CONQUEST_TICKETS_BG_RGB[0], CONQUEST_TICKETS_BG_RGB[1], CONQUEST_TICKETS_BG_RGB[2]],
                     bgAlpha: CONQUEST_TICKETS_BG_ALPHA,
                     bgFill: mod.UIBgFill.Blur,
                     children: [
                         {
                             name: `ConquestTicketsHudTeam2_${pid}`,
-                            type: "Text",
+                            type: 'Text',
                             position: [CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X, 0],
                             size: [CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT],
                             anchor: mod.UIAnchor.TopLeft,
@@ -1727,8 +2237,12 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     refs.conquestTicketsBleedLeftChevrons = [];
     refs.conquestTicketsBleedRightChevrons = [];
     for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
-        refs.conquestTicketsBleedLeftChevrons[chevronIndex] = safeFind(`ConquestTicketsHudBleedChevronLeft${chevronIndex + 1}_${pid}`);
-        refs.conquestTicketsBleedRightChevrons[chevronIndex] = safeFind(`ConquestTicketsHudBleedChevronRight${chevronIndex + 1}_${pid}`);
+        refs.conquestTicketsBleedLeftChevrons[chevronIndex] = safeFind(
+            `ConquestTicketsHudBleedChevronLeft${chevronIndex + 1}_${pid}`
+        );
+        refs.conquestTicketsBleedRightChevrons[chevronIndex] = safeFind(
+            `ConquestTicketsHudBleedChevronRight${chevronIndex + 1}_${pid}`
+        );
     }
     const conquestTicketsSlash = safeFind(`ConquestTicketsHudSlash_${pid}`);
     if (refs.conquestTicketsDebugRoot) {
@@ -1820,22 +2334,38 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetParent(refs.conquestTicketsLeadLeftBorder, refs.conquestTicketsDebugRoot);
             mod.SetUIWidgetPosition(
                 refs.conquestTicketsLeadLeftBorder,
-                mod.CreateVector(CONQUEST_TICKETS_TEAM_LEFT_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW, CONQUEST_TICKETS_ROW_Y - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW, 0)
+                mod.CreateVector(
+                    CONQUEST_TICKETS_TEAM_LEFT_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW,
+                    CONQUEST_TICKETS_ROW_Y - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW,
+                    0
+                )
             );
             mod.SetUIWidgetSize(
                 refs.conquestTicketsLeadLeftBorder,
-                mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH + (CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2), CONQUEST_TICKETS_TEAM_HEIGHT + (CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2), 0)
+                mod.CreateVector(
+                    CONQUEST_TICKETS_TEAM_WIDTH + CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2,
+                    CONQUEST_TICKETS_TEAM_HEIGHT + CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2,
+                    0
+                )
             );
         }
         if (refs.conquestTicketsLeadRightBorder) {
             mod.SetUIWidgetParent(refs.conquestTicketsLeadRightBorder, refs.conquestTicketsDebugRoot);
             mod.SetUIWidgetPosition(
                 refs.conquestTicketsLeadRightBorder,
-                mod.CreateVector(CONQUEST_TICKETS_TEAM_RIGHT_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW, CONQUEST_TICKETS_ROW_Y - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW, 0)
+                mod.CreateVector(
+                    CONQUEST_TICKETS_TEAM_RIGHT_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW,
+                    CONQUEST_TICKETS_ROW_Y - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW,
+                    0
+                )
             );
             mod.SetUIWidgetSize(
                 refs.conquestTicketsLeadRightBorder,
-                mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH + (CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2), CONQUEST_TICKETS_TEAM_HEIGHT + (CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2), 0)
+                mod.CreateVector(
+                    CONQUEST_TICKETS_TEAM_WIDTH + CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2,
+                    CONQUEST_TICKETS_TEAM_HEIGHT + CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2,
+                    0
+                )
             );
         }
         if (refs.conquestTicketsLeadLeftCrown) {
@@ -1843,7 +2373,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetPosition(
                 refs.conquestTicketsLeadLeftCrown,
                 mod.CreateVector(
-                    CONQUEST_TICKETS_TEAM_LEFT_X + ((CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2),
+                    CONQUEST_TICKETS_TEAM_LEFT_X +
+                        (CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2,
                     -(CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE + CONQUEST_HUD_TICKET_LEAD_CROWN_GAP_Y),
                     0
                 )
@@ -1858,7 +2389,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetPosition(
                 refs.conquestTicketsLeadRightCrown,
                 mod.CreateVector(
-                    CONQUEST_TICKETS_TEAM_RIGHT_X + ((CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2),
+                    CONQUEST_TICKETS_TEAM_RIGHT_X +
+                        (CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2,
                     -(CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE + CONQUEST_HUD_TICKET_LEAD_CROWN_GAP_Y),
                     0
                 )
@@ -1871,29 +2403,32 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         const leftBleedChevrons = refs.conquestTicketsBleedLeftChevrons ?? [];
         const rightBleedChevrons = refs.conquestTicketsBleedRightChevrons ?? [];
         for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
-            const rowOffsetY = CONQUEST_TICKETS_BLEED_START_Y + (chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y);
+            const rowOffsetY =
+                CONQUEST_TICKETS_BLEED_START_Y + chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y;
             const leftChevron = leftBleedChevrons[chevronIndex];
             if (leftChevron) {
                 mod.SetUIWidgetParent(leftChevron, refs.conquestTicketsDebugRoot);
-                mod.SetUIWidgetPosition(
-                    leftChevron,
-                    mod.CreateVector(CONQUEST_TICKETS_BLEED_LEFT_X, rowOffsetY, 0)
-                );
+                mod.SetUIWidgetPosition(leftChevron, mod.CreateVector(CONQUEST_TICKETS_BLEED_LEFT_X, rowOffsetY, 0));
                 mod.SetUIWidgetSize(
                     leftChevron,
-                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
+                    mod.CreateVector(
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH,
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT,
+                        0
+                    )
                 );
             }
             const rightChevron = rightBleedChevrons[chevronIndex];
             if (rightChevron) {
                 mod.SetUIWidgetParent(rightChevron, refs.conquestTicketsDebugRoot);
-                mod.SetUIWidgetPosition(
-                    rightChevron,
-                    mod.CreateVector(CONQUEST_TICKETS_BLEED_RIGHT_X, rowOffsetY, 0)
-                );
+                mod.SetUIWidgetPosition(rightChevron, mod.CreateVector(CONQUEST_TICKETS_BLEED_RIGHT_X, rowOffsetY, 0));
                 mod.SetUIWidgetSize(
                     rightChevron,
-                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
+                    mod.CreateVector(
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH,
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT,
+                        0
+                    )
                 );
             }
         }
@@ -1936,10 +2471,10 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         // Per-flag slot row: boxed letter indicators with in-box progress fill.
         const flagChildren: any[] = [];
         for (let i = 0; i < CONQUEST_FLAGS_MAX_ROWS; i++) {
-            const slotX = CONQUEST_FLAGS_SLOT_X[i] ?? (i * 35.0);
+            const slotX = CONQUEST_FLAGS_SLOT_X[i] ?? i * 35.0;
             flagChildren.push({
                 name: `ConquestFlagHudSlot_${pid}_${i}`,
-                type: "Container",
+                type: 'Container',
                 position: [slotX, 0],
                 size: [CONQUEST_HUD_FLAG_SLOT_WIDTH, CONQUEST_HUD_FLAG_SLOT_HEIGHT],
                 anchor: mod.UIAnchor.TopLeft,
@@ -1956,7 +2491,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 children: [
                     {
                         name: `ConquestFlagHudFill_${pid}_${i}`,
-                        type: "Container",
+                        type: 'Container',
                         position: [CONQUEST_HUD_FLAG_FILL_INSET_X, CONQUEST_HUD_FLAG_FILL_INSET_Y],
                         size: [CONQUEST_HUD_FLAG_FILL_MAX_WIDTH, CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
@@ -1972,8 +2507,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudLabelShadowRight_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y,
+                        ],
                         size: [CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: true,
@@ -1988,8 +2526,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudLabelShadowLeft_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y,
+                        ],
                         size: [CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: true,
@@ -2004,8 +2545,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudLabelShadowUp_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X,
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        ],
                         size: [CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: true,
@@ -2020,8 +2564,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudLabelShadowDown_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X,
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        ],
                         size: [CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: true,
@@ -2036,8 +2583,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudLabelShadowUpLeft_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        ],
                         size: [CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: true,
@@ -2052,8 +2602,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudLabelShadowUpRight_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        ],
                         size: [CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: true,
@@ -2068,8 +2621,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudLabelShadowDownRight_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        ],
                         size: [CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: true,
@@ -2084,8 +2640,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudLabelShadowDownLeft_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                            CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        ],
                         size: [CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: true,
@@ -2100,7 +2659,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudLabelShadowInner_${pid}_${i}`,
-                        type: "Text",
+                        type: 'Text',
                         position: [CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y],
                         size: [CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
@@ -2116,7 +2675,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudLabelShadowInnerDeep_${pid}_${i}`,
-                        type: "Text",
+                        type: 'Text',
                         position: [CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y],
                         size: [CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
@@ -2132,7 +2691,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudLabel_${pid}_${i}`,
-                        type: "Text",
+                        type: 'Text',
                         position: [CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y],
                         size: [CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
@@ -2155,24 +2714,23 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             flagChildren.push({
                 // Capture progress percentage row below each objective box.
                 name: `ConquestFlagHudPercentRoot_${pid}_${i}`,
-                type: "Container",
+                type: 'Container',
                 position: [slotX + CONQUEST_HUD_FLAG_PERCENT_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_OFFSET_Y],
                 size: [CONQUEST_HUD_FLAG_PERCENT_ROOT_WIDTH, CONQUEST_HUD_FLAG_PERCENT_ROOT_HEIGHT],
                 anchor: mod.UIAnchor.TopLeft,
                 visible: false,
                 padding: 0,
-                bgColor: [
-                    CONQUEST_TICKETS_BG_RGB[0],
-                    CONQUEST_TICKETS_BG_RGB[1],
-                    CONQUEST_TICKETS_BG_RGB[2],
-                ],
+                bgColor: [CONQUEST_TICKETS_BG_RGB[0], CONQUEST_TICKETS_BG_RGB[1], CONQUEST_TICKETS_BG_RGB[2]],
                 bgAlpha: CONQUEST_TICKETS_BG_ALPHA,
                 bgFill: mod.UIBgFill.Blur,
                 children: [
                     {
                         name: `ConquestFlagHudPercentShadowRight_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y,
+                        ],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -2187,8 +2745,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudPercentShadowLeft_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y,
+                        ],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -2203,8 +2764,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudPercentShadowUp_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X,
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        ],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -2219,8 +2783,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudPercentShadowDown_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X,
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        ],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -2235,8 +2802,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudPercentShadowUpLeft_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        ],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -2251,8 +2821,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudPercentShadowUpRight_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        ],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -2267,8 +2840,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudPercentShadowDownRight_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        ],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -2283,8 +2859,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudPercentShadowDownLeft_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        ],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -2299,8 +2878,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudPercentShadowInner_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X,
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y,
+                        ],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -2315,8 +2897,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     },
                     {
                         name: `ConquestFlagHudPercentText_${pid}_${i}`,
-                        type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y],
+                        type: 'Text',
+                        position: [
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X,
+                            CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y,
+                        ],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -2342,7 +2927,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         // - capture-state status text (Defend/Neutralizing/Contesting/Capturing)
         flagChildren.push({
             name: `ConquestFlagHudEngageRoot_${pid}`,
-            type: "Container",
+            type: 'Container',
             position: [0, 0],
             size: [CONQUEST_HUD_FLAG_ENGAGE_ROOT_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_ROOT_HEIGHT],
             anchor: mod.UIAnchor.TopLeft,
@@ -2353,7 +2938,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             children: [
                 {
                     name: `ConquestFlagHudEngageTrack_${pid}`,
-                    type: "Container",
+                    type: 'Container',
                     position: [CONQUEST_HUD_FLAG_ENGAGE_TRACK_X, CONQUEST_HUD_FLAG_ENGAGE_TRACK_Y],
                     size: [CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
@@ -2369,9 +2954,12 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     children: [
                         {
                             name: `ConquestFlagHudEngageFriendlyFill_${pid}`,
-                            type: "Container",
+                            type: 'Container',
                             position: [0, 0],
-                            size: [Math.floor(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH / 2), CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT],
+                            size: [
+                                Math.floor(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH / 2),
+                                CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT,
+                            ],
                             anchor: mod.UIAnchor.TopLeft,
                             visible: true,
                             padding: 0,
@@ -2385,9 +2973,13 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                         },
                         {
                             name: `ConquestFlagHudEngageEnemyFill_${pid}`,
-                            type: "Container",
+                            type: 'Container',
                             position: [Math.floor(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH / 2), 0],
-                            size: [CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH - Math.floor(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH / 2), CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT],
+                            size: [
+                                CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH -
+                                    Math.floor(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH / 2),
+                                CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT,
+                            ],
                             anchor: mod.UIAnchor.TopLeft,
                             visible: true,
                             padding: 0,
@@ -2403,7 +2995,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestFlagHudEngageFriendlyCountBg_${pid}`,
-                    type: "Container",
+                    type: 'Container',
                     position: [CONQUEST_HUD_FLAG_ENGAGE_FRIENDLY_COUNT_BG_X, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_Y],
                     size: [CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
@@ -2419,7 +3011,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestFlagHudEngageEnemyCountBg_${pid}`,
-                    type: "Container",
+                    type: 'Container',
                     position: [CONQUEST_HUD_FLAG_ENGAGE_ENEMY_COUNT_BG_X, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_Y],
                     size: [CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
@@ -2435,7 +3027,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestFlagHudEngageFriendlyCount_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X, CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y],
                     size: [CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
@@ -2455,7 +3047,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestFlagHudEngageEnemyCount_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X, CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y],
                     size: [CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
@@ -2475,7 +3067,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestFlagHudEngageStatusShadowRight_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y],
                     size: [CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
@@ -2491,7 +3083,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestFlagHudEngageStatusShadowLeft_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [-CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y],
                     size: [CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
@@ -2507,7 +3099,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestFlagHudEngageStatusShadowUp_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [0, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET],
                     size: [CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
@@ -2523,7 +3115,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestFlagHudEngageStatusShadowDown_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [0, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET],
                     size: [CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
@@ -2539,8 +3131,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestFlagHudEngageStatusShadowUpLeft_${pid}`,
-                    type: "Text",
-                    position: [-CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET],
+                    type: 'Text',
+                    position: [
+                        -CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    ],
                     size: [CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: true,
@@ -2555,8 +3150,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestFlagHudEngageStatusShadowUpRight_${pid}`,
-                    type: "Text",
-                    position: [CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET],
+                    type: 'Text',
+                    position: [
+                        CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    ],
                     size: [CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: true,
@@ -2571,8 +3169,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestFlagHudEngageStatusShadowDownRight_${pid}`,
-                    type: "Text",
-                    position: [CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET],
+                    type: 'Text',
+                    position: [
+                        CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    ],
                     size: [CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: true,
@@ -2587,8 +3188,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestFlagHudEngageStatusShadowDownLeft_${pid}`,
-                    type: "Text",
-                    position: [-CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET],
+                    type: 'Text',
+                    position: [
+                        -CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    ],
                     size: [CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: true,
@@ -2603,7 +3207,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `ConquestFlagHudEngageStatus_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [0, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y],
                     size: [CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
@@ -2621,7 +3225,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         });
         const conquestFlags = modlib.ParseUI({
             name: `ConquestFlagsHudRoot_${pid}`,
-            type: "Container",
+            type: 'Container',
             playerId: player,
             position: [CONQUEST_FLAGS_ROOT_X, CONQUEST_FLAGS_ROOT_Y],
             size: [CONQUEST_FLAGS_ROOT_WIDTH, CONQUEST_FLAGS_ROOT_HEIGHT],
@@ -2683,7 +3287,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     refs.conquestFlagsDebugEnemyRows = [];
     if (refs.conquestFlagsDebugRoot) {
         for (let i = 0; i < CONQUEST_FLAGS_MAX_ROWS; i++) {
-            const slotX = CONQUEST_FLAGS_SLOT_X[i] ?? (i * 35.0);
+            const slotX = CONQUEST_FLAGS_SLOT_X[i] ?? i * 35.0;
             const slotRoot = safeFind(`ConquestFlagHudSlot_${pid}_${i}`);
             const border = safeFind(`ConquestFlagHudBorder_${pid}_${i}`);
             const fill = safeFind(`ConquestFlagHudFill_${pid}_${i}`);
@@ -2741,145 +3345,367 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             }
             if (fill && slotRoot) {
                 mod.SetUIWidgetParent(fill, slotRoot);
-                mod.SetUIWidgetPosition(fill, mod.CreateVector(CONQUEST_HUD_FLAG_FILL_INSET_X, CONQUEST_HUD_FLAG_FILL_INSET_Y, 0));
+                mod.SetUIWidgetPosition(
+                    fill,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_FILL_INSET_X, CONQUEST_HUD_FLAG_FILL_INSET_Y, 0)
+                );
                 mod.SetUIWidgetDepth(fill, mod.UIDepth.AboveGameUI);
             }
             if (border && slotRoot) {
                 mod.SetUIWidgetParent(border, slotRoot);
                 mod.SetUIWidgetPosition(border, mod.CreateVector(0, 0, 0));
-                mod.SetUIWidgetSize(border, mod.CreateVector(CONQUEST_HUD_FLAG_SLOT_WIDTH, CONQUEST_HUD_FLAG_SLOT_HEIGHT, 0));
+                mod.SetUIWidgetSize(
+                    border,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_SLOT_WIDTH, CONQUEST_HUD_FLAG_SLOT_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(border, mod.UIDepth.AboveGameUI);
             }
             if (labelShadowRight && slotRoot) {
                 mod.SetUIWidgetParent(labelShadowRight, slotRoot);
-                mod.SetUIWidgetPosition(labelShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(labelShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowRight,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowRight,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(labelShadowRight, mod.UIDepth.AboveGameUI);
             }
             if (labelShadowLeft && slotRoot) {
                 mod.SetUIWidgetParent(labelShadowLeft, slotRoot);
-                mod.SetUIWidgetPosition(labelShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(labelShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowLeft,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowLeft,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(labelShadowLeft, mod.UIDepth.AboveGameUI);
             }
             if (labelShadowUp && slotRoot) {
                 mod.SetUIWidgetParent(labelShadowUp, slotRoot);
-                mod.SetUIWidgetPosition(labelShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowUp,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowUp,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(labelShadowUp, mod.UIDepth.AboveGameUI);
             }
             if (labelShadowDown && slotRoot) {
                 mod.SetUIWidgetParent(labelShadowDown, slotRoot);
-                mod.SetUIWidgetPosition(labelShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowDown,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowDown,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(labelShadowDown, mod.UIDepth.AboveGameUI);
             }
             if (labelShadowUpLeft && slotRoot) {
                 mod.SetUIWidgetParent(labelShadowUpLeft, slotRoot);
-                mod.SetUIWidgetPosition(labelShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowUpLeft,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowUpLeft,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(labelShadowUpLeft, mod.UIDepth.AboveGameUI);
             }
             if (labelShadowUpRight && slotRoot) {
                 mod.SetUIWidgetParent(labelShadowUpRight, slotRoot);
-                mod.SetUIWidgetPosition(labelShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowUpRight,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowUpRight,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(labelShadowUpRight, mod.UIDepth.AboveGameUI);
             }
             if (labelShadowDownRight && slotRoot) {
                 mod.SetUIWidgetParent(labelShadowDownRight, slotRoot);
-                mod.SetUIWidgetPosition(labelShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowDownRight,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowDownRight,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(labelShadowDownRight, mod.UIDepth.AboveGameUI);
             }
             if (labelShadowDownLeft && slotRoot) {
                 mod.SetUIWidgetParent(labelShadowDownLeft, slotRoot);
-                mod.SetUIWidgetPosition(labelShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowDownLeft,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowDownLeft,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(labelShadowDownLeft, mod.UIDepth.AboveGameUI);
             }
             if (labelShadowInner && slotRoot) {
                 mod.SetUIWidgetParent(labelShadowInner, slotRoot);
-                mod.SetUIWidgetPosition(labelShadowInner, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(labelShadowInner, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowInner,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowInner,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(labelShadowInner, mod.UIDepth.AboveGameUI);
             }
             if (labelShadowInnerDeep && slotRoot) {
                 mod.SetUIWidgetParent(labelShadowInnerDeep, slotRoot);
-                mod.SetUIWidgetPosition(labelShadowInnerDeep, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(labelShadowInnerDeep, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    labelShadowInnerDeep,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    labelShadowInnerDeep,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(labelShadowInnerDeep, mod.UIDepth.AboveGameUI);
             }
             if (label && slotRoot) {
                 mod.SetUIWidgetParent(label, slotRoot);
-                mod.SetUIWidgetPosition(label, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(label, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    label,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    label,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(label, mod.UIDepth.AboveGameUI);
             }
             if (percentRoot) {
                 mod.SetUIWidgetParent(percentRoot, refs.conquestFlagsDebugRoot);
-                mod.SetUIWidgetPosition(percentRoot, mod.CreateVector(slotX + CONQUEST_HUD_FLAG_PERCENT_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(percentRoot, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_ROOT_WIDTH, CONQUEST_HUD_FLAG_PERCENT_ROOT_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentRoot,
+                    mod.CreateVector(slotX + CONQUEST_HUD_FLAG_PERCENT_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_OFFSET_Y, 0)
+                );
+                mod.SetUIWidgetSize(
+                    percentRoot,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_ROOT_WIDTH, CONQUEST_HUD_FLAG_PERCENT_ROOT_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(percentRoot, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowRight && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowRight, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(percentShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowRight,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowRight,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(percentShadowRight, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowLeft && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowLeft, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(percentShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowLeft,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowLeft,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(percentShadowLeft, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowUp && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowUp, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowUp,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowUp,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(percentShadowUp, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowDown && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowDown, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowDown,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowDown,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(percentShadowDown, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowUpLeft && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowUpLeft, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowUpLeft,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowUpLeft,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(percentShadowUpLeft, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowUpRight && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowUpRight, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowUpRight,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowUpRight,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(percentShadowUpRight, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowDownRight && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowDownRight, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowDownRight,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowDownRight,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(percentShadowDownRight, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowDownLeft && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowDownLeft, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowDownLeft,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowDownLeft,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(percentShadowDownLeft, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowInner && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowInner, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowInner, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(percentShadowInner, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentShadowInner,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentShadowInner,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(percentShadowInner, mod.UIDepth.AboveGameUI);
             }
             if (percentText && percentRoot) {
                 mod.SetUIWidgetParent(percentText, percentRoot);
-                mod.SetUIWidgetPosition(percentText, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(percentText, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
+                mod.SetUIWidgetPosition(
+                    percentText,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X,
+                        CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y,
+                        0
+                    )
+                );
+                mod.SetUIWidgetSize(
+                    percentText,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0)
+                );
                 mod.SetUIWidgetDepth(percentText, mod.UIDepth.AboveGameUI);
             }
         }
@@ -2913,7 +3739,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetPosition(refs.conquestFlagsEngageFriendlyFill, mod.CreateVector(0, 0, 0));
             mod.SetUIWidgetSize(
                 refs.conquestFlagsEngageFriendlyFill,
-                mod.CreateVector(Math.floor(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH / 2), CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT, 0)
+                mod.CreateVector(
+                    Math.floor(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH / 2),
+                    CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT,
+                    0
+                )
             );
             mod.SetUIWidgetDepth(refs.conquestFlagsEngageFriendlyFill, mod.UIDepth.AboveGameUI);
         }
@@ -2923,7 +3753,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetPosition(refs.conquestFlagsEngageEnemyFill, mod.CreateVector(halfTrack, 0, 0));
             mod.SetUIWidgetSize(
                 refs.conquestFlagsEngageEnemyFill,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH - halfTrack, CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT, 0)
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH - halfTrack,
+                    CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT,
+                    0
+                )
             );
             mod.SetUIWidgetDepth(refs.conquestFlagsEngageEnemyFill, mod.UIDepth.AboveGameUI);
         }
@@ -3003,7 +3837,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetParent(refs.conquestFlagsEngageStatusShadowUp, refs.conquestFlagsEngageRoot);
             mod.SetUIWidgetPosition(
                 refs.conquestFlagsEngageStatusShadowUp,
-                mod.CreateVector(0, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
+                mod.CreateVector(
+                    0,
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    0
+                )
             );
             mod.SetUIWidgetSize(
                 refs.conquestFlagsEngageStatusShadowUp,
@@ -3015,7 +3853,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetParent(refs.conquestFlagsEngageStatusShadowDown, refs.conquestFlagsEngageRoot);
             mod.SetUIWidgetPosition(
                 refs.conquestFlagsEngageStatusShadowDown,
-                mod.CreateVector(0, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
+                mod.CreateVector(
+                    0,
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    0
+                )
             );
             mod.SetUIWidgetSize(
                 refs.conquestFlagsEngageStatusShadowDown,
@@ -3027,7 +3869,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetParent(refs.conquestFlagsEngageStatusShadowUpLeft, refs.conquestFlagsEngageRoot);
             mod.SetUIWidgetPosition(
                 refs.conquestFlagsEngageStatusShadowUpLeft,
-                mod.CreateVector(-CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
+                mod.CreateVector(
+                    -CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    0
+                )
             );
             mod.SetUIWidgetSize(
                 refs.conquestFlagsEngageStatusShadowUpLeft,
@@ -3039,7 +3885,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetParent(refs.conquestFlagsEngageStatusShadowUpRight, refs.conquestFlagsEngageRoot);
             mod.SetUIWidgetPosition(
                 refs.conquestFlagsEngageStatusShadowUpRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    0
+                )
             );
             mod.SetUIWidgetSize(
                 refs.conquestFlagsEngageStatusShadowUpRight,
@@ -3051,7 +3901,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetParent(refs.conquestFlagsEngageStatusShadowDownRight, refs.conquestFlagsEngageRoot);
             mod.SetUIWidgetPosition(
                 refs.conquestFlagsEngageStatusShadowDownRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    0
+                )
             );
             mod.SetUIWidgetSize(
                 refs.conquestFlagsEngageStatusShadowDownRight,
@@ -3063,7 +3917,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetParent(refs.conquestFlagsEngageStatusShadowDownLeft, refs.conquestFlagsEngageRoot);
             mod.SetUIWidgetPosition(
                 refs.conquestFlagsEngageStatusShadowDownLeft,
-                mod.CreateVector(-CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
+                mod.CreateVector(
+                    -CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET,
+                    0
+                )
             );
             mod.SetUIWidgetSize(
                 refs.conquestFlagsEngageStatusShadowDownLeft,
@@ -3073,7 +3931,10 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         }
         if (refs.conquestFlagsEngageStatus && refs.conquestFlagsEngageRoot) {
             mod.SetUIWidgetParent(refs.conquestFlagsEngageStatus, refs.conquestFlagsEngageRoot);
-            mod.SetUIWidgetPosition(refs.conquestFlagsEngageStatus, mod.CreateVector(0, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y, 0));
+            mod.SetUIWidgetPosition(
+                refs.conquestFlagsEngageStatus,
+                mod.CreateVector(0, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y, 0)
+            );
             mod.SetUIWidgetSize(
                 refs.conquestFlagsEngageStatus,
                 mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT, 0)
@@ -3087,27 +3948,19 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
     //#endregion ----------------- HUD Build/Ensure - Admin Action Counter --------------------
 
-
-
     //#region -------------------- HUD Build/Ensure - Counter Widgets --------------------
 
     // West/East score panels and top round X/Y counters intentionally removed for conquest HUD simplification.
 
     //#endregion ----------------- HUD Build/Ensure - Counter Widgets --------------------
 
-
-
     // Legacy round-end modal was removed; conquest uses the dedicated victory dialog builder below.
-
-
 
     //#region -------------------- HUD Build/Ensure - Victory Dialog --------------------
 
     buildVictoryDialogWidgets(player, pid, refs);
 
     //#endregion ----------------- HUD Build/Ensure - Victory Dialog --------------------
-
-
 
     //#region -------------------- HUD Build/Ensure - Cache Init + Defaults --------------------
 
@@ -3136,7 +3989,10 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         }
         mod.SetUIWidgetParent(readyContainer, mod.GetUIRoot());
         mod.SetUIWidgetPosition(readyContainer, mod.CreateVector(CONQUEST_READY_ABS_X, CONQUEST_READY_ABS_Y, 0));
-        mod.SetUIWidgetSize(readyContainer, mod.CreateVector(CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_CONTAINER_HEIGHT, 0));
+        mod.SetUIWidgetSize(
+            readyContainer,
+            mod.CreateVector(CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_CONTAINER_HEIGHT, 0)
+        );
     }
     const readyText = safeFind(`ReadyStatusText_${pid}`);
     if (readyText && readyContainer) {

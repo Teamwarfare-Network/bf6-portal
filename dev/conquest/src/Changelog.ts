@@ -118,8 +118,6 @@
 
 //#endregion ----------------- Changelog / History --------------------
 
-
-
 //#region -------------------- Improvements punchlist --------------------
 
 /*
@@ -143,8 +141,6 @@
  */
 
 //#endregion ----------------- Improvements punchlist --------------------
-
-
 
 //#region -------------------- Portal Naming Notes --------------------
 

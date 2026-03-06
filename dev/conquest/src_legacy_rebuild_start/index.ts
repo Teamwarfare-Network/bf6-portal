@@ -129,7 +129,8 @@ export async function OnGameModeStarted(): Promise<void> {
         updateOvertimeStage();
         checkTakeoffLimitForAllPlayers();
         if (State.match.victoryDialogActive) {
-            const elapsedSinceVictory = Math.floor(mod.GetMatchTimeElapsed()) - Math.floor(State.match.victoryStartElapsedSecondsSnapshot);
+            const elapsedSinceVictory =
+                Math.floor(mod.GetMatchTimeElapsed()) - Math.floor(State.match.victoryStartElapsedSecondsSnapshot);
             const remaining = MATCH_END_DELAY_SECONDS - elapsedSinceVictory;
             updateVictoryDialogForAllPlayers(Math.max(0, Math.floor(remaining)));
         }
@@ -138,8 +139,6 @@ export async function OnGameModeStarted(): Promise<void> {
 }
 
 //#endregion -------------------- Exported Event Handlers - Game Mode Start --------------------
-
-
 
 //#region -------------------- Exported Event Handlers - Player Join + Leave --------------------
 
@@ -190,7 +189,7 @@ export async function OnPlayerJoinGame(eventPlayer: mod.Player) {
     {
         const cache = ensureClockUIAndGetCache(eventPlayer);
         if (cache) setRoundStateText(cache.roundStateText);
-    updateHelpTextVisibilityForPlayer(eventPlayer);
+        updateHelpTextVisibilityForPlayer(eventPlayer);
     }
     deleteLegacyScoreRootForPlayer(eventPlayer);
     if (joinPid !== undefined) {
@@ -271,8 +270,6 @@ export function OnPlayerLeaveGame(eventNumber: number | mod.Player) {
 
 //#endregion -------------------- Exported Event Handlers - Player Join + Leave --------------------
 
-
-
 //#region -------------------- Exported Event Handlers - Player Deploy + Undeploy --------------------
 
 async function deferForcedUndeploy(player: mod.Player, reason: string): Promise<void> {
@@ -293,12 +290,12 @@ export async function OnPlayerDeployed(eventPlayer: mod.Player) {
     setUIInputModeForPlayer(eventPlayer, false);
     if (State.round.flow.cleanupActive && !State.round.flow.cleanupAllowDeploy) {
         State.players.deployedByPid[pid] = false;
-        await deferForcedUndeploy(eventPlayer, "cleanup");
+        await deferForcedUndeploy(eventPlayer, 'cleanup');
         return;
     }
     if (isLiveRespawnDisabled() && isRoundLive()) {
         State.players.deployedByPid[pid] = false;
-        await deferForcedUndeploy(eventPlayer, "live_round");
+        await deferForcedUndeploy(eventPlayer, 'live_round');
         return;
     }
 
@@ -307,16 +304,8 @@ export async function OnPlayerDeployed(eventPlayer: mod.Player) {
     //Remove existing gadgets and give deployable vehicle supply crates
     mod.RemoveEquipment(eventPlayer, mod.InventorySlots.GadgetOne);
     mod.RemoveEquipment(eventPlayer, mod.InventorySlots.GadgetTwo);
-    mod.AddEquipment(
-        eventPlayer,
-        mod.Gadgets.Deployable_Vehicle_Supply_Crate,
-        mod.InventorySlots.GadgetOne
-    );
-    mod.AddEquipment(
-        eventPlayer,
-        mod.Gadgets.Deployable_Vehicle_Supply_Crate,
-        mod.InventorySlots.GadgetTwo
-    );
+    mod.AddEquipment(eventPlayer, mod.Gadgets.Deployable_Vehicle_Supply_Crate, mod.InventorySlots.GadgetOne);
+    mod.AddEquipment(eventPlayer, mod.Gadgets.Deployable_Vehicle_Supply_Crate, mod.InventorySlots.GadgetTwo);
     // Rejoin / spawn behavior: players always start NOT READY for the next round gating.
     State.players.readyByPid[pid] = false;
     // Design assumption: players spawn in their main base; update immediately for roster display.
@@ -355,8 +344,6 @@ export function OnPlayerUndeploy(eventPlayer: mod.Player) {
 
 //#endregion -------------------- Exported Event Handlers - Player Deploy + Undeploy --------------------
 
-
-
 //#region -------------------- Exported Event Handlers - Player Loop + UI Inputs --------------------
 
 // Performance note:
@@ -394,14 +381,16 @@ export function OnPlayerInteract(eventPlayer: mod.Player, eventInteractPoint: mo
     teamSwitchInteractPointActivated(eventPlayer, eventInteractPoint);
 }
 
-export function OnPlayerUIButtonEvent(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, eventUIButtonEvent: mod.UIButtonEvent) {
+export function OnPlayerUIButtonEvent(
+    eventPlayer: mod.Player,
+    eventUIWidget: mod.UIWidget,
+    eventUIButtonEvent: mod.UIButtonEvent
+) {
     if (tryHandleJoinPromptButton(eventPlayer, eventUIWidget, eventUIButtonEvent)) return;
     teamSwitchButtonEvent(eventPlayer, eventUIWidget, eventUIButtonEvent);
 }
 
 //#endregion -------------------- Exported Event Handlers - Player Loop + UI Inputs --------------------
-
-
 
 //#region -------------------- Exported Event Handlers - Vehicle Entry + Exit --------------------
 
@@ -451,21 +440,22 @@ export function OnPlayerEnterVehicle(eventPlayer: mod.Player, eventVehicle: mod.
     const wasRegistered = inT1 || inT2;
 
     // Cached last driver for this vehicle (if any).
-    const priorOwner = getLastDriver(eventVehicle); 
+    const priorOwner = getLastDriver(eventVehicle);
 
     // Only trust the owner if the player is still valid.
-    const priorOwnerValid = !!priorOwner && mod.IsPlayerValid(priorOwner); 
+    const priorOwnerValid = !!priorOwner && mod.IsPlayerValid(priorOwner);
 
     // Same player re-entering their last-driven vehicle.
-    const isReturnToSameOwner = priorOwnerValid && (getObjId(priorOwner) === getObjId(eventPlayer)); 
+    const isReturnToSameOwner = priorOwnerValid && getObjId(priorOwner) === getObjId(eventPlayer);
 
     // Current registry team for this vehicle, if any.
-    const registeredTeam = inT1 ? TeamID.Team1 : (inT2 ? TeamID.Team2 : 0); 
+    const registeredTeam = inT1 ? TeamID.Team1 : inT2 ? TeamID.Team2 : 0;
 
     const isEmptyVehicle = isVehicleEmptyForEntry(eventVehicle, eventPlayer);
 
     // Transfer on empty vehicle entry, missing owner, or cross-team registry mismatch.
-    const shouldTransferOwnership = isEmptyVehicle || !priorOwnerValid || (registeredTeam !== 0 && registeredTeam !== teamNum); 
+    const shouldTransferOwnership =
+        isEmptyVehicle || !priorOwnerValid || (registeredTeam !== 0 && registeredTeam !== teamNum);
 
     // Reconcile baseline team for unowned vehicles before applying "enter = claim/steal".
     if (!priorOwnerValid) {
@@ -476,7 +466,7 @@ export function OnPlayerEnterVehicle(eventPlayer: mod.Player, eventVehicle: mod.
         }
 
         if (inferredBaseTeam === TeamID.Team1 || inferredBaseTeam === TeamID.Team2) {
-            const registeredTeam = inT1 ? TeamID.Team1 : (inT2 ? TeamID.Team2 : 0);
+            const registeredTeam = inT1 ? TeamID.Team1 : inT2 ? TeamID.Team2 : 0;
             if (registeredTeam !== inferredBaseTeam) {
                 registerVehicleToTeam(eventVehicle, inferredBaseTeam);
             }
@@ -497,36 +487,31 @@ export function OnPlayerEnterVehicle(eventPlayer: mod.Player, eventVehicle: mod.
     let messageKey: number = STR_VEHICLE_REG_NO_CHANGE;
     let arg0: any = eventPlayer;
     let arg1: any = teamNameKey;
-    if (!wasRegistered) { //New Vehicle
+    if (!wasRegistered) {
+        //New Vehicle
         messageKey = mod.stringkeys.twl.messages.vehicleRegisteredNew;
         arg0 = teamNameKey;
         arg1 = eventPlayer;
-    } else if (isReturnToSameOwner) { //Old Vehicle Same Player
-        messageKey = (registeredTeam !== 0 && registeredTeam !== teamNum)
-            ? STR_VEHICLE_STOLEN_REGISTER
-            : mod.stringkeys.twl.messages.vehicleReturned;
+    } else if (isReturnToSameOwner) {
+        //Old Vehicle Same Player
+        messageKey =
+            registeredTeam !== 0 && registeredTeam !== teamNum
+                ? STR_VEHICLE_STOLEN_REGISTER
+                : mod.stringkeys.twl.messages.vehicleReturned;
         arg0 = eventPlayer;
         arg1 = teamNameKey;
-    } else if (shouldTransferOwnership) { //Old Vehicle Different Player
-        messageKey = (registeredTeam !== 0 && registeredTeam !== teamNum)
-            ? STR_VEHICLE_STOLEN_REGISTER
-            : mod.stringkeys.twl.messages.vehicleReRegistered;
+    } else if (shouldTransferOwnership) {
+        //Old Vehicle Different Player
+        messageKey =
+            registeredTeam !== 0 && registeredTeam !== teamNum
+                ? STR_VEHICLE_STOLEN_REGISTER
+                : mod.stringkeys.twl.messages.vehicleReRegistered;
         arg0 = teamNameKey;
         arg1 = eventPlayer;
     }
 
-    sendHighlightedWorldLogMessage(
-        mod.Message(messageKey, arg0, arg1),
-        true,
-        mod.GetTeam(TeamID.Team1),
-        messageKey
-    );
-    sendHighlightedWorldLogMessage(
-        mod.Message(messageKey, arg0, arg1),
-        true,
-        mod.GetTeam(TeamID.Team2),
-        messageKey
-    );
+    sendHighlightedWorldLogMessage(mod.Message(messageKey, arg0, arg1), true, mod.GetTeam(TeamID.Team1), messageKey);
+    sendHighlightedWorldLogMessage(mod.Message(messageKey, arg0, arg1), true, mod.GetTeam(TeamID.Team2), messageKey);
 
     handleOvertimePlayerEnterVehicle(eventPlayer, eventVehicle);
 }
@@ -537,8 +522,6 @@ export function OnPlayerExitVehicle(eventPlayer: mod.Player, eventVehicle: mod.V
 }
 
 //#endregion -------------------- Exported Event Handlers - Vehicle Entry + Exit --------------------
-
-
 
 //#region -------------------- Exported Event Handlers - Vehicle Spawn + Destroy --------------------
 
@@ -553,7 +536,7 @@ export async function OnVehicleSpawned(eventVehicle: mod.Vehicle): Promise<void>
     const activeAt = State.vehicles.activeSpawnRequestedAtSeconds;
     if (activeIndex !== undefined && activeToken !== undefined && activeAt !== undefined) {
         const now = Math.floor(mod.GetMatchTimeElapsed());
-        const expired = (now - activeAt) > VEHICLE_SPAWNER_BIND_TIMEOUT_SECONDS;
+        const expired = now - activeAt > VEHICLE_SPAWNER_BIND_TIMEOUT_SECONDS;
         const activeSlot = State.vehicles.slots[activeIndex];
         if (!expired && activeSlot && activeSlot.expectingSpawn && activeSlot.spawnRequestToken === activeToken) {
             slotIndex = activeIndex;
@@ -580,7 +563,7 @@ export async function OnVehicleSpawned(eventVehicle: mod.Vehicle): Promise<void>
             return;
         }
     }
-    
+
     // Primary path: bind to a spawner slot that is expecting this spawn.
     let inferredTeam = bindSpawnedVehicleToSlot(eventVehicle, posObject);
 
@@ -618,10 +601,10 @@ export async function OnVehicleSpawned(eventVehicle: mod.Vehicle): Promise<void>
     }
 
     // Cache base-team inference for later reconciliation on enter.
-    vehicleSpawnBaseTeamByObjId[vehicleObjId] = inferredTeam; 
+    vehicleSpawnBaseTeamByObjId[vehicleObjId] = inferredTeam;
 
     // Reset cached owner so enter events can establish a new owner.
-    clearLastDriverByVehicleObjId(vehicleObjId); 
+    clearLastDriverByVehicleObjId(vehicleObjId);
 
     // Spawn-time registration is authoritative only after a slot binds (before any player enters).
     registerVehicleToTeam(eventVehicle, inferredTeam);
@@ -660,8 +643,6 @@ export async function OnVehicleDestroyed(eventVehicle: mod.Vehicle) {
 }
 
 //#endregion -------------------- Exported Event Handlers - Vehicle Spawn + Destroy --------------------
-
-
 
 //#region -------------------- Enter/Exit Triggers --------------------
 

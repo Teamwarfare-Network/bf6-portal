@@ -8,7 +8,7 @@
 const TransformSymbol: unique symbol;
 ```
 
-Defined in: [mod/index.d.ts:124](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L124)
+Defined in:
+[mod/index.d.ts:124](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L124)
 
-export type Transform = never;
-export type Transform = Any;
+export type Transform = never; export type Transform = Any;

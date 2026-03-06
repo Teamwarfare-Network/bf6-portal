@@ -5,7 +5,9 @@
 // Vehicle owner cache lifecycle:
 // - setLastDriver on entry, popLastDriver on destruction, clearLastDriverByVehicleObjId on spawn/respawn.
 
-function getVehicleId(v: mod.Vehicle): number { return getObjId(v); }
+function getVehicleId(v: mod.Vehicle): number {
+    return getObjId(v);
+}
 
 function setLastDriver(vehicle: mod.Vehicle, player: mod.Player): void {
     if (!player || !mod.IsPlayerValid(player)) return;

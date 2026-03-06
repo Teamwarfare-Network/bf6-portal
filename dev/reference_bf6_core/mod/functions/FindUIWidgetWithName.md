@@ -10,15 +10,16 @@
 function FindUIWidgetWithName(name, searchRoot): UIWidget;
 ```
 
-Defined in: [mod/index.d.ts:21998](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21998)
+Defined in:
+[mod/index.d.ts:21998](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21998)
 
 Returns the UI Widget matching the specified name.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `name` | `string` |
+| Parameter    | Type                                |
+| ------------ | ----------------------------------- |
+| `name`       | `string`                            |
 | `searchRoot` | [`UIWidget`](../UIWidget/_index.md) |
 
 ### Returns
@@ -31,15 +32,16 @@ Returns the UI Widget matching the specified name.
 function FindUIWidgetWithName(name): any;
 ```
 
-Defined in: [mod/index.d.ts:22001](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L22001)
+Defined in:
+[mod/index.d.ts:22001](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L22001)
 
 Returns the UI Widget matching the specified name.
 
 ### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `name` | `string` |
+| Parameter | Type     |
+| --------- | -------- |
+| `name`    | `string` |
 
 ### Returns
 

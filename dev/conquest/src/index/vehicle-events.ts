@@ -21,8 +21,6 @@ function onPlayerExitVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Vehi
 
 //#endregion -------------------- Exported Event Handlers - Vehicle Entry + Exit --------------------
 
-
-
 //#region -------------------- Exported Event Handlers - Vehicle Spawn + Destroy --------------------
 
 // OnVehicleSpawned:
@@ -36,7 +34,7 @@ async function onVehicleSpawnedImpl(eventVehicle: mod.Vehicle): Promise<void> {
     const activeAt = State.vehicles.activeSpawnRequestedAtSeconds;
     if (activeIndex !== undefined && activeToken !== undefined && activeAt !== undefined) {
         const now = Math.floor(mod.GetMatchTimeElapsed());
-        const expired = (now - activeAt) > VEHICLE_SPAWNER_BIND_TIMEOUT_SECONDS;
+        const expired = now - activeAt > VEHICLE_SPAWNER_BIND_TIMEOUT_SECONDS;
         const activeSlot = State.vehicles.slots[activeIndex];
         if (!expired && activeSlot && activeSlot.expectingSpawn && activeSlot.spawnRequestToken === activeToken) {
             slotIndex = activeIndex;
@@ -63,7 +61,7 @@ async function onVehicleSpawnedImpl(eventVehicle: mod.Vehicle): Promise<void> {
             return;
         }
     }
-    
+
     // Primary path: bind to a spawner slot that is expecting this spawn.
     let inferredTeam = bindSpawnedVehicleToSlot(eventVehicle, posObject);
 
@@ -101,10 +99,10 @@ async function onVehicleSpawnedImpl(eventVehicle: mod.Vehicle): Promise<void> {
     }
 
     // Cache base-team inference for later reconciliation on enter.
-    vehicleSpawnBaseTeamByObjId[vehicleObjId] = inferredTeam; 
+    vehicleSpawnBaseTeamByObjId[vehicleObjId] = inferredTeam;
 
     // Reset cached owner so enter events can establish a new owner.
-    clearLastDriverByVehicleObjId(vehicleObjId); 
+    clearLastDriverByVehicleObjId(vehicleObjId);
 
     // Spawn-time registration is authoritative only after a slot binds (before any player enters).
     registerVehicleToTeam(eventVehicle, inferredTeam);

@@ -31,7 +31,8 @@ function inferBaseTeamFromPosition(pos: mod.Vector): TeamID | 0 {
     const best = d1 <= d2 ? TeamID.Team1 : TeamID.Team2; // Pick the nearer base as the inferred team.
     const bestDist = d1 <= d2 ? d1 : d2; // Track the distance to that nearest base.
 
-    if (bestDist > MAIN_BASE_BIND_RADIUS_METERS) { // Outside bind radius: treat as unassigned.
+    if (bestDist > MAIN_BASE_BIND_RADIUS_METERS) {
+        // Outside bind radius: treat as unassigned.
         return 0;
     }
 

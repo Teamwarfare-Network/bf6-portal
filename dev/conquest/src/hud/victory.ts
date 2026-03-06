@@ -13,7 +13,10 @@ function getElapsedHmsParts(totalSeconds: number): { hours: number; minutes: num
 
 function updateVictoryDialogRosterSizing(refs: HudRefs, rosterRows: number): void {
     const clampedRows = Math.max(1, Math.min(TEAM_ROSTER_MAX_ROWS, Math.floor(rosterRows)));
-    const rosterHeight = VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP + (clampedRows * VICTORY_DIALOG_ROSTER_ROW_HEIGHT) + VICTORY_DIALOG_ROSTER_ROW_PADDING_BOTTOM;
+    const rosterHeight =
+        VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP +
+        clampedRows * VICTORY_DIALOG_ROSTER_ROW_HEIGHT +
+        VICTORY_DIALOG_ROSTER_ROW_PADDING_BOTTOM;
     const dialogHeight = VICTORY_DIALOG_ROSTER_ROW_Y + rosterHeight + VICTORY_DIALOG_BOTTOM_PADDING;
 
     if (refs.victoryRoot) {
@@ -23,10 +26,16 @@ function updateVictoryDialogRosterSizing(refs: HudRefs, rosterRows: number): voi
         mod.SetUIWidgetSize(refs.victoryRosterRow, mod.CreateVector(VICTORY_DIALOG_ROSTER_ROW_WIDTH, rosterHeight, 0));
     }
     if (refs.victoryRosterLeftContainer) {
-        mod.SetUIWidgetSize(refs.victoryRosterLeftContainer, mod.CreateVector(VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, rosterHeight, 0));
+        mod.SetUIWidgetSize(
+            refs.victoryRosterLeftContainer,
+            mod.CreateVector(VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, rosterHeight, 0)
+        );
     }
     if (refs.victoryRosterRightContainer) {
-        mod.SetUIWidgetSize(refs.victoryRosterRightContainer, mod.CreateVector(VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, rosterHeight, 0));
+        mod.SetUIWidgetSize(
+            refs.victoryRosterRightContainer,
+            mod.CreateVector(VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, rosterHeight, 0)
+        );
     }
 }
 
@@ -63,7 +72,10 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
         let displaySeconds = Math.floor(remainingSeconds);
         if (displaySeconds < 0) displaySeconds = 0;
         if (displaySeconds > MATCH_END_DELAY_SECONDS) displaySeconds = 0;
-        safeSetUITextLabel(refs.victoryRestartText, mod.Message(mod.stringkeys.twl.victory.restartInFormat, displaySeconds));
+        safeSetUITextLabel(
+            refs.victoryRestartText,
+            mod.Message(mod.stringkeys.twl.victory.restartInFormat, displaySeconds)
+        );
     }
     const parts = getElapsedHmsParts(State.match.endElapsedSecondsSnapshot);
     const hours = Math.min(99, Math.max(0, Math.floor(parts.hours)));
@@ -77,12 +89,18 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
     const sT = Math.floor(seconds / 10);
     const sO = seconds % 10;
 
-    if (refs.victoryTimeHoursTens) safeSetUITextLabel(refs.victoryTimeHoursTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, hT));
-    if (refs.victoryTimeHoursOnes) safeSetUITextLabel(refs.victoryTimeHoursOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, hO));
-    if (refs.victoryTimeMinutesTens) safeSetUITextLabel(refs.victoryTimeMinutesTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, mT));
-    if (refs.victoryTimeMinutesOnes) safeSetUITextLabel(refs.victoryTimeMinutesOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, mO));
-    if (refs.victoryTimeSecondsTens) safeSetUITextLabel(refs.victoryTimeSecondsTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, sT));
-    if (refs.victoryTimeSecondsOnes) safeSetUITextLabel(refs.victoryTimeSecondsOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, sO));
+    if (refs.victoryTimeHoursTens)
+        safeSetUITextLabel(refs.victoryTimeHoursTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, hT));
+    if (refs.victoryTimeHoursOnes)
+        safeSetUITextLabel(refs.victoryTimeHoursOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, hO));
+    if (refs.victoryTimeMinutesTens)
+        safeSetUITextLabel(refs.victoryTimeMinutesTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, mT));
+    if (refs.victoryTimeMinutesOnes)
+        safeSetUITextLabel(refs.victoryTimeMinutesOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, mO));
+    if (refs.victoryTimeSecondsTens)
+        safeSetUITextLabel(refs.victoryTimeSecondsTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, sT));
+    if (refs.victoryTimeSecondsOnes)
+        safeSetUITextLabel(refs.victoryTimeSecondsOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, sO));
 
     if (refs.victoryAdminActionsText) {
         const actionCount = Math.max(0, Math.floor(State.admin.actionCount));

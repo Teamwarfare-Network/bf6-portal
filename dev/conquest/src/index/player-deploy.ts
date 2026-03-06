@@ -23,8 +23,8 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     setUIInputModeForPlayer(eventPlayer, false);
     if (State.round.flow.cleanupActive && !State.round.flow.cleanupAllowDeploy) {
         State.players.deployedByPid[pid] = false;
-        conquestPhase2BMarkNextDeployReason(pid, "phase_transition");
-        await deferForcedUndeploy(eventPlayer, "cleanup");
+        conquestPhase2BMarkNextDeployReason(pid, 'phase_transition');
+        await deferForcedUndeploy(eventPlayer, 'cleanup');
         return;
     }
 

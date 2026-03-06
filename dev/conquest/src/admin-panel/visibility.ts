@@ -11,24 +11,30 @@ function setAdminPanelChildWidgetsVisible(playerId: number, visible: boolean): v
         UI_ADMIN_MATCH_LENGTH_LABEL_ID,
 
         // Row +/- buttons.
-        UI_TEST_BUTTON_CLOCK_TIME_DEC_ID, UI_TEST_BUTTON_CLOCK_TIME_INC_ID,
-        UI_ADMIN_MATCH_LENGTH_DEC_ID, UI_ADMIN_MATCH_LENGTH_INC_ID,
+        UI_TEST_BUTTON_CLOCK_TIME_DEC_ID,
+        UI_TEST_BUTTON_CLOCK_TIME_INC_ID,
+        UI_ADMIN_MATCH_LENGTH_DEC_ID,
+        UI_ADMIN_MATCH_LENGTH_INC_ID,
 
         // +/- text overlays.
         UI_TEST_MINUS_TEXT_ID,
         UI_TEST_PLUS_TEXT_ID,
 
         // Admin action buttons.
-        UI_TEST_BUTTON_CLOCK_RESET_ID, UI_TEST_RESET_TEXT_ID,
-        UI_TEST_BUTTON_MATCH_START_ID, UI_TEST_MATCH_START_TEXT_ID,
-        UI_TEST_BUTTON_MATCH_END_ID, UI_TEST_MATCH_END_TEXT_ID,
-        UI_TEST_BUTTON_POS_DEBUG_ID, UI_TEST_POS_DEBUG_TEXT_ID,
+        UI_TEST_BUTTON_CLOCK_RESET_ID,
+        UI_TEST_RESET_TEXT_ID,
+        UI_TEST_BUTTON_MATCH_START_ID,
+        UI_TEST_MATCH_START_TEXT_ID,
+        UI_TEST_BUTTON_MATCH_END_ID,
+        UI_TEST_MATCH_END_TEXT_ID,
+        UI_TEST_BUTTON_POS_DEBUG_ID,
+        UI_TEST_POS_DEBUG_TEXT_ID,
     ];
 
     for (const baseId of ids) {
         const w = safeFind(baseId + playerId);
         if (w) mod.SetUIWidgetVisible(w, visible);
-        const border = safeFind(baseId + playerId + "_BORDER");
+        const border = safeFind(baseId + playerId + '_BORDER');
         if (border) mod.SetUIWidgetVisible(border, visible);
     }
 }
@@ -48,7 +54,7 @@ function deleteAdminPanelUI(playerId: number, deleteToggle: boolean): void {
         if (adminToggle) mod.DeleteUIWidget(adminToggle);
         const adminToggleLabel = safeFind(UI_ADMIN_PANEL_BUTTON_LABEL_ID + playerId);
         if (adminToggleLabel) mod.DeleteUIWidget(adminToggleLabel);
-        const adminToggleBorder = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId + "_BORDER");
+        const adminToggleBorder = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId + '_BORDER');
         if (adminToggleBorder) mod.DeleteUIWidget(adminToggleBorder);
     }
 }
@@ -77,7 +83,7 @@ function ensureAdminPanelWidgets(eventPlayer: mod.Player, playerId: number): voi
     // Recreate label to guarantee correct anchor/parenting with outlined border.
     const existingToggleLabel = safeFind(adminToggleLabelId);
     if (existingToggleLabel) mod.DeleteUIWidget(existingToggleLabel);
-    const adminToggleBorder = safeFind(adminToggleButtonId + "_BORDER");
+    const adminToggleBorder = safeFind(adminToggleButtonId + '_BORDER');
     const toggleLabel = addCenteredButtonText(
         adminToggleLabelId,
         ADMIN_PANEL_TOGGLE_WIDTH,
@@ -99,8 +105,8 @@ function ensureAdminPanelWidgets(eventPlayer: mod.Player, playerId: number): voi
             adminContainerId,
             mod.CreateVector(ADMIN_PANEL_OFFSET_X, ADMIN_PANEL_OFFSET_Y, 0),
             mod.CreateVector(
-                ADMIN_PANEL_CONTENT_WIDTH + (ADMIN_PANEL_PADDING * 2),
-                ADMIN_PANEL_HEIGHT + (ADMIN_PANEL_PADDING * 2),
+                ADMIN_PANEL_CONTENT_WIDTH + ADMIN_PANEL_PADDING * 2,
+                ADMIN_PANEL_HEIGHT + ADMIN_PANEL_PADDING * 2,
                 0
             ),
             mod.UIAnchor.TopRight,
@@ -120,7 +126,7 @@ function ensureAdminPanelWidgets(eventPlayer: mod.Player, playerId: number): voi
     // When caching is enabled, we hide/show rather than recreate.
     if (toggleBtn) mod.SetUIWidgetVisible(toggleBtn, true);
     if (toggleLabel) mod.SetUIWidgetVisible(toggleLabel, true);
-    const toggleBorder = safeFind(adminToggleButtonId + "_BORDER");
+    const toggleBorder = safeFind(adminToggleButtonId + '_BORDER');
     if (toggleBorder) mod.SetUIWidgetVisible(toggleBorder, true);
 
     // Default closed on first build; preserve state on reopen.

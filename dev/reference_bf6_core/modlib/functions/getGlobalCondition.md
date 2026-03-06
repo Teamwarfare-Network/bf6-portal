@@ -8,13 +8,14 @@
 function getGlobalCondition(n): ConditionState;
 ```
 
-Defined in: [modlib/index.ts:196](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L196)
+Defined in:
+[modlib/index.ts:196](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L196)
 
 ## Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `n` | `number` |
+| Parameter | Type     |
+| --------- | -------- |
+| `n`       | `number` |
 
 ## Returns
 
