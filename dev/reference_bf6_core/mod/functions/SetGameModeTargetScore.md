@@ -8,15 +8,14 @@
 function SetGameModeTargetScore(newScore): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20392](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20392)
+Defined in: [mod/index.d.ts:20392](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20392)
 
 Sets the gamemode target score used to determine victory.
 
 ## Parameters
 
-| Parameter  | Type     |
-| ---------- | -------- |
+| Parameter | Type |
+| ------ | ------ |
 | `newScore` | `number` |
 
 ## Returns

@@ -4,7 +4,7 @@
 //#region -------------------- Ready Dialog - Takeoff Limit Gating --------------------
 
 function isPlayerInMainBaseForReady(pid: number): boolean {
-    const inBase = State.players.inMainBaseByPid[pid] !== undefined ? State.players.inMainBaseByPid[pid] : true;
+    const inBase = (State.players.inMainBaseByPid[pid] !== undefined) ? State.players.inMainBaseByPid[pid] : true;
     if (State.players.overTakeoffLimitByPid[pid]) return false;
     return inBase;
 }

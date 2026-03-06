@@ -8,17 +8,16 @@
 function SetVehicleSpawnerAbandonVehiclesOutOfCombatArea(vehicleSpawner, enabled): void;
 ```
 
-Defined in:
-[mod/index.d.ts:21432](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21432)
+Defined in: [mod/index.d.ts:21432](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21432)
 
 Enables or disables the feature to destroy vehicles left outside of the combat area.
 
 ## Parameters
 
-| Parameter        | Type                                            |
-| ---------------- | ----------------------------------------------- |
+| Parameter | Type |
+| ------ | ------ |
 | `vehicleSpawner` | [`VehicleSpawner`](../VehicleSpawner/_index.md) |
-| `enabled`        | `boolean`                                       |
+| `enabled` | `boolean` |
 
 ## Returns
 

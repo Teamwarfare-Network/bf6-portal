@@ -10,6 +10,8 @@ function setAdminPanelActionCountText(widget: mod.UIWidget | undefined, value: n
 
 //#endregion ----------------- HUD Counter Helpers --------------------
 
+
+
 //#region -------------------- HUD Phase State + Help Text --------------------
 
 function setMatchStateText(widget: mod.UIWidget | undefined): void {
@@ -145,7 +147,11 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
     if (!root) return undefined;
     mod.SetUIWidgetDepth(root, mod.UIDepth.AboveGameUI);
 
-    const reparentIds = ['Container_TopMiddle_CoreUI_', 'Container_TopLeft_CoreUI_', 'Container_TopRight_CoreUI_'];
+    const reparentIds = [
+        "Container_TopMiddle_CoreUI_",
+        "Container_TopLeft_CoreUI_",
+        "Container_TopRight_CoreUI_",
+    ];
 
     for (const base of reparentIds) {
         const widget = safeFind(base + pid);
@@ -154,7 +160,10 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
         mod.SetUIWidgetDepth(widget, mod.UIDepth.AboveGameUI);
     }
 
-    const topHudDepthIds = ['MatchTimerRoot_', 'RoundStateRoot_'];
+    const topHudDepthIds = [
+        "MatchTimerRoot_",
+        "RoundStateRoot_",
+    ];
     for (const base of topHudDepthIds) {
         const widget = safeFind(base + pid);
         if (widget) mod.SetUIWidgetDepth(widget, mod.UIDepth.AboveGameUI);
@@ -200,6 +209,8 @@ function setMatchStateTextForAllPlayers(): void {
 
 //#endregion ----------------- HUD Phase State + Help Text --------------------
 
+
+
 //#region -------------------- HUD Ready Count --------------------
 
 /**
@@ -225,7 +236,7 @@ function updatePlayersReadyHudTextForAllPlayers(): void {
         if (State.players.readyByPid[pid]) readyCount++;
     }
 
-    const shouldShow = !State.match.victoryDialogActive && !isMatchLive();
+    const shouldShow = (!State.match.victoryDialogActive) && (!isMatchLive());
 
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -239,11 +250,13 @@ function updatePlayersReadyHudTextForAllPlayers(): void {
         const isDialogOpen = !!State.players.readyDialogData[pid]?.dialogVisible;
         const isReady = !!State.players.readyByPid[pid];
         const isDeployed = !!State.players.deployedByPid[pid];
-        const canShowHelp =
-            !State.match.isEnded && !State.match.victoryDialogActive && !State.round.flow.cleanupActive && isDeployed;
-        const showHelp = canShowHelp && !isMatchLive() && !isReady && !isDialogOpen;
-        const showReady = canShowHelp && !isMatchLive() && isReady && !isDialogOpen;
-        const showReadyLine = shouldShow && !showHelp && !showReady;
+        const canShowHelp = (!State.match.isEnded)
+            && (!State.match.victoryDialogActive)
+            && (!State.round.flow.cleanupActive)
+            && (isDeployed);
+        const showHelp = canShowHelp && (!isMatchLive()) && (!isReady) && (!isDialogOpen);
+        const showReady = canShowHelp && (!isMatchLive()) && (isReady) && (!isDialogOpen);
+        const showReadyLine = shouldShow && (!showHelp) && (!showReady);
 
         // Toggle visibility first so we can avoid unnecessary label churn when hidden.
         safeSetUIWidgetVisible(cache.playersReadyText, showReadyLine);

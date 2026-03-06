@@ -13,7 +13,7 @@ const TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS = 0.6;
 // This intentionally does NOT re-deploy the player; the player is expected to choose a spawn point manually.
 async function forceUndeployPlayer(
     eventPlayer: mod.Player,
-    deployReason: ConquestSpawnChargeReason = 'forced_redeploy'
+    deployReason: ConquestSpawnChargeReason = "forced_redeploy"
 ): Promise<void> {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     const pid = safeGetPlayerId(eventPlayer);
@@ -62,7 +62,7 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
 
     const pid = safeGetPlayerId(eventPlayer);
     const currentTeamNum = getTeamNumber(mod.GetTeam(eventPlayer));
-    const newTeamNum = currentTeamNum === TeamID.Team2 ? TeamID.Team1 : TeamID.Team2;
+    const newTeamNum = (currentTeamNum === TeamID.Team2) ? TeamID.Team1 : TeamID.Team2;
     if (pid !== undefined) {
         // Treat swap as immediately undeployed for HUD authority until the engine undeploy callback lands.
         State.players.deployedByPid[pid] = false;
@@ -74,8 +74,7 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
         // Pre-seed swap perspective so post-SetTeam transient reads cannot repaint as Team1 fallback.
         State.conquest.debug.perspectiveTeamByPid[pid] = newTeamNum;
         // Hold perspective to the target team briefly so redraw cannot sample stale pre-swap engine team for one frame.
-        State.conquest.debug.teamSwapPerspectiveLockUntilByPid[pid] =
-            mod.GetMatchTimeElapsed() + TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS;
+        State.conquest.debug.teamSwapPerspectiveLockUntilByPid[pid] = mod.GetMatchTimeElapsed() + TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS;
         // Hide current conquest HUD immediately so old-team colors do not linger during swap settle.
         const swapRefs = ensureHudForPlayer(eventPlayer);
         if (swapRefs) conquestPhase3ForceHideAllV2Widgets(pid, swapRefs);
@@ -91,7 +90,7 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
     // Ensure team swapping does not grant faster-than-normal respawn timing.
     // Reuse the shared redeploy delay constant for consistent forced-undeploy behavior.
     mod.SetRedeployTime(eventPlayer, ROUND_END_REDEPLOY_DELAY_SECONDS);
-    void forceUndeployPlayer(eventPlayer, 'team_switch');
+    void forceUndeployPlayer(eventPlayer, "team_switch");
 
     sendHighlightedWorldLogMessage(
         mod.Message(mod.stringkeys.twl.notifications.teamSwitch),
@@ -189,7 +188,7 @@ function destroyReadyDialogUI(playerId: number): void {
     if (adminToggle) mod.DeleteUIWidget(adminToggle);
     const adminToggleLabel = safeFind(UI_ADMIN_PANEL_BUTTON_LABEL_ID + playerId);
     if (adminToggleLabel) mod.DeleteUIWidget(adminToggleLabel);
-    const adminToggleBorder = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId + '_BORDER');
+    const adminToggleBorder = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId + "_BORDER");
     if (adminToggleBorder) mod.DeleteUIWidget(adminToggleBorder);
     const adminContainer = safeFind(UI_ADMIN_PANEL_CONTAINER_ID + playerId);
     if (adminContainer) mod.DeleteUIWidget(adminContainer);

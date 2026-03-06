@@ -37,10 +37,7 @@ async function forceSpawnWithRetry(slotIndex: number): Promise<boolean> {
     for (let attempt = 0; attempt < 20; attempt++) {
         if (!slot.enabled || slot.enableToken !== token) {
             slot.expectingSpawn = false;
-            if (
-                State.vehicles.activeSpawnSlotIndex === slotIndex &&
-                State.vehicles.activeSpawnToken === slot.spawnRequestToken
-            ) {
+            if (State.vehicles.activeSpawnSlotIndex === slotIndex && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
                 State.vehicles.activeSpawnSlotIndex = undefined;
                 State.vehicles.activeSpawnToken = undefined;
                 State.vehicles.activeSpawnRequestedAtSeconds = undefined;
@@ -57,10 +54,7 @@ async function forceSpawnWithRetry(slotIndex: number): Promise<boolean> {
     }
 
     slot.expectingSpawn = false;
-    if (
-        State.vehicles.activeSpawnSlotIndex === slotIndex &&
-        State.vehicles.activeSpawnToken === slot.spawnRequestToken
-    ) {
+    if (State.vehicles.activeSpawnSlotIndex === slotIndex && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
         State.vehicles.activeSpawnSlotIndex = undefined;
         State.vehicles.activeSpawnToken = undefined;
         State.vehicles.activeSpawnRequestedAtSeconds = undefined;

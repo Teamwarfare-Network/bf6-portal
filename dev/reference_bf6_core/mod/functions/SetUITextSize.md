@@ -8,17 +8,16 @@
 function SetUITextSize(widget, value): void;
 ```
 
-Defined in:
-[mod/index.d.ts:21390](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21390)
+Defined in: [mod/index.d.ts:21390](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21390)
 
 Changes the font size of an UI Text Widget.
 
 ## Parameters
 
-| Parameter | Type                                |
-| --------- | ----------------------------------- |
-| `widget`  | [`UIWidget`](../UIWidget/_index.md) |
-| `value`   | `number`                            |
+| Parameter | Type |
+| ------ | ------ |
+| `widget` | [`UIWidget`](../UIWidget/_index.md) |
+| `value` | `number` |
 
 ## Returns
 

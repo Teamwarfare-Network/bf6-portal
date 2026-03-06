@@ -8,15 +8,14 @@
 function SetSpawnMode(spawnModes): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20532](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20532)
+Defined in: [mod/index.d.ts:20532](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20532)
 
 Determines if players are spawned automatically or not.
 
 ## Parameters
 
-| Parameter    | Type                                    |
-| ------------ | --------------------------------------- |
+| Parameter | Type |
+| ------ | ------ |
 | `spawnModes` | [`SpawnModes`](../SpawnModes/_index.md) |
 
 ## Returns

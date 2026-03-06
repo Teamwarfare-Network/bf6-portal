@@ -8,16 +8,15 @@
 function GetEmplacementSpawner(number): EmplacementSpawner;
 ```
 
-Defined in:
-[mod/index.d.ts:21583](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21583)
+Defined in: [mod/index.d.ts:21583](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21583)
 
 Returns the emplacement spawner object corresponding to the provided id.
 
 ## Parameters
 
-| Parameter | Type     |
-| --------- | -------- |
-| `number`  | `number` |
+| Parameter | Type |
+| ------ | ------ |
+| `number` | `number` |
 
 ## Returns
 

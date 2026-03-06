@@ -10,16 +10,15 @@
 function GetGameModeScore(player): number;
 ```
 
-Defined in:
-[mod/index.d.ts:21556](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21556)
+Defined in: [mod/index.d.ts:21556](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21556)
 
 Returns the current gamemode score of the provided player or team.
 
 ### Parameters
 
-| Parameter | Type                            |
-| --------- | ------------------------------- |
-| `player`  | [`Player`](../Player/_index.md) |
+| Parameter | Type |
+| ------ | ------ |
+| `player` | [`Player`](../Player/_index.md) |
 
 ### Returns
 
@@ -31,16 +30,15 @@ Returns the current gamemode score of the provided player or team.
 function GetGameModeScore(team): number;
 ```
 
-Defined in:
-[mod/index.d.ts:21559](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21559)
+Defined in: [mod/index.d.ts:21559](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21559)
 
 Returns the current gamemode score of the provided player or team.
 
 ### Parameters
 
-| Parameter | Type                        |
-| --------- | --------------------------- |
-| `team`    | [`Team`](../Team/_index.md) |
+| Parameter | Type |
+| ------ | ------ |
+| `team` | [`Team`](../Team/_index.md) |
 
 ### Returns
 

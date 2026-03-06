@@ -8,8 +8,7 @@
 function GetUIRoot(): UIWidget;
 ```
 
-Defined in:
-[mod/index.d.ts:22046](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L22046)
+Defined in: [mod/index.d.ts:22046](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L22046)
 
 Returns the UI Root as a UI Widget.
 

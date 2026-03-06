@@ -50,10 +50,7 @@ function setMatchClockPreview(seconds: number): void {
 
 function getRemainingSeconds(): number {
     if (State.round.clock.isPaused) {
-        return Math.max(
-            0,
-            State.round.clock.pausedRemainingSeconds !== undefined ? State.round.clock.pausedRemainingSeconds : 0
-        );
+        return Math.max(0, State.round.clock.pausedRemainingSeconds !== undefined ? State.round.clock.pausedRemainingSeconds : 0);
     }
 
     if (State.round.clock.matchStartElapsedSeconds === undefined) return 0;
@@ -66,8 +63,7 @@ function adjustMatchClockBySeconds(deltaSeconds: number): void {
     const delta = Math.floor(deltaSeconds);
 
     if (State.round.clock.isPaused) {
-        const current =
-            State.round.clock.pausedRemainingSeconds !== undefined ? State.round.clock.pausedRemainingSeconds : 0;
+        const current = State.round.clock.pausedRemainingSeconds !== undefined ? State.round.clock.pausedRemainingSeconds : 0;
         State.round.clock.pausedRemainingSeconds = Math.max(0, current + delta);
         State.round.clock.durationSeconds = Math.max(0, State.round.clock.durationSeconds + delta);
     } else {
@@ -144,6 +140,7 @@ function updateAllPlayersClock(): void {
         }
 
         updateVictoryDialogForPlayer(player, remaining);
+
     }
 
     State.round.clock.lastLowTimeState = lowTime;

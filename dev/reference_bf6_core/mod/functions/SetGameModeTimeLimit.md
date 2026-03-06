@@ -8,15 +8,14 @@
 function SetGameModeTimeLimit(newTimeLimit): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20395](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20395)
+Defined in: [mod/index.d.ts:20395](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20395)
 
 Sets the duration of the game in seconds.
 
 ## Parameters
 
-| Parameter      | Type     |
-| -------------- | -------- |
+| Parameter | Type |
+| ------ | ------ |
 | `newTimeLimit` | `number` |
 
 ## Returns

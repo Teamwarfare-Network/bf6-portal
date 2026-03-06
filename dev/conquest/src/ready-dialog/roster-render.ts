@@ -13,16 +13,10 @@
 // - Player name: white by default; green only when BOTH ready AND in main base.
 // - READY / IN MAIN BASE: green
 // - NOT READY / NOT IN MAIN BASE: red
-function applyReadyDialogRowColors(
-    nameWidget: mod.UIWidget | undefined,
-    readyWidget: mod.UIWidget | undefined,
-    baseWidget: mod.UIWidget | undefined,
-    isReady: boolean,
-    isInBase: boolean
-): void {
+function applyReadyDialogRowColors(nameWidget: mod.UIWidget | undefined, readyWidget: mod.UIWidget | undefined, baseWidget: mod.UIWidget | undefined, isReady: boolean, isInBase: boolean): void {
     if (readyWidget) mod.SetUITextColor(readyWidget, isReady ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
     if (baseWidget) mod.SetUITextColor(baseWidget, isInBase ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
-    if (nameWidget) mod.SetUITextColor(nameWidget, isReady && isInBase ? COLOR_READY_GREEN : COLOR_NORMAL);
+    if (nameWidget) mod.SetUITextColor(nameWidget, (isReady && isInBase) ? COLOR_READY_GREEN : COLOR_NORMAL);
 }
 
 // Renders the entire Ready Up dialog state for a single viewer.
@@ -30,6 +24,7 @@ function applyReadyDialogRowColors(
 function renderReadyDialogForViewer(eventPlayer: mod.Player, viewerPid: number): void {
     refreshReadyDialogRosterForViewer(eventPlayer, viewerPid);
     updateReadyToggleButtonForViewer(eventPlayer, viewerPid);
+
 }
 
 // Renders the dialog for all players who currently have it open.
@@ -54,15 +49,15 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
     const t2Players = roster.team2;
 
     const maxRowsPerTeam = TEAM_ROSTER_MAX_ROWS;
-    const emptyMsg = mod.Message(mod.stringkeys.twl.system.genericCounter, '');
+    const emptyMsg = mod.Message(mod.stringkeys.twl.system.genericCounter, "");
     for (let row = 0; row < maxRowsPerTeam; row++) {
-        const t1NameId = UI_READY_DIALOG_T1_ROW_NAME_ID + viewerPlayerId + '_' + row;
-        const t1ReadyId = UI_READY_DIALOG_T1_ROW_READY_ID + viewerPlayerId + '_' + row;
-        const t1BaseId = UI_READY_DIALOG_T1_ROW_BASE_ID + viewerPlayerId + '_' + row;
+        const t1NameId = UI_READY_DIALOG_T1_ROW_NAME_ID + viewerPlayerId + "_" + row;
+        const t1ReadyId = UI_READY_DIALOG_T1_ROW_READY_ID + viewerPlayerId + "_" + row;
+        const t1BaseId = UI_READY_DIALOG_T1_ROW_BASE_ID + viewerPlayerId + "_" + row;
 
-        const t2NameId = UI_READY_DIALOG_T2_ROW_NAME_ID + viewerPlayerId + '_' + row;
-        const t2ReadyId = UI_READY_DIALOG_T2_ROW_READY_ID + viewerPlayerId + '_' + row;
-        const t2BaseId = UI_READY_DIALOG_T2_ROW_BASE_ID + viewerPlayerId + '_' + row;
+        const t2NameId = UI_READY_DIALOG_T2_ROW_NAME_ID + viewerPlayerId + "_" + row;
+        const t2ReadyId = UI_READY_DIALOG_T2_ROW_READY_ID + viewerPlayerId + "_" + row;
+        const t2BaseId = UI_READY_DIALOG_T2_ROW_BASE_ID + viewerPlayerId + "_" + row;
 
         const t1Name = mod.FindUIWidgetWithName(t1NameId, mod.GetUIRoot());
         const t1Ready = mod.FindUIWidgetWithName(t1ReadyId, mod.GetUIRoot());
@@ -72,8 +67,8 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
         const t2Ready = mod.FindUIWidgetWithName(t2ReadyId, mod.GetUIRoot());
         const t2Base = mod.FindUIWidgetWithName(t2BaseId, mod.GetUIRoot());
 
-        const t1Entry = row < t1Players.length ? t1Players[row] : undefined;
-        const t2Entry = row < t2Players.length ? t2Players[row] : undefined;
+        const t1Entry = (row < t1Players.length) ? t1Players[row] : undefined;
+        const t2Entry = (row < t2Players.length) ? t2Players[row] : undefined;
         const p1 = t1Entry?.player;
         const p2 = t2Entry?.player;
 
@@ -91,21 +86,17 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
         mod.SetUITextLabel(
             t1Ready,
             hasP1
-                ? p1
-                    ? State.players.readyByPid[mod.GetObjId(p1)]
-                        ? mod.Message(mod.stringkeys.twl.readyDialog.status.ready)
-                        : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady)
-                    : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady)
+                ? (p1
+                    ? (State.players.readyByPid[mod.GetObjId(p1)] ? mod.Message(mod.stringkeys.twl.readyDialog.status.ready) : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
+                    : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
                 : emptyMsg
         );
         mod.SetUITextLabel(
             t1Base,
             hasP1
-                ? p1
-                    ? isPlayerInMainBaseForReady(mod.GetObjId(p1))
-                        ? mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.in)
-                        : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out)
-                    : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out)
+                ? (p1
+                    ? (isPlayerInMainBaseForReady(mod.GetObjId(p1)) ? mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.in) : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out))
+                    : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out))
                 : emptyMsg
         );
         if (p1) {
@@ -126,21 +117,17 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
         mod.SetUITextLabel(
             t2Ready,
             hasP2
-                ? p2
-                    ? State.players.readyByPid[mod.GetObjId(p2)]
-                        ? mod.Message(mod.stringkeys.twl.readyDialog.status.ready)
-                        : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady)
-                    : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady)
+                ? (p2
+                    ? (State.players.readyByPid[mod.GetObjId(p2)] ? mod.Message(mod.stringkeys.twl.readyDialog.status.ready) : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
+                    : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
                 : emptyMsg
         );
         mod.SetUITextLabel(
             t2Base,
             hasP2
-                ? p2
-                    ? isPlayerInMainBaseForReady(mod.GetObjId(p2))
-                        ? mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.in)
-                        : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out)
-                    : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out)
+                ? (p2
+                    ? (isPlayerInMainBaseForReady(mod.GetObjId(p2)) ? mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.in) : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out))
+                    : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out))
                 : emptyMsg
         );
         if (p2) {

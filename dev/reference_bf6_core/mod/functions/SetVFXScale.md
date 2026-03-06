@@ -8,17 +8,16 @@
 function SetVFXScale(vfxID, scale): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20299](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20299)
+Defined in: [mod/index.d.ts:20299](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20299)
 
 Changes the scale of a visual effect.
 
 ## Parameters
 
-| Parameter | Type                      |
-| --------- | ------------------------- |
-| `vfxID`   | [`VFX`](../VFX/_index.md) |
-| `scale`   | `number`                  |
+| Parameter | Type |
+| ------ | ------ |
+| `vfxID` | [`VFX`](../VFX/_index.md) |
+| `scale` | `number` |
 
 ## Returns
 

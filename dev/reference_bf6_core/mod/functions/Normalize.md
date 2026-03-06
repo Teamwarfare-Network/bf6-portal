@@ -8,16 +8,15 @@
 function Normalize(vector): Vector;
 ```
 
-Defined in:
-[mod/index.d.ts:21782](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21782)
+Defined in: [mod/index.d.ts:21782](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21782)
 
 Returns a unit-length normalization of a vector.
 
 ## Parameters
 
-| Parameter | Type                            |
-| --------- | ------------------------------- |
-| `vector`  | [`Vector`](../Vector/_index.md) |
+| Parameter | Type |
+| ------ | ------ |
+| `vector` | [`Vector`](../Vector/_index.md) |
 
 ## Returns
 

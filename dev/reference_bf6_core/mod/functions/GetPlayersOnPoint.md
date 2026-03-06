@@ -8,15 +8,14 @@
 function GetPlayersOnPoint(capturePoint): Array;
 ```
 
-Defined in:
-[mod/index.d.ts:21836](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21836)
+Defined in: [mod/index.d.ts:21836](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21836)
 
 Returns a array of all players within the boundaries of a provided capture point.
 
 ## Parameters
 
-| Parameter      | Type                                        |
-| -------------- | ------------------------------------------- |
+| Parameter | Type |
+| ------ | ------ |
 | `capturePoint` | [`CapturePoint`](../CapturePoint/_index.md) |
 
 ## Returns

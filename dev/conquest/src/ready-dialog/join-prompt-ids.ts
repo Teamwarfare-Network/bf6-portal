@@ -3,36 +3,16 @@
 
 //#region -------------------- Join Prompt - IDs + Gating --------------------
 
-function joinPromptRootName(pid: number): string {
-    return 'join_prompt_root_' + pid;
-}
-function joinPromptPanelName(pid: number): string {
-    return 'join_prompt_panel_' + pid;
-}
-function joinPromptTitleName(pid: number): string {
-    return 'join_prompt_title_' + pid;
-}
-function joinPromptBodyName(pid: number): string {
-    return 'join_prompt_body_' + pid;
-}
-function joinPromptButtonName(pid: number): string {
-    return 'join_prompt_dismiss_' + pid;
-}
-function joinPromptButtonBorderName(pid: number): string {
-    return joinPromptButtonName(pid) + '_BORDER';
-}
-function joinPromptButtonTextName(pid: number): string {
-    return 'join_prompt_dismiss_text_' + pid;
-}
-function joinPromptNeverShowButtonName(pid: number): string {
-    return 'join_prompt_never_show_' + pid;
-}
-function joinPromptNeverShowButtonBorderName(pid: number): string {
-    return joinPromptNeverShowButtonName(pid) + '_BORDER';
-}
-function joinPromptNeverShowButtonTextName(pid: number): string {
-    return 'join_prompt_never_show_text_' + pid;
-}
+function joinPromptRootName(pid: number): string { return "join_prompt_root_" + pid; }
+function joinPromptPanelName(pid: number): string { return "join_prompt_panel_" + pid; }
+function joinPromptTitleName(pid: number): string { return "join_prompt_title_" + pid; }
+function joinPromptBodyName(pid: number): string { return "join_prompt_body_" + pid; }
+function joinPromptButtonName(pid: number): string { return "join_prompt_dismiss_" + pid; }
+function joinPromptButtonBorderName(pid: number): string { return joinPromptButtonName(pid) + "_BORDER"; }
+function joinPromptButtonTextName(pid: number): string { return "join_prompt_dismiss_text_" + pid; }
+function joinPromptNeverShowButtonName(pid: number): string { return "join_prompt_never_show_" + pid; }
+function joinPromptNeverShowButtonBorderName(pid: number): string { return joinPromptNeverShowButtonName(pid) + "_BORDER"; }
+function joinPromptNeverShowButtonTextName(pid: number): string { return "join_prompt_never_show_text_" + pid; }
 
 function deleteJoinPromptWidget(name: string): void {
     const w = safeFind(name);
@@ -126,7 +106,7 @@ function getJoinPromptSequenceIndexForPid(pid: number): number {
     ensureJoinPromptStateForPid(pid);
     const raw = Math.floor(State.players.joinPromptTipIndexByPid[pid] ?? 0);
     const max = JOIN_PROMPT_BODY_SEQUENCE_KEYS.length;
-    const clamped = raw >= 0 && raw < max ? raw : 0;
+    const clamped = (raw >= 0 && raw < max) ? raw : 0;
     const resolved = findNextJoinPromptSequenceIndex(clamped);
     State.players.joinPromptTipIndexByPid[pid] = resolved;
     return resolved;

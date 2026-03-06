@@ -8,16 +8,15 @@
 function CosineFromDegrees(number): number;
 ```
 
-Defined in:
-[mod/index.d.ts:21731](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21731)
+Defined in: [mod/index.d.ts:21731](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21731)
 
 Returns the cosine value of a specified angle in degrees.
 
 ## Parameters
 
-| Parameter | Type     |
-| --------- | -------- |
-| `number`  | `number` |
+| Parameter | Type |
+| ------ | ------ |
+| `number` | `number` |
 
 ## Returns
 

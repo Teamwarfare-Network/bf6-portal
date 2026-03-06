@@ -10,17 +10,16 @@
 function StopSound(objectId, team): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20248](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20248)
+Defined in: [mod/index.d.ts:20248](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20248)
 
 Stops a given sound.
 
 ### Parameters
 
-| Parameter  | Type                        |
-| ---------- | --------------------------- |
-| `objectId` | `number`                    |
-| `team`     | [`Team`](../Team/_index.md) |
+| Parameter | Type |
+| ------ | ------ |
+| `objectId` | `number` |
+| `team` | [`Team`](../Team/_index.md) |
 
 ### Returns
 
@@ -32,17 +31,16 @@ Stops a given sound.
 function StopSound(objectId, squad): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20251](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20251)
+Defined in: [mod/index.d.ts:20251](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20251)
 
 Stops a given sound.
 
 ### Parameters
 
-| Parameter  | Type                          |
-| ---------- | ----------------------------- |
-| `objectId` | `number`                      |
-| `squad`    | [`Squad`](../Squad/_index.md) |
+| Parameter | Type |
+| ------ | ------ |
+| `objectId` | `number` |
+| `squad` | [`Squad`](../Squad/_index.md) |
 
 ### Returns
 
@@ -54,17 +52,16 @@ Stops a given sound.
 function StopSound(objectId, player): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20254](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20254)
+Defined in: [mod/index.d.ts:20254](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20254)
 
 Stops a given sound.
 
 ### Parameters
 
-| Parameter  | Type                            |
-| ---------- | ------------------------------- |
-| `objectId` | `number`                        |
-| `player`   | [`Player`](../Player/_index.md) |
+| Parameter | Type |
+| ------ | ------ |
+| `objectId` | `number` |
+| `player` | [`Player`](../Player/_index.md) |
 
 ### Returns
 
@@ -76,15 +73,14 @@ Stops a given sound.
 function StopSound(objectId): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20257](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20257)
+Defined in: [mod/index.d.ts:20257](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20257)
 
 Stops a given sound.
 
 ### Parameters
 
-| Parameter  | Type     |
-| ---------- | -------- |
+| Parameter | Type |
+| ------ | ------ |
 | `objectId` | `number` |
 
 ### Returns
@@ -97,17 +93,16 @@ Stops a given sound.
 function StopSound(sound, team): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20260](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20260)
+Defined in: [mod/index.d.ts:20260](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20260)
 
 Stops a given sound.
 
 ### Parameters
 
-| Parameter | Type                        |
-| --------- | --------------------------- |
-| `sound`   | [`SFX`](../SFX/_index.md)   |
-| `team`    | [`Team`](../Team/_index.md) |
+| Parameter | Type |
+| ------ | ------ |
+| `sound` | [`SFX`](../SFX/_index.md) |
+| `team` | [`Team`](../Team/_index.md) |
 
 ### Returns
 
@@ -119,17 +114,16 @@ Stops a given sound.
 function StopSound(sound, squad): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20263](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20263)
+Defined in: [mod/index.d.ts:20263](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20263)
 
 Stops a given sound.
 
 ### Parameters
 
-| Parameter | Type                          |
-| --------- | ----------------------------- |
-| `sound`   | [`SFX`](../SFX/_index.md)     |
-| `squad`   | [`Squad`](../Squad/_index.md) |
+| Parameter | Type |
+| ------ | ------ |
+| `sound` | [`SFX`](../SFX/_index.md) |
+| `squad` | [`Squad`](../Squad/_index.md) |
 
 ### Returns
 
@@ -141,17 +135,16 @@ Stops a given sound.
 function StopSound(sound, player): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20266](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20266)
+Defined in: [mod/index.d.ts:20266](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20266)
 
 Stops a given sound.
 
 ### Parameters
 
-| Parameter | Type                            |
-| --------- | ------------------------------- |
-| `sound`   | [`SFX`](../SFX/_index.md)       |
-| `player`  | [`Player`](../Player/_index.md) |
+| Parameter | Type |
+| ------ | ------ |
+| `sound` | [`SFX`](../SFX/_index.md) |
+| `player` | [`Player`](../Player/_index.md) |
 
 ### Returns
 
@@ -163,16 +156,15 @@ Stops a given sound.
 function StopSound(sound): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20269](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20269)
+Defined in: [mod/index.d.ts:20269](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20269)
 
 Stops a given sound.
 
 ### Parameters
 
-| Parameter | Type                      |
-| --------- | ------------------------- |
-| `sound`   | [`SFX`](../SFX/_index.md) |
+| Parameter | Type |
+| ------ | ------ |
+| `sound` | [`SFX`](../SFX/_index.md) |
 
 ### Returns
 

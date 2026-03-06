@@ -59,6 +59,7 @@ function teamSwitchInteractPointActivated(eventPlayer: mod.Player, eventInteract
             updateHelpTextVisibilityForPid(playerId);
             renderReadyDialogForViewer(eventPlayer, playerId);
             // Immediate self-refresh to avoid relying solely on global refresh bookkeeping.
+
         }
     }
 }

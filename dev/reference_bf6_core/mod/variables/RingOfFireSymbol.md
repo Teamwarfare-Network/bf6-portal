@@ -8,7 +8,7 @@
 const RingOfFireSymbol: unique symbol;
 ```
 
-Defined in:
-[mod/index.d.ts:79](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L79)
+Defined in: [mod/index.d.ts:79](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L79)
 
-export type RingOfFire = never; export type RingOfFire = Any;
+export type RingOfFire = never;
+export type RingOfFire = Any;

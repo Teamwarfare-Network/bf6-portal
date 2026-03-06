@@ -8,18 +8,17 @@
 function GetSFX(number): SFX;
 ```
 
-Defined in:
-[mod/index.d.ts:21535](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21535)
+Defined in: [mod/index.d.ts:21535](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21535)
 
-Returns the SFX object corresponding to the provided id. \*\*
-
--
+Returns the SFX object corresponding to the provided id.
+**
+*
 
 ## Parameters
 
-| Parameter | Type     |
-| --------- | -------- |
-| `number`  | `number` |
+| Parameter | Type |
+| ------ | ------ |
+| `number` | `number` |
 
 ## Returns
 
@@ -27,4 +26,5 @@ Returns the SFX object corresponding to the provided id. \*\*
 
 ## Deprecated
 
-The method should not be used \*/
+The method should not be used
+*/

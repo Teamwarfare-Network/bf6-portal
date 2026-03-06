@@ -8,14 +8,13 @@
 function ClearAllCustomNotificationMessages(target): void;
 ```
 
-Defined in:
-[modlib/index.ts:675](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L675)
+Defined in: [modlib/index.ts:675](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/modlib/index.ts#L675)
 
 ## Parameters
 
-| Parameter | Type                                       |
-| --------- | ------------------------------------------ |
-| `target`  | [`Player`](../../mod/mod/Player/_index.md) |
+| Parameter | Type |
+| ------ | ------ |
+| `target` | [`Player`](../../mod/mod/Player/_index.md) |
 
 ## Returns
 

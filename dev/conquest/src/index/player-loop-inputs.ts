@@ -38,11 +38,7 @@ function onPlayerInteractImpl(eventPlayer: mod.Player, eventInteractPoint: mod.I
     teamSwitchInteractPointActivated(eventPlayer, eventInteractPoint);
 }
 
-function onPlayerUIButtonEventImpl(
-    eventPlayer: mod.Player,
-    eventUIWidget: mod.UIWidget,
-    eventUIButtonEvent: mod.UIButtonEvent
-) {
+function onPlayerUIButtonEventImpl(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, eventUIButtonEvent: mod.UIButtonEvent) {
     if (tryHandleJoinPromptButton(eventPlayer, eventUIWidget, eventUIButtonEvent)) return;
     teamSwitchButtonEvent(eventPlayer, eventUIWidget, eventUIButtonEvent);
 }

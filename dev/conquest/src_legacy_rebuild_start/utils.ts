@@ -5,10 +5,7 @@
 
 //Code Cleanup: Refactor this reference and use TS Template as a tool import during bundling a new distribution instead
 class InteractMultiClickDetector {
-    private static readonly STATES: Record<
-        number,
-        { lastIsInteracting: boolean; clickCount: number; sequenceStartTime: number }
-    > = {};
+    private static readonly STATES: Record<number, { lastIsInteracting: boolean; clickCount: number; sequenceStartTime: number }> = {};
     private static readonly WINDOW_MS = 2_000; //Needs to be tuned to facilitate clunky console controls
     private static readonly REQUIRED_CLICKS = 3;
 
@@ -51,6 +48,8 @@ class InteractMultiClickDetector {
 
 //#endregion ----------------- MultiClickDetector (triple tap interact) --------------------
 
+
+
 //#region -------------------- Main Base Restock (area triggers) --------------------
 
 function IsPlayerInOwnMainBase(player: mod.Player, areaTrigger: mod.AreaTrigger): boolean {
@@ -59,14 +58,8 @@ function IsPlayerInOwnMainBase(player: mod.Player, areaTrigger: mod.AreaTrigger)
     const teamId = mod.GetObjId(mod.GetTeam(player));
 
     return mod.Or(
-        mod.And(
-            mod.Equals(triggerId, TEAM1_MAIN_BASE_TRIGGER_ID),
-            mod.Equals(teamId, mod.GetObjId(mod.GetTeam(TeamID.Team1)))
-        ),
-        mod.And(
-            mod.Equals(triggerId, TEAM2_MAIN_BASE_TRIGGER_ID),
-            mod.Equals(teamId, mod.GetObjId(mod.GetTeam(TeamID.Team2)))
-        )
+        mod.And(mod.Equals(triggerId, TEAM1_MAIN_BASE_TRIGGER_ID), mod.Equals(teamId, mod.GetObjId(mod.GetTeam(TeamID.Team1)))),
+        mod.And(mod.Equals(triggerId, TEAM2_MAIN_BASE_TRIGGER_ID), mod.Equals(teamId, mod.GetObjId(mod.GetTeam(TeamID.Team2))))
     );
 }
 
@@ -86,17 +79,21 @@ function BroadcastMainBaseEvent(
 
     const safeArg0 = sanitizeArg(arg0);
     const safeArg1 = sanitizeArg(arg1);
-    const message =
-        safeArg0 === undefined
-            ? mod.Message(messageKey)
-            : safeArg1 === undefined
-              ? mod.Message(messageKey, safeArg0)
-              : mod.Message(messageKey, safeArg0, safeArg1);
+    const message = (safeArg0 === undefined)
+        ? mod.Message(messageKey)
+        : (safeArg1 === undefined)
+            ? mod.Message(messageKey, safeArg0)
+            : mod.Message(messageKey, safeArg0, safeArg1);
     sendHighlightedWorldLogMessage(message, false, undefined, messageKey);
 }
 
 function NotifyAmmoRestocked(player: mod.Player): void {
-    sendHighlightedWorldLogMessage(mod.Message(STR_AMMO_RESTOCKED), true, player, STR_AMMO_RESTOCKED);
+    sendHighlightedWorldLogMessage(
+        mod.Message(STR_AMMO_RESTOCKED),
+        true,
+        player,
+        STR_AMMO_RESTOCKED
+    );
 }
 
 function RestockGadgetAmmo(player: mod.Player, magAmmo: number): void {

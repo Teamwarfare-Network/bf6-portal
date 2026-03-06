@@ -150,7 +150,7 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     {
         const cache = ensureClockUIAndGetCache(eventPlayer);
         if (cache) setMatchStateText(cache.roundStateText);
-        updateHelpTextVisibilityForPlayer(eventPlayer);
+    updateHelpTextVisibilityForPlayer(eventPlayer);
     }
     if (joinPid !== undefined) {
         updateTeamNameWidgetsForPid(joinPid);

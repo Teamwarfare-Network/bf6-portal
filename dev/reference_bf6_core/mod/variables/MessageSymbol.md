@@ -8,7 +8,7 @@
 const MessageSymbol: unique symbol;
 ```
 
-Defined in:
-[mod/index.d.ts:64](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L64)
+Defined in: [mod/index.d.ts:64](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L64)
 
-export type Message = never; export type Message = Any;
+export type Message = never;
+export type Message = Any;

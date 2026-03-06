@@ -8,16 +8,15 @@
 function GetCapturePoint(id): CapturePoint;
 ```
 
-Defined in:
-[mod/index.d.ts:21824](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21824)
+Defined in: [mod/index.d.ts:21824](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21824)
 
 Returns the capture point corresponding to the provided id.
 
 ## Parameters
 
-| Parameter | Type     |
-| --------- | -------- |
-| `id`      | `number` |
+| Parameter | Type |
+| ------ | ------ |
+| `id` | `number` |
 
 ## Returns
 

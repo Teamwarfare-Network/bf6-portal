@@ -8,15 +8,14 @@
 function DistanceBetween(vector0, vector1): number;
 ```
 
-Defined in:
-[mod/index.d.ts:21755](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21755)
+Defined in: [mod/index.d.ts:21755](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21755)
 
 Returns the distance between a starting position and ending position.
 
 ## Parameters
 
-| Parameter | Type                            |
-| --------- | ------------------------------- |
+| Parameter | Type |
+| ------ | ------ |
 | `vector0` | [`Vector`](../Vector/_index.md) |
 | `vector1` | [`Vector`](../Vector/_index.md) |
 

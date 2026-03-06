@@ -10,15 +10,14 @@
 function SetCameraTypeForAll(cameraType): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20272](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20272)
+Defined in: [mod/index.d.ts:20272](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20272)
 
 Sets CameraType for all players. CameraIndex optional.
 
 ### Parameters
 
-| Parameter    | Type                              |
-| ------------ | --------------------------------- |
+| Parameter | Type |
+| ------ | ------ |
 | `cameraType` | [`Cameras`](../Cameras/_index.md) |
 
 ### Returns
@@ -31,17 +30,16 @@ Sets CameraType for all players. CameraIndex optional.
 function SetCameraTypeForAll(cameraType, cameraIndex): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20275](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20275)
+Defined in: [mod/index.d.ts:20275](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20275)
 
 Sets CameraType for all players. CameraIndex optional.
 
 ### Parameters
 
-| Parameter     | Type                              |
-| ------------- | --------------------------------- |
-| `cameraType`  | [`Cameras`](../Cameras/_index.md) |
-| `cameraIndex` | `number`                          |
+| Parameter | Type |
+| ------ | ------ |
+| `cameraType` | [`Cameras`](../Cameras/_index.md) |
+| `cameraIndex` | `number` |
 
 ### Returns
 

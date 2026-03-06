@@ -8,15 +8,14 @@
 function ForceEmplacementSpawnerSpawn(emplacementSpawner): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20305](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20305)
+Defined in: [mod/index.d.ts:20305](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20305)
 
 Cause an emplacement spawner to spawn an emplacement of the type it is currently set to.
 
 ## Parameters
 
-| Parameter            | Type                                                    |
-| -------------------- | ------------------------------------------------------- |
+| Parameter | Type |
+| ------ | ------ |
 | `emplacementSpawner` | [`EmplacementSpawner`](../EmplacementSpawner/_index.md) |
 
 ## Returns

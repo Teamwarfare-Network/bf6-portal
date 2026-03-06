@@ -5,6 +5,7 @@
 
 // Builds the Admin Panel widgets lazily (to avoid a 1-frame flicker on dialog open).
 function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIWidget, playerId: number): void {
+
     // Fit at target resolutions.
     const testerBaseX = ADMIN_PANEL_BASE_X;
     const testerBaseY = ADMIN_PANEL_BASE_Y;
@@ -22,7 +23,7 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
 
     modlib.ParseUI({
         name: headerId,
-        type: 'Text',
+        type: "Text",
         playerId: eventPlayer,
         position: [0, testerBaseY + 2],
         size: [ADMIN_PANEL_CONTENT_WIDTH, 18],
@@ -43,23 +44,9 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
 
     const row0Y = testerBaseY + 22;
 
-    addTesterRow(
-        eventPlayer,
-        adminContainer,
-        playerId,
-        testerBaseX,
-        row0Y + (buttonSizeY + rowSpacingY) * 0,
-        UI_TEST_BUTTON_CLOCK_TIME_DEC_ID,
-        UI_TEST_BUTTON_CLOCK_TIME_INC_ID,
-        UI_TEST_LABEL_CLOCK_TIME_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.clockTime,
-        buttonSizeX,
-        buttonSizeY,
-        labelSizeX,
-        decOffsetX,
-        labelOffsetX,
-        incOffsetX
-    );
+    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 0,
+        UI_TEST_BUTTON_CLOCK_TIME_DEC_ID, UI_TEST_BUTTON_CLOCK_TIME_INC_ID, UI_TEST_LABEL_CLOCK_TIME_ID,
+        mod.stringkeys.twl.adminPanel.tester.labels.clockTime, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
 
     addTesterRow(
         eventPlayer,
@@ -79,59 +66,27 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         incOffsetX
     );
 
-    addTesterResetButton(
-        eventPlayer,
-        adminContainer,
-        playerId,
-        testerBaseX,
-        row0Y + (buttonSizeY + rowSpacingY) * 2,
-        buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX,
-        36
-    );
+    addTesterResetButton(eventPlayer, adminContainer, playerId, testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 2, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36);
 
-    addTesterActionButton(
-        eventPlayer,
-        adminContainer,
-        playerId,
-        testerBaseX,
-        row0Y + (buttonSizeY + rowSpacingY) * 3,
-        buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX,
-        36,
-        UI_TEST_BUTTON_MATCH_START_ID,
-        UI_TEST_MATCH_START_TEXT_ID,
-        mod.stringkeys.twl.adminPanel.tester.buttons.roundStart
-    );
+    addTesterActionButton(eventPlayer, adminContainer, playerId, testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 3, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36,
+        UI_TEST_BUTTON_MATCH_START_ID, UI_TEST_MATCH_START_TEXT_ID, mod.stringkeys.twl.adminPanel.tester.buttons.roundStart);
 
-    addTesterActionButton(
-        eventPlayer,
-        adminContainer,
-        playerId,
-        testerBaseX,
-        row0Y + (buttonSizeY + rowSpacingY) * 4,
-        buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX,
-        36,
-        UI_TEST_BUTTON_MATCH_END_ID,
-        UI_TEST_MATCH_END_TEXT_ID,
-        mod.stringkeys.twl.adminPanel.tester.buttons.roundEnd
-    );
+    addTesterActionButton(eventPlayer, adminContainer, playerId, testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 4, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36,
+        UI_TEST_BUTTON_MATCH_END_ID, UI_TEST_MATCH_END_TEXT_ID, mod.stringkeys.twl.adminPanel.tester.buttons.roundEnd);
 
-    addTesterActionButton(
-        eventPlayer,
-        adminContainer,
-        playerId,
-        testerBaseX,
-        row0Y + (buttonSizeY + rowSpacingY) * 5,
-        buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX,
-        36,
-        UI_TEST_BUTTON_POS_DEBUG_ID,
-        UI_TEST_POS_DEBUG_TEXT_ID,
-        mod.stringkeys.twl.adminPanel.tester.buttons.positionDebug
-    );
+    addTesterActionButton(eventPlayer, adminContainer, playerId, testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 5, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36,
+        UI_TEST_BUTTON_POS_DEBUG_ID, UI_TEST_POS_DEBUG_TEXT_ID, mod.stringkeys.twl.adminPanel.tester.buttons.positionDebug);
 
     syncAdminMatchLengthLabelForAllPlayers();
 }
 
 //#endregion ----------------- Admin Panel UI (Right Side) --------------------
+
+
 
 //#region -------------------- Admin Panel UI builder helpers --------------------
 
@@ -171,7 +126,7 @@ function addTesterRow(
         eventPlayer
     );
 
-    const DEC_BORDER = safeFind(decButtonId + '_BORDER');
+    const DEC_BORDER = safeFind(decButtonId + "_BORDER");
     const MINUS_TEXT = addCenteredButtonText(
         minusTextId,
         buttonSizeX,
@@ -185,14 +140,8 @@ function addTesterRow(
         mod.SetUITextColor(MINUS_TEXT, ADMIN_PANEL_BUTTON_TEXT_COLOR);
     }
 
-    mod.AddUIText(
-        labelId,
-        mod.CreateVector(baseX + labelOffsetX, baseY + 11, 0),
-        mod.CreateVector(labelSizeX, buttonSizeY - 22, 0),
-        mod.UIAnchor.TopLeft,
-        mod.Message(labelKey),
-        eventPlayer
-    );
+    mod.AddUIText(labelId, mod.CreateVector(baseX + labelOffsetX, baseY + 11, 0), mod.CreateVector(labelSizeX, buttonSizeY - 22, 0),
+        mod.UIAnchor.TopLeft, mod.Message(labelKey), eventPlayer);
     mod.SetUITextSize(mod.FindUIWidgetWithName(labelId, mod.GetUIRoot()), 12);
     const LABEL = mod.FindUIWidgetWithName(labelId, mod.GetUIRoot());
     mod.SetUIWidgetBgAlpha(LABEL, 0);
@@ -210,7 +159,7 @@ function addTesterRow(
         eventPlayer
     );
 
-    const INC_BORDER = safeFind(incButtonId + '_BORDER');
+    const INC_BORDER = safeFind(incButtonId + "_BORDER");
     const PLUS_TEXT = addCenteredButtonText(
         plusTextId,
         buttonSizeX,
@@ -246,35 +195,15 @@ function addTesterRowWithValue(
     labelOffsetX: number,
     incOffsetX: number
 ): void {
-    addTesterRow(
-        eventPlayer,
-        containerBase,
-        playerId,
-        baseX,
-        baseY,
-        decButtonBaseId,
-        incButtonBaseId,
-        labelBaseId,
-        labelKey,
-        buttonSizeX,
-        buttonSizeY,
-        labelSizeX,
-        decOffsetX,
-        labelOffsetX,
-        incOffsetX
-    );
+    addTesterRow(eventPlayer, containerBase, playerId, baseX, baseY,
+        decButtonBaseId, incButtonBaseId, labelBaseId, labelKey,
+        buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
 
     const valueId = valueBaseId + playerId;
     const valueX = baseX + incOffsetX - -3 - valueSizeX;
 
-    mod.AddUIText(
-        valueId,
-        mod.CreateVector(valueX, baseY + 11, 0),
-        mod.CreateVector(valueSizeX, buttonSizeY - 22, 0),
-        mod.UIAnchor.TopLeft,
-        mod.Message(mod.stringkeys.twl.system.genericCounter, Math.floor(initialValue)),
-        eventPlayer
-    );
+    mod.AddUIText(valueId, mod.CreateVector(valueX, baseY + 11, 0), mod.CreateVector(valueSizeX, buttonSizeY - 22, 0),
+        mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, Math.floor(initialValue)), eventPlayer);
     mod.SetUITextSize(mod.FindUIWidgetWithName(valueId, mod.GetUIRoot()), 12);
     const VALUE_TEXT = mod.FindUIWidgetWithName(valueId, mod.GetUIRoot());
     mod.SetUIWidgetBgAlpha(VALUE_TEXT, 0);
@@ -294,9 +223,18 @@ function addTesterResetButton(
     const buttonId = UI_TEST_BUTTON_CLOCK_RESET_ID + playerId;
     const labelId = UI_TEST_RESET_TEXT_ID + playerId;
 
-    addOutlinedButton(buttonId, baseX, baseY, width, height, mod.UIAnchor.TopLeft, containerBase, eventPlayer);
+    addOutlinedButton(
+        buttonId,
+        baseX,
+        baseY,
+        width,
+        height,
+        mod.UIAnchor.TopLeft,
+        containerBase,
+        eventPlayer
+    );
 
-    const resetParent = safeFind(buttonId + '_BORDER') ?? containerBase;
+    const resetParent = safeFind(buttonId + "_BORDER") ?? containerBase;
     const resetLabel = addCenteredButtonText(
         labelId,
         width,
@@ -326,19 +264,33 @@ function addTesterActionButton(
     const buttonId = buttonBaseId + playerId;
     const labelId = labelBaseId + playerId;
 
-    addOutlinedButton(buttonId, baseX, baseY, width, height, mod.UIAnchor.TopLeft, containerBase, eventPlayer);
+    addOutlinedButton(
+        buttonId,
+        baseX,
+        baseY,
+        width,
+        height,
+        mod.UIAnchor.TopLeft,
+        containerBase,
+        eventPlayer
+    );
 
-    const actionParent = safeFind(buttonId + '_BORDER') ?? containerBase;
-    const actionLabel = addCenteredButtonText(labelId, width, height, mod.Message(labelKey), eventPlayer, actionParent);
+    const actionParent = safeFind(buttonId + "_BORDER") ?? containerBase;
+    const actionLabel = addCenteredButtonText(
+        labelId,
+        width,
+        height,
+        mod.Message(labelKey),
+        eventPlayer,
+        actionParent
+    );
     if (actionLabel) {
         mod.SetUITextSize(actionLabel, 12);
         mod.SetUITextColor(actionLabel, ADMIN_PANEL_BUTTON_TEXT_COLOR);
     }
 }
 
-function ensurePositionDebugWidgets(
-    player: mod.Player
-): { x: mod.UIWidget; y: mod.UIWidget; z: mod.UIWidget; rotY: mod.UIWidget } | undefined {
+function ensurePositionDebugWidgets(player: mod.Player): { x: mod.UIWidget; y: mod.UIWidget; z: mod.UIWidget; rotY: mod.UIWidget } | undefined {
     const pid = mod.GetObjId(player);
     const containerId = UI_POS_DEBUG_CONTAINER_ID + pid;
     const xId = UI_POS_DEBUG_X_ID + pid;
@@ -374,7 +326,7 @@ function ensurePositionDebugWidgets(
             mod.CreateVector(0, posY, 0),
             mod.CreateVector(360, 14, 0),
             mod.UIAnchor.TopLeft,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
+            mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
             player
         );
         const w = mod.FindUIWidgetWithName(id, mod.GetUIRoot());
@@ -433,8 +385,8 @@ async function positionDebugLoop(player: mod.Player, expectedToken: number): Pro
                 roundTo3(mod.ZComponentOf(facing))
             )
         );
-        mod.SetUITextLabel(widgets.z, mod.Message(mod.stringkeys.twl.system.genericCounter, ''));
-        mod.SetUITextLabel(widgets.rotY, mod.Message(mod.stringkeys.twl.system.genericCounter, ''));
+        mod.SetUITextLabel(widgets.z, mod.Message(mod.stringkeys.twl.system.genericCounter, ""));
+        mod.SetUITextLabel(widgets.rotY, mod.Message(mod.stringkeys.twl.system.genericCounter, ""));
 
         await mod.Wait(2.0);
     }

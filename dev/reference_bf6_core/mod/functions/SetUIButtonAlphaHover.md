@@ -8,17 +8,16 @@
 function SetUIButtonAlphaHover(widget, value): void;
 ```
 
-Defined in:
-[mod/index.d.ts:21345](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21345)
+Defined in: [mod/index.d.ts:21345](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21345)
 
 Changes the alpha (transparency) of an UI Button Widget when it is hovered.
 
 ## Parameters
 
-| Parameter | Type                                |
-| --------- | ----------------------------------- |
-| `widget`  | [`UIWidget`](../UIWidget/_index.md) |
-| `value`   | `number`                            |
+| Parameter | Type |
+| ------ | ------ |
+| `widget` | [`UIWidget`](../UIWidget/_index.md) |
+| `value` | `number` |
 
 ## Returns
 

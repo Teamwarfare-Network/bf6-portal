@@ -8,15 +8,14 @@
 function Xor(boolean0, boolean1): boolean;
 ```
 
-Defined in:
-[mod/index.d.ts:21689](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21689)
+Defined in: [mod/index.d.ts:21689](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21689)
 
 Returns true if the provided boolean inputs return different values.
 
 ## Parameters
 
-| Parameter  | Type      |
-| ---------- | --------- |
+| Parameter | Type |
+| ------ | ------ |
 | `boolean0` | `boolean` |
 | `boolean1` | `boolean` |
 

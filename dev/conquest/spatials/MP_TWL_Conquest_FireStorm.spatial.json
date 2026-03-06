@@ -34,7 +34,10 @@
                 "z": -232.341
             },
             "id": "TEAM_2_HQ",
-            "linked": ["HQArea", "InfantrySpawns"]
+            "linked": [
+                "HQArea",
+                "InfantrySpawns"
+            ]
         },
         {
             "name": "HQ_Team2",
@@ -197,7 +200,10 @@
                 "z": 223.038
             },
             "id": "TEAM_1_HQ",
-            "linked": ["HQArea", "InfantrySpawns"]
+            "linked": [
+                "HQArea",
+                "InfantrySpawns"
+            ]
         },
         {
             "name": "HQ_Team1",
@@ -352,7 +358,9 @@
                 "z": 34.2265
             },
             "id": "CombatArea",
-            "linked": ["CombatVolume"]
+            "linked": [
+                "CombatVolume"
+            ]
         },
         {
             "name": "CombatVolume",
@@ -508,7 +516,9 @@
                 "z": 219.687
             },
             "id": "WestBaseAreaTrigger",
-            "linked": ["Area"]
+            "linked": [
+                "Area"
+            ]
         },
         {
             "name": "WestBaseOOBVolume",
@@ -608,7 +618,9 @@
                 "z": 219.687
             },
             "id": "WestBaseAreaTrigger/WestBaseSector",
-            "linked": ["SectorArea"]
+            "linked": [
+                "SectorArea"
+            ]
         },
         {
             "name": "EastBaseAreaTrigger",
@@ -636,7 +648,9 @@
                 "z": -240.638
             },
             "id": "EastBaseAreaTrigger",
-            "linked": ["Area"]
+            "linked": [
+                "Area"
+            ]
         },
         {
             "name": "EastBaseOOBVolume",
@@ -736,7 +750,9 @@
                 "z": -240.638
             },
             "id": "EastBaseAreaTrigger/EastBaseSector",
-            "linked": ["SectorArea"]
+            "linked": [
+                "SectorArea"
+            ]
         },
         {
             "name": "CapturePoint C",
@@ -764,7 +780,9 @@
                 "z": 83.363
             },
             "id": "CapturePoint C",
-            "linked": ["CaptureArea"]
+            "linked": [
+                "CaptureArea"
+            ]
         },
         {
             "name": "CaptureAreaTrigger C",
@@ -792,7 +810,9 @@
                 "z": 83.363
             },
             "id": "CapturePoint C/CaptureAreaTrigger C",
-            "linked": ["Area"]
+            "linked": [
+                "Area"
+            ]
         },
         {
             "name": "CapC PolygonVolume",
@@ -858,7 +878,9 @@
                 "z": 83.363
             },
             "id": "CapturePoint C/Sector C",
-            "linked": ["SectorArea"]
+            "linked": [
+                "SectorArea"
+            ]
         },
         {
             "name": "WorldIcon C",
@@ -912,7 +934,9 @@
                 "z": -1.05483
             },
             "id": "CapturePoint B",
-            "linked": ["CaptureArea"]
+            "linked": [
+                "CaptureArea"
+            ]
         },
         {
             "name": "CaptureAreaTrigger B",
@@ -940,7 +964,9 @@
                 "z": -1.05483
             },
             "id": "CapturePoint B/CaptureAreaTrigger B",
-            "linked": ["Area"]
+            "linked": [
+                "Area"
+            ]
         },
         {
             "name": "CapB PolygonVolume",
@@ -1006,7 +1032,9 @@
                 "z": -1.05483
             },
             "id": "CapturePoint B/Sector B",
-            "linked": ["SectorArea"]
+            "linked": [
+                "SectorArea"
+            ]
         },
         {
             "name": "WorldIcon B",
@@ -1060,7 +1088,9 @@
                 "z": -75.0189
             },
             "id": "CapturePoint A",
-            "linked": ["CaptureArea"]
+            "linked": [
+                "CaptureArea"
+            ]
         },
         {
             "name": "CaptureAreaTrigger A",
@@ -1088,7 +1118,9 @@
                 "z": -75.0189
             },
             "id": "CapturePoint A/CaptureAreaTrigger A",
-            "linked": ["Area"]
+            "linked": [
+                "Area"
+            ]
         },
         {
             "name": "CapA PolygonVolume",
@@ -1229,7 +1261,9 @@
                 "z": -75.0189
             },
             "id": "CapturePoint A/Sector A",
-            "linked": ["SectorArea"]
+            "linked": [
+                "SectorArea"
+            ]
         },
         {
             "name": "WorldIcon A",
@@ -1260,7 +1294,11 @@
         {
             "name": "CapturePoint Sector Ordering",
             "ObjId": 1000,
-            "CapturePoints": ["CapturePoint A", "CapturePoint B", "CapturePoint C"],
+            "CapturePoints": [
+                "CapturePoint A",
+                "CapturePoint B",
+                "CapturePoint C"
+            ],
             "type": "Sector",
             "right": {
                 "x": 1,
@@ -1283,7 +1321,9 @@
                 "z": -76.479
             },
             "id": "CapturePoint Sector Ordering",
-            "linked": ["CapturePoints"]
+            "linked": [
+                "CapturePoints"
+            ]
         }
     ],
     "Static": [

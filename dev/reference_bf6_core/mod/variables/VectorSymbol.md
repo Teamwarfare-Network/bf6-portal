@@ -8,7 +8,7 @@
 const VectorSymbol: unique symbol;
 ```
 
-Defined in:
-[mod/index.d.ts:149](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L149)
+Defined in: [mod/index.d.ts:149](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L149)
 
-export type Vector = never; export type Vector = Any;
+export type Vector = never;
+export type Vector = Any;

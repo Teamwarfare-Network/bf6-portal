@@ -16,7 +16,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     bindClockExpiryForContinuousMode();
 
     State.round.countdown.isRequested = false;
-    lifecycleSetLiveBaseline('pregame-start-match');
+    lifecycleSetLiveBaseline("pregame-start-match");
     conquestPhase2AResetLiveState();
     conquestPhase2BOnMatchLiveStart();
 
@@ -40,18 +40,15 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     );
 }
 
-function endMatch(
-    _triggerPlayer?: mod.Player,
-    _freezeRemainingSeconds?: number,
-    overrideWinnerTeamNum?: TeamID | 0
-): void {
-    const winner =
-        overrideWinnerTeamNum === TeamID.Team1 || overrideWinnerTeamNum === TeamID.Team2 ? overrideWinnerTeamNum : 0;
+function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number, overrideWinnerTeamNum?: TeamID | 0): void {
+    const winner = (overrideWinnerTeamNum === TeamID.Team1 || overrideWinnerTeamNum === TeamID.Team2)
+        ? overrideWinnerTeamNum
+        : 0;
 
     if (!State.conquest.endRace.endLatched) {
-        State.conquest.lifecyclePhase = 'POST_MATCH';
+        State.conquest.lifecyclePhase = "POST_MATCH";
         State.conquest.endRace.endLatched = true;
-        State.conquest.endRace.endReason = 'admin';
+        State.conquest.endRace.endReason = "admin";
         State.conquest.endRace.endSnapshot = {
             team1Tickets: State.conquest.tickets.team1,
             team2Tickets: State.conquest.tickets.team2,
@@ -60,7 +57,7 @@ function endMatch(
         };
     }
 
-    if (!lifecycleTrySetGameOver('pregame-end-match', winner)) return;
+    if (!lifecycleTrySetGameOver("pregame-end-match", winner)) return;
     State.round.clock.expiryFired = true;
 
     mod.EnableAllPlayerDeploy(true);
@@ -80,7 +77,7 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     cancelPregameCountdown();
     resetReadyStateForAllPlayers();
 
-    lifecycleSetNotReadyBaseline('fresh-setup');
+    lifecycleSetNotReadyBaseline("fresh-setup");
     conquestPhase2AResetNotLiveState();
     conquestPhase2BOnNotLiveReset();
 
@@ -99,7 +96,10 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
 }
 
 function clampMatchLengthSeconds(seconds: number): number {
-    return Math.max(ADMIN_MATCH_LENGTH_MIN_SECONDS, Math.min(ADMIN_MATCH_LENGTH_MAX_SECONDS, Math.floor(seconds)));
+    return Math.max(
+        ADMIN_MATCH_LENGTH_MIN_SECONDS,
+        Math.min(ADMIN_MATCH_LENGTH_MAX_SECONDS, Math.floor(seconds))
+    );
 }
 
 function getConfiguredMatchLengthSeconds(): number {

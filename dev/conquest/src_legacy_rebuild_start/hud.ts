@@ -10,10 +10,7 @@ function setCounterText(widget: mod.UIWidget | undefined, value: number): void {
 
 function setRoundRecordText(widget: mod.UIWidget | undefined, wins: number, losses: number, ties: number): void {
     if (!widget) return;
-    safeSetUITextLabel(
-        widget,
-        mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, Math.floor(wins), Math.floor(losses), Math.floor(ties))
-    );
+    safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, Math.floor(wins), Math.floor(losses), Math.floor(ties)));
 }
 
 function getTrendingWinnerTeam(): TeamID | 0 {
@@ -50,6 +47,8 @@ function setAdminPanelActionCountText(widget: mod.UIWidget | undefined, value: n
 
 //#endregion ----------------- HUD Counter Helpers --------------------
 
+
+
 //#region -------------------- HUD Round State + Help Text --------------------
 
 function setRoundStateText(widget: mod.UIWidget | undefined): void {
@@ -69,10 +68,13 @@ function setRoundStateText(widget: mod.UIWidget | undefined): void {
     mod.SetUITextColor(widget, isLive ? mod.CreateVector(1, 1, 1) : COLOR_NOT_READY_RED);
 }
 
-function setRoundLiveHelpText(root: mod.UIWidget | undefined, text: mod.UIWidget | undefined): void {
+function setRoundLiveHelpText(
+    root: mod.UIWidget | undefined,
+    text: mod.UIWidget | undefined
+): void {
     if (!root || !text) return;
 
-    const show = !State.match.isEnded && isRoundLive();
+    const show = (!State.match.isEnded) && (isRoundLive());
     mod.SetUIWidgetVisible(root, show);
 
     if (!show) return;
@@ -150,7 +152,20 @@ function safeAddUIContainer(
     player: mod.Player
 ): void {
     try {
-        mod.AddUIContainer(name, position, size, anchor, parent, visible, padding, color, alpha, fill, depth, player);
+        mod.AddUIContainer(
+            name,
+            position,
+            size,
+            anchor,
+            parent,
+            visible,
+            padding,
+            color,
+            alpha,
+            fill,
+            depth,
+            player
+        );
     } catch {
         return;
     }
@@ -168,7 +183,7 @@ function safeSetUIWidgetSize(widget: mod.UIWidget | undefined, size: mod.Vector)
 function setWidgetVisible(widget: mod.UIWidget | undefined, visible: boolean): void {
     if (!widget) return;
     safeSetUIWidgetVisible(widget, visible);
-    // SetUITextLabel only accepts mod.Message; string inputs are treated as string keys and wrapped with mod.Message(key).
+// SetUITextLabel only accepts mod.Message; string inputs are treated as string keys and wrapped with mod.Message(key).
 }
 
 function setWidgetText(widget: mod.UIWidget | undefined, label: string | mod.Message): void {
@@ -205,17 +220,17 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
     mod.SetUIWidgetDepth(root, mod.UIDepth.AboveGameUI);
 
     const reparentIds = [
-        'Container_TopMiddle_CoreUI_',
-        'Container_TopLeft_CoreUI_',
-        'Container_TopRight_CoreUI_',
-        'Container_TopLeft_RoundKills_',
-        'Container_TopRight_RoundKills_',
-        'RoundCounterContainer_',
-        'RoundCounterMaxContainer_',
-        'TeamLeft_Wins_Counter_',
-        'TeamRight_Wins_Counter_',
-        'TeamLeft_Kills_Counter_',
-        'TeamRight_Kills_Counter_',
+        "Container_TopMiddle_CoreUI_",
+        "Container_TopLeft_CoreUI_",
+        "Container_TopRight_CoreUI_",
+        "Container_TopLeft_RoundKills_",
+        "Container_TopRight_RoundKills_",
+        "RoundCounterContainer_",
+        "RoundCounterMaxContainer_",
+        "TeamLeft_Wins_Counter_",
+        "TeamRight_Wins_Counter_",
+        "TeamLeft_Kills_Counter_",
+        "TeamRight_Kills_Counter_",
     ];
 
     for (const base of reparentIds) {
@@ -225,7 +240,10 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
         mod.SetUIWidgetDepth(widget, mod.UIDepth.AboveGameUI);
     }
 
-    const topHudDepthIds = ['MatchTimerRoot_', 'RoundStateRoot_'];
+    const topHudDepthIds = [
+        "MatchTimerRoot_",
+        "RoundStateRoot_",
+    ];
     for (const base of topHudDepthIds) {
         const widget = safeFind(base + pid);
         if (widget) mod.SetUIWidgetDepth(widget, mod.UIDepth.AboveGameUI);
@@ -277,6 +295,8 @@ function setRoundStateTextForAllPlayers(): void {
 }
 
 //#endregion ----------------- HUD Round State + Help Text --------------------
+
+
 
 //#region -------------------- HUD Ready Count --------------------
 
@@ -346,6 +366,8 @@ function getReadyCountsForMessage(): { readyCount: number; totalCount: number } 
 
 //#endregion ----------------- HUD Ready Count --------------------
 
+
+
 //#region -------------------- HUD Victory Dialog Updates --------------------
 
 function getElapsedHmsParts(totalSeconds: number): { hours: number; minutes: number; seconds: number } {
@@ -367,10 +389,7 @@ function setVictoryWinnerCrownForRefs(refs: HudRefs | undefined): void {
 
 function updateVictoryDialogRosterSizing(refs: HudRefs, rosterRows: number): void {
     const clampedRows = Math.max(1, Math.min(TEAM_ROSTER_MAX_ROWS, Math.floor(rosterRows)));
-    const rosterHeight =
-        VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP +
-        clampedRows * VICTORY_DIALOG_ROSTER_ROW_HEIGHT +
-        VICTORY_DIALOG_ROSTER_ROW_PADDING_BOTTOM;
+    const rosterHeight = VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP + (clampedRows * VICTORY_DIALOG_ROSTER_ROW_HEIGHT) + VICTORY_DIALOG_ROSTER_ROW_PADDING_BOTTOM;
     const dialogHeight = VICTORY_DIALOG_ROSTER_ROW_Y + rosterHeight + VICTORY_DIALOG_BOTTOM_PADDING;
 
     if (refs.victoryRoot) {
@@ -380,16 +399,10 @@ function updateVictoryDialogRosterSizing(refs: HudRefs, rosterRows: number): voi
         mod.SetUIWidgetSize(refs.victoryRosterRow, mod.CreateVector(VICTORY_DIALOG_ROSTER_ROW_WIDTH, rosterHeight, 0));
     }
     if (refs.victoryRosterLeftContainer) {
-        mod.SetUIWidgetSize(
-            refs.victoryRosterLeftContainer,
-            mod.CreateVector(VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, rosterHeight, 0)
-        );
+        mod.SetUIWidgetSize(refs.victoryRosterLeftContainer, mod.CreateVector(VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, rosterHeight, 0));
     }
     if (refs.victoryRosterRightContainer) {
-        mod.SetUIWidgetSize(
-            refs.victoryRosterRightContainer,
-            mod.CreateVector(VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, rosterHeight, 0)
-        );
+        mod.SetUIWidgetSize(refs.victoryRosterRightContainer, mod.CreateVector(VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, rosterHeight, 0));
     }
 }
 
@@ -433,10 +446,7 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
         let displaySeconds = Math.floor(remainingSeconds);
         if (displaySeconds < 0) displaySeconds = 0;
         if (displaySeconds > MATCH_END_DELAY_SECONDS) displaySeconds = 0;
-        safeSetUITextLabel(
-            refs.victoryRestartText,
-            mod.Message(mod.stringkeys.twl.victory.restartInFormat, displaySeconds)
-        );
+        safeSetUITextLabel(refs.victoryRestartText, mod.Message(mod.stringkeys.twl.victory.restartInFormat, displaySeconds));
     }
     const parts = getElapsedHmsParts(State.match.endElapsedSecondsSnapshot);
     const hours = Math.min(99, Math.max(0, Math.floor(parts.hours)));
@@ -450,28 +460,15 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
     const sT = Math.floor(seconds / 10);
     const sO = seconds % 10;
 
-    if (refs.victoryTimeHoursTens)
-        safeSetUITextLabel(refs.victoryTimeHoursTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, hT));
-    if (refs.victoryTimeHoursOnes)
-        safeSetUITextLabel(refs.victoryTimeHoursOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, hO));
-    if (refs.victoryTimeMinutesTens)
-        safeSetUITextLabel(refs.victoryTimeMinutesTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, mT));
-    if (refs.victoryTimeMinutesOnes)
-        safeSetUITextLabel(refs.victoryTimeMinutesOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, mO));
-    if (refs.victoryTimeSecondsTens)
-        safeSetUITextLabel(refs.victoryTimeSecondsTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, sT));
-    if (refs.victoryTimeSecondsOnes)
-        safeSetUITextLabel(refs.victoryTimeSecondsOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, sO));
+    if (refs.victoryTimeHoursTens) safeSetUITextLabel(refs.victoryTimeHoursTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, hT));
+    if (refs.victoryTimeHoursOnes) safeSetUITextLabel(refs.victoryTimeHoursOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, hO));
+    if (refs.victoryTimeMinutesTens) safeSetUITextLabel(refs.victoryTimeMinutesTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, mT));
+    if (refs.victoryTimeMinutesOnes) safeSetUITextLabel(refs.victoryTimeMinutesOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, mO));
+    if (refs.victoryTimeSecondsTens) safeSetUITextLabel(refs.victoryTimeSecondsTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, sT));
+    if (refs.victoryTimeSecondsOnes) safeSetUITextLabel(refs.victoryTimeSecondsOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, sO));
 
     if (refs.victoryRoundsSummaryText) {
-        safeSetUITextLabel(
-            refs.victoryRoundsSummaryText,
-            mod.Message(
-                mod.stringkeys.twl.victory.roundsSummaryFormat,
-                Math.floor(State.round.current),
-                Math.floor(State.round.max)
-            )
-        );
+        safeSetUITextLabel(refs.victoryRoundsSummaryText, mod.Message(mod.stringkeys.twl.victory.roundsSummaryFormat, Math.floor(State.round.current), Math.floor(State.round.max)));
     }
     if (refs.victoryAdminActionsText) {
         const actionCount = Math.max(0, Math.floor(State.admin.actionCount));
@@ -495,94 +492,48 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
     const t2OutcomeKey = computeTeamOutcomeKey(TeamID.Team2);
 
     if (refs.victoryLeftOutcomeText) {
-        safeSetUITextLabel(
-            refs.victoryLeftOutcomeText,
-            mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, getTeamNameKey(TeamID.Team1), t1OutcomeKey)
-        );
+        safeSetUITextLabel(refs.victoryLeftOutcomeText, mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, getTeamNameKey(TeamID.Team1), t1OutcomeKey));
     }
     if (refs.victoryRightOutcomeText) {
-        safeSetUITextLabel(
-            refs.victoryRightOutcomeText,
-            mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, getTeamNameKey(TeamID.Team2), t2OutcomeKey)
-        );
+        safeSetUITextLabel(refs.victoryRightOutcomeText, mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, getTeamNameKey(TeamID.Team2), t2OutcomeKey));
     }
     setVictoryWinnerCrownForRefs(refs);
 
     if (refs.victoryLeftRecordText) {
-        safeSetUITextLabel(
-            refs.victoryLeftRecordText,
-            mod.Message(
-                mod.stringkeys.twl.hud.roundRecordFormat,
-                Math.floor(State.match.winsT1),
-                Math.floor(State.match.winsT2),
-                Math.floor(State.match.tiesT1)
-            )
-        );
+        safeSetUITextLabel(refs.victoryLeftRecordText, mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, Math.floor(State.match.winsT1), Math.floor(State.match.winsT2), Math.floor(State.match.tiesT1)));
     }
     if (refs.victoryRightRecordText) {
-        safeSetUITextLabel(
-            refs.victoryRightRecordText,
-            mod.Message(
-                mod.stringkeys.twl.hud.roundRecordFormat,
-                Math.floor(State.match.winsT2),
-                Math.floor(State.match.winsT1),
-                Math.floor(State.match.tiesT2)
-            )
-        );
+        safeSetUITextLabel(refs.victoryRightRecordText, mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, Math.floor(State.match.winsT2), Math.floor(State.match.winsT1), Math.floor(State.match.tiesT2)));
     }
 
     if (refs.victoryLeftRoundWinsText) {
-        safeSetUITextLabel(
-            refs.victoryLeftRoundWinsText,
-            mod.Message(mod.stringkeys.twl.victory.roundWinsFormat, Math.floor(State.match.winsT1))
-        );
+        safeSetUITextLabel(refs.victoryLeftRoundWinsText, mod.Message(mod.stringkeys.twl.victory.roundWinsFormat, Math.floor(State.match.winsT1)));
     }
     if (refs.victoryRightRoundWinsText) {
-        safeSetUITextLabel(
-            refs.victoryRightRoundWinsText,
-            mod.Message(mod.stringkeys.twl.victory.roundWinsFormat, Math.floor(State.match.winsT2))
-        );
+        safeSetUITextLabel(refs.victoryRightRoundWinsText, mod.Message(mod.stringkeys.twl.victory.roundWinsFormat, Math.floor(State.match.winsT2)));
     }
 
     const lossesT1 = State.match.lossesT1;
     const lossesT2 = State.match.lossesT2;
 
     if (refs.victoryLeftRoundLossesText) {
-        safeSetUITextLabel(
-            refs.victoryLeftRoundLossesText,
-            mod.Message(mod.stringkeys.twl.victory.roundLossesFormat, Math.floor(lossesT1))
-        );
+        safeSetUITextLabel(refs.victoryLeftRoundLossesText, mod.Message(mod.stringkeys.twl.victory.roundLossesFormat, Math.floor(lossesT1)));
     }
     if (refs.victoryRightRoundLossesText) {
-        safeSetUITextLabel(
-            refs.victoryRightRoundLossesText,
-            mod.Message(mod.stringkeys.twl.victory.roundLossesFormat, Math.floor(lossesT2))
-        );
+        safeSetUITextLabel(refs.victoryRightRoundLossesText, mod.Message(mod.stringkeys.twl.victory.roundLossesFormat, Math.floor(lossesT2)));
     }
     if (refs.victoryLeftRoundTiesText) {
-        safeSetUITextLabel(
-            refs.victoryLeftRoundTiesText,
-            mod.Message(mod.stringkeys.twl.victory.roundTiesFormat, Math.floor(State.match.tiesT1))
-        );
+        safeSetUITextLabel(refs.victoryLeftRoundTiesText, mod.Message(mod.stringkeys.twl.victory.roundTiesFormat, Math.floor(State.match.tiesT1)));
     }
     if (refs.victoryRightRoundTiesText) {
-        safeSetUITextLabel(
-            refs.victoryRightRoundTiesText,
-            mod.Message(mod.stringkeys.twl.victory.roundTiesFormat, Math.floor(State.match.tiesT2))
-        );
+        safeSetUITextLabel(refs.victoryRightRoundTiesText, mod.Message(mod.stringkeys.twl.victory.roundTiesFormat, Math.floor(State.match.tiesT2)));
     }
 
     if (refs.victoryLeftTotalKillsText) {
-        safeSetUITextLabel(
-            refs.victoryLeftTotalKillsText,
-            mod.Message(mod.stringkeys.twl.victory.totalKillsFormat, Math.floor(State.scores.t1TotalKills))
-        );
+        safeSetUITextLabel(refs.victoryLeftTotalKillsText, mod.Message(mod.stringkeys.twl.victory.totalKillsFormat, Math.floor(State.scores.t1TotalKills)));
     }
     if (refs.victoryRightTotalKillsText) {
-        safeSetUITextLabel(
-            refs.victoryRightTotalKillsText,
-            mod.Message(mod.stringkeys.twl.victory.totalKillsFormat, Math.floor(State.scores.t2TotalKills))
-        );
+        safeSetUITextLabel(refs.victoryRightTotalKillsText, mod.Message(mod.stringkeys.twl.victory.totalKillsFormat, Math.floor(State.scores.t2TotalKills)));
     }
 
     if (refs.victoryLeftRosterText || refs.victoryRightRosterText) {
@@ -623,6 +574,8 @@ function updateVictoryDialogForAllPlayers(remainingSeconds: number): void {
 }
 
 //#endregion ----------------- HUD Victory Dialog Updates --------------------
+
+
 
 //#region -------------------- HUD Round-End Dialog Updates --------------------
 
@@ -669,15 +622,14 @@ function setRoundEndDialogVisibleForAllPlayers(visible: boolean): void {
 
 // Round-end UI lockdown: avoid touching overtime HUD widgets during teardown transitions.
 function isRoundEndUiLockdownActive(): boolean {
-    return (
-        State.round.flow.roundEndUiLockdown || State.round.flow.roundEndDialogVisible || State.round.flow.cleanupActive
-    );
+    return State.round.flow.roundEndUiLockdown
+        || State.round.flow.roundEndDialogVisible
+        || State.round.flow.cleanupActive;
 }
 
 function isRoundEndDetailDrawReason(reason: RoundEndDetailReason): boolean {
-    return (
-        reason === RoundEndDetailReason.TimeOverDrawEvenElims || reason === RoundEndDetailReason.TimeOverDrawNoAction
-    );
+    return reason === RoundEndDetailReason.TimeOverDrawEvenElims
+        || reason === RoundEndDetailReason.TimeOverDrawNoAction;
 }
 
 function getRoundEndDetailForViewer(
@@ -688,10 +640,9 @@ function getRoundEndDetailForViewer(
     if (reason === RoundEndDetailReason.None) return undefined;
 
     if (isRoundEndDetailDrawReason(reason) || winnerTeamNum === 0) {
-        const drawKey =
-            reason === RoundEndDetailReason.TimeOverDrawNoAction
-                ? STR_ROUND_END_DETAIL_DRAW_NO_ACTION
-                : STR_ROUND_END_DETAIL_DRAW_EVEN_ELIMS;
+        const drawKey = reason === RoundEndDetailReason.TimeOverDrawNoAction
+            ? STR_ROUND_END_DETAIL_DRAW_NO_ACTION
+            : STR_ROUND_END_DETAIL_DRAW_EVEN_ELIMS;
         return { key: drawKey, color: COLOR_WHITE };
     }
 
@@ -703,17 +654,14 @@ function getRoundEndDetailForViewer(
             key = isViewerWinner ? STR_ROUND_END_DETAIL_WIN_ELIMINATION : STR_ROUND_END_DETAIL_LOSE_ELIMINATION;
             break;
         case RoundEndDetailReason.ObjectiveCaptured:
-            key = isViewerWinner
-                ? STR_ROUND_END_DETAIL_WIN_OBJECTIVE_CAPTURED
-                : STR_ROUND_END_DETAIL_LOSE_OBJECTIVE_CAPTURED;
+            key = isViewerWinner ? STR_ROUND_END_DETAIL_WIN_OBJECTIVE_CAPTURED : STR_ROUND_END_DETAIL_LOSE_OBJECTIVE_CAPTURED;
             break;
         case RoundEndDetailReason.TimeOverObjectiveProgress:
-            key = isViewerWinner
-                ? STR_ROUND_END_DETAIL_WIN_OBJECTIVE_PROGRESS
-                : STR_ROUND_END_DETAIL_LOSE_OBJECTIVE_PROGRESS;
+            key = isViewerWinner ? STR_ROUND_END_DETAIL_WIN_OBJECTIVE_PROGRESS : STR_ROUND_END_DETAIL_LOSE_OBJECTIVE_PROGRESS;
             const percents = getOvertimeDisplayPercents(State.round.lastObjectiveProgress);
-            value =
-                winnerTeamNum === TeamID.Team1 ? percents.left : winnerTeamNum === TeamID.Team2 ? percents.right : 50;
+            value = winnerTeamNum === TeamID.Team1
+                ? percents.left
+                : (winnerTeamNum === TeamID.Team2 ? percents.right : 50);
             break;
         case RoundEndDetailReason.TimeOverKills:
             key = isViewerWinner ? STR_ROUND_END_DETAIL_WIN_TIME_OVER_KILLS : STR_ROUND_END_DETAIL_LOSE_TIME_OVER_KILLS;
@@ -722,8 +670,9 @@ function getRoundEndDetailForViewer(
             return undefined;
     }
 
-    const teamColor =
-        winnerTeamNum === TeamID.Team1 ? COLOR_BLUE : winnerTeamNum === TeamID.Team2 ? COLOR_RED : COLOR_WHITE;
+    const teamColor = winnerTeamNum === TeamID.Team1
+        ? COLOR_BLUE
+        : (winnerTeamNum === TeamID.Team2 ? COLOR_RED : COLOR_WHITE);
     return { key, color: teamColor, value };
 }
 
@@ -760,20 +709,12 @@ function updateRoundEndDialogForPlayer(player: mod.Player, winnerTeamNum: TeamID
         if (winnerTeamNum === TeamID.Team1) {
             safeSetUITextLabel(
                 refs.roundEndOutcomeText,
-                mod.Message(
-                    mod.stringkeys.twl.victory.teamOutcomeFormat,
-                    getTeamNameKey(TeamID.Team1),
-                    mod.stringkeys.twl.victory.wins
-                )
+                mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, getTeamNameKey(TeamID.Team1), mod.stringkeys.twl.victory.wins)
             );
         } else if (winnerTeamNum === TeamID.Team2) {
             safeSetUITextLabel(
                 refs.roundEndOutcomeText,
-                mod.Message(
-                    mod.stringkeys.twl.victory.teamOutcomeFormat,
-                    getTeamNameKey(TeamID.Team2),
-                    mod.stringkeys.twl.victory.wins
-                )
+                mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, getTeamNameKey(TeamID.Team2), mod.stringkeys.twl.victory.wins)
             );
         } else {
             setWidgetText(refs.roundEndOutcomeText, mod.stringkeys.twl.roundEnd.draw);
@@ -784,7 +725,9 @@ function updateRoundEndDialogForPlayer(player: mod.Player, winnerTeamNum: TeamID
         const viewerTeamNum = getTeamNumber(mod.GetTeam(player));
         const detail = getRoundEndDetailForViewer(viewerTeamNum, winnerTeamNum);
         if (detail) {
-            const label = detail.value !== undefined ? mod.Message(detail.key, detail.value) : mod.Message(detail.key);
+            const label = detail.value !== undefined
+                ? mod.Message(detail.key, detail.value)
+                : mod.Message(detail.key);
             safeSetUITextLabel(refs.roundEndDetailText, label);
             safeSetUITextColor(refs.roundEndDetailText, detail.color);
             setWidgetVisible(refs.roundEndDetailText, true);
@@ -792,9 +735,12 @@ function updateRoundEndDialogForPlayer(player: mod.Player, winnerTeamNum: TeamID
             setWidgetVisible(refs.roundEndDetailText, false);
         }
     }
+
 }
 
 //#endregion ----------------- HUD Round-End Dialog Updates --------------------
+
+
 
 //#region -------------------- HUD Build/Ensure - Dialog Open + Help Text Visibility --------------------
 
@@ -820,14 +766,13 @@ function updateHelpTextVisibilityForPid(pid: number): void {
     const isDialogOpen = isTeamSwitchDialogOpenForPid(pid);
     const isReady = !!State.players.readyByPid[pid];
     const isDeployed = !!State.players.deployedByPid[pid];
-    const canShow =
-        !State.match.isEnded &&
-        !State.match.victoryDialogActive &&
-        !State.round.flow.roundEndDialogVisible &&
-        !State.round.flow.cleanupActive &&
-        isDeployed;
-    const showHelp = canShow && !isRoundLive() && !isReady && !isDialogOpen;
-    const showReady = canShow && !isRoundLive() && isReady && !isDialogOpen;
+    const canShow = (!State.match.isEnded)
+        && (!State.match.victoryDialogActive)
+        && (!State.round.flow.roundEndDialogVisible)
+        && (!State.round.flow.cleanupActive)
+        && (isDeployed);
+    const showHelp = canShow && (!isRoundLive()) && (!isReady) && (!isDialogOpen);
+    const showReady = canShow && (!isRoundLive()) && (isReady) && (!isDialogOpen);
 
     const helpContainer = refs.helpTextContainer ?? safeFind(`Container_HelpText_${pid}`);
     if (helpContainer) {
@@ -866,6 +811,8 @@ function updateHelpTextVisibilityForAllPlayers(): void {
 }
 
 //#endregion ----------------- HUD Build/Ensure - Dialog Open + Help Text Visibility --------------------
+
+
 
 //#region -------------------- HUD Build/Ensure Function Start --------------------
 
@@ -910,6 +857,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
     //#endregion -------------------- HUD Build/Ensure Function Start --------------------
 
+
+
     //#region -------------------- HUD Build/Ensure - Upper-Left HUD --------------------
 
     // --- Static HUD: Upper-left small box ---
@@ -917,7 +866,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         const rootName = `Upper_Left_Container_${pid}`;
         const upperLeft = modlib.ParseUI({
             name: rootName,
-            type: 'Container',
+            type: "Container",
             playerId: player,
             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
             position: [5, 5 + TOP_HUD_OFFSET_Y],
@@ -932,7 +881,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // UI element: Upper_Left_Text_${pid}
                     name: `Upper_Left_Text_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [5, -5.5],
                     size: [200, 17],
@@ -951,7 +900,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // UI element: Upper_Left_Text_2_${pid}
                     name: `Upper_Left_Text_2_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [7.25, 12.5],
                     size: [200, 16.5],
@@ -983,7 +932,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
         const settingsSummary = modlib.ParseUI({
             name: `Upper_Left_Settings_${pid}`,
-            type: 'Container',
+            type: "Container",
             playerId: player,
             position: [SETTINGS_CONTAINER_X, SETTINGS_CONTAINER_Y],
             size: [SETTINGS_TEXT_WIDTH, SETTINGS_LINE_HEIGHT * 6],
@@ -996,7 +945,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             children: [
                 {
                     name: `Settings_GameMode_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     position: [6, 0],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1012,7 +961,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `Settings_Ceiling_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     position: [6, SETTINGS_LINE_HEIGHT],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1020,10 +969,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(
-                        STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT,
-                        STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA
-                    ),
+                    textLabel: mod.Message(STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT, STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA),
                     textColor: SETTINGS_TEXT_COLOR,
                     textAlpha: 1,
                     textSize: SETTINGS_TEXT_SIZE,
@@ -1031,7 +977,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `Settings_VehiclesT1_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     position: [6, SETTINGS_LINE_HEIGHT * 2],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1051,7 +997,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `Settings_VehiclesT2_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     position: [6, SETTINGS_LINE_HEIGHT * 3],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1071,7 +1017,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `Settings_VehiclesMatchup_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     position: [6, SETTINGS_LINE_HEIGHT * 4],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1087,7 +1033,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
                 {
                     name: `Settings_Players_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     position: [6, SETTINGS_LINE_HEIGHT * 5],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1107,6 +1053,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     }
 
     //#endregion ----------------- HUD Build/Ensure - Upper-Left HUD --------------------
+
+
 
     //#region -------------------- HUD Build/Ensure - Top-Center Panels --------------------
 
@@ -1129,7 +1077,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         const mid = modlib.ParseUI({
             // UI element: Container_TopMiddle_CoreUI_${pid}
             name: `Container_TopMiddle_CoreUI_${pid}`,
-            type: 'Container',
+            type: "Container",
             playerId: player,
             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
             position: [MID_PANEL_X, TOP_PANEL_Y],
@@ -1144,7 +1092,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // Help/instructions text shown when enabled for this player
                     name: `Container_HelpText_${pid}`,
-                    type: 'Container',
+                    type: "Container",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [-165.5, 92], //[-116.5, 92]
                     size: [450, 20],
@@ -1158,7 +1106,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                         {
                             // Help/instructions text shown when enabled for this player
                             name: `HelpText_${pid}`,
-                            type: 'Text',
+                            type: "Text",
                             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [0, 2],
                             size: [450, 14],
@@ -1179,7 +1127,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // Ready status text shown when the player is READY and the round is not live
                     name: `Container_ReadyStatus_${pid}`,
-                    type: 'Container',
+                    type: "Container",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [-165.5, 92], //[-116.5, 92]
                     size: [450, 20],
@@ -1192,7 +1140,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                         {
                             // Ready status text shown when enabled for this player
                             name: `ReadyStatusText_${pid}`,
-                            type: 'Text',
+                            type: "Text",
                             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [0, 2],
                             size: [450, 14],
@@ -1216,13 +1164,15 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
     //#endregion ----------------- HUD Build/Ensure - Top-Center Panels --------------------
 
+
+
     //#region -------------------- HUD Build/Ensure - Admin Action Counter --------------------
 
     {
         // Admin action audit counter (top-right)
         const auditCounter = modlib.ParseUI({
             name: `AdminPanelActionCount_${pid}`,
-            type: 'Text',
+            type: "Text",
             playerId: player,
             // position: [x, y] offset; increase X to move right, increase Y to move down
             position: [20, 22],
@@ -1245,11 +1195,15 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
     //#endregion ----------------- HUD Build/Ensure - Admin Action Counter --------------------
 
+
+
     //#region -------------------- HUD Build/Ensure - Counter Widgets --------------------
 
     // West/East score panels and top round X/Y counters intentionally removed for conquest HUD simplification.
 
     //#endregion ----------------- HUD Build/Ensure - Counter Widgets --------------------
+
+
 
     //#region -------------------- HUD Build/Ensure - Round-End Dialog --------------------
 
@@ -1258,7 +1212,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         const roundEndModal = modlib.ParseUI({
             // UI element: RoundEndDialogRoot_${pid}
             name: `RoundEndDialogRoot_${pid}`,
-            type: 'Container',
+            type: "Container",
             playerId: player,
             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
             position: [0, 150],
@@ -1273,7 +1227,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // UI element: RoundEndDialog_Round_${pid}
                     name: `RoundEndDialog_Round_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 16],
                     size: [340, 24],
@@ -1291,7 +1245,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // UI element: RoundEndDialog_Outcome_${pid}
                     name: `RoundEndDialog_Outcome_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 46],
                     size: [340, 30],
@@ -1309,7 +1263,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // UI element: RoundEndDialog_Detail_${pid}
                     name: `RoundEndDialog_Detail_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 86],
                     size: [500, 18],
@@ -1336,13 +1290,15 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
     //#endregion ----------------- HUD Build/Ensure - Round-End Dialog --------------------
 
+
+
     //#region -------------------- HUD Build/Ensure - Victory Dialog --------------------
 
     {
         const modal = modlib.ParseUI({
-            // UI element: VictoryDialogRoot_${pid}
-            name: `VictoryDialogRoot_${pid}`,
-            type: 'Container',
+                        // UI element: VictoryDialogRoot_${pid}
+                        name: `VictoryDialogRoot_${pid}`,
+            type: "Container",
             playerId: player,
             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
             position: [0, 135],
@@ -1355,9 +1311,9 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             bgFill: mod.UIBgFill.Solid,
             children: [
                 {
-                    // UI element: VictoryDialog_Header1_${pid}
-                    name: `VictoryDialog_Header1_${pid}`,
-                    type: 'Text',
+            // UI element: VictoryDialog_Header1_${pid}
+            name: `VictoryDialog_Header1_${pid}`,
+                    type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 14],
                     size: [340, 22],
@@ -1375,7 +1331,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // UI element: VictoryDialog_Header2_${pid}
                     name: `VictoryDialog_Header2_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 36],
                     size: [340, 22],
@@ -1393,7 +1349,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // UI element: VictoryDialog_Screenshot_${pid}
                     name: `VictoryDialog_Screenshot_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 62],
                     size: [340, 16],
@@ -1411,7 +1367,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // UI element: VictoryDialog_Restart_${pid}
                     name: `VictoryDialog_Restart_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 82],
                     size: [340, 16],
@@ -1429,7 +1385,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // UI element: VictoryDialog_TotalTimeRow_${pid}
                     name: `VictoryDialog_TotalTimeRow_${pid}`,
-                    type: 'Container',
+                    type: "Container",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 102],
                     size: [340, 16],
@@ -1442,7 +1398,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                         {
                             // UI element: VictoryDialog_TotalTimeLabel_${pid}
                             name: `VictoryDialog_TotalTimeLabel_${pid}`,
-                            type: 'Text',
+                            type: "Text",
                             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [-45, 0],
                             size: [130, 16],
@@ -1460,7 +1416,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                         {
                             // UI element: VictoryDialog_TotalTimeDigits_${pid}
                             name: `VictoryDialog_TotalTimeDigits_${pid}`,
-                            type: 'Container',
+                            type: "Container",
                             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [55, 0],
                             size: [120, 16],
@@ -1473,7 +1429,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_TimeHT_${pid}
                                     name: `VictoryDialog_TimeHT_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [-45, 0],
                                     size: [10, 16],
@@ -1491,7 +1447,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_TimeHO_${pid}
                                     name: `VictoryDialog_TimeHO_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [-35, 0],
                                     size: [10, 16],
@@ -1509,7 +1465,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_TimeC1_${pid}
                                     name: `VictoryDialog_TimeC1_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [-25, 0],
                                     size: [10, 16],
@@ -1527,7 +1483,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_TimeMT_${pid}
                                     name: `VictoryDialog_TimeMT_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [-15, 0],
                                     size: [10, 16],
@@ -1545,7 +1501,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_TimeMO_${pid}
                                     name: `VictoryDialog_TimeMO_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [-5, 0],
                                     size: [10, 16],
@@ -1563,7 +1519,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_TimeC2_${pid}
                                     name: `VictoryDialog_TimeC2_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [5, 0],
                                     size: [10, 16],
@@ -1581,7 +1537,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_TimeST_${pid}
                                     name: `VictoryDialog_TimeST_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [15, 0],
                                     size: [10, 16],
@@ -1599,7 +1555,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_TimeSO_${pid}
                                     name: `VictoryDialog_TimeSO_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [25, 0],
                                     size: [10, 16],
@@ -1621,7 +1577,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // UI element: VictoryDialog_Rounds_${pid}
                     name: `VictoryDialog_Rounds_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 122],
                     size: [340, 16],
@@ -1639,7 +1595,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // UI element: VictoryDialog_AdminActions_${pid}
                     name: `VictoryDialog_AdminActions_${pid}`,
-                    type: 'Text',
+                    type: "Text",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 138],
                     size: [340, 16],
@@ -1657,7 +1613,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // UI element: VictoryDialog_TeamsRow_${pid}
                     name: `VictoryDialog_TeamsRow_${pid}`,
-                    type: 'Container',
+                    type: "Container",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 154],
                     size: [340, 70],
@@ -1670,7 +1626,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                         {
                             // UI element: VictoryDialog_TeamLeft_${pid}
                             name: `VictoryDialog_TeamLeft_${pid}`,
-                            type: 'Container',
+                            type: "Container",
                             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [-85, 0],
                             size: [160, 122],
@@ -1684,7 +1640,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_LeftOutcome_${pid}
                                     name: `VictoryDialog_LeftOutcome_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, 6],
                                     size: [150, 22],
@@ -1693,16 +1649,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(
-                                        mod.stringkeys.twl.victory.teamOutcomeFormat,
-                                        getTeamNameKey(TeamID.Team1),
-                                        mod.stringkeys.twl.victory.loses
-                                    ),
-                                    textColor: [
-                                        VICTORY_TEAM1_TEXT_RGB[0],
-                                        VICTORY_TEAM1_TEXT_RGB[1],
-                                        VICTORY_TEAM1_TEXT_RGB[2],
-                                    ],
+                                    textLabel: mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, getTeamNameKey(TeamID.Team1), mod.stringkeys.twl.victory.loses),
+                                    textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 18,
                                     textAnchor: mod.UIAnchor.Center,
@@ -1710,7 +1658,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // Winning crown (shown only for the winning team)
                                     name: `VictoryDialog_LeftCrown_${pid}`,
-                                    type: 'Image',
+                                    type: "Image",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [VICTORY_CROWN_OFFSET_X_LEFT, VICTORY_CROWN_OFFSET_Y],
                                     size: [VICTORY_CROWN_SIZE, VICTORY_CROWN_SIZE],
@@ -1726,7 +1674,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_LeftRecord_${pid}
                                     name: `VictoryDialog_LeftRecord_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, 30],
                                     size: [150, 16],
@@ -1736,11 +1684,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
                                     textLabel: mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, 0, 0, 0),
-                                    textColor: [
-                                        VICTORY_TEAM1_TEXT_RGB[0],
-                                        VICTORY_TEAM1_TEXT_RGB[1],
-                                        VICTORY_TEAM1_TEXT_RGB[2],
-                                    ],
+                                    textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 18,
                                     textAnchor: mod.UIAnchor.Center,
@@ -1748,7 +1692,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_LeftRoundWins_${pid}
                                     name: `VictoryDialog_LeftRoundWins_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, 50],
                                     size: [150, 16],
@@ -1758,11 +1702,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
                                     textLabel: mod.Message(mod.stringkeys.twl.victory.roundWinsFormat, 0),
-                                    textColor: [
-                                        VICTORY_TEAM1_TEXT_RGB[0],
-                                        VICTORY_TEAM1_TEXT_RGB[1],
-                                        VICTORY_TEAM1_TEXT_RGB[2],
-                                    ],
+                                    textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
                                     textAnchor: mod.UIAnchor.Center,
@@ -1770,7 +1710,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_LeftRoundLosses_${pid}
                                     name: `VictoryDialog_LeftRoundLosses_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, 68],
                                     size: [150, 16],
@@ -1780,11 +1720,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
                                     textLabel: mod.Message(mod.stringkeys.twl.victory.roundLossesFormat, 0),
-                                    textColor: [
-                                        VICTORY_TEAM1_TEXT_RGB[0],
-                                        VICTORY_TEAM1_TEXT_RGB[1],
-                                        VICTORY_TEAM1_TEXT_RGB[2],
-                                    ],
+                                    textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
                                     textAnchor: mod.UIAnchor.Center,
@@ -1792,7 +1728,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_LeftRoundTies_${pid}
                                     name: `VictoryDialog_LeftRoundTies_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, 86],
                                     size: [150, 16],
@@ -1802,11 +1738,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
                                     textLabel: mod.Message(mod.stringkeys.twl.victory.roundTiesFormat, 0),
-                                    textColor: [
-                                        VICTORY_TEAM1_TEXT_RGB[0],
-                                        VICTORY_TEAM1_TEXT_RGB[1],
-                                        VICTORY_TEAM1_TEXT_RGB[2],
-                                    ],
+                                    textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
                                     textAnchor: mod.UIAnchor.Center,
@@ -1814,7 +1746,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_LeftTotalKills_${pid}
                                     name: `VictoryDialog_LeftTotalKills_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, 104],
                                     size: [150, 16],
@@ -1824,11 +1756,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
                                     textLabel: mod.Message(mod.stringkeys.twl.victory.totalKillsFormat, 0),
-                                    textColor: [
-                                        VICTORY_TEAM1_TEXT_RGB[0],
-                                        VICTORY_TEAM1_TEXT_RGB[1],
-                                        VICTORY_TEAM1_TEXT_RGB[2],
-                                    ],
+                                    textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
                                     textAnchor: mod.UIAnchor.Center,
@@ -1838,7 +1766,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                         {
                             // UI element: VictoryDialog_TeamRight_${pid}
                             name: `VictoryDialog_TeamRight_${pid}`,
-                            type: 'Container',
+                            type: "Container",
                             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [85, 0],
                             size: [160, 122],
@@ -1852,7 +1780,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_RightOutcome_${pid}
                                     name: `VictoryDialog_RightOutcome_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, 6],
                                     size: [150, 22],
@@ -1861,16 +1789,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(
-                                        mod.stringkeys.twl.victory.teamOutcomeFormat,
-                                        getTeamNameKey(TeamID.Team2),
-                                        mod.stringkeys.twl.victory.wins
-                                    ),
-                                    textColor: [
-                                        VICTORY_TEAM2_TEXT_RGB[0],
-                                        VICTORY_TEAM2_TEXT_RGB[1],
-                                        VICTORY_TEAM2_TEXT_RGB[2],
-                                    ],
+                                    textLabel: mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, getTeamNameKey(TeamID.Team2), mod.stringkeys.twl.victory.wins),
+                                    textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 18,
                                     textAnchor: mod.UIAnchor.Center,
@@ -1878,7 +1798,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // Winning crown (shown only for the winning team)
                                     name: `VictoryDialog_RightCrown_${pid}`,
-                                    type: 'Image',
+                                    type: "Image",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [VICTORY_CROWN_OFFSET_X_RIGHT, VICTORY_CROWN_OFFSET_Y],
                                     size: [VICTORY_CROWN_SIZE, VICTORY_CROWN_SIZE],
@@ -1894,7 +1814,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_RightRecord_${pid}
                                     name: `VictoryDialog_RightRecord_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, 30],
                                     size: [150, 16],
@@ -1904,11 +1824,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
                                     textLabel: mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, 0, 0, 0),
-                                    textColor: [
-                                        VICTORY_TEAM2_TEXT_RGB[0],
-                                        VICTORY_TEAM2_TEXT_RGB[1],
-                                        VICTORY_TEAM2_TEXT_RGB[2],
-                                    ],
+                                    textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 18,
                                     textAnchor: mod.UIAnchor.Center,
@@ -1916,7 +1832,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_RightRoundWins_${pid}
                                     name: `VictoryDialog_RightRoundWins_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, 50],
                                     size: [150, 16],
@@ -1926,11 +1842,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
                                     textLabel: mod.Message(mod.stringkeys.twl.victory.roundWinsFormat, 0),
-                                    textColor: [
-                                        VICTORY_TEAM2_TEXT_RGB[0],
-                                        VICTORY_TEAM2_TEXT_RGB[1],
-                                        VICTORY_TEAM2_TEXT_RGB[2],
-                                    ],
+                                    textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
                                     textAnchor: mod.UIAnchor.Center,
@@ -1938,7 +1850,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_RightRoundLosses_${pid}
                                     name: `VictoryDialog_RightRoundLosses_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, 68],
                                     size: [150, 16],
@@ -1948,11 +1860,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
                                     textLabel: mod.Message(mod.stringkeys.twl.victory.roundLossesFormat, 0),
-                                    textColor: [
-                                        VICTORY_TEAM2_TEXT_RGB[0],
-                                        VICTORY_TEAM2_TEXT_RGB[1],
-                                        VICTORY_TEAM2_TEXT_RGB[2],
-                                    ],
+                                    textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
                                     textAnchor: mod.UIAnchor.Center,
@@ -1960,7 +1868,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_RightRoundTies_${pid}
                                     name: `VictoryDialog_RightRoundTies_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, 86],
                                     size: [150, 16],
@@ -1970,11 +1878,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
                                     textLabel: mod.Message(mod.stringkeys.twl.victory.roundTiesFormat, 0),
-                                    textColor: [
-                                        VICTORY_TEAM2_TEXT_RGB[0],
-                                        VICTORY_TEAM2_TEXT_RGB[1],
-                                        VICTORY_TEAM2_TEXT_RGB[2],
-                                    ],
+                                    textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
                                     textAnchor: mod.UIAnchor.Center,
@@ -1982,7 +1886,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 {
                                     // UI element: VictoryDialog_RightTotalKills_${pid}
                                     name: `VictoryDialog_RightTotalKills_${pid}`,
-                                    type: 'Text',
+                                    type: "Text",
                                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, 104],
                                     size: [150, 16],
@@ -1992,11 +1896,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
                                     textLabel: mod.Message(mod.stringkeys.twl.victory.totalKillsFormat, 0),
-                                    textColor: [
-                                        VICTORY_TEAM2_TEXT_RGB[0],
-                                        VICTORY_TEAM2_TEXT_RGB[1],
-                                        VICTORY_TEAM2_TEXT_RGB[2],
-                                    ],
+                                    textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 12,
                                     textAnchor: mod.UIAnchor.Center,
@@ -2008,7 +1908,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     // UI element: VictoryDialog_RosterRow_${pid}
                     name: `VictoryDialog_RosterRow_${pid}`,
-                    type: 'Container',
+                    type: "Container",
                     // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, VICTORY_DIALOG_ROSTER_ROW_Y],
                     size: [VICTORY_DIALOG_ROSTER_ROW_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT_MAX],
@@ -2021,7 +1921,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                         {
                             // UI element: VictoryDialog_RosterLeft_${pid}
                             name: `VictoryDialog_RosterLeft_${pid}`,
-                            type: 'Container',
+                            type: "Container",
                             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [-85, 0],
                             size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT_MAX],
@@ -2036,25 +1936,17 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 for (let i = 0; i < TEAM_ROSTER_MAX_ROWS; i++) {
                                     rows.push({
                                         name: `VictoryDialog_LeftRoster_${pid}_${i}`,
-                                        type: 'Text',
+                                        type: "Text",
                                         // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                        position: [
-                                            0,
-                                            VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP +
-                                                i * VICTORY_DIALOG_ROSTER_ROW_HEIGHT,
-                                        ],
+                                        position: [0, VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP + i * VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
                                         size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
                                         anchor: mod.UIAnchor.TopCenter,
                                         visible: true,
                                         padding: 0,
                                         bgAlpha: 0,
                                         bgFill: mod.UIBgFill.None,
-                                        textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
-                                        textColor: [
-                                            VICTORY_TEAM1_TEXT_RGB[0],
-                                            VICTORY_TEAM1_TEXT_RGB[1],
-                                            VICTORY_TEAM1_TEXT_RGB[2],
-                                        ],
+                                        textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+                                        textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
                                         textAlpha: 1,
                                         textSize: 11,
                                         textAnchor: mod.UIAnchor.Center,
@@ -2066,7 +1958,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                         {
                             // UI element: VictoryDialog_RosterRight_${pid}
                             name: `VictoryDialog_RosterRight_${pid}`,
-                            type: 'Container',
+                            type: "Container",
                             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [85, 0],
                             size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT_MAX],
@@ -2081,25 +1973,17 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                                 for (let i = 0; i < TEAM_ROSTER_MAX_ROWS; i++) {
                                     rows.push({
                                         name: `VictoryDialog_RightRoster_${pid}_${i}`,
-                                        type: 'Text',
+                                        type: "Text",
                                         // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                        position: [
-                                            0,
-                                            VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP +
-                                                i * VICTORY_DIALOG_ROSTER_ROW_HEIGHT,
-                                        ],
+                                        position: [0, VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP + i * VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
                                         size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
                                         anchor: mod.UIAnchor.TopCenter,
                                         visible: true,
                                         padding: 0,
                                         bgAlpha: 0,
                                         bgFill: mod.UIBgFill.None,
-                                        textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
-                                        textColor: [
-                                            VICTORY_TEAM2_TEXT_RGB[0],
-                                            VICTORY_TEAM2_TEXT_RGB[1],
-                                            VICTORY_TEAM2_TEXT_RGB[2],
-                                        ],
+                                        textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+                                        textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
                                         textAlpha: 1,
                                         textSize: 11,
                                         textAnchor: mod.UIAnchor.Center,
@@ -2157,6 +2041,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
     //#endregion ----------------- HUD Build/Ensure - Victory Dialog --------------------
 
+
+
     //#region -------------------- HUD Build/Ensure - Cache Init + Defaults --------------------
 
     refs.helpTextContainer = safeFind(`Container_HelpText_${pid}`);
@@ -2182,6 +2068,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 }
 
 //#endregion ----------------- HUD Build/Ensure - Cache Init + Defaults --------------------
+
+
 
 //#region -------------------- HUD Update Helpers --------------------
 
@@ -2257,14 +2145,16 @@ function handleAdminPanelAction(eventPlayer: mod.Player, actionKey: number): voi
 
 //#endregion ----------------- HUD Update Helpers --------------------
 
+
+
 //#region -------------------- Legacy UI Cleanup (old score_root_* containers) --------------------
 
 // Code Cleanup: Is this still needed???
 function deleteLegacyScoreRootForPlayer(player: mod.Player): void {
-    const name = 'score_root_' + getObjId(player);
+    const name = "score_root_" + getObjId(player);
     try {
         mod.DeleteUIWidget(mod.FindUIWidgetWithName(name));
-    } catch {}
+    } catch { }
 }
 
 function deleteLegacyScoreRootsForAllPlayers(): void {

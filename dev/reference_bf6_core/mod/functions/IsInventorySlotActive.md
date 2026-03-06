@@ -8,16 +8,15 @@
 function IsInventorySlotActive(player, inventorySlots): boolean;
 ```
 
-Defined in:
-[mod/index.d.ts:21917](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21917)
+Defined in: [mod/index.d.ts:21917](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21917)
 
 Returns true whether or not the active inventory slot of the target player is the provided inventory slots.
 
 ## Parameters
 
-| Parameter        | Type                                            |
-| ---------------- | ----------------------------------------------- |
-| `player`         | [`Player`](../Player/_index.md)                 |
+| Parameter | Type |
+| ------ | ------ |
+| `player` | [`Player`](../Player/_index.md) |
 | `inventorySlots` | [`InventorySlots`](../InventorySlots/_index.md) |
 
 ## Returns

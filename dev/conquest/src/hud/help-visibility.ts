@@ -23,10 +23,12 @@ function updateHelpTextVisibilityForPid(pid: number): void {
     const isDialogOpen = isReadyDialogOpenForPid(pid);
     const isReady = !!State.players.readyByPid[pid];
     const isDeployed = !!State.players.deployedByPid[pid];
-    const canShow =
-        !State.match.isEnded && !State.match.victoryDialogActive && !State.round.flow.cleanupActive && isDeployed;
-    const showHelp = canShow && !isMatchLive() && !isReady && !isDialogOpen;
-    const showReady = canShow && !isMatchLive() && isReady && !isDialogOpen;
+    const canShow = (!State.match.isEnded)
+        && (!State.match.victoryDialogActive)
+        && (!State.round.flow.cleanupActive)
+        && (isDeployed);
+    const showHelp = canShow && (!isMatchLive()) && (!isReady) && (!isDialogOpen);
+    const showReady = canShow && (!isMatchLive()) && (isReady) && (!isDialogOpen);
 
     const helpContainer = refs.helpTextContainer ?? safeFind(`Container_HelpText_${pid}`);
     if (helpContainer) {

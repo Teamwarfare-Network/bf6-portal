@@ -8,15 +8,14 @@
 function GetVFX(vfxNumber): VFX;
 ```
 
-Defined in:
-[mod/index.d.ts:21550](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21550)
+Defined in: [mod/index.d.ts:21550](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21550)
 
 Returns the VFX object corresponding to the provided id.
 
 ## Parameters
 
-| Parameter   | Type     |
-| ----------- | -------- |
+| Parameter | Type |
+| ------ | ------ |
 | `vfxNumber` | `number` |
 
 ## Returns

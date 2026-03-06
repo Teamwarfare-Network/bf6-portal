@@ -54,9 +54,9 @@ function ensureCustomGameModeForManualChange(): void {
     if (State.round.modeConfig.gameModeIndex === READY_DIALOG_GAME_MODE_CUSTOM_INDEX) return;
     const priorMode = State.round.modeConfig.gameMode;
     const shouldKeepCeilingOverride =
-        shouldApplyCustomCeilingForGameMode(priorMode) ||
-        State.round.modeConfig.aircraftCeilingOverridePending ||
-        State.round.modeConfig.confirmed.aircraftCeilingOverrideEnabled;
+        shouldApplyCustomCeilingForGameMode(priorMode)
+        || State.round.modeConfig.aircraftCeilingOverridePending
+        || State.round.modeConfig.confirmed.aircraftCeilingOverrideEnabled;
     if (shouldKeepCeilingOverride) {
         State.round.modeConfig.aircraftCeilingOverridePending = true;
     }
@@ -73,11 +73,7 @@ function isReadyDialogModePresetActive(gameModeKey: number): boolean {
     if (State.round.autoStartMinActivePlayers !== getReadyDialogPresetPlayersPerSide(gameModeKey)) return false;
     if (State.round.modeConfig.vehicleIndexT1 !== READY_DIALOG_MODE_PRESET_VEHICLE_INDEX) return false;
     if (State.round.modeConfig.vehicleIndexT2 !== READY_DIALOG_MODE_PRESET_VEHICLE_INDEX) return false;
-    if (
-        Math.floor(State.round.modeConfig.aircraftCeiling) !==
-        Math.floor(State.round.aircraftCeiling.mapDefaultHudCeiling)
-    )
-        return false;
+    if (Math.floor(State.round.modeConfig.aircraftCeiling) !== Math.floor(State.round.aircraftCeiling.mapDefaultHudCeiling)) return false;
     return true;
 }
 
@@ -190,11 +186,7 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
     }
     if (changedBy && cfg.confirmed.aircraftCeiling !== prevConfirmed) {
         sendHighlightedWorldLogMessage(
-            mod.Message(
-                STR_READY_DIALOG_AIRCRAFT_CEILING_CHANGED,
-                changedBy,
-                Math.floor(cfg.confirmed.aircraftCeiling)
-            ),
+            mod.Message(STR_READY_DIALOG_AIRCRAFT_CEILING_CHANGED, changedBy, Math.floor(cfg.confirmed.aircraftCeiling)),
             true,
             undefined,
             STR_READY_DIALOG_AIRCRAFT_CEILING_CHANGED

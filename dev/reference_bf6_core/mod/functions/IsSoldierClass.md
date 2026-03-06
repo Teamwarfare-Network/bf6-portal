@@ -8,16 +8,15 @@
 function IsSoldierClass(player, soldierClass): boolean;
 ```
 
-Defined in:
-[mod/index.d.ts:21920](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21920)
+Defined in: [mod/index.d.ts:21920](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21920)
 
 Returns true if the provided player is using the specified class.
 
 ## Parameters
 
-| Parameter      | Type                                        |
-| -------------- | ------------------------------------------- |
-| `player`       | [`Player`](../Player/_index.md)             |
+| Parameter | Type |
+| ------ | ------ |
+| `player` | [`Player`](../Player/_index.md) |
 | `soldierClass` | [`SoldierClass`](../SoldierClass/_index.md) |
 
 ## Returns

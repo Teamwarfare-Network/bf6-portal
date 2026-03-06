@@ -14,18 +14,18 @@
 // Async control (match end):
 // - State.match.flow.matchEndDelayToken invalidates any in-flight match-end delays when incremented.
 
+
 function broadcastStringKey(
     stringKey: number,
     arg0?: string | number | mod.Player,
     arg1?: string | number | mod.Player,
     arg2?: string | number | mod.Player
 ): void {
-    const message =
-        arg0 === undefined
-            ? mod.Message(stringKey)
-            : arg1 === undefined
-              ? mod.Message(stringKey, arg0)
-              : arg2 === undefined
+    const message = (arg0 === undefined)
+        ? mod.Message(stringKey)
+        : (arg1 === undefined)
+            ? mod.Message(stringKey, arg0)
+            : (arg2 === undefined)
                 ? mod.Message(stringKey, arg0, arg1)
                 : mod.Message(stringKey, arg0, arg1, arg2);
     sendNotificationMessage(message, false);
@@ -38,12 +38,11 @@ function broadcastGameplayNotificationKey(
     arg1?: string | number | mod.Player,
     arg2?: string | number | mod.Player
 ): void {
-    const message =
-        arg0 === undefined
-            ? mod.Message(stringKey)
-            : arg1 === undefined
-              ? mod.Message(stringKey, arg0)
-              : arg2 === undefined
+    const message = (arg0 === undefined)
+        ? mod.Message(stringKey)
+        : (arg1 === undefined)
+            ? mod.Message(stringKey, arg0)
+            : (arg2 === undefined)
                 ? mod.Message(stringKey, arg0, arg1)
                 : mod.Message(stringKey, arg0, arg1, arg2);
     sendNotificationMessage(message, true);
@@ -56,12 +55,11 @@ function broadcastGameplayHighlightedStringKey(
     arg1?: string | number | mod.Player,
     arg2?: string | number | mod.Player
 ): void {
-    const message =
-        arg0 === undefined
-            ? mod.Message(stringKey)
-            : arg1 === undefined
-              ? mod.Message(stringKey, arg0)
-              : arg2 === undefined
+    const message = (arg0 === undefined)
+        ? mod.Message(stringKey)
+        : (arg1 === undefined)
+            ? mod.Message(stringKey, arg0)
+            : (arg2 === undefined)
                 ? mod.Message(stringKey, arg0, arg1)
                 : mod.Message(stringKey, arg0, arg1, arg2);
     sendHighlightedWorldLogMessage(message, true, undefined, stringKey);
@@ -73,12 +71,11 @@ function broadcastHighlightedStringKey(
     arg1?: string | number | mod.Player,
     arg2?: string | number | mod.Player
 ): void {
-    const message =
-        arg0 === undefined
-            ? mod.Message(stringKey)
-            : arg1 === undefined
-              ? mod.Message(stringKey, arg0)
-              : arg2 === undefined
+    const message = (arg0 === undefined)
+        ? mod.Message(stringKey)
+        : (arg1 === undefined)
+            ? mod.Message(stringKey, arg0)
+            : (arg2 === undefined)
                 ? mod.Message(stringKey, arg0, arg1)
                 : mod.Message(stringKey, arg0, arg1, arg2);
     sendHighlightedWorldLogMessage(message, false, undefined, stringKey);
@@ -89,7 +86,7 @@ function broadcastHighlightedStringKey(
 //    mod.DisplayNotificationMessage(message);
 //}
 
-type CleanupSpawnWaitResult = 'completed' | 'timeout' | 'aborted';
+type CleanupSpawnWaitResult = "completed" | "timeout" | "aborted";
 
 function setCleanupState(active: boolean, allowDeploy: boolean): void {
     State.round.flow.cleanupActive = active;
@@ -167,15 +164,15 @@ function isSpawnerSystemQuiescent(): boolean {
 async function waitForCleanupSpawnsOrTimeout(expectedToken: number): Promise<CleanupSpawnWaitResult> {
     const startElapsed = Math.floor(mod.GetMatchTimeElapsed());
     while (true) {
-        if (expectedToken !== State.round.flow.roundEndRedeployToken) return 'aborted';
-        if (!State.round.flow.cleanupActive) return 'aborted';
+        if (expectedToken !== State.round.flow.roundEndRedeployToken) return "aborted";
+        if (!State.round.flow.cleanupActive) return "aborted";
         if (areCleanupSpawnsReady() && isSpawnerSystemQuiescent()) {
             await mod.Wait(0.5);
-            if (areCleanupSpawnsReady() && isSpawnerSystemQuiescent()) return 'completed';
+            if (areCleanupSpawnsReady() && isSpawnerSystemQuiescent()) return "completed";
         }
 
         const elapsed = Math.floor(mod.GetMatchTimeElapsed()) - startElapsed;
-        if (elapsed >= ROUND_END_CLEANUP_SPAWN_TIMEOUT_SECONDS) return 'timeout';
+        if (elapsed >= ROUND_END_CLEANUP_SPAWN_TIMEOUT_SECONDS) return "timeout";
 
         await mod.Wait(0.5);
     }
@@ -243,14 +240,14 @@ async function scheduleRoundEndCleanup(expectedToken: number): Promise<void> {
     applySpawnerEnablementForMatchup(State.round.matchupPresetIndex, true);
 
     const waitResult = await waitForCleanupSpawnsOrTimeout(expectedToken);
-    if (waitResult === 'timeout') {
+    if (waitResult === "timeout") {
         sendHighlightedWorldLogMessage(
             mod.Message(STR_ROUND_CLEANUP_SPAWN_TIMEOUT, ROUND_END_CLEANUP_SPAWN_TIMEOUT_SECONDS),
             true,
             undefined,
             STR_ROUND_CLEANUP_SPAWN_TIMEOUT
         );
-    } else if (waitResult === 'aborted') {
+    } else if (waitResult === "aborted") {
         return;
     }
 
@@ -402,10 +399,10 @@ function bindRoundClockExpiryToRoundEnd(): void {
 
 function startRound(_triggerPlayer?: mod.Player): void {
     if (State.match.isEnded) {
-        // Steps:
-        // 1) Reset round-scoped counters and flags
-        // 2) Initialize the round clock from ROUND_START_SECONDS
-        // 3) Push HUD/UI updates for the new round state
+    // Steps:
+    // 1) Reset round-scoped counters and flags
+    // 2) Initialize the round clock from ROUND_START_SECONDS
+    // 3) Push HUD/UI updates for the new round state
 
         return;
     }
@@ -469,11 +466,7 @@ function startRound(_triggerPlayer?: mod.Player): void {
 // - Redeploy delay and next-round scheduling are time-based
 // - Match end is handled separately and must not be triggered here
 
-function endRound(
-    _triggerPlayer?: mod.Player,
-    freezeRemainingSeconds?: number,
-    overrideWinnerTeamNum?: TeamID | 0
-): void {
+function endRound(_triggerPlayer?: mod.Player, freezeRemainingSeconds?: number, overrideWinnerTeamNum?: TeamID | 0): void {
     // Conquest cut: round transitions are deprecated; once LIVE, match flow stays LIVE.
     if (!isRoundLive()) return;
     return;

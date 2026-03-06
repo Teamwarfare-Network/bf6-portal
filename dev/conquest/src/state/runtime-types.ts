@@ -21,7 +21,7 @@ type VehicleSpawnerSlot = {
     spawnRetryScheduled: boolean;
 };
 
-type ConquestLifecyclePhase = 'NOT_READY' | 'PRE_MATCH' | 'LIVE_MATCH' | 'POST_MATCH' | 'RESET';
+type ConquestLifecyclePhase = "NOT_READY" | "PRE_MATCH" | "LIVE_MATCH" | "POST_MATCH" | "RESET";
 
 type ConquestCapturePointRuntimeState = {
     objId: number;
@@ -39,12 +39,12 @@ type ConquestCapturePointRuntimeState = {
 };
 
 type ConquestFlagVisualPhase =
-    | 'NEUTRAL_IDLE'
-    | 'NEUTRAL_CAPTURING'
-    | 'OWNED_STABLE'
-    | 'OWNED_CONTESTED_DRAIN'
-    | 'OWNED_CONTESTED_RECOVER'
-    | 'NEUTRALIZED_LATCH';
+    | "NEUTRAL_IDLE"
+    | "NEUTRAL_CAPTURING"
+    | "OWNED_STABLE"
+    | "OWNED_CONTESTED_DRAIN"
+    | "OWNED_CONTESTED_RECOVER"
+    | "NEUTRALIZED_LATCH";
 
 type ConquestFlagVisualRuntimeState = {
     phase: ConquestFlagVisualPhase;
@@ -61,18 +61,18 @@ type ConquestFlagVisualRuntimeState = {
 };
 
 type ConquestSpawnChargeReason =
-    | 'deploy'
-    | 'forced_redeploy'
-    | 'team_switch'
-    | 'admin_move'
-    | 'phase_transition'
-    | 'reconnect';
+    | "deploy"
+    | "forced_redeploy"
+    | "team_switch"
+    | "admin_move"
+    | "phase_transition"
+    | "reconnect";
 
 type ConquestSpawnChargeTxnState = {
     deploySeq: number;
     lastChargedDeploySeq: number;
     lastChargeAtSeconds: number;
-    lastReason: ConquestSpawnChargeReason | 'none';
+    lastReason: ConquestSpawnChargeReason | "none";
 };
 
 type ConquestSpawnChargeReasonCounters = Record<ConquestSpawnChargeReason, number>;
@@ -113,7 +113,7 @@ type ConquestRuntimeScaffold = {
     };
     endRace: {
         endLatched: boolean;
-        endReason?: 'tickets' | 'clock' | 'admin';
+        endReason?: "tickets" | "clock" | "admin";
         endSnapshot?: {
             team1Tickets: number;
             team2Tickets: number;

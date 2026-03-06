@@ -6,10 +6,7 @@
 // Local triple-tap detector used by OngoingPlayer to open the ready dialog interact point.
 // Keep local (instead of external dependency) to preserve deterministic bundle behavior.
 class InteractMultiClickDetector {
-    private static readonly STATES: Record<
-        number,
-        { lastIsInteracting: boolean; clickCount: number; sequenceStartTime: number }
-    > = {};
+    private static readonly STATES: Record<number, { lastIsInteracting: boolean; clickCount: number; sequenceStartTime: number }> = {};
     private static readonly WINDOW_MS = 2_000; // Tuned to allow slower input cadence on controller.
     private static readonly REQUIRED_CLICKS = 3;
 

@@ -44,12 +44,7 @@ function hasPlayersOnTeam(team: mod.Team): boolean {
 }
 
 // World-log wrapper; respects gameplay/debug gates and optional target.
-function sendHighlightedWorldLogMessage(
-    message: mod.Message,
-    isGameplay: boolean,
-    target?: mod.Player | mod.Team,
-    debugKey?: number
-): void {
+function sendHighlightedWorldLogMessage(message: mod.Message, isGameplay: boolean, target?: mod.Player | mod.Team, debugKey?: number): void {
     if (!shouldSendMessage(isGameplay, true)) return;
     noteHighlightedMessageSent(debugKey);
     if (target) {

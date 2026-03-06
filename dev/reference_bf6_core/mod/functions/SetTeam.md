@@ -8,17 +8,16 @@
 function SetTeam(player, team): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20425](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20425)
+Defined in: [mod/index.d.ts:20425](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20425)
 
 Sets the target player's team.
 
 ## Parameters
 
-| Parameter | Type                            |
-| --------- | ------------------------------- |
-| `player`  | [`Player`](../Player/_index.md) |
-| `team`    | [`Team`](../Team/_index.md)     |
+| Parameter | Type |
+| ------ | ------ |
+| `player` | [`Player`](../Player/_index.md) |
+| `team` | [`Team`](../Team/_index.md) |
 
 ## Returns
 

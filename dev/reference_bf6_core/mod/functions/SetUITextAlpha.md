@@ -8,17 +8,16 @@
 function SetUITextAlpha(widget, value): void;
 ```
 
-Defined in:
-[mod/index.d.ts:21378](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21378)
+Defined in: [mod/index.d.ts:21378](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21378)
 
 Changes the alpha (transparency) of the text of an UI Text Widget.
 
 ## Parameters
 
-| Parameter | Type                                |
-| --------- | ----------------------------------- |
-| `widget`  | [`UIWidget`](../UIWidget/_index.md) |
-| `value`   | `number`                            |
+| Parameter | Type |
+| ------ | ------ |
+| `widget` | [`UIWidget`](../UIWidget/_index.md) |
+| `value` | `number` |
 
 ## Returns
 

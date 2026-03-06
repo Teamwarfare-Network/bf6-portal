@@ -3,7 +3,11 @@
 
 // Handles admin tester controls that mutate match clock/start/end flow.
 // Returns true when a button name is recognized (including gated no-op actions).
-function tryHandleAdminTesterButtonEvent(eventPlayer: mod.Player, playerId: number, widgetName: string): boolean {
+function tryHandleAdminTesterButtonEvent(
+    eventPlayer: mod.Player,
+    playerId: number,
+    widgetName: string
+): boolean {
     switch (widgetName) {
         case UI_TEST_BUTTON_CLOCK_TIME_DEC_ID + playerId:
             adjustMatchClockBySeconds(-60);
@@ -51,9 +55,7 @@ function tryHandleAdminTesterButtonEvent(eventPlayer: mod.Player, playerId: numb
         case UI_ADMIN_MATCH_LENGTH_DEC_ID + playerId:
             if (isMatchLive()) return true;
             {
-                const next = clampMatchLengthSeconds(
-                    getConfiguredMatchLengthSeconds() - ADMIN_MATCH_LENGTH_STEP_SECONDS
-                );
+                const next = clampMatchLengthSeconds(getConfiguredMatchLengthSeconds() - ADMIN_MATCH_LENGTH_STEP_SECONDS);
                 setMatchClockPreview(next);
                 updateAllPlayersClock();
                 syncAdminMatchLengthLabelForAllPlayers();
@@ -64,9 +66,7 @@ function tryHandleAdminTesterButtonEvent(eventPlayer: mod.Player, playerId: numb
         case UI_ADMIN_MATCH_LENGTH_INC_ID + playerId:
             if (isMatchLive()) return true;
             {
-                const next = clampMatchLengthSeconds(
-                    getConfiguredMatchLengthSeconds() + ADMIN_MATCH_LENGTH_STEP_SECONDS
-                );
+                const next = clampMatchLengthSeconds(getConfiguredMatchLengthSeconds() + ADMIN_MATCH_LENGTH_STEP_SECONDS);
                 setMatchClockPreview(next);
                 updateAllPlayersClock();
                 syncAdminMatchLengthLabelForAllPlayers();

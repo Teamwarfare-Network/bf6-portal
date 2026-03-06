@@ -10,16 +10,15 @@
 function GetSoldierState(player, soldierStateNumber): number;
 ```
 
-Defined in:
-[mod/index.d.ts:21902](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21902)
+Defined in: [mod/index.d.ts:21902](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21902)
 
 Returns the value of the target player state.
 
 ### Parameters
 
-| Parameter            | Type                                                    |
-| -------------------- | ------------------------------------------------------- |
-| `player`             | [`Player`](../Player/_index.md)                         |
+| Parameter | Type |
+| ------ | ------ |
+| `player` | [`Player`](../Player/_index.md) |
 | `soldierStateNumber` | [`SoldierStateNumber`](../SoldierStateNumber/_index.md) |
 
 ### Returns
@@ -32,16 +31,15 @@ Returns the value of the target player state.
 function GetSoldierState(player, soldierStateBool): boolean;
 ```
 
-Defined in:
-[mod/index.d.ts:21905](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21905)
+Defined in: [mod/index.d.ts:21905](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21905)
 
 Returns the value of the target player state.
 
 ### Parameters
 
-| Parameter          | Type                                                |
-| ------------------ | --------------------------------------------------- |
-| `player`           | [`Player`](../Player/_index.md)                     |
+| Parameter | Type |
+| ------ | ------ |
+| `player` | [`Player`](../Player/_index.md) |
 | `soldierStateBool` | [`SoldierStateBool`](../SoldierStateBool/_index.md) |
 
 ### Returns
@@ -54,16 +52,15 @@ Returns the value of the target player state.
 function GetSoldierState(player, soldierStateVector): Vector;
 ```
 
-Defined in:
-[mod/index.d.ts:21908](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21908)
+Defined in: [mod/index.d.ts:21908](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21908)
 
 Returns the value of the target player state.
 
 ### Parameters
 
-| Parameter            | Type                                                    |
-| -------------------- | ------------------------------------------------------- |
-| `player`             | [`Player`](../Player/_index.md)                         |
+| Parameter | Type |
+| ------ | ------ |
+| `player` | [`Player`](../Player/_index.md) |
 | `soldierStateVector` | [`SoldierStateVector`](../SoldierStateVector/_index.md) |
 
 ### Returns

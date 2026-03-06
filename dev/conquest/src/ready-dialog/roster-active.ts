@@ -99,10 +99,10 @@ function getRosterDisplayEntries(): RosterDisplay_t {
 }
 
 function getRosterEntryNameMessage(entry: RosterDisplayEntry | undefined): mod.Message {
-    if (!entry) return mod.Message(mod.stringkeys.twl.system.genericCounter, '');
+    if (!entry) return mod.Message(mod.stringkeys.twl.system.genericCounter, "");
     if (entry.player) return mod.Message(mod.stringkeys.twl.readyDialog.playerNameFormat, entry.player);
     if (entry.nameKey) return mod.Message(entry.nameKey);
-    return mod.Message(mod.stringkeys.twl.system.genericCounter, '');
+    return mod.Message(mod.stringkeys.twl.system.genericCounter, "");
 }
 
 function areAllActivePlayersReady(): boolean {

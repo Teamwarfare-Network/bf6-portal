@@ -10,16 +10,15 @@
 function GetTeam(player): Team;
 ```
 
-Defined in:
-[mod/index.d.ts:21878](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21878)
+Defined in: [mod/index.d.ts:21878](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21878)
 
 Returns the team value of the specified player OR the corresponding team of the provided number.
 
 ### Parameters
 
-| Parameter | Type                            |
-| --------- | ------------------------------- |
-| `player`  | [`Player`](../Player/_index.md) |
+| Parameter | Type |
+| ------ | ------ |
+| `player` | [`Player`](../Player/_index.md) |
 
 ### Returns
 
@@ -31,16 +30,15 @@ Returns the team value of the specified player OR the corresponding team of the 
 function GetTeam(teamId): Team;
 ```
 
-Defined in:
-[mod/index.d.ts:21881](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21881)
+Defined in: [mod/index.d.ts:21881](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21881)
 
 Returns the team value of the specified player OR the corresponding team of the provided number.
 
 ### Parameters
 
-| Parameter | Type     |
-| --------- | -------- |
-| `teamId`  | `number` |
+| Parameter | Type |
+| ------ | ------ |
+| `teamId` | `number` |
 
 ### Returns
 

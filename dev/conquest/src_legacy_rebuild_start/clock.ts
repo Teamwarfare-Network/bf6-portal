@@ -53,10 +53,7 @@ function setRoundClockPreview(seconds: number): void {
 
 function getRemainingSeconds(): number {
     if (State.round.clock.isPaused) {
-        return Math.max(
-            0,
-            State.round.clock.pausedRemainingSeconds !== undefined ? State.round.clock.pausedRemainingSeconds : 0
-        );
+        return Math.max(0, State.round.clock.pausedRemainingSeconds !== undefined ? State.round.clock.pausedRemainingSeconds : 0);
     }
 
     if (State.round.clock.matchStartElapsedSeconds === undefined) return 0;
@@ -69,8 +66,7 @@ function adjustRoundClockBySeconds(deltaSeconds: number): void {
     const delta = Math.floor(deltaSeconds);
 
     if (State.round.clock.isPaused) {
-        const current =
-            State.round.clock.pausedRemainingSeconds !== undefined ? State.round.clock.pausedRemainingSeconds : 0;
+        const current = State.round.clock.pausedRemainingSeconds !== undefined ? State.round.clock.pausedRemainingSeconds : 0;
         State.round.clock.pausedRemainingSeconds = Math.max(0, current + delta);
         State.round.clock.durationSeconds = Math.max(0, State.round.clock.durationSeconds + delta);
     } else {
@@ -91,7 +87,9 @@ function resetRoundClockToDefault(): void {
 
 // NOTE: This counts registered/scoring vehicles, not every spawned vehicle in the world.
 function getRegisteredVehicleCount(teamNum: TeamID): number {
-    const arr = teamNum === TeamID.Team1 ? mod.GetVariable(regVehiclesTeam1) : mod.GetVariable(regVehiclesTeam2);
+    const arr = teamNum === TeamID.Team1
+        ? mod.GetVariable(regVehiclesTeam1)
+        : mod.GetVariable(regVehiclesTeam2);
     return Math.max(0, Math.floor(mod.CountOf(arr)));
 }
 
@@ -120,7 +118,7 @@ function updateAllPlayersClock(): void {
 
     const minutes = Math.floor(remaining / 60);
     // Read the authoritative remaining seconds for the round clock.
-    const seconds = remaining % 60;
+const seconds = remaining % 60;
 
     const digits = {
         mT: Math.floor(minutes / 10),
@@ -186,7 +184,11 @@ function updateAllPlayersClock(): void {
 
 //#endregion ----------------- Match Clock - Update + State --------------------
 
+
+
 //#region -------------------- Match Clock - UI Build + Cache Helpers --------------------
+
+
 
 /**
  * Ensures the clock UI widgets exist for a given player and returns the cached references.
@@ -199,10 +201,10 @@ function updateAllPlayersClock(): void {
 
 function ensureClockUIAndGetCache(player: mod.Player): ClockWidgetCacheEntry | undefined {
     // Clock widgets are stored per-player; derive pid for cache lookup.
-    const pid = mod.GetObjId(player);
-    const rootName = 'MatchTimerRoot_' + pid;
-    const roundStateRootName = 'RoundStateRoot_' + pid;
-    const roundLiveHelpRootName = 'RoundLiveHelpRoot_' + pid;
+const pid = mod.GetObjId(player);
+    const rootName = "MatchTimerRoot_" + pid;
+    const roundStateRootName = "RoundStateRoot_" + pid;
+    const roundLiveHelpRootName = "RoundLiveHelpRoot_" + pid;
 
     const cached = State.hudCache.clockWidgetCache[pid];
     if (cached) {
@@ -210,10 +212,7 @@ function ensureClockUIAndGetCache(player: mod.Player): ClockWidgetCacheEntry | u
         const probeState = safeFind(cached.roundStateRootName);
         const probeHelp = safeFind(cached.roundLiveHelpRootName);
         if (probeClock && probeState && probeHelp) {
-            mod.SetUIWidgetPosition(
-                probeHelp,
-                mod.CreateVector(CLOCK_POSITION_X, CLOCK_POSITION_Y + ROUND_LIVE_HELP_OFFSET_Y, 0)
-            );
+            mod.SetUIWidgetPosition(probeHelp, mod.CreateVector(CLOCK_POSITION_X, CLOCK_POSITION_Y + ROUND_LIVE_HELP_OFFSET_Y, 0));
             ensureTopHudRootForPid(pid, player);
             setHudHelpDepthForPid(pid);
             return cached;
@@ -224,16 +223,16 @@ function ensureClockUIAndGetCache(player: mod.Player): ClockWidgetCacheEntry | u
     const colonWidth = CLOCK_WIDTH * 0.06;
 
     const xOffsets = {
-        minTens: -digitWidth * 1.8 + 14,
-        minOnes: -digitWidth * 0.8 + 8,
+        minTens: -digitWidth * 1.8 + 14, 
+        minOnes: -digitWidth * 0.8 + 8, 
         colon: -digitWidth * 0.05,
-        secTens: digitWidth * 0.9 - 10,
-        secOnes: digitWidth * 1.9 - 16,
+        secTens: digitWidth * 0.9 - 10, 
+        secOnes: digitWidth * 1.9 - 16, 
     };
 
     modlib.ParseUI({
         name: rootName,
-        type: 'Container',
+        type: "Container",
         playerId: player,
         anchor: mod.UIAnchor.TopCenter,
         // position: [x, y] offset; direction depends on anchor, so verify visually in-game
@@ -243,18 +242,18 @@ function ensureClockUIAndGetCache(player: mod.Player): ClockWidgetCacheEntry | u
         bgAlpha: 0,
         children: [
             // Slow path: create digit widgets once per player, then cache refs for future updates.
-            buildDigit('MinTens', pid, xOffsets.minTens, digitWidth),
-            buildDigit('MinOnes', pid, xOffsets.minOnes, digitWidth),
+            buildDigit("MinTens", pid, xOffsets.minTens, digitWidth),
+            buildDigit("MinOnes", pid, xOffsets.minOnes, digitWidth),
             buildColon(pid, xOffsets.colon, colonWidth),
-            buildDigit('SecTens', pid, xOffsets.secTens, digitWidth),
-            buildDigit('SecOnes', pid, xOffsets.secOnes, digitWidth),
+            buildDigit("SecTens", pid, xOffsets.secTens, digitWidth),
+            buildDigit("SecOnes", pid, xOffsets.secOnes, digitWidth),
         ],
     });
 
     // Create round-state text under the match clock for this player.
     modlib.ParseUI({
         name: roundStateRootName,
-        type: 'Container',
+        type: "Container",
         playerId: player,
         anchor: mod.UIAnchor.TopCenter,
         // position: [x, y] offset; direction depends on anchor, so verify visually in-game
@@ -264,8 +263,8 @@ function ensureClockUIAndGetCache(player: mod.Player): ClockWidgetCacheEntry | u
         bgAlpha: 0,
         children: [
             {
-                name: 'RoundStateText_' + pid,
-                type: 'Text',
+                name: "RoundStateText_" + pid,
+                type: "Text",
                 anchor: mod.UIAnchor.TopCenter,
                 // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 0],
@@ -281,8 +280,8 @@ function ensureClockUIAndGetCache(player: mod.Player): ClockWidgetCacheEntry | u
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                name: 'PlayersReadyText_' + pid,
-                type: 'Text',
+                name: "PlayersReadyText_" + pid,
+                type: "Text",
                 anchor: mod.UIAnchor.TopCenter,
                 // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 14],
@@ -292,7 +291,7 @@ function ensureClockUIAndGetCache(player: mod.Player): ClockWidgetCacheEntry | u
                 bgAlpha: 0,
                 bgFill: mod.UIBgFill.None,
                 // Placeholder label; runtime will set full "{X} / {Y} PLAYERS READY" format.
-                textLabel: '',
+                textLabel: "",
                 // Yellow, matching other important HUD callouts.
                 textColor: [1, 1, 0],
                 textAlpha: 1,
@@ -305,7 +304,7 @@ function ensureClockUIAndGetCache(player: mod.Player): ClockWidgetCacheEntry | u
     // Create round-live help text under the round-state for this player.
     modlib.ParseUI({
         name: roundLiveHelpRootName,
-        type: 'Container',
+        type: "Container",
         playerId: player,
         anchor: mod.UIAnchor.TopCenter,
         // position: [x, y] offset; direction depends on anchor, so verify visually in-game
@@ -315,8 +314,8 @@ function ensureClockUIAndGetCache(player: mod.Player): ClockWidgetCacheEntry | u
         bgAlpha: 0,
         children: [
             {
-                name: 'RoundLiveHelpText_' + pid,
-                type: 'Text',
+                name: "RoundLiveHelpText_" + pid,
+                type: "Text",
                 anchor: mod.UIAnchor.TopCenter,
                 // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 0],
@@ -338,15 +337,15 @@ function ensureClockUIAndGetCache(player: mod.Player): ClockWidgetCacheEntry | u
         rootName: rootName,
         roundStateRootName: roundStateRootName,
         roundLiveHelpRootName: roundLiveHelpRootName,
-        minTens: safeFind('MatchTimerMinTens_' + pid) as mod.UIWidget,
-        minOnes: safeFind('MatchTimerMinOnes_' + pid) as mod.UIWidget,
-        colon: safeFind('MatchTimerColon_' + pid) as mod.UIWidget,
-        secTens: safeFind('MatchTimerSecTens_' + pid) as mod.UIWidget,
-        secOnes: safeFind('MatchTimerSecOnes_' + pid) as mod.UIWidget,
-        roundStateText: safeFind('RoundStateText_' + pid) as mod.UIWidget,
-        playersReadyText: safeFind('PlayersReadyText_' + pid) as mod.UIWidget,
+        minTens: safeFind("MatchTimerMinTens_" + pid) as mod.UIWidget,
+        minOnes: safeFind("MatchTimerMinOnes_" + pid) as mod.UIWidget,
+        colon: safeFind("MatchTimerColon_" + pid) as mod.UIWidget,
+        secTens: safeFind("MatchTimerSecTens_" + pid) as mod.UIWidget,
+        secOnes: safeFind("MatchTimerSecOnes_" + pid) as mod.UIWidget,
+        roundStateText: safeFind("RoundStateText_" + pid) as mod.UIWidget,
+        playersReadyText: safeFind("PlayersReadyText_" + pid) as mod.UIWidget,
         roundLiveHelpRoot: safeFind(roundLiveHelpRootName) as mod.UIWidget,
-        roundLiveHelpText: safeFind('RoundLiveHelpText_' + pid) as mod.UIWidget,
+        roundLiveHelpText: safeFind("RoundLiveHelpText_" + pid) as mod.UIWidget,
     };
 
     if (
@@ -373,8 +372,8 @@ function ensureClockUIAndGetCache(player: mod.Player): ClockWidgetCacheEntry | u
 
 function buildDigit(part: string, pid: number, x: number, width: number) {
     return {
-        name: 'MatchTimer' + part + '_' + pid,
-        type: 'Text',
+        name: "MatchTimer" + part + "_" + pid,
+        type: "Text",
         anchor: mod.UIAnchor.Center,
         // position: [x, y] offset; direction depends on anchor, so verify visually in-game
         position: [x, 0],
@@ -389,8 +388,8 @@ function buildDigit(part: string, pid: number, x: number, width: number) {
 
 function buildColon(pid: number, x: number, width: number) {
     return {
-        name: 'MatchTimerColon_' + pid,
-        type: 'Text',
+        name: "MatchTimerColon_" + pid,
+        type: "Text",
         anchor: mod.UIAnchor.Center,
         // position: [x, y] offset; direction depends on anchor, so verify visually in-game
         position: [x, 0],

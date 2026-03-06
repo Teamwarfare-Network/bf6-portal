@@ -14,13 +14,13 @@ function arrayRemoveVehicle(arr: any, vehicle: mod.Vehicle): any {
 
 //#endregion ----------------- Portal Array Helpers (engine arrays) --------------------
 
+
+
 //#region -------------------- Vehicle Ownership Tracking (vehIds/vehOwners) --------------------
 // Vehicle owner cache lifecycle:
 // - setLastDriver on entry, popLastDriver on destruction, clearLastDriverByVehicleObjId on spawn/respawn.
 
-function getVehicleId(v: mod.Vehicle): number {
-    return getObjId(v);
-}
+function getVehicleId(v: mod.Vehicle): number { return getObjId(v); }
 
 function getLastDriver(vehicle: mod.Vehicle): mod.Player | undefined {
     const vid = getVehicleId(vehicle);
@@ -90,6 +90,8 @@ function clearLastDriverByVehicleObjId(vehicleObjId: number): void {
 
 //#endregion ----------------- Vehicle Ownership Tracking (vehIds/vehOwners) --------------------
 
+
+
 //#region -------------------- Vehicle Registration (team arrays) --------------------
 
 // Registers vehicle ownership to a team for kill attribution.
@@ -120,8 +122,7 @@ function inferBaseTeamFromPosition(pos: mod.Vector): TeamID | 0 {
     const best = d1 <= d2 ? TeamID.Team1 : TeamID.Team2; // Pick the nearer base as the inferred team.
     const bestDist = d1 <= d2 ? d1 : d2; // Track the distance to that nearest base.
 
-    if (bestDist > MAIN_BASE_BIND_RADIUS_METERS) {
-        // Outside bind radius: treat as unassigned.
+    if (bestDist > MAIN_BASE_BIND_RADIUS_METERS) { // Outside bind radius: treat as unassigned.
         return 0;
     }
 
@@ -129,6 +130,8 @@ function inferBaseTeamFromPosition(pos: mod.Vector): TeamID | 0 {
 }
 
 //#endregion ----------------- Vehicle Registration (team arrays) --------------------
+
+
 
 //#region -------------------- Vehicle Spawner System --------------------
 
@@ -165,16 +168,14 @@ function findVehicleById(vehicleId: number): mod.Vehicle | undefined {
 }
 
 // Creates a spawner object, applies map-specific yaw, configures vehicle type, and registers the slot state.
-function addVehicleSpawnerSlot(
-    teamId: TeamID,
-    slotNumber: number,
-    spawnPos: mod.Vector,
-    spawnRot: mod.Vector,
-    vehicleType: mod.VehicleList
-): number {
+function addVehicleSpawnerSlot(teamId: TeamID, slotNumber: number, spawnPos: mod.Vector, spawnRot: mod.Vector, vehicleType: mod.VehicleList): number {
     const yaw = mod.YComponentOf(spawnRot) + VEHICLE_SPAWN_YAW_OFFSET_DEG;
     const spawnerRot = mod.CreateVector(mod.XComponentOf(spawnRot), yaw, mod.ZComponentOf(spawnRot));
-    const spawner = mod.SpawnObject(mod.RuntimeSpawn_Common.VehicleSpawner, spawnPos, spawnerRot) as mod.VehicleSpawner;
+    const spawner = mod.SpawnObject(
+        mod.RuntimeSpawn_Common.VehicleSpawner,
+        spawnPos,
+        spawnerRot
+    ) as mod.VehicleSpawner;
 
     // Disable autos right away to avoid the default vehicle spawning before we configure the spawner.
     mod.SetVehicleSpawnerAutoSpawn(spawner, false);
@@ -321,10 +322,7 @@ async function forceSpawnWithRetry(slotIndex: number): Promise<boolean> {
     for (let attempt = 0; attempt < 20; attempt++) {
         if (!slot.enabled || slot.enableToken !== token) {
             slot.expectingSpawn = false;
-            if (
-                State.vehicles.activeSpawnSlotIndex === slotIndex &&
-                State.vehicles.activeSpawnToken === slot.spawnRequestToken
-            ) {
+            if (State.vehicles.activeSpawnSlotIndex === slotIndex && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
                 State.vehicles.activeSpawnSlotIndex = undefined;
                 State.vehicles.activeSpawnToken = undefined;
                 State.vehicles.activeSpawnRequestedAtSeconds = undefined;
@@ -341,10 +339,7 @@ async function forceSpawnWithRetry(slotIndex: number): Promise<boolean> {
     }
 
     slot.expectingSpawn = false;
-    if (
-        State.vehicles.activeSpawnSlotIndex === slotIndex &&
-        State.vehicles.activeSpawnToken === slot.spawnRequestToken
-    ) {
+    if (State.vehicles.activeSpawnSlotIndex === slotIndex && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
         State.vehicles.activeSpawnSlotIndex = undefined;
         State.vehicles.activeSpawnToken = undefined;
         State.vehicles.activeSpawnRequestedAtSeconds = undefined;
@@ -453,7 +448,7 @@ async function applySpawnYawToVehicle(eventVehicle: mod.Vehicle, slot: VehicleSp
     // Enforce the desired spawn yaw on the vehicle after it exists (map-specific spawner yaw can drift).
     const pos = slot.spawnPos;
     const yawDeg = mod.YComponentOf(slot.spawnRot);
-    const yawRad = (yawDeg * Math.PI) / 180;
+    const yawRad = yawDeg * Math.PI / 180;
     mod.Teleport(eventVehicle, pos, yawRad);
     await mod.Wait(0);
     mod.Teleport(eventVehicle, pos, yawRad);
@@ -469,15 +464,10 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
     const activeAt = State.vehicles.activeSpawnRequestedAtSeconds;
     if (activeIndex !== undefined && activeToken !== undefined && activeAt !== undefined) {
         const now = Math.floor(mod.GetMatchTimeElapsed());
-        const expired = now - activeAt > VEHICLE_SPAWNER_BIND_TIMEOUT_SECONDS;
+        const expired = (now - activeAt) > VEHICLE_SPAWNER_BIND_TIMEOUT_SECONDS;
         if (!expired) {
             const activeSlot = State.vehicles.slots[activeIndex];
-            if (
-                activeSlot &&
-                activeSlot.enabled &&
-                activeSlot.expectingSpawn &&
-                activeSlot.spawnRequestToken === activeToken
-            ) {
+            if (activeSlot && activeSlot.enabled && activeSlot.expectingSpawn && activeSlot.spawnRequestToken === activeToken) {
                 activeSlot.expectingSpawn = false;
                 activeSlot.vehicleId = vehicleObjId;
                 activeSlot.respawnRunning = false;
@@ -508,10 +498,7 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
             slot.respawnRunning = false;
             slot.spawnRetryScheduled = false;
             State.vehicles.vehicleToSlot[vehicleObjId] = i;
-            if (
-                State.vehicles.activeSpawnSlotIndex === i &&
-                State.vehicles.activeSpawnToken === slot.spawnRequestToken
-            ) {
+            if (State.vehicles.activeSpawnSlotIndex === i && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
                 State.vehicles.activeSpawnSlotIndex = undefined;
                 State.vehicles.activeSpawnToken = undefined;
                 State.vehicles.activeSpawnRequestedAtSeconds = undefined;
@@ -585,6 +572,7 @@ async function startVehicleSpawnerSystem(): Promise<void> {
         State.vehicles.startupCleanupDone = true;
     }
 
+
     // Extra short wait reduces the chance of a default spawn appearing after cleanup.
     await mod.Wait(0.1);
     // Apply enablement before spawning so only the desired slots can spawn.
@@ -606,6 +594,8 @@ async function startVehicleSpawnerSystem(): Promise<void> {
 
 //#endregion ----------------- Vehicle Spawner System --------------------
 
+
+
 //#region -------------------- Kills HUD Sync (GameModeScore -> HUD) --------------------
 
 function syncKillsHudFromTrackedTotals(_force: boolean): void {
@@ -626,12 +616,7 @@ function syncKillsHudFromTrackedTotals(_force: boolean): void {
 
 // Round kills HUD Sync (RoundKills -> HUD)
 function syncRoundKillsHud(force: boolean = false): void {
-    if (
-        !force &&
-        State.hudCache.lastHudRoundKillsT1 === State.scores.t1RoundKills &&
-        State.hudCache.lastHudRoundKillsT2 === State.scores.t2RoundKills
-    )
-        return;
+    if (!force && State.hudCache.lastHudRoundKillsT1 === State.scores.t1RoundKills && State.hudCache.lastHudRoundKillsT2 === State.scores.t2RoundKills) return;
 
     State.hudCache.lastHudRoundKillsT1 = State.scores.t1RoundKills;
     State.hudCache.lastHudRoundKillsT2 = State.scores.t2RoundKills;

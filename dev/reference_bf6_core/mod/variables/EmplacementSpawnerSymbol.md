@@ -8,7 +8,7 @@
 const EmplacementSpawnerSymbol: unique symbol;
 ```
 
-Defined in:
-[mod/index.d.ts:39](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L39)
+Defined in: [mod/index.d.ts:39](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L39)
 
-export type EmplacementSpawner = never; export type EmplacementSpawner = Any;
+export type EmplacementSpawner = never;
+export type EmplacementSpawner = Any;

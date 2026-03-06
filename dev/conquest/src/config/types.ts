@@ -4,16 +4,7 @@
 //#region -------------------- Map Config (Constants + Types) --------------------
 
 // Supported maps for this mode; each key must have an entry in MAP_CONFIGS.
-type MapKey =
-    | 'Blackwell_Fields'
-    | 'Defense_Nexus'
-    | 'Golf_Course'
-    | 'Mirak_Valley'
-    | 'Operation_Firestorm'
-    | 'Liberation_Peak'
-    | 'Manhattan_Bridge'
-    | 'Sobek_City'
-    | 'Area_22B';
+type MapKey = "Blackwell_Fields" | "Defense_Nexus" | "Golf_Course" | "Mirak_Valley" | "Operation_Firestorm" | "Liberation_Peak" | "Manhattan_Bridge" | "Sobek_City" | "Area_22B";
 
 // slotNumber defines the explicit spawn priority per team (used for 1v1/2v2/3v3/4v4 enablement).
 type VehicleSpawnSpec = { slotNumber: number; pos: mod.Vector; rot: mod.Vector; vehicle: mod.VehicleList };

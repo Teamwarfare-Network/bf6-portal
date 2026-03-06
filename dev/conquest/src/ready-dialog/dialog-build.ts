@@ -76,10 +76,10 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
     const CONTAINER_BASE = mod.FindUIWidgetWithName(CONTAINER_BASE_ID, mod.GetUIRoot());
     mod.SetUIWidgetBgAlpha(CONTAINER_BASE, 0.995); // Force darker overlay (some clients render blur lighter)
 
-    const borderHalfWidth = CONTAINER_WIDTH / 2 + CONTAINER_BORDER_PADDING + CONTAINER_BORDER_THICKNESS / 2;
-    const borderHalfHeight = CONTAINER_HEIGHT / 2 + CONTAINER_BORDER_PADDING + CONTAINER_BORDER_THICKNESS / 2;
-    const borderLineWidth = CONTAINER_WIDTH + CONTAINER_BORDER_PADDING * 2 + CONTAINER_BORDER_OVERLAP * 2;
-    const borderLineHeight = CONTAINER_HEIGHT + CONTAINER_BORDER_PADDING * 2 + CONTAINER_BORDER_OVERLAP * 2;
+    const borderHalfWidth = (CONTAINER_WIDTH / 2) + CONTAINER_BORDER_PADDING + (CONTAINER_BORDER_THICKNESS / 2);
+    const borderHalfHeight = (CONTAINER_HEIGHT / 2) + CONTAINER_BORDER_PADDING + (CONTAINER_BORDER_THICKNESS / 2);
+    const borderLineWidth = CONTAINER_WIDTH + (CONTAINER_BORDER_PADDING * 2) + (CONTAINER_BORDER_OVERLAP * 2);
+    const borderLineHeight = CONTAINER_HEIGHT + (CONTAINER_BORDER_PADDING * 2) + (CONTAINER_BORDER_OVERLAP * 2);
 
     // Top border line
     mod.AddUIContainer(
@@ -147,6 +147,8 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
 
     //#endregion -------------------- UI - Ready Up Dialog (construction) --------------------
 
+
+
     //#region -------------------- Ready Dialog (Roster UI) -  (header + team rosters) --------------------
 
     buildReadyDialogHeaderAndMapSection(eventPlayer, CONTAINER_BASE, playerId);
@@ -207,6 +209,8 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
     buildReadyDialogRosterSection(eventPlayer, CONTAINER_BASE, playerId);
 
     //#endregion ----------------- Ready Dialog (Roster UI) -  (header + team rosters) --------------------
+
+    
 
     buildReadyDialogBottomButtonsSection(
         eventPlayer,

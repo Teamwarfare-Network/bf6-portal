@@ -8,7 +8,7 @@
 const WeaponUnlockSymbol: unique symbol;
 ```
 
-Defined in:
-[mod/index.d.ts:174](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L174)
+Defined in: [mod/index.d.ts:174](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L174)
 
-export type WeaponUnlock = never; export type WeaponUnlock = Any;
+export type WeaponUnlock = never;
+export type WeaponUnlock = Any;

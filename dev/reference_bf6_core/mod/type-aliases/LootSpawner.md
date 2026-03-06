@@ -8,11 +8,10 @@
 type LootSpawner = object;
 ```
 
-Defined in:
-[mod/index.d.ts:55](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L55)
+Defined in: [mod/index.d.ts:55](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L55)
 
 ## Properties
 
-| Property                       | Type                                                           | Defined in                                                                                                                                                            |
-| ------------------------------ | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <a id="_opaque"></a> `_opaque` | _typeof_ [`LootSpawnerSymbol`](../LootSpawnerSymbol/_index.md) | [mod/index.d.ts:55](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L55) |
+| Property | Type | Defined in |
+| ------ | ------ | ------ |
+| <a id="_opaque"></a> `_opaque` | *typeof* [`LootSpawnerSymbol`](../LootSpawnerSymbol/_index.md) | [mod/index.d.ts:55](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L55) |

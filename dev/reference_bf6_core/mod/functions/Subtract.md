@@ -10,15 +10,14 @@
 function Subtract(number0, number1): number;
 ```
 
-Defined in:
-[mod/index.d.ts:21809](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21809)
+Defined in: [mod/index.d.ts:21809](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21809)
 
 Returns the difference between two number values or two vector values.
 
 ### Parameters
 
-| Parameter | Type     |
-| --------- | -------- |
+| Parameter | Type |
+| ------ | ------ |
 | `number0` | `number` |
 | `number1` | `number` |
 
@@ -32,15 +31,14 @@ Returns the difference between two number values or two vector values.
 function Subtract(vector0, vector1): Vector;
 ```
 
-Defined in:
-[mod/index.d.ts:21812](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21812)
+Defined in: [mod/index.d.ts:21812](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21812)
 
 Returns the difference between two number values or two vector values.
 
 ### Parameters
 
-| Parameter | Type                            |
-| --------- | ------------------------------- |
+| Parameter | Type |
+| ------ | ------ |
 | `vector0` | [`Vector`](../Vector/_index.md) |
 | `vector1` | [`Vector`](../Vector/_index.md) |
 

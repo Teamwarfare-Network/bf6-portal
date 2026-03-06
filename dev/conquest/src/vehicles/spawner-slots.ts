@@ -25,16 +25,14 @@ function findVehicleById(vehicleId: number): mod.Vehicle | undefined {
 }
 
 // Creates a spawner object, applies map-specific yaw, configures vehicle type, and registers the slot state.
-function addVehicleSpawnerSlot(
-    teamId: TeamID,
-    slotNumber: number,
-    spawnPos: mod.Vector,
-    spawnRot: mod.Vector,
-    vehicleType: mod.VehicleList
-): number {
+function addVehicleSpawnerSlot(teamId: TeamID, slotNumber: number, spawnPos: mod.Vector, spawnRot: mod.Vector, vehicleType: mod.VehicleList): number {
     const yaw = mod.YComponentOf(spawnRot) + VEHICLE_SPAWN_YAW_OFFSET_DEG;
     const spawnerRot = mod.CreateVector(mod.XComponentOf(spawnRot), yaw, mod.ZComponentOf(spawnRot));
-    const spawner = mod.SpawnObject(mod.RuntimeSpawn_Common.VehicleSpawner, spawnPos, spawnerRot) as mod.VehicleSpawner;
+    const spawner = mod.SpawnObject(
+        mod.RuntimeSpawn_Common.VehicleSpawner,
+        spawnPos,
+        spawnerRot
+    ) as mod.VehicleSpawner;
 
     // Disable autos right away to avoid the default vehicle spawning before we configure the spawner.
     mod.SetVehicleSpawnerAutoSpawn(spawner, false);
@@ -142,3 +140,4 @@ function queueSequentialSpawns(slotIndices: number[]): void {
     State.vehicles.spawnSequenceInProgress = true;
     void runSequentialSpawns(slotIndices, token);
 }
+

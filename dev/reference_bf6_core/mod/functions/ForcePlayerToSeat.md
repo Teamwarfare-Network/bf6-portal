@@ -5,22 +5,23 @@
 # Function: ForcePlayerToSeat()
 
 ```ts
-function ForcePlayerToSeat(player, vehicle, seatNumber): void;
+function ForcePlayerToSeat(
+   player, 
+   vehicle, 
+   seatNumber): void;
 ```
 
-Defined in:
-[mod/index.d.ts:21480](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21480)
+Defined in: [mod/index.d.ts:21480](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21480)
 
-Forces the specified player into the target vehicle at the provided seat number. If the provided seat is -1, that player
-will be forced into the first available seat.
+Forces the specified player into the target vehicle at the provided seat number.  If the provided seat is -1, that player will be forced into the first available seat.
 
 ## Parameters
 
-| Parameter    | Type                              |
-| ------------ | --------------------------------- |
-| `player`     | [`Player`](../Player/_index.md)   |
-| `vehicle`    | [`Vehicle`](../Vehicle/_index.md) |
-| `seatNumber` | `number`                          |
+| Parameter | Type |
+| ------ | ------ |
+| `player` | [`Player`](../Player/_index.md) |
+| `vehicle` | [`Vehicle`](../Vehicle/_index.md) |
+| `seatNumber` | `number` |
 
 ## Returns
 

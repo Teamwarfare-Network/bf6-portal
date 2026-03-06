@@ -10,15 +10,14 @@
 function DisplayNotificationMessage(message): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20772](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20772)
+Defined in: [mod/index.d.ts:20772](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20772)
 
 Displays a notification-type Message on the top-right of the screen for 6 seconds.
 
 ### Parameters
 
-| Parameter | Type                              |
-| --------- | --------------------------------- |
+| Parameter | Type |
+| ------ | ------ |
 | `message` | [`Message`](../Message/_index.md) |
 
 ### Returns
@@ -31,17 +30,16 @@ Displays a notification-type Message on the top-right of the screen for 6 second
 function DisplayNotificationMessage(message, player): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20775](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20775)
+Defined in: [mod/index.d.ts:20775](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20775)
 
 Displays a notification-type Message on the top-right of the screen for 6 seconds.
 
 ### Parameters
 
-| Parameter | Type                              |
-| --------- | --------------------------------- |
+| Parameter | Type |
+| ------ | ------ |
 | `message` | [`Message`](../Message/_index.md) |
-| `player`  | [`Player`](../Player/_index.md)   |
+| `player` | [`Player`](../Player/_index.md) |
 
 ### Returns
 
@@ -53,17 +51,16 @@ Displays a notification-type Message on the top-right of the screen for 6 second
 function DisplayNotificationMessage(message, team): void;
 ```
 
-Defined in:
-[mod/index.d.ts:20778](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20778)
+Defined in: [mod/index.d.ts:20778](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L20778)
 
 Displays a notification-type Message on the top-right of the screen for 6 seconds.
 
 ### Parameters
 
-| Parameter | Type                              |
-| --------- | --------------------------------- |
+| Parameter | Type |
+| ------ | ------ |
 | `message` | [`Message`](../Message/_index.md) |
-| `team`    | [`Team`](../Team/_index.md)       |
+| `team` | [`Team`](../Team/_index.md) |
 
 ### Returns
 

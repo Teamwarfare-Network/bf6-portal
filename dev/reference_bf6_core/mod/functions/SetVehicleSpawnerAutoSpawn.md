@@ -8,17 +8,16 @@
 function SetVehicleSpawnerAutoSpawn(vehicleSpawner, enabled): void;
 ```
 
-Defined in:
-[mod/index.d.ts:21444](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21444)
+Defined in: [mod/index.d.ts:21444](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21444)
 
 Enables or Disables automatic vehicle respawning from the vehicle spawner.
 
 ## Parameters
 
-| Parameter        | Type                                            |
-| ---------------- | ----------------------------------------------- |
+| Parameter | Type |
+| ------ | ------ |
 | `vehicleSpawner` | [`VehicleSpawner`](../VehicleSpawner/_index.md) |
-| `enabled`        | `boolean`                                       |
+| `enabled` | `boolean` |
 
 ## Returns
 

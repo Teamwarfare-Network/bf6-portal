@@ -112,10 +112,7 @@ function updateSettingsSummaryHudForPid(pid: number): void {
 
     const cfg = State.round.modeConfig;
     const gameModeValue = cfg.confirmed.gameMode;
-    const applyCustomCeiling = shouldApplyCustomCeilingForConfig(
-        gameModeValue,
-        cfg.confirmed.aircraftCeilingOverrideEnabled
-    );
+    const applyCustomCeiling = shouldApplyCustomCeilingForConfig(gameModeValue, cfg.confirmed.aircraftCeilingOverrideEnabled);
     const ceilingValue = applyCustomCeiling
         ? Math.floor(cfg.confirmed.aircraftCeiling)
         : STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA;
@@ -131,10 +128,7 @@ function updateSettingsSummaryHudForPid(pid: number): void {
         mod.SetUITextLabel(refs.settingsGameModeText, mod.Message(STR_HUD_SETTINGS_GAME_MODE_FORMAT, gameModeValue));
     }
     if (refs.settingsAircraftCeilingText) {
-        mod.SetUITextLabel(
-            refs.settingsAircraftCeilingText,
-            mod.Message(STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT, ceilingValue)
-        );
+        mod.SetUITextLabel(refs.settingsAircraftCeilingText, mod.Message(STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT, ceilingValue));
     }
     if (refs.settingsVehiclesT1Text) {
         mod.SetUITextLabel(
@@ -152,17 +146,11 @@ function updateSettingsSummaryHudForPid(pid: number): void {
         const showMatchupText = !isMatchLive();
         mod.SetUIWidgetVisible(refs.settingsVehiclesMatchupText, showMatchupText);
         if (showMatchupText) {
-            mod.SetUITextLabel(
-                refs.settingsVehiclesMatchupText,
-                mod.Message(STR_HUD_SETTINGS_VEHICLES_MATCHUP_FORMAT, vehiclesLeft, vehiclesRight)
-            );
+            mod.SetUITextLabel(refs.settingsVehiclesMatchupText, mod.Message(STR_HUD_SETTINGS_VEHICLES_MATCHUP_FORMAT, vehiclesLeft, vehiclesRight));
         }
     }
     if (refs.settingsPlayersText) {
-        mod.SetUITextLabel(
-            refs.settingsPlayersText,
-            mod.Message(STR_HUD_SETTINGS_PLAYERS_FORMAT, autoStartCounts.left, autoStartCounts.right)
-        );
+        mod.SetUITextLabel(refs.settingsPlayersText, mod.Message(STR_HUD_SETTINGS_PLAYERS_FORMAT, autoStartCounts.left, autoStartCounts.right));
     }
 }
 
@@ -177,10 +165,7 @@ function updateSettingsSummaryHudForAllPlayers(): void {
 }
 
 function setAutoStartMinActivePlayers(value: number, eventPlayer?: mod.Player): void {
-    const clamped = Math.max(
-        AUTO_START_MIN_ACTIVE_PLAYERS_MIN,
-        Math.min(AUTO_START_MIN_ACTIVE_PLAYERS_MAX, Math.floor(value))
-    );
+    const clamped = Math.max(AUTO_START_MIN_ACTIVE_PLAYERS_MIN, Math.min(AUTO_START_MIN_ACTIVE_PLAYERS_MAX, Math.floor(value)));
     if (clamped === State.round.autoStartMinActivePlayers) return;
     ensureCustomGameModeForManualChange();
     State.round.autoStartMinActivePlayers = clamped;

@@ -32,6 +32,8 @@ interface teamSwitchData_t {
 
 //#endregion ----------------- Team Switch Data + Config --------------------
 
+
+
 //#region -------------------- Team Switch Interact Point --------------------
 
 async function spawnTeamSwitchInteractPoint(eventPlayer: mod.Player) {
@@ -91,6 +93,7 @@ function teamSwitchInteractPointActivated(eventPlayer: mod.Player, eventInteract
             updateHelpTextVisibilityForPid(playerId);
             renderReadyDialogForViewer(eventPlayer, playerId);
             // Immediate self-refresh to avoid relying solely on global refresh bookkeeping.
+
         }
     }
 }
@@ -165,6 +168,8 @@ function initTeamSwitchData(eventPlayer: mod.Player) {
 
 //#endregion ----------------- Team Switch Interact Point --------------------
 
+
+
 //#region -------------------- Team Switch Actions --------------------
 
 // Handles a player-initiated team switch.
@@ -197,7 +202,7 @@ function processTeamSwitch(eventPlayer: mod.Player) {
     deleteTeamSwitchUI(eventPlayer);
 
     const currentTeamNum = getTeamNumber(mod.GetTeam(eventPlayer));
-    const newTeamNum = currentTeamNum === TeamID.Team2 ? TeamID.Team1 : TeamID.Team2;
+    const newTeamNum = (currentTeamNum === TeamID.Team2) ? TeamID.Team1 : TeamID.Team2;
     mod.SetTeam(eventPlayer, mod.GetTeam(newTeamNum));
 
     // Force a rapid return to the deploy screen so the player respawns on the new team.
@@ -257,7 +262,7 @@ function deleteTeamSwitchUI(eventPlayer: mod.Player | number) {
         // Delete any previously-built admin container so the panel will rebuild cleanly on demand.
         const existingAdminContainer = safeFind(UI_ADMIN_PANEL_CONTAINER_ID + playerId);
         if (existingAdminContainer) mod.DeleteUIWidget(existingAdminContainer);
-        State.players.teamSwitchData[playerId].adminPanelBuilt = false;
+    State.players.teamSwitchData[playerId].adminPanelBuilt = false;
         // Dialog is no longer visible; stop participating in global roster refreshes.
         State.players.teamSwitchData[playerId].dialogVisible = false;
     }
@@ -303,7 +308,7 @@ function hardDeleteTeamSwitchUI(playerId: number): void {
     if (adminToggle) mod.DeleteUIWidget(adminToggle);
     const adminToggleLabel = safeFind(UI_ADMIN_PANEL_BUTTON_LABEL_ID + playerId);
     if (adminToggleLabel) mod.DeleteUIWidget(adminToggleLabel);
-    const adminToggleBorder = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId + '_BORDER');
+    const adminToggleBorder = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId + "_BORDER");
     if (adminToggleBorder) mod.DeleteUIWidget(adminToggleBorder);
     const adminContainer = safeFind(UI_ADMIN_PANEL_CONTAINER_ID + playerId);
     if (adminContainer) mod.DeleteUIWidget(adminContainer);
@@ -321,6 +326,8 @@ function hardDeleteTeamSwitchUI(playerId: number): void {
 }
 
 //#endregion ----------------- Team Switch Actions --------------------
+
+
 
 //#region -------------------- Team Switch UI + Tester Panel (IDs + build helpers) --------------------
 
@@ -445,10 +452,7 @@ function teamSwitchButtonEvent(
             // Clamp to current round so max rounds never dips below the live round index.
             ensureCustomGameModeForManualChange();
             const prevMax = State.round.max;
-            setHudRoundCountersForAllPlayers(
-                State.round.current,
-                Math.max(State.round.current, Math.max(1, State.round.max - 1))
-            );
+            setHudRoundCountersForAllPlayers(State.round.current, Math.max(State.round.current, Math.max(1, State.round.max - 1)));
             if (State.round.max !== prevMax) {
                 // Gameplay-gated world log message for best-of changes.
                 sendHighlightedWorldLogMessage(
@@ -566,17 +570,13 @@ function teamSwitchButtonEvent(
         case UI_ADMIN_PANEL_BUTTON_ID + playerId: {
             if (!State.players.teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
             const now = mod.GetMatchTimeElapsed();
-            if (
-                now - State.players.teamSwitchData[playerId].lastAdminPanelToggleAt <
-                ADMIN_PANEL_TOGGLE_COOLDOWN_SECONDS
-            ) {
+            if (now - State.players.teamSwitchData[playerId].lastAdminPanelToggleAt < ADMIN_PANEL_TOGGLE_COOLDOWN_SECONDS) {
                 break;
             }
             State.players.teamSwitchData[playerId].lastAdminPanelToggleAt = now;
 
             // Toggle admin panel visibility.
-            State.players.teamSwitchData[playerId].adminPanelVisible =
-                !State.players.teamSwitchData[playerId].adminPanelVisible;
+            State.players.teamSwitchData[playerId].adminPanelVisible = !State.players.teamSwitchData[playerId].adminPanelVisible;
             if (!State.players.teamSwitchData[playerId].adminPanelVisible) {
                 // Close: delete panel contents to avoid "ghost" children on some clients.
                 deleteAdminPanelUI(playerId, false);
@@ -597,11 +597,7 @@ function teamSwitchButtonEvent(
             mod.AddUIContainer(
                 UI_ADMIN_PANEL_CONTAINER_ID + playerId,
                 mod.CreateVector(ADMIN_PANEL_OFFSET_X, ADMIN_PANEL_OFFSET_Y, 0),
-                mod.CreateVector(
-                    ADMIN_PANEL_CONTENT_WIDTH + ADMIN_PANEL_PADDING * 2,
-                    ADMIN_PANEL_HEIGHT + ADMIN_PANEL_PADDING * 2,
-                    0
-                ),
+                mod.CreateVector(ADMIN_PANEL_CONTENT_WIDTH + (ADMIN_PANEL_PADDING * 2), ADMIN_PANEL_HEIGHT + (ADMIN_PANEL_PADDING * 2), 0),
                 mod.UIAnchor.TopRight,
                 mod.GetUIRoot(),
                 false,
@@ -625,6 +621,8 @@ function teamSwitchButtonEvent(
         }
 
         //#endregion ----------------- Team Switch UI + Tester Panel (IDs + build helpers) --------------------
+
+
 
         //#region -------------------- Tester Button Events --------------------
 
@@ -776,31 +774,31 @@ function teamSwitchButtonEvent(
             break;
         }
 
-        case UI_ADMIN_TIEBREAKER_BUTTON_ID + 'A_' + playerId:
+        case UI_ADMIN_TIEBREAKER_BUTTON_ID + "A_" + playerId:
             handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tieBreakerOverrideA);
             applyAdminTieBreakerOverride(0);
             break;
-        case UI_ADMIN_TIEBREAKER_BUTTON_ID + 'B_' + playerId:
+        case UI_ADMIN_TIEBREAKER_BUTTON_ID + "B_" + playerId:
             handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tieBreakerOverrideB);
             applyAdminTieBreakerOverride(1);
             break;
-        case UI_ADMIN_TIEBREAKER_BUTTON_ID + 'C_' + playerId:
+        case UI_ADMIN_TIEBREAKER_BUTTON_ID + "C_" + playerId:
             handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tieBreakerOverrideC);
             applyAdminTieBreakerOverride(2);
             break;
-        case UI_ADMIN_TIEBREAKER_BUTTON_ID + 'D_' + playerId:
+        case UI_ADMIN_TIEBREAKER_BUTTON_ID + "D_" + playerId:
             handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tieBreakerOverrideD);
             applyAdminTieBreakerOverride(3);
             break;
-        case UI_ADMIN_TIEBREAKER_BUTTON_ID + 'E_' + playerId:
+        case UI_ADMIN_TIEBREAKER_BUTTON_ID + "E_" + playerId:
             handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tieBreakerOverrideE);
             applyAdminTieBreakerOverride(4);
             break;
-        case UI_ADMIN_TIEBREAKER_BUTTON_ID + 'F_' + playerId:
+        case UI_ADMIN_TIEBREAKER_BUTTON_ID + "F_" + playerId:
             handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tieBreakerOverrideF);
             applyAdminTieBreakerOverride(5);
             break;
-        case UI_ADMIN_TIEBREAKER_BUTTON_ID + 'G_' + playerId:
+        case UI_ADMIN_TIEBREAKER_BUTTON_ID + "G_" + playerId:
             handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tieBreakerOverrideG);
             applyAdminTieBreakerOverride(6);
             break;

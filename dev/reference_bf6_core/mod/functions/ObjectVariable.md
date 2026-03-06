@@ -8,17 +8,16 @@
 function ObjectVariable(ownerObject, variableIndex): Variable;
 ```
 
-Defined in:
-[mod/index.d.ts:21493](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21493)
+Defined in: [mod/index.d.ts:21493](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L21493)
 
 Returns the variable specified by an object.
 
 ## Parameters
 
-| Parameter       | Type                            |
-| --------------- | ------------------------------- |
-| `ownerObject`   | [`Object`](../Object/_index.md) |
-| `variableIndex` | `number`                        |
+| Parameter | Type |
+| ------ | ------ |
+| `ownerObject` | [`Object`](../Object/_index.md) |
+| `variableIndex` | `number` |
 
 ## Returns
 

@@ -288,28 +288,32 @@ function conquestPhase3ForceHideAllV2Widgets(pid: number, refs: HudRefs): void {
 function conquestPhase3GetPerspectiveTeams(viewer: mod.Player): { friendlyTeam: TeamID; enemyTeam: TeamID } {
     const pid = safeGetPlayerId(viewer);
     const resolvedTeam = safeGetTeamNumberFromPlayer(viewer, 0);
-    const stickyTeam = pid !== undefined ? State.conquest.debug.perspectiveTeamByPid[pid] : undefined;
-    const swapPerspectiveLockUntil =
-        pid !== undefined ? (State.conquest.debug.teamSwapPerspectiveLockUntilByPid[pid] ?? -1) : -1;
-    const swapPerspectiveLockActive =
-        pid !== undefined &&
-        swapPerspectiveLockUntil >= mod.GetMatchTimeElapsed() &&
-        (stickyTeam === TeamID.Team1 || stickyTeam === TeamID.Team2);
+    const stickyTeam = pid !== undefined
+        ? State.conquest.debug.perspectiveTeamByPid[pid]
+        : undefined;
+    const swapPerspectiveLockUntil = pid !== undefined
+        ? (State.conquest.debug.teamSwapPerspectiveLockUntilByPid[pid] ?? -1)
+        : -1;
+    const swapPerspectiveLockActive = (
+        pid !== undefined
+        && swapPerspectiveLockUntil >= mod.GetMatchTimeElapsed()
+        && (stickyTeam === TeamID.Team1 || stickyTeam === TeamID.Team2)
+    );
 
     // During swap lock, keep script-authoritative sticky perspective and ignore transient engine team echoes.
     if (
-        !swapPerspectiveLockActive &&
-        pid !== undefined &&
-        (resolvedTeam === TeamID.Team1 || resolvedTeam === TeamID.Team2)
+        !swapPerspectiveLockActive
+        && pid !== undefined
+        && (resolvedTeam === TeamID.Team1 || resolvedTeam === TeamID.Team2)
     ) {
         State.conquest.debug.perspectiveTeamByPid[pid] = resolvedTeam;
     }
 
     const teamNum = swapPerspectiveLockActive
         ? stickyTeam
-        : resolvedTeam === TeamID.Team1 || resolvedTeam === TeamID.Team2
-          ? resolvedTeam
-          : stickyTeam === TeamID.Team1 || stickyTeam === TeamID.Team2
+        : (resolvedTeam === TeamID.Team1 || resolvedTeam === TeamID.Team2)
+        ? resolvedTeam
+        : (stickyTeam === TeamID.Team1 || stickyTeam === TeamID.Team2)
             ? stickyTeam
             : TeamID.Team1;
 
@@ -343,9 +347,12 @@ function conquestPhase3GetTicketBarRatio(currentTickets: number): number {
 function conquestPhase3ApplyTicketBarFill(refs: HudRefs, friendlyTickets: number, enemyTickets: number): void {
     const friendlyRatio = conquestPhase3GetTicketBarRatio(friendlyTickets);
     const enemyRatio = conquestPhase3GetTicketBarRatio(enemyTickets);
-    const friendlyWidth =
-        friendlyTickets <= 0 ? 0 : Math.max(1, Math.floor(CONQUEST_HUD_TICKET_BAR_WIDTH * friendlyRatio));
-    const enemyWidth = enemyTickets <= 0 ? 0 : Math.max(1, Math.floor(CONQUEST_HUD_TICKET_BAR_WIDTH * enemyRatio));
+    const friendlyWidth = friendlyTickets <= 0
+        ? 0
+        : Math.max(1, Math.floor(CONQUEST_HUD_TICKET_BAR_WIDTH * friendlyRatio));
+    const enemyWidth = enemyTickets <= 0
+        ? 0
+        : Math.max(1, Math.floor(CONQUEST_HUD_TICKET_BAR_WIDTH * enemyRatio));
 
     safeSetUIWidgetVisible(refs.conquestTicketsDebugLeftBarTrack, true);
     safeSetUIWidgetVisible(refs.conquestTicketsDebugRightBarTrack, true);
@@ -409,7 +416,11 @@ function conquestPhase3GetBleedChevronCountsForPerspective(
 }
 
 // Applies bleed-chevron stack visibility using script-authoritative differential state.
-function conquestPhase3ApplyTicketBleedIndicators(refs: HudRefs, friendlyTeam: TeamID, enemyTeam: TeamID): void {
+function conquestPhase3ApplyTicketBleedIndicators(
+    refs: HudRefs,
+    friendlyTeam: TeamID,
+    enemyTeam: TeamID
+): void {
     const leftChevrons = refs.conquestTicketsBleedLeftChevrons ?? [];
     const rightChevrons = refs.conquestTicketsBleedRightChevrons ?? [];
     const counts = conquestPhase3GetBleedChevronCountsForPerspective(friendlyTeam, enemyTeam);
@@ -474,26 +485,26 @@ function conquestPhase3GetCenteredFlagSlots(flagCount: number, maxSlots: number)
 
 // Resolves a deterministic fallback letter token when map config labels are missing.
 function conquestPhase3GetFallbackFlagToken(row: number): string {
-    if (row === 0) return 'A';
-    if (row === 1) return 'B';
-    if (row === 2) return 'C';
-    if (row === 3) return 'D';
-    if (row === 4) return 'E';
-    if (row === 5) return 'F';
-    if (row === 6) return 'G';
-    return '?';
+    if (row === 0) return "A";
+    if (row === 1) return "B";
+    if (row === 2) return "C";
+    if (row === 3) return "D";
+    if (row === 4) return "E";
+    if (row === 5) return "F";
+    if (row === 6) return "G";
+    return "?";
 }
 
 // Maps capture-point labels to explicit localized string keys (A..G or unknown).
 function conquestPhase3GetFlagLetterStringKey(cp: ConquestCapturePointRuntimeState, row: number): number {
     const raw = (cp.label && cp.label.length > 0 ? cp.label : conquestPhase3GetFallbackFlagToken(row)).toUpperCase();
-    if (raw === 'A') return STR_HUD_CONQUEST_FLAG_LETTER_A;
-    if (raw === 'B') return STR_HUD_CONQUEST_FLAG_LETTER_B;
-    if (raw === 'C') return STR_HUD_CONQUEST_FLAG_LETTER_C;
-    if (raw === 'D') return STR_HUD_CONQUEST_FLAG_LETTER_D;
-    if (raw === 'E') return STR_HUD_CONQUEST_FLAG_LETTER_E;
-    if (raw === 'F') return STR_HUD_CONQUEST_FLAG_LETTER_F;
-    if (raw === 'G') return STR_HUD_CONQUEST_FLAG_LETTER_G;
+    if (raw === "A") return STR_HUD_CONQUEST_FLAG_LETTER_A;
+    if (raw === "B") return STR_HUD_CONQUEST_FLAG_LETTER_B;
+    if (raw === "C") return STR_HUD_CONQUEST_FLAG_LETTER_C;
+    if (raw === "D") return STR_HUD_CONQUEST_FLAG_LETTER_D;
+    if (raw === "E") return STR_HUD_CONQUEST_FLAG_LETTER_E;
+    if (raw === "F") return STR_HUD_CONQUEST_FLAG_LETTER_F;
+    if (raw === "G") return STR_HUD_CONQUEST_FLAG_LETTER_G;
     return STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN;
 }
 
@@ -516,14 +527,14 @@ function conquestPhase3HideLegacyConquestRoots(pid: number): void {
 // Creates the default script-authoritative visual state for one flag.
 function conquestPhase3CreateDefaultFlagVisualState(sampleTick: number): ConquestFlagVisualRuntimeState {
     return {
-        phase: 'NEUTRAL_IDLE',
+        phase: "NEUTRAL_IDLE",
         ownerTeam: 0,
         activeTeam: 0,
         progress01: 0,
         ownerRemaining01: 0,
         suppressOwnerUntilRecaptured: false,
         neutralizationLatchUntilTick: -1,
-        lastPhase: 'NEUTRAL_IDLE',
+        lastPhase: "NEUTRAL_IDLE",
         lastPhaseChangeTick: sampleTick,
         sampleTick,
     };
@@ -551,12 +562,9 @@ function conquestPhase3NormalizeVisualSample(
 ): ConquestFlagVisualSample {
     const totalOnPoint = cp.onPointTeam1 + cp.onPointTeam2;
     const progressRaw = Math.max(0, Math.min(1, cp.progress01));
-    const progress01 =
-        progressRaw <= CONQUEST_FLAG_PROGRESS_DEADBAND_LOW
-            ? 0
-            : progressRaw >= CONQUEST_FLAG_PROGRESS_DEADBAND_HIGH
-              ? 1
-              : progressRaw;
+    const progress01 = progressRaw <= CONQUEST_FLAG_PROGRESS_DEADBAND_LOW
+        ? 0
+        : (progressRaw >= CONQUEST_FLAG_PROGRESS_DEADBAND_HIGH ? 1 : progressRaw);
 
     if (cp.ownerTeam === 0 && totalOnPoint <= 0 && progress01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW) {
         // Neutral + uncontested with only residual progress noise should snap fully back to neutral.
@@ -573,17 +581,19 @@ function conquestPhase3NormalizeVisualSample(
     if (activeTeam === 0 && progress01 > 0) {
         // Preserve prior contest/capture context when engine drops progress team transiently.
         if (
-            previousVisual.activeTeam !== 0 &&
-            (previousVisual.phase === 'OWNED_CONTESTED_DRAIN' ||
-                previousVisual.phase === 'OWNED_CONTESTED_RECOVER' ||
-                previousVisual.phase === 'NEUTRAL_CAPTURING' ||
-                previousVisual.phase === 'NEUTRALIZED_LATCH')
+            previousVisual.activeTeam !== 0
+            && (
+                previousVisual.phase === "OWNED_CONTESTED_DRAIN"
+                || previousVisual.phase === "OWNED_CONTESTED_RECOVER"
+                || previousVisual.phase === "NEUTRAL_CAPTURING"
+                || previousVisual.phase === "NEUTRALIZED_LATCH"
+            )
         ) {
             activeTeam = previousVisual.activeTeam;
         } else if (
-            cp.ownerTeam !== 0 &&
-            progress01 >= CONQUEST_FLAG_PHASE_TRANSITION_HIGH &&
-            previousVisual.phase === 'OWNED_STABLE'
+            cp.ownerTeam !== 0
+            && progress01 >= CONQUEST_FLAG_PHASE_TRANSITION_HIGH
+            && previousVisual.phase === "OWNED_STABLE"
         ) {
             // Stable owned state may report progress team as 0; keep owner affinity only in this case.
             activeTeam = cp.ownerTeam;
@@ -595,22 +605,26 @@ function conquestPhase3NormalizeVisualSample(
 
     let ownerTeam: TeamID | 0 = cp.ownerTeam;
     if (
-        ownerTeam !== 0 &&
-        previousVisual.phase === 'NEUTRALIZED_LATCH' &&
-        progress01 < CONQUEST_FLAG_PHASE_TRANSITION_HIGH
+        ownerTeam !== 0
+        && previousVisual.phase === "NEUTRALIZED_LATCH"
+        && progress01 < CONQUEST_FLAG_PHASE_TRANSITION_HIGH
     ) {
         // After neutralization, suppress stale engine owner reads until the next ownership is materially established.
         ownerTeam = 0;
     }
     if (
-        ownerTeam !== 0 &&
-        activeTeam !== 0 &&
-        activeTeam !== ownerTeam &&
-        (previousVisual.phase === 'NEUTRAL_IDLE' ||
-            previousVisual.phase === 'NEUTRAL_CAPTURING' ||
-            previousVisual.phase === 'NEUTRALIZED_LATCH' ||
-            (previousVisual.phase === 'OWNED_CONTESTED_DRAIN' &&
-                previousVisual.ownerRemaining01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW))
+        ownerTeam !== 0
+        && activeTeam !== 0
+        && activeTeam !== ownerTeam
+        && (
+            previousVisual.phase === "NEUTRAL_IDLE"
+            || previousVisual.phase === "NEUTRAL_CAPTURING"
+            || previousVisual.phase === "NEUTRALIZED_LATCH"
+            || (
+                previousVisual.phase === "OWNED_CONTESTED_DRAIN"
+                && previousVisual.ownerRemaining01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW
+            )
+        )
     ) {
         // Once a point has effectively neutralized, stale engine owner reads must not restore owner-border visuals.
         // Treat subsequent mixed owner/progress ticks as neutral capture flow until ownership is re-established.
@@ -619,8 +633,12 @@ function conquestPhase3NormalizeVisualSample(
     // Hard owner-echo suppression:
     // once neutralization is reached, keep owner off (no border) until a full recapture confirmation is observed.
     if (
-        previousVisual.suppressOwnerUntilRecaptured &&
-        !(ownerTeam !== 0 && activeTeam === ownerTeam && progress01 >= CONQUEST_FLAG_PHASE_TRANSITION_HIGH)
+        previousVisual.suppressOwnerUntilRecaptured
+        && !(
+            ownerTeam !== 0
+            && activeTeam === ownerTeam
+            && progress01 >= CONQUEST_FLAG_PHASE_TRANSITION_HIGH
+        )
     ) {
         ownerTeam = 0;
     }
@@ -663,140 +681,160 @@ function conquestPhase3ResolveFlagVisualState(
     let ownerRemaining01 = previousVisual.ownerRemaining01;
     let neutralizationLatchUntilTick = previousVisual.neutralizationLatchUntilTick;
     let suppressOwnerUntilRecaptured = previousVisual.suppressOwnerUntilRecaptured;
-    const neutralWrapDetected =
-        sample.ownerTeam !== 0 &&
-        sample.activeTeam !== 0 &&
-        sample.activeTeam !== sample.ownerTeam &&
-        sample.progress01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW &&
-        (previousVisual.phase === 'NEUTRALIZED_LATCH' ||
-            (previousVisual.phase === 'OWNED_CONTESTED_DRAIN' &&
-                previousVisual.ownerRemaining01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW) ||
-            (previousVisual.lastPhase === 'OWNED_CONTESTED_DRAIN' &&
-                previousVisual.ownerRemaining01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW));
+    const neutralWrapDetected = (
+        sample.ownerTeam !== 0
+        && sample.activeTeam !== 0
+        && sample.activeTeam !== sample.ownerTeam
+        && sample.progress01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW
+        && (
+            previousVisual.phase === "NEUTRALIZED_LATCH"
+            || (
+                previousVisual.phase === "OWNED_CONTESTED_DRAIN"
+                && previousVisual.ownerRemaining01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW
+            )
+            || (
+                previousVisual.lastPhase === "OWNED_CONTESTED_DRAIN"
+                && previousVisual.ownerRemaining01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW
+            )
+        )
+    );
 
     if (sample.sampleTick <= neutralizationLatchUntilTick) {
-        phase = 'NEUTRALIZED_LATCH';
+        phase = "NEUTRALIZED_LATCH";
         ownerRemaining01 = 0;
         suppressOwnerUntilRecaptured = true;
     } else if (neutralWrapDetected) {
         // Some capture flows wrap progress after neutralization while owner still echoes previous team.
         // Treat this as neutral capturing and keep owner visuals suppressed until full recapture confirmation.
-        phase = 'NEUTRAL_CAPTURING';
+        phase = "NEUTRAL_CAPTURING";
         ownerRemaining01 = 0;
         suppressOwnerUntilRecaptured = true;
         neutralizationLatchUntilTick = -1;
     } else if (sample.ownerTeam !== 0 && sample.progress01 === 0) {
         // Owner-lag guard: if owner is still reported but progress is neutral, force neutralized visuals.
-        phase = 'NEUTRALIZED_LATCH';
+        phase = "NEUTRALIZED_LATCH";
         ownerRemaining01 = 0;
         neutralizationLatchUntilTick = sample.sampleTick + CONQUEST_FLAG_NEUTRALIZATION_LATCH_TICKS;
         suppressOwnerUntilRecaptured = true;
     } else if (
-        sample.ownerTeam !== 0 &&
-        sample.activeTeam === 0 &&
-        sample.progress01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW &&
-        (previousVisual.phase === 'OWNED_CONTESTED_DRAIN' ||
-            previousVisual.lastPhase === 'OWNED_CONTESTED_DRAIN' ||
-            previousVisual.phase === 'NEUTRALIZED_LATCH')
+        sample.ownerTeam !== 0
+        && sample.activeTeam === 0
+        && sample.progress01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW
+        && (
+            previousVisual.phase === "OWNED_CONTESTED_DRAIN"
+            || previousVisual.lastPhase === "OWNED_CONTESTED_DRAIN"
+            || previousVisual.phase === "NEUTRALIZED_LATCH"
+        )
     ) {
         // Neutralization completion fallback:
         // when owner/progress signals stall around zero after drain, keep neutral visuals with no border.
-        phase = 'NEUTRALIZED_LATCH';
+        phase = "NEUTRALIZED_LATCH";
         ownerRemaining01 = 0;
         neutralizationLatchUntilTick = sample.sampleTick + CONQUEST_FLAG_NEUTRALIZATION_LATCH_TICKS;
         suppressOwnerUntilRecaptured = true;
     } else if (
-        sample.ownerTeam !== 0 &&
-        sample.activeTeam === 0 &&
-        sample.progress01 >= CONQUEST_FLAG_PHASE_TRANSITION_HIGH &&
-        (previousVisual.phase === 'OWNED_CONTESTED_DRAIN' ||
-            previousVisual.lastPhase === 'OWNED_CONTESTED_DRAIN' ||
-            previousVisual.phase === 'NEUTRALIZED_LATCH')
+        sample.ownerTeam !== 0
+        && sample.activeTeam === 0
+        && sample.progress01 >= CONQUEST_FLAG_PHASE_TRANSITION_HIGH
+        && (
+            previousVisual.phase === "OWNED_CONTESTED_DRAIN"
+            || previousVisual.lastPhase === "OWNED_CONTESTED_DRAIN"
+            || previousVisual.phase === "NEUTRALIZED_LATCH"
+        )
     ) {
         // Neutralization high-edge fallback:
         // prevent one-frame snap back to owner visuals when progress reports high before owner clears.
-        phase = 'NEUTRALIZED_LATCH';
+        phase = "NEUTRALIZED_LATCH";
         ownerRemaining01 = 0;
         neutralizationLatchUntilTick = sample.sampleTick + CONQUEST_FLAG_NEUTRALIZATION_LATCH_TICKS;
         suppressOwnerUntilRecaptured = true;
     } else if (sample.ownerTeam === 0 && sample.progress01 === 0) {
-        phase = 'NEUTRAL_IDLE';
+        phase = "NEUTRAL_IDLE";
         ownerRemaining01 = 0;
     } else if (sample.ownerTeam === 0 && sample.progress01 > 0 && sample.activeTeam !== 0) {
-        phase = 'NEUTRAL_CAPTURING';
+        phase = "NEUTRAL_CAPTURING";
         ownerRemaining01 = 0;
     } else if (
-        sample.ownerTeam !== 0 &&
-        sample.activeTeam === 0 &&
-        sample.progress01 > CONQUEST_FLAG_PHASE_TRANSITION_LOW &&
-        sample.progress01 < CONQUEST_FLAG_PHASE_TRANSITION_HIGH
+        sample.ownerTeam !== 0
+        && sample.activeTeam === 0
+        && sample.progress01 > CONQUEST_FLAG_PHASE_TRANSITION_LOW
+        && sample.progress01 < CONQUEST_FLAG_PHASE_TRANSITION_HIGH
     ) {
         // Engine sometimes drops progress-team to 0 mid-contest.
         // Preserve prior drain/recover intent rather than snapping to neutral/owned visuals.
-        if (previousVisual.phase === 'OWNED_CONTESTED_DRAIN' || previousVisual.lastPhase === 'OWNED_CONTESTED_DRAIN') {
-            phase = 'OWNED_CONTESTED_DRAIN';
+        if (
+            previousVisual.phase === "OWNED_CONTESTED_DRAIN"
+            || previousVisual.lastPhase === "OWNED_CONTESTED_DRAIN"
+        ) {
+            phase = "OWNED_CONTESTED_DRAIN";
             ownerRemaining01 = Math.max(0, Math.min(1, 1 - sample.progress01));
         } else {
-            phase = 'OWNED_CONTESTED_RECOVER';
+            phase = "OWNED_CONTESTED_RECOVER";
             ownerRemaining01 = sample.progress01;
         }
     } else if (sample.ownerTeam !== 0 && sample.activeTeam !== 0 && sample.activeTeam !== sample.ownerTeam) {
         ownerRemaining01 = Math.max(0, Math.min(1, 1 - sample.progress01));
         if (ownerRemaining01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW) {
-            phase = 'NEUTRALIZED_LATCH';
+            phase = "NEUTRALIZED_LATCH";
             ownerRemaining01 = 0;
             neutralizationLatchUntilTick = sample.sampleTick + CONQUEST_FLAG_NEUTRALIZATION_LATCH_TICKS;
             suppressOwnerUntilRecaptured = true;
         } else {
-            phase = 'OWNED_CONTESTED_DRAIN';
+            phase = "OWNED_CONTESTED_DRAIN";
         }
     } else if (
-        sample.ownerTeam !== 0 &&
-        sample.activeTeam === sample.ownerTeam &&
-        sample.progress01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW &&
-        (previousVisual.phase === 'OWNED_CONTESTED_DRAIN' ||
-            previousVisual.lastPhase === 'OWNED_CONTESTED_DRAIN' ||
-            previousVisual.phase === 'NEUTRALIZED_LATCH')
+        sample.ownerTeam !== 0
+        && sample.activeTeam === sample.ownerTeam
+        && sample.progress01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW
+        && (
+            previousVisual.phase === "OWNED_CONTESTED_DRAIN"
+            || previousVisual.lastPhase === "OWNED_CONTESTED_DRAIN"
+            || previousVisual.phase === "NEUTRALIZED_LATCH"
+        )
     ) {
         // Stale owner echo guard:
         // after a drain reaches neutral edge, engine can briefly report owner+ownerProgress with near-zero progress.
         // Keep neutralized state (no border) until ownership is truly re-established.
-        phase = 'NEUTRALIZED_LATCH';
+        phase = "NEUTRALIZED_LATCH";
         ownerRemaining01 = 0;
         neutralizationLatchUntilTick = sample.sampleTick + CONQUEST_FLAG_NEUTRALIZATION_LATCH_TICKS;
         suppressOwnerUntilRecaptured = true;
     } else if (
-        sample.ownerTeam !== 0 &&
-        sample.activeTeam === sample.ownerTeam &&
-        sample.progress01 < CONQUEST_FLAG_PHASE_TRANSITION_HIGH
+        sample.ownerTeam !== 0
+        && sample.activeTeam === sample.ownerTeam
+        && sample.progress01 < CONQUEST_FLAG_PHASE_TRANSITION_HIGH
     ) {
-        phase = 'OWNED_CONTESTED_RECOVER';
+        phase = "OWNED_CONTESTED_RECOVER";
         ownerRemaining01 = sample.progress01;
     } else if (
-        (previousVisual.phase === 'NEUTRALIZED_LATCH' ||
-            (previousVisual.phase === 'OWNED_CONTESTED_DRAIN' &&
-                previousVisual.ownerRemaining01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW)) &&
-        sample.ownerTeam !== 0 &&
-        sample.progress01 >= CONQUEST_FLAG_PHASE_TRANSITION_HIGH &&
-        (sample.activeTeam === 0 || sample.activeTeam === sample.ownerTeam)
+        (
+            previousVisual.phase === "NEUTRALIZED_LATCH"
+            || (
+                previousVisual.phase === "OWNED_CONTESTED_DRAIN"
+                && previousVisual.ownerRemaining01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW
+            )
+        )
+        && sample.ownerTeam !== 0
+        && sample.progress01 >= CONQUEST_FLAG_PHASE_TRANSITION_HIGH
+        && (sample.activeTeam === 0 || sample.activeTeam === sample.ownerTeam)
     ) {
         // Neutralization-edge guard:
         // if ownership lags by a tick after near-complete drain, keep neutralized visuals
         // instead of momentarily restoring full owner visuals.
-        phase = 'NEUTRALIZED_LATCH';
+        phase = "NEUTRALIZED_LATCH";
         ownerRemaining01 = 0;
         neutralizationLatchUntilTick = sample.sampleTick + CONQUEST_FLAG_NEUTRALIZATION_LATCH_TICKS;
         suppressOwnerUntilRecaptured = true;
     } else if (
-        sample.ownerTeam !== 0 &&
-        sample.activeTeam === sample.ownerTeam &&
-        sample.progress01 >= CONQUEST_FLAG_PHASE_TRANSITION_HIGH
+        sample.ownerTeam !== 0
+        && sample.activeTeam === sample.ownerTeam
+        && sample.progress01 >= CONQUEST_FLAG_PHASE_TRANSITION_HIGH
     ) {
-        phase = 'OWNED_STABLE';
+        phase = "OWNED_STABLE";
         ownerRemaining01 = 1;
         suppressOwnerUntilRecaptured = false;
     } else {
-        phase = 'NEUTRAL_IDLE';
+        phase = "NEUTRAL_IDLE";
         ownerRemaining01 = 0;
     }
 
@@ -822,13 +860,13 @@ function conquestPhase3HasVisualStateChanged(
     nextVisual: ConquestFlagVisualRuntimeState
 ): boolean {
     return (
-        previousVisual.phase !== nextVisual.phase ||
-        previousVisual.ownerTeam !== nextVisual.ownerTeam ||
-        previousVisual.activeTeam !== nextVisual.activeTeam ||
-        Math.abs(previousVisual.progress01 - nextVisual.progress01) >= 0.001 ||
-        Math.abs(previousVisual.ownerRemaining01 - nextVisual.ownerRemaining01) >= 0.001 ||
-        previousVisual.suppressOwnerUntilRecaptured !== nextVisual.suppressOwnerUntilRecaptured ||
-        previousVisual.neutralizationLatchUntilTick !== nextVisual.neutralizationLatchUntilTick
+        previousVisual.phase !== nextVisual.phase
+        || previousVisual.ownerTeam !== nextVisual.ownerTeam
+        || previousVisual.activeTeam !== nextVisual.activeTeam
+        || Math.abs(previousVisual.progress01 - nextVisual.progress01) >= 0.001
+        || Math.abs(previousVisual.ownerRemaining01 - nextVisual.ownerRemaining01) >= 0.001
+        || previousVisual.suppressOwnerUntilRecaptured !== nextVisual.suppressOwnerUntilRecaptured
+        || previousVisual.neutralizationLatchUntilTick !== nextVisual.neutralizationLatchUntilTick
     );
 }
 
@@ -914,8 +952,11 @@ function conquestPhase3GetFlagSlotVisual(
     const activeBright = getTeamBrightColor(visualState.activeTeam);
 
     if (
-        visualState.phase === 'NEUTRALIZED_LATCH' ||
-        (visualState.activeTeam === 0 && visualState.progress01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW)
+        visualState.phase === "NEUTRALIZED_LATCH"
+        || (
+            visualState.activeTeam === 0
+            && visualState.progress01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW
+        )
     ) {
         return {
             slotBgColor: neutralBg,
@@ -924,7 +965,7 @@ function conquestPhase3GetFlagSlotVisual(
         };
     }
 
-    if (visualState.phase === 'OWNED_STABLE' && ownerBright && ownerDark) {
+    if (visualState.phase === "OWNED_STABLE" && ownerBright && ownerDark) {
         return {
             slotBgColor: ownerDark,
             fillColor: ownerDark,
@@ -934,7 +975,7 @@ function conquestPhase3GetFlagSlotVisual(
         };
     }
 
-    if (visualState.phase === 'OWNED_CONTESTED_DRAIN' && ownerBright) {
+    if (visualState.phase === "OWNED_CONTESTED_DRAIN" && ownerBright) {
         return {
             slotBgColor: contestBg,
             fillColor: ownerBright,
@@ -944,7 +985,7 @@ function conquestPhase3GetFlagSlotVisual(
         };
     }
 
-    if (visualState.phase === 'OWNED_CONTESTED_RECOVER' && ownerBright) {
+    if (visualState.phase === "OWNED_CONTESTED_RECOVER" && ownerBright) {
         return {
             slotBgColor: contestBg,
             fillColor: ownerBright,
@@ -954,7 +995,7 @@ function conquestPhase3GetFlagSlotVisual(
         };
     }
 
-    if (visualState.phase === 'NEUTRAL_CAPTURING' && activeBright) {
+    if (visualState.phase === "NEUTRAL_CAPTURING" && activeBright) {
         return {
             slotBgColor: neutralBg,
             fillColor: activeBright,
@@ -1003,7 +1044,7 @@ function conquestPhase3GetFlagPercentDisplay(
     const ownerBright = getTeamBrightColor(visualState.ownerTeam);
     const activeBright = getTeamBrightColor(visualState.activeTeam);
 
-    if (visualState.phase === 'OWNED_CONTESTED_DRAIN') {
+    if (visualState.phase === "OWNED_CONTESTED_DRAIN") {
         return {
             visible: true,
             value01: clamp01(visualState.ownerRemaining01),
@@ -1011,7 +1052,7 @@ function conquestPhase3GetFlagPercentDisplay(
         };
     }
 
-    if (visualState.phase === 'OWNED_CONTESTED_RECOVER') {
+    if (visualState.phase === "OWNED_CONTESTED_RECOVER") {
         return {
             visible: true,
             value01: clamp01(visualState.progress01),
@@ -1019,14 +1060,14 @@ function conquestPhase3GetFlagPercentDisplay(
         };
     }
 
-    if (visualState.phase === 'NEUTRAL_CAPTURING') {
+    if (visualState.phase === "NEUTRAL_CAPTURING") {
         return {
             visible: true,
             value01: clamp01(visualState.progress01),
             color: activeBright ?? neutralWhite,
         };
     }
-    if (visualState.phase === 'NEUTRALIZED_LATCH' && visualState.progress01 > 0) {
+    if (visualState.phase === "NEUTRALIZED_LATCH" && visualState.progress01 > 0) {
         return {
             visible: true,
             value01: clamp01(visualState.progress01),
@@ -1122,8 +1163,12 @@ function conquestPhase3GetFlagEngageDisplayForViewer(
         };
     }
 
-    const friendlyCount = friendlyTeam === TeamID.Team1 ? cp.onPointTeam1 : cp.onPointTeam2;
-    const enemyCount = enemyTeam === TeamID.Team1 ? cp.onPointTeam1 : cp.onPointTeam2;
+    const friendlyCount = friendlyTeam === TeamID.Team1
+        ? cp.onPointTeam1
+        : cp.onPointTeam2;
+    const enemyCount = enemyTeam === TeamID.Team1
+        ? cp.onPointTeam1
+        : cp.onPointTeam2;
     const total = friendlyCount + enemyCount;
     if (total <= 0 || friendlyCount <= 0) {
         return {
@@ -1191,7 +1236,7 @@ function conquestPhase2AEnsureCaptureState(objId: number): ConquestCapturePointR
     const cfg = getActiveCapturePointConfigByObjId(objId);
     const next: ConquestCapturePointRuntimeState = {
         objId,
-        label: cfg?.label ?? '',
+        label: cfg?.label ?? "",
         order: cfg?.order ?? 9999,
         mapped: !!cfg,
         ownerLatchedByEvent: false,
@@ -1229,10 +1274,7 @@ function conquestPhase2AResetCaptureTimingConfigCache(): void {
 }
 
 // Applies engine capture/neutralization timing to one capture point once per ObjId.
-function conquestPhase2AConfigureCaptureTimingForPoint(
-    capturePoint: mod.CapturePoint | undefined,
-    objIdHint?: number
-): boolean {
+function conquestPhase2AConfigureCaptureTimingForPoint(capturePoint: mod.CapturePoint | undefined, objIdHint?: number): boolean {
     if (!capturePoint) return false;
     const objId = objIdHint ?? safeGetObjId(capturePoint);
     if (objId === undefined) return false;
@@ -1264,7 +1306,7 @@ function conquestPhase2AApplyCaptureTimingForMappedPoints(): void {
 
 // Resets conquest state for live start and seeds mapped capture state for Phase 2A.
 function conquestPhase2AResetLiveState(): void {
-    State.conquest.lifecyclePhase = 'LIVE_MATCH';
+    State.conquest.lifecyclePhase = "LIVE_MATCH";
     State.conquest.tickets.team1 = CONQUEST_STARTING_TICKETS;
     State.conquest.tickets.team2 = CONQUEST_STARTING_TICKETS;
     State.conquest.bleed.lastTickSeconds = Math.floor(mod.GetMatchTimeElapsed());
@@ -1289,7 +1331,7 @@ function conquestPhase2AResetLiveState(): void {
 
 // Resets conquest state for non-live phases while preserving config-derived mappings.
 function conquestPhase2AResetNotLiveState(): void {
-    State.conquest.lifecyclePhase = 'NOT_READY';
+    State.conquest.lifecyclePhase = "NOT_READY";
     State.conquest.bleed.lastTickSeconds = -1;
     State.conquest.bleed.carryTeam1 = 0;
     State.conquest.bleed.carryTeam2 = 0;
@@ -1342,9 +1384,9 @@ function conquestPhase2AApplyTicketDelta(team: TeamID, delta: number): boolean {
 }
 
 // Single-latch end transition owner for ticket/clock end reasons.
-function conquestPhase2ATryLatchEnd(reason: 'tickets' | 'clock', winnerTeam: TeamID | 0): void {
+function conquestPhase2ATryLatchEnd(reason: "tickets" | "clock", winnerTeam: TeamID | 0): void {
     if (State.conquest.endRace.endLatched) return;
-    State.conquest.lifecyclePhase = 'POST_MATCH';
+    State.conquest.lifecyclePhase = "POST_MATCH";
     State.conquest.endRace.endLatched = true;
     State.conquest.endRace.endReason = reason;
     State.conquest.endRace.endSnapshot = {
@@ -1381,7 +1423,9 @@ function conquestPhase2AApplyBleedTick(): void {
     } else {
         State.conquest.bleed.carryTeam2 += rate;
     }
-    const carry = losingTeam === TeamID.Team1 ? State.conquest.bleed.carryTeam1 : State.conquest.bleed.carryTeam2;
+    const carry = losingTeam === TeamID.Team1
+        ? State.conquest.bleed.carryTeam1
+        : State.conquest.bleed.carryTeam2;
     const bleedUnits = Math.max(0, Math.floor(carry));
     if (bleedUnits <= 0) return;
     if (losingTeam === TeamID.Team1) {
@@ -1404,23 +1448,23 @@ function conquestPhase2ACheckEndCondition(): void {
 
     if (team1Tickets <= 0 || team2Tickets <= 0) {
         if (team1Tickets <= 0 && team2Tickets <= 0) {
-            conquestPhase2ATryLatchEnd('tickets', 0);
+            conquestPhase2ATryLatchEnd("tickets", 0);
             return;
         }
         if (team1Tickets <= 0) {
-            conquestPhase2ATryLatchEnd('tickets', TeamID.Team2);
+            conquestPhase2ATryLatchEnd("tickets", TeamID.Team2);
             return;
         }
-        conquestPhase2ATryLatchEnd('tickets', TeamID.Team1);
+        conquestPhase2ATryLatchEnd("tickets", TeamID.Team1);
         return;
     }
 
     if (getRemainingSeconds() > 0) return;
     if (team1Tickets === team2Tickets) {
-        conquestPhase2ATryLatchEnd('clock', 0);
+        conquestPhase2ATryLatchEnd("clock", 0);
         return;
     }
-    conquestPhase2ATryLatchEnd('clock', team1Tickets > team2Tickets ? TeamID.Team1 : TeamID.Team2);
+    conquestPhase2ATryLatchEnd("clock", team1Tickets > team2Tickets ? TeamID.Team1 : TeamID.Team2);
 }
 
 // Ingests engine capture-point ownership/progress into authoritative capture runtime state.
@@ -1490,7 +1534,12 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
         onPointTeam2 = 0;
     }
 
-    ownerTeam = conquestPhase2AResolveAuthoritativeOwnerTeam(state, ownerTeam, ownerProgressTeam, progress01);
+    ownerTeam = conquestPhase2AResolveAuthoritativeOwnerTeam(
+        state,
+        ownerTeam,
+        ownerProgressTeam,
+        progress01
+    );
 
     // Keep ownerProgressTeam as raw engine signal at ingestion.
     // Visual stabilization belongs in the visual FSM, not in capture-state mutation.
@@ -1509,15 +1558,15 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
     const visualChanged = conquestPhase3HasVisualStateChanged(prevVisual, nextVisual);
 
     const changed =
-        state.mapped !== prevMapped ||
-        state.label !== prevLabel ||
-        state.order !== prevOrder ||
-        state.ownerTeam !== prevOwnerTeam ||
-        state.ownerProgressTeam !== prevOwnerProgressTeam ||
-        Math.abs(state.progress01 - prevProgress01) >= 0.001 ||
-        state.onPointTeam1 !== prevOnPointTeam1 ||
-        state.onPointTeam2 !== prevOnPointTeam2 ||
-        visualChanged;
+        state.mapped !== prevMapped
+        || state.label !== prevLabel
+        || state.order !== prevOrder
+        || state.ownerTeam !== prevOwnerTeam
+        || state.ownerProgressTeam !== prevOwnerProgressTeam
+        || Math.abs(state.progress01 - prevProgress01) >= 0.001
+        || state.onPointTeam1 !== prevOnPointTeam1
+        || state.onPointTeam2 !== prevOnPointTeam2
+        || visualChanged;
     if (changed) {
         conquestPhase3MarkHudDirty();
     }
@@ -1543,15 +1592,21 @@ function conquestPhase2AResolveAuthoritativeOwnerTeam(
     // Neutralization fallback:
     // if the engine drops ownerProgressTeam to 0 at the neutralization edge,
     // use last known opposing progress-team so ownership can still clear to neutral.
-    const opposingProgressTeam =
+    const opposingProgressTeam = (
         ownerProgressTeam !== 0 && ownerProgressTeam !== state.ownerTeam
-            ? ownerProgressTeam
-            : state.ownerProgressTeam !== 0 && state.ownerProgressTeam !== state.ownerTeam
-              ? state.ownerProgressTeam
-              : 0;
+    )
+        ? ownerProgressTeam
+        : (
+            state.ownerProgressTeam !== 0 && state.ownerProgressTeam !== state.ownerTeam
+        )
+            ? state.ownerProgressTeam
+            : 0;
 
-    const neutralizationComplete =
-        state.ownerTeam !== 0 && opposingProgressTeam !== 0 && progress01 >= CONQUEST_FLAG_PHASE_TRANSITION_HIGH;
+    const neutralizationComplete = (
+        state.ownerTeam !== 0
+        && opposingProgressTeam !== 0
+        && progress01 >= CONQUEST_FLAG_PHASE_TRANSITION_HIGH
+    );
     if (neutralizationComplete) {
         state.ownerTeam = 0;
         return 0;
@@ -1560,14 +1615,20 @@ function conquestPhase2AResolveAuthoritativeOwnerTeam(
     // Wrapped-neutralization fallback:
     // if owner was being drained and progress has wrapped back near zero while the opposing team is still active,
     // the neutralization edge likely occurred between samples; clear owner immediately to prevent stale owner borders.
-    const opposingProgressForWrap =
+    const opposingProgressForWrap = (
         ownerProgressTeam !== 0 && ownerProgressTeam !== state.ownerTeam
-            ? ownerProgressTeam
-            : state.ownerProgressTeam !== 0 && state.ownerProgressTeam !== state.ownerTeam
-              ? state.ownerProgressTeam
-              : 0;
-    const neutralizationWrapped =
-        state.ownerTeam !== 0 && opposingProgressForWrap !== 0 && progress01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW;
+    )
+        ? ownerProgressTeam
+        : (
+            state.ownerProgressTeam !== 0 && state.ownerProgressTeam !== state.ownerTeam
+        )
+            ? state.ownerProgressTeam
+            : 0;
+    const neutralizationWrapped = (
+        state.ownerTeam !== 0
+        && opposingProgressForWrap !== 0
+        && progress01 <= CONQUEST_FLAG_PHASE_TRANSITION_LOW
+    );
     if (neutralizationWrapped) {
         state.ownerTeam = 0;
         return 0;
@@ -1575,9 +1636,14 @@ function conquestPhase2AResolveAuthoritativeOwnerTeam(
 
     // Recapture fallback:
     // if progress-team is transiently 0 near full capture, use the last known non-zero progress-team.
-    const captureProgressTeam = ownerProgressTeam !== 0 ? ownerProgressTeam : state.ownerProgressTeam;
-    const recaptureComplete =
-        state.ownerTeam === 0 && captureProgressTeam !== 0 && progress01 >= CONQUEST_FLAG_PHASE_TRANSITION_HIGH;
+    const captureProgressTeam = ownerProgressTeam !== 0
+        ? ownerProgressTeam
+        : state.ownerProgressTeam;
+    const recaptureComplete = (
+        state.ownerTeam === 0
+        && captureProgressTeam !== 0
+        && progress01 >= CONQUEST_FLAG_PHASE_TRANSITION_HIGH
+    );
     if (recaptureComplete) {
         state.ownerTeam = captureProgressTeam;
         return captureProgressTeam;
@@ -1613,7 +1679,7 @@ function conquestPhase2AOnCapturePointLost(eventCapturePoint: mod.CapturePoint):
 
     const sampleTick = Math.floor(mod.GetMatchTimeElapsed() * 10);
     const visual = conquestPhase3EnsureFlagVisualState(objId, sampleTick);
-    visual.phase = 'NEUTRALIZED_LATCH';
+    visual.phase = "NEUTRALIZED_LATCH";
     visual.ownerTeam = 0;
     visual.activeTeam = cp.ownerProgressTeam;
     visual.progress01 = cp.progress01;
@@ -1662,7 +1728,7 @@ function conquestPhase2AOnCapturePointCaptured(eventCapturePoint: mod.CapturePoi
 
     const sampleTick = Math.floor(mod.GetMatchTimeElapsed() * 10);
     const visual = conquestPhase3EnsureFlagVisualState(objId, sampleTick);
-    visual.phase = ownerTeam === 0 ? 'NEUTRAL_IDLE' : 'OWNED_STABLE';
+    visual.phase = ownerTeam === 0 ? "NEUTRAL_IDLE" : "OWNED_STABLE";
     visual.ownerTeam = ownerTeam;
     visual.activeTeam = ownerTeam;
     visual.progress01 = ownerTeam === 0 ? 0 : 1;
@@ -1749,10 +1815,12 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
         if (!p || !mod.IsPlayerValid(p)) continue;
 
         const perspective = conquestPhase3GetPerspectiveTeams(p);
-        const friendlyTickets =
-            perspective.friendlyTeam === TeamID.Team1 ? State.conquest.tickets.team1 : State.conquest.tickets.team2;
-        const enemyTickets =
-            perspective.enemyTeam === TeamID.Team1 ? State.conquest.tickets.team1 : State.conquest.tickets.team2;
+        const friendlyTickets = perspective.friendlyTeam === TeamID.Team1
+            ? State.conquest.tickets.team1
+            : State.conquest.tickets.team2;
+        const enemyTickets = perspective.enemyTeam === TeamID.Team1
+            ? State.conquest.tickets.team1
+            : State.conquest.tickets.team2;
 
         const friendlyTicketLabel = mod.Message(mod.stringkeys.twl.system.genericCounter, friendlyTickets);
         const enemyTicketLabel = mod.Message(mod.stringkeys.twl.system.genericCounter, enemyTickets);
@@ -1785,7 +1853,11 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
             perspective.enemyTeam,
             State.conquest.debug.ticketLeaderTeam
         );
-        conquestPhase3ApplyTicketBleedIndicators(refs, perspective.friendlyTeam, perspective.enemyTeam);
+        conquestPhase3ApplyTicketBleedIndicators(
+            refs,
+            perspective.friendlyTeam,
+            perspective.enemyTeam
+        );
 
         if (refs.conquestFlagsDebugRoot) {
             safeSetUIWidgetVisible(refs.conquestFlagsDebugRoot, true);
@@ -1946,31 +2018,24 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
 
             const cp = mappedCaptureStates[row];
             const labelKey = conquestPhase3GetFlagLetterStringKey(cp, row);
-            const visualState =
-                State.conquest.capture.visualByObjId[cp.objId] ?? conquestPhase3RefreshFlagVisualState(cp);
-            const visual = conquestPhase3GetFlagSlotVisual(
-                visualState,
-                perspective.friendlyTeam,
-                perspective.enemyTeam
-            );
-            const percentVisual = conquestPhase3GetFlagPercentDisplay(
-                visualState,
-                perspective.friendlyTeam,
-                perspective.enemyTeam
-            );
+            const visualState = State.conquest.capture.visualByObjId[cp.objId] ?? conquestPhase3RefreshFlagVisualState(cp);
+            const visual = conquestPhase3GetFlagSlotVisual(visualState, perspective.friendlyTeam, perspective.enemyTeam);
+            const percentVisual = conquestPhase3GetFlagPercentDisplay(visualState, perspective.friendlyTeam, perspective.enemyTeam);
             const onPointCount = cp.onPointTeam1 + cp.onPointTeam2;
-            const rawFillHeight =
-                visual.fillRatio <= 0 ? 0 : Math.floor(CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT * visual.fillRatio);
-            const unattendedNeutralResidual = cp.ownerTeam === 0 && onPointCount <= 0 && rawFillHeight <= 1;
-            const fillHeight =
-                rawFillHeight <= 0
-                    ? // Only force a 1px minimum while the point is actively contested/captured.
-                      onPointCount > 0 && visual.fillRatio > 0
-                        ? 1
-                        : 0
-                    : unattendedNeutralResidual
-                      ? 0
-                      : rawFillHeight;
+            const rawFillHeight = visual.fillRatio <= 0
+                ? 0
+                : Math.floor(CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT * visual.fillRatio);
+            const unattendedNeutralResidual = (
+                cp.ownerTeam === 0
+                && onPointCount <= 0
+                && rawFillHeight <= 1
+            );
+            const fillHeight = rawFillHeight <= 0
+                ? (
+                    // Only force a 1px minimum while the point is actively contested/captured.
+                    onPointCount > 0 && visual.fillRatio > 0 ? 1 : 0
+                )
+                : (unattendedNeutralResidual ? 0 : rawFillHeight);
 
             safeSetUIWidgetVisible(slotRoot, true);
             conquestPhase3SetShadowTextGroupVisible(slotLabelGroup, true);
@@ -1994,8 +2059,14 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
             if (fillHeight > 0 && visual.fillColor) {
                 safeSetUIWidgetVisible(slotFill, true);
                 const fillY = CONQUEST_HUD_FLAG_FILL_INSET_Y + (CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT - fillHeight);
-                safeSetUIWidgetPosition(slotFill, mod.CreateVector(CONQUEST_HUD_FLAG_FILL_INSET_X, fillY, 0));
-                safeSetUIWidgetSize(slotFill, mod.CreateVector(CONQUEST_HUD_FLAG_FILL_MAX_WIDTH, fillHeight, 0));
+                safeSetUIWidgetPosition(
+                    slotFill,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_FILL_INSET_X, fillY, 0)
+                );
+                safeSetUIWidgetSize(
+                    slotFill,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_FILL_MAX_WIDTH, fillHeight, 0)
+                );
                 safeSetUIWidgetBgColor(slotFill, visual.fillColor);
             } else {
                 safeSetUIWidgetVisible(slotFill, false);
@@ -2044,10 +2115,9 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
         safeSetUIWidgetBgColor(engageTrack, COLOR_GRAY_DARK);
 
         const fullTrackWidth = Math.max(1, Math.floor(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH));
-        let friendlyWidth =
-            engageDisplay.friendlyCount <= 0
-                ? 0
-                : Math.max(1, Math.floor(fullTrackWidth * engageDisplay.friendlyRatio));
+        let friendlyWidth = engageDisplay.friendlyCount <= 0
+            ? 0
+            : Math.max(1, Math.floor(fullTrackWidth * engageDisplay.friendlyRatio));
         if (friendlyWidth > fullTrackWidth) friendlyWidth = fullTrackWidth;
         let enemyWidth = fullTrackWidth - friendlyWidth;
         if (engageDisplay.enemyCount > 0 && enemyWidth <= 0) {

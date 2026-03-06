@@ -8,7 +8,7 @@
 const HQSymbol: unique symbol;
 ```
 
-Defined in:
-[mod/index.d.ts:44](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L44)
+Defined in: [mod/index.d.ts:44](https://github.com/battlefield-portal-community/portal-docs/blob/e47049b63e51188248b798c13df021a40e9a89fc/generators/santiago/mod/index.d.ts#L44)
 
-export type HQ = never; export type HQ = Any;
+export type HQ = never;
+export type HQ = Any;

@@ -23,8 +23,7 @@ Regenerate:
 
 ## Skill Setup
 
-- `CODEX_SKILLS_SETUP.md` explains how to configure local Codex skills to use these references and enforce API
-  validation.
+- `CODEX_SKILLS_SETUP.md` explains how to configure local Codex skills to use these references and enforce API validation.
 
 ## Suggested Companion Files
 

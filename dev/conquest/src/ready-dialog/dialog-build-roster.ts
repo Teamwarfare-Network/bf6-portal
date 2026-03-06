@@ -1,7 +1,11 @@
 // @ts-nocheck
 // Module: ready-dialog/dialog-build-roster -- ready dialog roster panel/widget construction
 
-function buildReadyDialogRosterSection(eventPlayer: mod.Player, containerBase: mod.UIWidget, playerId: number): void {
+function buildReadyDialogRosterSection(
+    eventPlayer: mod.Player,
+    containerBase: mod.UIWidget,
+    playerId: number
+): void {
     const readyRosterPanelWidth = 580;
     const readyRosterPanelHeight = 440;
     const readyRosterPanelGap = 40;
@@ -84,89 +88,47 @@ function buildReadyDialogRosterSection(eventPlayer: mod.Player, containerBase: m
     const colStatusW = 140;
 
     for (let row = 0; row < TEAM_ROSTER_MAX_ROWS; row++) {
-        const y = rowStartY + row * rowH;
+        const y = rowStartY + (row * rowH);
 
-        const t1NameId = UI_READY_DIALOG_T1_ROW_NAME_ID + playerId + '_' + row;
-        const t1ReadyId = UI_READY_DIALOG_T1_ROW_READY_ID + playerId + '_' + row;
-        const t1BaseId = UI_READY_DIALOG_T1_ROW_BASE_ID + playerId + '_' + row;
+        const t1NameId = UI_READY_DIALOG_T1_ROW_NAME_ID + playerId + "_" + row;
+        const t1ReadyId = UI_READY_DIALOG_T1_ROW_READY_ID + playerId + "_" + row;
+        const t1BaseId = UI_READY_DIALOG_T1_ROW_BASE_ID + playerId + "_" + row;
 
-        mod.AddUIText(
-            t1NameId,
-            mod.CreateVector(colNameX, y, 0),
-            mod.CreateVector(colNameW, rowH, 0),
-            mod.UIAnchor.TopLeft,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
-            eventPlayer
-        );
+        mod.AddUIText(t1NameId, mod.CreateVector(colNameX, y, 0), mod.CreateVector(colNameW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
         const t1Name = mod.FindUIWidgetWithName(t1NameId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(t1Name, 0);
         mod.SetUITextSize(t1Name, 14);
         mod.SetUIWidgetParent(t1Name, t1Container);
 
-        mod.AddUIText(
-            t1ReadyId,
-            mod.CreateVector(colReadyX, y, 0),
-            mod.CreateVector(colStatusW, rowH, 0),
-            mod.UIAnchor.TopLeft,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
-            eventPlayer
-        );
+        mod.AddUIText(t1ReadyId, mod.CreateVector(colReadyX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
         const t1Ready = mod.FindUIWidgetWithName(t1ReadyId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(t1Ready, 0);
         mod.SetUITextSize(t1Ready, 14);
         mod.SetUIWidgetParent(t1Ready, t1Container);
 
-        mod.AddUIText(
-            t1BaseId,
-            mod.CreateVector(colBaseX, y, 0),
-            mod.CreateVector(colStatusW, rowH, 0),
-            mod.UIAnchor.TopLeft,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
-            eventPlayer
-        );
+        mod.AddUIText(t1BaseId, mod.CreateVector(colBaseX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
         const t1Base = mod.FindUIWidgetWithName(t1BaseId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(t1Base, 0);
         mod.SetUITextSize(t1Base, 14);
         mod.SetUIWidgetParent(t1Base, t1Container);
 
-        const t2NameId = UI_READY_DIALOG_T2_ROW_NAME_ID + playerId + '_' + row;
-        const t2ReadyId = UI_READY_DIALOG_T2_ROW_READY_ID + playerId + '_' + row;
-        const t2BaseId = UI_READY_DIALOG_T2_ROW_BASE_ID + playerId + '_' + row;
+        const t2NameId = UI_READY_DIALOG_T2_ROW_NAME_ID + playerId + "_" + row;
+        const t2ReadyId = UI_READY_DIALOG_T2_ROW_READY_ID + playerId + "_" + row;
+        const t2BaseId = UI_READY_DIALOG_T2_ROW_BASE_ID + playerId + "_" + row;
 
-        mod.AddUIText(
-            t2NameId,
-            mod.CreateVector(colNameX, y, 0),
-            mod.CreateVector(colNameW, rowH, 0),
-            mod.UIAnchor.TopLeft,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
-            eventPlayer
-        );
+        mod.AddUIText(t2NameId, mod.CreateVector(colNameX, y, 0), mod.CreateVector(colNameW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
         const t2Name = mod.FindUIWidgetWithName(t2NameId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(t2Name, 0);
         mod.SetUITextSize(t2Name, 14);
         mod.SetUIWidgetParent(t2Name, t2Container);
 
-        mod.AddUIText(
-            t2ReadyId,
-            mod.CreateVector(colReadyX, y, 0),
-            mod.CreateVector(colStatusW, rowH, 0),
-            mod.UIAnchor.TopLeft,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
-            eventPlayer
-        );
+        mod.AddUIText(t2ReadyId, mod.CreateVector(colReadyX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
         const t2Ready = mod.FindUIWidgetWithName(t2ReadyId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(t2Ready, 0);
         mod.SetUITextSize(t2Ready, 14);
         mod.SetUIWidgetParent(t2Ready, t2Container);
 
-        mod.AddUIText(
-            t2BaseId,
-            mod.CreateVector(colBaseX, y, 0),
-            mod.CreateVector(colStatusW, rowH, 0),
-            mod.UIAnchor.TopLeft,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
-            eventPlayer
-        );
+        mod.AddUIText(t2BaseId, mod.CreateVector(colBaseX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
         const t2Base = mod.FindUIWidgetWithName(t2BaseId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(t2Base, 0);
         mod.SetUITextSize(t2Base, 14);

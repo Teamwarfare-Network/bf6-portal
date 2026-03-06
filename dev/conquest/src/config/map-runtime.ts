@@ -11,9 +11,9 @@ function getMapNameKey(mapKey: MapKey): number {
 // Determines whether the current mode selection should use helicopter spawn specs.
 function isHeliGameMode(gameModeKey: number): boolean {
     return (
-        gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisLadder ||
-        gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisPractice ||
-        gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisCustom
+        gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisLadder
+        || gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisPractice
+        || gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisCustom
     );
 }
 
@@ -136,7 +136,10 @@ function detectMapKeyFromHqs(): MapKey | undefined {
 function findMatchupPresetIndex(leftPlayers: number, rightPlayers: number): number {
     for (let i = 0; i < MATCHUP_PRESETS.length; i++) {
         const preset = MATCHUP_PRESETS[i];
-        if (preset.leftPlayers === leftPlayers && preset.rightPlayers === rightPlayers) {
+        if (
+            preset.leftPlayers === leftPlayers &&
+            preset.rightPlayers === rightPlayers
+        ) {
             return i;
         }
     }

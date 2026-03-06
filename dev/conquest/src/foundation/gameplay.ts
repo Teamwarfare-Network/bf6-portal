@@ -13,7 +13,7 @@ const SHOW_HELP_TEXT_PROMPT_ON_JOIN = true; // Show the join help prompt overlay
 const ROUND_CLOCK_DEFAULT_SECONDS = ROUND_START_SECONDS; // Source of truth for clock reset.
 const ADMIN_MATCH_LENGTH_STEP_SECONDS = 60;
 const ADMIN_MATCH_LENGTH_MIN_SECONDS = 60;
-const ADMIN_MATCH_LENGTH_MAX_SECONDS = 99 * 60 + 59;
+const ADMIN_MATCH_LENGTH_MAX_SECONDS = (99 * 60) + 59;
 const GAMEMODE_TARGET_SCORE_SAFETY_CAP = 9999; // Prevent engine auto-end from low default targets.
 
 // Debug/gameplay message toggles:
@@ -214,3 +214,4 @@ const READY_DIALOG_INTERACT_CONFIG: ReadyDialogInteractConfig = {
 
 // Admin panel toggle debounce (seconds). Prevents double-toggle from press/release events.
 const ADMIN_PANEL_TOGGLE_COOLDOWN_SECONDS = 0.2;
+
