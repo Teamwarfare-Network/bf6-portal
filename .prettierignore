@@ -2,3 +2,5 @@ node_modules
 dist
 bf6-portal
 package-lock.json
+dev/reference_bf6_core
+dev/conquest

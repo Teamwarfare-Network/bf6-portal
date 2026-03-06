@@ -29,43 +29,58 @@ function setAdminPanelChildWidgetsVisible(playerId: number, visible: boolean): v
         UI_ADMIN_LIVE_RESPAWN_TEXT_ID,
 
         // Row +/- buttons
-        UI_TEST_BUTTON_LEFT_WINS_DEC_ID, UI_TEST_BUTTON_LEFT_WINS_INC_ID,
-        UI_TEST_BUTTON_RIGHT_WINS_DEC_ID, UI_TEST_BUTTON_RIGHT_WINS_INC_ID,
-        UI_TEST_BUTTON_LEFT_KILLS_DEC_ID, UI_TEST_BUTTON_LEFT_KILLS_INC_ID,
-        UI_TEST_BUTTON_RIGHT_KILLS_DEC_ID, UI_TEST_BUTTON_RIGHT_KILLS_INC_ID,
-        UI_TEST_BUTTON_ROUND_KILLS_TARGET_DEC_ID, UI_TEST_BUTTON_ROUND_KILLS_TARGET_INC_ID,
-        UI_ADMIN_BUTTON_T1_ROUND_KILLS_DEC_ID, UI_ADMIN_BUTTON_T1_ROUND_KILLS_INC_ID,
-        UI_ADMIN_BUTTON_T2_ROUND_KILLS_DEC_ID, UI_ADMIN_BUTTON_T2_ROUND_KILLS_INC_ID,
-        UI_ADMIN_TIEBREAKER_MODE_DEC_ID, UI_ADMIN_TIEBREAKER_MODE_INC_ID,
+        UI_TEST_BUTTON_LEFT_WINS_DEC_ID,
+        UI_TEST_BUTTON_LEFT_WINS_INC_ID,
+        UI_TEST_BUTTON_RIGHT_WINS_DEC_ID,
+        UI_TEST_BUTTON_RIGHT_WINS_INC_ID,
+        UI_TEST_BUTTON_LEFT_KILLS_DEC_ID,
+        UI_TEST_BUTTON_LEFT_KILLS_INC_ID,
+        UI_TEST_BUTTON_RIGHT_KILLS_DEC_ID,
+        UI_TEST_BUTTON_RIGHT_KILLS_INC_ID,
+        UI_TEST_BUTTON_ROUND_KILLS_TARGET_DEC_ID,
+        UI_TEST_BUTTON_ROUND_KILLS_TARGET_INC_ID,
+        UI_ADMIN_BUTTON_T1_ROUND_KILLS_DEC_ID,
+        UI_ADMIN_BUTTON_T1_ROUND_KILLS_INC_ID,
+        UI_ADMIN_BUTTON_T2_ROUND_KILLS_DEC_ID,
+        UI_ADMIN_BUTTON_T2_ROUND_KILLS_INC_ID,
+        UI_ADMIN_TIEBREAKER_MODE_DEC_ID,
+        UI_ADMIN_TIEBREAKER_MODE_INC_ID,
         UI_ADMIN_LIVE_RESPAWN_BUTTON_ID,
-        UI_TEST_BUTTON_TIES_DEC_ID, UI_TEST_BUTTON_TIES_INC_ID,
-        UI_TEST_BUTTON_CUR_ROUND_DEC_ID, UI_TEST_BUTTON_CUR_ROUND_INC_ID,
-        UI_TEST_BUTTON_CLOCK_TIME_DEC_ID, UI_TEST_BUTTON_CLOCK_TIME_INC_ID,
+        UI_TEST_BUTTON_TIES_DEC_ID,
+        UI_TEST_BUTTON_TIES_INC_ID,
+        UI_TEST_BUTTON_CUR_ROUND_DEC_ID,
+        UI_TEST_BUTTON_CUR_ROUND_INC_ID,
+        UI_TEST_BUTTON_CLOCK_TIME_DEC_ID,
+        UI_TEST_BUTTON_CLOCK_TIME_INC_ID,
 
         // +/- text overlays
         UI_TEST_MINUS_TEXT_ID,
         UI_TEST_PLUS_TEXT_ID,
 
         // Bottom admin buttons
-        UI_TEST_BUTTON_CLOCK_RESET_ID, UI_TEST_RESET_TEXT_ID,
-        UI_TEST_BUTTON_ROUND_START_ID, UI_TEST_ROUND_START_TEXT_ID,
-        UI_TEST_BUTTON_ROUND_END_ID, UI_TEST_ROUND_END_TEXT_ID,
-        UI_TEST_BUTTON_POS_DEBUG_ID, UI_TEST_POS_DEBUG_TEXT_ID,
+        UI_TEST_BUTTON_CLOCK_RESET_ID,
+        UI_TEST_RESET_TEXT_ID,
+        UI_TEST_BUTTON_ROUND_START_ID,
+        UI_TEST_ROUND_START_TEXT_ID,
+        UI_TEST_BUTTON_ROUND_END_ID,
+        UI_TEST_ROUND_END_TEXT_ID,
+        UI_TEST_BUTTON_POS_DEBUG_ID,
+        UI_TEST_POS_DEBUG_TEXT_ID,
     ];
 
     for (const baseId of ids) {
         const w = safeFind(baseId + playerId);
         if (w) mod.SetUIWidgetVisible(w, visible);
-        const border = safeFind(baseId + playerId + "_BORDER");
+        const border = safeFind(baseId + playerId + '_BORDER');
         if (border) mod.SetUIWidgetVisible(border, visible);
     }
 
     for (const letter of ADMIN_TIEBREAKER_OVERRIDE_LETTERS) {
-        const buttonBaseId = UI_ADMIN_TIEBREAKER_BUTTON_ID + letter + "_";
-        const textBaseId = UI_ADMIN_TIEBREAKER_BUTTON_TEXT_ID + letter + "_";
+        const buttonBaseId = UI_ADMIN_TIEBREAKER_BUTTON_ID + letter + '_';
+        const textBaseId = UI_ADMIN_TIEBREAKER_BUTTON_TEXT_ID + letter + '_';
         const button = safeFind(buttonBaseId + playerId);
         if (button) mod.SetUIWidgetVisible(button, visible);
-        const border = safeFind(buttonBaseId + playerId + "_BORDER");
+        const border = safeFind(buttonBaseId + playerId + '_BORDER');
         if (border) mod.SetUIWidgetVisible(border, visible);
         const text = safeFind(textBaseId + playerId);
         if (text) mod.SetUIWidgetVisible(text, visible);
@@ -87,7 +102,7 @@ function deleteAdminPanelUI(playerId: number, deleteToggle: boolean): void {
         if (adminToggle) mod.DeleteUIWidget(adminToggle);
         const adminToggleLabel = safeFind(UI_ADMIN_PANEL_BUTTON_LABEL_ID + playerId);
         if (adminToggleLabel) mod.DeleteUIWidget(adminToggleLabel);
-        const adminToggleBorder = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId + "_BORDER");
+        const adminToggleBorder = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId + '_BORDER');
         if (adminToggleBorder) mod.DeleteUIWidget(adminToggleBorder);
     }
 }
@@ -116,7 +131,7 @@ function ensureAdminPanelWidgets(eventPlayer: mod.Player, playerId: number): voi
     // Recreate label to guarantee correct anchor/parenting with outlined border.
     const existingToggleLabel = safeFind(ADMIN_TOGGLE_LABEL_ID);
     if (existingToggleLabel) mod.DeleteUIWidget(existingToggleLabel);
-    const adminToggleBorder = safeFind(ADMIN_TOGGLE_BUTTON_ID + "_BORDER");
+    const adminToggleBorder = safeFind(ADMIN_TOGGLE_BUTTON_ID + '_BORDER');
     const toggleLabel = addCenteredButtonText(
         ADMIN_TOGGLE_LABEL_ID,
         ADMIN_PANEL_TOGGLE_WIDTH,
@@ -137,7 +152,11 @@ function ensureAdminPanelWidgets(eventPlayer: mod.Player, playerId: number): voi
         mod.AddUIContainer(
             ADMIN_CONTAINER_ID,
             mod.CreateVector(ADMIN_PANEL_OFFSET_X, ADMIN_PANEL_OFFSET_Y, 0),
-            mod.CreateVector(ADMIN_PANEL_CONTENT_WIDTH + (ADMIN_PANEL_PADDING * 2), ADMIN_PANEL_HEIGHT + (ADMIN_PANEL_PADDING * 2), 0),
+            mod.CreateVector(
+                ADMIN_PANEL_CONTENT_WIDTH + ADMIN_PANEL_PADDING * 2,
+                ADMIN_PANEL_HEIGHT + ADMIN_PANEL_PADDING * 2,
+                0
+            ),
             mod.UIAnchor.TopRight,
             mod.GetUIRoot(),
             false,
@@ -155,7 +174,7 @@ function ensureAdminPanelWidgets(eventPlayer: mod.Player, playerId: number): voi
     // When caching is enabled, we hide/show rather than recreate.
     if (toggleBtn) mod.SetUIWidgetVisible(toggleBtn, true);
     if (toggleLabel) mod.SetUIWidgetVisible(toggleLabel, true);
-    const toggleBorder = safeFind(ADMIN_TOGGLE_BUTTON_ID + "_BORDER");
+    const toggleBorder = safeFind(ADMIN_TOGGLE_BUTTON_ID + '_BORDER');
     if (toggleBorder) mod.SetUIWidgetVisible(toggleBorder, true);
 
     // Default closed on first build; preserve state on reopen.
@@ -259,10 +278,10 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     const CONTAINER_BASE = mod.FindUIWidgetWithName(CONTAINER_BASE_ID, mod.GetUIRoot());
     mod.SetUIWidgetBgAlpha(CONTAINER_BASE, 0.995); // Force darker overlay (some clients render blur lighter)
 
-    const borderHalfWidth = (CONTAINER_WIDTH / 2) + CONTAINER_BORDER_PADDING + (CONTAINER_BORDER_THICKNESS / 2);
-    const borderHalfHeight = (CONTAINER_HEIGHT / 2) + CONTAINER_BORDER_PADDING + (CONTAINER_BORDER_THICKNESS / 2);
-    const borderLineWidth = CONTAINER_WIDTH + (CONTAINER_BORDER_PADDING * 2) + (CONTAINER_BORDER_OVERLAP * 2);
-    const borderLineHeight = CONTAINER_HEIGHT + (CONTAINER_BORDER_PADDING * 2) + (CONTAINER_BORDER_OVERLAP * 2);
+    const borderHalfWidth = CONTAINER_WIDTH / 2 + CONTAINER_BORDER_PADDING + CONTAINER_BORDER_THICKNESS / 2;
+    const borderHalfHeight = CONTAINER_HEIGHT / 2 + CONTAINER_BORDER_PADDING + CONTAINER_BORDER_THICKNESS / 2;
+    const borderLineWidth = CONTAINER_WIDTH + CONTAINER_BORDER_PADDING * 2 + CONTAINER_BORDER_OVERLAP * 2;
+    const borderLineHeight = CONTAINER_HEIGHT + CONTAINER_BORDER_PADDING * 2 + CONTAINER_BORDER_OVERLAP * 2;
 
     // Top border line
     mod.AddUIContainer(
@@ -329,8 +348,6 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     );
 
     //#endregion -------------------- UI - Ready Up Dialog (construction) --------------------
-
-
 
     //#region -------------------- Ready Dialog (Roster UI) -  (header + team rosters) --------------------
 
@@ -644,7 +661,10 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         mod.CreateVector(leftSectionValueX, modeSettingsY, 0),
         mod.CreateVector(leftSectionValueWidth, bestOfLabelSizeY, 0),
         mod.UIAnchor.TopRight,
-        mod.Message(mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat, Math.floor(State.round.modeConfig.aircraftCeiling)),
+        mod.Message(
+            mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat,
+            Math.floor(State.round.modeConfig.aircraftCeiling)
+        ),
         eventPlayer
     );
     const MODE_SETTINGS_VALUE = mod.FindUIWidgetWithName(MODE_SETTINGS_VALUE_ID, mod.GetUIRoot());
@@ -1130,7 +1150,11 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     );
     mod.AddUIContainer(
         T2_CONTAINER_ID,
-        mod.CreateVector(READY_ROSTER_PANEL_MARGIN + READY_ROSTER_PANEL_WIDTH + READY_ROSTER_PANEL_GAP, READY_ROSTER_PANEL_Y, 0),
+        mod.CreateVector(
+            READY_ROSTER_PANEL_MARGIN + READY_ROSTER_PANEL_WIDTH + READY_ROSTER_PANEL_GAP,
+            READY_ROSTER_PANEL_Y,
+            0
+        ),
         mod.CreateVector(READY_ROSTER_PANEL_WIDTH, READY_ROSTER_PANEL_HEIGHT, 0),
         mod.UIAnchor.TopLeft,
         CONTAINER_BASE,
@@ -1188,47 +1212,89 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     const colStatusW = 140;
 
     for (let row = 0; row < TEAM_ROSTER_MAX_ROWS; row++) {
-        const y = rowStartY + (row * rowH);
+        const y = rowStartY + row * rowH;
 
-        const t1NameId = UI_READY_DIALOG_T1_ROW_NAME_ID + playerId + "_" + row;
-        const t1ReadyId = UI_READY_DIALOG_T1_ROW_READY_ID + playerId + "_" + row;
-        const t1BaseId = UI_READY_DIALOG_T1_ROW_BASE_ID + playerId + "_" + row;
+        const t1NameId = UI_READY_DIALOG_T1_ROW_NAME_ID + playerId + '_' + row;
+        const t1ReadyId = UI_READY_DIALOG_T1_ROW_READY_ID + playerId + '_' + row;
+        const t1BaseId = UI_READY_DIALOG_T1_ROW_BASE_ID + playerId + '_' + row;
 
-        mod.AddUIText(t1NameId, mod.CreateVector(colNameX, y, 0), mod.CreateVector(colNameW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
+        mod.AddUIText(
+            t1NameId,
+            mod.CreateVector(colNameX, y, 0),
+            mod.CreateVector(colNameW, rowH, 0),
+            mod.UIAnchor.TopLeft,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
+            eventPlayer
+        );
         const T1_NAME = mod.FindUIWidgetWithName(t1NameId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(T1_NAME, 0);
         mod.SetUITextSize(T1_NAME, 14);
         mod.SetUIWidgetParent(T1_NAME, T1_CONTAINER);
 
-        mod.AddUIText(t1ReadyId, mod.CreateVector(colReadyX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
+        mod.AddUIText(
+            t1ReadyId,
+            mod.CreateVector(colReadyX, y, 0),
+            mod.CreateVector(colStatusW, rowH, 0),
+            mod.UIAnchor.TopLeft,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
+            eventPlayer
+        );
         const T1_READY = mod.FindUIWidgetWithName(t1ReadyId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(T1_READY, 0);
         mod.SetUITextSize(T1_READY, 14);
         mod.SetUIWidgetParent(T1_READY, T1_CONTAINER);
 
-        mod.AddUIText(t1BaseId, mod.CreateVector(colBaseX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
+        mod.AddUIText(
+            t1BaseId,
+            mod.CreateVector(colBaseX, y, 0),
+            mod.CreateVector(colStatusW, rowH, 0),
+            mod.UIAnchor.TopLeft,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
+            eventPlayer
+        );
         const T1_BASE = mod.FindUIWidgetWithName(t1BaseId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(T1_BASE, 0);
         mod.SetUITextSize(T1_BASE, 14);
         mod.SetUIWidgetParent(T1_BASE, T1_CONTAINER);
 
-        const t2NameId = UI_READY_DIALOG_T2_ROW_NAME_ID + playerId + "_" + row;
-        const t2ReadyId = UI_READY_DIALOG_T2_ROW_READY_ID + playerId + "_" + row;
-        const t2BaseId = UI_READY_DIALOG_T2_ROW_BASE_ID + playerId + "_" + row;
+        const t2NameId = UI_READY_DIALOG_T2_ROW_NAME_ID + playerId + '_' + row;
+        const t2ReadyId = UI_READY_DIALOG_T2_ROW_READY_ID + playerId + '_' + row;
+        const t2BaseId = UI_READY_DIALOG_T2_ROW_BASE_ID + playerId + '_' + row;
 
-        mod.AddUIText(t2NameId, mod.CreateVector(colNameX, y, 0), mod.CreateVector(colNameW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
+        mod.AddUIText(
+            t2NameId,
+            mod.CreateVector(colNameX, y, 0),
+            mod.CreateVector(colNameW, rowH, 0),
+            mod.UIAnchor.TopLeft,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
+            eventPlayer
+        );
         const T2_NAME = mod.FindUIWidgetWithName(t2NameId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(T2_NAME, 0);
         mod.SetUITextSize(T2_NAME, 14);
         mod.SetUIWidgetParent(T2_NAME, T2_CONTAINER);
 
-        mod.AddUIText(t2ReadyId, mod.CreateVector(colReadyX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
+        mod.AddUIText(
+            t2ReadyId,
+            mod.CreateVector(colReadyX, y, 0),
+            mod.CreateVector(colStatusW, rowH, 0),
+            mod.UIAnchor.TopLeft,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
+            eventPlayer
+        );
         const T2_READY = mod.FindUIWidgetWithName(t2ReadyId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(T2_READY, 0);
         mod.SetUITextSize(T2_READY, 14);
         mod.SetUIWidgetParent(T2_READY, T2_CONTAINER);
 
-        mod.AddUIText(t2BaseId, mod.CreateVector(colBaseX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
+        mod.AddUIText(
+            t2BaseId,
+            mod.CreateVector(colBaseX, y, 0),
+            mod.CreateVector(colStatusW, rowH, 0),
+            mod.UIAnchor.TopLeft,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, ''),
+            eventPlayer
+        );
         const T2_BASE = mod.FindUIWidgetWithName(t2BaseId, mod.GetUIRoot());
         mod.SetUIWidgetBgAlpha(T2_BASE, 0);
         mod.SetUITextSize(T2_BASE, 14);
@@ -1239,8 +1305,6 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     refreshReadyDialogRosterForViewer(eventPlayer, playerId);
 
     //#endregion ----------------- Ready Dialog (Roster UI) -  (header + team rosters) --------------------
-
-    
 
     //#region -------------------- Ready Dialog - Swap Teams Button --------------------
 
@@ -1269,8 +1333,6 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     );
 
     //#endregion ----------------- Ready Dialog - Swap Teams Button --------------------
-
-
 
     //#region -------------------- Ready Dialog  - Ready Toggle Button --------------------
 
@@ -1326,31 +1388,26 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
 
     //#endregion ----------------- Ready Dialog  - Ready Toggle Button --------------------
 
-
-
     //#region -------------------- Debug Info - Time Limit Seconds --------------------
 
     const DEBUG_TIMELIMIT_ID = UI_TEAMSWITCH_DEBUG_TIMELIMIT_ID + playerId;
     if (SHOW_DEBUG_TIMELIMIT) {
-
-    // Shows the current inferred gamemode time limit (seconds) while the team switch dialog is open.
-    const debugTimeLimitSeconds = Math.floor(mod.GetMatchTimeElapsed() + mod.GetMatchTimeRemaining());
-    mod.AddUIText(
-        DEBUG_TIMELIMIT_ID,
-        mod.CreateVector(-320, -160, 0),  //mod.CreateVector(-220, 10, 0),
-        mod.CreateVector(80, 28, 0),    //mod.CreateVector(80, 28, 0),
-        mod.UIAnchor.TopRight,
-        mod.Message(mod.stringkeys.twl.teamSwitch.debugTimeLimit, debugTimeLimitSeconds),
-        eventPlayer
-    );
-    const DEBUG_TIMELIMIT = mod.FindUIWidgetWithName(DEBUG_TIMELIMIT_ID, mod.GetUIRoot());
-    // Parent to the Team Switch container so the text is always drawn above the dialog background.
-    mod.SetUIWidgetParent(DEBUG_TIMELIMIT, CONTAINER_BASE);
-    mod.SetUIWidgetBgAlpha(DEBUG_TIMELIMIT, 0);
-    mod.SetUITextSize(DEBUG_TIMELIMIT, 12);
-    applyReadyDialogLabelTextColor(DEBUG_TIMELIMIT);
-
-
+        // Shows the current inferred gamemode time limit (seconds) while the team switch dialog is open.
+        const debugTimeLimitSeconds = Math.floor(mod.GetMatchTimeElapsed() + mod.GetMatchTimeRemaining());
+        mod.AddUIText(
+            DEBUG_TIMELIMIT_ID,
+            mod.CreateVector(-320, -160, 0), //mod.CreateVector(-220, 10, 0),
+            mod.CreateVector(80, 28, 0), //mod.CreateVector(80, 28, 0),
+            mod.UIAnchor.TopRight,
+            mod.Message(mod.stringkeys.twl.teamSwitch.debugTimeLimit, debugTimeLimitSeconds),
+            eventPlayer
+        );
+        const DEBUG_TIMELIMIT = mod.FindUIWidgetWithName(DEBUG_TIMELIMIT_ID, mod.GetUIRoot());
+        // Parent to the Team Switch container so the text is always drawn above the dialog background.
+        mod.SetUIWidgetParent(DEBUG_TIMELIMIT, CONTAINER_BASE);
+        mod.SetUIWidgetBgAlpha(DEBUG_TIMELIMIT, 0);
+        mod.SetUITextSize(DEBUG_TIMELIMIT, 12);
+        applyReadyDialogLabelTextColor(DEBUG_TIMELIMIT);
     } else {
         const existingDebug = safeFind(DEBUG_TIMELIMIT_ID);
         if (existingDebug) mod.SetUIWidgetVisible(existingDebug, false);
@@ -1358,16 +1415,12 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
 
     //#endregion -------------------- Debug Info - Time Limit Seconds --------------------
 
-
-    
     //#region -------------------- Admin Panel Toggle Button (Top-Right, only while Ready Up dialog is open) --------------------
 
     // UI caching note: these widgets are created once and then hidden/shown on open/close.
     ensureAdminPanelWidgets(eventPlayer, playerId);
 
     //#endregion ----------------- Admin Panel Toggle Button (Top-Right, only while Ready Up dialog is open) --------------------
-
-
 
     //#region -------------------- Dialog Buttons (Left Side) - Cancel --------------------
 
@@ -1399,13 +1452,10 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
 
 //#endregion ----------------- Dialog Buttons (Left Side) - Cancel --------------------
 
-
-
 //#region -------------------- Admin Panel UI (Right Side) --------------------
 
 // Builds the Admin Panel widgets lazily (to avoid a 1-frame flicker on dialog open).
 function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIWidget, playerId: number): void {
-
     // Fit at target resolutions.
     const testerBaseX = ADMIN_PANEL_BASE_X;
     const testerBaseY = ADMIN_PANEL_BASE_Y;
@@ -1423,7 +1473,7 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
 
     modlib.ParseUI({
         name: headerId,
-        type: "Text",
+        type: 'Text',
         playerId: eventPlayer,
         position: [0, testerBaseY + 2],
         size: [ADMIN_PANEL_CONTENT_WIDTH, 18],
@@ -1444,68 +1494,245 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
 
     const row0Y = testerBaseY + 22;
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 0,
-        UI_TEST_BUTTON_LEFT_WINS_DEC_ID, UI_TEST_BUTTON_LEFT_WINS_INC_ID, UI_TEST_LABEL_LEFT_WINS_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.leftWins, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+    addTesterRow(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 0,
+        UI_TEST_BUTTON_LEFT_WINS_DEC_ID,
+        UI_TEST_BUTTON_LEFT_WINS_INC_ID,
+        UI_TEST_LABEL_LEFT_WINS_ID,
+        mod.stringkeys.twl.adminPanel.tester.labels.leftWins,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 1,
-        UI_TEST_BUTTON_RIGHT_WINS_DEC_ID, UI_TEST_BUTTON_RIGHT_WINS_INC_ID, UI_TEST_LABEL_RIGHT_WINS_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.rightWins, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+    addTesterRow(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 1,
+        UI_TEST_BUTTON_RIGHT_WINS_DEC_ID,
+        UI_TEST_BUTTON_RIGHT_WINS_INC_ID,
+        UI_TEST_LABEL_RIGHT_WINS_ID,
+        mod.stringkeys.twl.adminPanel.tester.labels.rightWins,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 2,
-        UI_TEST_BUTTON_LEFT_KILLS_DEC_ID, UI_TEST_BUTTON_LEFT_KILLS_INC_ID, UI_TEST_LABEL_LEFT_KILLS_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.leftKills, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+    addTesterRow(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 2,
+        UI_TEST_BUTTON_LEFT_KILLS_DEC_ID,
+        UI_TEST_BUTTON_LEFT_KILLS_INC_ID,
+        UI_TEST_LABEL_LEFT_KILLS_ID,
+        mod.stringkeys.twl.adminPanel.tester.labels.leftKills,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 3,
-        UI_TEST_BUTTON_RIGHT_KILLS_DEC_ID, UI_TEST_BUTTON_RIGHT_KILLS_INC_ID, UI_TEST_LABEL_RIGHT_KILLS_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.rightKills, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+    addTesterRow(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 3,
+        UI_TEST_BUTTON_RIGHT_KILLS_DEC_ID,
+        UI_TEST_BUTTON_RIGHT_KILLS_INC_ID,
+        UI_TEST_LABEL_RIGHT_KILLS_ID,
+        mod.stringkeys.twl.adminPanel.tester.labels.rightKills,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 4,
-        UI_ADMIN_BUTTON_T1_ROUND_KILLS_DEC_ID, UI_ADMIN_BUTTON_T1_ROUND_KILLS_INC_ID, UI_ADMIN_LABEL_T1_ROUND_KILLS_ID,
-        mod.stringkeys.twl.adminPanel.labels.t1RoundKills, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+    addTesterRow(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 4,
+        UI_ADMIN_BUTTON_T1_ROUND_KILLS_DEC_ID,
+        UI_ADMIN_BUTTON_T1_ROUND_KILLS_INC_ID,
+        UI_ADMIN_LABEL_T1_ROUND_KILLS_ID,
+        mod.stringkeys.twl.adminPanel.labels.t1RoundKills,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 5,
-        UI_ADMIN_BUTTON_T2_ROUND_KILLS_DEC_ID, UI_ADMIN_BUTTON_T2_ROUND_KILLS_INC_ID, UI_ADMIN_LABEL_T2_ROUND_KILLS_ID,
-        mod.stringkeys.twl.adminPanel.labels.t2RoundKills, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+    addTesterRow(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 5,
+        UI_ADMIN_BUTTON_T2_ROUND_KILLS_DEC_ID,
+        UI_ADMIN_BUTTON_T2_ROUND_KILLS_INC_ID,
+        UI_ADMIN_LABEL_T2_ROUND_KILLS_ID,
+        mod.stringkeys.twl.adminPanel.labels.t2RoundKills,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
 
-    addTesterRowWithValue(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 6,
-        UI_TEST_BUTTON_ROUND_KILLS_TARGET_DEC_ID, UI_TEST_BUTTON_ROUND_KILLS_TARGET_INC_ID, UI_TEST_LABEL_ROUND_KILLS_TARGET_ID, UI_TEST_VALUE_ROUND_KILLS_TARGET_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.roundKillsTarget, State.round.killsTarget, buttonSizeX, buttonSizeY, labelSizeX, ADMIN_PANEL_VALUE_SIZE_X, decOffsetX, labelOffsetX, incOffsetX);
+    addTesterRowWithValue(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 6,
+        UI_TEST_BUTTON_ROUND_KILLS_TARGET_DEC_ID,
+        UI_TEST_BUTTON_ROUND_KILLS_TARGET_INC_ID,
+        UI_TEST_LABEL_ROUND_KILLS_TARGET_ID,
+        UI_TEST_VALUE_ROUND_KILLS_TARGET_ID,
+        mod.stringkeys.twl.adminPanel.tester.labels.roundKillsTarget,
+        State.round.killsTarget,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        ADMIN_PANEL_VALUE_SIZE_X,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
 
     syncRoundKillsTargetTesterValueForAllPlayers();
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 7,
-        UI_TEST_BUTTON_TIES_DEC_ID, UI_TEST_BUTTON_TIES_INC_ID, UI_TEST_LABEL_TIES_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.ties, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+    addTesterRow(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 7,
+        UI_TEST_BUTTON_TIES_DEC_ID,
+        UI_TEST_BUTTON_TIES_INC_ID,
+        UI_TEST_LABEL_TIES_ID,
+        mod.stringkeys.twl.adminPanel.tester.labels.ties,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 8,
-        UI_TEST_BUTTON_CUR_ROUND_DEC_ID, UI_TEST_BUTTON_CUR_ROUND_INC_ID, UI_TEST_LABEL_CUR_ROUND_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.currentRound, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+    addTesterRow(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 8,
+        UI_TEST_BUTTON_CUR_ROUND_DEC_ID,
+        UI_TEST_BUTTON_CUR_ROUND_INC_ID,
+        UI_TEST_LABEL_CUR_ROUND_ID,
+        mod.stringkeys.twl.adminPanel.tester.labels.currentRound,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
 
-    addTesterRow(eventPlayer, adminContainer, playerId, testerBaseX, row0Y + (buttonSizeY + rowSpacingY) * 9,
-        UI_TEST_BUTTON_CLOCK_TIME_DEC_ID, UI_TEST_BUTTON_CLOCK_TIME_INC_ID, UI_TEST_LABEL_CLOCK_TIME_ID,
-        mod.stringkeys.twl.adminPanel.tester.labels.clockTime, buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+    addTesterRow(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 9,
+        UI_TEST_BUTTON_CLOCK_TIME_DEC_ID,
+        UI_TEST_BUTTON_CLOCK_TIME_INC_ID,
+        UI_TEST_LABEL_CLOCK_TIME_ID,
+        mod.stringkeys.twl.adminPanel.tester.labels.clockTime,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
 
-    addTesterResetButton(eventPlayer, adminContainer, playerId, testerBaseX,
-        row0Y + (buttonSizeY + rowSpacingY) * 10, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36);
+    addTesterResetButton(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 10,
+        buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX,
+        36
+    );
 
-    addTesterActionButton(eventPlayer, adminContainer, playerId, testerBaseX,
-        row0Y + (buttonSizeY + rowSpacingY) * 11, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36,
-        UI_TEST_BUTTON_ROUND_START_ID, UI_TEST_ROUND_START_TEXT_ID, mod.stringkeys.twl.adminPanel.tester.buttons.roundStart);
+    addTesterActionButton(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 11,
+        buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX,
+        36,
+        UI_TEST_BUTTON_ROUND_START_ID,
+        UI_TEST_ROUND_START_TEXT_ID,
+        mod.stringkeys.twl.adminPanel.tester.buttons.roundStart
+    );
 
-    addTesterActionButton(eventPlayer, adminContainer, playerId, testerBaseX,
-        row0Y + (buttonSizeY + rowSpacingY) * 12, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36,
-        UI_TEST_BUTTON_ROUND_END_ID, UI_TEST_ROUND_END_TEXT_ID, mod.stringkeys.twl.adminPanel.tester.buttons.roundEnd);
+    addTesterActionButton(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 12,
+        buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX,
+        36,
+        UI_TEST_BUTTON_ROUND_END_ID,
+        UI_TEST_ROUND_END_TEXT_ID,
+        mod.stringkeys.twl.adminPanel.tester.buttons.roundEnd
+    );
 
-    addTesterActionButton(eventPlayer, adminContainer, playerId, testerBaseX,
-        row0Y + (buttonSizeY + rowSpacingY) * 13, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36,
-        UI_TEST_BUTTON_POS_DEBUG_ID, UI_TEST_POS_DEBUG_TEXT_ID, mod.stringkeys.twl.adminPanel.tester.buttons.positionDebug);
+    addTesterActionButton(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 13,
+        buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX,
+        36,
+        UI_TEST_BUTTON_POS_DEBUG_ID,
+        UI_TEST_POS_DEBUG_TEXT_ID,
+        mod.stringkeys.twl.adminPanel.tester.buttons.positionDebug
+    );
 
     const overrideLabelId = UI_ADMIN_TIEBREAKER_LABEL_ID + playerId;
     const overrideLabelY = row0Y + (buttonSizeY + rowSpacingY) * 14 + 2;
     modlib.ParseUI({
         name: overrideLabelId,
-        type: "Text",
+        type: 'Text',
         playerId: eventPlayer,
         position: [0, overrideLabelY],
         size: [ADMIN_PANEL_CONTENT_WIDTH, ADMIN_PANEL_TIEBREAKER_LABEL_HEIGHT],
@@ -1527,14 +1754,15 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
     const overrideButtonsY = overrideLabelY + ADMIN_PANEL_TIEBREAKER_LABEL_HEIGHT + 4;
     const overrideButtonSize = ADMIN_PANEL_TIEBREAKER_BUTTON_SIZE;
     const overrideSpacing = ADMIN_PANEL_TIEBREAKER_BUTTON_SPACING;
-    const overrideButtonsWidth = (overrideButtonSize * ADMIN_TIEBREAKER_OVERRIDE_LETTERS.length)
-        + (overrideSpacing * (ADMIN_TIEBREAKER_OVERRIDE_LETTERS.length - 1));
+    const overrideButtonsWidth =
+        overrideButtonSize * ADMIN_TIEBREAKER_OVERRIDE_LETTERS.length +
+        overrideSpacing * (ADMIN_TIEBREAKER_OVERRIDE_LETTERS.length - 1);
     const overrideBaseX = Math.floor((ADMIN_PANEL_CONTENT_WIDTH - overrideButtonsWidth) / 2);
 
     for (let i = 0; i < ADMIN_TIEBREAKER_OVERRIDE_LETTERS.length; i++) {
         const letter = ADMIN_TIEBREAKER_OVERRIDE_LETTERS[i];
-        const buttonId = UI_ADMIN_TIEBREAKER_BUTTON_ID + letter + "_" + playerId;
-        const textId = UI_ADMIN_TIEBREAKER_BUTTON_TEXT_ID + letter + "_" + playerId;
+        const buttonId = UI_ADMIN_TIEBREAKER_BUTTON_ID + letter + '_' + playerId;
+        const textId = UI_ADMIN_TIEBREAKER_BUTTON_TEXT_ID + letter + '_' + playerId;
         const buttonX = overrideBaseX + (overrideButtonSize + overrideSpacing) * i;
 
         addOutlinedButton(
@@ -1548,7 +1776,7 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
             eventPlayer
         );
 
-        const BUTTON_BORDER = safeFind(buttonId + "_BORDER");
+        const BUTTON_BORDER = safeFind(buttonId + '_BORDER');
         const BUTTON_TEXT = addCenteredButtonText(
             textId,
             overrideButtonSize,
@@ -1602,7 +1830,10 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
     const tieBreakerModeLabel = safeFind(UI_ADMIN_TIEBREAKER_MODE_LABEL_ID + playerId);
     if (tieBreakerModeLabel) {
         const tieBreakerModeLabelY = tieBreakerModeRowY + buttonSizeY - 14;
-        mod.SetUIWidgetPosition(tieBreakerModeLabel, mod.CreateVector(testerBaseX + labelOffsetX, tieBreakerModeLabelY, 0));
+        mod.SetUIWidgetPosition(
+            tieBreakerModeLabel,
+            mod.CreateVector(testerBaseX + labelOffsetX, tieBreakerModeLabelY, 0)
+        );
         safeSetUIWidgetSize(tieBreakerModeLabel, mod.CreateVector(labelSizeX, tieBreakerLabelHeight, 0));
         mod.SetUITextSize(tieBreakerModeLabel, 11);
     }
@@ -1614,7 +1845,7 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         playerId,
         testerBaseX,
         liveRespawnRowY,
-        (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX),
+        buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX,
         buttonSizeY,
         UI_ADMIN_LIVE_RESPAWN_BUTTON_ID,
         UI_ADMIN_LIVE_RESPAWN_TEXT_ID,
@@ -1646,8 +1877,6 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
 }
 
 //#endregion ----------------- Admin Panel UI (Right Side) --------------------
-
-
 
 //#region -------------------- Admin Panel UI builder helpers --------------------
 
@@ -1694,7 +1923,7 @@ function addTesterRow(
         eventPlayer
     );
 
-    const DEC_BORDER = safeFind(decButtonId + "_BORDER");
+    const DEC_BORDER = safeFind(decButtonId + '_BORDER');
     const MINUS_TEXT = addCenteredButtonText(
         minusTextId,
         buttonSizeX,
@@ -1708,8 +1937,14 @@ function addTesterRow(
         mod.SetUITextColor(MINUS_TEXT, ADMIN_PANEL_BUTTON_TEXT_COLOR);
     }
 
-    mod.AddUIText(labelId, mod.CreateVector(baseX + labelOffsetX, baseY + 11, 0), mod.CreateVector(labelSizeX, buttonSizeY - 22, 0),
-        mod.UIAnchor.TopLeft, mod.Message(labelKey), eventPlayer);
+    mod.AddUIText(
+        labelId,
+        mod.CreateVector(baseX + labelOffsetX, baseY + 11, 0),
+        mod.CreateVector(labelSizeX, buttonSizeY - 22, 0),
+        mod.UIAnchor.TopLeft,
+        mod.Message(labelKey),
+        eventPlayer
+    );
     mod.SetUITextSize(mod.FindUIWidgetWithName(labelId, mod.GetUIRoot()), 12);
     const LABEL = mod.FindUIWidgetWithName(labelId, mod.GetUIRoot());
     mod.SetUIWidgetBgAlpha(LABEL, 0);
@@ -1727,7 +1962,7 @@ function addTesterRow(
         eventPlayer
     );
 
-    const INC_BORDER = safeFind(incButtonId + "_BORDER");
+    const INC_BORDER = safeFind(incButtonId + '_BORDER');
     const PLUS_TEXT = addCenteredButtonText(
         plusTextId,
         buttonSizeX,
@@ -1762,15 +1997,35 @@ function addTesterRowWithValue(
     labelOffsetX: number,
     incOffsetX: number
 ): void {
-    addTesterRow(eventPlayer, containerBase, playerId, baseX, baseY,
-        decButtonBaseId, incButtonBaseId, labelBaseId, labelKey,
-        buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
+    addTesterRow(
+        eventPlayer,
+        containerBase,
+        playerId,
+        baseX,
+        baseY,
+        decButtonBaseId,
+        incButtonBaseId,
+        labelBaseId,
+        labelKey,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
 
     const valueId = valueBaseId + playerId;
     const valueX = baseX + incOffsetX - -3 - valueSizeX;
 
-    mod.AddUIText(valueId, mod.CreateVector(valueX, baseY + 11, 0), mod.CreateVector(valueSizeX, buttonSizeY - 22, 0),
-        mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, Math.floor(initialValue)), eventPlayer);
+    mod.AddUIText(
+        valueId,
+        mod.CreateVector(valueX, baseY + 11, 0),
+        mod.CreateVector(valueSizeX, buttonSizeY - 22, 0),
+        mod.UIAnchor.TopLeft,
+        mod.Message(mod.stringkeys.twl.system.genericCounter, Math.floor(initialValue)),
+        eventPlayer
+    );
     mod.SetUITextSize(mod.FindUIWidgetWithName(valueId, mod.GetUIRoot()), 12);
     const VALUE_TEXT = mod.FindUIWidgetWithName(valueId, mod.GetUIRoot());
     mod.SetUIWidgetBgAlpha(VALUE_TEXT, 0);
@@ -1788,7 +2043,10 @@ function syncRoundKillsTargetTesterValueForAllPlayers(): void {
         const pid = getObjId(p);
         const widget = mod.FindUIWidgetWithName(UI_TEST_VALUE_ROUND_KILLS_TARGET_ID + pid, mod.GetUIRoot());
         if (!widget) continue;
-        mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.system.genericCounter, Math.floor(State.round.killsTarget)));
+        mod.SetUITextLabel(
+            widget,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, Math.floor(State.round.killsTarget))
+        );
     }
     updateMatchupReadoutsForAllPlayers();
 }
@@ -1805,18 +2063,9 @@ function addTesterResetButton(
     const buttonId = UI_TEST_BUTTON_CLOCK_RESET_ID + playerId;
     const labelId = UI_TEST_RESET_TEXT_ID + playerId;
 
-    addOutlinedButton(
-        buttonId,
-        baseX,
-        baseY,
-        width,
-        height,
-        mod.UIAnchor.TopLeft,
-        containerBase,
-        eventPlayer
-    );
+    addOutlinedButton(buttonId, baseX, baseY, width, height, mod.UIAnchor.TopLeft, containerBase, eventPlayer);
 
-    const resetParent = safeFind(buttonId + "_BORDER") ?? containerBase;
+    const resetParent = safeFind(buttonId + '_BORDER') ?? containerBase;
     const resetLabel = addCenteredButtonText(
         labelId,
         width,
@@ -1846,33 +2095,19 @@ function addTesterActionButton(
     const buttonId = buttonBaseId + playerId;
     const labelId = labelBaseId + playerId;
 
-    addOutlinedButton(
-        buttonId,
-        baseX,
-        baseY,
-        width,
-        height,
-        mod.UIAnchor.TopLeft,
-        containerBase,
-        eventPlayer
-    );
+    addOutlinedButton(buttonId, baseX, baseY, width, height, mod.UIAnchor.TopLeft, containerBase, eventPlayer);
 
-    const actionParent = safeFind(buttonId + "_BORDER") ?? containerBase;
-    const actionLabel = addCenteredButtonText(
-        labelId,
-        width,
-        height,
-        mod.Message(labelKey),
-        eventPlayer,
-        actionParent
-    );
+    const actionParent = safeFind(buttonId + '_BORDER') ?? containerBase;
+    const actionLabel = addCenteredButtonText(labelId, width, height, mod.Message(labelKey), eventPlayer, actionParent);
     if (actionLabel) {
         mod.SetUITextSize(actionLabel, 12);
         mod.SetUITextColor(actionLabel, ADMIN_PANEL_BUTTON_TEXT_COLOR);
     }
 }
 
-function ensurePositionDebugWidgets(player: mod.Player): { x: mod.UIWidget; y: mod.UIWidget; z: mod.UIWidget; rotY: mod.UIWidget } | undefined {
+function ensurePositionDebugWidgets(
+    player: mod.Player
+): { x: mod.UIWidget; y: mod.UIWidget; z: mod.UIWidget; rotY: mod.UIWidget } | undefined {
     const pid = mod.GetObjId(player);
     const containerId = UI_POS_DEBUG_CONTAINER_ID + pid;
     const xId = UI_POS_DEBUG_X_ID + pid;
@@ -1952,9 +2187,18 @@ async function positionDebugLoop(player: mod.Player, expectedToken: number): Pro
         const yawRad = Math.atan2(mod.XComponentOf(facing), mod.ZComponentOf(facing));
         const yawDeg = (yawRad * 180) / Math.PI;
 
-        mod.SetUITextLabel(widgets.x, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.XComponentOf(pos))));
-        mod.SetUITextLabel(widgets.y, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.YComponentOf(pos))));
-        mod.SetUITextLabel(widgets.z, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.ZComponentOf(pos))));
+        mod.SetUITextLabel(
+            widgets.x,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.XComponentOf(pos)))
+        );
+        mod.SetUITextLabel(
+            widgets.y,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.YComponentOf(pos)))
+        );
+        mod.SetUITextLabel(
+            widgets.z,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.ZComponentOf(pos)))
+        );
         mod.SetUITextLabel(widgets.rotY, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(yawDeg)));
 
         await mod.Wait(2.0);
@@ -1985,8 +2229,6 @@ function setPositionDebugVisibleForPlayer(player: mod.Player, visible: boolean):
 
 //#endregion ----------------- Admin Panel UI builder helpers --------------------
 
-
-
 //#region -------------------- Ready Dialog - Roster Render + Toggle Labels --------------------
 
 // Builds the entire Team Switch + Admin Panel dialog.
@@ -1996,7 +2238,7 @@ function setPositionDebugVisibleForPlayer(player: mod.Player, visible: boolean):
 // - Wires all admin buttons to authoritative match state mutations
 // - Ensures per-player UI roots are created once and reused
 
-// Populates the roster UI for the given viewer. 
+// Populates the roster UI for the given viewer.
 // - Real active player lists + team assignment
 // - Default status values (NOT READY / IN MAIN BASE) for all rows
 // Later phases will replace defaults with authoritative per-player state + gating + round integration.
@@ -2005,10 +2247,16 @@ function setPositionDebugVisibleForPlayer(player: mod.Player, visible: boolean):
 // - Player name: white by default; green only when BOTH ready AND in main base.
 // - READY / IN MAIN BASE: green
 // - NOT READY / NOT IN MAIN BASE: red
-function applyReadyDialogRowColors(nameWidget: mod.UIWidget | undefined, readyWidget: mod.UIWidget | undefined, baseWidget: mod.UIWidget | undefined, isReady: boolean, isInBase: boolean): void {
+function applyReadyDialogRowColors(
+    nameWidget: mod.UIWidget | undefined,
+    readyWidget: mod.UIWidget | undefined,
+    baseWidget: mod.UIWidget | undefined,
+    isReady: boolean,
+    isInBase: boolean
+): void {
     if (readyWidget) mod.SetUITextColor(readyWidget, isReady ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
     if (baseWidget) mod.SetUITextColor(baseWidget, isInBase ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
-    if (nameWidget) mod.SetUITextColor(nameWidget, (isReady && isInBase) ? COLOR_READY_GREEN : COLOR_NORMAL);
+    if (nameWidget) mod.SetUITextColor(nameWidget, isReady && isInBase ? COLOR_READY_GREEN : COLOR_NORMAL);
 }
 
 // Renders the entire Ready Up dialog state for a single viewer.
@@ -2017,7 +2265,6 @@ function renderReadyDialogForViewer(eventPlayer: mod.Player, viewerPid: number):
     refreshReadyDialogRosterForViewer(eventPlayer, viewerPid);
     updateReadyToggleButtonForViewer(eventPlayer, viewerPid);
     updateAutoReadyToggleButtonForViewer(eventPlayer, viewerPid);
-
 }
 
 // Renders the dialog for all players who currently have it open.
@@ -2043,15 +2290,15 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
     const t2Players = roster.team2;
 
     const maxRowsPerTeam = TEAM_ROSTER_MAX_ROWS;
-    const emptyMsg = mod.Message(mod.stringkeys.twl.system.genericCounter, "");
+    const emptyMsg = mod.Message(mod.stringkeys.twl.system.genericCounter, '');
     for (let row = 0; row < maxRowsPerTeam; row++) {
-        const t1NameId = UI_READY_DIALOG_T1_ROW_NAME_ID + viewerPlayerId + "_" + row;
-        const t1ReadyId = UI_READY_DIALOG_T1_ROW_READY_ID + viewerPlayerId + "_" + row;
-        const t1BaseId = UI_READY_DIALOG_T1_ROW_BASE_ID + viewerPlayerId + "_" + row;
+        const t1NameId = UI_READY_DIALOG_T1_ROW_NAME_ID + viewerPlayerId + '_' + row;
+        const t1ReadyId = UI_READY_DIALOG_T1_ROW_READY_ID + viewerPlayerId + '_' + row;
+        const t1BaseId = UI_READY_DIALOG_T1_ROW_BASE_ID + viewerPlayerId + '_' + row;
 
-        const t2NameId = UI_READY_DIALOG_T2_ROW_NAME_ID + viewerPlayerId + "_" + row;
-        const t2ReadyId = UI_READY_DIALOG_T2_ROW_READY_ID + viewerPlayerId + "_" + row;
-        const t2BaseId = UI_READY_DIALOG_T2_ROW_BASE_ID + viewerPlayerId + "_" + row;
+        const t2NameId = UI_READY_DIALOG_T2_ROW_NAME_ID + viewerPlayerId + '_' + row;
+        const t2ReadyId = UI_READY_DIALOG_T2_ROW_READY_ID + viewerPlayerId + '_' + row;
+        const t2BaseId = UI_READY_DIALOG_T2_ROW_BASE_ID + viewerPlayerId + '_' + row;
 
         const t1Name = mod.FindUIWidgetWithName(t1NameId, mod.GetUIRoot());
         const t1Ready = mod.FindUIWidgetWithName(t1ReadyId, mod.GetUIRoot());
@@ -2061,8 +2308,8 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
         const t2Ready = mod.FindUIWidgetWithName(t2ReadyId, mod.GetUIRoot());
         const t2Base = mod.FindUIWidgetWithName(t2BaseId, mod.GetUIRoot());
 
-        const t1Entry = (row < t1Players.length) ? t1Players[row] : undefined;
-        const t2Entry = (row < t2Players.length) ? t2Players[row] : undefined;
+        const t1Entry = row < t1Players.length ? t1Players[row] : undefined;
+        const t2Entry = row < t2Players.length ? t2Players[row] : undefined;
         const p1 = t1Entry?.player;
         const p2 = t2Entry?.player;
 
@@ -2080,17 +2327,21 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
         mod.SetUITextLabel(
             t1Ready,
             hasP1
-                ? (p1
-                    ? (State.players.readyByPid[mod.GetObjId(p1)] ? mod.Message(mod.stringkeys.twl.readyDialog.status.ready) : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
-                    : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
+                ? p1
+                    ? State.players.readyByPid[mod.GetObjId(p1)]
+                        ? mod.Message(mod.stringkeys.twl.readyDialog.status.ready)
+                        : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady)
+                    : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady)
                 : emptyMsg
         );
         mod.SetUITextLabel(
             t1Base,
             hasP1
-                ? (p1
-                    ? (isPlayerInMainBaseForReady(mod.GetObjId(p1)) ? mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.in) : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out))
-                    : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out))
+                ? p1
+                    ? isPlayerInMainBaseForReady(mod.GetObjId(p1))
+                        ? mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.in)
+                        : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out)
+                    : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out)
                 : emptyMsg
         );
         if (p1) {
@@ -2111,17 +2362,21 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
         mod.SetUITextLabel(
             t2Ready,
             hasP2
-                ? (p2
-                    ? (State.players.readyByPid[mod.GetObjId(p2)] ? mod.Message(mod.stringkeys.twl.readyDialog.status.ready) : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
-                    : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
+                ? p2
+                    ? State.players.readyByPid[mod.GetObjId(p2)]
+                        ? mod.Message(mod.stringkeys.twl.readyDialog.status.ready)
+                        : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady)
+                    : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady)
                 : emptyMsg
         );
         mod.SetUITextLabel(
             t2Base,
             hasP2
-                ? (p2
-                    ? (isPlayerInMainBaseForReady(mod.GetObjId(p2)) ? mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.in) : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out))
-                    : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out))
+                ? p2
+                    ? isPlayerInMainBaseForReady(mod.GetObjId(p2))
+                        ? mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.in)
+                        : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out)
+                    : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out)
                 : emptyMsg
         );
         if (p2) {
@@ -2169,8 +2424,6 @@ function updateAutoReadyToggleButtonForViewer(viewer: mod.Player, viewerPlayerId
 
 //#endregion ----------------- Ready Dialog - Roster Render + Toggle Labels --------------------
 
-
-
 //#region -------------------- Ready Dialog - Map/Mode Config UI Readout --------------------
 
 // Updates the Ready Up dialog "Best of {0} Rounds" label for a single viewer.
@@ -2178,7 +2431,10 @@ function updateBestOfRoundsLabelForPid(pid: number): void {
     const labelId = UI_READY_DIALOG_BESTOF_LABEL_ID + pid;
     const labelWidget = safeFind(labelId);
     if (!labelWidget) return;
-    mod.SetUITextLabel(labelWidget, mod.Message(mod.stringkeys.twl.readyDialog.bestOfLabel, Math.floor(State.round.max)));
+    mod.SetUITextLabel(
+        labelWidget,
+        mod.Message(mod.stringkeys.twl.readyDialog.bestOfLabel, Math.floor(State.round.max))
+    );
 }
 
 function updateBestOfRoundsLabelForAllPlayers(): void {
@@ -2224,10 +2480,7 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
         const ceilingValue = applyCustomCeiling
             ? Math.floor(cfg.aircraftCeiling)
             : STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA;
-        mod.SetUITextLabel(
-            settingsValue,
-            mod.Message(cfg.gameSettings, ceilingValue)
-        );
+        mod.SetUITextLabel(settingsValue, mod.Message(cfg.gameSettings, ceilingValue));
     }
 
     const vehiclesT1Label = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T1_LABEL_ID + pid);
@@ -2261,8 +2514,6 @@ function updateReadyDialogModeConfigForAllVisibleViewers(): void {
 }
 
 //#endregion ----------------- Ready Dialog - Map/Mode Config UI Readout --------------------
-
-
 
 //#region -------------------- Aircraft Ceiling (Soft Enforcement) --------------------
 
@@ -2344,8 +2595,7 @@ function updateSoftCeilingForVehicle(
 
     const dtSeconds = Math.max(AIRCRAFT_SOFT_CEILING_NUDGE_INTERVAL_SECONDS, nowSeconds - state.lastNudgeAt);
     const upwardVel = Math.max(0, velY);
-    let step =
-        upwardVel * dtSeconds * AIRCRAFT_SOFT_CEILING_VELOCITY_SCALE;
+    let step = upwardVel * dtSeconds * AIRCRAFT_SOFT_CEILING_VELOCITY_SCALE;
     step = Math.max(AIRCRAFT_SOFT_CEILING_NUDGE_MIN_STEP, Math.min(AIRCRAFT_SOFT_CEILING_NUDGE_MAX_STEP, step));
     if (posY > hardY) {
         // If someone gets far above the soft ceiling, increase the nudge to avoid a slow climb.
@@ -2361,7 +2611,7 @@ function updateSoftCeilingForVehicle(
 // TODO(1.0): Unused; remove before final 1.0 release.
 async function runAircraftCeilingSoftEnforcementLoop(expectedToken: number): Promise<void> {
     while (State.round.aircraftCeiling.enforcementToken === expectedToken) {
-        if (!State.round.aircraftCeiling.customEnabled || AIRCRAFT_CEILING_ENFORCEMENT_MODE !== "soft") {
+        if (!State.round.aircraftCeiling.customEnabled || AIRCRAFT_CEILING_ENFORCEMENT_MODE !== 'soft') {
             await mod.Wait(AIRCRAFT_SOFT_CEILING_TICK_SECONDS);
             continue;
         }
@@ -2443,8 +2693,6 @@ function syncAircraftCeilingFromMapConfig(): void {
 
 //#endregion ----------------- Aircraft Ceiling (Soft Enforcement) --------------------
 
-
-
 //#region -------------------- Ready Dialog - Mode Presets + Confirm --------------------
 
 function isReadyDialogGameModeVanilla(gameModeKey: number): boolean {
@@ -2502,9 +2750,9 @@ function ensureCustomGameModeForManualChange(): void {
     if (State.round.modeConfig.gameModeIndex === READY_DIALOG_GAME_MODE_CUSTOM_INDEX) return;
     const priorMode = State.round.modeConfig.gameMode;
     const shouldKeepCeilingOverride =
-        shouldApplyCustomCeilingForGameMode(priorMode)
-        || State.round.modeConfig.aircraftCeilingOverridePending
-        || State.round.modeConfig.confirmed.aircraftCeilingOverrideEnabled;
+        shouldApplyCustomCeilingForGameMode(priorMode) ||
+        State.round.modeConfig.aircraftCeilingOverridePending ||
+        State.round.modeConfig.confirmed.aircraftCeilingOverrideEnabled;
     if (shouldKeepCeilingOverride) {
         State.round.modeConfig.aircraftCeilingOverridePending = true;
     }
@@ -2525,7 +2773,11 @@ function isReadyDialogModePresetActive(gameModeKey: number): boolean {
     if (State.round.autoStartMinActivePlayers !== getReadyDialogPresetPlayersPerSide(gameModeKey)) return false;
     if (State.round.modeConfig.vehicleIndexT1 !== READY_DIALOG_MODE_PRESET_VEHICLE_INDEX) return false;
     if (State.round.modeConfig.vehicleIndexT2 !== READY_DIALOG_MODE_PRESET_VEHICLE_INDEX) return false;
-    if (Math.floor(State.round.modeConfig.aircraftCeiling) !== Math.floor(State.round.aircraftCeiling.mapDefaultHudCeiling)) return false;
+    if (
+        Math.floor(State.round.modeConfig.aircraftCeiling) !==
+        Math.floor(State.round.aircraftCeiling.mapDefaultHudCeiling)
+    )
+        return false;
     return true;
 }
 
@@ -2657,13 +2909,17 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
         disableCustomAircraftCeilingAndRestoreDefault();
     } else {
         enableCustomAircraftCeiling();
-        if (AIRCRAFT_CEILING_ENFORCEMENT_MODE === "hard") {
+        if (AIRCRAFT_CEILING_ENFORCEMENT_MODE === 'hard') {
             applyCustomAircraftCeilingHardLimiter();
         }
     }
     if (changedBy && cfg.confirmed.aircraftCeiling !== prevConfirmed) {
         sendHighlightedWorldLogMessage(
-            mod.Message(STR_READY_DIALOG_AIRCRAFT_CEILING_CHANGED, changedBy, Math.floor(cfg.confirmed.aircraftCeiling)),
+            mod.Message(
+                STR_READY_DIALOG_AIRCRAFT_CEILING_CHANGED,
+                changedBy,
+                Math.floor(cfg.confirmed.aircraftCeiling)
+            ),
             true,
             undefined,
             STR_READY_DIALOG_AIRCRAFT_CEILING_CHANGED
@@ -2683,8 +2939,6 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
 }
 
 //#endregion ----------------- Ready Dialog - Mode Presets + Confirm --------------------
-
-
 
 //#region -------------------- Ready Dialog - Team/Matchup Readouts + Summary HUD --------------------
 
@@ -2793,7 +3047,10 @@ function updateSettingsSummaryHudForPid(pid: number): void {
 
     const cfg = State.round.modeConfig;
     const gameModeValue = cfg.confirmed.gameMode;
-    const applyCustomCeiling = shouldApplyCustomCeilingForConfig(gameModeValue, cfg.confirmed.aircraftCeilingOverrideEnabled);
+    const applyCustomCeiling = shouldApplyCustomCeilingForConfig(
+        gameModeValue,
+        cfg.confirmed.aircraftCeilingOverrideEnabled
+    );
     const ceilingValue = applyCustomCeiling
         ? Math.floor(cfg.confirmed.aircraftCeiling)
         : STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA;
@@ -2809,7 +3066,10 @@ function updateSettingsSummaryHudForPid(pid: number): void {
         mod.SetUITextLabel(refs.settingsGameModeText, mod.Message(STR_HUD_SETTINGS_GAME_MODE_FORMAT, gameModeValue));
     }
     if (refs.settingsAircraftCeilingText) {
-        mod.SetUITextLabel(refs.settingsAircraftCeilingText, mod.Message(STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT, ceilingValue));
+        mod.SetUITextLabel(
+            refs.settingsAircraftCeilingText,
+            mod.Message(STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT, ceilingValue)
+        );
     }
     if (refs.settingsVehiclesT1Text) {
         mod.SetUITextLabel(
@@ -2824,10 +3084,16 @@ function updateSettingsSummaryHudForPid(pid: number): void {
         );
     }
     if (refs.settingsVehiclesMatchupText) {
-        mod.SetUITextLabel(refs.settingsVehiclesMatchupText, mod.Message(STR_HUD_SETTINGS_VEHICLES_MATCHUP_FORMAT, vehiclesLeft, vehiclesRight));
+        mod.SetUITextLabel(
+            refs.settingsVehiclesMatchupText,
+            mod.Message(STR_HUD_SETTINGS_VEHICLES_MATCHUP_FORMAT, vehiclesLeft, vehiclesRight)
+        );
     }
     if (refs.settingsPlayersText) {
-        mod.SetUITextLabel(refs.settingsPlayersText, mod.Message(STR_HUD_SETTINGS_PLAYERS_FORMAT, autoStartCounts.left, autoStartCounts.right));
+        mod.SetUITextLabel(
+            refs.settingsPlayersText,
+            mod.Message(STR_HUD_SETTINGS_PLAYERS_FORMAT, autoStartCounts.left, autoStartCounts.right)
+        );
     }
 }
 
@@ -2842,7 +3108,10 @@ function updateSettingsSummaryHudForAllPlayers(): void {
 }
 
 function setAutoStartMinActivePlayers(value: number, eventPlayer?: mod.Player): void {
-    const clamped = Math.max(AUTO_START_MIN_ACTIVE_PLAYERS_MIN, Math.min(AUTO_START_MIN_ACTIVE_PLAYERS_MAX, Math.floor(value)));
+    const clamped = Math.max(
+        AUTO_START_MIN_ACTIVE_PLAYERS_MIN,
+        Math.min(AUTO_START_MIN_ACTIVE_PLAYERS_MAX, Math.floor(value))
+    );
     if (clamped === State.round.autoStartMinActivePlayers) return;
     ensureCustomGameModeForManualChange();
     State.round.autoStartMinActivePlayers = clamped;
@@ -2925,20 +3194,38 @@ function refreshReadyDialogForAllVisibleViewers(): void {
 
 //#endregion ----------------- Ready Dialog - Team/Matchup Readouts + Summary HUD --------------------
 
-
-
 //#region -------------------- Join Prompt - IDs + Gating --------------------
 
-function joinPromptRootName(pid: number): string { return "join_prompt_root_" + pid; }
-function joinPromptPanelName(pid: number): string { return "join_prompt_panel_" + pid; }
-function joinPromptTitleName(pid: number): string { return "join_prompt_title_" + pid; }
-function joinPromptBodyName(pid: number): string { return "join_prompt_body_" + pid; }
-function joinPromptButtonName(pid: number): string { return "join_prompt_dismiss_" + pid; }
-function joinPromptButtonBorderName(pid: number): string { return joinPromptButtonName(pid) + "_BORDER"; }
-function joinPromptButtonTextName(pid: number): string { return "join_prompt_dismiss_text_" + pid; }
-function joinPromptNeverShowButtonName(pid: number): string { return "join_prompt_never_show_" + pid; }
-function joinPromptNeverShowButtonBorderName(pid: number): string { return joinPromptNeverShowButtonName(pid) + "_BORDER"; }
-function joinPromptNeverShowButtonTextName(pid: number): string { return "join_prompt_never_show_text_" + pid; }
+function joinPromptRootName(pid: number): string {
+    return 'join_prompt_root_' + pid;
+}
+function joinPromptPanelName(pid: number): string {
+    return 'join_prompt_panel_' + pid;
+}
+function joinPromptTitleName(pid: number): string {
+    return 'join_prompt_title_' + pid;
+}
+function joinPromptBodyName(pid: number): string {
+    return 'join_prompt_body_' + pid;
+}
+function joinPromptButtonName(pid: number): string {
+    return 'join_prompt_dismiss_' + pid;
+}
+function joinPromptButtonBorderName(pid: number): string {
+    return joinPromptButtonName(pid) + '_BORDER';
+}
+function joinPromptButtonTextName(pid: number): string {
+    return 'join_prompt_dismiss_text_' + pid;
+}
+function joinPromptNeverShowButtonName(pid: number): string {
+    return 'join_prompt_never_show_' + pid;
+}
+function joinPromptNeverShowButtonBorderName(pid: number): string {
+    return joinPromptNeverShowButtonName(pid) + '_BORDER';
+}
+function joinPromptNeverShowButtonTextName(pid: number): string {
+    return 'join_prompt_never_show_text_' + pid;
+}
 
 function deleteJoinPromptWidget(name: string): void {
     const w = safeFind(name);
@@ -3032,7 +3319,7 @@ function getJoinPromptSequenceIndexForPid(pid: number): number {
     ensureJoinPromptStateForPid(pid);
     const raw = Math.floor(State.players.joinPromptTipIndexByPid[pid] ?? 0);
     const max = JOIN_PROMPT_BODY_SEQUENCE_KEYS.length;
-    const clamped = (raw >= 0 && raw < max) ? raw : 0;
+    const clamped = raw >= 0 && raw < max ? raw : 0;
     const resolved = findNextJoinPromptSequenceIndex(clamped);
     State.players.joinPromptTipIndexByPid[pid] = resolved;
     return resolved;
@@ -3081,8 +3368,6 @@ function advanceJoinPromptSequenceOnDismiss(pid: number): void {
 }
 
 //#endregion ----------------- Join Prompt - IDs + Gating --------------------
-
-
 
 //#region -------------------- Join Prompt - Layout --------------------
 
@@ -3268,8 +3553,6 @@ function createJoinPromptForPlayer(player: mod.Player): void {
 
 //#endregion ----------------- Join Prompt - Layout --------------------
 
-
-
 //#region -------------------- Join Prompt - Lifecycle + Events --------------------
 
 // Respects round/cleanup locks when re-enabling deploy after dismiss.
@@ -3349,8 +3632,6 @@ function tryHandleJoinPromptButton(
 
 //#endregion ----------------- Join Prompt - Lifecycle + Events --------------------
 
-
-
 //#region -------------------- Ready Dialog - Ready State Reset --------------------
 
 // Resets all players to NOT READY. Called when a round ends (including match-end paths) so the next round requires a fresh ready-up cycle.
@@ -3373,20 +3654,16 @@ function resetReadyStateForAllPlayers(): void {
 
 //#endregion -------------------- Ready Dialog - Ready State Reset --------------------
 
-
-
 //#region -------------------- Ready Dialog - Takeoff Limit Gating --------------------
 
 function isPlayerInMainBaseForReady(pid: number): boolean {
-    const inBase = (State.players.inMainBaseByPid[pid] !== undefined) ? State.players.inMainBaseByPid[pid] : true;
+    const inBase = State.players.inMainBaseByPid[pid] !== undefined ? State.players.inMainBaseByPid[pid] : true;
     if (State.players.overTakeoffLimitByPid[pid]) return false;
     return inBase;
 }
 
 async function showOverTakeoffMessageForAllPlayers(offender: mod.Player): Promise<void> {
-    const offenderToken = (offender && mod.IsPlayerValid(offender))
-        ? offender
-        : mod.stringkeys.twl.system.unknownPlayer;
+    const offenderToken = offender && mod.IsPlayerValid(offender) ? offender : mod.stringkeys.twl.system.unknownPlayer;
     await showGlobalTitleSubtitleMessageForAllPlayers(
         mod.Message(STR_OVERLINE_TAKEOFF_TITLE, offenderToken),
         mod.Message(STR_OVERLINE_TAKEOFF_SUBTITLE, offenderToken),
@@ -3449,7 +3726,6 @@ function checkTakeoffLimitForAllPlayers(): void {
 
 //#endregion -------------------- Ready Dialog - Takeoff Limit Gating --------------------
 
-
 //#region -------------------- Ready Dialog - Auto-Ready --------------------
 
 // Applies auto-ready rules for a single player. Returns true if ready state changed.
@@ -3510,8 +3786,6 @@ function applyAutoReadyForAllPlayers(): void {
 }
 
 //#endregion -------------------- Ready Dialog - Auto-Ready --------------------
-
-
 
 //#region -------------------- Ready Dialog - Active Player Resolution + Roster --------------------
 
@@ -3611,10 +3885,10 @@ function getRosterDisplayEntries(): RosterDisplay_t {
 }
 
 function getRosterEntryNameMessage(entry: RosterDisplayEntry | undefined): mod.Message {
-    if (!entry) return mod.Message(mod.stringkeys.twl.system.genericCounter, "");
+    if (!entry) return mod.Message(mod.stringkeys.twl.system.genericCounter, '');
     if (entry.player) return mod.Message(mod.stringkeys.twl.readyDialog.playerNameFormat, entry.player);
     if (entry.nameKey) return mod.Message(entry.nameKey);
-    return mod.Message(mod.stringkeys.twl.system.genericCounter, "");
+    return mod.Message(mod.stringkeys.twl.system.genericCounter, '');
 }
 
 function areAllActivePlayersReady(): boolean {
@@ -3650,8 +3924,6 @@ function areAllActivePlayersReady(): boolean {
 
 //#endregion -------------------- Ready Dialog - Active Player Resolution + Roster --------------------
 
-
-
 //#region -------------------- Ready Dialog - Pregame Countdown UI --------------------
 
 // Implements a synchronized pre-round 10-1-GO! countdown that starts the round on GO.
@@ -3663,7 +3935,7 @@ interface CountdownWidgetCacheEntry {
 function ensureCountdownUIAndGetWidget(player: mod.Player): mod.UIWidget | undefined {
     if (!player || !mod.IsPlayerValid(player)) return undefined;
     const pid = mod.GetObjId(player);
-    const rootName = "PregameCountdownText_" + pid;
+    const rootName = 'PregameCountdownText_' + pid;
 
     const cached = State.hudCache.countdownWidgetCache[pid];
     if (cached) {
@@ -3678,7 +3950,7 @@ function ensureCountdownUIAndGetWidget(player: mod.Player): mod.UIWidget | undef
 
     modlib.ParseUI({
         name: rootName,
-        type: "Text",
+        type: 'Text',
         playerId: player,
         position: [0, 0],
         size: [320, 140],
@@ -3717,9 +3989,7 @@ function setPregameCountdownVisualForAllPlayers(
 
         mod.SetUIWidgetVisible(w, visible);
         if (visible) {
-            const message = (labelValue !== undefined)
-                ? mod.Message(labelKey, labelValue)
-                : mod.Message(labelKey);
+            const message = labelValue !== undefined ? mod.Message(labelKey, labelValue) : mod.Message(labelKey);
             mod.SetUITextLabel(w, message);
             mod.SetUITextColor(w, color);
             mod.SetUITextSize(w, size);
@@ -3753,8 +4023,6 @@ function hidePregameCountdownForAllPlayers(): void {
 
 //#endregion -------------------- Ready Dialog - Pregame Countdown UI --------------------
 
-
-
 //#region -------------------- Ready Dialog - OverLine UI Widgets + Big Messages --------------------
 
 function ensureOverLineTitleShadowUIAndGetWidget(player: mod.Player): mod.UIWidget | undefined {
@@ -3775,7 +4043,7 @@ function ensureOverLineTitleShadowUIAndGetWidget(player: mod.Player): mod.UIWidg
 
     modlib.ParseUI({
         name: rootName,
-        type: "Text",
+        type: 'Text',
         playerId: player,
         position: [HUD_TEXT_SHADOW_OFFSET_X, BIG_TITLE_OFFSET_Y + HUD_TEXT_SHADOW_OFFSET_Y],
         size: [BIG_TITLE_BG_WIDTH, BIG_TITLE_BG_HEIGHT],
@@ -3814,7 +4082,7 @@ function ensureOverLineSubtitleShadowUIAndGetWidget(player: mod.Player): mod.UIW
 
     modlib.ParseUI({
         name: rootName,
-        type: "Text",
+        type: 'Text',
         playerId: player,
         position: [HUD_TEXT_SHADOW_OFFSET_X, BIG_SUBTITLE_OFFSET_Y + HUD_TEXT_SHADOW_OFFSET_Y],
         size: [BIG_SUBTITLE_BG_WIDTH, BIG_SUBTITLE_BG_HEIGHT],
@@ -3853,7 +4121,7 @@ function ensureOverLineTitleUIAndGetWidget(player: mod.Player): mod.UIWidget | u
 
     modlib.ParseUI({
         name: rootName,
-        type: "Text",
+        type: 'Text',
         playerId: player,
         position: [0, BIG_TITLE_OFFSET_Y],
         size: [BIG_TITLE_BG_WIDTH, BIG_TITLE_BG_HEIGHT],
@@ -3893,7 +4161,7 @@ function ensureOverLineSubtitleUIAndGetWidget(player: mod.Player): mod.UIWidget 
 
     modlib.ParseUI({
         name: rootName,
-        type: "Text",
+        type: 'Text',
         playerId: player,
         position: [0, BIG_SUBTITLE_OFFSET_Y],
         size: [BIG_SUBTITLE_BG_WIDTH, BIG_SUBTITLE_BG_HEIGHT],
@@ -3937,9 +4205,7 @@ function hideBigTitleSubtitleMessageForPlayer(pid: number): void {
 }
 
 async function showOverLineMessageForAllPlayers(offender: mod.Player): Promise<void> {
-    const offenderToken = (offender && mod.IsPlayerValid(offender))
-        ? offender
-        : mod.stringkeys.twl.system.unknownPlayer;
+    const offenderToken = offender && mod.IsPlayerValid(offender) ? offender : mod.stringkeys.twl.system.unknownPlayer;
     await showGlobalTitleSubtitleMessageForAllPlayers(
         mod.Message(mod.stringkeys.twl.overLine.title, offenderToken),
         mod.Message(mod.stringkeys.twl.overLine.subtitle, offenderToken),
@@ -4091,7 +4357,14 @@ async function showDynamicGlobalTitleSubtitleMessageForAllPlayers(
             const title = titleBuilder ? titleBuilder(remainingSeconds) : undefined;
             const subtitle = subtitleBuilder ? subtitleBuilder(remainingSeconds) : undefined;
             if (title || subtitle) {
-                renderBigTitleSubtitleMessageForAllPlayers(title, subtitle, titleColor, subtitleColor, layout, playerFilter);
+                renderBigTitleSubtitleMessageForAllPlayers(
+                    title,
+                    subtitle,
+                    titleColor,
+                    subtitleColor,
+                    layout,
+                    playerFilter
+                );
             }
         }
 
@@ -4115,8 +4388,6 @@ async function showRoundStartMessageForAllPlayers(durationSeconds?: number): Pro
 }
 
 //#endregion -------------------- Ready Dialog - OverLine UI Widgets + Big Messages --------------------
-
-
 
 //#region -------------------- Ready Dialog - Pregame Countdown Flow --------------------
 
@@ -4182,7 +4453,7 @@ async function runPregameCountdown(expectedToken: number, triggerPlayer?: mod.Pl
 
         if (value === 4) {
             // Start the round-start messaging so it ends with the GO! hide.
-            const remainingSeconds = ((value + 1) * PREGAME_COUNTDOWN_STEP_SECONDS) + PREGAME_COUNTDOWN_GO_HOLD_SECONDS;
+            const remainingSeconds = (value + 1) * PREGAME_COUNTDOWN_STEP_SECONDS + PREGAME_COUNTDOWN_GO_HOLD_SECONDS;
             void showRoundStartMessageForAllPlayers(remainingSeconds);
         }
 
@@ -4256,8 +4527,6 @@ async function runPregameCountdown(expectedToken: number, triggerPlayer?: mod.Pl
 
 //#endregion -------------------- Ready Dialog - Pregame Countdown Flow --------------------
 
-
-
 //#region -------------------- Ready Dialog - Auto-Start --------------------
 
 // Starts the round as soon as all active players are READY.
@@ -4272,8 +4541,6 @@ function tryAutoStartRoundIfAllReady(triggerPlayer?: mod.Player): void {
 }
 
 //#endregion -------------------- Ready Dialog - Auto-Start --------------------
-
-
 
 //#region -------------------- Ready Dialog - Swap Teams Button (single toggle) --------------------
 
