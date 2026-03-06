@@ -310,6 +310,80 @@ Each module uses `// @ts-nocheck` because cross-module references (functions, va
 
 ---
 
+## Shared Tooling (Root)
+
+The root `package.json` provides deploy, lint, and formatting tools shared across all experiences.
+
+### First-Time Setup
+
+```bash
+# From repo root
+npm install
+```
+
+This installs the deploy client (`@bf6mods/portal`), ESLint, Prettier, and other shared dev tools.
+
+### Environment Setup (Deploy)
+
+1. Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+2. Get your `SESSION_ID` from the Portal web editor (browser dev tools → Application → Cookies → `sessionId`).
+3. Paste it into `.env`.
+4. Set `modId` in each experience's `package.json` (the Portal experience ID from the URL).
+
+### Deploy
+
+```bash
+# Build + deploy (patch version bump by default)
+npm run deploy -- --experience helis-only
+
+# Deploy without building (if you already built)
+npm run deploy -- --experience helis-only --no-build
+
+# Minor or major version bump
+npm run deploy -- --experience helis-only --versionBump minor
+npm run deploy -- --experience conquest --versionBump major
+
+# Or from the experience directory
+cd dev/helis-only
+npm run deploy
+```
+
+The deploy script:
+1. Builds the experience (unless `--no-build`)
+2. Bumps the version in the experience's `package.json`
+3. Uploads `dist/bundle.ts` and `dist/bundle.strings.json` to Portal
+4. Updates the experience name to include the new version
+
+### Lint & Format
+
+```bash
+# Lint all TypeScript source
+npm run lint
+npm run lint:fix     # Auto-fix what's possible
+
+# Format all files
+npm run prettier
+npm run prettier:check   # Check without modifying
+```
+
+### Dependency Updates
+
+```bash
+# Update one experience's deps
+npm run update -- --experience helis-only
+
+# Update root deps only
+npm run update -- --root
+
+# Update everything
+npm run update -- --all
+```
+
+---
+
 ## Questions?
 
 - **Discord**: Ask in `#battlefield-6-portal` on the TWL Discord
