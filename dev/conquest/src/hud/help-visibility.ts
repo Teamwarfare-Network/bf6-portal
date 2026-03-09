@@ -3,12 +3,6 @@
 
 //#region -------------------- HUD Build/Ensure - Dialog Open + Help Text Visibility --------------------
 
-function isReadyDialogOpenForPid(pid: number): boolean {
-    // With UI caching, the dialog root widget may continue to exist while hidden.
-    // Use the explicit per-player state flag as the source of truth for "open".
-    return !!State.players.readyDialogData[pid]?.dialogVisible;
-}
-
 /**
  * Applies the current 'help text' visibility rules to one specific player id.
  * This is intentionally pid-based (not Player-based) so it can be used during join/leave and UI rebuilds.
@@ -20,15 +14,9 @@ function updateHelpTextVisibilityForPid(pid: number): void {
     const refs = State.hudCache.hudByPid[pid];
     if (!refs) return;
 
-    const isDialogOpen = isReadyDialogOpenForPid(pid);
-    const isReady = !!State.players.readyByPid[pid];
-    const isDeployed = !!State.players.deployedByPid[pid];
-    const canShow = (!State.match.isEnded)
-        && (!State.match.victoryDialogActive)
-        && (!State.round.flow.cleanupActive)
-        && (isDeployed);
-    const showHelp = canShow && (!isMatchLive()) && (!isReady) && (!isDialogOpen);
-    const showReady = canShow && (!isMatchLive()) && (isReady) && (!isDialogOpen);
+    const visibility = getHudVisibilitySnapshotForPid(pid);
+    const showHelp = visibility.showHelp;
+    const showReady = visibility.showReady;
 
     const helpContainer = refs.helpTextContainer ?? safeFind(`Container_HelpText_${pid}`);
     if (helpContainer) {
@@ -50,19 +38,7 @@ function updateHelpTextVisibilityForPid(pid: number): void {
         mod.SetUITextLabel(readyText, mod.Message(mod.stringkeys.twl.hud.readyText));
     }
 
-    // Keep pre-live banners readable by hiding phase/ready lines when help or ready strips are active.
-    const showStateLines = !showHelp && !showReady;
-    const roundStateText = safeFind(`RoundStateText_${pid}`);
-    if (roundStateText) {
-        safeSetUIWidgetVisible(roundStateText, showStateLines);
-    }
-
-    if (!showStateLines) {
-        const playersReadyText = safeFind(`PlayersReadyText_${pid}`);
-        if (playersReadyText) {
-            safeSetUIWidgetVisible(playersReadyText, false);
-        }
-    }
+    // Round-state and players-ready line visibility are owned by hud/status.ts.
 }
 
 function updateHelpTextVisibilityForPlayer(player: mod.Player): void {

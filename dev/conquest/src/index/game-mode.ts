@@ -82,6 +82,7 @@ async function onGameModeStartedImpl(): Promise<void> {
         if (isMatchLive() && !State.match.victoryDialogActive) {
             conquestPhase2AOnLiveTick();
         }
+
         // Push the initial clock display so every HUD shows the same starting time.
         updateAllPlayersClock();
         checkTakeoffLimitForAllPlayers();

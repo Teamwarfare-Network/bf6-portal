@@ -55,7 +55,90 @@ type ConquestFlagEngageDisplay = {
     statusKey: number;
 };
 
+type ConquestHudTicketViewModel = {
+    friendlyTeam: TeamID;
+    enemyTeam: TeamID;
+    friendlyTickets: number;
+    enemyTickets: number;
+    friendlyTicketLabel: mod.Message;
+    enemyTicketLabel: mod.Message;
+    leaderTeam: TeamID | 0;
+    bleedLeftCount: number;
+    bleedRightCount: number;
+};
+
+type ConquestHudFlagSlotViewModel = {
+    visible: boolean;
+    slotBgColor?: mod.Vector;
+    fillVisible: boolean;
+    fillColor?: mod.Vector;
+    fillY: number;
+    fillHeight: number;
+    labelVisible: boolean;
+    labelMessage?: mod.Message;
+    labelColor?: mod.Vector;
+    percentVisible: boolean;
+    percentMessage?: mod.Message;
+    percentColor?: mod.Vector;
+};
+
+type ConquestHudFlagsViewModel = {
+    slots: ConquestHudFlagSlotViewModel[];
+};
+
+type ConquestHudEngageViewModel = {
+    visible: boolean;
+    friendlyCountLabel?: mod.Message;
+    enemyCountLabel?: mod.Message;
+    statusLabel?: mod.Message;
+    friendlyWidth: number;
+    enemyWidth: number;
+};
+
+type ConquestHudStatusViewModel = {
+    isLive: boolean;
+    isGameOver: boolean;
+    showRoundStateLine: boolean;
+    showPlayersReadyLine: boolean;
+};
+
+type ConquestHudHelpReadyViewModel = {
+    showHelp: boolean;
+    showReady: boolean;
+};
+
+type ConquestHudClockViewModel = {
+    durationSeconds: number;
+    elapsedSeconds: number;
+    remainingSeconds: number;
+    isPaused: boolean;
+    isLowTime: boolean;
+};
+
+type ConquestHudViewModel = {
+    pid: number;
+    perspective: {
+        friendlyTeam: TeamID;
+        enemyTeam: TeamID;
+    };
+    tickets: ConquestHudTicketViewModel;
+    flags: ConquestHudFlagsViewModel;
+    engage: ConquestHudEngageViewModel;
+    status: ConquestHudStatusViewModel;
+    helpReady: ConquestHudHelpReadyViewModel;
+    clock: ConquestHudClockViewModel;
+};
+
 const CONQUEST_SHADOW_TEXT_COLOR_BLACK = mod.CreateVector(0, 0, 0);
+const CONQUEST_BLEED_PULSE_SIDE_NONE = 0;
+const CONQUEST_BLEED_PULSE_SIDE_LEFT = 1;
+const CONQUEST_BLEED_PULSE_SIDE_RIGHT = 2;
+const CONQUEST_BLEED_PULSE_PHASE_IDLE = 0;
+const CONQUEST_BLEED_PULSE_PHASE_HIDE = 1;
+const CONQUEST_BLEED_PULSE_PHASE_SHOW = 2;
+const CONQUEST_BLEED_PULSE_SEQUENCE_CAP_SECONDS = 0.10;
+const CONQUEST_BLEED_PULSE_SEQUENCE_MIN_SECONDS = 0.03;
+const CONQUEST_BLEED_PULSE_SEQUENCE_FRACTION_OF_BLEED_INTERVAL = 0.30;
 
 // Applies one visibility value to all widgets in a shadow-text group.
 function conquestPhase3SetShadowTextGroupVisible(group: ConquestShadowTextWidgetSet, visible: boolean): void {
@@ -102,39 +185,370 @@ function conquestPhase3SetShadowTextGroupColors(group: ConquestShadowTextWidgetS
     safeSetUITextColor(group.text, foreground);
 }
 
+// Resolves one bleed-chevron foreground+shadow widget set by side/index.
+function conquestPhase3GetBleedChevronShadowGroup(
+    refs: HudRefs,
+    pid: number,
+    side: 1 | 2,
+    chevronIndex: number
+): ConquestShadowTextWidgetSet {
+    const sideName = side === CONQUEST_BLEED_PULSE_SIDE_LEFT ? "Left" : "Right";
+    const slot = chevronIndex + 1;
+    const coreChevron = safeFind(`ConquestTicketsHudBleedChevron${sideName}${slot}_${pid}`);
+    if (side === CONQUEST_BLEED_PULSE_SIDE_LEFT) {
+        if (!refs.conquestTicketsBleedLeftChevrons) refs.conquestTicketsBleedLeftChevrons = [];
+        refs.conquestTicketsBleedLeftChevrons[chevronIndex] = coreChevron;
+    } else {
+        if (!refs.conquestTicketsBleedRightChevrons) refs.conquestTicketsBleedRightChevrons = [];
+        refs.conquestTicketsBleedRightChevrons[chevronIndex] = coreChevron;
+    }
+    return {
+        right: safeFind(`ConquestTicketsHudBleedChevron${sideName}${slot}ShadowRight_${pid}`),
+        left: safeFind(`ConquestTicketsHudBleedChevron${sideName}${slot}ShadowLeft_${pid}`),
+        up: safeFind(`ConquestTicketsHudBleedChevron${sideName}${slot}ShadowUp_${pid}`),
+        down: safeFind(`ConquestTicketsHudBleedChevron${sideName}${slot}ShadowDown_${pid}`),
+        upLeft: safeFind(`ConquestTicketsHudBleedChevron${sideName}${slot}ShadowUpLeft_${pid}`),
+        upRight: safeFind(`ConquestTicketsHudBleedChevron${sideName}${slot}ShadowUpRight_${pid}`),
+        downRight: safeFind(`ConquestTicketsHudBleedChevron${sideName}${slot}ShadowDownRight_${pid}`),
+        downLeft: safeFind(`ConquestTicketsHudBleedChevron${sideName}${slot}ShadowDownLeft_${pid}`),
+        text: coreChevron,
+    };
+}
+
+// Clears one player's queued/active bleed-pulse animation state.
+function conquestPhase3ResetBleedPulseForPid(pid: number): void {
+    State.conquest.debug.bleedPulseQueueLeftByPid[pid] = 0;
+    State.conquest.debug.bleedPulseQueueRightByPid[pid] = 0;
+    State.conquest.debug.bleedPulseActiveSideByPid[pid] = CONQUEST_BLEED_PULSE_SIDE_NONE;
+    State.conquest.debug.bleedPulseStepByPid[pid] = 0;
+    State.conquest.debug.bleedPulseLimitByPid[pid] = 0;
+    State.conquest.debug.bleedPulsePhaseByPid[pid] = CONQUEST_BLEED_PULSE_PHASE_IDLE;
+    State.conquest.debug.bleedPulseNextAtByPid[pid] = 0;
+}
+
+// Computes per-slot pulse timing for a rapid inner->outer burst per bleed event.
+// The burst is intentionally quick, but still scales down proportionally when bleed intervals become very short.
+function conquestPhase3GetBleedPulseTimingSeconds(visibleLimit: number): { offSeconds: number; onSeconds: number } {
+    const clampedLimit = Math.max(1, Math.min(CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT, visibleLimit));
+    const perDiffPerSecond = Math.max(0.001, State.conquest.bleed.perDiffPerSecond);
+    const bleedIntervalSeconds = 1 / (perDiffPerSecond * clampedLimit);
+    const sequenceSeconds = Math.max(
+        CONQUEST_BLEED_PULSE_SEQUENCE_MIN_SECONDS,
+        Math.min(
+            CONQUEST_BLEED_PULSE_SEQUENCE_CAP_SECONDS,
+            bleedIntervalSeconds * CONQUEST_BLEED_PULSE_SEQUENCE_FRACTION_OF_BLEED_INTERVAL
+        )
+    );
+    const slotSeconds = Math.max(0.02, sequenceSeconds / clampedLimit);
+    const offSeconds = Math.max(0.008, Math.min(0.02, slotSeconds * 0.35));
+    const onSeconds = Math.max(0.012, slotSeconds - offSeconds);
+    return { offSeconds, onSeconds };
+}
+
+// Starts one bleed pulse for the given side and visible chevron count limit.
+function conquestPhase3StartBleedPulseForPid(
+    pid: number,
+    side: 1 | 2,
+    visibleLimit: number,
+    now: number
+): boolean {
+    const clampedLimit = Math.max(0, Math.min(CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT, visibleLimit));
+    if (clampedLimit <= 0) return false;
+    const timing = conquestPhase3GetBleedPulseTimingSeconds(clampedLimit);
+    State.conquest.debug.bleedPulseActiveSideByPid[pid] = side;
+    State.conquest.debug.bleedPulseStepByPid[pid] = 0;
+    State.conquest.debug.bleedPulseLimitByPid[pid] = clampedLimit;
+    State.conquest.debug.bleedPulsePhaseByPid[pid] = CONQUEST_BLEED_PULSE_PHASE_HIDE;
+    State.conquest.debug.bleedPulseNextAtByPid[pid] = now + timing.offSeconds;
+    return true;
+}
+
+// Advances one player's queued bleed-pulse animation and returns which slot should be hidden this frame.
+function conquestPhase3AdvanceBleedPulseForPid(
+    pid: number,
+    leftCount: number,
+    rightCount: number
+): { hideLeftIndex: number; hideRightIndex: number } {
+    const now = mod.GetMatchTimeElapsed();
+    const queueLeftMap = State.conquest.debug.bleedPulseQueueLeftByPid;
+    const queueRightMap = State.conquest.debug.bleedPulseQueueRightByPid;
+    let queueLeft = Math.max(0, queueLeftMap[pid] ?? 0);
+    let queueRight = Math.max(0, queueRightMap[pid] ?? 0);
+    if (leftCount <= 0) queueLeft = 0;
+    if (rightCount <= 0) queueRight = 0;
+    queueLeftMap[pid] = queueLeft;
+    queueRightMap[pid] = queueRight;
+
+    let activeSide = State.conquest.debug.bleedPulseActiveSideByPid[pid] ?? CONQUEST_BLEED_PULSE_SIDE_NONE;
+    let phase = State.conquest.debug.bleedPulsePhaseByPid[pid] ?? CONQUEST_BLEED_PULSE_PHASE_IDLE;
+    let step = State.conquest.debug.bleedPulseStepByPid[pid] ?? 0;
+    let limit = State.conquest.debug.bleedPulseLimitByPid[pid] ?? 0;
+    let nextAt = State.conquest.debug.bleedPulseNextAtByPid[pid] ?? 0;
+
+    const tryStartNextPulse = (): boolean => {
+        if (queueLeft > 0 && leftCount > 0) {
+            return conquestPhase3StartBleedPulseForPid(pid, CONQUEST_BLEED_PULSE_SIDE_LEFT, leftCount, now);
+        }
+        if (queueRight > 0 && rightCount > 0) {
+            return conquestPhase3StartBleedPulseForPid(pid, CONQUEST_BLEED_PULSE_SIDE_RIGHT, rightCount, now);
+        }
+        return false;
+    };
+
+    if (activeSide === CONQUEST_BLEED_PULSE_SIDE_NONE || phase === CONQUEST_BLEED_PULSE_PHASE_IDLE || limit <= 0) {
+        const started = tryStartNextPulse();
+        if (!started) {
+            State.conquest.debug.bleedPulseActiveSideByPid[pid] = CONQUEST_BLEED_PULSE_SIDE_NONE;
+            State.conquest.debug.bleedPulsePhaseByPid[pid] = CONQUEST_BLEED_PULSE_PHASE_IDLE;
+            State.conquest.debug.bleedPulseStepByPid[pid] = 0;
+            State.conquest.debug.bleedPulseLimitByPid[pid] = 0;
+            State.conquest.debug.bleedPulseNextAtByPid[pid] = 0;
+            return { hideLeftIndex: -1, hideRightIndex: -1 };
+        }
+        activeSide = State.conquest.debug.bleedPulseActiveSideByPid[pid];
+        phase = State.conquest.debug.bleedPulsePhaseByPid[pid];
+        step = State.conquest.debug.bleedPulseStepByPid[pid];
+        limit = State.conquest.debug.bleedPulseLimitByPid[pid];
+        nextAt = State.conquest.debug.bleedPulseNextAtByPid[pid];
+    }
+
+    // Drain due animation transitions if this frame arrives after one or more scheduled ticks.
+    let guard = 0;
+    while (activeSide !== CONQUEST_BLEED_PULSE_SIDE_NONE && now >= nextAt && guard < 32) {
+        guard += 1;
+        if (phase === CONQUEST_BLEED_PULSE_PHASE_HIDE) {
+            const timing = conquestPhase3GetBleedPulseTimingSeconds(limit);
+            phase = CONQUEST_BLEED_PULSE_PHASE_SHOW;
+            nextAt = now + timing.onSeconds;
+            continue;
+        }
+
+        step += 1;
+        if (step >= limit) {
+            if (activeSide === CONQUEST_BLEED_PULSE_SIDE_LEFT) {
+                queueLeft = Math.max(0, queueLeft - 1);
+            } else if (activeSide === CONQUEST_BLEED_PULSE_SIDE_RIGHT) {
+                queueRight = Math.max(0, queueRight - 1);
+            }
+            queueLeftMap[pid] = queueLeft;
+            queueRightMap[pid] = queueRight;
+            if (activeSide === CONQUEST_BLEED_PULSE_SIDE_LEFT && queueLeft > 0 && leftCount > 0) {
+                conquestPhase3StartBleedPulseForPid(pid, CONQUEST_BLEED_PULSE_SIDE_LEFT, leftCount, now);
+            } else if (activeSide === CONQUEST_BLEED_PULSE_SIDE_RIGHT && queueRight > 0 && rightCount > 0) {
+                conquestPhase3StartBleedPulseForPid(pid, CONQUEST_BLEED_PULSE_SIDE_RIGHT, rightCount, now);
+            } else if (queueLeft > 0 && leftCount > 0) {
+                conquestPhase3StartBleedPulseForPid(pid, CONQUEST_BLEED_PULSE_SIDE_LEFT, leftCount, now);
+            } else if (queueRight > 0 && rightCount > 0) {
+                conquestPhase3StartBleedPulseForPid(pid, CONQUEST_BLEED_PULSE_SIDE_RIGHT, rightCount, now);
+            } else {
+                activeSide = CONQUEST_BLEED_PULSE_SIDE_NONE;
+                phase = CONQUEST_BLEED_PULSE_PHASE_IDLE;
+                step = 0;
+                limit = 0;
+                nextAt = 0;
+                break;
+            }
+            activeSide = State.conquest.debug.bleedPulseActiveSideByPid[pid];
+            phase = State.conquest.debug.bleedPulsePhaseByPid[pid];
+            step = State.conquest.debug.bleedPulseStepByPid[pid];
+            limit = State.conquest.debug.bleedPulseLimitByPid[pid];
+            nextAt = State.conquest.debug.bleedPulseNextAtByPid[pid];
+            continue;
+        }
+        const timing = conquestPhase3GetBleedPulseTimingSeconds(limit);
+        phase = CONQUEST_BLEED_PULSE_PHASE_HIDE;
+        nextAt = now + timing.offSeconds;
+    }
+
+    State.conquest.debug.bleedPulseQueueLeftByPid[pid] = queueLeft;
+    State.conquest.debug.bleedPulseQueueRightByPid[pid] = queueRight;
+    State.conquest.debug.bleedPulseActiveSideByPid[pid] = activeSide;
+    State.conquest.debug.bleedPulseStepByPid[pid] = step;
+    State.conquest.debug.bleedPulseLimitByPid[pid] = limit;
+    State.conquest.debug.bleedPulsePhaseByPid[pid] = phase;
+    State.conquest.debug.bleedPulseNextAtByPid[pid] = nextAt;
+
+    if (activeSide === CONQUEST_BLEED_PULSE_SIDE_NONE || phase !== CONQUEST_BLEED_PULSE_PHASE_HIDE) {
+        return { hideLeftIndex: -1, hideRightIndex: -1 };
+    }
+    const slot = Math.max(0, Math.min(CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT - 1, (limit - 1) - step));
+    if (activeSide === CONQUEST_BLEED_PULSE_SIDE_LEFT && slot < leftCount) {
+        return { hideLeftIndex: slot, hideRightIndex: -1 };
+    }
+    if (activeSide === CONQUEST_BLEED_PULSE_SIDE_RIGHT && slot < rightCount) {
+        return { hideLeftIndex: -1, hideRightIndex: slot };
+    }
+    return { hideLeftIndex: -1, hideRightIndex: -1 };
+}
+
+// Queues one or more bleed-pulse animations for every player from the team that just lost tickets.
+function conquestPhase3QueueBleedPulseForLoss(losingTeam: TeamID, bleedUnits: number): void {
+    const pulseCount = Math.max(0, Math.floor(bleedUnits));
+    if (pulseCount <= 0) return;
+    const players = mod.AllPlayers();
+    const playerCount = mod.CountOf(players);
+    let queuedAny = false;
+    for (let i = 0; i < playerCount; i++) {
+        const player = mod.ValueInArray(players, i) as mod.Player;
+        if (!player || !mod.IsPlayerValid(player)) continue;
+        const pid = safeGetPlayerId(player);
+        if (pid === undefined) continue;
+        const playerTeam = safeGetTeamNumberFromPlayer(player, 0);
+        if (playerTeam === 0) continue;
+        if (playerTeam === losingTeam) {
+            State.conquest.debug.bleedPulseQueueLeftByPid[pid] = Math.max(
+                0,
+                (State.conquest.debug.bleedPulseQueueLeftByPid[pid] ?? 0) + pulseCount
+            );
+            queuedAny = true;
+            continue;
+        }
+        State.conquest.debug.bleedPulseQueueRightByPid[pid] = Math.max(
+            0,
+            (State.conquest.debug.bleedPulseQueueRightByPid[pid] ?? 0) + pulseCount
+        );
+        queuedAny = true;
+    }
+    if (queuedAny) conquestPhase3MarkHudDirty();
+}
+
 // Marks conquest HUD projections dirty so the next live tick performs a render pass.
 function conquestPhase3MarkHudDirty(): void {
     State.conquest.debug.hudDirty = true;
 }
 
-// Strict ownership probe helper: hide all known V2 conquest ticket/flag widgets by refs and direct name lookup.
-function conquestPhase3ForceHideAllV2Widgets(pid: number, refs: HudRefs): void {
+// Publishes derived top-HUD slices shared by status/help/clock owners.
+function conquestPhase3PublishTopHudDerivedSlicesForPid(
+    pid: number,
+    status: ConquestHudStatusViewModel,
+    helpReady: ConquestHudHelpReadyViewModel,
+    clock: ConquestHudClockViewModel
+): void {
+    State.conquest.debug.hudStatusVmByPid[pid] = {
+        isLive: status.isLive,
+        isGameOver: status.isGameOver,
+        showRoundStateLine: status.showRoundStateLine,
+        showPlayersReadyLine: status.showPlayersReadyLine,
+    };
+    State.conquest.debug.hudHelpReadyVmByPid[pid] = {
+        showHelp: helpReady.showHelp,
+        showReady: helpReady.showReady,
+    };
+    State.conquest.debug.hudClockVmByPid[pid] = {
+        remainingSeconds: clock.remainingSeconds,
+        isLowTime: clock.isLowTime,
+        isPaused: clock.isPaused,
+    };
+}
+
+// Refreshes derived top-HUD slices for one player.
+// This is used by status/help/clock owners when they render outside the conquest HUD tick path.
+// Important:
+// - Clock remaining seconds are time-variant every second while live.
+// - Therefore this function must refresh the derived slices each call, not only initialize once.
+function conquestPhase3EnsureTopHudDerivedSlicesForPid(pid: number): void {
+    const helpReady = deriveConquestHudHelpReadyViewModel(pid);
+    const status = deriveConquestHudStatusViewModel(helpReady);
+    const clock = deriveConquestHudClockViewModel();
+    conquestPhase3PublishTopHudDerivedSlicesForPid(pid, status, helpReady, clock);
+}
+
+// Publishes derived top-HUD view-model slices for status/help/clock owners.
+function conquestPhase3PublishDerivedHudSlicesForPid(pid: number, vm: ConquestHudViewModel): void {
+    conquestPhase3PublishTopHudDerivedSlicesForPid(pid, vm.status, vm.helpReady, vm.clock);
+}
+
+// Tracks per-player render bursts and enforces one conquest HUD render pass per short time bucket.
+// Returns true when this call should render; returns false for duplicate same-bucket passes.
+function conquestPhase3TrackSinglePassRenderForPid(pid: number): boolean {
+    const bucket = Math.floor(mod.GetMatchTimeElapsed() * 20);
+    const previousBucket = State.conquest.debug.hudRenderBucketByPid[pid];
+    if (previousBucket !== bucket) {
+        State.conquest.debug.hudRenderBucketByPid[pid] = bucket;
+        State.conquest.debug.hudRenderBurstByPid[pid] = 1;
+        return true;
+    }
+
+    const nextBurst = (State.conquest.debug.hudRenderBurstByPid[pid] ?? 1) + 1;
+    State.conquest.debug.hudRenderBurstByPid[pid] = nextBurst;
+    if (nextBurst > 1) {
+        const duplicateCount = State.conquest.debug.hudRenderDuplicateBurstByPid[pid] ?? 0;
+        State.conquest.debug.hudRenderDuplicateBurstByPid[pid] = duplicateCount + 1;
+    }
+    return false;
+}
+
+// Returns true when the minimum conquest HUD refs required for safe render are present.
+// If false, caller should rebuild the player's conquest HUD instead of rendering partial state.
+function conquestPhase3HasCriticalHudRefs(refs: HudRefs): boolean {
+    if (!refs.conquestTicketsDebugRoot) return false;
+    if (!refs.conquestTicketsTeam1Container || !refs.conquestTicketsTeam2Container) return false;
+    if (!refs.conquestTicketsDebugTeam1 || !refs.conquestTicketsDebugTeam2) return false;
+    if (!refs.conquestTicketsDebugLeftBarTrack || !refs.conquestTicketsDebugLeftBarFill) return false;
+    if (!refs.conquestTicketsDebugRightBarTrack || !refs.conquestTicketsDebugRightBarFill) return false;
+    if (!refs.conquestFlagsDebugRoot) return false;
+    if (!refs.conquestFlagsEngageRoot || !refs.conquestFlagsEngageTrack) return false;
+
+    const mappedCount = Math.max(1, Math.min(7, State.conquest.capture.mappedObjIdsInOrder.length));
+    const slotRoots = refs.conquestFlagsDebugSlotRoots ?? [];
+    const slotFills = refs.conquestFlagsDebugFillRows ?? [];
+    const slotLabels = refs.conquestFlagsDebugLabelRows ?? [];
+    const slotPercents = refs.conquestFlagsDebugPercentRoots ?? [];
+    for (let i = 0; i < mappedCount; i++) {
+        if (!slotRoots[i]) return false;
+        if (!slotFills[i]) return false;
+        if (!slotLabels[i]) return false;
+        if (!slotPercents[i]) return false;
+    }
+    return true;
+}
+
+// Strict ownership probe helper: hide all known V2 conquest ticket/flag widgets by cached refs only.
+function conquestPhase3ForceHideAllV2Widgets(refs: HudRefs): void {
+    const pid = refs.pid;
     safeSetUIWidgetVisible(refs.conquestTicketsDebugRoot, false);
     safeSetUIWidgetVisible(refs.conquestTicketsDebugTeam1, false);
     safeSetUIWidgetVisible(refs.conquestTicketsDebugTeam2, false);
-    safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudTeam1Container_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudTeam2Container_${pid}`), false);
+    safeSetUIWidgetVisible(refs.conquestTicketsTeam1Container, false);
+    safeSetUIWidgetVisible(refs.conquestTicketsTeam2Container, false);
     safeSetUIWidgetVisible(refs.conquestTicketsDebugLeftBarTrack, false);
     safeSetUIWidgetVisible(refs.conquestTicketsDebugLeftBarFill, false);
     safeSetUIWidgetVisible(refs.conquestTicketsDebugRightBarTrack, false);
     safeSetUIWidgetVisible(refs.conquestTicketsDebugRightBarFill, false);
     safeSetUIWidgetVisible(refs.conquestTicketsLeadLeftBorder, false);
     safeSetUIWidgetVisible(refs.conquestTicketsLeadRightBorder, false);
+    safeSetUIWidgetVisible(refs.conquestTicketsLeadLeftCrownShadow, false);
+    safeSetUIWidgetVisible(refs.conquestTicketsLeadRightCrownShadow, false);
     safeSetUIWidgetVisible(refs.conquestTicketsLeadLeftCrown, false);
     safeSetUIWidgetVisible(refs.conquestTicketsLeadRightCrown, false);
     const leftBleedChevrons = refs.conquestTicketsBleedLeftChevrons ?? [];
     const rightBleedChevrons = refs.conquestTicketsBleedRightChevrons ?? [];
     for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
-        safeSetUIWidgetVisible(leftBleedChevrons[chevronIndex], false);
-        safeSetUIWidgetVisible(rightBleedChevrons[chevronIndex], false);
-        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${chevronIndex + 1}_${pid}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${chevronIndex + 1}_${pid}`), false);
+        const slot = chevronIndex + 1;
+        const leftCore = safeFind(`ConquestTicketsHudBleedChevronLeft${slot}_${pid}`) ?? leftBleedChevrons[chevronIndex];
+        const rightCore = safeFind(`ConquestTicketsHudBleedChevronRight${slot}_${pid}`) ?? rightBleedChevrons[chevronIndex];
+        leftBleedChevrons[chevronIndex] = leftCore;
+        rightBleedChevrons[chevronIndex] = rightCore;
+        safeSetUIWidgetVisible(leftCore, false);
+        safeSetUIWidgetVisible(rightCore, false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowRight_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowLeft_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDown_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownRight_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownLeft_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowRight_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowLeft_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowDown_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownRight_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownLeft_${pid}`), false);
     }
-    safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudLeadBorderLeft_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudLeadBorderRight_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudLeadCrownLeft_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudLeadCrownRight_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudSlash_${pid}`), false);
+    safeSetUIWidgetVisible(refs.conquestTicketsSlash, false);
 
     safeSetUIWidgetVisible(refs.conquestFlagsDebugRoot, false);
     safeSetUIWidgetVisible(refs.conquestFlagsEngageRoot, false);
@@ -154,23 +568,6 @@ function conquestPhase3ForceHideAllV2Widgets(pid: number, refs: HudRefs): void {
     safeSetUIWidgetVisible(refs.conquestFlagsEngageStatusShadowDownRight, false);
     safeSetUIWidgetVisible(refs.conquestFlagsEngageStatusShadowDownLeft, false);
     safeSetUIWidgetVisible(refs.conquestFlagsEngageStatus, false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageRoot_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageTrack_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageFriendlyFill_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageEnemyFill_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageFriendlyCountBg_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageEnemyCountBg_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageFriendlyCount_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageEnemyCount_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageStatusShadowRight_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageStatusShadowLeft_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageStatusShadowUp_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageStatusShadowDown_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageStatusShadowUpLeft_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageStatusShadowUpRight_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageStatusShadowDownRight_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageStatusShadowDownLeft_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagHudEngageStatus_${pid}`), false);
     const slotRoots = refs.conquestFlagsDebugSlotRoots ?? [];
     const slotBorders = refs.conquestFlagsDebugBorderRows ?? [];
     const slotFills = refs.conquestFlagsDebugFillRows ?? [];
@@ -250,42 +647,173 @@ function conquestPhase3ForceHideAllV2Widgets(pid: number, refs: HudRefs): void {
         safeSetUIWidgetVisible(slotPercentShadowsDownLeft[i], false);
         safeSetUIWidgetVisible(slotPercentShadowsInner[i], false);
         safeSetUIWidgetVisible(slotPercentTexts[i], false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudSlot_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudBorder_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudFill_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadowRight_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadowLeft_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadowUp_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadowDown_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadowUpLeft_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadowUpRight_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadowDownRight_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadowDownLeft_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadowInner_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadowInnerDeep_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudPercentRoot_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudPercentShadowRight_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudPercentShadowLeft_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudPercentShadowUp_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudPercentShadowDown_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudPercentShadowUpLeft_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudPercentShadowUpRight_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudPercentShadowDownRight_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudPercentShadowDownLeft_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudPercentShadowInner_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudPercentText_${pid}_${i}`), false);
-        // Keep clearing deprecated center shadow in case stale widgets exist from older builds.
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadowCenter_${pid}_${i}`), false);
-        // Hide legacy shadow variants from previous iterations to avoid overlap.
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadowOuter_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadowMid_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadow_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabel_${pid}_${i}`), false);
     }
 }
 
+// Force-hides the per-player engage panel widgets by cached refs and id fallback.
+// Used by swap/undeploy cleanup paths so stale engage rows cannot survive lifecycle transitions.
+const CONQUEST_ENGAGE_WIDGET_NAME_TEMPLATE: readonly string[] = [
+    "ConquestFlagHudEngageRoot_{pid}",
+    "ConquestFlagHudEngageTrack_{pid}",
+    "ConquestFlagHudEngageFriendlyFill_{pid}",
+    "ConquestFlagHudEngageEnemyFill_{pid}",
+    "ConquestFlagHudEngageFriendlyCountBg_{pid}",
+    "ConquestFlagHudEngageEnemyCountBg_{pid}",
+    "ConquestFlagHudEngageFriendlyCount_{pid}",
+    "ConquestFlagHudEngageEnemyCount_{pid}",
+    "ConquestFlagHudEngageStatusShadowRight_{pid}",
+    "ConquestFlagHudEngageStatusShadowLeft_{pid}",
+    "ConquestFlagHudEngageStatusShadowUp_{pid}",
+    "ConquestFlagHudEngageStatusShadowDown_{pid}",
+    "ConquestFlagHudEngageStatusShadowUpLeft_{pid}",
+    "ConquestFlagHudEngageStatusShadowUpRight_{pid}",
+    "ConquestFlagHudEngageStatusShadowDownRight_{pid}",
+    "ConquestFlagHudEngageStatusShadowDownLeft_{pid}",
+    "ConquestFlagHudEngageStatus_{pid}",
+];
+
+// Deletes every duplicate widget instance that shares the same name.
+// This is required because FindUIWidgetWithName can return stale roots after swap churn.
+function conquestPhase3DeleteAllWidgetsByName(name: string, maxPasses: number = 128): void {
+    for (let i = 0; i < maxPasses; i++) {
+        const widget = safeFind(name);
+        if (!widget) return;
+        try {
+            mod.DeleteUIWidget(widget);
+        } catch {
+            return;
+        }
+    }
+}
+
+// Clears engage widget refs from per-player HUD cache after purge/delete.
+// Keeping stale refs can resurrect old visual state on the next render pass.
+function conquestPhase3ClearEngageWidgetRefsForPid(pid: number): void {
+    const refs = State.hudCache.hudByPid[pid];
+    if (!refs) return;
+    refs.conquestFlagsEngageRoot = undefined;
+    refs.conquestFlagsEngageTrack = undefined;
+    refs.conquestFlagsEngageFriendlyFill = undefined;
+    refs.conquestFlagsEngageEnemyFill = undefined;
+    refs.conquestFlagsEngageFriendlyCountBg = undefined;
+    refs.conquestFlagsEngageEnemyCountBg = undefined;
+    refs.conquestFlagsEngageFriendlyCount = undefined;
+    refs.conquestFlagsEngageEnemyCount = undefined;
+    refs.conquestFlagsEngageStatusShadowRight = undefined;
+    refs.conquestFlagsEngageStatusShadowLeft = undefined;
+    refs.conquestFlagsEngageStatusShadowUp = undefined;
+    refs.conquestFlagsEngageStatusShadowDown = undefined;
+    refs.conquestFlagsEngageStatusShadowUpLeft = undefined;
+    refs.conquestFlagsEngageStatusShadowUpRight = undefined;
+    refs.conquestFlagsEngageStatusShadowDownRight = undefined;
+    refs.conquestFlagsEngageStatusShadowDownLeft = undefined;
+    refs.conquestFlagsEngageStatus = undefined;
+}
+
+// Hard-purges engage widgets for one player id.
+// Team swap uses this to guarantee stale "Neutralizing/Defending" rows cannot survive hidden in duplicates.
+function conquestPhase3PurgeEngageWidgetsForPid(pid: number): void {
+    for (let i = 0; i < CONQUEST_ENGAGE_WIDGET_NAME_TEMPLATE.length; i++) {
+        const name = CONQUEST_ENGAGE_WIDGET_NAME_TEMPLATE[i].replace("{pid}", `${pid}`);
+        conquestPhase3DeleteAllWidgetsByName(name);
+    }
+    conquestPhase3ClearEngageWidgetRefsForPid(pid);
+}
+
+function conquestPhase3ForceHideEngageWidgetsForPid(pid: number): void {
+    // Do not mutate unsuppress confirmation here.
+    // This helper runs every live tick while suppressed; resetting here would prevent
+    // multi-tick unsuppress confirmation from ever completing.
+    // Swap/undeploy owners explicitly reset confirmation when state transitions occur.
+    const refs = State.hudCache.hudByPid[pid];
+    // Resolve by name first each call so stale cached handles cannot bypass hide on swap/undeploy transitions.
+    const engageRoot = refs?.conquestFlagsEngageRoot ?? safeFind(`ConquestFlagHudEngageRoot_${pid}`);
+    const engageTrack = refs?.conquestFlagsEngageTrack ?? safeFind(`ConquestFlagHudEngageTrack_${pid}`);
+    const engageFriendlyFill = refs?.conquestFlagsEngageFriendlyFill ?? safeFind(`ConquestFlagHudEngageFriendlyFill_${pid}`);
+    const engageEnemyFill = refs?.conquestFlagsEngageEnemyFill ?? safeFind(`ConquestFlagHudEngageEnemyFill_${pid}`);
+    const engageFriendlyCountBg = refs?.conquestFlagsEngageFriendlyCountBg ?? safeFind(`ConquestFlagHudEngageFriendlyCountBg_${pid}`);
+    const engageEnemyCountBg = refs?.conquestFlagsEngageEnemyCountBg ?? safeFind(`ConquestFlagHudEngageEnemyCountBg_${pid}`);
+    const engageFriendlyCount = refs?.conquestFlagsEngageFriendlyCount ?? safeFind(`ConquestFlagHudEngageFriendlyCount_${pid}`);
+    const engageEnemyCount = refs?.conquestFlagsEngageEnemyCount ?? safeFind(`ConquestFlagHudEngageEnemyCount_${pid}`);
+    const engageStatusShadowRight = refs?.conquestFlagsEngageStatusShadowRight ?? safeFind(`ConquestFlagHudEngageStatusShadowRight_${pid}`);
+    const engageStatusShadowLeft = refs?.conquestFlagsEngageStatusShadowLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowLeft_${pid}`);
+    const engageStatusShadowUp = refs?.conquestFlagsEngageStatusShadowUp ?? safeFind(`ConquestFlagHudEngageStatusShadowUp_${pid}`);
+    const engageStatusShadowDown = refs?.conquestFlagsEngageStatusShadowDown ?? safeFind(`ConquestFlagHudEngageStatusShadowDown_${pid}`);
+    const engageStatusShadowUpLeft = refs?.conquestFlagsEngageStatusShadowUpLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowUpLeft_${pid}`);
+    const engageStatusShadowUpRight = refs?.conquestFlagsEngageStatusShadowUpRight ?? safeFind(`ConquestFlagHudEngageStatusShadowUpRight_${pid}`);
+    const engageStatusShadowDownRight = refs?.conquestFlagsEngageStatusShadowDownRight ?? safeFind(`ConquestFlagHudEngageStatusShadowDownRight_${pid}`);
+    const engageStatusShadowDownLeft = refs?.conquestFlagsEngageStatusShadowDownLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowDownLeft_${pid}`);
+    const engageStatus = refs?.conquestFlagsEngageStatus ?? safeFind(`ConquestFlagHudEngageStatus_${pid}`);
+    safeSetUIWidgetVisible(engageRoot, false);
+    safeSetUIWidgetVisible(engageTrack, false);
+    safeSetUIWidgetVisible(engageFriendlyFill, false);
+    safeSetUIWidgetVisible(engageEnemyFill, false);
+    safeSetUIWidgetVisible(engageFriendlyCountBg, false);
+    safeSetUIWidgetVisible(engageEnemyCountBg, false);
+    safeSetUIWidgetVisible(engageFriendlyCount, false);
+    safeSetUIWidgetVisible(engageEnemyCount, false);
+    safeSetUIWidgetVisible(engageStatusShadowRight, false);
+    safeSetUIWidgetVisible(engageStatusShadowLeft, false);
+    safeSetUIWidgetVisible(engageStatusShadowUp, false);
+    safeSetUIWidgetVisible(engageStatusShadowDown, false);
+    safeSetUIWidgetVisible(engageStatusShadowUpLeft, false);
+    safeSetUIWidgetVisible(engageStatusShadowUpRight, false);
+    safeSetUIWidgetVisible(engageStatusShadowDownRight, false);
+    safeSetUIWidgetVisible(engageStatusShadowDownLeft, false);
+    safeSetUIWidgetVisible(engageStatus, false);
+    if (refs) {
+        refs.conquestFlagsEngageRoot = engageRoot;
+        refs.conquestFlagsEngageTrack = engageTrack;
+        refs.conquestFlagsEngageFriendlyFill = engageFriendlyFill;
+        refs.conquestFlagsEngageEnemyFill = engageEnemyFill;
+        refs.conquestFlagsEngageFriendlyCountBg = engageFriendlyCountBg;
+        refs.conquestFlagsEngageEnemyCountBg = engageEnemyCountBg;
+        refs.conquestFlagsEngageFriendlyCount = engageFriendlyCount;
+        refs.conquestFlagsEngageEnemyCount = engageEnemyCount;
+        refs.conquestFlagsEngageStatusShadowRight = engageStatusShadowRight;
+        refs.conquestFlagsEngageStatusShadowLeft = engageStatusShadowLeft;
+        refs.conquestFlagsEngageStatusShadowUp = engageStatusShadowUp;
+        refs.conquestFlagsEngageStatusShadowDown = engageStatusShadowDown;
+        refs.conquestFlagsEngageStatusShadowUpLeft = engageStatusShadowUpLeft;
+        refs.conquestFlagsEngageStatusShadowUpRight = engageStatusShadowUpRight;
+        refs.conquestFlagsEngageStatusShadowDownRight = engageStatusShadowDownRight;
+        refs.conquestFlagsEngageStatusShadowDownLeft = engageStatusShadowDownLeft;
+        refs.conquestFlagsEngageStatus = engageStatus;
+    }
+}
+
+// Enforces engage suppression every live tick outside the dirty/render gate.
+// This prevents stale engage widgets from persisting when no normal HUD render occurs.
+function conquestPhase3EnforceSuppressedEngageWidgets(): void {
+    const players = mod.AllPlayers();
+    const count = mod.CountOf(players);
+    for (let i = 0; i < count; i++) {
+        const viewer = mod.ValueInArray(players, i) as mod.Player;
+        if (!viewer || !mod.IsPlayerValid(viewer)) continue;
+        const pid = safeGetPlayerId(viewer);
+        if (pid === undefined) continue;
+        const engagedObjId = State.conquest.capture.engagedObjIdByPid[pid];
+        if (!conquestPhase3ShouldRenderEngageForPid(pid, engagedObjId)) {
+            conquestPhase3ForceHideEngageWidgetsForPid(pid);
+        }
+    }
+}
+
+// Single-owner engage visibility gate for Conquest capture HUD.
+// Engage can render only when the player is deployed, not in swap-reset pending,
+// and has a capture-point-derived active objective id for this tick.
+function conquestPhase3ShouldRenderEngageForPid(pid: number, activeObjId: number | undefined): boolean {
+    if (!State.players.deployedByPid[pid]) return false;
+    if (State.conquest.debug.teamSwapHudResetPendingByPid[pid] === true) return false;
+    if (activeObjId === undefined) return false;
+    return true;
+}
+
 // Resolves viewer perspective teams for friendly-left/enemy-right HUD rendering.
-function conquestPhase3GetPerspectiveTeams(viewer: mod.Player): { friendlyTeam: TeamID; enemyTeam: TeamID } {
+// If unresolved, render should skip team-colored conquest widgets for this frame.
+function conquestPhase3GetPerspectiveTeams(
+    viewer: mod.Player
+): { friendlyTeam: TeamID; enemyTeam: TeamID; resolved: boolean } {
     const pid = safeGetPlayerId(viewer);
     const resolvedTeam = safeGetTeamNumberFromPlayer(viewer, 0);
     const stickyTeam = pid !== undefined
@@ -309,18 +837,26 @@ function conquestPhase3GetPerspectiveTeams(viewer: mod.Player): { friendlyTeam: 
         State.conquest.debug.perspectiveTeamByPid[pid] = resolvedTeam;
     }
 
-    const teamNum = swapPerspectiveLockActive
+    const teamNum: TeamID | 0 = swapPerspectiveLockActive
         ? stickyTeam
         : (resolvedTeam === TeamID.Team1 || resolvedTeam === TeamID.Team2)
         ? resolvedTeam
         : (stickyTeam === TeamID.Team1 || stickyTeam === TeamID.Team2)
             ? stickyTeam
-            : TeamID.Team1;
+            : 0;
+
+    if (teamNum === 0) {
+        return {
+            friendlyTeam: TeamID.Team1,
+            enemyTeam: TeamID.Team2,
+            resolved: false,
+        };
+    }
 
     if (teamNum === TeamID.Team2) {
-        return { friendlyTeam: TeamID.Team2, enemyTeam: TeamID.Team1 };
+        return { friendlyTeam: TeamID.Team2, enemyTeam: TeamID.Team1, resolved: true };
     }
-    return { friendlyTeam: TeamID.Team1, enemyTeam: TeamID.Team2 };
+    return { friendlyTeam: TeamID.Team1, enemyTeam: TeamID.Team2, resolved: true };
 }
 
 // Returns mapped capture states in stable config-driven order for flag HUD rows.
@@ -391,7 +927,7 @@ function conquestPhase3GetTicketLeaderTeam(): TeamID | 0 {
 
 // Computes stacked bleed-chevron counts from ownership differential for one player's team perspective.
 // Contract:
-// - up to 3 chevrons are shown on the losing/bleeding side (not the advantaged side)
+// - up to CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT chevrons are shown on the losing/bleeding side
 // - no chevrons are shown when bleed is disabled, pre-live, or objective control is tied
 function conquestPhase3GetBleedChevronCountsForPerspective(
     friendlyTeam: TeamID,
@@ -415,30 +951,450 @@ function conquestPhase3GetBleedChevronCountsForPerspective(
     return { leftCount: 0, rightCount: 0 };
 }
 
-// Applies bleed-chevron stack visibility using script-authoritative differential state.
-function conquestPhase3ApplyTicketBleedIndicators(
+// Applies bleed-chevron stack visibility using explicit left/right counts.
+function conquestPhase3ApplyTicketBleedIndicatorCounts(
     refs: HudRefs,
+    leftCount: number,
+    rightCount: number
+): void {
+    const restackChevronGroup = (group: ConquestShadowTextWidgetSet): void => {
+        const uiRoot = mod.GetUIRoot();
+        const shadowWidgets: (mod.UIWidget | undefined)[] = [
+            group.right,
+            group.left,
+            group.up,
+            group.down,
+            group.upLeft,
+            group.upRight,
+            group.downRight,
+            group.downLeft,
+            group.inner,
+            group.innerDeep,
+        ];
+        for (let i = 0; i < shadowWidgets.length; i++) {
+            const shadow = shadowWidgets[i];
+            if (!shadow) continue;
+            try {
+                mod.SetUIWidgetParent(shadow, uiRoot);
+            } catch {
+                // Best-effort restack only.
+            }
+            safeSetUIWidgetDepth(shadow, mod.UIDepth.AboveGameUI);
+        }
+        if (group.text) {
+            try {
+                mod.SetUIWidgetParent(group.text, uiRoot);
+            } catch {
+                // Best-effort restack only.
+            }
+            safeSetUIWidgetDepth(group.text, mod.UIDepth.AboveGameUI);
+        }
+    };
+    const pid = refs.pid;
+    const clampedLeft = Math.max(0, Math.min(CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT, Math.floor(leftCount)));
+    const clampedRight = Math.max(0, Math.min(CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT, Math.floor(rightCount)));
+    // Static-only chevrons:
+    // - no pulse sequencing
+    // - visibility is strictly driven by current bleed differential count.
+    // Also clear any queued pulse state from previous builds so it cannot affect visibility.
+    conquestPhase3ResetBleedPulseForPid(pid);
+    const friendlyChevronColor = mod.CreateVector(
+        CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB[0],
+        CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB[1],
+        CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB[2]
+    );
+    const enemyChevronColor = mod.CreateVector(
+        CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB[0],
+        CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB[1],
+        CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB[2]
+    );
+    for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
+        const leftVisible = chevronIndex < clampedLeft;
+        const rightVisible = chevronIndex < clampedRight;
+        const leftGroup = conquestPhase3GetBleedChevronShadowGroup(
+            refs,
+            pid,
+            CONQUEST_BLEED_PULSE_SIDE_LEFT,
+            chevronIndex
+        );
+        // Reassert shadow/core ordering on every writer pass so chevrons cannot fall behind ticket bars.
+        restackChevronGroup(leftGroup);
+        conquestPhase3SetShadowTextGroupLabel(leftGroup, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT));
+        conquestPhase3SetShadowTextGroupColors(leftGroup, friendlyChevronColor);
+        const leftRenderable = leftVisible && !!leftGroup.text;
+        conquestPhase3SetShadowTextGroupVisible(leftGroup, leftRenderable);
+        if (leftVisible && !leftGroup.text) {
+            // Queue one retry pass so core glyphs can bind without showing shadow-only artifacts.
+            conquestPhase3MarkHudDirty();
+        }
+
+        const rightGroup = conquestPhase3GetBleedChevronShadowGroup(
+            refs,
+            pid,
+            CONQUEST_BLEED_PULSE_SIDE_RIGHT,
+            chevronIndex
+        );
+        // Reassert shadow/core ordering on every writer pass so chevrons cannot fall behind ticket bars.
+        restackChevronGroup(rightGroup);
+        conquestPhase3SetShadowTextGroupLabel(rightGroup, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT));
+        conquestPhase3SetShadowTextGroupColors(rightGroup, enemyChevronColor);
+        const rightRenderable = rightVisible && !!rightGroup.text;
+        conquestPhase3SetShadowTextGroupVisible(rightGroup, rightRenderable);
+        if (rightVisible && !rightGroup.text) {
+            // Queue one retry pass so core glyphs can bind without showing shadow-only artifacts.
+            conquestPhase3MarkHudDirty();
+        }
+    }
+}
+
+// Returns the maximum number of conquest flag slots from cached refs for this player.
+function conquestPhase3GetFlagMaxSlotsFromRefs(refs: HudRefs): number {
+    const slotRoots = refs.conquestFlagsDebugSlotRoots ?? [];
+    const slotBorders = refs.conquestFlagsDebugBorderRows ?? [];
+    const slotFills = refs.conquestFlagsDebugFillRows ?? [];
+    const slotLabels = refs.conquestFlagsDebugLabelRows ?? [];
+    const slotPercents = refs.conquestFlagsDebugPercentRoots ?? [];
+    return Math.max(
+        slotRoots.length,
+        slotBorders.length,
+        slotFills.length,
+        slotLabels.length,
+        slotPercents.length,
+        1
+    );
+}
+
+// Derives help/ready strip visibility from script-authoritative player + match state.
+function deriveConquestHudHelpReadyViewModel(pid: number): ConquestHudHelpReadyViewModel {
+    const isDialogOpen = !!State.players.readyDialogData[pid]?.dialogVisible;
+    const isReady = !!State.players.readyByPid[pid];
+    const isDeployed = !!State.players.deployedByPid[pid];
+    const canShow = (!State.match.isEnded)
+        && (!State.match.victoryDialogActive)
+        && (!State.round.flow.cleanupActive)
+        && isDeployed;
+    const showHelp = canShow && (!isMatchLive()) && (!isReady) && (!isDialogOpen);
+    const showReady = canShow && (!isMatchLive()) && isReady && (!isDialogOpen);
+    return {
+        showHelp,
+        showReady,
+    };
+}
+
+// Derives clock state for HUD planning; rendering remains owned by clock/status modules.
+function deriveConquestHudClockViewModel(): ConquestHudClockViewModel {
+    const durationSeconds = Math.max(0, State.round.clock.durationSeconds);
+    const now = mod.GetMatchTimeElapsed();
+    const startElapsed = State.round.clock.matchStartElapsedSeconds;
+    const elapsedFromStart = startElapsed === undefined ? 0 : Math.max(0, now - startElapsed);
+    const pausedRemaining = State.round.clock.pausedRemainingSeconds;
+    const remaining = State.round.clock.isPaused && pausedRemaining !== undefined
+        ? Math.max(0, pausedRemaining)
+        : Math.max(0, durationSeconds - elapsedFromStart);
+    return {
+        durationSeconds,
+        elapsedSeconds: elapsedFromStart,
+        remainingSeconds: remaining,
+        isPaused: State.round.clock.isPaused,
+        isLowTime: remaining < LOW_TIME_THRESHOLD_SECONDS,
+    };
+}
+
+// Derives round-state line visibility from current match state and help/ready visibility.
+function deriveConquestHudStatusViewModel(
+    helpReady: ConquestHudHelpReadyViewModel
+): ConquestHudStatusViewModel {
+    const isLive = isMatchLive();
+    const isGameOver = State.round.phase === MatchPhase.GameOver;
+    const showRoundStateLine = !helpReady.showHelp && !helpReady.showReady;
+    const showPlayersReadyLine = (!State.match.victoryDialogActive)
+        && (!isLive)
+        && (!helpReady.showHelp)
+        && (!helpReady.showReady);
+    return {
+        isLive,
+        isGameOver,
+        showRoundStateLine,
+        showPlayersReadyLine,
+    };
+}
+
+// Derives engage-panel labels and fill widths for this viewer.
+function deriveConquestHudEngageViewModel(
+    pid: number,
     friendlyTeam: TeamID,
     enemyTeam: TeamID
-): void {
-    const leftChevrons = refs.conquestTicketsBleedLeftChevrons ?? [];
-    const rightChevrons = refs.conquestTicketsBleedRightChevrons ?? [];
-    const counts = conquestPhase3GetBleedChevronCountsForPerspective(friendlyTeam, enemyTeam);
-    // Chevron stack visibility rules:
-    // - 3 visible: keep default top-to-bottom stack (0,1,2)
-    // - 2 visible: use contiguous top/mid stack (0,1) for even visual spacing with this glyph/font.
-    // - 1 visible: use center slot (1), aligned with ticket text lane.
-    const isChevronIndexVisible = (index: number, count: number): boolean => {
-        if (count <= 0) return false;
-        if (count === 1) return index === 1;
-        if (count === 2) return index < 2;
-        return index < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT;
+): ConquestHudEngageViewModel {
+    const engageDisplay = conquestPhase3GetFlagEngageDisplayForViewer(pid, friendlyTeam, enemyTeam);
+    if (!engageDisplay.visible) {
+        return {
+            visible: false,
+            friendlyWidth: 0,
+            enemyWidth: 0,
+        };
+    }
+
+    const fullTrackWidth = Math.max(1, Math.floor(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH));
+    let friendlyWidth = engageDisplay.friendlyCount <= 0
+        ? 0
+        : Math.max(1, Math.floor(fullTrackWidth * engageDisplay.friendlyRatio));
+    if (friendlyWidth > fullTrackWidth) friendlyWidth = fullTrackWidth;
+    let enemyWidth = fullTrackWidth - friendlyWidth;
+    if (engageDisplay.enemyCount > 0 && enemyWidth <= 0) {
+        enemyWidth = 1;
+        friendlyWidth = Math.max(0, fullTrackWidth - enemyWidth);
+    }
+
+    return {
+        visible: true,
+        friendlyCountLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, engageDisplay.friendlyCount),
+        enemyCountLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, engageDisplay.enemyCount),
+        statusLabel: mod.Message(engageDisplay.statusKey),
+        friendlyWidth,
+        enemyWidth,
     };
+}
+
+// Derives per-slot flag visuals/labels/percent widgets from script-authoritative state.
+function deriveConquestHudFlagsViewModel(
+    mappedCaptureStates: ConquestCapturePointRuntimeState[],
+    friendlyTeam: TeamID,
+    enemyTeam: TeamID,
+    maxSlots: number
+): ConquestHudFlagsViewModel {
+    const clampedSlots = Math.max(1, maxSlots);
+    const slots: ConquestHudFlagSlotViewModel[] = [];
+    for (let i = 0; i < clampedSlots; i++) {
+        slots.push({
+            visible: false,
+            fillVisible: false,
+            fillY: CONQUEST_HUD_FLAG_FILL_INSET_Y + CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT,
+            fillHeight: 0,
+            labelVisible: false,
+            percentVisible: false,
+        });
+    }
+
+    const visibleSlots = conquestPhase3GetCenteredFlagSlots(mappedCaptureStates.length, clampedSlots);
+    const sampleTick = Math.floor(mod.GetMatchTimeElapsed() * 10);
+    for (let row = 0; row < mappedCaptureStates.length && row < visibleSlots.length; row++) {
+        const slotIndex = visibleSlots[row];
+        const cp = mappedCaptureStates[row];
+        const labelKey = conquestPhase3GetFlagLetterStringKey(cp, row);
+        const visualState = State.conquest.capture.visualByObjId[cp.objId]
+            ?? conquestPhase3CreateDefaultFlagVisualState(sampleTick);
+        const visual = conquestPhase3GetFlagSlotVisual(visualState, friendlyTeam, enemyTeam);
+        const percentVisual = conquestPhase3GetFlagPercentDisplay(visualState, friendlyTeam, enemyTeam);
+        const onPointCount = cp.onPointTeam1 + cp.onPointTeam2;
+        const rawFillHeight = visual.fillRatio <= 0
+            ? 0
+            : Math.floor(CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT * visual.fillRatio);
+        const minVisibleFillRatio = 1 / Math.max(1, CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT);
+        const minNeutralHideRatio = 2 / Math.max(1, CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT);
+        const unattendedNeutral = cp.ownerTeam === 0 && onPointCount <= 0;
+        const nearZeroNeutralResidual = unattendedNeutral && (
+            visual.fillRatio <= minNeutralHideRatio
+            || cp.progress01 <= minNeutralHideRatio
+            || rawFillHeight <= 2
+        );
+        const forceNeutralIdleEmpty = visualState.phase === "NEUTRAL_IDLE";
+        const fillHeight = forceNeutralIdleEmpty
+            ? 0
+            : nearZeroNeutralResidual
+                ? 0
+                : rawFillHeight <= 0
+                    ? (onPointCount > 0 && visual.fillRatio > 0 ? 1 : 0)
+                    : rawFillHeight;
+
+        const slotVm: ConquestHudFlagSlotViewModel = {
+            visible: true,
+            slotBgColor: visual.slotBgColor,
+            fillVisible: fillHeight > 0 && !!visual.fillColor,
+            fillColor: visual.fillColor,
+            fillY: CONQUEST_HUD_FLAG_FILL_INSET_Y + (CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT - fillHeight),
+            fillHeight,
+            labelVisible: true,
+            labelMessage: mod.Message(labelKey),
+            labelColor: visual.labelColor,
+            percentVisible: percentVisual.visible,
+            percentColor: percentVisual.color,
+        };
+        if (percentVisual.visible && percentVisual.color) {
+            const percentValue = Math.max(0, Math.min(100, Math.round(percentVisual.value01 * 100)));
+            slotVm.percentMessage = mod.Message(STR_SYSTEM_GENERIC_PERCENT, percentValue);
+        }
+        slots[slotIndex] = slotVm;
+    }
+
+    return { slots };
+}
+
+// Derives a script-authoritative conquest HUD view model for one player.
+function deriveHudViewModelForPlayer(
+    pid: number,
+    perspective: { friendlyTeam: TeamID; enemyTeam: TeamID },
+    mappedCaptureStates: ConquestCapturePointRuntimeState[],
+    maxFlagSlots: number
+): ConquestHudViewModel {
+    const friendlyTickets = perspective.friendlyTeam === TeamID.Team1
+        ? State.conquest.tickets.team1
+        : State.conquest.tickets.team2;
+    const enemyTickets = perspective.enemyTeam === TeamID.Team1
+        ? State.conquest.tickets.team1
+        : State.conquest.tickets.team2;
+    const bleedCounts = conquestPhase3GetBleedChevronCountsForPerspective(
+        perspective.friendlyTeam,
+        perspective.enemyTeam
+    );
+    const helpReady = deriveConquestHudHelpReadyViewModel(pid);
+    const status = deriveConquestHudStatusViewModel(helpReady);
+    const clock = deriveConquestHudClockViewModel();
+    const flags = deriveConquestHudFlagsViewModel(
+        mappedCaptureStates,
+        perspective.friendlyTeam,
+        perspective.enemyTeam,
+        maxFlagSlots
+    );
+    const engage = deriveConquestHudEngageViewModel(
+        pid,
+        perspective.friendlyTeam,
+        perspective.enemyTeam
+    );
+
+    return {
+        pid,
+        perspective: {
+            friendlyTeam: perspective.friendlyTeam,
+            enemyTeam: perspective.enemyTeam,
+        },
+        tickets: {
+            friendlyTeam: perspective.friendlyTeam,
+            enemyTeam: perspective.enemyTeam,
+            friendlyTickets,
+            enemyTickets,
+            friendlyTicketLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, friendlyTickets),
+            enemyTicketLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, enemyTickets),
+            leaderTeam: State.conquest.debug.ticketLeaderTeam,
+            bleedLeftCount: bleedCounts.leftCount,
+            bleedRightCount: bleedCounts.rightCount,
+        },
+        flags,
+        engage,
+        status,
+        helpReady,
+        clock,
+    };
+}
+
+// Renders top-level conquest roots only.
+function renderConquestRootsForPid(refs: HudRefs): void {
+    safeSetUIWidgetVisible(refs.conquestTicketsDebugRoot, true);
+    safeSetUIWidgetVisible(refs.conquestFlagsDebugRoot, true);
+}
+
+// Renders ticket number containers/text only.
+function renderConquestTicketCountersForPid(refs: HudRefs, tickets: ConquestHudTicketViewModel): void {
+    safeSetUIWidgetVisible(refs.conquestTicketsTeam1Container, true);
+    safeSetUIWidgetVisible(refs.conquestTicketsTeam2Container, true);
+    safeSetUIWidgetVisible(refs.conquestTicketsDebugTeam1, true);
+    safeSetUIWidgetVisible(refs.conquestTicketsDebugTeam2, true);
+    safeSetUITextLabel(refs.conquestTicketsDebugTeam1, tickets.friendlyTicketLabel);
+    safeSetUITextLabel(refs.conquestTicketsDebugTeam2, tickets.enemyTicketLabel);
+    safeSetUITextColor(refs.conquestTicketsDebugTeam1, COLOR_BLUE);
+    safeSetUITextColor(refs.conquestTicketsDebugTeam2, COLOR_RED);
+}
+
+// Renders ticket bar tracks/fills only.
+function renderConquestTicketBarsForPid(refs: HudRefs, tickets: ConquestHudTicketViewModel): void {
+    conquestPhase3ApplyTicketBarFill(refs, tickets.friendlyTickets, tickets.enemyTickets);
+}
+
+// Renders ticket lead crown/border only.
+function renderConquestTicketLeaderForPid(refs: HudRefs, tickets: ConquestHudTicketViewModel): void {
+    conquestPhase3ApplyTicketLeadIndicators(
+        refs,
+        tickets.friendlyTeam,
+        tickets.enemyTeam,
+        tickets.leaderTeam
+    );
+}
+
+// Backfills bleed-chevron core glyph refs from widget names and reports readiness.
+// This protects first-load renders where ParseUI widgets exist but refs are still undefined in cache.
+function conquestPhase3BackfillBleedChevronCoreRefs(refs: HudRefs): boolean {
+    if (!refs.conquestTicketsBleedLeftChevrons) refs.conquestTicketsBleedLeftChevrons = [];
+    if (!refs.conquestTicketsBleedRightChevrons) refs.conquestTicketsBleedRightChevrons = [];
+    let allFound = true;
     for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
-        safeSetUIWidgetVisible(leftChevrons[chevronIndex], isChevronIndexVisible(chevronIndex, counts.leftCount));
-        safeSetUIWidgetVisible(rightChevrons[chevronIndex], isChevronIndexVisible(chevronIndex, counts.rightCount));
-        safeSetUITextColor(leftChevrons[chevronIndex], COLOR_BLUE);
-        safeSetUITextColor(rightChevrons[chevronIndex], COLOR_RED);
+        const slot = chevronIndex + 1;
+        // Always resolve by name each pass; cached handles can be stale after rebuild/swap churn.
+        const leftChevron = safeFind(`ConquestTicketsHudBleedChevronLeft${slot}_${refs.pid}`);
+        const rightChevron = safeFind(`ConquestTicketsHudBleedChevronRight${slot}_${refs.pid}`);
+        refs.conquestTicketsBleedLeftChevrons[chevronIndex] = leftChevron;
+        refs.conquestTicketsBleedRightChevrons[chevronIndex] = rightChevron;
+        if (!leftChevron || !rightChevron) {
+            allFound = false;
+        }
+    }
+    return allFound;
+}
+
+// Renders ticket bleed chevrons only.
+function renderConquestTicketBleedForPid(refs: HudRefs, tickets: ConquestHudTicketViewModel): void {
+    let chevronsReady = conquestPhase3BackfillBleedChevronCoreRefs(refs);
+    if (!chevronsReady && (tickets.bleedLeftCount > 0 || tickets.bleedRightCount > 0)) {
+        const viewer = safeFindPlayer(refs.pid);
+        if (viewer && mod.IsPlayerValid(viewer)) {
+            // First-life hardening:
+            // if bleed is active but core chevrons are unresolved, force one HUD ensure pass
+            // so chevrons do not wait for a later team-swap rebuild to appear.
+            ensureHudForPlayer(viewer);
+            chevronsReady = conquestPhase3BackfillBleedChevronCoreRefs(refs);
+        }
+    }
+    if (!chevronsReady && (tickets.bleedLeftCount > 0 || tickets.bleedRightCount > 0)) {
+        // Keep a retry render queued until all core chevron refs are bound.
+        conquestPhase3MarkHudDirty();
+    }
+    conquestPhase3ApplyTicketBleedIndicatorCounts(
+        refs,
+        tickets.bleedLeftCount,
+        tickets.bleedRightCount
+    );
+}
+
+// Refreshes bleed chevrons on non-dirty ticks so first-life indicators do not depend on unrelated HUD writes.
+function conquestPhase3RefreshTicketBleedWhenHudClean(): void {
+    if (!isMatchLive()) return;
+    const players = mod.AllPlayers();
+    const count = mod.CountOf(players);
+    for (let i = 0; i < count; i++) {
+        const viewer = mod.ValueInArray(players, i) as mod.Player;
+        if (!viewer || !mod.IsPlayerValid(viewer)) continue;
+        const pid = safeGetPlayerId(viewer);
+        if (pid === undefined) continue;
+        if (State.conquest.debug.teamSwapHudResetPendingByPid[pid] === true) continue;
+        const refs = State.hudCache.hudByPid[pid];
+        if (!refs) continue;
+        const perspective = conquestPhase3GetPerspectiveTeams(viewer);
+        if (!perspective.resolved) continue;
+        const bleedCounts = conquestPhase3GetBleedChevronCountsForPerspective(
+            perspective.friendlyTeam,
+            perspective.enemyTeam
+        );
+        let chevronsReady = conquestPhase3BackfillBleedChevronCoreRefs(refs);
+        if (!chevronsReady && (bleedCounts.leftCount > 0 || bleedCounts.rightCount > 0)) {
+            ensureHudForPlayer(viewer);
+            chevronsReady = conquestPhase3BackfillBleedChevronCoreRefs(refs);
+        }
+        if (!chevronsReady && (bleedCounts.leftCount > 0 || bleedCounts.rightCount > 0)) {
+            conquestPhase3MarkHudDirty();
+        }
+        conquestPhase3ApplyTicketBleedIndicatorCounts(
+            refs,
+            bleedCounts.leftCount,
+            bleedCounts.rightCount
+        );
     }
 }
 
@@ -457,16 +1413,20 @@ function conquestPhase3ApplyTicketLeadIndicators(
 
     safeSetUIWidgetVisible(refs.conquestTicketsLeadLeftBorder, false);
     safeSetUIWidgetVisible(refs.conquestTicketsLeadRightBorder, false);
+    safeSetUIWidgetVisible(refs.conquestTicketsLeadLeftCrownShadow, false);
+    safeSetUIWidgetVisible(refs.conquestTicketsLeadRightCrownShadow, false);
     safeSetUIWidgetVisible(refs.conquestTicketsLeadLeftCrown, false);
     safeSetUIWidgetVisible(refs.conquestTicketsLeadRightCrown, false);
 
     if (showLeftLead) {
         safeSetUIWidgetBgColor(refs.conquestTicketsLeadLeftBorder, COLOR_BLUE);
         safeSetUIWidgetVisible(refs.conquestTicketsLeadLeftBorder, true);
+        safeSetUIWidgetVisible(refs.conquestTicketsLeadLeftCrownShadow, true);
         safeSetUIWidgetVisible(refs.conquestTicketsLeadLeftCrown, true);
     } else if (showRightLead) {
         safeSetUIWidgetBgColor(refs.conquestTicketsLeadRightBorder, COLOR_RED);
         safeSetUIWidgetVisible(refs.conquestTicketsLeadRightBorder, true);
+        safeSetUIWidgetVisible(refs.conquestTicketsLeadRightCrownShadow, true);
         safeSetUIWidgetVisible(refs.conquestTicketsLeadRightCrown, true);
     }
 }
@@ -506,22 +1466,6 @@ function conquestPhase3GetFlagLetterStringKey(cp: ConquestCapturePointRuntimeSta
     if (raw === "F") return STR_HUD_CONQUEST_FLAG_LETTER_F;
     if (raw === "G") return STR_HUD_CONQUEST_FLAG_LETTER_G;
     return STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN;
-}
-
-// Hides stale legacy per-flag triplet widgets from earlier HUD layouts.
-function conquestPhase3HideLegacyFlagTripletWidgets(pid: number): void {
-    const legacyRows = 7;
-    for (let i = 0; i < legacyRows; i++) {
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagFriendly_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagCenter_${pid}_${i}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagEnemy_${pid}_${i}`), false);
-    }
-}
-
-// Hides legacy conquest roots so V2 HUD roots are the only visible ticket/flag layers.
-function conquestPhase3HideLegacyConquestRoots(pid: number): void {
-    safeSetUIWidgetVisible(safeFind(`ConquestTicketsDebugRoot_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`ConquestFlagsDebugRoot_${pid}`), false);
 }
 
 // Creates the default script-authoritative visual state for one flag.
@@ -649,27 +1593,6 @@ function conquestPhase3NormalizeVisualSample(
         progress01,
         sampleTick,
     };
-}
-
-// Verifies whether a viewer is currently inside the radius of a specific mapped capture point.
-function conquestPhase3IsViewerOnCapturePoint(viewer: mod.Player, objId: number): boolean {
-    if (!viewer || !mod.IsPlayerValid(viewer) || !isPlayerDeployed(viewer)) return false;
-    const viewerPid = safeGetPlayerId(viewer);
-    if (viewerPid === undefined) return false;
-    try {
-        const cp = mod.GetCapturePoint(objId);
-        if (!cp) return false;
-        const playersOnPoint = mod.GetPlayersOnPoint(cp);
-        const playerCount = mod.CountOf(playersOnPoint);
-        for (let i = 0; i < playerCount; i++) {
-            const pointPlayer = mod.ValueInArray(playersOnPoint, i) as mod.Player;
-            if (!pointPlayer || !mod.IsPlayerValid(pointPlayer)) continue;
-            if (safeGetPlayerId(pointPlayer) === viewerPid) return true;
-        }
-    } catch {
-        return false;
-    }
-    return false;
 }
 
 // Resolves the next flag visual phase from normalized sample + previous phase state.
@@ -1101,68 +2024,36 @@ function conquestPhase3GetEngageStatusKey(
     return STR_HUD_CONQUEST_CAPTURE_STATUS_CONTESTING;
 }
 
+// Builds a hidden engage panel payload with optional last-known counts.
+// This keeps hidden-return branches consistent and prevents subtle field drift.
+function conquestPhase3BuildHiddenEngageDisplay(
+    friendlyCount: number = 0,
+    enemyCount: number = 0
+): ConquestFlagEngageDisplay {
+    return {
+        visible: false,
+        friendlyCount,
+        enemyCount,
+        friendlyRatio: 0,
+        enemyRatio: 0,
+        statusKey: STR_HUD_CONQUEST_CAPTURE_STATUS_CONTESTING,
+    };
+}
+
 // Builds script-authoritative engagement panel data for one viewer.
 function conquestPhase3GetFlagEngageDisplayForViewer(
-    viewer: mod.Player,
     pid: number,
     friendlyTeam: TeamID,
     enemyTeam: TeamID
 ): ConquestFlagEngageDisplay {
-    if (!State.players.deployedByPid[pid]) {
-        return {
-            visible: false,
-            friendlyCount: 0,
-            enemyCount: 0,
-            friendlyRatio: 0,
-            enemyRatio: 0,
-            statusKey: STR_HUD_CONQUEST_CAPTURE_STATUS_CONTESTING,
-        };
-    }
-    const swapPerspectiveLockUntil = State.conquest.debug.teamSwapPerspectiveLockUntilByPid[pid] ?? -1;
-    if (swapPerspectiveLockUntil >= mod.GetMatchTimeElapsed()) {
-        return {
-            visible: false,
-            friendlyCount: 0,
-            enemyCount: 0,
-            friendlyRatio: 0,
-            enemyRatio: 0,
-            statusKey: STR_HUD_CONQUEST_CAPTURE_STATUS_CONTESTING,
-        };
-    }
     const activeObjId = State.conquest.capture.engagedObjIdByPid[pid];
-    if (activeObjId === undefined) {
-        return {
-            visible: false,
-            friendlyCount: 0,
-            enemyCount: 0,
-            friendlyRatio: 0,
-            enemyRatio: 0,
-            statusKey: STR_HUD_CONQUEST_CAPTURE_STATUS_CONTESTING,
-        };
+    if (!conquestPhase3ShouldRenderEngageForPid(pid, activeObjId)) {
+        return conquestPhase3BuildHiddenEngageDisplay();
     }
-    if (!conquestPhase3IsViewerOnCapturePoint(viewer, activeObjId)) {
-        return {
-            visible: false,
-            friendlyCount: 0,
-            enemyCount: 0,
-            friendlyRatio: 0,
-            enemyRatio: 0,
-            statusKey: STR_HUD_CONQUEST_CAPTURE_STATUS_CONTESTING,
-        };
-    }
-
     const cp = State.conquest.capture.byObjId[activeObjId];
     if (!cp || !cp.mapped) {
-        return {
-            visible: false,
-            friendlyCount: 0,
-            enemyCount: 0,
-            friendlyRatio: 0,
-            enemyRatio: 0,
-            statusKey: STR_HUD_CONQUEST_CAPTURE_STATUS_CONTESTING,
-        };
+        return conquestPhase3BuildHiddenEngageDisplay();
     }
-
     const friendlyCount = friendlyTeam === TeamID.Team1
         ? cp.onPointTeam1
         : cp.onPointTeam2;
@@ -1171,14 +2062,7 @@ function conquestPhase3GetFlagEngageDisplayForViewer(
         : cp.onPointTeam2;
     const total = friendlyCount + enemyCount;
     if (total <= 0 || friendlyCount <= 0) {
-        return {
-            visible: false,
-            friendlyCount,
-            enemyCount,
-            friendlyRatio: 0,
-            enemyRatio: 0,
-            statusKey: STR_HUD_CONQUEST_CAPTURE_STATUS_CONTESTING,
-        };
+        return conquestPhase3BuildHiddenEngageDisplay(friendlyCount, enemyCount);
     }
 
     const friendlyRatio = Math.max(0, Math.min(1, friendlyCount / total));
@@ -1318,6 +2202,13 @@ function conquestPhase2AResetLiveState(): void {
     State.conquest.capture.unmappedSeenCount = 0;
     State.conquest.capture.visualByObjId = {};
     State.conquest.capture.engagedObjIdByPid = {};
+    State.conquest.debug.bleedPulseQueueLeftByPid = {};
+    State.conquest.debug.bleedPulseQueueRightByPid = {};
+    State.conquest.debug.bleedPulseActiveSideByPid = {};
+    State.conquest.debug.bleedPulseStepByPid = {};
+    State.conquest.debug.bleedPulseLimitByPid = {};
+    State.conquest.debug.bleedPulsePhaseByPid = {};
+    State.conquest.debug.bleedPulseNextAtByPid = {};
     State.conquest.endRace.endLatched = false;
     State.conquest.endRace.endReason = undefined;
     State.conquest.endRace.endSnapshot = undefined;
@@ -1344,6 +2235,13 @@ function conquestPhase2AResetNotLiveState(): void {
     State.conquest.capture.unmappedSeenCount = 0;
     State.conquest.capture.visualByObjId = {};
     State.conquest.capture.engagedObjIdByPid = {};
+    State.conquest.debug.bleedPulseQueueLeftByPid = {};
+    State.conquest.debug.bleedPulseQueueRightByPid = {};
+    State.conquest.debug.bleedPulseActiveSideByPid = {};
+    State.conquest.debug.bleedPulseStepByPid = {};
+    State.conquest.debug.bleedPulseLimitByPid = {};
+    State.conquest.debug.bleedPulsePhaseByPid = {};
+    State.conquest.debug.bleedPulseNextAtByPid = {};
     conquestPhase2AResetCaptureTimingConfigCache();
     conquestPhase2ABuildMappedCaptureIndexFromConfig();
     conquestPhase2AApplyCaptureTimingForMappedPoints();
@@ -1435,7 +2333,9 @@ function conquestPhase2AApplyBleedTick(): void {
     }
 
     const changed = conquestPhase2AApplyTicketDelta(losingTeam, -bleedUnits);
-    if (changed) conquestPhase2AMirrorTicketsToEngineScore();
+    if (changed) {
+        conquestPhase2AMirrorTicketsToEngineScore();
+    }
 }
 
 // Evaluates ticket-first end condition with clock fallback per CF-07/CF-60.
@@ -1468,6 +2368,7 @@ function conquestPhase2ACheckEndCondition(): void {
 }
 
 // Ingests engine capture-point ownership/progress into authoritative capture runtime state.
+// Engage membership is handled by capture-point enter/exit event handlers.
 function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint): void {
     if (!eventCapturePoint) return;
     const objId = safeGetObjId(eventCapturePoint);
@@ -1520,14 +2421,22 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
             const pointPlayer = mod.ValueInArray(playersOnPoint, i) as mod.Player;
             if (!pointPlayer || !mod.IsPlayerValid(pointPlayer)) continue;
             const pointPid = safeGetPlayerId(pointPlayer);
-            if (pointPid !== undefined && !State.players.deployedByPid[pointPid]) continue;
             const pointTeam = safeGetTeamNumberFromPlayer(pointPlayer, 0);
-            if (pointTeam === TeamID.Team1) onPointTeam1 += 1;
-            if (pointTeam === TeamID.Team2) onPointTeam2 += 1;
-            if (pointPid === undefined) continue;
-            if (State.conquest.capture.engagedObjIdByPid[pointPid] === undefined) {
-                State.conquest.capture.engagedObjIdByPid[pointPid] = objId;
+            let resolvedPointTeam = pointTeam;
+            if (pointPid !== undefined) {
+                const livePlayer = safeFindPlayer(pointPid);
+                const liveTeam = livePlayer && mod.IsPlayerValid(livePlayer)
+                    ? safeGetTeamNumberFromPlayer(livePlayer, 0)
+                    : 0;
+                // Count on-point players by authoritative live team when available.
+                // This avoids first-post-swap engage suppression caused by transient team mismatch
+                // between on-point sample snapshots and live player team state.
+                if (liveTeam !== 0) {
+                    resolvedPointTeam = liveTeam;
+                }
             }
+            if (resolvedPointTeam === TeamID.Team1) onPointTeam1 += 1;
+            if (resolvedPointTeam === TeamID.Team2) onPointTeam2 += 1;
         }
     } catch {
         onPointTeam1 = 0;
@@ -1753,8 +2662,7 @@ function conquestPhase2AOnCapturePointCaptured(eventCapturePoint: mod.CapturePoi
  */
 function conquestPhase2ASyncMappedCapturePointsFromEngine(): void {
     const mappedObjIds = State.conquest.capture.mappedObjIdsInOrder;
-    const previousEngagedByPid = State.conquest.capture.engagedObjIdByPid;
-    State.conquest.capture.engagedObjIdByPid = {};
+    const previousEngagedByPid = { ...State.conquest.capture.engagedObjIdByPid };
     for (let i = 0; i < mappedObjIds.length; i++) {
         const objId = mappedObjIds[i];
         const cachedState = State.conquest.capture.byObjId[objId];
@@ -1771,8 +2679,8 @@ function conquestPhase2ASyncMappedCapturePointsFromEngine(): void {
         if (!cp) continue;
         conquestPhase2AOnCapturePointTick(cp);
     }
-
     const nextEngagedByPid = State.conquest.capture.engagedObjIdByPid;
+
     const previousKeys = Object.keys(previousEngagedByPid);
     const nextKeys = Object.keys(nextEngagedByPid);
     if (previousKeys.length !== nextKeys.length) {
@@ -1795,10 +2703,294 @@ function hasOwnerTeamForProgressReset(ownerTeam: TeamID | 0, progress01: number)
     return progress01 > 0.001;
 }
 
+// Renders conquest flag slot background/fill/label/percent widgets only.
+function renderConquestFlagSlotsForPid(
+    refs: HudRefs,
+    flags: ConquestHudFlagsViewModel
+): void {
+    const slotRoots = refs.conquestFlagsDebugSlotRoots ?? [];
+    const slotBorders = refs.conquestFlagsDebugBorderRows ?? [];
+    const slotFills = refs.conquestFlagsDebugFillRows ?? [];
+    const slotLabelShadowsRight = refs.conquestFlagsDebugLabelShadowRightRows ?? [];
+    const slotLabelShadowsLeft = refs.conquestFlagsDebugLabelShadowLeftRows ?? [];
+    const slotLabelShadowsUp = refs.conquestFlagsDebugLabelShadowUpRows ?? [];
+    const slotLabelShadowsDown = refs.conquestFlagsDebugLabelShadowDownRows ?? [];
+    const slotLabelShadowsUpLeft = refs.conquestFlagsDebugLabelShadowUpLeftRows ?? [];
+    const slotLabelShadowsUpRight = refs.conquestFlagsDebugLabelShadowUpRightRows ?? [];
+    const slotLabelShadowsDownRight = refs.conquestFlagsDebugLabelShadowDownRightRows ?? [];
+    const slotLabelShadowsDownLeft = refs.conquestFlagsDebugLabelShadowDownLeftRows ?? [];
+    const slotLabelShadowsInner = refs.conquestFlagsDebugLabelShadowInnerRows ?? [];
+    const slotLabelShadowsInnerDeep = refs.conquestFlagsDebugLabelShadowInnerDeepRows ?? [];
+    const slotLabels = refs.conquestFlagsDebugLabelRows ?? [];
+    const slotPercentRoots = refs.conquestFlagsDebugPercentRoots ?? [];
+    const slotPercentShadowsRight = refs.conquestFlagsDebugPercentShadowRightRows ?? [];
+    const slotPercentShadowsLeft = refs.conquestFlagsDebugPercentShadowLeftRows ?? [];
+    const slotPercentShadowsUp = refs.conquestFlagsDebugPercentShadowUpRows ?? [];
+    const slotPercentShadowsDown = refs.conquestFlagsDebugPercentShadowDownRows ?? [];
+    const slotPercentShadowsUpLeft = refs.conquestFlagsDebugPercentShadowUpLeftRows ?? [];
+    const slotPercentShadowsUpRight = refs.conquestFlagsDebugPercentShadowUpRightRows ?? [];
+    const slotPercentShadowsDownRight = refs.conquestFlagsDebugPercentShadowDownRightRows ?? [];
+    const slotPercentShadowsDownLeft = refs.conquestFlagsDebugPercentShadowDownLeftRows ?? [];
+    const slotPercentShadowsInner = refs.conquestFlagsDebugPercentShadowInnerRows ?? [];
+    const slotPercentTexts = refs.conquestFlagsDebugPercentTextRows ?? [];
+    const maxSlotsFromRefs = Math.max(
+        slotRoots.length,
+        slotBorders.length,
+        slotFills.length,
+        slotLabelShadowsRight.length,
+        slotLabelShadowsLeft.length,
+        slotLabelShadowsUp.length,
+        slotLabelShadowsDown.length,
+        slotLabelShadowsUpLeft.length,
+        slotLabelShadowsUpRight.length,
+        slotLabelShadowsDownRight.length,
+        slotLabelShadowsDownLeft.length,
+        slotLabelShadowsInner.length,
+        slotLabelShadowsInnerDeep.length,
+        slotLabels.length,
+        slotPercentRoots.length,
+        slotPercentShadowsRight.length,
+        slotPercentShadowsLeft.length,
+        slotPercentShadowsUp.length,
+        slotPercentShadowsDown.length,
+        slotPercentShadowsUpLeft.length,
+        slotPercentShadowsUpRight.length,
+        slotPercentShadowsDownRight.length,
+        slotPercentShadowsDownLeft.length,
+        slotPercentShadowsInner.length,
+        slotPercentTexts.length
+    );
+    const maxSlots = Math.max(maxSlotsFromRefs, flags.slots.length);
+
+    for (let slot = 0; slot < maxSlots; slot++) {
+        const slotVm = flags.slots[slot] ?? {
+            visible: false,
+            fillVisible: false,
+            fillY: 0,
+            fillHeight: 0,
+            labelVisible: false,
+            percentVisible: false,
+        };
+        const slotRoot = slotRoots[slot];
+        const slotBorder = slotBorders[slot];
+        const slotFill = slotFills[slot];
+        const slotLabelShadowRight = slotLabelShadowsRight[slot];
+        const slotLabelShadowLeft = slotLabelShadowsLeft[slot];
+        const slotLabelShadowUp = slotLabelShadowsUp[slot];
+        const slotLabelShadowDown = slotLabelShadowsDown[slot];
+        const slotLabelShadowUpLeft = slotLabelShadowsUpLeft[slot];
+        const slotLabelShadowUpRight = slotLabelShadowsUpRight[slot];
+        const slotLabelShadowDownRight = slotLabelShadowsDownRight[slot];
+        const slotLabelShadowDownLeft = slotLabelShadowsDownLeft[slot];
+        const slotLabelShadowInner = slotLabelShadowsInner[slot];
+        const slotLabelShadowInnerDeep = slotLabelShadowsInnerDeep[slot];
+        const slotLabel = slotLabels[slot];
+        const slotPercentRoot = slotPercentRoots[slot];
+        const slotPercentShadowRight = slotPercentShadowsRight[slot];
+        const slotPercentShadowLeft = slotPercentShadowsLeft[slot];
+        const slotPercentShadowUp = slotPercentShadowsUp[slot];
+        const slotPercentShadowDown = slotPercentShadowsDown[slot];
+        const slotPercentShadowUpLeft = slotPercentShadowsUpLeft[slot];
+        const slotPercentShadowUpRight = slotPercentShadowsUpRight[slot];
+        const slotPercentShadowDownRight = slotPercentShadowsDownRight[slot];
+        const slotPercentShadowDownLeft = slotPercentShadowsDownLeft[slot];
+        const slotPercentShadowInner = slotPercentShadowsInner[slot];
+        const slotPercentText = slotPercentTexts[slot];
+        const slotLabelGroup: ConquestShadowTextWidgetSet = {
+            right: slotLabelShadowRight,
+            left: slotLabelShadowLeft,
+            up: slotLabelShadowUp,
+            down: slotLabelShadowDown,
+            upLeft: slotLabelShadowUpLeft,
+            upRight: slotLabelShadowUpRight,
+            downRight: slotLabelShadowDownRight,
+            downLeft: slotLabelShadowDownLeft,
+            text: slotLabel,
+        };
+        const slotPercentGroup: ConquestShadowTextWidgetSet = {
+            right: slotPercentShadowRight,
+            left: slotPercentShadowLeft,
+            up: slotPercentShadowUp,
+            down: slotPercentShadowDown,
+            upLeft: slotPercentShadowUpLeft,
+            upRight: slotPercentShadowUpRight,
+            downRight: slotPercentShadowDownRight,
+            downLeft: slotPercentShadowDownLeft,
+            inner: slotPercentShadowInner,
+            text: slotPercentText,
+        };
+        // Objective letters use only the even 8-direction ring; centered inner layers are disabled.
+        safeSetUIWidgetVisible(slotLabelShadowInner, false);
+        safeSetUIWidgetVisible(slotLabelShadowInnerDeep, false);
+        if (!slotVm.visible) {
+            safeSetUIWidgetVisible(slotRoot, false);
+            safeSetUIWidgetVisible(slotBorder, false);
+            safeSetUIWidgetVisible(slotFill, false);
+            safeSetUIWidgetVisible(slotPercentRoot, false);
+            conquestPhase3SetShadowTextGroupVisible(slotLabelGroup, false);
+            conquestPhase3SetShadowTextGroupVisible(slotPercentGroup, false);
+            continue;
+        }
+
+        safeSetUIWidgetVisible(slotRoot, true);
+        conquestPhase3SetShadowTextGroupVisible(slotLabelGroup, slotVm.labelVisible);
+        if (slotVm.labelVisible && slotVm.labelMessage && slotVm.labelColor) {
+            conquestPhase3SetShadowTextGroupLabel(slotLabelGroup, slotVm.labelMessage);
+            conquestPhase3SetShadowTextGroupColors(slotLabelGroup, slotVm.labelColor);
+        }
+        safeSetUIWidgetVisible(slotPercentRoot, slotVm.percentVisible);
+        if (slotVm.percentVisible && slotVm.percentMessage && slotVm.percentColor) {
+            conquestPhase3SetShadowTextGroupVisible(slotPercentGroup, true);
+            conquestPhase3SetShadowTextGroupLabel(slotPercentGroup, slotVm.percentMessage);
+            conquestPhase3SetShadowTextGroupColors(slotPercentGroup, slotVm.percentColor);
+        } else {
+            conquestPhase3SetShadowTextGroupVisible(slotPercentGroup, false);
+        }
+        const slotBgColor = slotVm.slotBgColor ?? mod.CreateVector(
+            CONQUEST_HUD_FLAG_SLOT_TRACK_RGB[0],
+            CONQUEST_HUD_FLAG_SLOT_TRACK_RGB[1],
+            CONQUEST_HUD_FLAG_SLOT_TRACK_RGB[2]
+        );
+        safeSetUIWidgetBgColor(slotRoot, slotBgColor);
+        // Borders are disabled for conquest objective flags.
+        safeSetUIWidgetVisible(slotBorder, false);
+
+        if (slotVm.fillVisible && slotVm.fillColor) {
+            safeSetUIWidgetVisible(slotFill, true);
+            safeSetUIWidgetPosition(
+                slotFill,
+                mod.CreateVector(CONQUEST_HUD_FLAG_FILL_INSET_X, slotVm.fillY, 0)
+            );
+            safeSetUIWidgetSize(
+                slotFill,
+                mod.CreateVector(CONQUEST_HUD_FLAG_FILL_MAX_WIDTH, slotVm.fillHeight, 0)
+            );
+            safeSetUIWidgetBgColor(slotFill, slotVm.fillColor);
+        } else {
+            safeSetUIWidgetVisible(slotFill, false);
+        }
+    }
+}
+
+// Renders conquest engage status widgets only.
+function renderConquestEngageForPid(
+    refs: HudRefs,
+    engage: ConquestHudEngageViewModel
+): void {
+    const pid = refs.pid;
+    // Resolve by name first each pass so stale cached handles cannot block engage hide/show writes.
+    const engageRoot = refs.conquestFlagsEngageRoot ?? safeFind(`ConquestFlagHudEngageRoot_${pid}`);
+    const engageTrack = refs.conquestFlagsEngageTrack ?? safeFind(`ConquestFlagHudEngageTrack_${pid}`);
+    const engageFriendlyFill = refs.conquestFlagsEngageFriendlyFill ?? safeFind(`ConquestFlagHudEngageFriendlyFill_${pid}`);
+    const engageEnemyFill = refs.conquestFlagsEngageEnemyFill ?? safeFind(`ConquestFlagHudEngageEnemyFill_${pid}`);
+    const engageFriendlyCountBg = refs.conquestFlagsEngageFriendlyCountBg ?? safeFind(`ConquestFlagHudEngageFriendlyCountBg_${pid}`);
+    const engageEnemyCountBg = refs.conquestFlagsEngageEnemyCountBg ?? safeFind(`ConquestFlagHudEngageEnemyCountBg_${pid}`);
+    const engageFriendlyCount = refs.conquestFlagsEngageFriendlyCount ?? safeFind(`ConquestFlagHudEngageFriendlyCount_${pid}`);
+    const engageEnemyCount = refs.conquestFlagsEngageEnemyCount ?? safeFind(`ConquestFlagHudEngageEnemyCount_${pid}`);
+    const engageStatusShadowRight = refs.conquestFlagsEngageStatusShadowRight ?? safeFind(`ConquestFlagHudEngageStatusShadowRight_${pid}`);
+    const engageStatusShadowLeft = refs.conquestFlagsEngageStatusShadowLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowLeft_${pid}`);
+    const engageStatusShadowUp = refs.conquestFlagsEngageStatusShadowUp ?? safeFind(`ConquestFlagHudEngageStatusShadowUp_${pid}`);
+    const engageStatusShadowDown = refs.conquestFlagsEngageStatusShadowDown ?? safeFind(`ConquestFlagHudEngageStatusShadowDown_${pid}`);
+    const engageStatusShadowUpLeft = refs.conquestFlagsEngageStatusShadowUpLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowUpLeft_${pid}`);
+    const engageStatusShadowUpRight = refs.conquestFlagsEngageStatusShadowUpRight ?? safeFind(`ConquestFlagHudEngageStatusShadowUpRight_${pid}`);
+    const engageStatusShadowDownRight = refs.conquestFlagsEngageStatusShadowDownRight ?? safeFind(`ConquestFlagHudEngageStatusShadowDownRight_${pid}`);
+    const engageStatusShadowDownLeft = refs.conquestFlagsEngageStatusShadowDownLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowDownLeft_${pid}`);
+    const engageStatus = refs.conquestFlagsEngageStatus ?? safeFind(`ConquestFlagHudEngageStatus_${pid}`);
+    refs.conquestFlagsEngageRoot = engageRoot;
+    refs.conquestFlagsEngageTrack = engageTrack;
+    refs.conquestFlagsEngageFriendlyFill = engageFriendlyFill;
+    refs.conquestFlagsEngageEnemyFill = engageEnemyFill;
+    refs.conquestFlagsEngageFriendlyCountBg = engageFriendlyCountBg;
+    refs.conquestFlagsEngageEnemyCountBg = engageEnemyCountBg;
+    refs.conquestFlagsEngageFriendlyCount = engageFriendlyCount;
+    refs.conquestFlagsEngageEnemyCount = engageEnemyCount;
+    refs.conquestFlagsEngageStatusShadowRight = engageStatusShadowRight;
+    refs.conquestFlagsEngageStatusShadowLeft = engageStatusShadowLeft;
+    refs.conquestFlagsEngageStatusShadowUp = engageStatusShadowUp;
+    refs.conquestFlagsEngageStatusShadowDown = engageStatusShadowDown;
+    refs.conquestFlagsEngageStatusShadowUpLeft = engageStatusShadowUpLeft;
+    refs.conquestFlagsEngageStatusShadowUpRight = engageStatusShadowUpRight;
+    refs.conquestFlagsEngageStatusShadowDownRight = engageStatusShadowDownRight;
+    refs.conquestFlagsEngageStatusShadowDownLeft = engageStatusShadowDownLeft;
+    refs.conquestFlagsEngageStatus = engageStatus;
+    const engageStatusGroup: ConquestShadowTextWidgetSet = {
+        right: engageStatusShadowRight,
+        left: engageStatusShadowLeft,
+        up: engageStatusShadowUp,
+        down: engageStatusShadowDown,
+        upLeft: engageStatusShadowUpLeft,
+        upRight: engageStatusShadowUpRight,
+        downRight: engageStatusShadowDownRight,
+        downLeft: engageStatusShadowDownLeft,
+        text: engageStatus,
+    };
+    safeSetUIWidgetVisible(engageRoot, engage.visible);
+    if (!engage.visible) {
+        safeSetUIWidgetVisible(engageTrack, false);
+        safeSetUIWidgetVisible(engageFriendlyFill, false);
+        safeSetUIWidgetVisible(engageEnemyFill, false);
+        safeSetUIWidgetVisible(engageFriendlyCountBg, false);
+        safeSetUIWidgetVisible(engageEnemyCountBg, false);
+        safeSetUIWidgetVisible(engageFriendlyCount, false);
+        safeSetUIWidgetVisible(engageEnemyCount, false);
+        conquestPhase3SetShadowTextGroupVisible(engageStatusGroup, false);
+        return;
+    }
+
+    safeSetUIWidgetVisible(engageTrack, true);
+    safeSetUIWidgetVisible(engageFriendlyCountBg, true);
+    safeSetUIWidgetVisible(engageEnemyCountBg, true);
+    safeSetUIWidgetVisible(engageFriendlyCount, true);
+    safeSetUIWidgetVisible(engageEnemyCount, true);
+    conquestPhase3SetShadowTextGroupVisible(engageStatusGroup, true);
+
+    const friendlyCountLabel = engage.friendlyCountLabel ?? mod.Message(mod.stringkeys.twl.system.genericCounter, 0);
+    const enemyCountLabel = engage.enemyCountLabel ?? mod.Message(mod.stringkeys.twl.system.genericCounter, 0);
+    const statusLabel = engage.statusLabel ?? mod.Message(STR_HUD_CONQUEST_CAPTURE_STATUS_CONTESTING);
+    safeSetUITextLabel(
+        engageFriendlyCount,
+        friendlyCountLabel
+    );
+    safeSetUITextLabel(
+        engageEnemyCount,
+        enemyCountLabel
+    );
+    conquestPhase3SetShadowTextGroupLabel(engageStatusGroup, statusLabel);
+    conquestPhase3SetShadowTextGroupColors(engageStatusGroup, COLOR_WHITE);
+    safeSetUITextColor(engageFriendlyCount, COLOR_BLUE);
+    safeSetUITextColor(engageEnemyCount, COLOR_RED);
+    safeSetUIWidgetBgColor(engageTrack, COLOR_GRAY_DARK);
+
+    const friendlyWidth = engage.friendlyWidth;
+    const enemyWidth = engage.enemyWidth;
+
+    safeSetUIWidgetVisible(engageFriendlyFill, friendlyWidth > 0);
+    safeSetUIWidgetVisible(engageEnemyFill, enemyWidth > 0);
+    if (friendlyWidth > 0) {
+        safeSetUIWidgetPosition(engageFriendlyFill, mod.CreateVector(0, 0, 0));
+        safeSetUIWidgetSize(
+            engageFriendlyFill,
+            mod.CreateVector(friendlyWidth, CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT, 0)
+        );
+        safeSetUIWidgetBgColor(engageFriendlyFill, COLOR_BLUE);
+    }
+    if (enemyWidth > 0) {
+        safeSetUIWidgetPosition(engageEnemyFill, mod.CreateVector(friendlyWidth, 0, 0));
+        safeSetUIWidgetSize(
+            engageEnemyFill,
+            mod.CreateVector(enemyWidth, CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT, 0)
+        );
+        safeSetUIWidgetBgColor(engageEnemyFill, COLOR_RED);
+    }
+}
+
 // Updates per-player conquest ticket/flag HUD from authoritative state using viewer perspective colors.
 function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
     if (!State.conquest.debug.hudEnabled) return;
-    if (!force && !State.conquest.debug.hudDirty) return;
+    if (!force && !State.conquest.debug.hudDirty) {
+        conquestPhase3RefreshTicketBleedWhenHudClean();
+        return;
+    }
 
     const now = Math.floor(mod.GetMatchTimeElapsed());
     State.conquest.debug.hudLastUpdatedAtSeconds = now;
@@ -1813,336 +3005,67 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
+        const pid = safeGetPlayerId(p);
+        if (pid === undefined) continue;
+        if (!force && !conquestPhase3TrackSinglePassRenderForPid(pid)) continue;
+        const swapResetPending = State.conquest.debug.teamSwapHudResetPendingByPid[pid] === true;
+        const refsDuringSwap = State.hudCache.hudByPid[pid];
+        if (swapResetPending) {
+            // Hard swap gate:
+            // never build/recover/render while pending; only force-hide any existing widgets.
+            State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
+            delete State.conquest.capture.engagedObjIdByPid[pid];
+            conquestPhase3ForceHideEngageWidgetsForPid(pid);
+            if (refsDuringSwap) {
+                conquestPhase3ForceHideAllV2Widgets(refsDuringSwap);
+            }
+            continue;
+        }
+        const topHelpReadyVm = deriveConquestHudHelpReadyViewModel(pid);
+        const topStatusVm = deriveConquestHudStatusViewModel(topHelpReadyVm);
+        const topClockVm = deriveConquestHudClockViewModel();
+        conquestPhase3PublishTopHudDerivedSlicesForPid(pid, topStatusVm, topHelpReadyVm, topClockVm);
 
         const perspective = conquestPhase3GetPerspectiveTeams(p);
-        const friendlyTickets = perspective.friendlyTeam === TeamID.Team1
-            ? State.conquest.tickets.team1
-            : State.conquest.tickets.team2;
-        const enemyTickets = perspective.enemyTeam === TeamID.Team1
-            ? State.conquest.tickets.team1
-            : State.conquest.tickets.team2;
-
-        const friendlyTicketLabel = mod.Message(mod.stringkeys.twl.system.genericCounter, friendlyTickets);
-        const enemyTicketLabel = mod.Message(mod.stringkeys.twl.system.genericCounter, enemyTickets);
-
-        const refs = ensureHudForPlayer(p);
+        let refs: HudRefs | undefined = State.hudCache.hudByPid[pid];
+        if (!refs) {
+            refs = ensureHudForPlayer(p);
+        }
         if (!refs) continue;
-        conquestPhase3HideLegacyConquestRoots(refs.pid);
-        conquestPhase3HideLegacyFlagTripletWidgets(refs.pid);
+        if (!conquestPhase3HasCriticalHudRefs(refs)) {
+            destroyConquestHudForPid(refs.pid);
+            refs = ensureHudForPlayer(p);
+            if (!refs || !conquestPhase3HasCriticalHudRefs(refs)) continue;
+        }
+        if (!perspective.resolved) {
+            // Never paint conquest team colors with an unresolved perspective.
+            // Hide this frame and wait for authoritative team resolution.
+            conquestPhase3ForceHideAllV2Widgets(refs);
+            continue;
+        }
+        const maxFlagSlots = conquestPhase3GetFlagMaxSlotsFromRefs(refs);
+        const hudVm = deriveHudViewModelForPlayer(pid, perspective, mappedCaptureStates, maxFlagSlots);
+        conquestPhase3PublishDerivedHudSlicesForPid(pid, hudVm);
 
         if (CONQUEST_PHASE3_UI_OWNERSHIP_PROBE_HIDE_V2) {
-            conquestPhase3ForceHideAllV2Widgets(refs.pid, refs);
+            conquestPhase3ForceHideAllV2Widgets(refs);
             continue;
         }
-
-        if (refs.conquestTicketsDebugRoot) {
-            safeSetUIWidgetVisible(refs.conquestTicketsDebugRoot, true);
-        }
-        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudTeam1Container_${refs.pid}`), true);
-        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudTeam2Container_${refs.pid}`), true);
-        safeSetUIWidgetVisible(refs.conquestTicketsDebugTeam1, true);
-        safeSetUIWidgetVisible(refs.conquestTicketsDebugTeam2, true);
-        safeSetUITextLabel(refs.conquestTicketsDebugTeam1, friendlyTicketLabel);
-        safeSetUITextLabel(refs.conquestTicketsDebugTeam2, enemyTicketLabel);
-        safeSetUITextColor(refs.conquestTicketsDebugTeam1, COLOR_BLUE);
-        safeSetUITextColor(refs.conquestTicketsDebugTeam2, COLOR_RED);
-        conquestPhase3ApplyTicketBarFill(refs, friendlyTickets, enemyTickets);
-        conquestPhase3ApplyTicketLeadIndicators(
+        renderConquestTicketCountersForPid(refs, hudVm.tickets);
+        renderConquestTicketBarsForPid(refs, hudVm.tickets);
+        renderConquestTicketLeaderForPid(refs, hudVm.tickets);
+        renderConquestTicketBleedForPid(refs, hudVm.tickets);
+        renderConquestFlagSlotsForPid(
             refs,
-            perspective.friendlyTeam,
-            perspective.enemyTeam,
-            State.conquest.debug.ticketLeaderTeam
+            hudVm.flags
         );
-        conquestPhase3ApplyTicketBleedIndicators(
+        renderConquestEngageForPid(
             refs,
-            perspective.friendlyTeam,
-            perspective.enemyTeam
+            hudVm.engage
         );
-
-        if (refs.conquestFlagsDebugRoot) {
-            safeSetUIWidgetVisible(refs.conquestFlagsDebugRoot, true);
-        }
-        const slotRoots = refs.conquestFlagsDebugSlotRoots ?? [];
-        const slotBorders = refs.conquestFlagsDebugBorderRows ?? [];
-        const slotFills = refs.conquestFlagsDebugFillRows ?? [];
-        const slotLabelShadowsRight = refs.conquestFlagsDebugLabelShadowRightRows ?? [];
-        const slotLabelShadowsLeft = refs.conquestFlagsDebugLabelShadowLeftRows ?? [];
-        const slotLabelShadowsUp = refs.conquestFlagsDebugLabelShadowUpRows ?? [];
-        const slotLabelShadowsDown = refs.conquestFlagsDebugLabelShadowDownRows ?? [];
-        const slotLabelShadowsUpLeft = refs.conquestFlagsDebugLabelShadowUpLeftRows ?? [];
-        const slotLabelShadowsUpRight = refs.conquestFlagsDebugLabelShadowUpRightRows ?? [];
-        const slotLabelShadowsDownRight = refs.conquestFlagsDebugLabelShadowDownRightRows ?? [];
-        const slotLabelShadowsDownLeft = refs.conquestFlagsDebugLabelShadowDownLeftRows ?? [];
-        const slotLabelShadowsInner = refs.conquestFlagsDebugLabelShadowInnerRows ?? [];
-        const slotLabelShadowsInnerDeep = refs.conquestFlagsDebugLabelShadowInnerDeepRows ?? [];
-        const slotLabels = refs.conquestFlagsDebugLabelRows ?? [];
-        const slotPercentRoots = refs.conquestFlagsDebugPercentRoots ?? [];
-        const slotPercentShadowsRight = refs.conquestFlagsDebugPercentShadowRightRows ?? [];
-        const slotPercentShadowsLeft = refs.conquestFlagsDebugPercentShadowLeftRows ?? [];
-        const slotPercentShadowsUp = refs.conquestFlagsDebugPercentShadowUpRows ?? [];
-        const slotPercentShadowsDown = refs.conquestFlagsDebugPercentShadowDownRows ?? [];
-        const slotPercentShadowsUpLeft = refs.conquestFlagsDebugPercentShadowUpLeftRows ?? [];
-        const slotPercentShadowsUpRight = refs.conquestFlagsDebugPercentShadowUpRightRows ?? [];
-        const slotPercentShadowsDownRight = refs.conquestFlagsDebugPercentShadowDownRightRows ?? [];
-        const slotPercentShadowsDownLeft = refs.conquestFlagsDebugPercentShadowDownLeftRows ?? [];
-        const slotPercentShadowsInner = refs.conquestFlagsDebugPercentShadowInnerRows ?? [];
-        const slotPercentTexts = refs.conquestFlagsDebugPercentTextRows ?? [];
-        const engageRoot = refs.conquestFlagsEngageRoot;
-        const engageTrack = refs.conquestFlagsEngageTrack;
-        const engageFriendlyFill = refs.conquestFlagsEngageFriendlyFill;
-        const engageEnemyFill = refs.conquestFlagsEngageEnemyFill;
-        const engageFriendlyCountBg = refs.conquestFlagsEngageFriendlyCountBg;
-        const engageEnemyCountBg = refs.conquestFlagsEngageEnemyCountBg;
-        const engageFriendlyCount = refs.conquestFlagsEngageFriendlyCount;
-        const engageEnemyCount = refs.conquestFlagsEngageEnemyCount;
-        const engageStatusShadowRight = refs.conquestFlagsEngageStatusShadowRight;
-        const engageStatusShadowLeft = refs.conquestFlagsEngageStatusShadowLeft;
-        const engageStatusShadowUp = refs.conquestFlagsEngageStatusShadowUp;
-        const engageStatusShadowDown = refs.conquestFlagsEngageStatusShadowDown;
-        const engageStatusShadowUpLeft = refs.conquestFlagsEngageStatusShadowUpLeft;
-        const engageStatusShadowUpRight = refs.conquestFlagsEngageStatusShadowUpRight;
-        const engageStatusShadowDownRight = refs.conquestFlagsEngageStatusShadowDownRight;
-        const engageStatusShadowDownLeft = refs.conquestFlagsEngageStatusShadowDownLeft;
-        const engageStatus = refs.conquestFlagsEngageStatus;
-        const engageStatusGroup: ConquestShadowTextWidgetSet = {
-            right: engageStatusShadowRight,
-            left: engageStatusShadowLeft,
-            up: engageStatusShadowUp,
-            down: engageStatusShadowDown,
-            upLeft: engageStatusShadowUpLeft,
-            upRight: engageStatusShadowUpRight,
-            downRight: engageStatusShadowDownRight,
-            downLeft: engageStatusShadowDownLeft,
-            text: engageStatus,
-        };
-        const maxSlots = Math.max(
-            slotRoots.length,
-            slotBorders.length,
-            slotFills.length,
-            slotLabelShadowsRight.length,
-            slotLabelShadowsLeft.length,
-            slotLabelShadowsUp.length,
-            slotLabelShadowsDown.length,
-            slotLabelShadowsUpLeft.length,
-            slotLabelShadowsUpRight.length,
-            slotLabelShadowsDownRight.length,
-            slotLabelShadowsDownLeft.length,
-            slotLabelShadowsInner.length,
-            slotLabelShadowsInnerDeep.length,
-            slotLabels.length,
-            slotPercentRoots.length,
-            slotPercentShadowsRight.length,
-            slotPercentShadowsLeft.length,
-            slotPercentShadowsUp.length,
-            slotPercentShadowsDown.length,
-            slotPercentShadowsUpLeft.length,
-            slotPercentShadowsUpRight.length,
-            slotPercentShadowsDownRight.length,
-            slotPercentShadowsDownLeft.length,
-            slotPercentShadowsInner.length,
-            slotPercentTexts.length
-        );
-        const visibleSlots = conquestPhase3GetCenteredFlagSlots(mappedCaptureStates.length, maxSlots);
-        const slotToRowIndex: number[] = [];
-        for (let slot = 0; slot < maxSlots; slot++) slotToRowIndex[slot] = -1;
-        for (let row = 0; row < mappedCaptureStates.length && row < visibleSlots.length; row++) {
-            slotToRowIndex[visibleSlots[row]] = row;
-        }
-
-        for (let slot = 0; slot < maxSlots; slot++) {
-            const row = slotToRowIndex[slot];
-            const slotRoot = slotRoots[slot];
-            const slotBorder = slotBorders[slot];
-            const slotFill = slotFills[slot];
-            const slotLabelShadowRight = slotLabelShadowsRight[slot];
-            const slotLabelShadowLeft = slotLabelShadowsLeft[slot];
-            const slotLabelShadowUp = slotLabelShadowsUp[slot];
-            const slotLabelShadowDown = slotLabelShadowsDown[slot];
-            const slotLabelShadowUpLeft = slotLabelShadowsUpLeft[slot];
-            const slotLabelShadowUpRight = slotLabelShadowsUpRight[slot];
-            const slotLabelShadowDownRight = slotLabelShadowsDownRight[slot];
-            const slotLabelShadowDownLeft = slotLabelShadowsDownLeft[slot];
-            const slotLabelShadowInner = slotLabelShadowsInner[slot];
-            const slotLabelShadowInnerDeep = slotLabelShadowsInnerDeep[slot];
-            const slotLabel = slotLabels[slot];
-            const slotPercentRoot = slotPercentRoots[slot];
-            const slotPercentShadowRight = slotPercentShadowsRight[slot];
-            const slotPercentShadowLeft = slotPercentShadowsLeft[slot];
-            const slotPercentShadowUp = slotPercentShadowsUp[slot];
-            const slotPercentShadowDown = slotPercentShadowsDown[slot];
-            const slotPercentShadowUpLeft = slotPercentShadowsUpLeft[slot];
-            const slotPercentShadowUpRight = slotPercentShadowsUpRight[slot];
-            const slotPercentShadowDownRight = slotPercentShadowsDownRight[slot];
-            const slotPercentShadowDownLeft = slotPercentShadowsDownLeft[slot];
-            const slotPercentShadowInner = slotPercentShadowsInner[slot];
-            const slotPercentText = slotPercentTexts[slot];
-            const slotLabelGroup: ConquestShadowTextWidgetSet = {
-                right: slotLabelShadowRight,
-                left: slotLabelShadowLeft,
-                up: slotLabelShadowUp,
-                down: slotLabelShadowDown,
-                upLeft: slotLabelShadowUpLeft,
-                upRight: slotLabelShadowUpRight,
-                downRight: slotLabelShadowDownRight,
-                downLeft: slotLabelShadowDownLeft,
-                text: slotLabel,
-            };
-            const slotPercentGroup: ConquestShadowTextWidgetSet = {
-                right: slotPercentShadowRight,
-                left: slotPercentShadowLeft,
-                up: slotPercentShadowUp,
-                down: slotPercentShadowDown,
-                upLeft: slotPercentShadowUpLeft,
-                upRight: slotPercentShadowUpRight,
-                downRight: slotPercentShadowDownRight,
-                downLeft: slotPercentShadowDownLeft,
-                inner: slotPercentShadowInner,
-                text: slotPercentText,
-            };
-            // Ensure legacy shadow variants from previous iterations never contribute to outline bias.
-            safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadow_${refs.pid}_${slot}`), false);
-            safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadowMid_${refs.pid}_${slot}`), false);
-            safeSetUIWidgetVisible(safeFind(`ConquestFlagHudLabelShadowOuter_${refs.pid}_${slot}`), false);
-            // Objective letters use only the even 8-direction ring; centered inner layers are disabled.
-            safeSetUIWidgetVisible(slotLabelShadowInner, false);
-            safeSetUIWidgetVisible(slotLabelShadowInnerDeep, false);
-            if (row < 0) {
-                safeSetUIWidgetVisible(slotRoot, false);
-                safeSetUIWidgetVisible(slotBorder, false);
-                safeSetUIWidgetVisible(slotFill, false);
-                safeSetUIWidgetVisible(slotPercentRoot, false);
-                conquestPhase3SetShadowTextGroupVisible(slotLabelGroup, false);
-                conquestPhase3SetShadowTextGroupVisible(slotPercentGroup, false);
-                continue;
-            }
-
-            const cp = mappedCaptureStates[row];
-            const labelKey = conquestPhase3GetFlagLetterStringKey(cp, row);
-            const visualState = State.conquest.capture.visualByObjId[cp.objId] ?? conquestPhase3RefreshFlagVisualState(cp);
-            const visual = conquestPhase3GetFlagSlotVisual(visualState, perspective.friendlyTeam, perspective.enemyTeam);
-            const percentVisual = conquestPhase3GetFlagPercentDisplay(visualState, perspective.friendlyTeam, perspective.enemyTeam);
-            const onPointCount = cp.onPointTeam1 + cp.onPointTeam2;
-            const rawFillHeight = visual.fillRatio <= 0
-                ? 0
-                : Math.floor(CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT * visual.fillRatio);
-            const unattendedNeutralResidual = (
-                cp.ownerTeam === 0
-                && onPointCount <= 0
-                && rawFillHeight <= 1
-            );
-            const fillHeight = rawFillHeight <= 0
-                ? (
-                    // Only force a 1px minimum while the point is actively contested/captured.
-                    onPointCount > 0 && visual.fillRatio > 0 ? 1 : 0
-                )
-                : (unattendedNeutralResidual ? 0 : rawFillHeight);
-
-            safeSetUIWidgetVisible(slotRoot, true);
-            conquestPhase3SetShadowTextGroupVisible(slotLabelGroup, true);
-            conquestPhase3SetShadowTextGroupLabel(slotLabelGroup, mod.Message(labelKey));
-            conquestPhase3SetShadowTextGroupColors(slotLabelGroup, visual.labelColor);
-            safeSetUIWidgetVisible(slotPercentRoot, percentVisual.visible);
-            if (percentVisual.visible && percentVisual.color) {
-                const percentValue = Math.max(0, Math.min(100, Math.round(percentVisual.value01 * 100)));
-                const percentLabel = mod.Message(STR_SYSTEM_GENERIC_PERCENT, percentValue);
-                conquestPhase3SetShadowTextGroupVisible(slotPercentGroup, true);
-                conquestPhase3SetShadowTextGroupLabel(slotPercentGroup, percentLabel);
-                conquestPhase3SetShadowTextGroupColors(slotPercentGroup, percentVisual.color);
-            } else {
-                conquestPhase3SetShadowTextGroupVisible(slotPercentGroup, false);
-            }
-            safeSetUIWidgetBgColor(slotRoot, visual.slotBgColor);
-            // Borders are disabled for conquest objective flags.
-            safeSetUIWidgetVisible(slotBorder, false);
-            safeSetUIWidgetVisible(safeFind(`ConquestFlagHudBorder_${refs.pid}_${slot}`), false);
-
-            if (fillHeight > 0 && visual.fillColor) {
-                safeSetUIWidgetVisible(slotFill, true);
-                const fillY = CONQUEST_HUD_FLAG_FILL_INSET_Y + (CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT - fillHeight);
-                safeSetUIWidgetPosition(
-                    slotFill,
-                    mod.CreateVector(CONQUEST_HUD_FLAG_FILL_INSET_X, fillY, 0)
-                );
-                safeSetUIWidgetSize(
-                    slotFill,
-                    mod.CreateVector(CONQUEST_HUD_FLAG_FILL_MAX_WIDTH, fillHeight, 0)
-                );
-                safeSetUIWidgetBgColor(slotFill, visual.fillColor);
-            } else {
-                safeSetUIWidgetVisible(slotFill, false);
-            }
-        }
-
-        const engageDisplay = conquestPhase3GetFlagEngageDisplayForViewer(
-            p,
-            refs.pid,
-            perspective.friendlyTeam,
-            perspective.enemyTeam
-        );
-        safeSetUIWidgetVisible(engageRoot, engageDisplay.visible);
-        if (!engageDisplay.visible) {
-            delete State.conquest.capture.engagedObjIdByPid[refs.pid];
-            safeSetUIWidgetVisible(engageTrack, false);
-            safeSetUIWidgetVisible(engageFriendlyFill, false);
-            safeSetUIWidgetVisible(engageEnemyFill, false);
-            safeSetUIWidgetVisible(engageFriendlyCountBg, false);
-            safeSetUIWidgetVisible(engageEnemyCountBg, false);
-            safeSetUIWidgetVisible(engageFriendlyCount, false);
-            safeSetUIWidgetVisible(engageEnemyCount, false);
-            conquestPhase3SetShadowTextGroupVisible(engageStatusGroup, false);
-            continue;
-        }
-
-        safeSetUIWidgetVisible(engageTrack, true);
-        safeSetUIWidgetVisible(engageFriendlyCountBg, true);
-        safeSetUIWidgetVisible(engageEnemyCountBg, true);
-        safeSetUIWidgetVisible(engageFriendlyCount, true);
-        safeSetUIWidgetVisible(engageEnemyCount, true);
-        conquestPhase3SetShadowTextGroupVisible(engageStatusGroup, true);
-
-        safeSetUITextLabel(
-            engageFriendlyCount,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, engageDisplay.friendlyCount)
-        );
-        safeSetUITextLabel(
-            engageEnemyCount,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, engageDisplay.enemyCount)
-        );
-        conquestPhase3SetShadowTextGroupLabel(engageStatusGroup, mod.Message(engageDisplay.statusKey));
-        conquestPhase3SetShadowTextGroupColors(engageStatusGroup, COLOR_WHITE);
-        safeSetUITextColor(engageFriendlyCount, COLOR_BLUE);
-        safeSetUITextColor(engageEnemyCount, COLOR_RED);
-        safeSetUIWidgetBgColor(engageTrack, COLOR_GRAY_DARK);
-
-        const fullTrackWidth = Math.max(1, Math.floor(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH));
-        let friendlyWidth = engageDisplay.friendlyCount <= 0
-            ? 0
-            : Math.max(1, Math.floor(fullTrackWidth * engageDisplay.friendlyRatio));
-        if (friendlyWidth > fullTrackWidth) friendlyWidth = fullTrackWidth;
-        let enemyWidth = fullTrackWidth - friendlyWidth;
-        if (engageDisplay.enemyCount > 0 && enemyWidth <= 0) {
-            enemyWidth = 1;
-            friendlyWidth = Math.max(0, fullTrackWidth - enemyWidth);
-        }
-
-        safeSetUIWidgetVisible(engageFriendlyFill, friendlyWidth > 0);
-        safeSetUIWidgetVisible(engageEnemyFill, enemyWidth > 0);
-        if (friendlyWidth > 0) {
-            safeSetUIWidgetPosition(engageFriendlyFill, mod.CreateVector(0, 0, 0));
-            safeSetUIWidgetSize(
-                engageFriendlyFill,
-                mod.CreateVector(friendlyWidth, CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT, 0)
-            );
-            safeSetUIWidgetBgColor(engageFriendlyFill, COLOR_BLUE);
-        }
-        if (enemyWidth > 0) {
-            safeSetUIWidgetPosition(engageEnemyFill, mod.CreateVector(friendlyWidth, 0, 0));
-            safeSetUIWidgetSize(
-                engageEnemyFill,
-                mod.CreateVector(enemyWidth, CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT, 0)
-            );
-            safeSetUIWidgetBgColor(engageEnemyFill, COLOR_RED);
-        }
+        // Show roots last so all child updates are already committed before reveal.
+        // This reduces swap-time incremental construction visibility.
+        renderConquestRootsForPid(refs);
     }
 }
 
@@ -2150,6 +3073,8 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
 function conquestPhase2AOnLiveTick(): void {
     // Keep capture-state authoritative even if event-driven capture callbacks miss a transition frame.
     conquestPhase2ASyncMappedCapturePointsFromEngine();
+    // Run suppression outside the regular dirty-render gate so stale engage rows never linger.
+    conquestPhase3EnforceSuppressedEngageWidgets();
     conquestPhase2AApplyBleedTick();
     conquestPhase2ACheckEndCondition();
     updateConquestPhase2ADebugHudForAllPlayers();

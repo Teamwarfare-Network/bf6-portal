@@ -40,35 +40,10 @@ function cleanupHudForPid(pid: number): void {
         }
     };
 
+    // Conquest HUD widgets are torn down through one authoritative lifecycle owner.
+    destroyConquestHudForPid(pid);
+
     const rootNames = [
-        `ConquestTicketsHudRoot_${pid}`,
-        `ConquestFlagsHudRoot_${pid}`,
-        `ConquestTicketsDebugRoot_${pid}`,
-        `ConquestFlagsDebugRoot_${pid}`,
-        `ConquestTicketsHudTeam1_${pid}`,
-        `ConquestTicketsHudTeam2_${pid}`,
-        `ConquestTicketsHudSlash_${pid}`,
-        `ConquestTicketsHudLeftBarTrack_${pid}`,
-        `ConquestTicketsHudLeftBarFill_${pid}`,
-        `ConquestTicketsHudRightBarTrack_${pid}`,
-        `ConquestTicketsHudRightBarFill_${pid}`,
-        `ConquestTicketsHudLeadBorderLeft_${pid}`,
-        `ConquestTicketsHudLeadBorderRight_${pid}`,
-        `ConquestTicketsHudLeadCrownLeft_${pid}`,
-        `ConquestTicketsHudLeadCrownRight_${pid}`,
-        `ConquestTicketsHudBleedChevronLeft1_${pid}`,
-        `ConquestTicketsHudBleedChevronLeft2_${pid}`,
-        `ConquestTicketsHudBleedChevronLeft3_${pid}`,
-        `ConquestTicketsHudBleedChevronRight1_${pid}`,
-        `ConquestTicketsHudBleedChevronRight2_${pid}`,
-        `ConquestTicketsHudBleedChevronRight3_${pid}`,
-        `ConquestFlagHudEngageRoot_${pid}`,
-        `ConquestFlagHudEngageTrack_${pid}`,
-        `ConquestFlagHudEngageFriendlyFill_${pid}`,
-        `ConquestFlagHudEngageEnemyFill_${pid}`,
-        `ConquestFlagHudEngageFriendlyCount_${pid}`,
-        `ConquestFlagHudEngageEnemyCount_${pid}`,
-        `ConquestFlagHudEngageStatus_${pid}`,
         `TopHudRoot_${pid}`,
         `Container_TopMiddle_CoreUI_${pid}`,
         `Container_TopLeft_CoreUI_${pid}`,
@@ -84,44 +59,21 @@ function cleanupHudForPid(pid: number): void {
     for (const name of rootNames) {
         deleteAllByName(name);
     }
-    for (let i = 0; i < 7; i++) {
-        deleteAllByName(`ConquestFlagHudSlot_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudBorder_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudFill_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudLabelShadowRight_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudLabelShadowLeft_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudLabelShadowUp_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudLabelShadowDown_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudLabelShadowUpLeft_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudLabelShadowUpRight_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudLabelShadowDownRight_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudLabelShadowDownLeft_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudLabelShadowInner_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudLabelShadowInnerDeep_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudLabelShadowCenter_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudPercentRoot_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudPercentShadowRight_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudPercentShadowLeft_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudPercentShadowUp_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudPercentShadowDown_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudPercentShadowUpLeft_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudPercentShadowUpRight_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudPercentShadowDownRight_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudPercentShadowDownLeft_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudPercentShadowInner_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudPercentText_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagHudLabel_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagFriendly_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagCenter_${pid}_${i}`);
-        deleteAllByName(`ConquestFlagEnemy_${pid}_${i}`);
-    }
 
-    delete State.hudCache.hudByPid[pid];
     delete State.hudCache.clockWidgetCache[pid];
     delete State.hudCache.countdownWidgetCache[pid];
+    delete State.conquest.debug.hudGenerationByPid[pid];
     delete State.conquest.debug.teamSwapRefreshTokenByPid[pid];
+    delete State.conquest.debug.teamSwapHudResetPendingByPid[pid];
     delete State.conquest.debug.perspectiveTeamByPid[pid];
     delete State.conquest.debug.teamSwapPerspectiveLockUntilByPid[pid];
+    delete State.conquest.debug.engageHiddenUntilDeployByPid[pid];
+    delete State.conquest.debug.hudRenderBucketByPid[pid];
+    delete State.conquest.debug.hudRenderBurstByPid[pid];
+    delete State.conquest.debug.hudRenderDuplicateBurstByPid[pid];
+    delete State.conquest.debug.hudStatusVmByPid[pid];
+    delete State.conquest.debug.hudHelpReadyVmByPid[pid];
+    delete State.conquest.debug.hudClockVmByPid[pid];
 }
 
 // Join entrypoint: initializes per-player state, rebuilds HUD, and re-syncs shared UI projections.
@@ -149,7 +101,10 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     updateConquestPhase2ADebugHudForAllPlayers(true);
     {
         const cache = ensureClockUIAndGetCache(eventPlayer);
-        if (cache) setMatchStateText(cache.roundStateText);
+        if (cache && joinPid !== undefined) {
+            const visibility = getHudVisibilitySnapshotForPid(joinPid);
+            setMatchStateText(cache.roundStateText, visibility.status);
+        }
     updateHelpTextVisibilityForPlayer(eventPlayer);
     }
     if (joinPid !== undefined) {

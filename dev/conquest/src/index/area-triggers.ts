@@ -18,6 +18,50 @@ function onCapturePointCapturedImpl(eventCapturePoint: mod.CapturePoint): void {
     conquestPhase2AOnCapturePointCaptured(eventCapturePoint);
 }
 
+// Returns true when an objective ObjId is part of the active mapped conquest point set.
+function isMappedConquestCapturePointObjId(objId: number): boolean {
+    const mapped = State.conquest.capture.mappedObjIdsInOrder;
+    for (let i = 0; i < mapped.length; i++) {
+        if (mapped[i] === objId) return true;
+    }
+    return false;
+}
+
+// Capture-point enter is authoritative for engage HUD ownership.
+function onPlayerEnterCapturePointImpl(eventPlayer: mod.Player, eventCapturePoint: mod.CapturePoint): void {
+    try {
+        if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+        if (!eventCapturePoint) return;
+        const pid = safeGetPlayerId(eventPlayer);
+        if (pid === undefined) return;
+        const objId = safeGetObjId(eventCapturePoint);
+        if (objId === undefined) return;
+        if (!isMappedConquestCapturePointObjId(objId)) return;
+        State.conquest.capture.engagedObjIdByPid[pid] = objId;
+        conquestPhase3MarkHudDirty();
+    } catch {
+        return;
+    }
+}
+
+// Capture-point exit clears engage HUD ownership for the exiting objective.
+function onPlayerExitCapturePointImpl(eventPlayer: mod.Player, eventCapturePoint: mod.CapturePoint): void {
+    try {
+        if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+        const pid = safeGetPlayerId(eventPlayer);
+        if (pid === undefined) return;
+        const currentObjId = State.conquest.capture.engagedObjIdByPid[pid];
+        if (currentObjId === undefined) return;
+        const exitingObjId = safeGetObjId(eventCapturePoint);
+        if (exitingObjId !== undefined && currentObjId !== exitingObjId) return;
+        delete State.conquest.capture.engagedObjIdByPid[pid];
+        conquestPhase3ForceHideEngageWidgetsForPid(pid);
+        conquestPhase3MarkHudDirty();
+    } catch {
+        return;
+    }
+}
+
 function onPlayerEnterAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger) {
     try {
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;

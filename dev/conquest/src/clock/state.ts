@@ -94,27 +94,16 @@ function resetMatchClockToDefault(): void {
  */
 
 function updateAllPlayersClock(): void {
-    const remaining = isMatchLive() ? getRemainingSeconds() : getConfiguredMatchLengthSeconds();
+    const fallbackRemaining = isMatchLive() ? getRemainingSeconds() : getConfiguredMatchLengthSeconds();
 
-    if (!State.round.clock.expiryFired && remaining <= 0) {
+    if (!State.round.clock.expiryFired && fallbackRemaining <= 0) {
         State.round.clock.expiryFired = true;
         for (let i = 0; i < State.round.clock.expiryHandlers.length; i++) {
             State.round.clock.expiryHandlers[i]();
         }
     }
 
-    const lowTime = remaining < LOW_TIME_THRESHOLD_SECONDS;
-
-    const minutes = Math.floor(remaining / 60);
-    // Read the authoritative remaining seconds for the match clock.
-    const seconds = remaining % 60;
-
-    const digits = {
-        mT: Math.floor(minutes / 10),
-        mO: minutes % 10,
-        sT: Math.floor(seconds / 10),
-        sO: seconds % 10,
-    };
+    const fallbackLowTime = fallbackRemaining < LOW_TIME_THRESHOLD_SECONDS;
 
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -122,16 +111,30 @@ function updateAllPlayersClock(): void {
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
         if (!player || !mod.IsPlayerValid(player)) continue;
+        const pid = mod.GetObjId(player);
+        conquestPhase3EnsureTopHudDerivedSlicesForPid(pid);
+        const derivedClock = State.conquest.debug.hudClockVmByPid[pid];
+        if (!derivedClock) continue;
+        const playerRemaining = Math.max(0, Math.floor(derivedClock.remainingSeconds));
+        const playerLowTime = !!derivedClock.isLowTime;
+        const minutes = Math.floor(playerRemaining / 60);
+        const seconds = playerRemaining % 60;
+        const digits = {
+            mT: Math.floor(minutes / 10),
+            mO: minutes % 10,
+            sT: Math.floor(seconds / 10),
+            sO: seconds % 10,
+        };
 
         // Ensure each player's clock widgets exist and get cached refs for efficient updates.
         const cacheEntry = ensureClockUIAndGetCache(player);
         if (!cacheEntry) continue;
 
-        if (State.round.clock.lastLowTimeState === undefined || lowTime !== State.round.clock.lastLowTimeState) {
-            setClockColorCached(cacheEntry, lowTime ? COLOR_LOW_TIME : COLOR_NORMAL);
+        if (State.round.clock.lastLowTimeState === undefined || playerLowTime !== State.round.clock.lastLowTimeState) {
+            setClockColorCached(cacheEntry, playerLowTime ? COLOR_LOW_TIME : COLOR_NORMAL);
         }
 
-        if (State.round.clock.lastDisplayedSeconds !== remaining) {
+        if (State.round.clock.lastDisplayedSeconds !== playerRemaining) {
             setDigitCached(cacheEntry.minTens, digits.mT);
             setDigitCached(cacheEntry.minOnes, digits.mO);
             setColonCached(cacheEntry.colon);
@@ -139,12 +142,12 @@ function updateAllPlayersClock(): void {
             setDigitCached(cacheEntry.secOnes, digits.sO);
         }
 
-        updateVictoryDialogForPlayer(player, remaining);
+        updateVictoryDialogForPlayer(player, playerRemaining);
 
     }
 
-    State.round.clock.lastLowTimeState = lowTime;
-    State.round.clock.lastDisplayedSeconds = remaining;
+    State.round.clock.lastLowTimeState = fallbackLowTime;
+    State.round.clock.lastDisplayedSeconds = fallbackRemaining;
 }
 
 //#endregion ----------------- Match Clock - Update + State --------------------

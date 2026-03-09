@@ -32,14 +32,19 @@ type HudRefs = {
 
     adminPanelActionCountText?: mod.UIWidget;
     conquestTicketsDebugRoot?: mod.UIWidget;
+    conquestTicketsTeam1Container?: mod.UIWidget;
+    conquestTicketsTeam2Container?: mod.UIWidget;
     conquestTicketsDebugTeam1?: mod.UIWidget;
     conquestTicketsDebugTeam2?: mod.UIWidget;
+    conquestTicketsSlash?: mod.UIWidget;
     conquestTicketsDebugLeftBarTrack?: mod.UIWidget;
     conquestTicketsDebugLeftBarFill?: mod.UIWidget;
     conquestTicketsDebugRightBarTrack?: mod.UIWidget;
     conquestTicketsDebugRightBarFill?: mod.UIWidget;
     conquestTicketsLeadLeftBorder?: mod.UIWidget;
     conquestTicketsLeadRightBorder?: mod.UIWidget;
+    conquestTicketsLeadLeftCrownShadow?: mod.UIWidget;
+    conquestTicketsLeadRightCrownShadow?: mod.UIWidget;
     conquestTicketsLeadLeftCrown?: mod.UIWidget;
     conquestTicketsLeadRightCrown?: mod.UIWidget;
     conquestTicketsBleedLeftChevrons?: Array<mod.UIWidget | undefined>;

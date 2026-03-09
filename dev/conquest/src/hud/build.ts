@@ -3,6 +3,135 @@
 
 //#region -------------------- HUD Build/Ensure Function Start --------------------
 
+// Deletes all instances of a widget name (defensive against duplicate roots with identical ids).
+function deleteAllHudWidgetsByName(name: string, maxPasses: number = 128): void {
+    for (let i = 0; i < maxPasses; i++) {
+        const widget = safeFind(name);
+        if (!widget) return;
+        try {
+            mod.DeleteUIWidget(widget);
+        } catch {
+            return;
+        }
+    }
+}
+
+// Authoritative conquest HUD teardown for one player id.
+// All lifecycle callers (swap, leave, schema-reset) should route through this to avoid drift.
+function destroyConquestHudForPid(pid: number): void {
+    State.conquest.debug.hudGenerationByPid[pid] = (State.conquest.debug.hudGenerationByPid[pid] ?? 0) + 1;
+
+    const baseNames = [
+        `ConquestTicketsHudRoot_${pid}`,
+        `ConquestFlagsHudRoot_${pid}`,
+        `ConquestTicketsDebugRoot_${pid}`,
+        `ConquestFlagsDebugRoot_${pid}`,
+        `ConquestTicketsHudTeam1Container_${pid}`,
+        `ConquestTicketsHudTeam2Container_${pid}`,
+        `ConquestTicketsHudTeam1_${pid}`,
+        `ConquestTicketsHudTeam2_${pid}`,
+        `ConquestTicketsHudSlash_${pid}`,
+        `ConquestTicketsHudLeftBarTrack_${pid}`,
+        `ConquestTicketsHudLeftBarFill_${pid}`,
+        `ConquestTicketsHudRightBarTrack_${pid}`,
+        `ConquestTicketsHudRightBarFill_${pid}`,
+        `ConquestTicketsHudLeadBorderLeft_${pid}`,
+        `ConquestTicketsHudLeadBorderRight_${pid}`,
+        `ConquestTicketsHudLeadCrownLeftShadow_${pid}`,
+        `ConquestTicketsHudLeadCrownRightShadow_${pid}`,
+        `ConquestTicketsHudLeadCrownLeft_${pid}`,
+        `ConquestTicketsHudLeadCrownRight_${pid}`,
+        `ConquestFlagHudEngageRoot_${pid}`,
+        `ConquestFlagHudEngageTrack_${pid}`,
+        `ConquestFlagHudEngageFriendlyFill_${pid}`,
+        `ConquestFlagHudEngageEnemyFill_${pid}`,
+        `ConquestFlagHudEngageFriendlyCountBg_${pid}`,
+        `ConquestFlagHudEngageEnemyCountBg_${pid}`,
+        `ConquestFlagHudEngageFriendlyCount_${pid}`,
+        `ConquestFlagHudEngageEnemyCount_${pid}`,
+        `ConquestFlagHudEngageStatusShadowRight_${pid}`,
+        `ConquestFlagHudEngageStatusShadowLeft_${pid}`,
+        `ConquestFlagHudEngageStatusShadowUp_${pid}`,
+        `ConquestFlagHudEngageStatusShadowDown_${pid}`,
+        `ConquestFlagHudEngageStatusShadowUpLeft_${pid}`,
+        `ConquestFlagHudEngageStatusShadowUpRight_${pid}`,
+        `ConquestFlagHudEngageStatusShadowDownRight_${pid}`,
+        `ConquestFlagHudEngageStatusShadowDownLeft_${pid}`,
+        `ConquestFlagHudEngageStatus_${pid}`,
+    ];
+    for (let i = 0; i < baseNames.length; i++) {
+        deleteAllHudWidgetsByName(baseNames[i]);
+    }
+    // Purges all bleed-chevron widgets, including shadow layers, across schema changes.
+    for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
+        const slot = chevronIndex + 1;
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowRight_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowLeft_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDown_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownRight_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownLeft_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowRight_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowLeft_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowDown_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownRight_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownLeft_${pid}`);
+    }
+    for (let slot = 0; slot < 7; slot++) {
+        deleteAllHudWidgetsByName(`ConquestFlagHudSlot_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudBorder_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudFill_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowRight_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowLeft_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowUp_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowDown_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowUpLeft_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowUpRight_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowDownRight_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowDownLeft_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowInner_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowInnerDeep_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowCenter_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadow_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowMid_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowOuter_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudPercentRoot_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowRight_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowLeft_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowUp_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowDown_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowUpLeft_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowUpRight_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowDownRight_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowDownLeft_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowInner_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudPercentText_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagHudLabel_${pid}_${slot}`);
+        // Legacy rows from older layouts.
+        deleteAllHudWidgetsByName(`ConquestFlagFriendly_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagCenter_${pid}_${slot}`);
+        deleteAllHudWidgetsByName(`ConquestFlagEnemy_${pid}_${slot}`);
+    }
+    delete State.hudCache.hudByPid[pid];
+    delete State.conquest.debug.hudStatusVmByPid[pid];
+    delete State.conquest.debug.hudHelpReadyVmByPid[pid];
+    delete State.conquest.debug.hudClockVmByPid[pid];
+    delete State.conquest.debug.bleedPulseQueueLeftByPid[pid];
+    delete State.conquest.debug.bleedPulseQueueRightByPid[pid];
+    delete State.conquest.debug.bleedPulseActiveSideByPid[pid];
+    delete State.conquest.debug.bleedPulseStepByPid[pid];
+    delete State.conquest.debug.bleedPulseLimitByPid[pid];
+    delete State.conquest.debug.bleedPulsePhaseByPid[pid];
+    delete State.conquest.debug.bleedPulseNextAtByPid[pid];
+}
+
 // Ensures all persistent HUD widgets exist for a player.
 // This function is idempotent and safe to call on join, respawn, or reconnect.
 // Widget references created here are reused and updated elsewhere.
@@ -21,12 +150,15 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_TICKETS_ROOT_Y = 0;
     const CONQUEST_TICKETS_ROOT_WIDTH = 561.77;
     const CONQUEST_TICKETS_ROOT_HEIGHT = 50;
+    // Inward nudge for ticket-side UI cluster (counter boxes + lead borders + crowns).
+    // Positive value moves each side toward center by that many units.
+    const CONQUEST_TICKETS_SIDE_INNER_NUDGE_X = 2;
     const CONQUEST_TICKETS_TEAM_OUTER_EXPAND = 12;
     const CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X = 0;
     const CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X = 0;
     // Keep containers at outward-expanded positions; text is nudged inward inside the containers.
-    const CONQUEST_TICKETS_TEAM_LEFT_X = 40 - CONQUEST_TICKETS_TEAM_OUTER_EXPAND;
-    const CONQUEST_TICKETS_TEAM_RIGHT_X = 461.39;
+    const CONQUEST_TICKETS_TEAM_LEFT_X = (40 - CONQUEST_TICKETS_TEAM_OUTER_EXPAND) + CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
+    const CONQUEST_TICKETS_TEAM_RIGHT_X = 461.39 - CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
     const CONQUEST_TICKETS_ROW_Y = 0;
     const CONQUEST_TICKETS_LEFT_BAR_X = 103.39;
     const CONQUEST_TICKETS_RIGHT_BAR_X = 284.90;
@@ -40,26 +172,45 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_FLAGS_ROOT_Y = 0;
     const CONQUEST_FLAGS_ROOT_WIDTH = 238.5;
     const CONQUEST_FLAGS_ROOT_HEIGHT = 46;
-    const CONQUEST_TICKETS_TEAM_LEFT_ABS_X = 719.15 - CONQUEST_TICKETS_TEAM_OUTER_EXPAND;
-    const CONQUEST_TICKETS_TEAM_RIGHT_ABS_X = 1140.54;
+    const CONQUEST_TICKETS_TEAM_LEFT_ABS_X = (719.15 - CONQUEST_TICKETS_TEAM_OUTER_EXPAND) + CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
+    const CONQUEST_TICKETS_TEAM_RIGHT_ABS_X = 1140.54 - CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
     const CONQUEST_TICKETS_TEAM_ABS_Y = 69.85;
-    const CONQUEST_TICKETS_BLEED_LEFT_X = CONQUEST_TICKETS_TEAM_LEFT_X + CONQUEST_HUD_TICKET_BLEED_CHEVRON_GAP_X;
-    const CONQUEST_TICKETS_BLEED_RIGHT_X = CONQUEST_TICKETS_TEAM_RIGHT_X + CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_BLEED_CHEVRON_GAP_X - CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH;
-    const CONQUEST_TICKETS_BLEED_START_Y = CONQUEST_TICKETS_ROW_Y + CONQUEST_HUD_TICKET_BLEED_CHEVRON_START_OFFSET_Y;
-    const CONQUEST_TICKETS_BLEED_LEFT_ABS_X = CONQUEST_TICKETS_TEAM_LEFT_ABS_X + CONQUEST_HUD_TICKET_BLEED_CHEVRON_GAP_X;
-    const CONQUEST_TICKETS_BLEED_RIGHT_ABS_X = CONQUEST_TICKETS_TEAM_RIGHT_ABS_X + CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_BLEED_CHEVRON_GAP_X - CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH;
-    const CONQUEST_TICKETS_BLEED_ABS_START_Y = CONQUEST_TICKETS_TEAM_ABS_Y + CONQUEST_HUD_TICKET_BLEED_CHEVRON_START_OFFSET_Y;
+    const CONQUEST_TICKETS_BLEED_Y = CONQUEST_TICKETS_BAR_Y
+        + Math.floor((CONQUEST_HUD_TICKET_BAR_HEIGHT - CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT) / 2)
+        + CONQUEST_HUD_TICKET_BLEED_CHEVRON_IN_BAR_OFFSET_Y;
+    const CONQUEST_TICKETS_BLEED_LEFT_X = CONQUEST_TICKETS_LEFT_BAR_X + CONQUEST_HUD_TICKET_BLEED_CHEVRON_OUTER_INSET_X;
+    const CONQUEST_TICKETS_BLEED_RIGHT_X = CONQUEST_TICKETS_RIGHT_BAR_X
+        + CONQUEST_HUD_TICKET_BAR_WIDTH
+        - CONQUEST_HUD_TICKET_BLEED_CHEVRON_OUTER_INSET_X
+        - CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH;
+    const CONQUEST_TICKETS_LEFT_BAR_ABS_X = 782.54;
+    const CONQUEST_TICKETS_RIGHT_BAR_ABS_X = 964.05;
+    const CONQUEST_TICKETS_BAR_ABS_Y = 79.55;
+    const CONQUEST_TICKETS_BLEED_ABS_Y = CONQUEST_TICKETS_BAR_ABS_Y
+        + Math.floor((CONQUEST_HUD_TICKET_BAR_HEIGHT - CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT) / 2)
+        + CONQUEST_HUD_TICKET_BLEED_CHEVRON_IN_BAR_OFFSET_Y;
+    const CONQUEST_TICKETS_BLEED_LEFT_ABS_X = CONQUEST_TICKETS_LEFT_BAR_ABS_X + CONQUEST_HUD_TICKET_BLEED_CHEVRON_OUTER_INSET_X;
+    const CONQUEST_TICKETS_BLEED_RIGHT_ABS_X = CONQUEST_TICKETS_RIGHT_BAR_ABS_X
+        + CONQUEST_HUD_TICKET_BAR_WIDTH
+        - CONQUEST_HUD_TICKET_BLEED_CHEVRON_OUTER_INSET_X
+        - CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH;
     const CONQUEST_TICKETS_LEAD_LEFT_BORDER_ABS_X = CONQUEST_TICKETS_TEAM_LEFT_ABS_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW;
     const CONQUEST_TICKETS_LEAD_RIGHT_BORDER_ABS_X = CONQUEST_TICKETS_TEAM_RIGHT_ABS_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW;
     const CONQUEST_TICKETS_LEAD_BORDER_ABS_Y = CONQUEST_TICKETS_TEAM_ABS_Y - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW;
     const CONQUEST_TICKETS_LEAD_BORDER_WIDTH = CONQUEST_TICKETS_TEAM_WIDTH + (CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2);
     const CONQUEST_TICKETS_LEAD_BORDER_HEIGHT = CONQUEST_TICKETS_TEAM_HEIGHT + (CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2);
+    const CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET = 0;
+    const CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_GROW = 5;
+    const CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_TOP_BIAS = -0.5;
+    const CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT = CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_GROW / 2;
+    const CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE = CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_GROW;
+    const CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_ALPHA = 0.82;
     const CONQUEST_TICKETS_LEAD_LEFT_CROWN_ABS_X = CONQUEST_TICKETS_TEAM_LEFT_ABS_X + ((CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2);
     const CONQUEST_TICKETS_LEAD_RIGHT_CROWN_ABS_X = CONQUEST_TICKETS_TEAM_RIGHT_ABS_X + ((CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2);
     const CONQUEST_TICKETS_LEAD_CROWN_ABS_Y = CONQUEST_TICKETS_TEAM_ABS_Y - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE - CONQUEST_HUD_TICKET_LEAD_CROWN_GAP_Y;
-    const CONQUEST_TICKETS_LEFT_BAR_ABS_X = 782.54;
-    const CONQUEST_TICKETS_RIGHT_BAR_ABS_X = 964.05;
-    const CONQUEST_TICKETS_BAR_ABS_Y = 79.55;
+    const CONQUEST_TICKETS_LEAD_LEFT_CROWN_SHADOW_ABS_X = CONQUEST_TICKETS_LEAD_LEFT_CROWN_ABS_X - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET;
+    const CONQUEST_TICKETS_LEAD_RIGHT_CROWN_SHADOW_ABS_X = CONQUEST_TICKETS_LEAD_RIGHT_CROWN_ABS_X - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET;
+    const CONQUEST_TICKETS_LEAD_CROWN_SHADOW_ABS_Y = CONQUEST_TICKETS_LEAD_CROWN_ABS_Y - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_TOP_BIAS;
     const CONQUEST_TICKETS_SLASH_ABS_X = 952.0;
     const CONQUEST_TICKETS_SLASH_ABS_Y = 47.73;
     const CONQUEST_FLAGS_SLOT_ABS_Y = 91.86;
@@ -99,6 +250,97 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         175.00, // Capture Point 6 (x=1015.50, w=29)
         210.00, // Capture Point 7 (x=1050.50, w=29)
     ];
+    // Returns ticket-root-local X for one bleed chevron index.
+    // Index 0 is outermost (closest to the ticket counter), increasing inward toward center.
+    const getBleedChevronX = (isLeftSide: boolean, chevronIndex: number): number => {
+        if (isLeftSide) {
+            return CONQUEST_TICKETS_BLEED_LEFT_X + (chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STEP_X);
+        }
+        return CONQUEST_TICKETS_BLEED_RIGHT_X - (chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STEP_X);
+    };
+    // Returns bar-track-local X for one bleed chevron index.
+    const getBleedChevronTrackX = (isLeftSide: boolean, chevronIndex: number): number => {
+        if (isLeftSide) {
+            return CONQUEST_HUD_TICKET_BLEED_CHEVRON_OUTER_INSET_X + (chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STEP_X);
+        }
+        return CONQUEST_HUD_TICKET_BAR_WIDTH
+            - CONQUEST_HUD_TICKET_BLEED_CHEVRON_OUTER_INSET_X
+            - CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH
+            - (chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STEP_X);
+    };
+    // Returns absolute/root-local X for one bleed chevron index.
+    const getBleedChevronAbsX = (isLeftSide: boolean, chevronIndex: number): number => {
+        if (isLeftSide) {
+            return CONQUEST_TICKETS_BLEED_LEFT_ABS_X + (chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STEP_X);
+        }
+        return CONQUEST_TICKETS_BLEED_RIGHT_ABS_X - (chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STEP_X);
+    };
+    // Ensures all foreground and shadow bleed-chevron widgets exist for the active schema.
+    // This upgrades legacy HUD trees (3 chevrons, no shadows) in-place to 7 horizontal slots with shadow layers.
+    const ensureConquestBleedChevronWidgets = (): void => {
+        const createTextWidgetIfMissing = (
+            name: string,
+            textLabel: mod.Message,
+            textColor: [number, number, number]
+        ): void => {
+            if (safeFind(name)) return;
+            modlib.ParseUI({
+                name,
+                type: "Text",
+                playerId: player,
+                position: [0, 0],
+                size: [CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT],
+                anchor: mod.UIAnchor.TopLeft,
+                visible: false,
+                padding: 0,
+                bgAlpha: 0,
+                bgFill: mod.UIBgFill.None,
+                textLabel,
+                textColor,
+                textAlpha: 1,
+                textSize: CONQUEST_HUD_TICKET_BLEED_CHEVRON_TEXT_SIZE,
+                textAnchor: mod.UIAnchor.Center,
+            });
+        };
+        for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
+            const slot = chevronIndex + 1;
+            createTextWidgetIfMissing(
+                `ConquestTicketsHudBleedChevronLeft${slot}_${pid}`,
+                mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT),
+                [
+                    CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB[0],
+                    CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB[1],
+                    CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB[2],
+                ]
+            );
+            createTextWidgetIfMissing(
+                `ConquestTicketsHudBleedChevronRight${slot}_${pid}`,
+                mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT),
+                [
+                    CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB[0],
+                    CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB[1],
+                    CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB[2],
+                ]
+            );
+            const shadowColor: [number, number, number] = [0, 0, 0];
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronLeft${slot}ShadowRight_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT), shadowColor);
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronLeft${slot}ShadowLeft_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT), shadowColor);
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT), shadowColor);
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDown_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT), shadowColor);
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT), shadowColor);
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT), shadowColor);
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownRight_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT), shadowColor);
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownLeft_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT), shadowColor);
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronRight${slot}ShadowRight_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT), shadowColor);
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronRight${slot}ShadowLeft_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT), shadowColor);
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT), shadowColor);
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronRight${slot}ShadowDown_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT), shadowColor);
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT), shadowColor);
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT), shadowColor);
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownRight_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT), shadowColor);
+            createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownLeft_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT), shadowColor);
+        }
+    };
     // Hides legacy triplet-row flag widgets left behind by prior HUD layouts.
     const hideLegacyFlagTripletRows = (): void => {
         for (let i = 0; i < CONQUEST_FLAGS_MAX_ROWS; i++) {
@@ -142,7 +384,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         const ticketsParent = ticketsRoot ?? uiRoot;
         const flagsParent = flagsRoot ?? uiRoot;
 
-        const ticketT1Container = safeFind(`ConquestTicketsHudTeam1Container_${pid}`);
+        const ticketT1Container = refsForPid?.conquestTicketsTeam1Container
+            ?? safeFind(`ConquestTicketsHudTeam1Container_${pid}`);
         if (ticketT1Container) {
             try {
                 mod.SetUIWidgetAnchor(ticketT1Container, mod.UIAnchor.TopLeft);
@@ -169,7 +412,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             );
             mod.SetUIWidgetSize(ticketT1, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
         }
-        const ticketT2Container = safeFind(`ConquestTicketsHudTeam2Container_${pid}`);
+        const ticketT2Container = refsForPid?.conquestTicketsTeam2Container
+            ?? safeFind(`ConquestTicketsHudTeam2Container_${pid}`);
         if (ticketT2Container) {
             try {
                 mod.SetUIWidgetAnchor(ticketT2Container, mod.UIAnchor.TopLeft);
@@ -220,6 +464,29 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetSize(leadRightBorder, mod.CreateVector(CONQUEST_TICKETS_LEAD_BORDER_WIDTH, CONQUEST_TICKETS_LEAD_BORDER_HEIGHT, 0));
         }
 
+        const leadLeftCrownShadow = refsForPid?.conquestTicketsLeadLeftCrownShadow ?? safeFind(`ConquestTicketsHudLeadCrownLeftShadow_${pid}`);
+        if (leadLeftCrownShadow) {
+            try {
+                mod.SetUIWidgetAnchor(leadLeftCrownShadow, mod.UIAnchor.TopLeft);
+            } catch {
+                // Best-effort anchor normalization only.
+            }
+            mod.SetUIWidgetParent(leadLeftCrownShadow, ticketsParent);
+            mod.SetUIWidgetPosition(leadLeftCrownShadow, mod.CreateVector(CONQUEST_TICKETS_LEAD_LEFT_CROWN_SHADOW_ABS_X, CONQUEST_TICKETS_LEAD_CROWN_SHADOW_ABS_Y, 0));
+            mod.SetUIWidgetSize(leadLeftCrownShadow, mod.CreateVector(CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE, 0));
+        }
+        const leadRightCrownShadow = refsForPid?.conquestTicketsLeadRightCrownShadow ?? safeFind(`ConquestTicketsHudLeadCrownRightShadow_${pid}`);
+        if (leadRightCrownShadow) {
+            try {
+                mod.SetUIWidgetAnchor(leadRightCrownShadow, mod.UIAnchor.TopLeft);
+            } catch {
+                // Best-effort anchor normalization only.
+            }
+            mod.SetUIWidgetParent(leadRightCrownShadow, ticketsParent);
+            mod.SetUIWidgetPosition(leadRightCrownShadow, mod.CreateVector(CONQUEST_TICKETS_LEAD_RIGHT_CROWN_SHADOW_ABS_X, CONQUEST_TICKETS_LEAD_CROWN_SHADOW_ABS_Y, 0));
+            mod.SetUIWidgetSize(leadRightCrownShadow, mod.CreateVector(CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE, 0));
+        }
+
         const leadLeftCrown = refsForPid?.conquestTicketsLeadLeftCrown ?? safeFind(`ConquestTicketsHudLeadCrownLeft_${pid}`);
         if (leadLeftCrown) {
             try {
@@ -245,8 +512,15 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
         const leftBleedChevrons = refsForPid?.conquestTicketsBleedLeftChevrons ?? [];
         const rightBleedChevrons = refsForPid?.conquestTicketsBleedRightChevrons ?? [];
+        const chevronOverlayParent = uiRoot;
         for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
-            const rowOffsetY = CONQUEST_TICKETS_BLEED_ABS_START_Y + (chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y);
+            // Keep chevrons under UIRoot overlay so ticket bar/fill layering cannot occlude the glyphs.
+            const leftParent = chevronOverlayParent;
+            const rightParent = chevronOverlayParent;
+            const leftX = getBleedChevronAbsX(true, chevronIndex);
+            const rightX = getBleedChevronAbsX(false, chevronIndex);
+            const leftY = CONQUEST_TICKETS_BLEED_ABS_Y;
+            const rightY = CONQUEST_TICKETS_BLEED_ABS_Y;
             const leftChevron = leftBleedChevrons[chevronIndex] ?? safeFind(`ConquestTicketsHudBleedChevronLeft${chevronIndex + 1}_${pid}`);
             if (leftChevron) {
                 try {
@@ -254,8 +528,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 } catch {
                     // Best-effort anchor normalization only.
                 }
-                mod.SetUIWidgetParent(leftChevron, ticketsParent);
-                mod.SetUIWidgetPosition(leftChevron, mod.CreateVector(CONQUEST_TICKETS_BLEED_LEFT_ABS_X, rowOffsetY, 0));
+                mod.SetUIWidgetParent(leftChevron, leftParent);
+                mod.SetUIWidgetPosition(leftChevron, mod.CreateVector(leftX, leftY, 0));
                 mod.SetUIWidgetSize(
                     leftChevron,
                     mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
@@ -269,8 +543,58 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 } catch {
                     // Best-effort anchor normalization only.
                 }
-                mod.SetUIWidgetParent(rightChevron, ticketsParent);
-                mod.SetUIWidgetPosition(rightChevron, mod.CreateVector(CONQUEST_TICKETS_BLEED_RIGHT_ABS_X, rowOffsetY, 0));
+                mod.SetUIWidgetParent(rightChevron, rightParent);
+                mod.SetUIWidgetPosition(rightChevron, mod.CreateVector(rightX, rightY, 0));
+                mod.SetUIWidgetSize(
+                    rightChevron,
+                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
+                );
+            }
+            const setBleedShadowAbsoluteLayout = (name: string, x: number, y: number, parent: mod.UIWidget): void => {
+                const shadow = safeFind(name);
+                if (!shadow) return;
+                try {
+                    mod.SetUIWidgetAnchor(shadow, mod.UIAnchor.TopLeft);
+                } catch {
+                    // Best-effort anchor normalization only.
+                }
+                mod.SetUIWidgetParent(shadow, parent);
+                mod.SetUIWidgetPosition(shadow, mod.CreateVector(x, y, 0));
+                mod.SetUIWidgetSize(
+                    shadow,
+                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
+                );
+            };
+            const slot = chevronIndex + 1;
+            const d = CONQUEST_HUD_TICKET_BLEED_CHEVRON_SHADOW_OFFSET;
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowRight_${pid}`, leftX + d, leftY, leftParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowLeft_${pid}`, leftX - d, leftY, leftParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`, leftX, leftY - d, leftParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDown_${pid}`, leftX, leftY + d, leftParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`, leftX - d, leftY - d, leftParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`, leftX + d, leftY - d, leftParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownRight_${pid}`, leftX + d, leftY + d, leftParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownLeft_${pid}`, leftX - d, leftY + d, leftParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowRight_${pid}`, rightX + d, rightY, rightParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowLeft_${pid}`, rightX - d, rightY, rightParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`, rightX, rightY - d, rightParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowDown_${pid}`, rightX, rightY + d, rightParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`, rightX - d, rightY - d, rightParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`, rightX + d, rightY - d, rightParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownRight_${pid}`, rightX + d, rightY + d, rightParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownLeft_${pid}`, rightX - d, rightY + d, rightParent);
+            // Re-attach core chevrons after shadows so the colored glyph sits above the black drop-shadow ring.
+            if (leftChevron) {
+                mod.SetUIWidgetParent(leftChevron, leftParent);
+                mod.SetUIWidgetPosition(leftChevron, mod.CreateVector(leftX, leftY, 0));
+                mod.SetUIWidgetSize(
+                    leftChevron,
+                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
+                );
+            }
+            if (rightChevron) {
+                mod.SetUIWidgetParent(rightChevron, rightParent);
+                mod.SetUIWidgetPosition(rightChevron, mod.CreateVector(rightX, rightY, 0));
                 mod.SetUIWidgetSize(
                     rightChevron,
                     mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
@@ -278,7 +602,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             }
         }
 
-        const ticketSlash = safeFind(`ConquestTicketsHudSlash_${pid}`);
+        const ticketSlash = refsForPid?.conquestTicketsSlash ?? safeFind(`ConquestTicketsHudSlash_${pid}`);
         if (ticketSlash) {
             try {
                 mod.SetUIWidgetAnchor(ticketSlash, mod.UIAnchor.TopLeft);
@@ -327,6 +651,68 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetPosition(rightFill, mod.CreateVector(0, 0, 0));
             if (resetDynamicFillGeometry) {
                 mod.SetUIWidgetSize(rightFill, mod.CreateVector(CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT, 0));
+            }
+        }
+        // Final ordering pass for bleed chevrons in absolute layout:
+        // 1) bar track/fill (already parented above)
+        // 2) chevron shadows
+        // 3) chevron colored core (top-most)
+        const leftBleedChevronsFinal = refsForPid?.conquestTicketsBleedLeftChevrons ?? [];
+        const rightBleedChevronsFinal = refsForPid?.conquestTicketsBleedRightChevrons ?? [];
+        const chevronOverlayParentFinal = uiRoot;
+        for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
+            const leftParent = chevronOverlayParentFinal;
+            const rightParent = chevronOverlayParentFinal;
+            const leftX = getBleedChevronAbsX(true, chevronIndex);
+            const rightX = getBleedChevronAbsX(false, chevronIndex);
+            const leftY = CONQUEST_TICKETS_BLEED_ABS_Y;
+            const rightY = CONQUEST_TICKETS_BLEED_ABS_Y;
+            const slot = chevronIndex + 1;
+            const d = CONQUEST_HUD_TICKET_BLEED_CHEVRON_SHADOW_OFFSET;
+            const setBleedShadowAbsoluteFinal = (name: string, x: number, y: number, parent: mod.UIWidget): void => {
+                const shadow = safeFind(name);
+                if (!shadow) return;
+                mod.SetUIWidgetParent(shadow, parent);
+                mod.SetUIWidgetPosition(shadow, mod.CreateVector(x, y, 0));
+                mod.SetUIWidgetSize(
+                    shadow,
+                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
+                );
+            };
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowRight_${pid}`, leftX + d, leftY, leftParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowLeft_${pid}`, leftX - d, leftY, leftParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`, leftX, leftY - d, leftParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDown_${pid}`, leftX, leftY + d, leftParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`, leftX - d, leftY - d, leftParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`, leftX + d, leftY - d, leftParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownRight_${pid}`, leftX + d, leftY + d, leftParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownLeft_${pid}`, leftX - d, leftY + d, leftParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowRight_${pid}`, rightX + d, rightY, rightParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowLeft_${pid}`, rightX - d, rightY, rightParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`, rightX, rightY - d, rightParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowDown_${pid}`, rightX, rightY + d, rightParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`, rightX - d, rightY - d, rightParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`, rightX + d, rightY - d, rightParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownRight_${pid}`, rightX + d, rightY + d, rightParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownLeft_${pid}`, rightX - d, rightY + d, rightParent);
+
+            const leftChevron = leftBleedChevronsFinal[chevronIndex] ?? safeFind(`ConquestTicketsHudBleedChevronLeft${slot}_${pid}`);
+            if (leftChevron) {
+                mod.SetUIWidgetParent(leftChevron, leftParent);
+                mod.SetUIWidgetPosition(leftChevron, mod.CreateVector(leftX, leftY, 0));
+                mod.SetUIWidgetSize(
+                    leftChevron,
+                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
+                );
+            }
+            const rightChevron = rightBleedChevronsFinal[chevronIndex] ?? safeFind(`ConquestTicketsHudBleedChevronRight${slot}_${pid}`);
+            if (rightChevron) {
+                mod.SetUIWidgetParent(rightChevron, rightParent);
+                mod.SetUIWidgetPosition(rightChevron, mod.CreateVector(rightX, rightY, 0));
+                mod.SetUIWidgetSize(
+                    rightChevron,
+                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
+                );
             }
         }
 
@@ -729,7 +1115,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     // This prevents old child widgets from previous layout iterations from persisting across script reloads.
     const hasCachedHudRefs = Object.prototype.hasOwnProperty.call(State.hudCache.hudByPid, pid);
     let cached: HudRefs | undefined = hasCachedHudRefs ? State.hudCache.hudByPid[pid] : undefined;
-    const CONQUEST_HUD_SCHEMA_VERSION = 2;
+    const CONQUEST_HUD_SCHEMA_VERSION = 5;
     const conquestHudSchemaByPid = ((State.conquest.debug as any).hudSchemaVersionByPid ??= {}) as Record<number, number>;
     if (conquestHudSchemaByPid[pid] !== CONQUEST_HUD_SCHEMA_VERSION) {
         // Force one clean rebuild when HUD schema changes to purge stale duplicate widgets.
@@ -737,104 +1123,13 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         cached = undefined;
         conquestHudSchemaByPid[pid] = CONQUEST_HUD_SCHEMA_VERSION;
     }
-    const deleteAllWidgetsByName = (name: string, maxPasses: number = 128): void => {
-        for (let i = 0; i < maxPasses; i++) {
-            const widget = safeFind(name);
-            if (!widget) return;
-            try {
-                mod.DeleteUIWidget(widget);
-            } catch {
-                return;
-            }
-        }
-    };
     if (!cached) {
         // Root widgets may exist in duplicate instances after hot reload/swap churn.
         // Always delete all instances by name before rebuilding to avoid stacked ticket texts.
-        deleteAllWidgetsByName(`Container_TopLeft_CoreUI_${pid}`);
-        deleteAllWidgetsByName(`Container_TopMiddle_CoreUI_${pid}`);
-        deleteAllWidgetsByName(`Container_TopRight_CoreUI_${pid}`);
-        deleteAllWidgetsByName(`ConquestTicketsHudRoot_${pid}`);
-        deleteAllWidgetsByName(`ConquestFlagsHudRoot_${pid}`);
-        deleteAllWidgetsByName(`ConquestTicketsDebugRoot_${pid}`);
-        deleteAllWidgetsByName(`ConquestFlagsDebugRoot_${pid}`);
-        // Delete known conquest child widgets as well.
-        const staleChildNames = [
-            `ConquestTicketsHudTeam1Container_${pid}`,
-            `ConquestTicketsHudTeam2Container_${pid}`,
-            `ConquestTicketsHudTeam1_${pid}`,
-            `ConquestTicketsHudTeam2_${pid}`,
-            `ConquestTicketsHudSlash_${pid}`,
-            `ConquestTicketsHudLeftBarTrack_${pid}`,
-            `ConquestTicketsHudLeftBarFill_${pid}`,
-            `ConquestTicketsHudRightBarTrack_${pid}`,
-            `ConquestTicketsHudRightBarFill_${pid}`,
-            `ConquestTicketsHudLeadBorderLeft_${pid}`,
-            `ConquestTicketsHudLeadBorderRight_${pid}`,
-            `ConquestTicketsHudLeadCrownLeft_${pid}`,
-            `ConquestTicketsHudLeadCrownRight_${pid}`,
-            `ConquestTicketsHudBleedChevronLeft1_${pid}`,
-            `ConquestTicketsHudBleedChevronLeft2_${pid}`,
-            `ConquestTicketsHudBleedChevronLeft3_${pid}`,
-            `ConquestTicketsHudBleedChevronRight1_${pid}`,
-            `ConquestTicketsHudBleedChevronRight2_${pid}`,
-            `ConquestTicketsHudBleedChevronRight3_${pid}`,
-            `ConquestFlagHudEngageRoot_${pid}`,
-            `ConquestFlagHudEngageTrack_${pid}`,
-            `ConquestFlagHudEngageFriendlyFill_${pid}`,
-            `ConquestFlagHudEngageEnemyFill_${pid}`,
-            `ConquestFlagHudEngageFriendlyCountBg_${pid}`,
-            `ConquestFlagHudEngageEnemyCountBg_${pid}`,
-            `ConquestFlagHudEngageFriendlyCount_${pid}`,
-            `ConquestFlagHudEngageEnemyCount_${pid}`,
-            `ConquestFlagHudEngageStatusShadowRight_${pid}`,
-            `ConquestFlagHudEngageStatusShadowLeft_${pid}`,
-            `ConquestFlagHudEngageStatusShadowUp_${pid}`,
-            `ConquestFlagHudEngageStatusShadowDown_${pid}`,
-            `ConquestFlagHudEngageStatusShadowUpLeft_${pid}`,
-            `ConquestFlagHudEngageStatusShadowUpRight_${pid}`,
-            `ConquestFlagHudEngageStatusShadowDownRight_${pid}`,
-            `ConquestFlagHudEngageStatusShadowDownLeft_${pid}`,
-            `ConquestFlagHudEngageStatus_${pid}`,
-        ];
-        for (const childName of staleChildNames) {
-            deleteAllWidgetsByName(childName);
-        }
-        for (let i = 0; i < CONQUEST_FLAGS_MAX_ROWS; i++) {
-            deleteAllWidgetsByName(`ConquestFlagHudSlot_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudBorder_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudFill_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudLabelShadowRight_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudLabelShadowLeft_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudLabelShadowUp_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudLabelShadowDown_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudLabelShadowUpLeft_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudLabelShadowUpRight_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudLabelShadowDownRight_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudLabelShadowDownLeft_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudLabelShadowInner_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudLabelShadowInnerDeep_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudPercentRoot_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudPercentShadowRight_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudPercentShadowLeft_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudPercentShadowUp_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudPercentShadowDown_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudPercentShadowUpLeft_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudPercentShadowUpRight_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudPercentShadowDownRight_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudPercentShadowDownLeft_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudPercentShadowInner_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudPercentText_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudLabelShadowCenter_${pid}_${i}`);
-            // Remove legacy shadow variants from prior iterations.
-            deleteAllWidgetsByName(`ConquestFlagHudLabelShadow_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudLabelShadowMid_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudLabelShadowOuter_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagHudLabel_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagFriendly_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagCenter_${pid}_${i}`);
-            deleteAllWidgetsByName(`ConquestFlagEnemy_${pid}_${i}`);
-        }
+        deleteAllHudWidgetsByName(`Container_TopLeft_CoreUI_${pid}`);
+        deleteAllHudWidgetsByName(`Container_TopMiddle_CoreUI_${pid}`);
+        deleteAllHudWidgetsByName(`Container_TopRight_CoreUI_${pid}`);
+        destroyConquestHudForPid(pid);
     }
 
     // If cached, reuse that HUD instance to avoid duplicate ParseUI trees with the same widget names.
@@ -851,6 +1146,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         hideLegacyConquestRoots();
         hideLegacyFlagTripletRows();
         ensureTopHudRootForPid(pid, player);
+        ensureConquestBleedChevronWidgets();
         const helpContainer = safeFind(`Container_HelpText_${pid}`);
         if (helpContainer) {
             mod.SetUIWidgetPosition(helpContainer, mod.CreateVector(CONQUEST_HELP_CONTAINER_X, CONQUEST_HELP_CONTAINER_Y, 0));
@@ -897,12 +1193,17 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         updateSettingsSummaryHudForPid(pid);
         // Keep cached refs stable once established.
         // Re-binding from global name lookups each tick can target stale duplicates and cause color/overlay drift.
+        cached.conquestTicketsTeam1Container = cached.conquestTicketsTeam1Container ?? safeFind(`ConquestTicketsHudTeam1Container_${pid}`);
+        cached.conquestTicketsTeam2Container = cached.conquestTicketsTeam2Container ?? safeFind(`ConquestTicketsHudTeam2Container_${pid}`);
         cached.conquestTicketsDebugLeftBarTrack = cached.conquestTicketsDebugLeftBarTrack ?? safeFind(`ConquestTicketsHudLeftBarTrack_${pid}`);
         cached.conquestTicketsDebugLeftBarFill = cached.conquestTicketsDebugLeftBarFill ?? safeFind(`ConquestTicketsHudLeftBarFill_${pid}`);
         cached.conquestTicketsDebugRightBarTrack = cached.conquestTicketsDebugRightBarTrack ?? safeFind(`ConquestTicketsHudRightBarTrack_${pid}`);
         cached.conquestTicketsDebugRightBarFill = cached.conquestTicketsDebugRightBarFill ?? safeFind(`ConquestTicketsHudRightBarFill_${pid}`);
+        cached.conquestTicketsSlash = cached.conquestTicketsSlash ?? safeFind(`ConquestTicketsHudSlash_${pid}`);
         cached.conquestTicketsLeadLeftBorder = cached.conquestTicketsLeadLeftBorder ?? safeFind(`ConquestTicketsHudLeadBorderLeft_${pid}`);
         cached.conquestTicketsLeadRightBorder = cached.conquestTicketsLeadRightBorder ?? safeFind(`ConquestTicketsHudLeadBorderRight_${pid}`);
+        cached.conquestTicketsLeadLeftCrownShadow = cached.conquestTicketsLeadLeftCrownShadow ?? safeFind(`ConquestTicketsHudLeadCrownLeftShadow_${pid}`);
+        cached.conquestTicketsLeadRightCrownShadow = cached.conquestTicketsLeadRightCrownShadow ?? safeFind(`ConquestTicketsHudLeadCrownRightShadow_${pid}`);
         cached.conquestTicketsLeadLeftCrown = cached.conquestTicketsLeadLeftCrown ?? safeFind(`ConquestTicketsHudLeadCrownLeft_${pid}`);
         cached.conquestTicketsLeadRightCrown = cached.conquestTicketsLeadRightCrown ?? safeFind(`ConquestTicketsHudLeadCrownRight_${pid}`);
         if (!cached.conquestTicketsBleedLeftChevrons) cached.conquestTicketsBleedLeftChevrons = [];
@@ -1335,7 +1636,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             position: [CONQUEST_TICKETS_ROOT_X, CONQUEST_TICKETS_ROOT_Y],
             size: [CONQUEST_TICKETS_ROOT_WIDTH, CONQUEST_TICKETS_ROOT_HEIGHT],
             anchor: mod.UIAnchor.TopCenter,
-            visible: true,
+            // Start hidden so swap-time rebuilds cannot show incremental construction frames.
+            visible: false,
             padding: 0,
             bgAlpha: 0,
             bgFill: mod.UIBgFill.None,
@@ -1449,6 +1751,24 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgFill: mod.UIBgFill.OutlineThin,
                 },
                 {
+                    // Drop shadow for the left lead crown.
+                    name: `ConquestTicketsHudLeadCrownLeftShadow_${pid}`,
+                    type: "Image",
+                    position: [
+                        CONQUEST_TICKETS_TEAM_LEFT_X + ((CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2) - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET,
+                        -(CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE + CONQUEST_HUD_TICKET_LEAD_CROWN_GAP_Y) - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_TOP_BIAS,
+                    ],
+                    size: [CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE],
+                    anchor: mod.UIAnchor.TopLeft,
+                    visible: false,
+                    padding: 0,
+                    bgAlpha: 0,
+                    bgFill: mod.UIBgFill.None,
+                    imageType: mod.UIImageType.CrownSolid,
+                    imageColor: [0, 0, 0],
+                    imageAlpha: CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_ALPHA,
+                },
+                {
                     // Lead crown for the left ticket counter (shown only while this side leads).
                     name: `ConquestTicketsHudLeadCrownLeft_${pid}`,
                     type: "Image",
@@ -1469,6 +1789,24 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                         CONQUEST_HUD_TICKET_LEAD_CROWN_RGB[2],
                     ],
                     imageAlpha: 1,
+                },
+                {
+                    // Drop shadow for the right lead crown.
+                    name: `ConquestTicketsHudLeadCrownRightShadow_${pid}`,
+                    type: "Image",
+                    position: [
+                        CONQUEST_TICKETS_TEAM_RIGHT_X + ((CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2) - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET,
+                        -(CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE + CONQUEST_HUD_TICKET_LEAD_CROWN_GAP_Y) - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_TOP_BIAS,
+                    ],
+                    size: [CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE],
+                    anchor: mod.UIAnchor.TopLeft,
+                    visible: false,
+                    padding: 0,
+                    bgAlpha: 0,
+                    bgFill: mod.UIBgFill.None,
+                    imageType: mod.UIImageType.CrownSolid,
+                    imageColor: [0, 0, 0],
+                    imageAlpha: CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_ALPHA,
                 },
                 {
                     // Lead crown for the right ticket counter (shown only while this side leads).
@@ -1495,18 +1833,18 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     name: `ConquestTicketsHudBleedChevronLeft1_${pid}`,
                     type: "Text",
-                    position: [CONQUEST_TICKETS_BLEED_LEFT_X, CONQUEST_TICKETS_BLEED_START_Y],
+                    position: [CONQUEST_TICKETS_BLEED_LEFT_X, CONQUEST_TICKETS_BLEED_Y],
                     size: [CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: false,
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON),
+                    textLabel: mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT),
                     textColor: [
-                        CONQUEST_HUD_TEXT_FRIENDLY_RGB[0],
-                        CONQUEST_HUD_TEXT_FRIENDLY_RGB[1],
-                        CONQUEST_HUD_TEXT_FRIENDLY_RGB[2],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB[0],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB[1],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB[2],
                     ],
                     textAlpha: 1,
                     textSize: CONQUEST_HUD_TICKET_BLEED_CHEVRON_TEXT_SIZE,
@@ -1515,18 +1853,18 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     name: `ConquestTicketsHudBleedChevronLeft2_${pid}`,
                     type: "Text",
-                    position: [CONQUEST_TICKETS_BLEED_LEFT_X, CONQUEST_TICKETS_BLEED_START_Y + CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y],
+                    position: [CONQUEST_TICKETS_BLEED_LEFT_X + CONQUEST_HUD_TICKET_BLEED_CHEVRON_STEP_X, CONQUEST_TICKETS_BLEED_Y],
                     size: [CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: false,
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON),
+                    textLabel: mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT),
                     textColor: [
-                        CONQUEST_HUD_TEXT_FRIENDLY_RGB[0],
-                        CONQUEST_HUD_TEXT_FRIENDLY_RGB[1],
-                        CONQUEST_HUD_TEXT_FRIENDLY_RGB[2],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB[0],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB[1],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB[2],
                     ],
                     textAlpha: 1,
                     textSize: CONQUEST_HUD_TICKET_BLEED_CHEVRON_TEXT_SIZE,
@@ -1535,18 +1873,18 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     name: `ConquestTicketsHudBleedChevronLeft3_${pid}`,
                     type: "Text",
-                    position: [CONQUEST_TICKETS_BLEED_LEFT_X, CONQUEST_TICKETS_BLEED_START_Y + (CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y * 2)],
+                    position: [CONQUEST_TICKETS_BLEED_LEFT_X + (CONQUEST_HUD_TICKET_BLEED_CHEVRON_STEP_X * 2), CONQUEST_TICKETS_BLEED_Y],
                     size: [CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: false,
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON),
+                    textLabel: mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT),
                     textColor: [
-                        CONQUEST_HUD_TEXT_FRIENDLY_RGB[0],
-                        CONQUEST_HUD_TEXT_FRIENDLY_RGB[1],
-                        CONQUEST_HUD_TEXT_FRIENDLY_RGB[2],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB[0],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB[1],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB[2],
                     ],
                     textAlpha: 1,
                     textSize: CONQUEST_HUD_TICKET_BLEED_CHEVRON_TEXT_SIZE,
@@ -1555,18 +1893,18 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     name: `ConquestTicketsHudBleedChevronRight1_${pid}`,
                     type: "Text",
-                    position: [CONQUEST_TICKETS_BLEED_RIGHT_X, CONQUEST_TICKETS_BLEED_START_Y],
+                    position: [CONQUEST_TICKETS_BLEED_RIGHT_X, CONQUEST_TICKETS_BLEED_Y],
                     size: [CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: false,
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON),
+                    textLabel: mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT),
                     textColor: [
-                        CONQUEST_HUD_TEXT_ENEMY_RGB[0],
-                        CONQUEST_HUD_TEXT_ENEMY_RGB[1],
-                        CONQUEST_HUD_TEXT_ENEMY_RGB[2],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB[0],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB[1],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB[2],
                     ],
                     textAlpha: 1,
                     textSize: CONQUEST_HUD_TICKET_BLEED_CHEVRON_TEXT_SIZE,
@@ -1575,18 +1913,18 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     name: `ConquestTicketsHudBleedChevronRight2_${pid}`,
                     type: "Text",
-                    position: [CONQUEST_TICKETS_BLEED_RIGHT_X, CONQUEST_TICKETS_BLEED_START_Y + CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y],
+                    position: [CONQUEST_TICKETS_BLEED_RIGHT_X - CONQUEST_HUD_TICKET_BLEED_CHEVRON_STEP_X, CONQUEST_TICKETS_BLEED_Y],
                     size: [CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: false,
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON),
+                    textLabel: mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT),
                     textColor: [
-                        CONQUEST_HUD_TEXT_ENEMY_RGB[0],
-                        CONQUEST_HUD_TEXT_ENEMY_RGB[1],
-                        CONQUEST_HUD_TEXT_ENEMY_RGB[2],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB[0],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB[1],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB[2],
                     ],
                     textAlpha: 1,
                     textSize: CONQUEST_HUD_TICKET_BLEED_CHEVRON_TEXT_SIZE,
@@ -1595,18 +1933,18 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     name: `ConquestTicketsHudBleedChevronRight3_${pid}`,
                     type: "Text",
-                    position: [CONQUEST_TICKETS_BLEED_RIGHT_X, CONQUEST_TICKETS_BLEED_START_Y + (CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y * 2)],
+                    position: [CONQUEST_TICKETS_BLEED_RIGHT_X - (CONQUEST_HUD_TICKET_BLEED_CHEVRON_STEP_X * 2), CONQUEST_TICKETS_BLEED_Y],
                     size: [CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: false,
                     padding: 0,
                     bgAlpha: 0,
                     bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON),
+                    textLabel: mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT),
                     textColor: [
-                        CONQUEST_HUD_TEXT_ENEMY_RGB[0],
-                        CONQUEST_HUD_TEXT_ENEMY_RGB[1],
-                        CONQUEST_HUD_TEXT_ENEMY_RGB[2],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB[0],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB[1],
+                        CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB[2],
                     ],
                     textAlpha: 1,
                     textSize: CONQUEST_HUD_TICKET_BLEED_CHEVRON_TEXT_SIZE,
@@ -1712,16 +2050,22 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         });
         if (conquestTickets) refs.roots.push(conquestTickets);
     }
+    ensureConquestBleedChevronWidgets();
 
     refs.conquestTicketsDebugRoot = safeFind(`ConquestTicketsHudRoot_${pid}`);
+    refs.conquestTicketsTeam1Container = safeFind(`ConquestTicketsHudTeam1Container_${pid}`);
+    refs.conquestTicketsTeam2Container = safeFind(`ConquestTicketsHudTeam2Container_${pid}`);
     refs.conquestTicketsDebugTeam1 = safeFind(`ConquestTicketsHudTeam1_${pid}`);
     refs.conquestTicketsDebugTeam2 = safeFind(`ConquestTicketsHudTeam2_${pid}`);
+    refs.conquestTicketsSlash = safeFind(`ConquestTicketsHudSlash_${pid}`);
     refs.conquestTicketsDebugLeftBarTrack = safeFind(`ConquestTicketsHudLeftBarTrack_${pid}`);
     refs.conquestTicketsDebugLeftBarFill = safeFind(`ConquestTicketsHudLeftBarFill_${pid}`);
     refs.conquestTicketsDebugRightBarTrack = safeFind(`ConquestTicketsHudRightBarTrack_${pid}`);
     refs.conquestTicketsDebugRightBarFill = safeFind(`ConquestTicketsHudRightBarFill_${pid}`);
     refs.conquestTicketsLeadLeftBorder = safeFind(`ConquestTicketsHudLeadBorderLeft_${pid}`);
     refs.conquestTicketsLeadRightBorder = safeFind(`ConquestTicketsHudLeadBorderRight_${pid}`);
+    refs.conquestTicketsLeadLeftCrownShadow = safeFind(`ConquestTicketsHudLeadCrownLeftShadow_${pid}`);
+    refs.conquestTicketsLeadRightCrownShadow = safeFind(`ConquestTicketsHudLeadCrownRightShadow_${pid}`);
     refs.conquestTicketsLeadLeftCrown = safeFind(`ConquestTicketsHudLeadCrownLeft_${pid}`);
     refs.conquestTicketsLeadRightCrown = safeFind(`ConquestTicketsHudLeadCrownRight_${pid}`);
     refs.conquestTicketsBleedLeftChevrons = [];
@@ -1730,10 +2074,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         refs.conquestTicketsBleedLeftChevrons[chevronIndex] = safeFind(`ConquestTicketsHudBleedChevronLeft${chevronIndex + 1}_${pid}`);
         refs.conquestTicketsBleedRightChevrons[chevronIndex] = safeFind(`ConquestTicketsHudBleedChevronRight${chevronIndex + 1}_${pid}`);
     }
-    const conquestTicketsSlash = safeFind(`ConquestTicketsHudSlash_${pid}`);
+    const conquestTicketsSlash = refs.conquestTicketsSlash;
     if (refs.conquestTicketsDebugRoot) {
+        const ticketsRoot = refs.conquestTicketsDebugRoot;
         if (refs.conquestTicketsDebugLeftBarTrack) {
-            mod.SetUIWidgetParent(refs.conquestTicketsDebugLeftBarTrack, refs.conquestTicketsDebugRoot);
+            mod.SetUIWidgetParent(refs.conquestTicketsDebugLeftBarTrack, ticketsRoot);
             mod.SetUIWidgetPosition(
                 refs.conquestTicketsDebugLeftBarTrack,
                 mod.CreateVector(CONQUEST_TICKETS_LEFT_BAR_X, CONQUEST_TICKETS_BAR_Y, 0)
@@ -1763,7 +2108,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             );
         }
         if (refs.conquestTicketsDebugTeam1) {
-            const team1Container = safeFind(`ConquestTicketsHudTeam1Container_${pid}`);
+            const team1Container = refs.conquestTicketsTeam1Container;
             mod.SetUIWidgetParent(refs.conquestTicketsDebugTeam1, team1Container ?? refs.conquestTicketsDebugRoot);
             mod.SetUIWidgetPosition(
                 refs.conquestTicketsDebugTeam1,
@@ -1792,7 +2137,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetPosition(conquestTicketsSlash, mod.CreateVector(272, CONQUEST_TICKETS_ROW_Y, 0));
         }
         if (refs.conquestTicketsDebugTeam2) {
-            const team2Container = safeFind(`ConquestTicketsHudTeam2Container_${pid}`);
+            const team2Container = refs.conquestTicketsTeam2Container;
             mod.SetUIWidgetParent(refs.conquestTicketsDebugTeam2, team2Container ?? refs.conquestTicketsDebugRoot);
             mod.SetUIWidgetPosition(
                 refs.conquestTicketsDebugTeam2,
@@ -1838,6 +2183,36 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH + (CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2), CONQUEST_TICKETS_TEAM_HEIGHT + (CONQUEST_HUD_TICKET_LEAD_BORDER_GROW * 2), 0)
             );
         }
+        if (refs.conquestTicketsLeadLeftCrownShadow) {
+            mod.SetUIWidgetParent(refs.conquestTicketsLeadLeftCrownShadow, refs.conquestTicketsDebugRoot);
+            mod.SetUIWidgetPosition(
+                refs.conquestTicketsLeadLeftCrownShadow,
+                mod.CreateVector(
+                    CONQUEST_TICKETS_TEAM_LEFT_X + ((CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2) - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET,
+                    -(CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE + CONQUEST_HUD_TICKET_LEAD_CROWN_GAP_Y) - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_TOP_BIAS,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                refs.conquestTicketsLeadLeftCrownShadow,
+                mod.CreateVector(CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE, 0)
+            );
+        }
+        if (refs.conquestTicketsLeadRightCrownShadow) {
+            mod.SetUIWidgetParent(refs.conquestTicketsLeadRightCrownShadow, refs.conquestTicketsDebugRoot);
+            mod.SetUIWidgetPosition(
+                refs.conquestTicketsLeadRightCrownShadow,
+                mod.CreateVector(
+                    CONQUEST_TICKETS_TEAM_RIGHT_X + ((CONQUEST_TICKETS_TEAM_WIDTH - CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE) / 2) - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET,
+                    -(CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE + CONQUEST_HUD_TICKET_LEAD_CROWN_GAP_Y) - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_TOP_BIAS,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                refs.conquestTicketsLeadRightCrownShadow,
+                mod.CreateVector(CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE, 0)
+            );
+        }
         if (refs.conquestTicketsLeadLeftCrown) {
             mod.SetUIWidgetParent(refs.conquestTicketsLeadLeftCrown, refs.conquestTicketsDebugRoot);
             mod.SetUIWidgetPosition(
@@ -1870,14 +2245,21 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         }
         const leftBleedChevrons = refs.conquestTicketsBleedLeftChevrons ?? [];
         const rightBleedChevrons = refs.conquestTicketsBleedRightChevrons ?? [];
+        const chevronOverlayParent = mod.GetUIRoot();
         for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
-            const rowOffsetY = CONQUEST_TICKETS_BLEED_START_Y + (chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STACK_STEP_Y);
+            // Keep chevrons under UIRoot overlay so ticket bar/fill layering cannot occlude the glyphs.
+            const leftParent = chevronOverlayParent;
+            const rightParent = chevronOverlayParent;
+            const leftX = getBleedChevronAbsX(true, chevronIndex);
+            const rightX = getBleedChevronAbsX(false, chevronIndex);
+            const leftY = CONQUEST_TICKETS_BLEED_ABS_Y;
+            const rightY = CONQUEST_TICKETS_BLEED_ABS_Y;
             const leftChevron = leftBleedChevrons[chevronIndex];
             if (leftChevron) {
-                mod.SetUIWidgetParent(leftChevron, refs.conquestTicketsDebugRoot);
+                mod.SetUIWidgetParent(leftChevron, leftParent);
                 mod.SetUIWidgetPosition(
                     leftChevron,
-                    mod.CreateVector(CONQUEST_TICKETS_BLEED_LEFT_X, rowOffsetY, 0)
+                    mod.CreateVector(leftX, leftY, 0)
                 );
                 mod.SetUIWidgetSize(
                     leftChevron,
@@ -1886,11 +2268,56 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             }
             const rightChevron = rightBleedChevrons[chevronIndex];
             if (rightChevron) {
-                mod.SetUIWidgetParent(rightChevron, refs.conquestTicketsDebugRoot);
+                mod.SetUIWidgetParent(rightChevron, rightParent);
                 mod.SetUIWidgetPosition(
                     rightChevron,
-                    mod.CreateVector(CONQUEST_TICKETS_BLEED_RIGHT_X, rowOffsetY, 0)
+                    mod.CreateVector(rightX, rightY, 0)
                 );
+                mod.SetUIWidgetSize(
+                    rightChevron,
+                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
+                );
+            }
+            const setBleedShadowLocalLayout = (name: string, x: number, y: number, parent: mod.UIWidget): void => {
+                const shadow = safeFind(name);
+                if (!shadow) return;
+                mod.SetUIWidgetParent(shadow, parent);
+                mod.SetUIWidgetPosition(shadow, mod.CreateVector(x, y, 0));
+                mod.SetUIWidgetSize(
+                    shadow,
+                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
+                );
+            };
+            const slot = chevronIndex + 1;
+            const d = CONQUEST_HUD_TICKET_BLEED_CHEVRON_SHADOW_OFFSET;
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowRight_${pid}`, leftX + d, leftY, leftParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowLeft_${pid}`, leftX - d, leftY, leftParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`, leftX, leftY - d, leftParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDown_${pid}`, leftX, leftY + d, leftParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`, leftX - d, leftY - d, leftParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`, leftX + d, leftY - d, leftParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownRight_${pid}`, leftX + d, leftY + d, leftParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownLeft_${pid}`, leftX - d, leftY + d, leftParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowRight_${pid}`, rightX + d, rightY, rightParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowLeft_${pid}`, rightX - d, rightY, rightParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`, rightX, rightY - d, rightParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowDown_${pid}`, rightX, rightY + d, rightParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`, rightX - d, rightY - d, rightParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`, rightX + d, rightY - d, rightParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownRight_${pid}`, rightX + d, rightY + d, rightParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownLeft_${pid}`, rightX - d, rightY + d, rightParent);
+            // Re-attach core chevrons after shadows so the colored glyph sits above the black drop-shadow ring.
+            if (leftChevron) {
+                mod.SetUIWidgetParent(leftChevron, leftParent);
+                mod.SetUIWidgetPosition(leftChevron, mod.CreateVector(leftX, leftY, 0));
+                mod.SetUIWidgetSize(
+                    leftChevron,
+                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
+                );
+            }
+            if (rightChevron) {
+                mod.SetUIWidgetParent(rightChevron, rightParent);
+                mod.SetUIWidgetPosition(rightChevron, mod.CreateVector(rightX, rightY, 0));
                 mod.SetUIWidgetSize(
                     rightChevron,
                     mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
@@ -1903,13 +2330,15 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     safeSetUIWidgetDepth(refs.conquestTicketsDebugLeftBarFill, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(refs.conquestTicketsDebugRightBarTrack, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(refs.conquestTicketsDebugRightBarFill, mod.UIDepth.AboveGameUI);
-    safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudTeam1Container_${pid}`), mod.UIDepth.AboveGameUI);
-    safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudTeam2Container_${pid}`), mod.UIDepth.AboveGameUI);
+    safeSetUIWidgetDepth(refs.conquestTicketsTeam1Container, mod.UIDepth.AboveGameUI);
+    safeSetUIWidgetDepth(refs.conquestTicketsTeam2Container, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(refs.conquestTicketsDebugTeam1, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(conquestTicketsSlash, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(refs.conquestTicketsDebugTeam2, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(refs.conquestTicketsLeadLeftBorder, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(refs.conquestTicketsLeadRightBorder, mod.UIDepth.AboveGameUI);
+    safeSetUIWidgetDepth(refs.conquestTicketsLeadLeftCrownShadow, mod.UIDepth.AboveGameUI);
+    safeSetUIWidgetDepth(refs.conquestTicketsLeadRightCrownShadow, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(refs.conquestTicketsLeadLeftCrown, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(refs.conquestTicketsLeadRightCrown, mod.UIDepth.AboveGameUI);
     const leftBleedChevrons = refs.conquestTicketsBleedLeftChevrons ?? [];
@@ -1917,6 +2346,23 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
         safeSetUIWidgetDepth(leftBleedChevrons[chevronIndex], mod.UIDepth.AboveGameUI);
         safeSetUIWidgetDepth(rightBleedChevrons[chevronIndex], mod.UIDepth.AboveGameUI);
+        const slot = chevronIndex + 1;
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowRight_${pid}`), mod.UIDepth.AboveGameUI);
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowLeft_${pid}`), mod.UIDepth.AboveGameUI);
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`), mod.UIDepth.AboveGameUI);
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDown_${pid}`), mod.UIDepth.AboveGameUI);
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`), mod.UIDepth.AboveGameUI);
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`), mod.UIDepth.AboveGameUI);
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownRight_${pid}`), mod.UIDepth.AboveGameUI);
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownLeft_${pid}`), mod.UIDepth.AboveGameUI);
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowRight_${pid}`), mod.UIDepth.AboveGameUI);
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowLeft_${pid}`), mod.UIDepth.AboveGameUI);
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`), mod.UIDepth.AboveGameUI);
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowDown_${pid}`), mod.UIDepth.AboveGameUI);
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`), mod.UIDepth.AboveGameUI);
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`), mod.UIDepth.AboveGameUI);
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownRight_${pid}`), mod.UIDepth.AboveGameUI);
+        safeSetUIWidgetDepth(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownLeft_${pid}`), mod.UIDepth.AboveGameUI);
     }
     safeSetUIWidgetVisible(refs.conquestTicketsDebugLeftBarTrack, true);
     safeSetUIWidgetVisible(refs.conquestTicketsDebugLeftBarFill, true);
@@ -1924,11 +2370,30 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     safeSetUIWidgetVisible(refs.conquestTicketsDebugRightBarFill, true);
     safeSetUIWidgetVisible(refs.conquestTicketsLeadLeftBorder, false);
     safeSetUIWidgetVisible(refs.conquestTicketsLeadRightBorder, false);
+    safeSetUIWidgetVisible(refs.conquestTicketsLeadLeftCrownShadow, false);
+    safeSetUIWidgetVisible(refs.conquestTicketsLeadRightCrownShadow, false);
     safeSetUIWidgetVisible(refs.conquestTicketsLeadLeftCrown, false);
     safeSetUIWidgetVisible(refs.conquestTicketsLeadRightCrown, false);
     for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
         safeSetUIWidgetVisible(leftBleedChevrons[chevronIndex], false);
         safeSetUIWidgetVisible(rightBleedChevrons[chevronIndex], false);
+        const slot = chevronIndex + 1;
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowRight_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowLeft_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDown_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownRight_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownLeft_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowRight_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowLeft_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowDown_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownRight_${pid}`), false);
+        safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownLeft_${pid}`), false);
     }
     safeSetUIWidgetVisible(conquestTicketsSlash, false);
 
@@ -2626,7 +3091,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             position: [CONQUEST_FLAGS_ROOT_X, CONQUEST_FLAGS_ROOT_Y],
             size: [CONQUEST_FLAGS_ROOT_WIDTH, CONQUEST_FLAGS_ROOT_HEIGHT],
             anchor: mod.UIAnchor.TopCenter,
-            visible: true,
+            // Start hidden so swap-time rebuilds cannot show incremental construction frames.
+            visible: false,
             padding: 0,
             bgAlpha: 0,
             bgFill: mod.UIBgFill.None,
@@ -3119,6 +3585,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     refs.settingsVehiclesT2Text = safeFind(`Settings_VehiclesT2_${pid}`);
     refs.settingsVehiclesMatchupText = safeFind(`Settings_VehiclesMatchup_${pid}`);
     refs.settingsPlayersText = safeFind(`Settings_Players_${pid}`);
+    State.conquest.debug.hudGenerationByPid[pid] = (State.conquest.debug.hudGenerationByPid[pid] ?? 0) + 1;
     State.hudCache.hudByPid[pid] = refs;
 
     // Keep only HUD elements used by conquest's simplified center HUD + overlays.

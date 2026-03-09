@@ -138,6 +138,14 @@ export function OnCapturePointCaptured(eventCapturePoint: mod.CapturePoint): voi
     onCapturePointCapturedImpl(eventCapturePoint);
 }
 
+export function OnPlayerEnterCapturePoint(eventPlayer: mod.Player, eventCapturePoint: mod.CapturePoint): void {
+    onPlayerEnterCapturePointImpl(eventPlayer, eventCapturePoint);
+}
+
+export function OnPlayerExitCapturePoint(eventPlayer: mod.Player, eventCapturePoint: mod.CapturePoint): void {
+    onPlayerExitCapturePointImpl(eventPlayer, eventCapturePoint);
+}
+
 export function OnPlayerEnterAreaTrigger(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger): void {
     onPlayerEnterAreaTriggerImpl(eventPlayer, eventAreaTrigger);
 }

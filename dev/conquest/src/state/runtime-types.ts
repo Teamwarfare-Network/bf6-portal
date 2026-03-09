@@ -126,9 +126,37 @@ type ConquestRuntimeScaffold = {
         hudLastUpdatedAtSeconds: number;
         hudDirty: boolean;
         ticketLeaderTeam: TeamID | 0;
+        hudGenerationByPid: Record<number, number>;
         teamSwapRefreshTokenByPid: Record<number, number>;
+        teamSwapHudResetPendingByPid: Record<number, boolean>;
         perspectiveTeamByPid: Record<number, TeamID | 0>;
         teamSwapPerspectiveLockUntilByPid: Record<number, number>;
+        engageHiddenUntilDeployByPid: Record<number, boolean>;
+        bleedPulseQueueLeftByPid: Record<number, number>;
+        bleedPulseQueueRightByPid: Record<number, number>;
+        bleedPulseActiveSideByPid: Record<number, 0 | 1 | 2>;
+        bleedPulseStepByPid: Record<number, number>;
+        bleedPulseLimitByPid: Record<number, number>;
+        bleedPulsePhaseByPid: Record<number, 0 | 1 | 2>;
+        bleedPulseNextAtByPid: Record<number, number>;
+        hudRenderBucketByPid: Record<number, number>;
+        hudRenderBurstByPid: Record<number, number>;
+        hudRenderDuplicateBurstByPid: Record<number, number>;
+        hudStatusVmByPid: Record<number, {
+            isLive: boolean;
+            isGameOver: boolean;
+            showRoundStateLine: boolean;
+            showPlayersReadyLine: boolean;
+        }>;
+        hudHelpReadyVmByPid: Record<number, {
+            showHelp: boolean;
+            showReady: boolean;
+        }>;
+        hudClockVmByPid: Record<number, {
+            remainingSeconds: number;
+            isLowTime: boolean;
+            isPaused: boolean;
+        }>;
     };
 };
 

@@ -5,6 +5,26 @@
 
 const TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS = 0.6;
 
+// Performs a focused conquest HUD reset for one player before team-swap redraw.
+// This is intentionally non-destructive: keep the existing widget tree cached, hide it immediately,
+// then repaint once from authoritative state after swap settles.
+function cleanupConquestHudForTeamSwap(pid: number): void {
+    delete State.conquest.capture.engagedObjIdByPid[pid];
+    State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
+    State.conquest.debug.teamSwapHudResetPendingByPid[pid] = true;
+    delete State.conquest.debug.hudRenderBucketByPid[pid];
+    delete State.conquest.debug.hudRenderBurstByPid[pid];
+    conquestPhase3ResetBleedPulseForPid(pid);
+    const refs = State.hudCache.hudByPid[pid];
+    if (refs) {
+        // Hide every conquest-owned widget for this player immediately.
+        // This includes chevrons that are parented to UI root and not ticket root.
+        conquestPhase3ForceHideAllV2Widgets(refs);
+    }
+    // Always force-hide engage row explicitly for swap transitions.
+    conquestPhase3ForceHideEngageWidgetsForPid(pid);
+}
+
 // Handles a player-initiated team swap.
 // This function validates the request, updates team membership,
 // and triggers any required HUD or state refresh.
@@ -42,7 +62,17 @@ async function refreshConquestHudAfterTeamSwap(eventPlayer: mod.Player): Promise
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     if ((State.conquest.debug.teamSwapRefreshTokenByPid[pid] ?? 0) !== nextToken) return;
 
-    ensureHudForPlayer(eventPlayer);
+    // Non-destructive swap refresh:
+    // keep existing cached widgets hidden while swap is pending; do not destroy/rebuild here.
+    const refs = State.hudCache.hudByPid[pid];
+    if (refs) conquestPhase3ForceHideAllV2Widgets(refs);
+    // Hard clear engage state before releasing swap-pending gate.
+    // This prevents stale Neutralizing/Defending rows from carrying to the new team context.
+    State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
+    delete State.conquest.capture.engagedObjIdByPid[pid];
+    conquestPhase3ForceHideEngageWidgetsForPid(pid);
+    // Keep swap gate engaged until deploy callback confirms the new team context.
+    // onPlayerDeployedImpl is the only owner that releases teamSwapHudResetPendingByPid.
     conquestPhase3MarkHudDirty();
     updateConquestPhase2ADebugHudForAllPlayers(true);
 }
@@ -66,23 +96,19 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
     if (pid !== undefined) {
         // Treat swap as immediately undeployed for HUD authority until the engine undeploy callback lands.
         State.players.deployedByPid[pid] = false;
-        // Team swap must invalidate any in-progress engage row for this viewer before redraw.
-        // Otherwise the old on-flag panel can persist for one pass with stale ownership context.
-        delete State.conquest.capture.engagedObjIdByPid[pid];
-        // Force one clean HUD rebuild after swap to prevent duplicate ticket widgets from cache drift.
-        delete State.hudCache.hudByPid[pid];
+        // Force one clean conquest HUD reset (non-destructive) after swap to prevent stale overlays/duplicates.
+        cleanupConquestHudForTeamSwap(pid);
         // Pre-seed swap perspective so post-SetTeam transient reads cannot repaint as Team1 fallback.
         State.conquest.debug.perspectiveTeamByPid[pid] = newTeamNum;
         // Hold perspective to the target team briefly so redraw cannot sample stale pre-swap engine team for one frame.
         State.conquest.debug.teamSwapPerspectiveLockUntilByPid[pid] = mod.GetMatchTimeElapsed() + TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS;
-        // Hide current conquest HUD immediately so old-team colors do not linger during swap settle.
-        const swapRefs = ensureHudForPlayer(eventPlayer);
-        if (swapRefs) conquestPhase3ForceHideAllV2Widgets(pid, swapRefs);
     }
     mod.SetTeam(eventPlayer, mod.GetTeam(newTeamNum));
-    // Immediate script-authoritative redraw using locked perspective, then a delayed settle pass.
+    // Single redraw strategy:
+    // - mark dirty now
+    // - let the delayed settle pass perform one authoritative rebuild/draw
+    // This avoids swap-time duplicate repaint churn.
     conquestPhase3MarkHudDirty();
-    updateConquestPhase2ADebugHudForAllPlayers(true);
     void refreshConquestHudAfterTeamSwap(eventPlayer);
 
     // Force a rapid return to the deploy screen so the player respawns on the new team.

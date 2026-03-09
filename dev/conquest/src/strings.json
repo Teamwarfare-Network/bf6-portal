@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v0.178)",
+        "title": "teamwarfare . net | TWL Conquest (v0.278)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -29,6 +29,8 @@
         "bleedStarted": "Your team controls more objectives. Enemy tickets are bleeding.",
         "bleedStopped": "Objective control is even. Enemy ticket bleed has stopped.",
         "bleedChevron": "v",
+        "bleedChevronLeft": "<",
+        "bleedChevronRight": ">",
         "flagLetters": {
           "A": "A",
           "B": "B",

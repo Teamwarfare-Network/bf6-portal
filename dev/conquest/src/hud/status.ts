@@ -14,16 +14,23 @@ function setAdminPanelActionCountText(widget: mod.UIWidget | undefined, value: n
 
 //#region -------------------- HUD Phase State + Help Text --------------------
 
-function setMatchStateText(widget: mod.UIWidget | undefined): void {
+function setMatchStateText(
+    widget: mod.UIWidget | undefined,
+    derivedStatus: {
+        isLive: boolean;
+        isGameOver: boolean;
+    }
+): void {
     if (!widget) return;
 
-    if (State.round.phase === MatchPhase.GameOver) {
+    const isGameOver = derivedStatus.isGameOver;
+    if (isGameOver) {
         mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.roundStateGameOver));
         mod.SetUITextColor(widget, COLOR_WARNING_YELLOW);
         return;
     }
 
-    const isLive = isMatchLive();
+    const isLive = derivedStatus.isLive;
     const stateKey = isLive ? mod.stringkeys.twl.hud.roundStateLive : mod.stringkeys.twl.hud.roundStateNotReady;
     mod.SetUITextLabel(widget, mod.Message(stateKey));
 
@@ -186,6 +193,55 @@ function setHudHelpDepthForPid(pid: number): void {
     }
 }
 
+type HudVisibilitySnapshot = {
+    showHelp: boolean;
+    showReady: boolean;
+    showRoundStateLine: boolean;
+    showPlayersReadyLine: boolean;
+    status: {
+        isLive: boolean;
+        isGameOver: boolean;
+    };
+};
+
+// Returns one authoritative visibility snapshot for top HUD help/ready/round-state lanes.
+// Priority:
+// 1) derived Conquest HUD VM slices
+// 2) local fallback computation
+function getHudVisibilitySnapshotForPid(pid: number): HudVisibilitySnapshot {
+    conquestPhase3EnsureTopHudDerivedSlicesForPid(pid);
+    const derivedStatus = State.conquest.debug.hudStatusVmByPid[pid];
+    const derivedHelpReady = State.conquest.debug.hudHelpReadyVmByPid[pid];
+    if (derivedStatus && derivedHelpReady) {
+        return {
+            showHelp: derivedHelpReady.showHelp,
+            showReady: derivedHelpReady.showReady,
+            showRoundStateLine: derivedStatus.showRoundStateLine,
+            showPlayersReadyLine: derivedStatus.showPlayersReadyLine,
+            status: {
+                isLive: derivedStatus.isLive,
+                isGameOver: derivedStatus.isGameOver,
+            },
+        };
+    }
+
+    const isLive = isMatchLive();
+    const isGameOver = State.round.phase === MatchPhase.GameOver;
+    // Defensive fallback (should be rare): keep only state/ready line visible.
+    const showHelp = false;
+    const showReady = false;
+    return {
+        showHelp,
+        showReady,
+        showRoundStateLine: true,
+        showPlayersReadyLine: (!State.match.victoryDialogActive) && (!isLive),
+        status: {
+            isLive,
+            isGameOver,
+        },
+    };
+}
+
 /**
  * Sets the shared phase-state text (e.g., NOT READY / LIVE / GAME OVER) for every player's HUD.
  * This is a broadcast-style UI update:
@@ -201,7 +257,10 @@ function setMatchStateTextForAllPlayers(): void {
         if (!p || !mod.IsPlayerValid(p)) continue;
         const cache = ensureClockUIAndGetCache(p);
         if (!cache) continue;
-        setMatchStateText(cache.roundStateText);
+        const pid = mod.GetObjId(p);
+        const visibility = getHudVisibilitySnapshotForPid(pid);
+        safeSetUIWidgetVisible(cache.roundStateText, visibility.showRoundStateLine);
+        setMatchStateText(cache.roundStateText, visibility.status);
     }
     // Keep the pre-live ready count line in sync with phase-state HUD refreshes.
     updatePlayersReadyHudTextForAllPlayers();
@@ -247,16 +306,8 @@ function updatePlayersReadyHudTextForAllPlayers(): void {
         if (!cache || !cache.playersReadyText) continue;
 
         const pid = mod.GetObjId(p);
-        const isDialogOpen = !!State.players.readyDialogData[pid]?.dialogVisible;
-        const isReady = !!State.players.readyByPid[pid];
-        const isDeployed = !!State.players.deployedByPid[pid];
-        const canShowHelp = (!State.match.isEnded)
-            && (!State.match.victoryDialogActive)
-            && (!State.round.flow.cleanupActive)
-            && (isDeployed);
-        const showHelp = canShowHelp && (!isMatchLive()) && (!isReady) && (!isDialogOpen);
-        const showReady = canShowHelp && (!isMatchLive()) && (isReady) && (!isDialogOpen);
-        const showReadyLine = shouldShow && (!showHelp) && (!showReady);
+        const visibility = getHudVisibilitySnapshotForPid(pid);
+        const showReadyLine = shouldShow && visibility.showPlayersReadyLine;
 
         // Toggle visibility first so we can avoid unnecessary label churn when hidden.
         safeSetUIWidgetVisible(cache.playersReadyText, showReadyLine);

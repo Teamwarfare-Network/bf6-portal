@@ -47,4 +47,10 @@ function initializeConquestPhase1Scaffold(): void {
     State.conquest.debug.hudEnabled = true;
     State.conquest.debug.hudLastUpdatedAtSeconds = -1;
     State.conquest.debug.hudDirty = true;
+    State.conquest.debug.hudRenderBucketByPid = {};
+    State.conquest.debug.hudRenderBurstByPid = {};
+    State.conquest.debug.hudRenderDuplicateBurstByPid = {};
+    State.conquest.debug.hudStatusVmByPid = {};
+    State.conquest.debug.hudHelpReadyVmByPid = {};
+    State.conquest.debug.hudClockVmByPid = {};
 }

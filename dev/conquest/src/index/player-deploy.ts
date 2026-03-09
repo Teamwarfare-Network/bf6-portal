@@ -19,6 +19,12 @@ async function deferForcedUndeploy(player: mod.Player, reason: string): Promise<
 async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
+    // Seed viewer perspective on deploy so first-life HUD slices (including bleed chevrons)
+    // do not wait for a later swap path to establish team context.
+    const deployedTeam = safeGetTeamNumberFromPlayer(eventPlayer, 0);
+    if (deployedTeam === TeamID.Team1 || deployedTeam === TeamID.Team2) {
+        State.conquest.debug.perspectiveTeamByPid[pid] = deployedTeam;
+    }
     // Safety: always restore UI input mode on deploy to avoid stuck UI suppressing messages.
     setUIInputModeForPlayer(eventPlayer, false);
     if (State.round.flow.cleanupActive && !State.round.flow.cleanupAllowDeploy) {
@@ -31,6 +37,7 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     const wasAlreadyDeployed = !!State.players.deployedByPid[pid];
     conquestPhase2BOnPlayerDeployed(eventPlayer, wasAlreadyDeployed);
     State.players.deployedByPid[pid] = true;
+    State.conquest.debug.teamSwapHudResetPendingByPid[pid] = false;
     State.players.joinPromptTripleTapArmedByPid[pid] = false;
     // Rejoin/spawn behavior: players always start NOT READY for the next live-start gate.
     State.players.readyByPid[pid] = false;
@@ -44,6 +51,10 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     ensureHudForPlayer(eventPlayer);
     // Keep conquest HUD state in sync for newly deployed viewers even when no new capture/ticket events fire.
     updateConquestPhase2ADebugHudForAllPlayers(true);
+    // First-life chevron stabilization:
+    // run one clean-tick bleed projection pass right after deploy so chevrons don't wait
+    // for a later unrelated HUD tick or team swap to appear.
+    conquestPhase3RefreshTicketBleedWhenHudClean();
     await spawnReadyDialogInteractPoint(eventPlayer);
 }
 
@@ -56,8 +67,11 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     if (pid === undefined) return;
     if (isPidDisconnected(pid)) return;
     State.players.deployedByPid[pid] = false;
+    // Keep engage panel suppressed after undeploy until the player physically re-enters a capture radius.
+    State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
     // Clear active objective engagement ownership on undeploy so stale swap/death samples cannot persist.
     delete State.conquest.capture.engagedObjIdByPid[pid];
+    conquestPhase3ForceHideEngageWidgetsForPid(pid);
     conquestPhase3MarkHudDirty();
     updateConquestPhase2ADebugHudForAllPlayers(true);
     State.players.joinPromptTripleTapArmedByPid[pid] = false;
