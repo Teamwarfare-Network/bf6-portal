@@ -3,11 +3,7 @@
 
 //#region -------------------- Changelog / History --------------------
 
-// Changelog discipline (required):
-// - On every `npm run bumpVersion`, append one concise entry here before testing handoff.
-// - Keep newest-first ordering and include bug IDs when applicable.
-// - Keep this file compact; deep historical notes belong in design docs, not runtime script.
-
+// v0.290: HUD polish: top-row slot cache-rebind hardening and force-hide border suppression to prevent active-lane border persistence
 // v0.278: CQ_Bug_3 count-source fix: removed deployed-state filter from `GetPlayersOnPoint` counting so first post-swap engage visibility is not suppressed by transient deployed-map desync
 // v0.277: CQ_Bug_3 ordering fix: removed deploy-time engage bind clear and enter-time deployed guard so capture-point enter binds survive swap/deploy event ordering and first post-swap neutralization can render
 // v0.276: CQ_Bug_3 first-entry fix: capture-point enter no longer ignores binds during swap-pending window, so first valid post-swap objective entry remains bound and renders once swap gate clears
@@ -59,5 +55,10 @@
 // v0.230: compile-safe CQ_Bug_3/4 + CQ_Bug_6 pass: cached swap refresh, engage clear before release, chevron restack
 // v0.229: CQ_Bug_3/4 + CQ_Bug_6 pass: non-destructive swap refresh, root-last reveal, per-render chevron restack
 // v0.228: CQ_Bug_1/2/3/4 hardening: swap gate before ensure/build, pending bind block, neutral fill clamp
+
+// Changelog discipline (required):
+// - On every `npm run bumpVersion`, append one concise entry here before testing handoff.
+// - Keep newest-first ordering and include bug IDs when applicable.
+// - Keep this file compact; deep historical notes belong in design docs, not runtime script.
 
 //#endregion ----------------- Changelog / History --------------------

@@ -616,31 +616,31 @@ function conquestPhase3ForceHideAllV2Widgets(refs: HudRefs): void {
     safeSetUIWidgetVisible(refs.conquestFlagsEngageStatusShadowDownRight, false);
     safeSetUIWidgetVisible(refs.conquestFlagsEngageStatusShadowDownLeft, false);
     safeSetUIWidgetVisible(refs.conquestFlagsEngageStatus, false);
-    const slotRoots = refs.conquestFlagsDebugSlotRoots ?? [];
-    const slotBorders = refs.conquestFlagsDebugBorderRows ?? [];
-    const slotFills = refs.conquestFlagsDebugFillRows ?? [];
-    const slotLabelShadowsRight = refs.conquestFlagsDebugLabelShadowRightRows ?? [];
-    const slotLabelShadowsLeft = refs.conquestFlagsDebugLabelShadowLeftRows ?? [];
-    const slotLabelShadowsUp = refs.conquestFlagsDebugLabelShadowUpRows ?? [];
-    const slotLabelShadowsDown = refs.conquestFlagsDebugLabelShadowDownRows ?? [];
-    const slotLabelShadowsUpLeft = refs.conquestFlagsDebugLabelShadowUpLeftRows ?? [];
-    const slotLabelShadowsUpRight = refs.conquestFlagsDebugLabelShadowUpRightRows ?? [];
-    const slotLabelShadowsDownRight = refs.conquestFlagsDebugLabelShadowDownRightRows ?? [];
-    const slotLabelShadowsDownLeft = refs.conquestFlagsDebugLabelShadowDownLeftRows ?? [];
-    const slotLabelShadowsInner = refs.conquestFlagsDebugLabelShadowInnerRows ?? [];
-    const slotLabelShadowsInnerDeep = refs.conquestFlagsDebugLabelShadowInnerDeepRows ?? [];
-    const slotLabels = refs.conquestFlagsDebugLabelRows ?? [];
-    const slotPercentRoots = refs.conquestFlagsDebugPercentRoots ?? [];
-    const slotPercentShadowsRight = refs.conquestFlagsDebugPercentShadowRightRows ?? [];
-    const slotPercentShadowsLeft = refs.conquestFlagsDebugPercentShadowLeftRows ?? [];
-    const slotPercentShadowsUp = refs.conquestFlagsDebugPercentShadowUpRows ?? [];
-    const slotPercentShadowsDown = refs.conquestFlagsDebugPercentShadowDownRows ?? [];
-    const slotPercentShadowsUpLeft = refs.conquestFlagsDebugPercentShadowUpLeftRows ?? [];
-    const slotPercentShadowsUpRight = refs.conquestFlagsDebugPercentShadowUpRightRows ?? [];
-    const slotPercentShadowsDownRight = refs.conquestFlagsDebugPercentShadowDownRightRows ?? [];
-    const slotPercentShadowsDownLeft = refs.conquestFlagsDebugPercentShadowDownLeftRows ?? [];
-    const slotPercentShadowsInner = refs.conquestFlagsDebugPercentShadowInnerRows ?? [];
-    const slotPercentTexts = refs.conquestFlagsDebugPercentTextRows ?? [];
+    const slotRoots = refs.conquestFlagsDebugSlotRoots ?? (refs.conquestFlagsDebugSlotRoots = []);
+    const slotBorders = refs.conquestFlagsDebugBorderRows ?? (refs.conquestFlagsDebugBorderRows = []);
+    const slotFills = refs.conquestFlagsDebugFillRows ?? (refs.conquestFlagsDebugFillRows = []);
+    const slotLabelShadowsRight = refs.conquestFlagsDebugLabelShadowRightRows ?? (refs.conquestFlagsDebugLabelShadowRightRows = []);
+    const slotLabelShadowsLeft = refs.conquestFlagsDebugLabelShadowLeftRows ?? (refs.conquestFlagsDebugLabelShadowLeftRows = []);
+    const slotLabelShadowsUp = refs.conquestFlagsDebugLabelShadowUpRows ?? (refs.conquestFlagsDebugLabelShadowUpRows = []);
+    const slotLabelShadowsDown = refs.conquestFlagsDebugLabelShadowDownRows ?? (refs.conquestFlagsDebugLabelShadowDownRows = []);
+    const slotLabelShadowsUpLeft = refs.conquestFlagsDebugLabelShadowUpLeftRows ?? (refs.conquestFlagsDebugLabelShadowUpLeftRows = []);
+    const slotLabelShadowsUpRight = refs.conquestFlagsDebugLabelShadowUpRightRows ?? (refs.conquestFlagsDebugLabelShadowUpRightRows = []);
+    const slotLabelShadowsDownRight = refs.conquestFlagsDebugLabelShadowDownRightRows ?? (refs.conquestFlagsDebugLabelShadowDownRightRows = []);
+    const slotLabelShadowsDownLeft = refs.conquestFlagsDebugLabelShadowDownLeftRows ?? (refs.conquestFlagsDebugLabelShadowDownLeftRows = []);
+    const slotLabelShadowsInner = refs.conquestFlagsDebugLabelShadowInnerRows ?? (refs.conquestFlagsDebugLabelShadowInnerRows = []);
+    const slotLabelShadowsInnerDeep = refs.conquestFlagsDebugLabelShadowInnerDeepRows ?? (refs.conquestFlagsDebugLabelShadowInnerDeepRows = []);
+    const slotLabels = refs.conquestFlagsDebugLabelRows ?? (refs.conquestFlagsDebugLabelRows = []);
+    const slotPercentRoots = refs.conquestFlagsDebugPercentRoots ?? (refs.conquestFlagsDebugPercentRoots = []);
+    const slotPercentShadowsRight = refs.conquestFlagsDebugPercentShadowRightRows ?? (refs.conquestFlagsDebugPercentShadowRightRows = []);
+    const slotPercentShadowsLeft = refs.conquestFlagsDebugPercentShadowLeftRows ?? (refs.conquestFlagsDebugPercentShadowLeftRows = []);
+    const slotPercentShadowsUp = refs.conquestFlagsDebugPercentShadowUpRows ?? (refs.conquestFlagsDebugPercentShadowUpRows = []);
+    const slotPercentShadowsDown = refs.conquestFlagsDebugPercentShadowDownRows ?? (refs.conquestFlagsDebugPercentShadowDownRows = []);
+    const slotPercentShadowsUpLeft = refs.conquestFlagsDebugPercentShadowUpLeftRows ?? (refs.conquestFlagsDebugPercentShadowUpLeftRows = []);
+    const slotPercentShadowsUpRight = refs.conquestFlagsDebugPercentShadowUpRightRows ?? (refs.conquestFlagsDebugPercentShadowUpRightRows = []);
+    const slotPercentShadowsDownRight = refs.conquestFlagsDebugPercentShadowDownRightRows ?? (refs.conquestFlagsDebugPercentShadowDownRightRows = []);
+    const slotPercentShadowsDownLeft = refs.conquestFlagsDebugPercentShadowDownLeftRows ?? (refs.conquestFlagsDebugPercentShadowDownLeftRows = []);
+    const slotPercentShadowsInner = refs.conquestFlagsDebugPercentShadowInnerRows ?? (refs.conquestFlagsDebugPercentShadowInnerRows = []);
+    const slotPercentTexts = refs.conquestFlagsDebugPercentTextRows ?? (refs.conquestFlagsDebugPercentTextRows = []);
     const maxSlots = Math.max(
         slotRoots.length,
         slotBorders.length,
@@ -670,30 +670,31 @@ function conquestPhase3ForceHideAllV2Widgets(refs: HudRefs): void {
         7
     );
     for (let i = 0; i < maxSlots; i++) {
-        safeSetUIWidgetVisible(slotRoots[i], false);
-        safeSetUIWidgetVisible(slotFills[i], false);
-        safeSetUIWidgetVisible(slotLabelShadowsRight[i], false);
-        safeSetUIWidgetVisible(slotLabelShadowsLeft[i], false);
-        safeSetUIWidgetVisible(slotLabelShadowsUp[i], false);
-        safeSetUIWidgetVisible(slotLabelShadowsDown[i], false);
-        safeSetUIWidgetVisible(slotLabelShadowsUpLeft[i], false);
-        safeSetUIWidgetVisible(slotLabelShadowsUpRight[i], false);
-        safeSetUIWidgetVisible(slotLabelShadowsDownRight[i], false);
-        safeSetUIWidgetVisible(slotLabelShadowsDownLeft[i], false);
-        safeSetUIWidgetVisible(slotLabelShadowsInner[i], false);
-        safeSetUIWidgetVisible(slotLabelShadowsInnerDeep[i], false);
-        safeSetUIWidgetVisible(slotLabels[i], false);
-        safeSetUIWidgetVisible(slotPercentRoots[i], false);
-        safeSetUIWidgetVisible(slotPercentShadowsRight[i], false);
-        safeSetUIWidgetVisible(slotPercentShadowsLeft[i], false);
-        safeSetUIWidgetVisible(slotPercentShadowsUp[i], false);
-        safeSetUIWidgetVisible(slotPercentShadowsDown[i], false);
-        safeSetUIWidgetVisible(slotPercentShadowsUpLeft[i], false);
-        safeSetUIWidgetVisible(slotPercentShadowsUpRight[i], false);
-        safeSetUIWidgetVisible(slotPercentShadowsDownRight[i], false);
-        safeSetUIWidgetVisible(slotPercentShadowsDownLeft[i], false);
-        safeSetUIWidgetVisible(slotPercentShadowsInner[i], false);
-        safeSetUIWidgetVisible(slotPercentTexts[i], false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotRoots, i, `ConquestFlagHudSlot_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotBorders, i, `ConquestFlagHudBorder_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotFills, i, `ConquestFlagHudFill_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsRight, i, `ConquestFlagHudLabelShadowRight_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsLeft, i, `ConquestFlagHudLabelShadowLeft_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsUp, i, `ConquestFlagHudLabelShadowUp_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsDown, i, `ConquestFlagHudLabelShadowDown_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsUpLeft, i, `ConquestFlagHudLabelShadowUpLeft_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsUpRight, i, `ConquestFlagHudLabelShadowUpRight_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsDownRight, i, `ConquestFlagHudLabelShadowDownRight_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsDownLeft, i, `ConquestFlagHudLabelShadowDownLeft_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsInner, i, `ConquestFlagHudLabelShadowInner_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsInnerDeep, i, `ConquestFlagHudLabelShadowInnerDeep_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotLabels, i, `ConquestFlagHudLabel_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotPercentRoots, i, `ConquestFlagHudPercentRoot_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsRight, i, `ConquestFlagHudPercentShadowRight_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsLeft, i, `ConquestFlagHudPercentShadowLeft_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsUp, i, `ConquestFlagHudPercentShadowUp_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsDown, i, `ConquestFlagHudPercentShadowDown_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsUpLeft, i, `ConquestFlagHudPercentShadowUpLeft_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsUpRight, i, `ConquestFlagHudPercentShadowUpRight_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsDownRight, i, `ConquestFlagHudPercentShadowDownRight_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsDownLeft, i, `ConquestFlagHudPercentShadowDownLeft_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsInner, i, `ConquestFlagHudPercentShadowInner_${pid}_${i}`), false);
+        safeSetUIWidgetVisible(conquestPhase3ResolveCachedIndexedWidget(slotPercentTexts, i, `ConquestFlagHudPercentText_${pid}_${i}`), false);
     }
 }
 
@@ -2893,6 +2894,19 @@ function hasOwnerTeamForProgressReset(ownerTeam: TeamID | 0, progress01: number)
     return progress01 > 0.001;
 }
 
+// Resolves one cached widget ref by index and backfills the cache via safeFind when needed.
+function conquestPhase3ResolveCachedIndexedWidget(
+    cache: Array<mod.UIWidget | undefined>,
+    index: number,
+    widgetName: string
+): mod.UIWidget | undefined {
+    const cached = cache[index];
+    if (cached) return cached;
+    const resolved = safeFind(widgetName);
+    if (resolved) cache[index] = resolved;
+    return resolved;
+}
+
 // Renders conquest flag slot background/fill/label/percent widgets only.
 function renderConquestFlagSlotsForPid(
     refs: HudRefs,
@@ -2900,31 +2914,31 @@ function renderConquestFlagSlotsForPid(
 ): void {
     const pid = refs.pid;
     const activeObjId = State.conquest.capture.engagedObjIdByPid[pid];
-    const slotRoots = refs.conquestFlagsDebugSlotRoots ?? [];
-    const slotBorders = refs.conquestFlagsDebugBorderRows ?? [];
-    const slotFills = refs.conquestFlagsDebugFillRows ?? [];
-    const slotLabelShadowsRight = refs.conquestFlagsDebugLabelShadowRightRows ?? [];
-    const slotLabelShadowsLeft = refs.conquestFlagsDebugLabelShadowLeftRows ?? [];
-    const slotLabelShadowsUp = refs.conquestFlagsDebugLabelShadowUpRows ?? [];
-    const slotLabelShadowsDown = refs.conquestFlagsDebugLabelShadowDownRows ?? [];
-    const slotLabelShadowsUpLeft = refs.conquestFlagsDebugLabelShadowUpLeftRows ?? [];
-    const slotLabelShadowsUpRight = refs.conquestFlagsDebugLabelShadowUpRightRows ?? [];
-    const slotLabelShadowsDownRight = refs.conquestFlagsDebugLabelShadowDownRightRows ?? [];
-    const slotLabelShadowsDownLeft = refs.conquestFlagsDebugLabelShadowDownLeftRows ?? [];
-    const slotLabelShadowsInner = refs.conquestFlagsDebugLabelShadowInnerRows ?? [];
-    const slotLabelShadowsInnerDeep = refs.conquestFlagsDebugLabelShadowInnerDeepRows ?? [];
-    const slotLabels = refs.conquestFlagsDebugLabelRows ?? [];
-    const slotPercentRoots = refs.conquestFlagsDebugPercentRoots ?? [];
-    const slotPercentShadowsRight = refs.conquestFlagsDebugPercentShadowRightRows ?? [];
-    const slotPercentShadowsLeft = refs.conquestFlagsDebugPercentShadowLeftRows ?? [];
-    const slotPercentShadowsUp = refs.conquestFlagsDebugPercentShadowUpRows ?? [];
-    const slotPercentShadowsDown = refs.conquestFlagsDebugPercentShadowDownRows ?? [];
-    const slotPercentShadowsUpLeft = refs.conquestFlagsDebugPercentShadowUpLeftRows ?? [];
-    const slotPercentShadowsUpRight = refs.conquestFlagsDebugPercentShadowUpRightRows ?? [];
-    const slotPercentShadowsDownRight = refs.conquestFlagsDebugPercentShadowDownRightRows ?? [];
-    const slotPercentShadowsDownLeft = refs.conquestFlagsDebugPercentShadowDownLeftRows ?? [];
-    const slotPercentShadowsInner = refs.conquestFlagsDebugPercentShadowInnerRows ?? [];
-    const slotPercentTexts = refs.conquestFlagsDebugPercentTextRows ?? [];
+    const slotRoots = refs.conquestFlagsDebugSlotRoots ?? (refs.conquestFlagsDebugSlotRoots = []);
+    const slotBorders = refs.conquestFlagsDebugBorderRows ?? (refs.conquestFlagsDebugBorderRows = []);
+    const slotFills = refs.conquestFlagsDebugFillRows ?? (refs.conquestFlagsDebugFillRows = []);
+    const slotLabelShadowsRight = refs.conquestFlagsDebugLabelShadowRightRows ?? (refs.conquestFlagsDebugLabelShadowRightRows = []);
+    const slotLabelShadowsLeft = refs.conquestFlagsDebugLabelShadowLeftRows ?? (refs.conquestFlagsDebugLabelShadowLeftRows = []);
+    const slotLabelShadowsUp = refs.conquestFlagsDebugLabelShadowUpRows ?? (refs.conquestFlagsDebugLabelShadowUpRows = []);
+    const slotLabelShadowsDown = refs.conquestFlagsDebugLabelShadowDownRows ?? (refs.conquestFlagsDebugLabelShadowDownRows = []);
+    const slotLabelShadowsUpLeft = refs.conquestFlagsDebugLabelShadowUpLeftRows ?? (refs.conquestFlagsDebugLabelShadowUpLeftRows = []);
+    const slotLabelShadowsUpRight = refs.conquestFlagsDebugLabelShadowUpRightRows ?? (refs.conquestFlagsDebugLabelShadowUpRightRows = []);
+    const slotLabelShadowsDownRight = refs.conquestFlagsDebugLabelShadowDownRightRows ?? (refs.conquestFlagsDebugLabelShadowDownRightRows = []);
+    const slotLabelShadowsDownLeft = refs.conquestFlagsDebugLabelShadowDownLeftRows ?? (refs.conquestFlagsDebugLabelShadowDownLeftRows = []);
+    const slotLabelShadowsInner = refs.conquestFlagsDebugLabelShadowInnerRows ?? (refs.conquestFlagsDebugLabelShadowInnerRows = []);
+    const slotLabelShadowsInnerDeep = refs.conquestFlagsDebugLabelShadowInnerDeepRows ?? (refs.conquestFlagsDebugLabelShadowInnerDeepRows = []);
+    const slotLabels = refs.conquestFlagsDebugLabelRows ?? (refs.conquestFlagsDebugLabelRows = []);
+    const slotPercentRoots = refs.conquestFlagsDebugPercentRoots ?? (refs.conquestFlagsDebugPercentRoots = []);
+    const slotPercentShadowsRight = refs.conquestFlagsDebugPercentShadowRightRows ?? (refs.conquestFlagsDebugPercentShadowRightRows = []);
+    const slotPercentShadowsLeft = refs.conquestFlagsDebugPercentShadowLeftRows ?? (refs.conquestFlagsDebugPercentShadowLeftRows = []);
+    const slotPercentShadowsUp = refs.conquestFlagsDebugPercentShadowUpRows ?? (refs.conquestFlagsDebugPercentShadowUpRows = []);
+    const slotPercentShadowsDown = refs.conquestFlagsDebugPercentShadowDownRows ?? (refs.conquestFlagsDebugPercentShadowDownRows = []);
+    const slotPercentShadowsUpLeft = refs.conquestFlagsDebugPercentShadowUpLeftRows ?? (refs.conquestFlagsDebugPercentShadowUpLeftRows = []);
+    const slotPercentShadowsUpRight = refs.conquestFlagsDebugPercentShadowUpRightRows ?? (refs.conquestFlagsDebugPercentShadowUpRightRows = []);
+    const slotPercentShadowsDownRight = refs.conquestFlagsDebugPercentShadowDownRightRows ?? (refs.conquestFlagsDebugPercentShadowDownRightRows = []);
+    const slotPercentShadowsDownLeft = refs.conquestFlagsDebugPercentShadowDownLeftRows ?? (refs.conquestFlagsDebugPercentShadowDownLeftRows = []);
+    const slotPercentShadowsInner = refs.conquestFlagsDebugPercentShadowInnerRows ?? (refs.conquestFlagsDebugPercentShadowInnerRows = []);
+    const slotPercentTexts = refs.conquestFlagsDebugPercentTextRows ?? (refs.conquestFlagsDebugPercentTextRows = []);
     const maxSlotsFromRefs = Math.max(
         slotRoots.length,
         slotBorders.length,
@@ -2964,34 +2978,31 @@ function renderConquestFlagSlotsForPid(
             labelVisible: false,
             percentVisible: false,
         };
-        const slotRoot = slotRoots[slot];
-        const slotBorder = slotBorders[slot] ?? safeFind(`ConquestFlagHudBorder_${pid}_${slot}`);
-        if (!slotBorders[slot] && slotBorder) {
-            slotBorders[slot] = slotBorder;
-        }
-        const slotFill = slotFills[slot];
-        const slotLabelShadowRight = slotLabelShadowsRight[slot];
-        const slotLabelShadowLeft = slotLabelShadowsLeft[slot];
-        const slotLabelShadowUp = slotLabelShadowsUp[slot];
-        const slotLabelShadowDown = slotLabelShadowsDown[slot];
-        const slotLabelShadowUpLeft = slotLabelShadowsUpLeft[slot];
-        const slotLabelShadowUpRight = slotLabelShadowsUpRight[slot];
-        const slotLabelShadowDownRight = slotLabelShadowsDownRight[slot];
-        const slotLabelShadowDownLeft = slotLabelShadowsDownLeft[slot];
-        const slotLabelShadowInner = slotLabelShadowsInner[slot];
-        const slotLabelShadowInnerDeep = slotLabelShadowsInnerDeep[slot];
-        const slotLabel = slotLabels[slot];
-        const slotPercentRoot = slotPercentRoots[slot];
-        const slotPercentShadowRight = slotPercentShadowsRight[slot];
-        const slotPercentShadowLeft = slotPercentShadowsLeft[slot];
-        const slotPercentShadowUp = slotPercentShadowsUp[slot];
-        const slotPercentShadowDown = slotPercentShadowsDown[slot];
-        const slotPercentShadowUpLeft = slotPercentShadowsUpLeft[slot];
-        const slotPercentShadowUpRight = slotPercentShadowsUpRight[slot];
-        const slotPercentShadowDownRight = slotPercentShadowsDownRight[slot];
-        const slotPercentShadowDownLeft = slotPercentShadowsDownLeft[slot];
-        const slotPercentShadowInner = slotPercentShadowsInner[slot];
-        const slotPercentText = slotPercentTexts[slot];
+        const slotRoot = conquestPhase3ResolveCachedIndexedWidget(slotRoots, slot, `ConquestFlagHudSlot_${pid}_${slot}`);
+        const slotBorder = conquestPhase3ResolveCachedIndexedWidget(slotBorders, slot, `ConquestFlagHudBorder_${pid}_${slot}`);
+        const slotFill = conquestPhase3ResolveCachedIndexedWidget(slotFills, slot, `ConquestFlagHudFill_${pid}_${slot}`);
+        const slotLabelShadowRight = conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsRight, slot, `ConquestFlagHudLabelShadowRight_${pid}_${slot}`);
+        const slotLabelShadowLeft = conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsLeft, slot, `ConquestFlagHudLabelShadowLeft_${pid}_${slot}`);
+        const slotLabelShadowUp = conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsUp, slot, `ConquestFlagHudLabelShadowUp_${pid}_${slot}`);
+        const slotLabelShadowDown = conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsDown, slot, `ConquestFlagHudLabelShadowDown_${pid}_${slot}`);
+        const slotLabelShadowUpLeft = conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsUpLeft, slot, `ConquestFlagHudLabelShadowUpLeft_${pid}_${slot}`);
+        const slotLabelShadowUpRight = conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsUpRight, slot, `ConquestFlagHudLabelShadowUpRight_${pid}_${slot}`);
+        const slotLabelShadowDownRight = conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsDownRight, slot, `ConquestFlagHudLabelShadowDownRight_${pid}_${slot}`);
+        const slotLabelShadowDownLeft = conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsDownLeft, slot, `ConquestFlagHudLabelShadowDownLeft_${pid}_${slot}`);
+        const slotLabelShadowInner = conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsInner, slot, `ConquestFlagHudLabelShadowInner_${pid}_${slot}`);
+        const slotLabelShadowInnerDeep = conquestPhase3ResolveCachedIndexedWidget(slotLabelShadowsInnerDeep, slot, `ConquestFlagHudLabelShadowInnerDeep_${pid}_${slot}`);
+        const slotLabel = conquestPhase3ResolveCachedIndexedWidget(slotLabels, slot, `ConquestFlagHudLabel_${pid}_${slot}`);
+        const slotPercentRoot = conquestPhase3ResolveCachedIndexedWidget(slotPercentRoots, slot, `ConquestFlagHudPercentRoot_${pid}_${slot}`);
+        const slotPercentShadowRight = conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsRight, slot, `ConquestFlagHudPercentShadowRight_${pid}_${slot}`);
+        const slotPercentShadowLeft = conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsLeft, slot, `ConquestFlagHudPercentShadowLeft_${pid}_${slot}`);
+        const slotPercentShadowUp = conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsUp, slot, `ConquestFlagHudPercentShadowUp_${pid}_${slot}`);
+        const slotPercentShadowDown = conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsDown, slot, `ConquestFlagHudPercentShadowDown_${pid}_${slot}`);
+        const slotPercentShadowUpLeft = conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsUpLeft, slot, `ConquestFlagHudPercentShadowUpLeft_${pid}_${slot}`);
+        const slotPercentShadowUpRight = conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsUpRight, slot, `ConquestFlagHudPercentShadowUpRight_${pid}_${slot}`);
+        const slotPercentShadowDownRight = conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsDownRight, slot, `ConquestFlagHudPercentShadowDownRight_${pid}_${slot}`);
+        const slotPercentShadowDownLeft = conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsDownLeft, slot, `ConquestFlagHudPercentShadowDownLeft_${pid}_${slot}`);
+        const slotPercentShadowInner = conquestPhase3ResolveCachedIndexedWidget(slotPercentShadowsInner, slot, `ConquestFlagHudPercentShadowInner_${pid}_${slot}`);
+        const slotPercentText = conquestPhase3ResolveCachedIndexedWidget(slotPercentTexts, slot, `ConquestFlagHudPercentText_${pid}_${slot}`);
         const slotLabelGroup: ConquestShadowTextWidgetSet = {
             right: slotLabelShadowRight,
             left: slotLabelShadowLeft,

@@ -137,9 +137,15 @@ function runBuild() {
 function parseCliArgs(argv) {
   let versionArg;
   let commentArg;
+  let showHelp = false;
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
+
+    if (arg === "-h" || arg === "--help") {
+      showHelp = true;
+      continue;
+    }
 
     if (arg === "-c" || arg === "--comment") {
       if (i + 1 >= argv.length) {
@@ -170,13 +176,22 @@ function parseCliArgs(argv) {
     versionArg = arg;
   }
 
-  return { versionArg, commentArg };
+  return { versionArg, commentArg, showHelp };
 }
 
 function normalizeComment(raw) {
   if (raw === undefined || raw === null) return "";
   const singleLine = String(raw).replace(/\r?\n+/g, " ").trim();
   return singleLine;
+}
+
+function printUsage() {
+  console.log("Usage:");
+  console.log("  npm run bumpVersion -- [targetVersion] -c \"brief changelog entry\"");
+  console.log("");
+  console.log("Examples:");
+  console.log("  npm run bumpVersion -- -c \"CQ_Bug_7: top-row border suppression + cache rebind hardening\"");
+  console.log("  npm run bumpVersion -- 0.290 -c \"HUD polish pass: active slot neutralization + lifecycle hide hardening\"");
 }
 
 function updateChangelogHistory(src, targetVersion, comment) {
@@ -197,7 +212,12 @@ function updateChangelogHistory(src, targetVersion, comment) {
 }
 
 function main() {
-  const { versionArg, commentArg } = parseCliArgs(process.argv.slice(2));
+  const { versionArg, commentArg, showHelp } = parseCliArgs(process.argv.slice(2));
+  if (showHelp) {
+    printUsage();
+    return;
+  }
+
   const header = readText(headerPath);
   const footer = readText(footerPath);
   const strings = readText(stringsPath);

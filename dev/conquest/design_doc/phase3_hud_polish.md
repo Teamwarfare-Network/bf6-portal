@@ -178,3 +178,18 @@ Proceed with the Phase 3 pattern as documented:
 3. Reserve create/delete for schema rebuild, teardown, and explicit lifecycle reset paths.
 
 This aligns with lower runtime churn, fewer rebuild races, and better stability at higher player counts.
+
+## Implementation Progress Snapshot
+Date: 2026-03-09
+
+Completed:
+1. P0 ownership map is documented in this file (state owners, UI state layers, and widget-family ownership).
+2. P2 ref-rebind hardening added for top-row flag render path:
+- Runtime now resolves missing per-slot refs via `safeFind(...)` and backfills cache arrays.
+3. P2 lifecycle hide hardening added for force-hide path:
+- Top-row border widgets are now explicitly hidden during force-hide passes.
+- Force-hide pass now also rebinding-resolves per-slot widgets before hide.
+
+Rationale:
+1. These changes reduce stale-widget leakage during swap/rebuild windows.
+2. These changes target CQ_Bug_7 class behavior (active-lane/top-row border persistence) without changing conquest game-state ownership.
