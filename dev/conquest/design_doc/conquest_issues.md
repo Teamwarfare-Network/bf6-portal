@@ -10,6 +10,7 @@ Last Tested Build: `v0.278`
 - `CQ_Bug_4`: Fixed enough for current phase
 - `CQ_Bug_5`: Fixed
 - `CQ_Bug_6`: Fixed
+- `CQ_Bug_7`: Open
 
 ## CQ_Bug_1
 Title: Ticket Counter Overlay / Doubling During Bleed
@@ -164,3 +165,19 @@ Status:
 Resolution Used:
 - Enforced render/layer order and swap lifecycle hide/recovery behavior.
 - Stabilized first-life visibility and rebuild ordering for chevron refs.
+
+## CQ_Bug_7
+Title: Top Row Flag Border Persists While Pop-Out Is Visible
+
+Observed:
+- During active objective pop-out display, top-row flag border color can remain visible.
+
+Expected:
+- When pop-out is visible, there should be no top-row border on the active slot.
+- Active objective status should be represented by the pop-out only.
+
+Status:
+- Open.
+
+Notes:
+- This is a UI ownership/presentation rule issue for the active objective lane.

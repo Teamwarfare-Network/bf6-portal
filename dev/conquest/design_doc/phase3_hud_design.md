@@ -5,6 +5,18 @@ Deliver the active-objective "pop-out" HUD experience in controlled phases, with
 
 This plan explicitly avoids an all-at-once rollout.
 
+## Implementation Status (2026-03-09)
+- Phase 3A: implemented in code (`build.ts`, `hud-cache-types.ts`, `capture-tickets.ts`, `ui-layout.ts`), compile and verify passing.
+- Phase 3B (first pass): implemented in code:
+  - active slot muting when `engagedObjIdByPid` matches slot objective.
+  - pop-out view-model derives from same authoritative slot visual state path (fill/percent parity).
+- Phase 3C: implemented as layout-only coordinate change; engage container is now positioned directly below pop-out with fixed gap and no engage predicate changes.
+- Phase 3D (first pass): implemented in code with single-writer slot render ownership:
+  - border is shown only when objective visual phase is stable ownership with full-progress threshold.
+  - border is hidden for neutral and all partial-progress states.
+  - border color is the owning team bright color from viewer perspective.
+- Manual in-game regression gate is required before Phase 3E polish finalization.
+
 ## References
 - `bf6-portal/dev/conquest/reference_design_documentation/bf6_live_hud_examples/hud6.PNG`
 - `bf6-portal/dev/conquest/reference_design_documentation/bf6_live_hud_examples/hud7.PNG`

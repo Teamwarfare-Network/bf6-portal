@@ -41,6 +41,30 @@ function destroyConquestHudForPid(pid: number): void {
         `ConquestTicketsHudLeadCrownRightShadow_${pid}`,
         `ConquestTicketsHudLeadCrownLeft_${pid}`,
         `ConquestTicketsHudLeadCrownRight_${pid}`,
+        `ConquestFlagHudActivePopoutRoot_${pid}`,
+        `ConquestFlagHudActivePopoutSlot_${pid}`,
+        `ConquestFlagHudActivePopoutBorder_${pid}`,
+        `ConquestFlagHudActivePopoutFill_${pid}`,
+        `ConquestFlagHudActivePopoutLabelShadowRight_${pid}`,
+        `ConquestFlagHudActivePopoutLabelShadowLeft_${pid}`,
+        `ConquestFlagHudActivePopoutLabelShadowUp_${pid}`,
+        `ConquestFlagHudActivePopoutLabelShadowDown_${pid}`,
+        `ConquestFlagHudActivePopoutLabelShadowUpLeft_${pid}`,
+        `ConquestFlagHudActivePopoutLabelShadowUpRight_${pid}`,
+        `ConquestFlagHudActivePopoutLabelShadowDownRight_${pid}`,
+        `ConquestFlagHudActivePopoutLabelShadowDownLeft_${pid}`,
+        `ConquestFlagHudActivePopoutLabel_${pid}`,
+        `ConquestFlagHudActivePopoutPercentRoot_${pid}`,
+        `ConquestFlagHudActivePopoutPercentShadowRight_${pid}`,
+        `ConquestFlagHudActivePopoutPercentShadowLeft_${pid}`,
+        `ConquestFlagHudActivePopoutPercentShadowUp_${pid}`,
+        `ConquestFlagHudActivePopoutPercentShadowDown_${pid}`,
+        `ConquestFlagHudActivePopoutPercentShadowUpLeft_${pid}`,
+        `ConquestFlagHudActivePopoutPercentShadowUpRight_${pid}`,
+        `ConquestFlagHudActivePopoutPercentShadowDownRight_${pid}`,
+        `ConquestFlagHudActivePopoutPercentShadowDownLeft_${pid}`,
+        `ConquestFlagHudActivePopoutPercentShadowInner_${pid}`,
+        `ConquestFlagHudActivePopoutPercentText_${pid}`,
         `ConquestFlagHudEngageRoot_${pid}`,
         `ConquestFlagHudEngageTrack_${pid}`,
         `ConquestFlagHudEngageFriendlyFill_${pid}`,
@@ -223,8 +247,22 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         1015.50, // Capture Point 6
         1050.50, // Capture Point 7
     ];
-    const CONQUEST_FLAGS_ENGAGE_ABS_X = 884.00;
-    const CONQUEST_FLAGS_ENGAGE_ABS_Y = 133.00;
+    const CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_X = 928.00;
+    const CONQUEST_FLAGS_ACTIVE_POPOUT_GAP_Y = 4.00;
+    const CONQUEST_FLAGS_ACTIVE_POPOUT_NUDGE_UP_Y = 6.00;
+    const CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_Y = CONQUEST_FLAGS_SLOT_ABS_Y
+        + CONQUEST_HUD_FLAG_PERCENT_OFFSET_Y
+        + CONQUEST_HUD_FLAG_PERCENT_ROOT_HEIGHT
+        + CONQUEST_FLAGS_ACTIVE_POPOUT_GAP_Y
+        - CONQUEST_FLAGS_ACTIVE_POPOUT_NUDGE_UP_Y;
+    const CONQUEST_FLAGS_ENGAGE_GAP_Y = 4.00;
+    const CONQUEST_FLAGS_ENGAGE_NUDGE_UP_Y = 10.00;
+    const CONQUEST_FLAGS_ENGAGE_ABS_X = CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_X
+        - ((CONQUEST_HUD_FLAG_ENGAGE_ROOT_WIDTH - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_ROOT_WIDTH) / 2);
+    const CONQUEST_FLAGS_ENGAGE_ABS_Y = CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_Y
+        + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_ROOT_HEIGHT
+        + CONQUEST_FLAGS_ENGAGE_GAP_Y
+        - CONQUEST_FLAGS_ENGAGE_NUDGE_UP_Y;
     const CONQUEST_HELP_CONTAINER_X = -223.60;
     const CONQUEST_HELP_CONTAINER_Y = 81.10;
     const CONQUEST_HELP_CONTAINER_WIDTH = 561.77;
@@ -907,6 +945,365 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             }
         }
 
+        const activePopoutRoot = refsForPid?.conquestFlagsActivePopoutRoot ?? safeFind(`ConquestFlagHudActivePopoutRoot_${pid}`);
+        const activePopoutSlot = refsForPid?.conquestFlagsActivePopoutSlot ?? safeFind(`ConquestFlagHudActivePopoutSlot_${pid}`);
+        const activePopoutBorder = refsForPid?.conquestFlagsActivePopoutBorder ?? safeFind(`ConquestFlagHudActivePopoutBorder_${pid}`);
+        const activePopoutFill = refsForPid?.conquestFlagsActivePopoutFill ?? safeFind(`ConquestFlagHudActivePopoutFill_${pid}`);
+        const activePopoutLabelShadowRight = refsForPid?.conquestFlagsActivePopoutLabelShadowRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowRight_${pid}`);
+        const activePopoutLabelShadowLeft = refsForPid?.conquestFlagsActivePopoutLabelShadowLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowLeft_${pid}`);
+        const activePopoutLabelShadowUp = refsForPid?.conquestFlagsActivePopoutLabelShadowUp ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUp_${pid}`);
+        const activePopoutLabelShadowDown = refsForPid?.conquestFlagsActivePopoutLabelShadowDown ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDown_${pid}`);
+        const activePopoutLabelShadowUpLeft = refsForPid?.conquestFlagsActivePopoutLabelShadowUpLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUpLeft_${pid}`);
+        const activePopoutLabelShadowUpRight = refsForPid?.conquestFlagsActivePopoutLabelShadowUpRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUpRight_${pid}`);
+        const activePopoutLabelShadowDownRight = refsForPid?.conquestFlagsActivePopoutLabelShadowDownRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDownRight_${pid}`);
+        const activePopoutLabelShadowDownLeft = refsForPid?.conquestFlagsActivePopoutLabelShadowDownLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDownLeft_${pid}`);
+        const activePopoutLabel = refsForPid?.conquestFlagsActivePopoutLabel ?? safeFind(`ConquestFlagHudActivePopoutLabel_${pid}`);
+        const activePopoutPercentRoot = refsForPid?.conquestFlagsActivePopoutPercentRoot ?? safeFind(`ConquestFlagHudActivePopoutPercentRoot_${pid}`);
+        const activePopoutPercentShadowRight = refsForPid?.conquestFlagsActivePopoutPercentShadowRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowRight_${pid}`);
+        const activePopoutPercentShadowLeft = refsForPid?.conquestFlagsActivePopoutPercentShadowLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowLeft_${pid}`);
+        const activePopoutPercentShadowUp = refsForPid?.conquestFlagsActivePopoutPercentShadowUp ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUp_${pid}`);
+        const activePopoutPercentShadowDown = refsForPid?.conquestFlagsActivePopoutPercentShadowDown ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDown_${pid}`);
+        const activePopoutPercentShadowUpLeft = refsForPid?.conquestFlagsActivePopoutPercentShadowUpLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUpLeft_${pid}`);
+        const activePopoutPercentShadowUpRight = refsForPid?.conquestFlagsActivePopoutPercentShadowUpRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUpRight_${pid}`);
+        const activePopoutPercentShadowDownRight = refsForPid?.conquestFlagsActivePopoutPercentShadowDownRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDownRight_${pid}`);
+        const activePopoutPercentShadowDownLeft = refsForPid?.conquestFlagsActivePopoutPercentShadowDownLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDownLeft_${pid}`);
+        const activePopoutPercentShadowInner = refsForPid?.conquestFlagsActivePopoutPercentShadowInner ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowInner_${pid}`);
+        const activePopoutPercentText = refsForPid?.conquestFlagsActivePopoutPercentText ?? safeFind(`ConquestFlagHudActivePopoutPercentText_${pid}`);
+
+        if (activePopoutRoot) {
+            try {
+                mod.SetUIWidgetAnchor(activePopoutRoot, mod.UIAnchor.TopLeft);
+            } catch {
+                // Best-effort anchor normalization only.
+            }
+            mod.SetUIWidgetParent(activePopoutRoot, flagsParent);
+            mod.SetUIWidgetPosition(activePopoutRoot, mod.CreateVector(CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_X, CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_Y, 0));
+            mod.SetUIWidgetSize(
+                activePopoutRoot,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_ROOT_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_ROOT_HEIGHT, 0)
+            );
+        }
+        if (activePopoutSlot && activePopoutRoot) {
+            mod.SetUIWidgetParent(activePopoutSlot, activePopoutRoot);
+            mod.SetUIWidgetPosition(
+                activePopoutSlot,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_OFFSET_Y, 0)
+            );
+            mod.SetUIWidgetSize(
+                activePopoutSlot,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_HEIGHT, 0)
+            );
+        }
+        if (activePopoutBorder && activePopoutSlot) {
+            mod.SetUIWidgetParent(activePopoutBorder, activePopoutSlot);
+            mod.SetUIWidgetPosition(activePopoutBorder, mod.CreateVector(0, 0, 0));
+            mod.SetUIWidgetSize(
+                activePopoutBorder,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_HEIGHT, 0)
+            );
+        }
+        if (activePopoutFill && activePopoutSlot) {
+            mod.SetUIWidgetParent(activePopoutFill, activePopoutSlot);
+            mod.SetUIWidgetPosition(
+                activePopoutFill,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_INSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_INSET_Y, 0)
+            );
+            if (resetDynamicFillGeometry) {
+                mod.SetUIWidgetSize(
+                    activePopoutFill,
+                    mod.CreateVector(
+                        CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_MAX_WIDTH,
+                        CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_MAX_HEIGHT,
+                        0
+                    )
+                );
+            }
+        }
+        if (activePopoutLabelShadowRight && activePopoutSlot) {
+            mod.SetUIWidgetParent(activePopoutLabelShadowRight, activePopoutSlot);
+            mod.SetUIWidgetPosition(
+                activePopoutLabelShadowRight,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutLabelShadowRight,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutLabelShadowLeft && activePopoutSlot) {
+            mod.SetUIWidgetParent(activePopoutLabelShadowLeft, activePopoutSlot);
+            mod.SetUIWidgetPosition(
+                activePopoutLabelShadowLeft,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutLabelShadowLeft,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutLabelShadowUp && activePopoutSlot) {
+            mod.SetUIWidgetParent(activePopoutLabelShadowUp, activePopoutSlot);
+            mod.SetUIWidgetPosition(
+                activePopoutLabelShadowUp,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutLabelShadowUp,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutLabelShadowDown && activePopoutSlot) {
+            mod.SetUIWidgetParent(activePopoutLabelShadowDown, activePopoutSlot);
+            mod.SetUIWidgetPosition(
+                activePopoutLabelShadowDown,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutLabelShadowDown,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutLabelShadowUpLeft && activePopoutSlot) {
+            mod.SetUIWidgetParent(activePopoutLabelShadowUpLeft, activePopoutSlot);
+            mod.SetUIWidgetPosition(
+                activePopoutLabelShadowUpLeft,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutLabelShadowUpLeft,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutLabelShadowUpRight && activePopoutSlot) {
+            mod.SetUIWidgetParent(activePopoutLabelShadowUpRight, activePopoutSlot);
+            mod.SetUIWidgetPosition(
+                activePopoutLabelShadowUpRight,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutLabelShadowUpRight,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutLabelShadowDownRight && activePopoutSlot) {
+            mod.SetUIWidgetParent(activePopoutLabelShadowDownRight, activePopoutSlot);
+            mod.SetUIWidgetPosition(
+                activePopoutLabelShadowDownRight,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutLabelShadowDownRight,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutLabelShadowDownLeft && activePopoutSlot) {
+            mod.SetUIWidgetParent(activePopoutLabelShadowDownLeft, activePopoutSlot);
+            mod.SetUIWidgetPosition(
+                activePopoutLabelShadowDownLeft,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutLabelShadowDownLeft,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutLabel && activePopoutSlot) {
+            mod.SetUIWidgetParent(activePopoutLabel, activePopoutSlot);
+            mod.SetUIWidgetPosition(
+                activePopoutLabel,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y, 0)
+            );
+            mod.SetUIWidgetSize(
+                activePopoutLabel,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutPercentRoot && activePopoutRoot) {
+            mod.SetUIWidgetParent(activePopoutPercentRoot, activePopoutRoot);
+            mod.SetUIWidgetPosition(
+                activePopoutPercentRoot,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_OFFSET_Y, 0)
+            );
+            mod.SetUIWidgetSize(
+                activePopoutPercentRoot,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_ROOT_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_ROOT_HEIGHT, 0)
+            );
+        }
+        if (activePopoutPercentShadowRight && activePopoutPercentRoot) {
+            mod.SetUIWidgetParent(activePopoutPercentShadowRight, activePopoutPercentRoot);
+            mod.SetUIWidgetPosition(
+                activePopoutPercentShadowRight,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutPercentShadowRight,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutPercentShadowLeft && activePopoutPercentRoot) {
+            mod.SetUIWidgetParent(activePopoutPercentShadowLeft, activePopoutPercentRoot);
+            mod.SetUIWidgetPosition(
+                activePopoutPercentShadowLeft,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutPercentShadowLeft,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutPercentShadowUp && activePopoutPercentRoot) {
+            mod.SetUIWidgetParent(activePopoutPercentShadowUp, activePopoutPercentRoot);
+            mod.SetUIWidgetPosition(
+                activePopoutPercentShadowUp,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutPercentShadowUp,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutPercentShadowDown && activePopoutPercentRoot) {
+            mod.SetUIWidgetParent(activePopoutPercentShadowDown, activePopoutPercentRoot);
+            mod.SetUIWidgetPosition(
+                activePopoutPercentShadowDown,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutPercentShadowDown,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutPercentShadowUpLeft && activePopoutPercentRoot) {
+            mod.SetUIWidgetParent(activePopoutPercentShadowUpLeft, activePopoutPercentRoot);
+            mod.SetUIWidgetPosition(
+                activePopoutPercentShadowUpLeft,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutPercentShadowUpLeft,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutPercentShadowUpRight && activePopoutPercentRoot) {
+            mod.SetUIWidgetParent(activePopoutPercentShadowUpRight, activePopoutPercentRoot);
+            mod.SetUIWidgetPosition(
+                activePopoutPercentShadowUpRight,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutPercentShadowUpRight,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutPercentShadowDownRight && activePopoutPercentRoot) {
+            mod.SetUIWidgetParent(activePopoutPercentShadowDownRight, activePopoutPercentRoot);
+            mod.SetUIWidgetPosition(
+                activePopoutPercentShadowDownRight,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutPercentShadowDownRight,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutPercentShadowDownLeft && activePopoutPercentRoot) {
+            mod.SetUIWidgetParent(activePopoutPercentShadowDownLeft, activePopoutPercentRoot);
+            mod.SetUIWidgetPosition(
+                activePopoutPercentShadowDownLeft,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                activePopoutPercentShadowDownLeft,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutPercentShadowInner && activePopoutPercentRoot) {
+            mod.SetUIWidgetParent(activePopoutPercentShadowInner, activePopoutPercentRoot);
+            mod.SetUIWidgetPosition(
+                activePopoutPercentShadowInner,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y, 0)
+            );
+            mod.SetUIWidgetSize(
+                activePopoutPercentShadowInner,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
+            );
+        }
+        if (activePopoutPercentText && activePopoutPercentRoot) {
+            mod.SetUIWidgetParent(activePopoutPercentText, activePopoutPercentRoot);
+            mod.SetUIWidgetPosition(
+                activePopoutPercentText,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y, 0)
+            );
+            mod.SetUIWidgetSize(
+                activePopoutPercentText,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
+            );
+        }
+
         const engageRoot = refsForPid?.conquestFlagsEngageRoot ?? safeFind(`ConquestFlagHudEngageRoot_${pid}`);
         const engageTrack = refsForPid?.conquestFlagsEngageTrack ?? safeFind(`ConquestFlagHudEngageTrack_${pid}`);
         const engageFriendlyFill = refsForPid?.conquestFlagsEngageFriendlyFill ?? safeFind(`ConquestFlagHudEngageFriendlyFill_${pid}`);
@@ -1115,7 +1512,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     // This prevents old child widgets from previous layout iterations from persisting across script reloads.
     const hasCachedHudRefs = Object.prototype.hasOwnProperty.call(State.hudCache.hudByPid, pid);
     let cached: HudRefs | undefined = hasCachedHudRefs ? State.hudCache.hudByPid[pid] : undefined;
-    const CONQUEST_HUD_SCHEMA_VERSION = 5;
+    const CONQUEST_HUD_SCHEMA_VERSION = 8;
     const conquestHudSchemaByPid = ((State.conquest.debug as any).hudSchemaVersionByPid ??= {}) as Record<number, number>;
     if (conquestHudSchemaByPid[pid] !== CONQUEST_HUD_SCHEMA_VERSION) {
         // Force one clean rebuild when HUD schema changes to purge stale duplicate widgets.
@@ -1214,6 +1611,30 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             cached.conquestTicketsBleedRightChevrons[chevronIndex] = cached.conquestTicketsBleedRightChevrons[chevronIndex]
                 ?? safeFind(`ConquestTicketsHudBleedChevronRight${chevronIndex + 1}_${pid}`);
         }
+        cached.conquestFlagsActivePopoutRoot = cached.conquestFlagsActivePopoutRoot ?? safeFind(`ConquestFlagHudActivePopoutRoot_${pid}`);
+        cached.conquestFlagsActivePopoutSlot = cached.conquestFlagsActivePopoutSlot ?? safeFind(`ConquestFlagHudActivePopoutSlot_${pid}`);
+        cached.conquestFlagsActivePopoutBorder = cached.conquestFlagsActivePopoutBorder ?? safeFind(`ConquestFlagHudActivePopoutBorder_${pid}`);
+        cached.conquestFlagsActivePopoutFill = cached.conquestFlagsActivePopoutFill ?? safeFind(`ConquestFlagHudActivePopoutFill_${pid}`);
+        cached.conquestFlagsActivePopoutLabelShadowRight = cached.conquestFlagsActivePopoutLabelShadowRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowRight_${pid}`);
+        cached.conquestFlagsActivePopoutLabelShadowLeft = cached.conquestFlagsActivePopoutLabelShadowLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowLeft_${pid}`);
+        cached.conquestFlagsActivePopoutLabelShadowUp = cached.conquestFlagsActivePopoutLabelShadowUp ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUp_${pid}`);
+        cached.conquestFlagsActivePopoutLabelShadowDown = cached.conquestFlagsActivePopoutLabelShadowDown ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDown_${pid}`);
+        cached.conquestFlagsActivePopoutLabelShadowUpLeft = cached.conquestFlagsActivePopoutLabelShadowUpLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUpLeft_${pid}`);
+        cached.conquestFlagsActivePopoutLabelShadowUpRight = cached.conquestFlagsActivePopoutLabelShadowUpRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUpRight_${pid}`);
+        cached.conquestFlagsActivePopoutLabelShadowDownRight = cached.conquestFlagsActivePopoutLabelShadowDownRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDownRight_${pid}`);
+        cached.conquestFlagsActivePopoutLabelShadowDownLeft = cached.conquestFlagsActivePopoutLabelShadowDownLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDownLeft_${pid}`);
+        cached.conquestFlagsActivePopoutLabel = cached.conquestFlagsActivePopoutLabel ?? safeFind(`ConquestFlagHudActivePopoutLabel_${pid}`);
+        cached.conquestFlagsActivePopoutPercentRoot = cached.conquestFlagsActivePopoutPercentRoot ?? safeFind(`ConquestFlagHudActivePopoutPercentRoot_${pid}`);
+        cached.conquestFlagsActivePopoutPercentShadowRight = cached.conquestFlagsActivePopoutPercentShadowRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowRight_${pid}`);
+        cached.conquestFlagsActivePopoutPercentShadowLeft = cached.conquestFlagsActivePopoutPercentShadowLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowLeft_${pid}`);
+        cached.conquestFlagsActivePopoutPercentShadowUp = cached.conquestFlagsActivePopoutPercentShadowUp ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUp_${pid}`);
+        cached.conquestFlagsActivePopoutPercentShadowDown = cached.conquestFlagsActivePopoutPercentShadowDown ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDown_${pid}`);
+        cached.conquestFlagsActivePopoutPercentShadowUpLeft = cached.conquestFlagsActivePopoutPercentShadowUpLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUpLeft_${pid}`);
+        cached.conquestFlagsActivePopoutPercentShadowUpRight = cached.conquestFlagsActivePopoutPercentShadowUpRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUpRight_${pid}`);
+        cached.conquestFlagsActivePopoutPercentShadowDownRight = cached.conquestFlagsActivePopoutPercentShadowDownRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDownRight_${pid}`);
+        cached.conquestFlagsActivePopoutPercentShadowDownLeft = cached.conquestFlagsActivePopoutPercentShadowDownLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDownLeft_${pid}`);
+        cached.conquestFlagsActivePopoutPercentShadowInner = cached.conquestFlagsActivePopoutPercentShadowInner ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowInner_${pid}`);
+        cached.conquestFlagsActivePopoutPercentText = cached.conquestFlagsActivePopoutPercentText ?? safeFind(`ConquestFlagHudActivePopoutPercentText_${pid}`);
         cached.conquestFlagsEngageRoot = cached.conquestFlagsEngageRoot ?? safeFind(`ConquestFlagHudEngageRoot_${pid}`);
         cached.conquestFlagsEngageTrack = cached.conquestFlagsEngageTrack ?? safeFind(`ConquestFlagHudEngageTrack_${pid}`);
         cached.conquestFlagsEngageFriendlyFill = cached.conquestFlagsEngageFriendlyFill ?? safeFind(`ConquestFlagHudEngageFriendlyFill_${pid}`);
@@ -2436,6 +2857,22 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                         bgFill: mod.UIBgFill.Solid,
                     },
                     {
+                        name: `ConquestFlagHudBorder_${pid}_${i}`,
+                        type: "Container",
+                        position: [0, 0],
+                        size: [CONQUEST_HUD_FLAG_SLOT_WIDTH, CONQUEST_HUD_FLAG_SLOT_HEIGHT],
+                        anchor: mod.UIAnchor.TopLeft,
+                        visible: false,
+                        padding: 0,
+                        bgColor: [
+                            CONQUEST_HUD_TEXT_FRIENDLY_RGB[0],
+                            CONQUEST_HUD_TEXT_FRIENDLY_RGB[1],
+                            CONQUEST_HUD_TEXT_FRIENDLY_RGB[2],
+                        ],
+                        bgAlpha: 1,
+                        bgFill: mod.UIBgFill.OutlineThin,
+                    },
+                    {
                         name: `ConquestFlagHudLabelShadowRight_${pid}_${i}`,
                         type: "Text",
                         position: [CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y],
@@ -2801,6 +3238,402 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 ],
             });
         }
+        // Active-objective pop-out panel:
+        // - enlarged objective letter with in-box capture fill
+        // - optional capture-progress percentage row
+        flagChildren.push({
+            name: `ConquestFlagHudActivePopoutRoot_${pid}`,
+            type: "Container",
+            position: [0, 0],
+            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_ROOT_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_ROOT_HEIGHT],
+            anchor: mod.UIAnchor.TopLeft,
+            visible: false,
+            padding: 0,
+            bgAlpha: 0,
+            bgFill: mod.UIBgFill.None,
+            children: [
+                {
+                    name: `ConquestFlagHudActivePopoutSlot_${pid}`,
+                    type: "Container",
+                    position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_OFFSET_Y],
+                    size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_HEIGHT],
+                    anchor: mod.UIAnchor.TopLeft,
+                    visible: false,
+                    padding: 0,
+                    bgColor: [
+                        CONQUEST_HUD_FLAG_SLOT_TRACK_RGB[0],
+                        CONQUEST_HUD_FLAG_SLOT_TRACK_RGB[1],
+                        CONQUEST_HUD_FLAG_SLOT_TRACK_RGB[2],
+                    ],
+                    bgAlpha: 0.9,
+                    bgFill: mod.UIBgFill.Solid,
+                    children: [
+                        {
+                            name: `ConquestFlagHudActivePopoutFill_${pid}`,
+                            type: "Container",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_INSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_INSET_Y],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_MAX_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_MAX_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgColor: [
+                                CONQUEST_HUD_TEXT_FRIENDLY_RGB[0],
+                                CONQUEST_HUD_TEXT_FRIENDLY_RGB[1],
+                                CONQUEST_HUD_TEXT_FRIENDLY_RGB[2],
+                            ],
+                            bgAlpha: 0.95,
+                            bgFill: mod.UIBgFill.Solid,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutBorder_${pid}`,
+                            type: "Container",
+                            position: [0, 0],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgColor: [
+                                CONQUEST_HUD_TEXT_FRIENDLY_RGB[0],
+                                CONQUEST_HUD_TEXT_FRIENDLY_RGB[1],
+                                CONQUEST_HUD_TEXT_FRIENDLY_RGB[2],
+                            ],
+                            bgAlpha: 1,
+                            bgFill: mod.UIBgFill.OutlineThin,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutLabelShadowRight_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutLabelShadowLeft_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutLabelShadowUp_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutLabelShadowDown_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutLabelShadowUpLeft_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutLabelShadowUpRight_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutLabelShadowDownRight_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutLabelShadowDownLeft_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutLabel_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN),
+                            textColor: [
+                                CONQUEST_HUD_TEXT_NEUTRAL_RGB[0],
+                                CONQUEST_HUD_TEXT_NEUTRAL_RGB[1],
+                                CONQUEST_HUD_TEXT_NEUTRAL_RGB[2],
+                            ],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                    ],
+                },
+                {
+                    name: `ConquestFlagHudActivePopoutPercentRoot_${pid}`,
+                    type: "Container",
+                    position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_OFFSET_Y],
+                    size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_ROOT_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_ROOT_HEIGHT],
+                    anchor: mod.UIAnchor.TopLeft,
+                    visible: false,
+                    padding: 0,
+                    bgColor: [
+                        CONQUEST_TICKETS_BG_RGB[0],
+                        CONQUEST_TICKETS_BG_RGB[1],
+                        CONQUEST_TICKETS_BG_RGB[2],
+                    ],
+                    bgAlpha: CONQUEST_TICKETS_BG_ALPHA,
+                    bgFill: mod.UIBgFill.Blur,
+                    children: [
+                        {
+                            name: `ConquestFlagHudActivePopoutPercentShadowRight_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutPercentShadowLeft_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutPercentShadowUp_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutPercentShadowDown_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutPercentShadowUpLeft_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutPercentShadowUpRight_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutPercentShadowDownRight_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutPercentShadowDownLeft_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutPercentShadowInner_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_SHADOW_INNER_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestFlagHudActivePopoutPercentText_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y],
+                            size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                            textColor: [
+                                CONQUEST_HUD_TEXT_NEUTRAL_RGB[0],
+                                CONQUEST_HUD_TEXT_NEUTRAL_RGB[1],
+                                CONQUEST_HUD_TEXT_NEUTRAL_RGB[2],
+                            ],
+                            textAlpha: 1,
+                            textSize: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                    ],
+                },
+            ],
+        });
         // Active-objective engagement panel:
         // - left/right on-point soldier counts (viewer perspective)
         // - split ratio bar (friendly vs enemy presence)
@@ -3127,6 +3960,30 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     refs.conquestFlagsDebugPercentShadowDownLeftRows = [];
     refs.conquestFlagsDebugPercentShadowInnerRows = [];
     refs.conquestFlagsDebugPercentTextRows = [];
+    refs.conquestFlagsActivePopoutRoot = safeFind(`ConquestFlagHudActivePopoutRoot_${pid}`);
+    refs.conquestFlagsActivePopoutSlot = safeFind(`ConquestFlagHudActivePopoutSlot_${pid}`);
+    refs.conquestFlagsActivePopoutBorder = safeFind(`ConquestFlagHudActivePopoutBorder_${pid}`);
+    refs.conquestFlagsActivePopoutFill = safeFind(`ConquestFlagHudActivePopoutFill_${pid}`);
+    refs.conquestFlagsActivePopoutLabelShadowRight = safeFind(`ConquestFlagHudActivePopoutLabelShadowRight_${pid}`);
+    refs.conquestFlagsActivePopoutLabelShadowLeft = safeFind(`ConquestFlagHudActivePopoutLabelShadowLeft_${pid}`);
+    refs.conquestFlagsActivePopoutLabelShadowUp = safeFind(`ConquestFlagHudActivePopoutLabelShadowUp_${pid}`);
+    refs.conquestFlagsActivePopoutLabelShadowDown = safeFind(`ConquestFlagHudActivePopoutLabelShadowDown_${pid}`);
+    refs.conquestFlagsActivePopoutLabelShadowUpLeft = safeFind(`ConquestFlagHudActivePopoutLabelShadowUpLeft_${pid}`);
+    refs.conquestFlagsActivePopoutLabelShadowUpRight = safeFind(`ConquestFlagHudActivePopoutLabelShadowUpRight_${pid}`);
+    refs.conquestFlagsActivePopoutLabelShadowDownRight = safeFind(`ConquestFlagHudActivePopoutLabelShadowDownRight_${pid}`);
+    refs.conquestFlagsActivePopoutLabelShadowDownLeft = safeFind(`ConquestFlagHudActivePopoutLabelShadowDownLeft_${pid}`);
+    refs.conquestFlagsActivePopoutLabel = safeFind(`ConquestFlagHudActivePopoutLabel_${pid}`);
+    refs.conquestFlagsActivePopoutPercentRoot = safeFind(`ConquestFlagHudActivePopoutPercentRoot_${pid}`);
+    refs.conquestFlagsActivePopoutPercentShadowRight = safeFind(`ConquestFlagHudActivePopoutPercentShadowRight_${pid}`);
+    refs.conquestFlagsActivePopoutPercentShadowLeft = safeFind(`ConquestFlagHudActivePopoutPercentShadowLeft_${pid}`);
+    refs.conquestFlagsActivePopoutPercentShadowUp = safeFind(`ConquestFlagHudActivePopoutPercentShadowUp_${pid}`);
+    refs.conquestFlagsActivePopoutPercentShadowDown = safeFind(`ConquestFlagHudActivePopoutPercentShadowDown_${pid}`);
+    refs.conquestFlagsActivePopoutPercentShadowUpLeft = safeFind(`ConquestFlagHudActivePopoutPercentShadowUpLeft_${pid}`);
+    refs.conquestFlagsActivePopoutPercentShadowUpRight = safeFind(`ConquestFlagHudActivePopoutPercentShadowUpRight_${pid}`);
+    refs.conquestFlagsActivePopoutPercentShadowDownRight = safeFind(`ConquestFlagHudActivePopoutPercentShadowDownRight_${pid}`);
+    refs.conquestFlagsActivePopoutPercentShadowDownLeft = safeFind(`ConquestFlagHudActivePopoutPercentShadowDownLeft_${pid}`);
+    refs.conquestFlagsActivePopoutPercentShadowInner = safeFind(`ConquestFlagHudActivePopoutPercentShadowInner_${pid}`);
+    refs.conquestFlagsActivePopoutPercentText = safeFind(`ConquestFlagHudActivePopoutPercentText_${pid}`);
     refs.conquestFlagsEngageRoot = safeFind(`ConquestFlagHudEngageRoot_${pid}`);
     refs.conquestFlagsEngageTrack = safeFind(`ConquestFlagHudEngageTrack_${pid}`);
     refs.conquestFlagsEngageFriendlyFill = safeFind(`ConquestFlagHudEngageFriendlyFill_${pid}`);

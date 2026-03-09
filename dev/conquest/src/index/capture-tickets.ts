@@ -69,7 +69,28 @@ type ConquestHudTicketViewModel = {
 
 type ConquestHudFlagSlotViewModel = {
     visible: boolean;
+    objId?: number;
     slotBgColor?: mod.Vector;
+    borderVisible: boolean;
+    borderColor?: mod.Vector;
+    fillVisible: boolean;
+    fillColor?: mod.Vector;
+    fillY: number;
+    fillHeight: number;
+    labelVisible: boolean;
+    labelMessage?: mod.Message;
+    labelColor?: mod.Vector;
+    percentVisible: boolean;
+    percentMessage?: mod.Message;
+    percentColor?: mod.Vector;
+};
+
+type ConquestHudActiveFlagPopoutViewModel = {
+    visible: boolean;
+    objId?: number;
+    slotBgColor?: mod.Vector;
+    borderVisible: boolean;
+    borderColor?: mod.Vector;
     fillVisible: boolean;
     fillColor?: mod.Vector;
     fillY: number;
@@ -123,6 +144,7 @@ type ConquestHudViewModel = {
     };
     tickets: ConquestHudTicketViewModel;
     flags: ConquestHudFlagsViewModel;
+    activeFlagPopout: ConquestHudActiveFlagPopoutViewModel;
     engage: ConquestHudEngageViewModel;
     status: ConquestHudStatusViewModel;
     helpReady: ConquestHudHelpReadyViewModel;
@@ -139,6 +161,8 @@ const CONQUEST_BLEED_PULSE_PHASE_SHOW = 2;
 const CONQUEST_BLEED_PULSE_SEQUENCE_CAP_SECONDS = 0.10;
 const CONQUEST_BLEED_PULSE_SEQUENCE_MIN_SECONDS = 0.03;
 const CONQUEST_BLEED_PULSE_SEQUENCE_FRACTION_OF_BLEED_INTERVAL = 0.30;
+const CONQUEST_PHASE3_ACTIVE_SLOT_MUTED_BG = mod.CreateVector(43 / 255, 48 / 255, 53 / 255);
+const CONQUEST_PHASE3_ACTIVE_SLOT_MUTED_LABEL = mod.CreateVector(180 / 255, 188 / 255, 196 / 255);
 
 // Applies one visibility value to all widgets in a shadow-text group.
 function conquestPhase3SetShadowTextGroupVisible(group: ConquestShadowTextWidgetSet, visible: boolean): void {
@@ -551,6 +575,30 @@ function conquestPhase3ForceHideAllV2Widgets(refs: HudRefs): void {
     safeSetUIWidgetVisible(refs.conquestTicketsSlash, false);
 
     safeSetUIWidgetVisible(refs.conquestFlagsDebugRoot, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutRoot, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutSlot, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutBorder, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutFill, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutLabelShadowRight, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutLabelShadowLeft, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutLabelShadowUp, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutLabelShadowDown, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutLabelShadowUpLeft, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutLabelShadowUpRight, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutLabelShadowDownRight, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutLabelShadowDownLeft, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutLabel, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutPercentRoot, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutPercentShadowRight, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutPercentShadowLeft, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutPercentShadowUp, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutPercentShadowDown, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutPercentShadowUpLeft, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutPercentShadowUpRight, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutPercentShadowDownRight, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutPercentShadowDownLeft, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutPercentShadowInner, false);
+    safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutPercentText, false);
     safeSetUIWidgetVisible(refs.conquestFlagsEngageRoot, false);
     safeSetUIWidgetVisible(refs.conquestFlagsEngageTrack, false);
     safeSetUIWidgetVisible(refs.conquestFlagsEngageFriendlyFill, false);
@@ -623,7 +671,6 @@ function conquestPhase3ForceHideAllV2Widgets(refs: HudRefs): void {
     );
     for (let i = 0; i < maxSlots; i++) {
         safeSetUIWidgetVisible(slotRoots[i], false);
-        safeSetUIWidgetVisible(slotBorders[i], false);
         safeSetUIWidgetVisible(slotFills[i], false);
         safeSetUIWidgetVisible(slotLabelShadowsRight[i], false);
         safeSetUIWidgetVisible(slotLabelShadowsLeft[i], false);
@@ -1155,18 +1202,47 @@ function deriveConquestHudEngageViewModel(
     };
 }
 
+// Converts a fill ratio into pixel height while preserving neutral-idle cleanup rules.
+function conquestPhase3ComputeFlagFillHeight(
+    maxFillHeight: number,
+    visualFillRatio: number,
+    ownerTeam: TeamID | 0,
+    progress01: number,
+    onPointCount: number,
+    forceNeutralIdleEmpty: boolean
+): number {
+    const rawFillHeight = visualFillRatio <= 0
+        ? 0
+        : Math.floor(maxFillHeight * visualFillRatio);
+    const minNeutralHideRatio = 2 / Math.max(1, maxFillHeight);
+    const unattendedNeutral = ownerTeam === 0 && onPointCount <= 0;
+    const nearZeroNeutralResidual = unattendedNeutral && (
+        visualFillRatio <= minNeutralHideRatio
+        || progress01 <= minNeutralHideRatio
+        || rawFillHeight <= 2
+    );
+    if (forceNeutralIdleEmpty || nearZeroNeutralResidual) return 0;
+    if (rawFillHeight <= 0) {
+        return onPointCount > 0 && visualFillRatio > 0 ? 1 : 0;
+    }
+    return rawFillHeight;
+}
+
 // Derives per-slot flag visuals/labels/percent widgets from script-authoritative state.
 function deriveConquestHudFlagsViewModel(
+    pid: number,
     mappedCaptureStates: ConquestCapturePointRuntimeState[],
     friendlyTeam: TeamID,
     enemyTeam: TeamID,
     maxSlots: number
 ): ConquestHudFlagsViewModel {
     const clampedSlots = Math.max(1, maxSlots);
+    const engagedObjId = State.conquest.capture.engagedObjIdByPid[pid];
     const slots: ConquestHudFlagSlotViewModel[] = [];
     for (let i = 0; i < clampedSlots; i++) {
         slots.push({
             visible: false,
+            borderVisible: false,
             fillVisible: false,
             fillY: CONQUEST_HUD_FLAG_FILL_INSET_Y + CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT,
             fillHeight: 0,
@@ -1185,30 +1261,39 @@ function deriveConquestHudFlagsViewModel(
             ?? conquestPhase3CreateDefaultFlagVisualState(sampleTick);
         const visual = conquestPhase3GetFlagSlotVisual(visualState, friendlyTeam, enemyTeam);
         const percentVisual = conquestPhase3GetFlagPercentDisplay(visualState, friendlyTeam, enemyTeam);
+        const borderColor = visualState.ownerTeam === friendlyTeam
+            ? mod.CreateVector(
+                CONQUEST_HUD_TEXT_FRIENDLY_RGB[0],
+                CONQUEST_HUD_TEXT_FRIENDLY_RGB[1],
+                CONQUEST_HUD_TEXT_FRIENDLY_RGB[2]
+            )
+            : visualState.ownerTeam === enemyTeam
+                ? mod.CreateVector(
+                    CONQUEST_HUD_TEXT_ENEMY_RGB[0],
+                    CONQUEST_HUD_TEXT_ENEMY_RGB[1],
+                    CONQUEST_HUD_TEXT_ENEMY_RGB[2]
+                )
+                : undefined;
+        const borderVisible = visualState.phase === "OWNED_STABLE"
+            && visualState.progress01 >= CONQUEST_FLAG_PROGRESS_DEADBAND_HIGH
+            && !!borderColor;
         const onPointCount = cp.onPointTeam1 + cp.onPointTeam2;
-        const rawFillHeight = visual.fillRatio <= 0
-            ? 0
-            : Math.floor(CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT * visual.fillRatio);
-        const minVisibleFillRatio = 1 / Math.max(1, CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT);
-        const minNeutralHideRatio = 2 / Math.max(1, CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT);
-        const unattendedNeutral = cp.ownerTeam === 0 && onPointCount <= 0;
-        const nearZeroNeutralResidual = unattendedNeutral && (
-            visual.fillRatio <= minNeutralHideRatio
-            || cp.progress01 <= minNeutralHideRatio
-            || rawFillHeight <= 2
-        );
         const forceNeutralIdleEmpty = visualState.phase === "NEUTRAL_IDLE";
-        const fillHeight = forceNeutralIdleEmpty
-            ? 0
-            : nearZeroNeutralResidual
-                ? 0
-                : rawFillHeight <= 0
-                    ? (onPointCount > 0 && visual.fillRatio > 0 ? 1 : 0)
-                    : rawFillHeight;
+        const fillHeight = conquestPhase3ComputeFlagFillHeight(
+            CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT,
+            visual.fillRatio,
+            cp.ownerTeam,
+            cp.progress01,
+            onPointCount,
+            forceNeutralIdleEmpty
+        );
 
         const slotVm: ConquestHudFlagSlotViewModel = {
             visible: true,
+            objId: cp.objId,
             slotBgColor: visual.slotBgColor,
+            borderVisible,
+            borderColor,
             fillVisible: fillHeight > 0 && !!visual.fillColor,
             fillColor: visual.fillColor,
             fillY: CONQUEST_HUD_FLAG_FILL_INSET_Y + (CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT - fillHeight),
@@ -1223,10 +1308,107 @@ function deriveConquestHudFlagsViewModel(
             const percentValue = Math.max(0, Math.min(100, Math.round(percentVisual.value01 * 100)));
             slotVm.percentMessage = mod.Message(STR_SYSTEM_GENERIC_PERCENT, percentValue);
         }
+        if (engagedObjId && cp.objId === engagedObjId) {
+            slotVm.slotBgColor = CONQUEST_PHASE3_ACTIVE_SLOT_MUTED_BG;
+            slotVm.borderVisible = false;
+            slotVm.fillVisible = false;
+            slotVm.fillHeight = 0;
+            slotVm.labelVisible = false;
+            slotVm.percentVisible = false;
+            slotVm.labelColor = CONQUEST_PHASE3_ACTIVE_SLOT_MUTED_LABEL;
+        }
         slots[slotIndex] = slotVm;
     }
 
     return { slots };
+}
+
+// Derives active-objective pop-out from the same per-objective visuals used by slot rendering.
+function deriveConquestHudActiveFlagPopoutViewModel(
+    pid: number,
+    mappedCaptureStates: ConquestCapturePointRuntimeState[],
+    friendlyTeam: TeamID,
+    enemyTeam: TeamID
+): ConquestHudActiveFlagPopoutViewModel {
+    const engagedObjId = State.conquest.capture.engagedObjIdByPid[pid];
+    const hidden: ConquestHudActiveFlagPopoutViewModel = {
+        visible: false,
+        objId: engagedObjId,
+        borderVisible: false,
+        fillVisible: false,
+        fillY: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_INSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_MAX_HEIGHT,
+        fillHeight: 0,
+        labelVisible: false,
+        percentVisible: false,
+    };
+    if (!engagedObjId) return hidden;
+
+    let activeCapturePoint: ConquestCapturePointRuntimeState | undefined;
+    let activeRow = 0;
+    for (let i = 0; i < mappedCaptureStates.length; i++) {
+        const cp = mappedCaptureStates[i];
+        if (cp.objId === engagedObjId) {
+            activeCapturePoint = cp;
+            activeRow = i;
+            break;
+        }
+    }
+    if (!activeCapturePoint) return hidden;
+
+    const labelKey = conquestPhase3GetFlagLetterStringKey(activeCapturePoint, activeRow);
+    const sampleTick = Math.floor(mod.GetMatchTimeElapsed() * 10);
+    const visualState = State.conquest.capture.visualByObjId[activeCapturePoint.objId]
+        ?? conquestPhase3CreateDefaultFlagVisualState(sampleTick);
+    const visual = conquestPhase3GetFlagSlotVisual(visualState, friendlyTeam, enemyTeam);
+    const percentVisual = conquestPhase3GetFlagPercentDisplay(visualState, friendlyTeam, enemyTeam);
+    const borderColor = visualState.ownerTeam === friendlyTeam
+        ? mod.CreateVector(
+            CONQUEST_HUD_TEXT_FRIENDLY_RGB[0],
+            CONQUEST_HUD_TEXT_FRIENDLY_RGB[1],
+            CONQUEST_HUD_TEXT_FRIENDLY_RGB[2]
+        )
+        : visualState.ownerTeam === enemyTeam
+            ? mod.CreateVector(
+                CONQUEST_HUD_TEXT_ENEMY_RGB[0],
+                CONQUEST_HUD_TEXT_ENEMY_RGB[1],
+                CONQUEST_HUD_TEXT_ENEMY_RGB[2]
+            )
+            : undefined;
+    const borderVisible = visualState.phase === "OWNED_STABLE"
+        && visualState.progress01 >= CONQUEST_FLAG_PROGRESS_DEADBAND_HIGH
+        && !!borderColor;
+    const onPointCount = activeCapturePoint.onPointTeam1 + activeCapturePoint.onPointTeam2;
+    const forceNeutralIdleEmpty = visualState.phase === "NEUTRAL_IDLE";
+    const fillHeight = conquestPhase3ComputeFlagFillHeight(
+        CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_MAX_HEIGHT,
+        visual.fillRatio,
+        activeCapturePoint.ownerTeam,
+        activeCapturePoint.progress01,
+        onPointCount,
+        forceNeutralIdleEmpty
+    );
+
+    const popoutVm: ConquestHudActiveFlagPopoutViewModel = {
+        visible: true,
+        objId: engagedObjId,
+        slotBgColor: visual.slotBgColor,
+        borderVisible,
+        borderColor,
+        fillVisible: fillHeight > 0 && !!visual.fillColor,
+        fillColor: visual.fillColor,
+        fillY: CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_INSET_Y + (CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_MAX_HEIGHT - fillHeight),
+        fillHeight,
+        labelVisible: true,
+        labelMessage: mod.Message(labelKey),
+        labelColor: visual.labelColor,
+        percentVisible: percentVisual.visible,
+        percentColor: percentVisual.color,
+    };
+    if (percentVisual.visible && percentVisual.color) {
+        const percentValue = Math.max(0, Math.min(100, Math.round(percentVisual.value01 * 100)));
+        popoutVm.percentMessage = mod.Message(STR_SYSTEM_GENERIC_PERCENT, percentValue);
+    }
+    return popoutVm;
 }
 
 // Derives a script-authoritative conquest HUD view model for one player.
@@ -1250,10 +1432,17 @@ function deriveHudViewModelForPlayer(
     const status = deriveConquestHudStatusViewModel(helpReady);
     const clock = deriveConquestHudClockViewModel();
     const flags = deriveConquestHudFlagsViewModel(
+        pid,
         mappedCaptureStates,
         perspective.friendlyTeam,
         perspective.enemyTeam,
         maxFlagSlots
+    );
+    const activeFlagPopout = deriveConquestHudActiveFlagPopoutViewModel(
+        pid,
+        mappedCaptureStates,
+        perspective.friendlyTeam,
+        perspective.enemyTeam
     );
     const engage = deriveConquestHudEngageViewModel(
         pid,
@@ -1279,6 +1468,7 @@ function deriveHudViewModelForPlayer(
             bleedRightCount: bleedCounts.rightCount,
         },
         flags,
+        activeFlagPopout,
         engage,
         status,
         helpReady,
@@ -2708,6 +2898,8 @@ function renderConquestFlagSlotsForPid(
     refs: HudRefs,
     flags: ConquestHudFlagsViewModel
 ): void {
+    const pid = refs.pid;
+    const activeObjId = State.conquest.capture.engagedObjIdByPid[pid];
     const slotRoots = refs.conquestFlagsDebugSlotRoots ?? [];
     const slotBorders = refs.conquestFlagsDebugBorderRows ?? [];
     const slotFills = refs.conquestFlagsDebugFillRows ?? [];
@@ -2765,6 +2957,7 @@ function renderConquestFlagSlotsForPid(
     for (let slot = 0; slot < maxSlots; slot++) {
         const slotVm = flags.slots[slot] ?? {
             visible: false,
+            borderVisible: false,
             fillVisible: false,
             fillY: 0,
             fillHeight: 0,
@@ -2772,7 +2965,10 @@ function renderConquestFlagSlotsForPid(
             percentVisible: false,
         };
         const slotRoot = slotRoots[slot];
-        const slotBorder = slotBorders[slot];
+        const slotBorder = slotBorders[slot] ?? safeFind(`ConquestFlagHudBorder_${pid}_${slot}`);
+        if (!slotBorders[slot] && slotBorder) {
+            slotBorders[slot] = slotBorder;
+        }
         const slotFill = slotFills[slot];
         const slotLabelShadowRight = slotLabelShadowsRight[slot];
         const slotLabelShadowLeft = slotLabelShadowsLeft[slot];
@@ -2852,8 +3048,11 @@ function renderConquestFlagSlotsForPid(
             CONQUEST_HUD_FLAG_SLOT_TRACK_RGB[2]
         );
         safeSetUIWidgetBgColor(slotRoot, slotBgColor);
-        // Borders are disabled for conquest objective flags.
-        safeSetUIWidgetVisible(slotBorder, false);
+        const suppressActiveBorder = !!activeObjId && slotVm.objId === activeObjId;
+        safeSetUIWidgetVisible(slotBorder, slotVm.borderVisible && !!slotVm.borderColor && !suppressActiveBorder);
+        if (slotVm.borderVisible && slotVm.borderColor && !suppressActiveBorder) {
+            safeSetUIWidgetBgColor(slotBorder, slotVm.borderColor);
+        }
 
         if (slotVm.fillVisible && slotVm.fillColor) {
             safeSetUIWidgetVisible(slotFill, true);
@@ -2869,6 +3068,141 @@ function renderConquestFlagSlotsForPid(
         } else {
             safeSetUIWidgetVisible(slotFill, false);
         }
+    }
+}
+
+// Renders the active-objective pop-out widgets only.
+function renderConquestActiveFlagPopoutForPid(
+    refs: HudRefs,
+    popout: ConquestHudActiveFlagPopoutViewModel
+): void {
+    const pid = refs.pid;
+    const popoutRoot = refs.conquestFlagsActivePopoutRoot ?? safeFind(`ConquestFlagHudActivePopoutRoot_${pid}`);
+    const popoutSlot = refs.conquestFlagsActivePopoutSlot ?? safeFind(`ConquestFlagHudActivePopoutSlot_${pid}`);
+    const popoutBorder = refs.conquestFlagsActivePopoutBorder ?? safeFind(`ConquestFlagHudActivePopoutBorder_${pid}`);
+    const popoutFill = refs.conquestFlagsActivePopoutFill ?? safeFind(`ConquestFlagHudActivePopoutFill_${pid}`);
+    const popoutLabelShadowRight = refs.conquestFlagsActivePopoutLabelShadowRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowRight_${pid}`);
+    const popoutLabelShadowLeft = refs.conquestFlagsActivePopoutLabelShadowLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowLeft_${pid}`);
+    const popoutLabelShadowUp = refs.conquestFlagsActivePopoutLabelShadowUp ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUp_${pid}`);
+    const popoutLabelShadowDown = refs.conquestFlagsActivePopoutLabelShadowDown ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDown_${pid}`);
+    const popoutLabelShadowUpLeft = refs.conquestFlagsActivePopoutLabelShadowUpLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUpLeft_${pid}`);
+    const popoutLabelShadowUpRight = refs.conquestFlagsActivePopoutLabelShadowUpRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUpRight_${pid}`);
+    const popoutLabelShadowDownRight = refs.conquestFlagsActivePopoutLabelShadowDownRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDownRight_${pid}`);
+    const popoutLabelShadowDownLeft = refs.conquestFlagsActivePopoutLabelShadowDownLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDownLeft_${pid}`);
+    const popoutLabel = refs.conquestFlagsActivePopoutLabel ?? safeFind(`ConquestFlagHudActivePopoutLabel_${pid}`);
+    const popoutPercentRoot = refs.conquestFlagsActivePopoutPercentRoot ?? safeFind(`ConquestFlagHudActivePopoutPercentRoot_${pid}`);
+    const popoutPercentShadowRight = refs.conquestFlagsActivePopoutPercentShadowRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowRight_${pid}`);
+    const popoutPercentShadowLeft = refs.conquestFlagsActivePopoutPercentShadowLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowLeft_${pid}`);
+    const popoutPercentShadowUp = refs.conquestFlagsActivePopoutPercentShadowUp ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUp_${pid}`);
+    const popoutPercentShadowDown = refs.conquestFlagsActivePopoutPercentShadowDown ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDown_${pid}`);
+    const popoutPercentShadowUpLeft = refs.conquestFlagsActivePopoutPercentShadowUpLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUpLeft_${pid}`);
+    const popoutPercentShadowUpRight = refs.conquestFlagsActivePopoutPercentShadowUpRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUpRight_${pid}`);
+    const popoutPercentShadowDownRight = refs.conquestFlagsActivePopoutPercentShadowDownRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDownRight_${pid}`);
+    const popoutPercentShadowDownLeft = refs.conquestFlagsActivePopoutPercentShadowDownLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDownLeft_${pid}`);
+    const popoutPercentShadowInner = refs.conquestFlagsActivePopoutPercentShadowInner ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowInner_${pid}`);
+    const popoutPercentText = refs.conquestFlagsActivePopoutPercentText ?? safeFind(`ConquestFlagHudActivePopoutPercentText_${pid}`);
+
+    refs.conquestFlagsActivePopoutRoot = popoutRoot;
+    refs.conquestFlagsActivePopoutSlot = popoutSlot;
+    refs.conquestFlagsActivePopoutBorder = popoutBorder;
+    refs.conquestFlagsActivePopoutFill = popoutFill;
+    refs.conquestFlagsActivePopoutLabelShadowRight = popoutLabelShadowRight;
+    refs.conquestFlagsActivePopoutLabelShadowLeft = popoutLabelShadowLeft;
+    refs.conquestFlagsActivePopoutLabelShadowUp = popoutLabelShadowUp;
+    refs.conquestFlagsActivePopoutLabelShadowDown = popoutLabelShadowDown;
+    refs.conquestFlagsActivePopoutLabelShadowUpLeft = popoutLabelShadowUpLeft;
+    refs.conquestFlagsActivePopoutLabelShadowUpRight = popoutLabelShadowUpRight;
+    refs.conquestFlagsActivePopoutLabelShadowDownRight = popoutLabelShadowDownRight;
+    refs.conquestFlagsActivePopoutLabelShadowDownLeft = popoutLabelShadowDownLeft;
+    refs.conquestFlagsActivePopoutLabel = popoutLabel;
+    refs.conquestFlagsActivePopoutPercentRoot = popoutPercentRoot;
+    refs.conquestFlagsActivePopoutPercentShadowRight = popoutPercentShadowRight;
+    refs.conquestFlagsActivePopoutPercentShadowLeft = popoutPercentShadowLeft;
+    refs.conquestFlagsActivePopoutPercentShadowUp = popoutPercentShadowUp;
+    refs.conquestFlagsActivePopoutPercentShadowDown = popoutPercentShadowDown;
+    refs.conquestFlagsActivePopoutPercentShadowUpLeft = popoutPercentShadowUpLeft;
+    refs.conquestFlagsActivePopoutPercentShadowUpRight = popoutPercentShadowUpRight;
+    refs.conquestFlagsActivePopoutPercentShadowDownRight = popoutPercentShadowDownRight;
+    refs.conquestFlagsActivePopoutPercentShadowDownLeft = popoutPercentShadowDownLeft;
+    refs.conquestFlagsActivePopoutPercentShadowInner = popoutPercentShadowInner;
+    refs.conquestFlagsActivePopoutPercentText = popoutPercentText;
+
+    const labelGroup: ConquestShadowTextWidgetSet = {
+        right: popoutLabelShadowRight,
+        left: popoutLabelShadowLeft,
+        up: popoutLabelShadowUp,
+        down: popoutLabelShadowDown,
+        upLeft: popoutLabelShadowUpLeft,
+        upRight: popoutLabelShadowUpRight,
+        downRight: popoutLabelShadowDownRight,
+        downLeft: popoutLabelShadowDownLeft,
+        text: popoutLabel,
+    };
+    const percentGroup: ConquestShadowTextWidgetSet = {
+        right: popoutPercentShadowRight,
+        left: popoutPercentShadowLeft,
+        up: popoutPercentShadowUp,
+        down: popoutPercentShadowDown,
+        upLeft: popoutPercentShadowUpLeft,
+        upRight: popoutPercentShadowUpRight,
+        downRight: popoutPercentShadowDownRight,
+        downLeft: popoutPercentShadowDownLeft,
+        inner: popoutPercentShadowInner,
+        text: popoutPercentText,
+    };
+
+    safeSetUIWidgetVisible(popoutRoot, popout.visible);
+    if (!popout.visible) {
+        safeSetUIWidgetVisible(popoutSlot, false);
+        safeSetUIWidgetVisible(popoutBorder, false);
+        safeSetUIWidgetVisible(popoutFill, false);
+        safeSetUIWidgetVisible(popoutPercentRoot, false);
+        conquestPhase3SetShadowTextGroupVisible(labelGroup, false);
+        conquestPhase3SetShadowTextGroupVisible(percentGroup, false);
+        return;
+    }
+
+    safeSetUIWidgetVisible(popoutSlot, true);
+    safeSetUIWidgetBgColor(
+        popoutSlot,
+        popout.slotBgColor ?? mod.CreateVector(
+            CONQUEST_HUD_FLAG_SLOT_TRACK_RGB[0],
+            CONQUEST_HUD_FLAG_SLOT_TRACK_RGB[1],
+            CONQUEST_HUD_FLAG_SLOT_TRACK_RGB[2]
+        )
+    );
+    safeSetUIWidgetVisible(popoutBorder, popout.borderVisible && !!popout.borderColor);
+    if (popout.borderVisible && popout.borderColor) {
+        safeSetUIWidgetBgColor(popoutBorder, popout.borderColor);
+    }
+    conquestPhase3SetShadowTextGroupVisible(labelGroup, popout.labelVisible);
+    if (popout.labelVisible && popout.labelMessage && popout.labelColor) {
+        conquestPhase3SetShadowTextGroupLabel(labelGroup, popout.labelMessage);
+        conquestPhase3SetShadowTextGroupColors(labelGroup, popout.labelColor);
+    }
+
+    if (popout.fillVisible && popout.fillColor) {
+        safeSetUIWidgetVisible(popoutFill, true);
+        safeSetUIWidgetPosition(
+            popoutFill,
+            mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_INSET_X, popout.fillY, 0)
+        );
+        safeSetUIWidgetSize(
+            popoutFill,
+            mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_MAX_WIDTH, popout.fillHeight, 0)
+        );
+        safeSetUIWidgetBgColor(popoutFill, popout.fillColor);
+    } else {
+        safeSetUIWidgetVisible(popoutFill, false);
+    }
+
+    safeSetUIWidgetVisible(popoutPercentRoot, popout.percentVisible);
+    if (popout.percentVisible && popout.percentMessage && popout.percentColor) {
+        conquestPhase3SetShadowTextGroupVisible(percentGroup, true);
+        conquestPhase3SetShadowTextGroupLabel(percentGroup, popout.percentMessage);
+        conquestPhase3SetShadowTextGroupColors(percentGroup, popout.percentColor);
+    } else {
+        conquestPhase3SetShadowTextGroupVisible(percentGroup, false);
     }
 }
 
@@ -3058,6 +3392,10 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
         renderConquestFlagSlotsForPid(
             refs,
             hudVm.flags
+        );
+        renderConquestActiveFlagPopoutForPid(
+            refs,
+            hudVm.activeFlagPopout
         );
         renderConquestEngageForPid(
             refs,
