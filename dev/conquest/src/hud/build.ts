@@ -210,8 +210,12 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
     const pid = getObjId(player);
     // Phase 3B anchor package from reference_design_documentation/ui_location_starter.md
+    const CONQUEST_HUD_NON_CLOCK_SHIFT_Y = 0;
+    // Tickets + flag stack correction: keep non-clock global shift for other HUD groups,
+    // but move ticket/flag lane back down as requested.
+    const CONQUEST_HUD_TICKETS_FLAGS_SHIFT_Y = CONQUEST_HUD_NON_CLOCK_SHIFT_Y + 20;
     const CONQUEST_TICKETS_ROOT_X = 0;
-    const CONQUEST_TICKETS_ROOT_Y = 0;
+    const CONQUEST_TICKETS_ROOT_Y = CONQUEST_HUD_TICKETS_FLAGS_SHIFT_Y;
     const CONQUEST_TICKETS_ROOT_WIDTH = 561.77;
     const CONQUEST_TICKETS_ROOT_HEIGHT = 50;
     // Inward nudge for ticket-side UI cluster (counter boxes + lead borders + crowns).
@@ -220,12 +224,24 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_TICKETS_TEAM_OUTER_EXPAND = 12;
     const CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X = 0;
     const CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X = 0;
+    const CONQUEST_FLAGS_MAX_ROWS = 7;
+    const CONQUEST_FLAGS_SLOT_STEP_X = 35.0;
+    const CONQUEST_FLAGS_ACTIVE_COUNT = Math.max(
+        1,
+        Math.min(CONQUEST_FLAGS_MAX_ROWS, ACTIVE_CAPTURE_POINT_CONFIGS.length)
+    );
+    const CONQUEST_FLAGS_FIRST_VISIBLE_SLOT_INDEX = Math.floor(
+        (CONQUEST_FLAGS_MAX_ROWS - CONQUEST_FLAGS_ACTIVE_COUNT) / 2
+    );
+    // Width occupied by the active objective row: slot widths plus lane spacing.
+    const CONQUEST_FLAGS_VISIBLE_SPAN_WIDTH = CONQUEST_HUD_FLAG_SLOT_WIDTH
+        + ((CONQUEST_FLAGS_ACTIVE_COUNT - 1) * CONQUEST_FLAGS_SLOT_STEP_X);
     // Keep containers at outward-expanded positions; text is nudged inward inside the containers.
-    const CONQUEST_TICKETS_TEAM_LEFT_X = (40 - CONQUEST_TICKETS_TEAM_OUTER_EXPAND) + CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
-    const CONQUEST_TICKETS_TEAM_RIGHT_X = 461.39 - CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
+    const CONQUEST_TICKETS_TEAM_LEFT_X_BASE = (40 - CONQUEST_TICKETS_TEAM_OUTER_EXPAND) + CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
+    const CONQUEST_TICKETS_TEAM_RIGHT_X_BASE = 461.39 - CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
     const CONQUEST_TICKETS_ROW_Y = -1;
-    const CONQUEST_TICKETS_LEFT_BAR_X = 103.39;
-    const CONQUEST_TICKETS_RIGHT_BAR_X = 284.90;
+    const CONQUEST_TICKETS_LEFT_BAR_X_BASE = 103.39;
+    const CONQUEST_TICKETS_RIGHT_BAR_X_BASE = 284.90;
     const CONQUEST_TICKETS_BAR_Y = 30.82;
     const CONQUEST_TICKETS_TEAM_WIDTH = 60 + CONQUEST_TICKETS_TEAM_OUTER_EXPAND;
     const CONQUEST_TICKETS_TEAM_HEIGHT = 28;
@@ -234,26 +250,54 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_TICKETS_BG_RGB: [number, number, number] = [0.0314, 0.0431, 0.0431];
     const CONQUEST_TICKETS_BG_ALPHA = 0.75;
     const CONQUEST_FLAGS_ROOT_X = 0;
-    const CONQUEST_FLAGS_ROOT_Y = 0;
+    const CONQUEST_FLAGS_ROOT_Y = CONQUEST_HUD_TICKETS_FLAGS_SHIFT_Y;
     const CONQUEST_FLAGS_ROOT_WIDTH = 238.5;
     const CONQUEST_FLAGS_ROOT_HEIGHT = 46;
-    const CONQUEST_TICKETS_TEAM_LEFT_ABS_X = (719.15 - CONQUEST_TICKETS_TEAM_OUTER_EXPAND) + CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
-    const CONQUEST_TICKETS_TEAM_RIGHT_ABS_X = 1140.54 - CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
-    const CONQUEST_TICKETS_TEAM_ABS_Y = 68.85;
+    const CONQUEST_TICKETS_TEAM_LEFT_ABS_X_BASE = (719.15 - CONQUEST_TICKETS_TEAM_OUTER_EXPAND) + CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
+    const CONQUEST_TICKETS_TEAM_RIGHT_ABS_X_BASE = 1140.54 - CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
+    // Extra downward tuning for the objective/ticket stack (clock lane remains fixed).
+    const CONQUEST_HUD_OBJECTIVE_STACK_EXTRA_DOWN_Y = 10;
+    const CONQUEST_TICKETS_TEAM_ABS_Y = 68.85 + CONQUEST_HUD_OBJECTIVE_STACK_EXTRA_DOWN_Y;
+    const CONQUEST_TICKETS_LEFT_BAR_ABS_X_BASE = 782.54;
+    const CONQUEST_TICKETS_RIGHT_BAR_ABS_X_BASE = 964.05;
+    const CONQUEST_TICKETS_BASE_CENTER_GAP_X = CONQUEST_TICKETS_RIGHT_BAR_ABS_X_BASE
+        - (CONQUEST_TICKETS_LEFT_BAR_ABS_X_BASE + CONQUEST_HUD_TICKET_BAR_WIDTH);
+    // Keep one "between-flag" gap between the center flag lane and each ticket bar.
+    // Inter-flag edge gap = slot step - slot width.
+    const CONQUEST_FLAGS_TO_TICKET_SIDE_GAP_X = Math.max(
+        0,
+        CONQUEST_FLAGS_SLOT_STEP_X - CONQUEST_HUD_FLAG_SLOT_WIDTH
+    );
+    const CONQUEST_TICKETS_TARGET_CENTER_GAP_X = CONQUEST_FLAGS_VISIBLE_SPAN_WIDTH
+        + (CONQUEST_FLAGS_TO_TICKET_SIDE_GAP_X * 2);
+    // Push both ticket clusters outward so the center lane matches active-flag row footprint.
+    const CONQUEST_TICKETS_OUTWARD_SHIFT_X = Math.max(
+        0,
+        (CONQUEST_TICKETS_TARGET_CENTER_GAP_X - CONQUEST_TICKETS_BASE_CENTER_GAP_X) / 2
+    );
+    const CONQUEST_TICKETS_TEAM_LEFT_X = CONQUEST_TICKETS_TEAM_LEFT_X_BASE - CONQUEST_TICKETS_OUTWARD_SHIFT_X;
+    const CONQUEST_TICKETS_TEAM_RIGHT_X = CONQUEST_TICKETS_TEAM_RIGHT_X_BASE + CONQUEST_TICKETS_OUTWARD_SHIFT_X;
+    const CONQUEST_TICKETS_LEFT_BAR_X = CONQUEST_TICKETS_LEFT_BAR_X_BASE - CONQUEST_TICKETS_OUTWARD_SHIFT_X;
+    const CONQUEST_TICKETS_RIGHT_BAR_X = CONQUEST_TICKETS_RIGHT_BAR_X_BASE + CONQUEST_TICKETS_OUTWARD_SHIFT_X;
+    const CONQUEST_TICKETS_TEAM_LEFT_ABS_X = CONQUEST_TICKETS_TEAM_LEFT_ABS_X_BASE - CONQUEST_TICKETS_OUTWARD_SHIFT_X;
+    const CONQUEST_TICKETS_TEAM_RIGHT_ABS_X = CONQUEST_TICKETS_TEAM_RIGHT_ABS_X_BASE + CONQUEST_TICKETS_OUTWARD_SHIFT_X;
+    const CONQUEST_TICKETS_LEFT_BAR_ABS_X = CONQUEST_TICKETS_LEFT_BAR_ABS_X_BASE - CONQUEST_TICKETS_OUTWARD_SHIFT_X;
+    const CONQUEST_TICKETS_RIGHT_BAR_ABS_X = CONQUEST_TICKETS_RIGHT_BAR_ABS_X_BASE + CONQUEST_TICKETS_OUTWARD_SHIFT_X;
     const CONQUEST_TICKETS_BLEED_Y = CONQUEST_TICKETS_BAR_Y
         + Math.floor((CONQUEST_HUD_TICKET_BAR_HEIGHT - CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT) / 2)
-        + CONQUEST_HUD_TICKET_BLEED_CHEVRON_IN_BAR_OFFSET_Y;
+        + CONQUEST_HUD_TICKET_BLEED_CHEVRON_IN_BAR_OFFSET_Y
+        - 20;
     const CONQUEST_TICKETS_BLEED_LEFT_X = CONQUEST_TICKETS_LEFT_BAR_X + CONQUEST_HUD_TICKET_BLEED_CHEVRON_OUTER_INSET_X;
     const CONQUEST_TICKETS_BLEED_RIGHT_X = CONQUEST_TICKETS_RIGHT_BAR_X
         + CONQUEST_HUD_TICKET_BAR_WIDTH
         - CONQUEST_HUD_TICKET_BLEED_CHEVRON_OUTER_INSET_X
         - CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH;
-    const CONQUEST_TICKETS_LEFT_BAR_ABS_X = 782.54;
-    const CONQUEST_TICKETS_RIGHT_BAR_ABS_X = 964.05;
-    const CONQUEST_TICKETS_BAR_ABS_Y = 78.55;
+    const CONQUEST_TICKETS_BAR_ABS_Y = 78.55 + CONQUEST_HUD_OBJECTIVE_STACK_EXTRA_DOWN_Y;
     const CONQUEST_TICKETS_BLEED_ABS_Y = CONQUEST_TICKETS_BAR_ABS_Y
         + Math.floor((CONQUEST_HUD_TICKET_BAR_HEIGHT - CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT) / 2)
-        + CONQUEST_HUD_TICKET_BLEED_CHEVRON_IN_BAR_OFFSET_Y;
+        + CONQUEST_HUD_TICKET_BLEED_CHEVRON_IN_BAR_OFFSET_Y
+        + CONQUEST_HUD_TICKETS_FLAGS_SHIFT_Y
+        - 20;
     const CONQUEST_TICKETS_BLEED_LEFT_ABS_X = CONQUEST_TICKETS_LEFT_BAR_ABS_X + CONQUEST_HUD_TICKET_BLEED_CHEVRON_OUTER_INSET_X;
     const CONQUEST_TICKETS_BLEED_RIGHT_ABS_X = CONQUEST_TICKETS_RIGHT_BAR_ABS_X
         + CONQUEST_HUD_TICKET_BAR_WIDTH
@@ -278,24 +322,30 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_TICKETS_LEAD_CROWN_SHADOW_ABS_Y = CONQUEST_TICKETS_LEAD_CROWN_ABS_Y - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_TOP_BIAS;
     const CONQUEST_TICKETS_SLASH_ABS_X = 952.0;
     const CONQUEST_TICKETS_SLASH_ABS_Y = 46.73;
-    const CONQUEST_FLAGS_SLOT_ABS_Y = 91.86;
-    const CONQUEST_FLAGS_SLOT_ABS_X: number[] = [
-        840.50, // Capture Point 1
-        875.50, // Capture Point 2
-        910.50, // Capture Point 3
-        945.50, // Capture Point 4
-        980.50, // Capture Point 5
-        1015.50, // Capture Point 6
-        1050.50, // Capture Point 7
-    ];
-    const CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_X = 928.00;
+    const CONQUEST_TICKETS_BAR_CENTER_ABS_Y = CONQUEST_TICKETS_BAR_ABS_Y + (CONQUEST_HUD_TICKET_BAR_HEIGHT / 2);
+    // Align objective slots with ticket-bar centerline for higher top-stack density.
+    const CONQUEST_FLAGS_SLOT_ABS_Y = CONQUEST_TICKETS_BAR_CENTER_ABS_Y - (CONQUEST_HUD_FLAG_SLOT_HEIGHT / 2);
+    const CONQUEST_FLAGS_CENTER_GAP_LEFT_EDGE_ABS_X = CONQUEST_TICKETS_LEFT_BAR_ABS_X + CONQUEST_HUD_TICKET_BAR_WIDTH;
+    const CONQUEST_FLAGS_CENTER_GAP_RIGHT_EDGE_ABS_X = CONQUEST_TICKETS_RIGHT_BAR_ABS_X;
+    const CONQUEST_FLAGS_CENTER_ABS_X = (CONQUEST_FLAGS_CENTER_GAP_LEFT_EDGE_ABS_X + CONQUEST_FLAGS_CENTER_GAP_RIGHT_EDGE_ABS_X) / 2;
+    const CONQUEST_FLAGS_FIRST_VISIBLE_SLOT_ABS_X = CONQUEST_FLAGS_CENTER_ABS_X - (CONQUEST_FLAGS_VISIBLE_SPAN_WIDTH / 2);
+    const CONQUEST_FLAGS_SLOT0_ABS_X = CONQUEST_FLAGS_FIRST_VISIBLE_SLOT_ABS_X
+        - (CONQUEST_FLAGS_FIRST_VISIBLE_SLOT_INDEX * CONQUEST_FLAGS_SLOT_STEP_X);
+    const CONQUEST_FLAGS_SLOT_ABS_X: number[] = [];
+    for (let i = 0; i < CONQUEST_FLAGS_MAX_ROWS; i++) {
+        CONQUEST_FLAGS_SLOT_ABS_X[i] = CONQUEST_FLAGS_SLOT0_ABS_X + (i * CONQUEST_FLAGS_SLOT_STEP_X);
+    }
+    const CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_X = CONQUEST_FLAGS_CENTER_ABS_X - (CONQUEST_HUD_FLAG_ACTIVE_POPOUT_ROOT_WIDTH / 2);
     const CONQUEST_FLAGS_ACTIVE_POPOUT_GAP_Y = 4.00;
     const CONQUEST_FLAGS_ACTIVE_POPOUT_NUDGE_UP_Y = 6.00;
+    // Popout-only correction: lift popout without moving engage row.
+    const CONQUEST_FLAGS_ACTIVE_POPOUT_EXTRA_UP_Y = 20.00;
     const CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_Y = CONQUEST_FLAGS_SLOT_ABS_Y
         + CONQUEST_HUD_FLAG_PERCENT_OFFSET_Y
         + CONQUEST_HUD_FLAG_PERCENT_ROOT_HEIGHT
         + CONQUEST_FLAGS_ACTIVE_POPOUT_GAP_Y
-        - CONQUEST_FLAGS_ACTIVE_POPOUT_NUDGE_UP_Y;
+        - CONQUEST_FLAGS_ACTIVE_POPOUT_NUDGE_UP_Y
+        - CONQUEST_FLAGS_ACTIVE_POPOUT_EXTRA_UP_Y;
     const CONQUEST_FLAGS_ENGAGE_GAP_Y = 4.00;
     const CONQUEST_FLAGS_ENGAGE_NUDGE_UP_Y = 10.00;
     const CONQUEST_FLAGS_ENGAGE_ABS_X = CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_X
@@ -303,6 +353,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_FLAGS_ENGAGE_ABS_Y = CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_Y
         + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_ROOT_HEIGHT
         + CONQUEST_FLAGS_ENGAGE_GAP_Y
+        + CONQUEST_FLAGS_ACTIVE_POPOUT_EXTRA_UP_Y
         - CONQUEST_FLAGS_ENGAGE_NUDGE_UP_Y;
     const CONQUEST_HELP_CONTAINER_X = -223.60;
     const CONQUEST_HELP_CONTAINER_Y = 81.10;
@@ -312,23 +363,19 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_HELP_TEXT_HEIGHT = 18;
     // "You are Ready" lane: left HUD stack under branding/settings.
     const CONQUEST_READY_CONTAINER_X = -905.00;
-    const CONQUEST_READY_CONTAINER_Y = 81.10;
+    const CONQUEST_READY_CONTAINER_Y = 81.10 + CONQUEST_HUD_NON_CLOCK_SHIFT_Y;
     const CONQUEST_READY_CONTAINER_WIDTH = 200.0;
     const CONQUEST_READY_CONTAINER_HEIGHT = 20.0;
     const CONQUEST_READY_TEXT_OFFSET_Y = 1;
     const CONQUEST_READY_TEXT_HEIGHT = 18;
     const CONQUEST_READY_ABS_X = 5.0;
-    const CONQUEST_READY_ABS_Y = 131.0;
-    const CONQUEST_FLAGS_MAX_ROWS = 7;
-    const CONQUEST_FLAGS_SLOT_X: number[] = [
-        0,      // Capture Point 1 (x=840.51, w=29)
-        35.00,  // Capture Point 2 (x=875.50, w=29)
-        70.00,  // Capture Point 3 (x=910.50, w=29)
-        105.00, // Capture Point 4 (x=945.50, w=29)
-        140.00, // Capture Point 5 (x=980.50, w=29)
-        175.00, // Capture Point 6 (x=1015.50, w=29)
-        210.00, // Capture Point 7 (x=1050.50, w=29)
-    ];
+    const CONQUEST_READY_ABS_Y = 131.0 + CONQUEST_HUD_NON_CLOCK_SHIFT_Y;
+    // Root-local slot layout keeps active row centered while preserving fixed 7-slot schema widgets.
+    const CONQUEST_FLAGS_SLOT0_X = 0 - (CONQUEST_FLAGS_FIRST_VISIBLE_SLOT_INDEX * CONQUEST_FLAGS_SLOT_STEP_X);
+    const CONQUEST_FLAGS_SLOT_X: number[] = [];
+    for (let i = 0; i < CONQUEST_FLAGS_MAX_ROWS; i++) {
+        CONQUEST_FLAGS_SLOT_X[i] = CONQUEST_FLAGS_SLOT0_X + (i * CONQUEST_FLAGS_SLOT_STEP_X);
+    }
     // Returns ticket-root-local X for one bleed chevron index.
     // Index 0 is outermost (closest to the ticket counter), increasing inward toward center.
     const getBleedChevronX = (isLeftSide: boolean, chevronIndex: number): number => {
@@ -2013,7 +2060,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             type: "Container",
             playerId: player,
             // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-            position: [5, 5 + TOP_HUD_OFFSET_Y],
+            position: [5, 5 + TOP_HUD_OFFSET_Y + CONQUEST_HUD_NON_CLOCK_SHIFT_Y],
             size: [200, 30],
             anchor: mod.UIAnchor.TopLeft,
             visible: true,
@@ -2068,7 +2115,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     // --- Static HUD: Upper-left settings summary (below branding) ---
     {
         const SETTINGS_CONTAINER_X = 5;
-        const SETTINGS_CONTAINER_Y = 5 + TOP_HUD_OFFSET_Y + 30 + 6;
+        const SETTINGS_CONTAINER_Y = 5 + TOP_HUD_OFFSET_Y + 30 + 6 + CONQUEST_HUD_NON_CLOCK_SHIFT_Y;
         const SETTINGS_LINE_HEIGHT = 12;
         const SETTINGS_TEXT_WIDTH = 200;
         const SETTINGS_TEXT_SIZE = 9;
@@ -2319,7 +2366,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             type: "Text",
             playerId: player,
             // position: [x, y] offset; increase X to move right, increase Y to move down
-            position: [20, 22],
+            position: [20, 22 + CONQUEST_HUD_NON_CLOCK_SHIFT_Y],
             size: [60, 12],
             anchor: mod.UIAnchor.TopRight,
             visible: true,

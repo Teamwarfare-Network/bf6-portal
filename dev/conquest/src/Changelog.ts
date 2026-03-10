@@ -3,6 +3,8 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.313: HUD layout: global +10 Y shift for non-clock HUD groups (tickets/flags/help/ready/upper-left/admin), while match clock position remains unchanged
+// v0.312: HUD layout scaling: objective-count-driven outward ticket spacing, flag row centered in middle lane at ticket-bar centerline, and upward stack shift for percent/popout/engage
 // v0.295: HUD polish: synchronize popout+engage force-hide timing, shift engage status text up 1px, and tint active top-row muted slot dark blue/red by owner (neutral stays gray)
 // v0.294: Bleed differential authority correction: reverted to capture-state owner counts and added pre-event neutralization/recapture edge inference in authoritative owner resolver for missed callback windows
 // v0.293: Bleed differential transition fix: ownership counts now use visual-authoritative owner state first (capture fallback) to prevent neutralization/recapture stale chevron/bleed windows
