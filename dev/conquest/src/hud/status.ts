@@ -3,6 +3,7 @@
 
 //#region -------------------- HUD Counter Helpers --------------------
 
+// Writes the admin panel action counter label if the widget is currently available.
 function setAdminPanelActionCountText(widget: mod.UIWidget | undefined, value: number): void {
     if (!widget) return;
     mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.adminPanel.actionCountFormat, Math.floor(value)));
@@ -38,6 +39,7 @@ function setMatchStateText(
     mod.SetUITextColor(widget, isLive ? mod.CreateVector(1, 1, 1) : COLOR_NOT_READY_RED);
 }
 
+// Splits remaining clock seconds into minute and second digit parts for HUD glyph widgets.
 function getClockTimeParts(remainingSeconds: number): { minutes: number; secTens: number; secOnes: number } {
     const clamped = Math.max(0, Math.floor(remainingSeconds));
     const minutes = Math.floor(clamped / 60);
@@ -62,6 +64,7 @@ function safeSetUIWidgetVisible(widget: mod.UIWidget | undefined, visible: boole
     }
 }
 
+// Safe text-label write helper used by HUD render paths.
 function safeSetUITextLabel(widget: mod.UIWidget | undefined, label: mod.Message): void {
     if (!widget) return;
     try {
@@ -71,6 +74,7 @@ function safeSetUITextLabel(widget: mod.UIWidget | undefined, label: mod.Message
     }
 }
 
+// Safe text-color write helper used by HUD render paths.
 function safeSetUITextColor(widget: mod.UIWidget | undefined, color: mod.Vector): void {
     if (!widget) return;
     try {
@@ -80,6 +84,17 @@ function safeSetUITextColor(widget: mod.UIWidget | undefined, color: mod.Vector)
     }
 }
 
+// Safe text-alpha write helper used by HUD render paths.
+function safeSetUITextAlpha(widget: mod.UIWidget | undefined, alpha: number): void {
+    if (!widget) return;
+    try {
+        mod.SetUITextAlpha(widget, alpha);
+    } catch {
+        return;
+    }
+}
+
+// Safe background-color write helper used by HUD render paths.
 function safeSetUIWidgetBgColor(widget: mod.UIWidget | undefined, color: mod.Vector): void {
     if (!widget) return;
     try {
@@ -89,6 +104,7 @@ function safeSetUIWidgetBgColor(widget: mod.UIWidget | undefined, color: mod.Vec
     }
 }
 
+// Safe background-alpha write helper used by HUD render paths.
 function safeSetUIWidgetBgAlpha(widget: mod.UIWidget | undefined, alpha: number): void {
     if (!widget) return;
     try {
@@ -98,6 +114,7 @@ function safeSetUIWidgetBgAlpha(widget: mod.UIWidget | undefined, alpha: number)
     }
 }
 
+// Safe depth write helper used by HUD render/restack paths.
 function safeSetUIWidgetDepth(widget: mod.UIWidget | undefined, depth: mod.UIDepth): void {
     if (!widget) return;
     try {
@@ -107,6 +124,17 @@ function safeSetUIWidgetDepth(widget: mod.UIWidget | undefined, depth: mod.UIDep
     }
 }
 
+// Safe parent write helper used by render restack paths.
+function safeSetUIWidgetParent(widget: mod.UIWidget | undefined, parent: mod.UIWidget | undefined): void {
+    if (!widget || !parent) return;
+    try {
+        mod.SetUIWidgetParent(widget, parent);
+    } catch {
+        return;
+    }
+}
+
+// Safe size write helper used by HUD render/layout paths.
 function safeSetUIWidgetSize(widget: mod.UIWidget | undefined, size: mod.Vector): void {
     if (!widget) return;
     try {
@@ -116,6 +144,7 @@ function safeSetUIWidgetSize(widget: mod.UIWidget | undefined, size: mod.Vector)
     }
 }
 
+// Safe position write helper used by HUD render/layout paths.
 function safeSetUIWidgetPosition(widget: mod.UIWidget | undefined, position: mod.Vector): void {
     if (!widget) return;
     try {
@@ -125,11 +154,13 @@ function safeSetUIWidgetPosition(widget: mod.UIWidget | undefined, position: mod
     }
 }
 
+// Small visibility wrapper to keep call sites semantically clear.
 function setWidgetVisible(widget: mod.UIWidget | undefined, visible: boolean): void {
     if (!widget) return;
     safeSetUIWidgetVisible(widget, visible);
 }
 
+// Ensures one shared top-HUD root exists for this player and reparents core top-HUD lanes under it.
 function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget | undefined {
     const rootName = `TopHudRoot_${pid}`;
     let root = safeFind(rootName);
@@ -179,6 +210,7 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
     return root;
 }
 
+// Forces help/ready lanes below gameplay HUD depth so they do not occlude critical combat overlays.
 function setHudHelpDepthForPid(pid: number): void {
     const helpIds = [
         `Container_HelpText_${pid}`,

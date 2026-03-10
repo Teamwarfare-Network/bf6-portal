@@ -78,24 +78,43 @@ async function onGameModeStartedImpl(): Promise<void> {
     // Vehicle spawners run on their own loop so they don't block the main clock loop.
     void startVehicleSpawnerSystem();
 
+    // Core game-state mutation remains second-boundary authoritative.
+    // HUD-only refresh runs at half-second cadence to smooth progress/percentage updates.
+    let lastSecondBoundary = -1;
+    let lastLiveCoreTickSecond = -1;
     while (true) {
+        const nowElapsed = mod.GetMatchTimeElapsed();
+        const nowSecondBoundary = Math.floor(nowElapsed);
+
         if (isMatchLive() && !State.match.victoryDialogActive) {
-            conquestPhase2AOnLiveTick();
+            if (nowSecondBoundary !== lastLiveCoreTickSecond) {
+                lastLiveCoreTickSecond = nowSecondBoundary;
+                conquestPhase2AOnLiveTick();
+            } else {
+                updateConquestPhase2ADebugHudForAllPlayers();
+            }
+        } else {
+            lastLiveCoreTickSecond = -1;
         }
 
-        // Push the initial clock display so every HUD shows the same starting time.
-        updateAllPlayersClock();
-        checkTakeoffLimitForAllPlayers();
-        if (State.match.victoryDialogActive) {
-            const elapsedSinceVictory = Math.floor(mod.GetMatchTimeElapsed()) - Math.floor(State.match.victoryStartElapsedSecondsSnapshot);
-            const remaining = MATCH_END_DELAY_SECONDS - elapsedSinceVictory;
-            updateVictoryDialogForAllPlayers(Math.max(0, Math.floor(remaining)));
-            if (remaining <= 0) {
-                endGameModeForTeamNum(State.match.winnerTeam ?? 0);
-                return;
+        if (nowSecondBoundary !== lastSecondBoundary) {
+            lastSecondBoundary = nowSecondBoundary;
+
+            // Push the initial clock display so every HUD shows the same starting time.
+            updateAllPlayersClock();
+            checkTakeoffLimitForAllPlayers();
+            if (State.match.victoryDialogActive) {
+                const elapsedSinceVictory = nowSecondBoundary - Math.floor(State.match.victoryStartElapsedSecondsSnapshot);
+                const remaining = MATCH_END_DELAY_SECONDS - elapsedSinceVictory;
+                updateVictoryDialogForAllPlayers(Math.max(0, Math.floor(remaining)));
+                if (remaining <= 0) {
+                    endGameModeForTeamNum(State.match.winnerTeam ?? 0);
+                    return;
+                }
             }
         }
-        await mod.Wait(1.0);
+
+        await mod.Wait(0.25);
     }
 }
 

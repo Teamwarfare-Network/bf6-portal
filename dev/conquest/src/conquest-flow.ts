@@ -1,6 +1,7 @@
 // @ts-nocheck
 // Module: conquest-flow -- continuous-live flow orchestration and phase-state helpers.
 
+// Binds clock expiry to Conquest end-condition checks for continuous live flow.
 function bindClockExpiryForContinuousMode(): void {
     State.round.clock.expiryHandlers = [
         () => {
@@ -9,6 +10,7 @@ function bindClockExpiryForContinuousMode(): void {
     ];
 }
 
+// Starts a live Conquest round from pre-live state and refreshes all major HUD/readout lanes.
 function startMatch(_triggerPlayer?: mod.Player): void {
     if (State.match.isEnded) return;
     if (isMatchLive()) return;
@@ -40,6 +42,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     );
 }
 
+// Ends the current round using one authoritative post-match transition and winner snapshot.
 function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number, overrideWinnerTeamNum?: TeamID | 0): void {
     const winner = (overrideWinnerTeamNum === TeamID.Team1 || overrideWinnerTeamNum === TeamID.Team2)
         ? overrideWinnerTeamNum
@@ -70,6 +73,7 @@ function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number,
     updateMatchupReadoutsForAllPlayers();
 }
 
+// Resets pre-live systems for a fresh setup pass without entering live state.
 function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     if (State.match.isEnded) return;
     if (isMatchLive()) return;
@@ -95,6 +99,7 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     }
 }
 
+// Clamps configured match length to admin-safe limits.
 function clampMatchLengthSeconds(seconds: number): number {
     return Math.max(
         ADMIN_MATCH_LENGTH_MIN_SECONDS,
@@ -102,10 +107,12 @@ function clampMatchLengthSeconds(seconds: number): number {
     );
 }
 
+// Returns the current configured round length with admin bounds enforced.
 function getConfiguredMatchLengthSeconds(): number {
     return clampMatchLengthSeconds(State.round.clock.matchLengthSeconds ?? ROUND_CLOCK_DEFAULT_SECONDS);
 }
 
+// Refreshes admin match-length labels for all connected players.
 function syncAdminMatchLengthLabelForAllPlayers(): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);

@@ -34,10 +34,12 @@ function ongoingPlayerImpl(eventPlayer: mod.Player): void {
     }
 }
 
+// Routes interact-point activation events into Ready Dialog interaction handler.
 function onPlayerInteractImpl(eventPlayer: mod.Player, eventInteractPoint: mod.InteractPoint) {
     teamSwitchInteractPointActivated(eventPlayer, eventInteractPoint);
 }
 
+// Routes UI button events through join prompt first, then Ready Dialog action handling.
 function onPlayerUIButtonEventImpl(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, eventUIButtonEvent: mod.UIButtonEvent) {
     if (tryHandleJoinPromptButton(eventPlayer, eventUIWidget, eventUIButtonEvent)) return;
     teamSwitchButtonEvent(eventPlayer, eventUIWidget, eventUIButtonEvent);

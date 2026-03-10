@@ -16,6 +16,33 @@ function deleteAllHudWidgetsByName(name: string, maxPasses: number = 128): void 
     }
 }
 
+const CONQUEST_TICKET_COUNTER_SHADOW_RING_LAYERS: { suffix: string; offsetX: number; offsetY: number }[] = [
+    { suffix: "ShadowRight", offsetX: CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET, offsetY: 0 },
+    { suffix: "ShadowLeft", offsetX: -CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET, offsetY: 0 },
+    { suffix: "ShadowUp", offsetX: 0, offsetY: -CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET },
+    { suffix: "ShadowDown", offsetX: 0, offsetY: CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET },
+    {
+        suffix: "ShadowUpLeft",
+        offsetX: -CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
+        offsetY: -CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
+    },
+    {
+        suffix: "ShadowUpRight",
+        offsetX: CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
+        offsetY: -CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
+    },
+    {
+        suffix: "ShadowDownRight",
+        offsetX: CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
+        offsetY: CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
+    },
+    {
+        suffix: "ShadowDownLeft",
+        offsetX: -CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
+        offsetY: CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
+    },
+];
+
 // Authoritative conquest HUD teardown for one player id.
 // All lifecycle callers (swap, leave, schema-reset) should route through this to avoid drift.
 function destroyConquestHudForPid(pid: number): void {
@@ -28,8 +55,12 @@ function destroyConquestHudForPid(pid: number): void {
         `ConquestFlagsDebugRoot_${pid}`,
         `ConquestTicketsHudTeam1Container_${pid}`,
         `ConquestTicketsHudTeam2Container_${pid}`,
+        `ConquestTicketsHudTeam1Shadow_${pid}`,
         `ConquestTicketsHudTeam1_${pid}`,
+        `ConquestTicketsHudTeam1CoreOverlay_${pid}`,
+        `ConquestTicketsHudTeam2Shadow_${pid}`,
         `ConquestTicketsHudTeam2_${pid}`,
+        `ConquestTicketsHudTeam2CoreOverlay_${pid}`,
         `ConquestTicketsHudSlash_${pid}`,
         `ConquestTicketsHudLeftBarTrack_${pid}`,
         `ConquestTicketsHudLeftBarFill_${pid}`,
@@ -71,6 +102,8 @@ function destroyConquestHudForPid(pid: number): void {
         `ConquestFlagHudEngageEnemyFill_${pid}`,
         `ConquestFlagHudEngageFriendlyCountBg_${pid}`,
         `ConquestFlagHudEngageEnemyCountBg_${pid}`,
+        `ConquestFlagHudEngageFriendlyCountShadow_${pid}`,
+        `ConquestFlagHudEngageEnemyCountShadow_${pid}`,
         `ConquestFlagHudEngageFriendlyCount_${pid}`,
         `ConquestFlagHudEngageEnemyCount_${pid}`,
         `ConquestFlagHudEngageStatusShadowRight_${pid}`,
@@ -85,6 +118,13 @@ function destroyConquestHudForPid(pid: number): void {
     ];
     for (let i = 0; i < baseNames.length; i++) {
         deleteAllHudWidgetsByName(baseNames[i]);
+    }
+    for (let teamIndex = 1; teamIndex <= 2; teamIndex++) {
+        const teamPrefix = `ConquestTicketsHudTeam${teamIndex}`;
+        for (let layerIndex = 0; layerIndex < CONQUEST_TICKET_COUNTER_SHADOW_RING_LAYERS.length; layerIndex++) {
+            const layer = CONQUEST_TICKET_COUNTER_SHADOW_RING_LAYERS[layerIndex];
+            deleteAllHudWidgetsByName(`${teamPrefix}${layer.suffix}_${pid}`);
+        }
     }
     // Purges all bleed-chevron widgets, including shadow layers, across schema changes.
     for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
@@ -183,13 +223,14 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     // Keep containers at outward-expanded positions; text is nudged inward inside the containers.
     const CONQUEST_TICKETS_TEAM_LEFT_X = (40 - CONQUEST_TICKETS_TEAM_OUTER_EXPAND) + CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
     const CONQUEST_TICKETS_TEAM_RIGHT_X = 461.39 - CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
-    const CONQUEST_TICKETS_ROW_Y = 0;
+    const CONQUEST_TICKETS_ROW_Y = -1;
     const CONQUEST_TICKETS_LEFT_BAR_X = 103.39;
     const CONQUEST_TICKETS_RIGHT_BAR_X = 284.90;
-    const CONQUEST_TICKETS_BAR_Y = 31.82;
+    const CONQUEST_TICKETS_BAR_Y = 30.82;
     const CONQUEST_TICKETS_TEAM_WIDTH = 60 + CONQUEST_TICKETS_TEAM_OUTER_EXPAND;
     const CONQUEST_TICKETS_TEAM_HEIGHT = 28;
     const CONQUEST_TICKETS_TEAM_TEXT_SIZE = 26;
+    const CONQUEST_TICKETS_TEAM_SHADOW_TEXT_SIZE = CONQUEST_TICKETS_TEAM_TEXT_SIZE + 1;
     const CONQUEST_TICKETS_BG_RGB: [number, number, number] = [0.0314, 0.0431, 0.0431];
     const CONQUEST_TICKETS_BG_ALPHA = 0.75;
     const CONQUEST_FLAGS_ROOT_X = 0;
@@ -198,7 +239,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_FLAGS_ROOT_HEIGHT = 46;
     const CONQUEST_TICKETS_TEAM_LEFT_ABS_X = (719.15 - CONQUEST_TICKETS_TEAM_OUTER_EXPAND) + CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
     const CONQUEST_TICKETS_TEAM_RIGHT_ABS_X = 1140.54 - CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
-    const CONQUEST_TICKETS_TEAM_ABS_Y = 69.85;
+    const CONQUEST_TICKETS_TEAM_ABS_Y = 68.85;
     const CONQUEST_TICKETS_BLEED_Y = CONQUEST_TICKETS_BAR_Y
         + Math.floor((CONQUEST_HUD_TICKET_BAR_HEIGHT - CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT) / 2)
         + CONQUEST_HUD_TICKET_BLEED_CHEVRON_IN_BAR_OFFSET_Y;
@@ -209,7 +250,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         - CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH;
     const CONQUEST_TICKETS_LEFT_BAR_ABS_X = 782.54;
     const CONQUEST_TICKETS_RIGHT_BAR_ABS_X = 964.05;
-    const CONQUEST_TICKETS_BAR_ABS_Y = 79.55;
+    const CONQUEST_TICKETS_BAR_ABS_Y = 78.55;
     const CONQUEST_TICKETS_BLEED_ABS_Y = CONQUEST_TICKETS_BAR_ABS_Y
         + Math.floor((CONQUEST_HUD_TICKET_BAR_HEIGHT - CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT) / 2)
         + CONQUEST_HUD_TICKET_BLEED_CHEVRON_IN_BAR_OFFSET_Y;
@@ -236,7 +277,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_TICKETS_LEAD_RIGHT_CROWN_SHADOW_ABS_X = CONQUEST_TICKETS_LEAD_RIGHT_CROWN_ABS_X - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET;
     const CONQUEST_TICKETS_LEAD_CROWN_SHADOW_ABS_Y = CONQUEST_TICKETS_LEAD_CROWN_ABS_Y - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_TOP_BIAS;
     const CONQUEST_TICKETS_SLASH_ABS_X = 952.0;
-    const CONQUEST_TICKETS_SLASH_ABS_Y = 47.73;
+    const CONQUEST_TICKETS_SLASH_ABS_Y = 46.73;
     const CONQUEST_FLAGS_SLOT_ABS_Y = 91.86;
     const CONQUEST_FLAGS_SLOT_ABS_X: number[] = [
         840.50, // Capture Point 1
@@ -379,6 +420,75 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             createTextWidgetIfMissing(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownLeft_${pid}`, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT), shadowColor);
         }
     };
+    // Ensures ticket counter directional shadow widgets exist so counters render an even outline ring.
+    const ensureConquestTicketCounterShadowWidgets = (): void => {
+        const createTicketShadowWidgetIfMissing = (name: string): void => {
+            if (safeFind(name)) return;
+            modlib.ParseUI({
+                name,
+                type: "Text",
+                playerId: player,
+                position: [0, 0],
+                size: [CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT],
+                anchor: mod.UIAnchor.TopLeft,
+                visible: false,
+                padding: 0,
+                bgAlpha: 0,
+                bgFill: mod.UIBgFill.None,
+                textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                textColor: [0, 0, 0],
+                textAlpha: CONQUEST_HUD_TICKET_COUNTER_SHADOW_ALPHA,
+                textSize: CONQUEST_TICKETS_TEAM_SHADOW_TEXT_SIZE,
+                textAnchor: mod.UIAnchor.Center,
+            });
+        };
+        const createTicketCoreOverlayIfMissing = (
+            name: string,
+            teamColor: [number, number, number]
+        ): void => {
+            if (safeFind(name)) return;
+            modlib.ParseUI({
+                name,
+                type: "Text",
+                playerId: player,
+                position: [0, 0],
+                size: [CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT],
+                anchor: mod.UIAnchor.TopLeft,
+                visible: false,
+                padding: 0,
+                bgAlpha: 0,
+                bgFill: mod.UIBgFill.None,
+                textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                textColor: teamColor,
+                textAlpha: 1,
+                textSize: CONQUEST_TICKETS_TEAM_TEXT_SIZE,
+                textAnchor: mod.UIAnchor.Center,
+            });
+        };
+        for (let teamIndex = 1; teamIndex <= 2; teamIndex++) {
+            const teamPrefix = `ConquestTicketsHudTeam${teamIndex}`;
+            for (let layerIndex = 0; layerIndex < CONQUEST_TICKET_COUNTER_SHADOW_RING_LAYERS.length; layerIndex++) {
+                const layer = CONQUEST_TICKET_COUNTER_SHADOW_RING_LAYERS[layerIndex];
+                createTicketShadowWidgetIfMissing(`${teamPrefix}${layer.suffix}_${pid}`);
+            }
+        }
+        createTicketCoreOverlayIfMissing(
+            `ConquestTicketsHudTeam1CoreOverlay_${pid}`,
+            [
+                CONQUEST_HUD_TEXT_FRIENDLY_RGB[0],
+                CONQUEST_HUD_TEXT_FRIENDLY_RGB[1],
+                CONQUEST_HUD_TEXT_FRIENDLY_RGB[2],
+            ]
+        );
+        createTicketCoreOverlayIfMissing(
+            `ConquestTicketsHudTeam2CoreOverlay_${pid}`,
+            [
+                CONQUEST_HUD_TEXT_ENEMY_RGB[0],
+                CONQUEST_HUD_TEXT_ENEMY_RGB[1],
+                CONQUEST_HUD_TEXT_ENEMY_RGB[2],
+            ]
+        );
+    };
     // Hides legacy triplet-row flag widgets left behind by prior HUD layouts.
     const hideLegacyFlagTripletRows = (): void => {
         for (let i = 0; i < CONQUEST_FLAGS_MAX_ROWS; i++) {
@@ -421,6 +531,34 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         }
         const ticketsParent = ticketsRoot ?? uiRoot;
         const flagsParent = flagsRoot ?? uiRoot;
+        const setTicketCounterShadowRingAbsoluteLayout = (
+            teamPrefix: string,
+            parent: mod.UIWidget,
+            baseX: number,
+            baseY: number
+        ): void => {
+            for (let layerIndex = 0; layerIndex < CONQUEST_TICKET_COUNTER_SHADOW_RING_LAYERS.length; layerIndex++) {
+                const layer = CONQUEST_TICKET_COUNTER_SHADOW_RING_LAYERS[layerIndex];
+                const shadow = safeFind(`${teamPrefix}${layer.suffix}_${pid}`);
+                if (!shadow) continue;
+                try {
+                    mod.SetUIWidgetAnchor(shadow, mod.UIAnchor.TopLeft);
+                } catch {
+                    // Best-effort anchor normalization only.
+                }
+                mod.SetUIWidgetParent(shadow, parent);
+                mod.SetUIWidgetPosition(
+                    shadow,
+                    mod.CreateVector(baseX + layer.offsetX, baseY + layer.offsetY, 0)
+                );
+                mod.SetUIWidgetSize(
+                    shadow,
+                    mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0)
+                );
+                mod.SetUITextSize(shadow, CONQUEST_TICKETS_TEAM_SHADOW_TEXT_SIZE);
+                mod.SetUITextAlpha(shadow, CONQUEST_HUD_TICKET_COUNTER_SHADOW_ALPHA);
+            }
+        };
 
         const ticketT1Container = refsForPid?.conquestTicketsTeam1Container
             ?? safeFind(`ConquestTicketsHudTeam1Container_${pid}`);
@@ -435,6 +573,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetSize(ticketT1Container, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
         }
         const ticketT1 = refsForPid?.conquestTicketsDebugTeam1 ?? safeFind(`ConquestTicketsHudTeam1_${pid}`);
+        const ticketT1Shadow = refsForPid?.conquestTicketsDebugTeam1Shadow ?? safeFind(`ConquestTicketsHudTeam1Shadow_${pid}`);
         if (ticketT1) {
             try {
                 mod.SetUIWidgetAnchor(ticketT1, mod.UIAnchor.TopLeft);
@@ -450,6 +589,50 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             );
             mod.SetUIWidgetSize(ticketT1, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
         }
+        if (ticketT1Shadow) {
+            try {
+                mod.SetUIWidgetAnchor(ticketT1Shadow, mod.UIAnchor.TopLeft);
+            } catch {
+                // Best-effort anchor normalization only.
+            }
+            mod.SetUIWidgetParent(ticketT1Shadow, ticketT1Container ?? ticketsParent);
+            mod.SetUIWidgetPosition(
+                ticketT1Shadow,
+                ticketT1Container
+                    ? mod.CreateVector(
+                        CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        0
+                    )
+                    : mod.CreateVector(
+                        CONQUEST_TICKETS_TEAM_LEFT_ABS_X + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        CONQUEST_TICKETS_TEAM_ABS_Y + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        0
+                    )
+            );
+            mod.SetUIWidgetSize(ticketT1Shadow, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
+            mod.SetUITextSize(ticketT1Shadow, CONQUEST_TICKETS_TEAM_SHADOW_TEXT_SIZE);
+            if (ticketT1) {
+                mod.SetUIWidgetParent(ticketT1, ticketT1Container ?? ticketsParent);
+                mod.SetUIWidgetPosition(
+                    ticketT1,
+                    ticketT1Container
+                        ? mod.CreateVector(CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X, 0, 0)
+                        : mod.CreateVector(CONQUEST_TICKETS_TEAM_LEFT_ABS_X, CONQUEST_TICKETS_TEAM_ABS_Y, 0)
+                );
+                mod.SetUIWidgetSize(ticketT1, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
+                mod.SetUITextSize(ticketT1, CONQUEST_TICKETS_TEAM_TEXT_SIZE);
+            }
+        }
+        const ticketT1ShadowParent = ticketT1Container ?? ticketsParent;
+        const ticketT1ShadowBaseX = ticketT1Container ? CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X : CONQUEST_TICKETS_TEAM_LEFT_ABS_X;
+        const ticketT1ShadowBaseY = ticketT1Container ? 0 : CONQUEST_TICKETS_TEAM_ABS_Y;
+        setTicketCounterShadowRingAbsoluteLayout(
+            "ConquestTicketsHudTeam1",
+            ticketT1ShadowParent,
+            ticketT1ShadowBaseX,
+            ticketT1ShadowBaseY
+        );
         const ticketT2Container = refsForPid?.conquestTicketsTeam2Container
             ?? safeFind(`ConquestTicketsHudTeam2Container_${pid}`);
         if (ticketT2Container) {
@@ -463,6 +646,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             mod.SetUIWidgetSize(ticketT2Container, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
         }
         const ticketT2 = refsForPid?.conquestTicketsDebugTeam2 ?? safeFind(`ConquestTicketsHudTeam2_${pid}`);
+        const ticketT2Shadow = refsForPid?.conquestTicketsDebugTeam2Shadow ?? safeFind(`ConquestTicketsHudTeam2Shadow_${pid}`);
         if (ticketT2) {
             try {
                 mod.SetUIWidgetAnchor(ticketT2, mod.UIAnchor.TopLeft);
@@ -478,6 +662,50 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             );
             mod.SetUIWidgetSize(ticketT2, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
         }
+        if (ticketT2Shadow) {
+            try {
+                mod.SetUIWidgetAnchor(ticketT2Shadow, mod.UIAnchor.TopLeft);
+            } catch {
+                // Best-effort anchor normalization only.
+            }
+            mod.SetUIWidgetParent(ticketT2Shadow, ticketT2Container ?? ticketsParent);
+            mod.SetUIWidgetPosition(
+                ticketT2Shadow,
+                ticketT2Container
+                    ? mod.CreateVector(
+                        CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        0
+                    )
+                    : mod.CreateVector(
+                        CONQUEST_TICKETS_TEAM_RIGHT_ABS_X + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        CONQUEST_TICKETS_TEAM_ABS_Y + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        0
+                    )
+            );
+            mod.SetUIWidgetSize(ticketT2Shadow, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
+            mod.SetUITextSize(ticketT2Shadow, CONQUEST_TICKETS_TEAM_SHADOW_TEXT_SIZE);
+            if (ticketT2) {
+                mod.SetUIWidgetParent(ticketT2, ticketT2Container ?? ticketsParent);
+                mod.SetUIWidgetPosition(
+                    ticketT2,
+                    ticketT2Container
+                        ? mod.CreateVector(CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X, 0, 0)
+                        : mod.CreateVector(CONQUEST_TICKETS_TEAM_RIGHT_ABS_X, CONQUEST_TICKETS_TEAM_ABS_Y, 0)
+                );
+                mod.SetUIWidgetSize(ticketT2, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
+                mod.SetUITextSize(ticketT2, CONQUEST_TICKETS_TEAM_TEXT_SIZE);
+            }
+        }
+        const ticketT2ShadowParent = ticketT2Container ?? ticketsParent;
+        const ticketT2ShadowBaseX = ticketT2Container ? CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X : CONQUEST_TICKETS_TEAM_RIGHT_ABS_X;
+        const ticketT2ShadowBaseY = ticketT2Container ? 0 : CONQUEST_TICKETS_TEAM_ABS_Y;
+        setTicketCounterShadowRingAbsoluteLayout(
+            "ConquestTicketsHudTeam2",
+            ticketT2ShadowParent,
+            ticketT2ShadowBaseX,
+            ticketT2ShadowBaseY
+        );
 
         const leadLeftBorder = refsForPid?.conquestTicketsLeadLeftBorder ?? safeFind(`ConquestTicketsHudLeadBorderLeft_${pid}`);
         if (leadLeftBorder) {
@@ -605,20 +833,21 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             };
             const slot = chevronIndex + 1;
             const d = CONQUEST_HUD_TICKET_BLEED_CHEVRON_SHADOW_OFFSET;
+            const dUp = d * 0.5;
             setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowRight_${pid}`, leftX + d, leftY, leftParent);
             setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowLeft_${pid}`, leftX - d, leftY, leftParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`, leftX, leftY - d, leftParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`, leftX, leftY - dUp, leftParent);
             setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDown_${pid}`, leftX, leftY + d, leftParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`, leftX - d, leftY - d, leftParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`, leftX + d, leftY - d, leftParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`, leftX - d, leftY - dUp, leftParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`, leftX + d, leftY - dUp, leftParent);
             setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownRight_${pid}`, leftX + d, leftY + d, leftParent);
             setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownLeft_${pid}`, leftX - d, leftY + d, leftParent);
             setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowRight_${pid}`, rightX + d, rightY, rightParent);
             setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowLeft_${pid}`, rightX - d, rightY, rightParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`, rightX, rightY - d, rightParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`, rightX, rightY - dUp, rightParent);
             setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowDown_${pid}`, rightX, rightY + d, rightParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`, rightX - d, rightY - d, rightParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`, rightX + d, rightY - d, rightParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`, rightX - d, rightY - dUp, rightParent);
+            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`, rightX + d, rightY - dUp, rightParent);
             setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownRight_${pid}`, rightX + d, rightY + d, rightParent);
             setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownLeft_${pid}`, rightX - d, rightY + d, rightParent);
             // Re-attach core chevrons after shadows so the colored glyph sits above the black drop-shadow ring.
@@ -707,6 +936,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             const rightY = CONQUEST_TICKETS_BLEED_ABS_Y;
             const slot = chevronIndex + 1;
             const d = CONQUEST_HUD_TICKET_BLEED_CHEVRON_SHADOW_OFFSET;
+            const dUp = d * 0.5;
             const setBleedShadowAbsoluteFinal = (name: string, x: number, y: number, parent: mod.UIWidget): void => {
                 const shadow = safeFind(name);
                 if (!shadow) return;
@@ -719,18 +949,18 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             };
             setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowRight_${pid}`, leftX + d, leftY, leftParent);
             setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowLeft_${pid}`, leftX - d, leftY, leftParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`, leftX, leftY - d, leftParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`, leftX, leftY - dUp, leftParent);
             setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDown_${pid}`, leftX, leftY + d, leftParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`, leftX - d, leftY - d, leftParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`, leftX + d, leftY - d, leftParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`, leftX - d, leftY - dUp, leftParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`, leftX + d, leftY - dUp, leftParent);
             setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownRight_${pid}`, leftX + d, leftY + d, leftParent);
             setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownLeft_${pid}`, leftX - d, leftY + d, leftParent);
             setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowRight_${pid}`, rightX + d, rightY, rightParent);
             setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowLeft_${pid}`, rightX - d, rightY, rightParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`, rightX, rightY - d, rightParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`, rightX, rightY - dUp, rightParent);
             setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowDown_${pid}`, rightX, rightY + d, rightParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`, rightX - d, rightY - d, rightParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`, rightX + d, rightY - d, rightParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`, rightX - d, rightY - dUp, rightParent);
+            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`, rightX + d, rightY - dUp, rightParent);
             setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownRight_${pid}`, rightX + d, rightY + d, rightParent);
             setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownLeft_${pid}`, rightX - d, rightY + d, rightParent);
 
@@ -895,42 +1125,42 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             }
             if (percentShadowRight && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowRight, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
+                mod.SetUIWidgetPosition(percentShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
                 mod.SetUIWidgetSize(percentShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
             }
             if (percentShadowLeft && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowLeft, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
+                mod.SetUIWidgetPosition(percentShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
                 mod.SetUIWidgetSize(percentShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
             }
             if (percentShadowUp && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowUp, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
+                mod.SetUIWidgetPosition(percentShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
                 mod.SetUIWidgetSize(percentShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
             }
             if (percentShadowDown && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowDown, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
+                mod.SetUIWidgetPosition(percentShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
                 mod.SetUIWidgetSize(percentShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
             }
             if (percentShadowUpLeft && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowUpLeft, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
+                mod.SetUIWidgetPosition(percentShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
                 mod.SetUIWidgetSize(percentShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
             }
             if (percentShadowUpRight && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowUpRight, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
+                mod.SetUIWidgetPosition(percentShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
                 mod.SetUIWidgetSize(percentShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
             }
             if (percentShadowDownRight && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowDownRight, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
+                mod.SetUIWidgetPosition(percentShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
                 mod.SetUIWidgetSize(percentShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
             }
             if (percentShadowDownLeft && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowDownLeft, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
+                mod.SetUIWidgetPosition(percentShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
                 mod.SetUIWidgetSize(percentShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
             }
             if (percentShadowInner && percentRoot) {
@@ -1310,6 +1540,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         const engageEnemyFill = refsForPid?.conquestFlagsEngageEnemyFill ?? safeFind(`ConquestFlagHudEngageEnemyFill_${pid}`);
         const engageFriendlyCountBg = refsForPid?.conquestFlagsEngageFriendlyCountBg ?? safeFind(`ConquestFlagHudEngageFriendlyCountBg_${pid}`);
         const engageEnemyCountBg = refsForPid?.conquestFlagsEngageEnemyCountBg ?? safeFind(`ConquestFlagHudEngageEnemyCountBg_${pid}`);
+        const engageFriendlyCountShadow = refsForPid?.conquestFlagsEngageFriendlyCountShadow ?? safeFind(`ConquestFlagHudEngageFriendlyCountShadow_${pid}`);
+        const engageEnemyCountShadow = refsForPid?.conquestFlagsEngageEnemyCountShadow ?? safeFind(`ConquestFlagHudEngageEnemyCountShadow_${pid}`);
         const engageFriendlyCount = refsForPid?.conquestFlagsEngageFriendlyCount ?? safeFind(`ConquestFlagHudEngageFriendlyCount_${pid}`);
         const engageEnemyCount = refsForPid?.conquestFlagsEngageEnemyCount ?? safeFind(`ConquestFlagHudEngageEnemyCount_${pid}`);
         const engageStatusShadowRight = refsForPid?.conquestFlagsEngageStatusShadowRight ?? safeFind(`ConquestFlagHudEngageStatusShadowRight_${pid}`);
@@ -1396,6 +1628,32 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
             );
         }
+        if (engageFriendlyCountShadow && engageFriendlyCountBg) {
+            mod.SetUIWidgetParent(engageFriendlyCountShadow, engageFriendlyCountBg);
+            mod.SetUIWidgetPosition(
+                engageFriendlyCountShadow,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                engageFriendlyCountShadow,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
+            );
+            if (engageFriendlyCount) {
+                mod.SetUIWidgetParent(engageFriendlyCount, engageFriendlyCountBg);
+                mod.SetUIWidgetPosition(
+                    engageFriendlyCount,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X, CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y, 0)
+                );
+                mod.SetUIWidgetSize(
+                    engageFriendlyCount,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
+                );
+            }
+        }
         if (engageEnemyCount && engageEnemyCountBg) {
             mod.SetUIWidgetParent(engageEnemyCount, engageEnemyCountBg);
             mod.SetUIWidgetPosition(
@@ -1406,6 +1664,32 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 engageEnemyCount,
                 mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
             );
+        }
+        if (engageEnemyCountShadow && engageEnemyCountBg) {
+            mod.SetUIWidgetParent(engageEnemyCountShadow, engageEnemyCountBg);
+            mod.SetUIWidgetPosition(
+                engageEnemyCountShadow,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                engageEnemyCountShadow,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
+            );
+            if (engageEnemyCount) {
+                mod.SetUIWidgetParent(engageEnemyCount, engageEnemyCountBg);
+                mod.SetUIWidgetPosition(
+                    engageEnemyCount,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X, CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y, 0)
+                );
+                mod.SetUIWidgetSize(
+                    engageEnemyCount,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
+                );
+            }
         }
         if (engageStatusShadowRight && engageRoot) {
             mod.SetUIWidgetParent(engageStatusShadowRight, engageRoot);
@@ -1592,6 +1876,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         // Re-binding from global name lookups each tick can target stale duplicates and cause color/overlay drift.
         cached.conquestTicketsTeam1Container = cached.conquestTicketsTeam1Container ?? safeFind(`ConquestTicketsHudTeam1Container_${pid}`);
         cached.conquestTicketsTeam2Container = cached.conquestTicketsTeam2Container ?? safeFind(`ConquestTicketsHudTeam2Container_${pid}`);
+        cached.conquestTicketsDebugTeam1Shadow = cached.conquestTicketsDebugTeam1Shadow ?? safeFind(`ConquestTicketsHudTeam1Shadow_${pid}`);
+        cached.conquestTicketsDebugTeam2Shadow = cached.conquestTicketsDebugTeam2Shadow ?? safeFind(`ConquestTicketsHudTeam2Shadow_${pid}`);
         cached.conquestTicketsDebugLeftBarTrack = cached.conquestTicketsDebugLeftBarTrack ?? safeFind(`ConquestTicketsHudLeftBarTrack_${pid}`);
         cached.conquestTicketsDebugLeftBarFill = cached.conquestTicketsDebugLeftBarFill ?? safeFind(`ConquestTicketsHudLeftBarFill_${pid}`);
         cached.conquestTicketsDebugRightBarTrack = cached.conquestTicketsDebugRightBarTrack ?? safeFind(`ConquestTicketsHudRightBarTrack_${pid}`);
@@ -1641,6 +1927,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         cached.conquestFlagsEngageEnemyFill = cached.conquestFlagsEngageEnemyFill ?? safeFind(`ConquestFlagHudEngageEnemyFill_${pid}`);
         cached.conquestFlagsEngageFriendlyCountBg = cached.conquestFlagsEngageFriendlyCountBg ?? safeFind(`ConquestFlagHudEngageFriendlyCountBg_${pid}`);
         cached.conquestFlagsEngageEnemyCountBg = cached.conquestFlagsEngageEnemyCountBg ?? safeFind(`ConquestFlagHudEngageEnemyCountBg_${pid}`);
+        cached.conquestFlagsEngageFriendlyCountShadow = cached.conquestFlagsEngageFriendlyCountShadow ?? safeFind(`ConquestFlagHudEngageFriendlyCountShadow_${pid}`);
+        cached.conquestFlagsEngageEnemyCountShadow = cached.conquestFlagsEngageEnemyCountShadow ?? safeFind(`ConquestFlagHudEngageEnemyCountShadow_${pid}`);
         cached.conquestFlagsEngageFriendlyCount = cached.conquestFlagsEngageFriendlyCount ?? safeFind(`ConquestFlagHudEngageFriendlyCount_${pid}`);
         cached.conquestFlagsEngageEnemyCount = cached.conquestFlagsEngageEnemyCount ?? safeFind(`ConquestFlagHudEngageEnemyCount_${pid}`);
         cached.conquestFlagsEngageStatusShadowRight = cached.conquestFlagsEngageStatusShadowRight ?? safeFind(`ConquestFlagHudEngageStatusShadowRight_${pid}`);
@@ -2388,7 +2676,46 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgFill: mod.UIBgFill.Blur,
                     children: [
                         {
+                            name: `ConquestTicketsHudTeam1Shadow_${pid}`,
+                            type: "Text",
+                            position: [
+                                CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                                CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                            ],
+                            size: [CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_TICKETS_TEAM_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
                             name: `ConquestTicketsHudTeam1_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X, 0],
+                            size: [CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: true,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                            textColor: [
+                                CONQUEST_HUD_TEXT_FRIENDLY_RGB[0],
+                                CONQUEST_HUD_TEXT_FRIENDLY_RGB[1],
+                                CONQUEST_HUD_TEXT_FRIENDLY_RGB[2],
+                            ],
+                            textAlpha: 1,
+                            textSize: CONQUEST_TICKETS_TEAM_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestTicketsHudTeam1CoreOverlay_${pid}`,
                             type: "Text",
                             position: [CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X, 0],
                             size: [CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT],
@@ -2446,7 +2773,46 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgFill: mod.UIBgFill.Blur,
                     children: [
                         {
+                            name: `ConquestTicketsHudTeam2Shadow_${pid}`,
+                            type: "Text",
+                            position: [
+                                CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                                CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                            ],
+                            size: [CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: false,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                            textColor: [0, 0, 0],
+                            textAlpha: 1,
+                            textSize: CONQUEST_TICKETS_TEAM_SHADOW_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
                             name: `ConquestTicketsHudTeam2_${pid}`,
+                            type: "Text",
+                            position: [CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X, 0],
+                            size: [CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT],
+                            anchor: mod.UIAnchor.TopLeft,
+                            visible: true,
+                            padding: 0,
+                            bgAlpha: 0,
+                            bgFill: mod.UIBgFill.None,
+                            textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                            textColor: [
+                                CONQUEST_HUD_TEXT_ENEMY_RGB[0],
+                                CONQUEST_HUD_TEXT_ENEMY_RGB[1],
+                                CONQUEST_HUD_TEXT_ENEMY_RGB[2],
+                            ],
+                            textAlpha: 1,
+                            textSize: CONQUEST_TICKETS_TEAM_TEXT_SIZE,
+                            textAnchor: mod.UIAnchor.Center,
+                        },
+                        {
+                            name: `ConquestTicketsHudTeam2CoreOverlay_${pid}`,
                             type: "Text",
                             position: [CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X, 0],
                             size: [CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT],
@@ -2471,13 +2837,16 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         });
         if (conquestTickets) refs.roots.push(conquestTickets);
     }
+    ensureConquestTicketCounterShadowWidgets();
     ensureConquestBleedChevronWidgets();
 
     refs.conquestTicketsDebugRoot = safeFind(`ConquestTicketsHudRoot_${pid}`);
     refs.conquestTicketsTeam1Container = safeFind(`ConquestTicketsHudTeam1Container_${pid}`);
     refs.conquestTicketsTeam2Container = safeFind(`ConquestTicketsHudTeam2Container_${pid}`);
-    refs.conquestTicketsDebugTeam1 = safeFind(`ConquestTicketsHudTeam1_${pid}`);
-    refs.conquestTicketsDebugTeam2 = safeFind(`ConquestTicketsHudTeam2_${pid}`);
+    refs.conquestTicketsDebugTeam1Shadow = safeFind(`ConquestTicketsHudTeam1Shadow_${pid}`);
+    refs.conquestTicketsDebugTeam2Shadow = safeFind(`ConquestTicketsHudTeam2Shadow_${pid}`);
+    refs.conquestTicketsDebugTeam1 = safeFind(`ConquestTicketsHudTeam1CoreOverlay_${pid}`) ?? safeFind(`ConquestTicketsHudTeam1_${pid}`);
+    refs.conquestTicketsDebugTeam2 = safeFind(`ConquestTicketsHudTeam2CoreOverlay_${pid}`) ?? safeFind(`ConquestTicketsHudTeam2_${pid}`);
     refs.conquestTicketsSlash = safeFind(`ConquestTicketsHudSlash_${pid}`);
     refs.conquestTicketsDebugLeftBarTrack = safeFind(`ConquestTicketsHudLeftBarTrack_${pid}`);
     refs.conquestTicketsDebugLeftBarFill = safeFind(`ConquestTicketsHudLeftBarFill_${pid}`);
@@ -2498,6 +2867,29 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const conquestTicketsSlash = refs.conquestTicketsSlash;
     if (refs.conquestTicketsDebugRoot) {
         const ticketsRoot = refs.conquestTicketsDebugRoot;
+        const setTicketCounterShadowRingLocalLayout = (
+            teamPrefix: string,
+            parent: mod.UIWidget,
+            baseX: number,
+            baseY: number
+        ): void => {
+            for (let layerIndex = 0; layerIndex < CONQUEST_TICKET_COUNTER_SHADOW_RING_LAYERS.length; layerIndex++) {
+                const layer = CONQUEST_TICKET_COUNTER_SHADOW_RING_LAYERS[layerIndex];
+                const shadow = safeFind(`${teamPrefix}${layer.suffix}_${pid}`);
+                if (!shadow) continue;
+                mod.SetUIWidgetParent(shadow, parent);
+                mod.SetUIWidgetPosition(
+                    shadow,
+                    mod.CreateVector(baseX + layer.offsetX, baseY + layer.offsetY, 0)
+                );
+                mod.SetUIWidgetSize(
+                    shadow,
+                    mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0)
+                );
+                mod.SetUITextSize(shadow, CONQUEST_TICKETS_TEAM_SHADOW_TEXT_SIZE);
+                mod.SetUITextAlpha(shadow, CONQUEST_HUD_TICKET_COUNTER_SHADOW_ALPHA);
+            }
+        };
         if (refs.conquestTicketsDebugLeftBarTrack) {
             mod.SetUIWidgetParent(refs.conquestTicketsDebugLeftBarTrack, ticketsRoot);
             mod.SetUIWidgetPosition(
@@ -2553,6 +2945,52 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 );
             }
         }
+        if (refs.conquestTicketsDebugTeam1Shadow) {
+            const team1Container = refs.conquestTicketsTeam1Container;
+            mod.SetUIWidgetParent(refs.conquestTicketsDebugTeam1Shadow, team1Container ?? refs.conquestTicketsDebugRoot);
+            mod.SetUIWidgetPosition(
+                refs.conquestTicketsDebugTeam1Shadow,
+                team1Container
+                    ? mod.CreateVector(
+                        CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        0
+                    )
+                    : mod.CreateVector(
+                        CONQUEST_TICKETS_TEAM_LEFT_X + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        CONQUEST_TICKETS_ROW_Y + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        0
+                    )
+            );
+            mod.SetUIWidgetSize(
+                refs.conquestTicketsDebugTeam1Shadow,
+                mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0)
+            );
+            mod.SetUITextSize(refs.conquestTicketsDebugTeam1Shadow, CONQUEST_TICKETS_TEAM_SHADOW_TEXT_SIZE);
+            if (refs.conquestTicketsDebugTeam1) {
+                mod.SetUIWidgetParent(refs.conquestTicketsDebugTeam1, team1Container ?? refs.conquestTicketsDebugRoot);
+                mod.SetUIWidgetPosition(
+                    refs.conquestTicketsDebugTeam1,
+                    team1Container
+                        ? mod.CreateVector(CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X, 0, 0)
+                        : mod.CreateVector(CONQUEST_TICKETS_TEAM_LEFT_X, CONQUEST_TICKETS_ROW_Y, 0)
+                );
+                mod.SetUIWidgetSize(
+                    refs.conquestTicketsDebugTeam1,
+                    mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0)
+                );
+                mod.SetUITextSize(refs.conquestTicketsDebugTeam1, CONQUEST_TICKETS_TEAM_TEXT_SIZE);
+            }
+        }
+        const team1ShadowParent = refs.conquestTicketsTeam1Container ?? refs.conquestTicketsDebugRoot;
+        const team1ShadowBaseX = refs.conquestTicketsTeam1Container ? CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X : CONQUEST_TICKETS_TEAM_LEFT_X;
+        const team1ShadowBaseY = refs.conquestTicketsTeam1Container ? 0 : CONQUEST_TICKETS_ROW_Y;
+        setTicketCounterShadowRingLocalLayout(
+            "ConquestTicketsHudTeam1",
+            team1ShadowParent,
+            team1ShadowBaseX,
+            team1ShadowBaseY
+        );
         if (conquestTicketsSlash) {
             mod.SetUIWidgetParent(conquestTicketsSlash, refs.conquestTicketsDebugRoot);
             mod.SetUIWidgetPosition(conquestTicketsSlash, mod.CreateVector(272, CONQUEST_TICKETS_ROW_Y, 0));
@@ -2582,6 +3020,52 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 );
             }
         }
+        if (refs.conquestTicketsDebugTeam2Shadow) {
+            const team2Container = refs.conquestTicketsTeam2Container;
+            mod.SetUIWidgetParent(refs.conquestTicketsDebugTeam2Shadow, team2Container ?? refs.conquestTicketsDebugRoot);
+            mod.SetUIWidgetPosition(
+                refs.conquestTicketsDebugTeam2Shadow,
+                team2Container
+                    ? mod.CreateVector(
+                        CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        0
+                    )
+                    : mod.CreateVector(
+                        CONQUEST_TICKETS_TEAM_RIGHT_X + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        CONQUEST_TICKETS_ROW_Y + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
+                        0
+                    )
+            );
+            mod.SetUIWidgetSize(
+                refs.conquestTicketsDebugTeam2Shadow,
+                mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0)
+            );
+            mod.SetUITextSize(refs.conquestTicketsDebugTeam2Shadow, CONQUEST_TICKETS_TEAM_SHADOW_TEXT_SIZE);
+            if (refs.conquestTicketsDebugTeam2) {
+                mod.SetUIWidgetParent(refs.conquestTicketsDebugTeam2, team2Container ?? refs.conquestTicketsDebugRoot);
+                mod.SetUIWidgetPosition(
+                    refs.conquestTicketsDebugTeam2,
+                    team2Container
+                        ? mod.CreateVector(CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X, 0, 0)
+                        : mod.CreateVector(CONQUEST_TICKETS_TEAM_RIGHT_X, CONQUEST_TICKETS_ROW_Y, 0)
+                );
+                mod.SetUIWidgetSize(
+                    refs.conquestTicketsDebugTeam2,
+                    mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0)
+                );
+                mod.SetUITextSize(refs.conquestTicketsDebugTeam2, CONQUEST_TICKETS_TEAM_TEXT_SIZE);
+            }
+        }
+        const team2ShadowParent = refs.conquestTicketsTeam2Container ?? refs.conquestTicketsDebugRoot;
+        const team2ShadowBaseX = refs.conquestTicketsTeam2Container ? CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X : CONQUEST_TICKETS_TEAM_RIGHT_X;
+        const team2ShadowBaseY = refs.conquestTicketsTeam2Container ? 0 : CONQUEST_TICKETS_ROW_Y;
+        setTicketCounterShadowRingLocalLayout(
+            "ConquestTicketsHudTeam2",
+            team2ShadowParent,
+            team2ShadowBaseX,
+            team2ShadowBaseY
+        );
         if (refs.conquestTicketsLeadLeftBorder) {
             mod.SetUIWidgetParent(refs.conquestTicketsLeadLeftBorder, refs.conquestTicketsDebugRoot);
             mod.SetUIWidgetPosition(
@@ -2711,20 +3195,21 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             };
             const slot = chevronIndex + 1;
             const d = CONQUEST_HUD_TICKET_BLEED_CHEVRON_SHADOW_OFFSET;
+            const dUp = d * 0.5;
             setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowRight_${pid}`, leftX + d, leftY, leftParent);
             setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowLeft_${pid}`, leftX - d, leftY, leftParent);
-            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`, leftX, leftY - d, leftParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`, leftX, leftY - dUp, leftParent);
             setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDown_${pid}`, leftX, leftY + d, leftParent);
-            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`, leftX - d, leftY - d, leftParent);
-            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`, leftX + d, leftY - d, leftParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`, leftX - d, leftY - dUp, leftParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`, leftX + d, leftY - dUp, leftParent);
             setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownRight_${pid}`, leftX + d, leftY + d, leftParent);
             setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownLeft_${pid}`, leftX - d, leftY + d, leftParent);
             setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowRight_${pid}`, rightX + d, rightY, rightParent);
             setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowLeft_${pid}`, rightX - d, rightY, rightParent);
-            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`, rightX, rightY - d, rightParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`, rightX, rightY - dUp, rightParent);
             setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowDown_${pid}`, rightX, rightY + d, rightParent);
-            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`, rightX - d, rightY - d, rightParent);
-            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`, rightX + d, rightY - d, rightParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`, rightX - d, rightY - dUp, rightParent);
+            setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`, rightX + d, rightY - dUp, rightParent);
             setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownRight_${pid}`, rightX + d, rightY + d, rightParent);
             setBleedShadowLocalLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownLeft_${pid}`, rightX - d, rightY + d, rightParent);
             // Re-attach core chevrons after shadows so the colored glyph sits above the black drop-shadow ring.
@@ -2753,8 +3238,10 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     safeSetUIWidgetDepth(refs.conquestTicketsDebugRightBarFill, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(refs.conquestTicketsTeam1Container, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(refs.conquestTicketsTeam2Container, mod.UIDepth.AboveGameUI);
+    safeSetUIWidgetDepth(refs.conquestTicketsDebugTeam1Shadow, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(refs.conquestTicketsDebugTeam1, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(conquestTicketsSlash, mod.UIDepth.AboveGameUI);
+    safeSetUIWidgetDepth(refs.conquestTicketsDebugTeam2Shadow, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(refs.conquestTicketsDebugTeam2, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(refs.conquestTicketsLeadLeftBorder, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(refs.conquestTicketsLeadRightBorder, mod.UIDepth.AboveGameUI);
@@ -3074,7 +3561,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     {
                         name: `ConquestFlagHudPercentShadowRight_${pid}_${i}`,
                         type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y],
+                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -3090,7 +3577,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     {
                         name: `ConquestFlagHudPercentShadowLeft_${pid}_${i}`,
                         type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y],
+                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -3106,7 +3593,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     {
                         name: `ConquestFlagHudPercentShadowUp_${pid}_${i}`,
                         type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -3122,7 +3609,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     {
                         name: `ConquestFlagHudPercentShadowDown_${pid}_${i}`,
                         type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -3138,7 +3625,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     {
                         name: `ConquestFlagHudPercentShadowUpLeft_${pid}_${i}`,
                         type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -3154,7 +3641,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     {
                         name: `ConquestFlagHudPercentShadowUpRight_${pid}_${i}`,
                         type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -3170,7 +3657,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     {
                         name: `ConquestFlagHudPercentShadowDownRight_${pid}_${i}`,
                         type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -3186,7 +3673,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     {
                         name: `ConquestFlagHudPercentShadowDownLeft_${pid}_${i}`,
                         type: "Text",
-                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET],
+                        position: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET],
                         size: [CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT],
                         anchor: mod.UIAnchor.TopLeft,
                         visible: false,
@@ -3732,6 +4219,25 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     bgFill: mod.UIBgFill.Solid,
                 },
                 {
+                    name: `ConquestFlagHudEngageFriendlyCountShadow_${pid}`,
+                    type: "Text",
+                    position: [
+                        CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
+                    ],
+                    size: [CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT],
+                    anchor: mod.UIAnchor.TopLeft,
+                    visible: true,
+                    padding: 0,
+                    bgAlpha: 0,
+                    bgFill: mod.UIBgFill.None,
+                    textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                    textColor: [0, 0, 0],
+                    textAlpha: 1,
+                    textSize: CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_SIZE,
+                    textAnchor: mod.UIAnchor.Center,
+                },
+                {
                     name: `ConquestFlagHudEngageFriendlyCount_${pid}`,
                     type: "Text",
                     position: [CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X, CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y],
@@ -3747,6 +4253,25 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                         CONQUEST_HUD_TEXT_FRIENDLY_RGB[1],
                         CONQUEST_HUD_TEXT_FRIENDLY_RGB[2],
                     ],
+                    textAlpha: 1,
+                    textSize: CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_SIZE,
+                    textAnchor: mod.UIAnchor.Center,
+                },
+                {
+                    name: `ConquestFlagHudEngageEnemyCountShadow_${pid}`,
+                    type: "Text",
+                    position: [
+                        CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
+                        CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
+                    ],
+                    size: [CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT],
+                    anchor: mod.UIAnchor.TopLeft,
+                    visible: true,
+                    padding: 0,
+                    bgAlpha: 0,
+                    bgFill: mod.UIBgFill.None,
+                    textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                    textColor: [0, 0, 0],
                     textAlpha: 1,
                     textSize: CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_SIZE,
                     textAnchor: mod.UIAnchor.Center,
@@ -3990,6 +4515,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     refs.conquestFlagsEngageEnemyFill = safeFind(`ConquestFlagHudEngageEnemyFill_${pid}`);
     refs.conquestFlagsEngageFriendlyCountBg = safeFind(`ConquestFlagHudEngageFriendlyCountBg_${pid}`);
     refs.conquestFlagsEngageEnemyCountBg = safeFind(`ConquestFlagHudEngageEnemyCountBg_${pid}`);
+    refs.conquestFlagsEngageFriendlyCountShadow = safeFind(`ConquestFlagHudEngageFriendlyCountShadow_${pid}`);
+    refs.conquestFlagsEngageEnemyCountShadow = safeFind(`ConquestFlagHudEngageEnemyCountShadow_${pid}`);
     refs.conquestFlagsEngageFriendlyCount = safeFind(`ConquestFlagHudEngageFriendlyCount_${pid}`);
     refs.conquestFlagsEngageEnemyCount = safeFind(`ConquestFlagHudEngageEnemyCount_${pid}`);
     refs.conquestFlagsEngageStatusShadowRight = safeFind(`ConquestFlagHudEngageStatusShadowRight_${pid}`);
@@ -4147,49 +4674,49 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             }
             if (percentShadowRight && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowRight, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
+                mod.SetUIWidgetPosition(percentShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
                 mod.SetUIWidgetSize(percentShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
                 mod.SetUIWidgetDepth(percentShadowRight, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowLeft && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowLeft, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
+                mod.SetUIWidgetPosition(percentShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
                 mod.SetUIWidgetSize(percentShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
                 mod.SetUIWidgetDepth(percentShadowLeft, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowUp && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowUp, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
+                mod.SetUIWidgetPosition(percentShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
                 mod.SetUIWidgetSize(percentShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
                 mod.SetUIWidgetDepth(percentShadowUp, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowDown && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowDown, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
+                mod.SetUIWidgetPosition(percentShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
                 mod.SetUIWidgetSize(percentShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
                 mod.SetUIWidgetDepth(percentShadowDown, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowUpLeft && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowUpLeft, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
+                mod.SetUIWidgetPosition(percentShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
                 mod.SetUIWidgetSize(percentShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
                 mod.SetUIWidgetDepth(percentShadowUpLeft, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowUpRight && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowUpRight, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
+                mod.SetUIWidgetPosition(percentShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
                 mod.SetUIWidgetSize(percentShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
                 mod.SetUIWidgetDepth(percentShadowUpRight, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowDownRight && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowDownRight, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
+                mod.SetUIWidgetPosition(percentShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
                 mod.SetUIWidgetSize(percentShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
                 mod.SetUIWidgetDepth(percentShadowDownRight, mod.UIDepth.AboveGameUI);
             }
             if (percentShadowDownLeft && percentRoot) {
                 mod.SetUIWidgetParent(percentShadowDownLeft, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
+                mod.SetUIWidgetPosition(percentShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
                 mod.SetUIWidgetSize(percentShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
                 mod.SetUIWidgetDepth(percentShadowDownLeft, mod.UIDepth.AboveGameUI);
             }
@@ -4286,6 +4813,34 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             );
             mod.SetUIWidgetDepth(refs.conquestFlagsEngageFriendlyCount, mod.UIDepth.AboveGameUI);
         }
+        if (refs.conquestFlagsEngageFriendlyCountShadow && refs.conquestFlagsEngageFriendlyCountBg) {
+            mod.SetUIWidgetParent(refs.conquestFlagsEngageFriendlyCountShadow, refs.conquestFlagsEngageFriendlyCountBg);
+            mod.SetUIWidgetPosition(
+                refs.conquestFlagsEngageFriendlyCountShadow,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                refs.conquestFlagsEngageFriendlyCountShadow,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
+            );
+            mod.SetUIWidgetDepth(refs.conquestFlagsEngageFriendlyCountShadow, mod.UIDepth.AboveGameUI);
+            if (refs.conquestFlagsEngageFriendlyCount) {
+                mod.SetUIWidgetParent(refs.conquestFlagsEngageFriendlyCount, refs.conquestFlagsEngageFriendlyCountBg);
+                mod.SetUIWidgetPosition(
+                    refs.conquestFlagsEngageFriendlyCount,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X, CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y, 0)
+                );
+                mod.SetUIWidgetSize(
+                    refs.conquestFlagsEngageFriendlyCount,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
+                );
+                mod.SetUIWidgetDepth(refs.conquestFlagsEngageFriendlyCount, mod.UIDepth.AboveGameUI);
+            }
+        }
         if (refs.conquestFlagsEngageEnemyCount && refs.conquestFlagsEngageEnemyCountBg) {
             mod.SetUIWidgetParent(refs.conquestFlagsEngageEnemyCount, refs.conquestFlagsEngageEnemyCountBg);
             mod.SetUIWidgetPosition(
@@ -4297,6 +4852,34 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
             );
             mod.SetUIWidgetDepth(refs.conquestFlagsEngageEnemyCount, mod.UIDepth.AboveGameUI);
+        }
+        if (refs.conquestFlagsEngageEnemyCountShadow && refs.conquestFlagsEngageEnemyCountBg) {
+            mod.SetUIWidgetParent(refs.conquestFlagsEngageEnemyCountShadow, refs.conquestFlagsEngageEnemyCountBg);
+            mod.SetUIWidgetPosition(
+                refs.conquestFlagsEngageEnemyCountShadow,
+                mod.CreateVector(
+                    CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
+                    CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
+                    0
+                )
+            );
+            mod.SetUIWidgetSize(
+                refs.conquestFlagsEngageEnemyCountShadow,
+                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
+            );
+            mod.SetUIWidgetDepth(refs.conquestFlagsEngageEnemyCountShadow, mod.UIDepth.AboveGameUI);
+            if (refs.conquestFlagsEngageEnemyCount) {
+                mod.SetUIWidgetParent(refs.conquestFlagsEngageEnemyCount, refs.conquestFlagsEngageEnemyCountBg);
+                mod.SetUIWidgetPosition(
+                    refs.conquestFlagsEngageEnemyCount,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X, CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y, 0)
+                );
+                mod.SetUIWidgetSize(
+                    refs.conquestFlagsEngageEnemyCount,
+                    mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
+                );
+                mod.SetUIWidgetDepth(refs.conquestFlagsEngageEnemyCount, mod.UIDepth.AboveGameUI);
+            }
         }
         if (refs.conquestFlagsEngageStatusShadowRight && refs.conquestFlagsEngageRoot) {
             mod.SetUIWidgetParent(refs.conquestFlagsEngageStatusShadowRight, refs.conquestFlagsEngageRoot);

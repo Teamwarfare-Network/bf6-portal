@@ -15,11 +15,13 @@ function applyCustomAircraftCeilingHardLimiter(): void {
     mod.SetMaxVehicleHeightLimitScale(scale);
 }
 
+// Enables custom ceiling runtime state without applying a limiter until confirm path runs.
 function enableCustomAircraftCeiling(): void {
     State.round.aircraftCeiling.customEnabled = true;
     State.round.aircraftCeiling.vehicleStates = {};
 }
 
+// Disables custom ceiling, restores map-default settings, and resets engine limiter scale.
 function disableCustomAircraftCeilingAndRestoreDefault(): void {
     State.round.aircraftCeiling.customEnabled = false;
     State.round.aircraftCeiling.vehicleStates = {};
@@ -30,6 +32,7 @@ function disableCustomAircraftCeilingAndRestoreDefault(): void {
     updateReadyDialogModeConfigForAllVisibleViewers();
 }
 
+// Syncs aircraft-ceiling runtime/config state from map defaults at round setup/reset time.
 function syncAircraftCeilingFromMapConfig(): void {
     const mapDefault = Math.max(1, Math.floor(ACTIVE_MAP_CONFIG.aircraftCeiling));
     const mapMaxHud = Math.max(1, Math.floor(ACTIVE_MAP_CONFIG.hudMaxY));

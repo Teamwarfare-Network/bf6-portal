@@ -53,6 +53,7 @@ function deleteAdminPanelUI(playerId: number, deleteToggle: boolean): void {
     }
 }
 
+// Ensures admin panel toggle/container widgets exist and matches current visibility state.
 function ensureAdminPanelWidgets(eventPlayer: mod.Player, playerId: number): void {
     const adminToggleButtonId = UI_ADMIN_PANEL_BUTTON_ID + playerId;
     const adminToggleLabelId = UI_ADMIN_PANEL_BUTTON_LABEL_ID + playerId;

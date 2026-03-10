@@ -21,10 +21,12 @@ function registerVehicleToTeam(vehicle: mod.Vehicle, teamNum: TeamID): void {
     }
 }
 
+// Clears cached inferred base-team entries for vehicle ObjIds.
 function clearSpawnBaseTeamCache(): void {
     for (const k in vehicleSpawnBaseTeamByObjId) delete vehicleSpawnBaseTeamByObjId[k as any];
 }
 
+// Infers a vehicle base team from nearest main-base anchor within bind radius.
 function inferBaseTeamFromPosition(pos: mod.Vector): TeamID | 0 {
     const d1 = mod.DistanceBetween(pos, MAIN_BASE_TEAM1_POS); // Distance from vehicle to Team 1 base anchor.
     const d2 = mod.DistanceBetween(pos, MAIN_BASE_TEAM2_POS); // Distance from vehicle to Team 2 base anchor.

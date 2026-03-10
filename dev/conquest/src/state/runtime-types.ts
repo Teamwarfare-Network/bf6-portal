@@ -157,6 +157,16 @@ type ConquestRuntimeScaffold = {
             isLowTime: boolean;
             isPaused: boolean;
         }>;
+        hudProjectionEngagedObjIdByPid: Record<number, number>;
+        hudProjectionPopoutVisibleByPid: Record<number, boolean>;
+        hudProjectionPopoutObjIdByPid: Record<number, number>;
+        hudProjectionEngageVisibleByPid: Record<number, boolean>;
+        hudProjectionActiveTopSlotNeutralizedByPid: Record<number, boolean>;
+        hudProjectionActiveTopSlotBorderVisibleByPid: Record<number, boolean>;
+        hudProjectionSwapPendingByPid: Record<number, boolean>;
+        hudProjectionDeployedByPid: Record<number, boolean>;
+        hudProjectionTransitionCountByPid: Record<number, number>;
+        hudProjectionLastChangedAtByPid: Record<number, number>;
     };
 };
 

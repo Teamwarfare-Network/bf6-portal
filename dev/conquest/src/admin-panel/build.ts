@@ -211,6 +211,7 @@ function addTesterRowWithValue(
     mod.SetUIWidgetParent(VALUE_TEXT, containerBase);
 }
 
+// Adds the tester clock reset action button and its centered label.
 function addTesterResetButton(
     eventPlayer: mod.Player,
     containerBase: mod.UIWidget,
@@ -249,6 +250,7 @@ function addTesterResetButton(
     }
 }
 
+// Adds a full-width tester action button used for start/end/debug controls.
 function addTesterActionButton(
     eventPlayer: mod.Player,
     containerBase: mod.UIWidget,
@@ -290,6 +292,7 @@ function addTesterActionButton(
     }
 }
 
+// Ensures per-player position debug text widgets exist and returns widget handles.
 function ensurePositionDebugWidgets(player: mod.Player): { x: mod.UIWidget; y: mod.UIWidget; z: mod.UIWidget; rotY: mod.UIWidget } | undefined {
     const pid = mod.GetObjId(player);
     const containerId = UI_POS_DEBUG_CONTAINER_ID + pid;
@@ -320,6 +323,7 @@ function ensurePositionDebugWidgets(player: mod.Player): { x: mod.UIWidget; y: m
         mod.SetUIWidgetVisible(container, true);
     }
 
+    // Local text factory to create a position/facing row under the debug container.
     const makeText = (id: string, posY: number) => {
         mod.AddUIText(
             id,
@@ -366,6 +370,7 @@ async function positionDebugLoop(player: mod.Player, expectedToken: number): Pro
         const facing = safeGetSoldierStateVector(player, mod.SoldierStateVector.GetFacingDirection);
         if (!pos || !facing) return;
 
+        // Round debug values to keep labels stable and easy to read at runtime.
         const roundTo3 = (value: number) => Math.round(value * 1000) / 1000;
         mod.SetUITextLabel(
             widgets.x,
@@ -392,6 +397,7 @@ async function positionDebugLoop(player: mod.Player, expectedToken: number): Pro
     }
 }
 
+// Toggles position-debug visibility for a single player and starts/stops refresh loop.
 function setPositionDebugVisibleForPlayer(player: mod.Player, visible: boolean): void {
     const pid = mod.GetObjId(player);
     const state = State.players.readyDialogData[pid];

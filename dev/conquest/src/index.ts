@@ -74,34 +74,42 @@ import './index/vehicle-events';
 import './index/area-triggers';
 
 // Exported entrypoints required by BF6 Portal runtime.
+// Forwards game-mode start into the internal startup orchestrator.
 export async function OnGameModeStarted(): Promise<void> {
     return onGameModeStartedImpl();
 }
 
+// Forwards player-join lifecycle into Conquest join handling.
 export async function OnPlayerJoinGame(eventPlayer: mod.Player): Promise<void> {
     return onPlayerJoinGameImpl(eventPlayer);
 }
 
+// Forwards player-leave lifecycle into cleanup and state teardown handling.
 export function OnPlayerLeaveGame(eventNumber: number | mod.Player): void {
     onPlayerLeaveGameImpl(eventNumber);
 }
 
+// Forwards deploy lifecycle into deploy-state and HUD refresh handling.
 export async function OnPlayerDeployed(eventPlayer: mod.Player): Promise<void> {
     return onPlayerDeployedImpl(eventPlayer);
 }
 
+// Forwards undeploy lifecycle into deploy-state/HUD suppression handling.
 export function OnPlayerUndeploy(eventPlayer: mod.Player): void {
     onPlayerUndeployImpl(eventPlayer);
 }
 
+// Forwards per-player ongoing tick processing.
 export function OngoingPlayer(eventPlayer: mod.Player): void {
     ongoingPlayerImpl(eventPlayer);
 }
 
+// Forwards world-interact input events.
 export function OnPlayerInteract(eventPlayer: mod.Player, eventInteractPoint: mod.InteractPoint): void {
     onPlayerInteractImpl(eventPlayer, eventInteractPoint);
 }
 
+// Forwards UI button events used by ready/admin panels.
 export function OnPlayerUIButtonEvent(
     eventPlayer: mod.Player,
     eventUIWidget: mod.UIWidget,
@@ -110,46 +118,57 @@ export function OnPlayerUIButtonEvent(
     onPlayerUIButtonEventImpl(eventPlayer, eventUIWidget, eventUIButtonEvent);
 }
 
+// Forwards player-enter-vehicle events for seat ownership and flow updates.
 export function OnPlayerEnterVehicle(eventPlayer: mod.Player, eventVehicle: mod.Vehicle): void {
     onPlayerEnterVehicleImpl(eventPlayer, eventVehicle);
 }
 
+// Forwards player-exit-vehicle events for seat ownership cleanup.
 export function OnPlayerExitVehicle(eventPlayer: mod.Player, eventVehicle: mod.Vehicle): void {
     onPlayerExitVehicleImpl(eventPlayer, eventVehicle);
 }
 
+// Forwards vehicle-spawn lifecycle into registration/slot binding.
 export async function OnVehicleSpawned(eventVehicle: mod.Vehicle): Promise<void> {
     return onVehicleSpawnedImpl(eventVehicle);
 }
 
+// Forwards vehicle-destroyed lifecycle into slot cleanup/respawn sequencing.
 export async function OnVehicleDestroyed(eventVehicle: mod.Vehicle): Promise<void> {
     return onVehicleDestroyedImpl(eventVehicle);
 }
 
+// Forwards capture-point ongoing ticks into authoritative capture-state sync.
 export function OngoingCapturePoint(eventCapturePoint: mod.CapturePoint): void {
     ongoingCapturePointImpl(eventCapturePoint);
 }
 
+// Forwards neutralization edge callback for owner-latch updates.
 export function OnCapturePointLost(eventCapturePoint: mod.CapturePoint): void {
     onCapturePointLostImpl(eventCapturePoint);
 }
 
+// Forwards capture-complete edge callback for owner-latch updates.
 export function OnCapturePointCaptured(eventCapturePoint: mod.CapturePoint): void {
     onCapturePointCapturedImpl(eventCapturePoint);
 }
 
+// Forwards objective-enter callback for engaged objective ownership.
 export function OnPlayerEnterCapturePoint(eventPlayer: mod.Player, eventCapturePoint: mod.CapturePoint): void {
     onPlayerEnterCapturePointImpl(eventPlayer, eventCapturePoint);
 }
 
+// Forwards objective-exit callback for engaged objective cleanup.
 export function OnPlayerExitCapturePoint(eventPlayer: mod.Player, eventCapturePoint: mod.CapturePoint): void {
     onPlayerExitCapturePointImpl(eventPlayer, eventCapturePoint);
 }
 
+// Forwards area-trigger enter callback for main-base gating state.
 export function OnPlayerEnterAreaTrigger(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger): void {
     onPlayerEnterAreaTriggerImpl(eventPlayer, eventAreaTrigger);
 }
 
+// Forwards area-trigger exit callback for main-base/ready enforcement.
 export function OnPlayerExitAreaTrigger(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger): void {
     onPlayerExitAreaTriggerImpl(eventPlayer, eventAreaTrigger);
 }

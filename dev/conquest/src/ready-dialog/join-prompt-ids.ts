@@ -4,16 +4,26 @@
 //#region -------------------- Join Prompt - IDs + Gating --------------------
 
 function joinPromptRootName(pid: number): string { return "join_prompt_root_" + pid; }
+// Returns the panel widget id for the player's join prompt.
 function joinPromptPanelName(pid: number): string { return "join_prompt_panel_" + pid; }
+// Returns the title label widget id for the player's join prompt.
 function joinPromptTitleName(pid: number): string { return "join_prompt_title_" + pid; }
+// Returns the body label widget id for the player's join prompt.
 function joinPromptBodyName(pid: number): string { return "join_prompt_body_" + pid; }
+// Returns the dismiss button widget id for the player's join prompt.
 function joinPromptButtonName(pid: number): string { return "join_prompt_dismiss_" + pid; }
+// Returns the dismiss button border widget id for the player's join prompt.
 function joinPromptButtonBorderName(pid: number): string { return joinPromptButtonName(pid) + "_BORDER"; }
+// Returns the dismiss button text widget id for the player's join prompt.
 function joinPromptButtonTextName(pid: number): string { return "join_prompt_dismiss_text_" + pid; }
+// Returns the never-show button widget id for the player's join prompt.
 function joinPromptNeverShowButtonName(pid: number): string { return "join_prompt_never_show_" + pid; }
+// Returns the never-show button border widget id for the player's join prompt.
 function joinPromptNeverShowButtonBorderName(pid: number): string { return joinPromptNeverShowButtonName(pid) + "_BORDER"; }
+// Returns the never-show button text widget id for the player's join prompt.
 function joinPromptNeverShowButtonTextName(pid: number): string { return "join_prompt_never_show_text_" + pid; }
 
+// Deletes a join prompt widget safely when tearing down prompt UI elements.
 function deleteJoinPromptWidget(name: string): void {
     const w = safeFind(name);
     if (!w) return;
@@ -25,6 +35,7 @@ function deleteJoinPromptWidget(name: string): void {
     }
 }
 
+// Returns true when this player disabled join prompts for the active map.
 function isJoinPromptSuppressedForPlayer(pid: number): boolean {
     return !!State.players.joinPromptNeverShowByPidMap[pid]?.[ACTIVE_MAP_KEY];
 }
@@ -80,16 +91,19 @@ function armJoinPromptTripleTapForPid(pid: number): void {
     State.players.joinPromptTripleTapArmedByPid[pid] = true;
 }
 
+// Consumes and clears the one-shot triple-tap armed flag for this player.
 function consumeJoinPromptTripleTapForPid(pid: number): boolean {
     if (!State.players.joinPromptTripleTapArmedByPid[pid]) return false;
     State.players.joinPromptTripleTapArmedByPid[pid] = false;
     return true;
 }
 
+// Returns true for body sequence keys that should be skipped in rotation.
 function isJoinPromptBodyKeySkipped(key: number): boolean {
     return JOIN_PROMPT_BODY_SEQUENCE_SKIP_KEYS.indexOf(key) !== -1;
 }
 
+// Resolves the next usable body sequence index while skipping disabled keys.
 function findNextJoinPromptSequenceIndex(startIndex: number): number {
     const max = JOIN_PROMPT_BODY_SEQUENCE_KEYS.length;
     if (max <= 0) return 0;

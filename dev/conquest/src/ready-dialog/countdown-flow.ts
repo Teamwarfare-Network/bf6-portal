@@ -11,6 +11,7 @@ function cancelPregameCountdown(): void {
     hidePregameCountdownForAllPlayers();
 }
 
+// Starts the pregame countdown when gates pass, then launches async countdown flow.
 function startPregameCountdown(triggerPlayer?: mod.Player, force?: boolean): void {
     if (State.round.countdown.isActive) return;
     if (State.match.isEnded || isMatchLive()) return;
@@ -25,6 +26,7 @@ function startPregameCountdown(triggerPlayer?: mod.Player, force?: boolean): voi
     void runPregameCountdown(expectedToken, triggerPlayer, force === true);
 }
 
+// Validates whether countdown execution should continue for the expected token/state.
 function isPregameCountdownStillValid(expectedToken: number, force?: boolean, allowRoundActive?: boolean): boolean {
     if (expectedToken !== State.round.countdown.token) return false;
     if (State.match.isEnded) return false;
@@ -33,6 +35,7 @@ function isPregameCountdownStillValid(expectedToken: number, force?: boolean, al
     return true;
 }
 
+// Returns countdown digit color (yellow for 1, red otherwise).
 function getPregameCountdownColor(value: number): mod.Vector {
     return value === 1 ? mod.CreateVector(1, 1, 0) : mod.CreateVector(1, 0, 0);
 }

@@ -68,6 +68,7 @@ function addOutlinedButton(
     return border ?? undefined;
 }
 
+// Rebuilds centered button text under a known parent, deleting any stale duplicate first.
 function addCenteredButtonText(
     labelId: string,
     sizeX: number,
@@ -113,6 +114,7 @@ function addCenteredButtonText(
     return widget;
 }
 
+// Creates a right-aligned label and applies Ready Dialog text color defaults.
 function addRightAlignedLabel(
     labelId: string,
     posX: number,
@@ -149,14 +151,17 @@ function addRightAlignedLabel(
     return widget;
 }
 
+// Applies the default Ready Dialog label color when the widget exists.
 function applyReadyDialogLabelTextColor(widget?: mod.UIWidget): void {
     if (widget) mod.SetUITextColor(widget, READY_DIALOG_LABEL_TEXT_COLOR);
 }
 
+// Applies the default Admin Panel label color when the widget exists.
 function applyAdminPanelLabelTextColor(widget?: mod.UIWidget): void {
     if (widget) mod.SetUITextColor(widget, ADMIN_PANEL_LABEL_TEXT_COLOR);
 }
 
+// Recreates all Ready Dialog button labels for a viewer after UI build/theme refresh.
 function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, baseContainer: mod.UIWidget): void {
     const swapBorder = safeFind(UI_READY_DIALOG_BUTTON_SWAP_ID + pid + "_BORDER");
     addCenteredButtonText(

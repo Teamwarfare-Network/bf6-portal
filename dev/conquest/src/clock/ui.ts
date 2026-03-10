@@ -232,6 +232,7 @@ const pid = mod.GetObjId(player);
     return entry;
 }
 
+// Builds a single numeric clock digit descriptor for ParseUI clock children.
 function buildDigit(part: string, pid: number, x: number, width: number) {
     return {
         name: "MatchTimer" + part + "_" + pid,
@@ -248,6 +249,7 @@ function buildDigit(part: string, pid: number, x: number, width: number) {
     };
 }
 
+// Builds the static ":" clock separator descriptor for ParseUI clock children.
 function buildColon(pid: number, x: number, width: number) {
     return {
         name: "MatchTimerColon_" + pid,
@@ -264,14 +266,17 @@ function buildColon(pid: number, x: number, width: number) {
     };
 }
 
+// Writes a single numeric digit into an existing cached clock text widget.
 function setDigitCached(widget: mod.UIWidget, digit: number): void {
     mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.clock.digit, digit));
 }
 
+// Writes the colon glyph into an existing cached clock separator widget.
 function setColonCached(widget: mod.UIWidget): void {
     mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.clock.colon));
 }
 
+// Applies one color value across all cached clock digit/separator widgets.
 function setClockColorCached(cacheEntry: ClockWidgetCacheEntry, color: any): void {
     mod.SetUITextColor(cacheEntry.minTens, color);
     mod.SetUITextColor(cacheEntry.minOnes, color);

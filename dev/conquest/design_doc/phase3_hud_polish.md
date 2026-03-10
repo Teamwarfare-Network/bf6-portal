@@ -189,7 +189,15 @@ Completed:
 3. P2 lifecycle hide hardening added for force-hide path:
 - Top-row border widgets are now explicitly hidden during force-hide passes.
 - Force-hide pass now also rebinding-resolves per-slot widgets before hide.
+4. P2 force-hide hardening expanded to pop-out and engage families:
+- `conquestPhase3ForceHideAllV2Widgets(...)` now routes pop-out + engage hiding through name-fallback helpers.
+- Cleanup behavior no longer depends on cache-only refs for those families.
+5. P3 instrumentation baseline added for HUD projection triage:
+- Per-player snapshot maps now track engaged objective, pop-out visibility/objective, engage visibility, active top-slot neutralization state, swap-pending state, and deployed state.
+- Snapshot publish runs on normal renders and on suppression/early-return paths (swap pending, unresolved perspective, missing refs) so debug state reflects what was actually projected.
+- Transition counters/timestamps now increment only when projection-relevant values change.
 
 Rationale:
 1. These changes reduce stale-widget leakage during swap/rebuild windows.
 2. These changes target CQ_Bug_7 class behavior (active-lane/top-row border persistence) without changing conquest game-state ownership.
+3. Added projection instrumentation improves root-cause speed for future swap/render regressions (especially CQ_Bug_3/CQ_Bug_7 class issues) without introducing new render owners.

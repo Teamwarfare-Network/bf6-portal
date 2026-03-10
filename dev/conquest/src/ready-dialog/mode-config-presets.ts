@@ -7,22 +7,27 @@ function isReadyDialogGameModeVanilla(gameModeKey: number): boolean {
     return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisPractice;
 }
 
+// True when the selected game mode is the Ladder preset.
 function isReadyDialogGameModeLadder(gameModeKey: number): boolean {
     return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisLadder;
 }
 
+// True when the selected game mode is the TWL 1v1 preset.
 function isReadyDialogGameModeTwl1v1(gameModeKey: number): boolean {
     return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisTwl1v1;
 }
 
+// True when the selected game mode is Custom.
 function isReadyDialogGameModeCustom(gameModeKey: number): boolean {
     return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisCustom;
 }
 
+// True when the mode is one of the TWL preset variants.
 function isReadyDialogGameModeTwlPreset(gameModeKey: number): boolean {
     return isReadyDialogGameModeLadder(gameModeKey) || isReadyDialogGameModeTwl1v1(gameModeKey);
 }
 
+// Returns the preset-ready player count per side for the selected game mode.
 function getReadyDialogPresetPlayersPerSide(gameModeKey: number): number {
     if (isReadyDialogGameModeTwl1v1(gameModeKey)) {
         return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_1V1;
@@ -33,6 +38,7 @@ function getReadyDialogPresetPlayersPerSide(gameModeKey: number): number {
     return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_VANILLA;
 }
 
+// Returns whether selected mode should apply aircraft ceiling override behavior by default.
 function shouldApplyCustomCeilingForGameMode(gameModeKey: number): boolean {
     if (isReadyDialogGameModeVanilla(gameModeKey)) return false;
     if (isReadyDialogGameModeCustom(gameModeKey)) return true;
@@ -103,6 +109,7 @@ function applyReadyDialogModePresetForGameMode(gameModeKey: number): boolean {
     return true;
 }
 
+// Sets the selected game mode option and optionally re-applies its preset.
 function setReadyDialogGameModeIndex(nextIndex: number, applyPreset: boolean = true): void {
     const count = READY_DIALOG_GAME_MODE_OPTIONS.length;
     if (count <= 0) return;
@@ -117,6 +124,7 @@ function setReadyDialogGameModeIndex(nextIndex: number, applyPreset: boolean = t
     updateSettingsSummaryHudForAllPlayers();
 }
 
+// Sets the pending aircraft ceiling value from UI controls.
 function setReadyDialogAircraftCeiling(nextValue: number, _changedBy?: mod.Player): void {
     ensureCustomGameModeForManualChange();
     const clamped = Math.max(
@@ -129,6 +137,7 @@ function setReadyDialogAircraftCeiling(nextValue: number, _changedBy?: mod.Playe
     updateReadyDialogModeConfigForAllVisibleViewers();
 }
 
+// Sets Team 1 vehicle preset index and mirrored vehicle string key.
 function setReadyDialogVehicleIndexT1(nextIndex: number): void {
     const count = READY_DIALOG_VEHICLE_OPTIONS.length;
     if (count <= 0) return;
@@ -139,6 +148,7 @@ function setReadyDialogVehicleIndexT1(nextIndex: number): void {
     updateReadyDialogModeConfigForAllVisibleViewers();
 }
 
+// Sets Team 2 vehicle preset index and mirrored vehicle string key.
 function setReadyDialogVehicleIndexT2(nextIndex: number): void {
     const count = READY_DIALOG_VEHICLE_OPTIONS.length;
     if (count <= 0) return;
@@ -149,6 +159,7 @@ function setReadyDialogVehicleIndexT2(nextIndex: number): void {
     updateReadyDialogModeConfigForAllVisibleViewers();
 }
 
+// Commits the mode config snapshot and applies runtime side effects.
 function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
     const cfg = State.round.modeConfig;
     const prevConfirmed = cfg.confirmed.aircraftCeiling;

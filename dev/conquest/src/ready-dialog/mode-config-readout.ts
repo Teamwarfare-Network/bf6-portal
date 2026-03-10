@@ -10,6 +10,7 @@ function updateReadyDialogMapLabelForPid(pid: number): void {
     mod.SetUITextLabel(valueWidget, mod.Message(getMapNameKey(ACTIVE_MAP_KEY)));
 }
 
+// Refreshes the map label/value pair for all connected players.
 function updateReadyDialogMapLabelForAllPlayers(): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -20,6 +21,7 @@ function updateReadyDialogMapLabelForAllPlayers(): void {
     }
 }
 
+// Updates Ready Dialog mode-setting labels/values for a specific viewer pid.
 function updateReadyDialogModeConfigForPid(pid: number): void {
     const cfg = State.round.modeConfig;
 
@@ -63,6 +65,7 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
     if (vehiclesT2Value) mod.SetUITextLabel(vehiclesT2Value, mod.Message(cfg.vehiclesT2));
 }
 
+// Updates mode-config readouts for players with an actively visible Ready Dialog.
 function updateReadyDialogModeConfigForAllVisibleViewers(): void {
     for (const pidStr in State.players.readyDialogData) {
         const pid = Number(pidStr);

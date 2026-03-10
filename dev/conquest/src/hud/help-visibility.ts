@@ -41,10 +41,12 @@ function updateHelpTextVisibilityForPid(pid: number): void {
     // Round-state and players-ready line visibility are owned by hud/status.ts.
 }
 
+// Player-wrapper for pid-based help/ready visibility refresh.
 function updateHelpTextVisibilityForPlayer(player: mod.Player): void {
     updateHelpTextVisibilityForPid(mod.GetObjId(player));
 }
 
+// Broadcast refresh for help/ready visibility across all currently valid players.
 function updateHelpTextVisibilityForAllPlayers(): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);

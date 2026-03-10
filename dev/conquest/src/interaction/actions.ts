@@ -77,6 +77,7 @@ async function refreshConquestHudAfterTeamSwap(eventPlayer: mod.Player): Promise
     updateConquestPhase2ADebugHudForAllPlayers(true);
 }
 
+// Handles the Ready Dialog "Swap Teams" action and triggers authoritative swap refresh flow.
 function processReadyDialogSelection(eventPlayer: mod.Player) {
     // Shared swap pathway used by the ready-dialog "Swap Teams" action.
     // Requirements:
@@ -126,6 +127,7 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
     );
 }
 
+// Hides the Ready Dialog (cached widgets) and clears per-player dialog/admin visibility state.
 function hideReadyDialogUI(eventPlayer: mod.Player | number) {
     // Deletes/hides the Ready Dialog UI for the given player id and restores normal input.
     // Note: When called with a player id (number) rather than a mod.Player, UI input mode cannot be toggled here.
@@ -176,6 +178,7 @@ function hideReadyDialogUI(eventPlayer: mod.Player | number) {
     updateHelpTextVisibilityForPid(playerId);
 }
 
+// Closes Ready Dialog UI for every viewer that currently has the dialog open.
 function closeReadyDialogForAllPlayers(): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);

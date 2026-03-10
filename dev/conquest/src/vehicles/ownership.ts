@@ -7,6 +7,7 @@
 
 function getVehicleId(v: mod.Vehicle): number { return getObjId(v); }
 
+// Records the most recent valid player driver for a vehicle id.
 function setLastDriver(vehicle: mod.Vehicle, player: mod.Player): void {
     if (!player || !mod.IsPlayerValid(player)) return;
     const vid = getVehicleId(vehicle);
@@ -22,6 +23,7 @@ function setLastDriver(vehicle: mod.Vehicle, player: mod.Player): void {
     vehOwners.push(player);
 }
 
+// Returns and removes the cached last-driver entry for a vehicle, if present.
 function popLastDriver(vehicle: mod.Vehicle): mod.Player | undefined {
     const vid = getVehicleId(vehicle);
 
@@ -45,6 +47,7 @@ function popLastDriver(vehicle: mod.Vehicle): mod.Player | undefined {
     return undefined;
 }
 
+// Removes cached last-driver data for a vehicle ObjId without returning an owner.
 function clearLastDriverByVehicleObjId(vehicleObjId: number): void {
     // Remove the last-driver entry for a specific vehicle ObjId (if it exists).
     for (let i = 0; i < vehIds.length; i++) {

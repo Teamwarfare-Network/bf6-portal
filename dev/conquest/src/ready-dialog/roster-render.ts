@@ -43,6 +43,7 @@ function renderReadyDialogForAllVisibleViewers(): void {
     }
 }
 
+// Re-renders team roster rows and per-row ready/base labels for a single viewer.
 function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: number): void {
     const roster = getRosterDisplayEntries();
     const t1Players = roster.team1;

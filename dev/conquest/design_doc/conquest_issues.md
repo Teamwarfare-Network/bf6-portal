@@ -1,7 +1,7 @@
 # Conquest Issues
 
 Last Updated: 2026-03-09  
-Last Tested Build: `v0.278`
+Last Tested Build: `v0.294`
 
 ## Current Snapshot
 - `CQ_Bug_1`: Fixed
@@ -10,7 +10,8 @@ Last Tested Build: `v0.278`
 - `CQ_Bug_4`: Fixed enough for current phase
 - `CQ_Bug_5`: Fixed
 - `CQ_Bug_6`: Fixed
-- `CQ_Bug_7`: Open
+- `CQ_Bug_7`: Resolved
+- `CQ_Bug_8`: Resolved
 
 ## CQ_Bug_1
 Title: Ticket Counter Overlay / Doubling During Bleed
@@ -177,7 +178,27 @@ Expected:
 - Active objective status should be represented by the pop-out only.
 
 Status:
-- Open.
+- Resolved in latest user validation.
 
-Notes:
-- This is a UI ownership/presentation rule issue for the active objective lane.
+Potential Resolution Drivers:
+- Active top-row slot neutralization when `engagedObjIdByPid` matches slot objective (border/fill/label/percent hidden on active slot projection).
+- Active-slot border suppression in slot renderer (`suppressActiveBorder`) so the engaged top-row slot cannot render a border while pop-out is active.
+- Force-hide hardening for top-row/pop-out/engage with cache rebind via name fallback (`safeFind`) to prevent stale border refs surviving swap/rebuild paths.
+
+## CQ_Bug_8
+Title: Intermittent Flag Differential Stall During Neutralization/Recapture Transition
+
+Observed:
+- In some neutralization/recapture transition windows, objective ownership differential can present as stale for bleed/chevron projection.
+- Repro observed where enemy held only one objective while other previously-owned objectives were neutralized, but bleed/chevron did not immediately reflect differential.
+- Behavior sometimes self-corrected after subsequent capture interaction.
+
+Expected:
+- Differential, bleed, and chevrons should update coherently at neutralization/recapture edges without requiring additional interaction.
+
+Status:
+- Resolved in latest user validation (keep monitoring for recurrence during high-transition rounds).
+
+Potential Resolution Drivers:
+- Differential ownership counting remains capture-state authoritative (`capture.byObjId.ownerTeam`).
+- Authoritative owner resolver now includes pre-event edge inference for strong neutralization/recapture thresholds when edge callbacks are missed, so owner differential cannot stall until a later interaction.

@@ -9,6 +9,7 @@ function isPlayerInMainBaseForReady(pid: number): boolean {
     return inBase;
 }
 
+// Enforces not-live takeoff altitude gating and clears/announces ready-state violations.
 function checkTakeoffLimitForAllPlayers(): void {
     if (State.match.isEnded) return;
     if (isMatchLive()) return;

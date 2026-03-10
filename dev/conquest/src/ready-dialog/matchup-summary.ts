@@ -20,6 +20,7 @@ function updateTeamNameWidgetsForPid(pid: number): void {
     updateReadyDialogModeConfigForPid(pid);
 }
 
+// Refreshes team-name labels for every connected player and then updates summary HUD.
 function updateTeamNameWidgetsForAllPlayers(): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -31,6 +32,7 @@ function updateTeamNameWidgetsForAllPlayers(): void {
     updateSettingsSummaryHudForAllPlayers();
 }
 
+// Refreshes the per-player matchup label (for example, "1 vs 1") while match is not live.
 function updateMatchupLabelForPid(pid: number): void {
     const labelId = UI_READY_DIALOG_MATCHUP_LABEL_ID + pid;
     const labelWidget = safeFind(labelId);
@@ -154,6 +156,7 @@ function updateSettingsSummaryHudForPid(pid: number): void {
     }
 }
 
+// Recomputes and applies settings summary HUD text for all connected players.
 function updateSettingsSummaryHudForAllPlayers(): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -164,6 +167,7 @@ function updateSettingsSummaryHudForAllPlayers(): void {
     }
 }
 
+// Sets minimum active players-per-side with clamping, UI refresh, and optional announce/start check.
 function setAutoStartMinActivePlayers(value: number, eventPlayer?: mod.Player): void {
     const clamped = Math.max(AUTO_START_MIN_ACTIVE_PLAYERS_MIN, Math.min(AUTO_START_MIN_ACTIVE_PLAYERS_MAX, Math.floor(value)));
     if (clamped === State.round.autoStartMinActivePlayers) return;

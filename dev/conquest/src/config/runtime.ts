@@ -9,6 +9,7 @@ let ACTIVE_MAP_CONFIG = MAP_CONFIGS[ACTIVE_MAP_KEY];
 let ACTIVE_CAPTURE_POINT_CONFIGS: CapturePointConfig[] = ACTIVE_MAP_CONFIG.capturePoints ?? [];
 const ACTIVE_CAPTURE_POINT_CONFIG_BY_OBJ_ID: Record<number, CapturePointConfig> = {};
 
+// Rebuilds the active capture-point config lookup map keyed by ObjId.
 function rebuildActiveCapturePointConfigIndex(): void {
     for (const key of Object.keys(ACTIVE_CAPTURE_POINT_CONFIG_BY_OBJ_ID)) {
         delete ACTIVE_CAPTURE_POINT_CONFIG_BY_OBJ_ID[Number(key)];
@@ -19,6 +20,7 @@ function rebuildActiveCapturePointConfigIndex(): void {
     }
 }
 
+// Returns active capture-point config for one ObjId, if present.
 function getActiveCapturePointConfigByObjId(objId: number): CapturePointConfig | undefined {
     return ACTIVE_CAPTURE_POINT_CONFIG_BY_OBJ_ID[objId];
 }

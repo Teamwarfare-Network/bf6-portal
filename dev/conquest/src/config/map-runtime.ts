@@ -29,6 +29,7 @@ function buildHeliSpawnsFromTankSpawns(spawns: VehicleSpawnSpec[], team: TeamID)
     }));
 }
 
+// Returns heli spawn specs for one team, falling back to tank-anchor-derived heli spawns when absent.
 function resolveHeliSpawnsForTeam(cfg: MapConfig, team: TeamID): VehicleSpawnSpec[] {
     if (team === TeamID.Team1) {
         if (cfg.team1HeliSpawns && cfg.team1HeliSpawns.length > 0) return cfg.team1HeliSpawns;
@@ -38,10 +39,12 @@ function resolveHeliSpawnsForTeam(cfg: MapConfig, team: TeamID): VehicleSpawnSpe
     return buildHeliSpawnsFromTankSpawns(cfg.team2TankSpawns, TeamID.Team2);
 }
 
+// Resolves a ready-dialog vehicle override index to a valid VehicleList entry.
 function getReadyDialogVehicleListByIndex(index: number): mod.VehicleList {
     return READY_DIALOG_VEHICLE_LIST[index] ?? READY_DIALOG_VEHICLE_LIST[0];
 }
 
+// Applies one vehicle override to every spawn spec in the provided list.
 function applyVehicleOverrideToSpawns(spawns: VehicleSpawnSpec[], vehicle: mod.VehicleList): VehicleSpawnSpec[] {
     return spawns.map((spawn) => ({
         slotNumber: spawn.slotNumber,
@@ -51,6 +54,7 @@ function applyVehicleOverrideToSpawns(spawns: VehicleSpawnSpec[], vehicle: mod.V
     }));
 }
 
+// Recomputes runtime spawn specs from current mode config and active map settings.
 function refreshVehicleSpawnSpecsFromModeConfig(): void {
     const useHelis = isHeliGameMode(State.round.modeConfig.confirmed.gameMode);
     if (useHelis) {
@@ -71,6 +75,7 @@ function refreshVehicleSpawnSpecsFromModeConfig(): void {
     TEAM2_VEHICLE_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team2TankSpawns;
 }
 
+// Applies updated runtime spawn specs to already-registered spawner slots.
 function applyVehicleSpawnSpecsToExistingSlots(): void {
     if (State.vehicles.slots.length === 0) return;
     const team1BySlot: Record<number, VehicleSpawnSpec> = {};

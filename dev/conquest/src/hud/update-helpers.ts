@@ -16,6 +16,7 @@ function updateAdminPanelActionCountForAllPlayers(): void {
     }
 }
 
+// Records one admin action press, updates HUD counters, and emits world-log telemetry.
 function handleAdminPanelAction(eventPlayer: mod.Player, actionKey: number): void {
     // Increments the admin action counter and broadcasts the action to the world log.
     State.admin.actionCount = Math.max(0, Math.floor(State.admin.actionCount) + 1);

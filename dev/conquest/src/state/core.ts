@@ -11,12 +11,14 @@ function shouldSendMessage(isGameplay: boolean, isHighlighted: boolean): boolean
     return isHighlighted ? ENABLE_DEBUG_HIGHLIGHTED_MESSAGES : ENABLE_DEBUG_NOTIFICATION_MESSAGES;
 }
 
+// Toggles UI input mode for one player and mirrors the state in script cache.
 function setUIInputModeForPlayer(player: mod.Player, enabled: boolean): void {
     if (!player || !mod.IsPlayerValid(player)) return;
     mod.EnableUIInputMode(enabled, player);
     State.players.uiInputEnabledByPid[mod.GetObjId(player)] = enabled;
 }
 
+// Updates highlighted-message debug counters and stores the last emitted key when provided.
 function noteHighlightedMessageSent(messageKey?: number): void {
     State.debug.highlightedMessageCount = State.debug.highlightedMessageCount + 1;
     State.debug.lastHighlightedMessageAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
@@ -66,6 +68,7 @@ function sendHighlightedWorldLogMessage(message: mod.Message, isGameplay: boolea
     mod.DisplayHighlightedWorldLogMessage(message);
 }
 
+// Ends the current mode for the provided team number using team-targeted engine call.
 function endGameModeForTeamNum(teamNum: TeamID | 0): void {
     const winningTeam = mod.GetTeam(teamNum);
 

@@ -136,6 +136,7 @@ function buildReadyDialogHeaderAndMapSection(
     updateReadyDialogMapLabelForPid(playerId);
 }
 
+// Builds matchup and min-player controls (buttons plus readout labels) for Ready Dialog.
 function buildReadyDialogMatchupAndPlayersSection(
     eventPlayer: mod.Player,
     containerBase: mod.UIWidget,
@@ -311,6 +312,7 @@ function buildReadyDialogMatchupAndPlayersSection(
     updateReadyDialogModeConfigForPid(playerId);
 }
 
+// Builds bottom action row (swap/ready/cancel) and ensures admin-toggle widgets exist.
 function buildReadyDialogBottomButtonsSection(
     eventPlayer: mod.Player,
     containerBase: mod.UIWidget,

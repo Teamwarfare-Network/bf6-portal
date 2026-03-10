@@ -22,6 +22,7 @@ interface ClockWidgetCacheEntry {
     secOnes: mod.UIWidget;
 }
 
+// Resets live clock runtime to the provided duration and clears pause/expiry markers.
 function resetMatchClock(seconds: number): void {
     const clampedSeconds = Math.max(0, Math.floor(seconds));
     State.round.clock.durationSeconds = clampedSeconds;
@@ -36,6 +37,7 @@ function resetMatchClock(seconds: number): void {
     State.round.clock.lastLowTimeState = undefined;
 }
 
+// Sets a paused pre-live clock preview without starting elapsed-time tracking.
 function setMatchClockPreview(seconds: number): void {
     const clampedSeconds = clampMatchLengthSeconds(seconds);
     State.round.clock.durationSeconds = clampedSeconds;
@@ -48,6 +50,7 @@ function setMatchClockPreview(seconds: number): void {
     State.round.clock.lastLowTimeState = undefined;
 }
 
+// Returns current remaining seconds from paused state or live elapsed-time state.
 function getRemainingSeconds(): number {
     if (State.round.clock.isPaused) {
         return Math.max(0, State.round.clock.pausedRemainingSeconds !== undefined ? State.round.clock.pausedRemainingSeconds : 0);
@@ -59,6 +62,7 @@ function getRemainingSeconds(): number {
     return Math.max(0, State.round.clock.durationSeconds - elapsed);
 }
 
+// Applies an admin delta to clock duration/remaining values and refresh markers.
 function adjustMatchClockBySeconds(deltaSeconds: number): void {
     const delta = Math.floor(deltaSeconds);
 
@@ -78,6 +82,7 @@ function adjustMatchClockBySeconds(deltaSeconds: number): void {
     State.round.clock.lastLowTimeState = undefined;
 }
 
+// Resets live clock runtime using the current configured match length.
 function resetMatchClockToDefault(): void {
     resetMatchClock(getConfiguredMatchLengthSeconds());
 }

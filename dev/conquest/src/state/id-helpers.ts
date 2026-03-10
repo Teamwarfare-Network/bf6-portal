@@ -3,10 +3,12 @@
 
 //#region -------------------- Shared ID helpers --------------------
 
+// Fast object-id lookup for call sites that already control validity.
 function getObjId(obj: any): number {
     return mod.GetObjId(obj);
 }
 
+// Guarded object-id lookup for paths where object validity is uncertain.
 function safeGetObjId(obj: any): number | undefined {
     if (!obj) return undefined;
     try {
@@ -26,16 +28,19 @@ function safeGetPlayerId(player: mod.Player | null | undefined): number | undefi
     }
 }
 
+// Returns true when the runtime has marked this player id as disconnected.
 function isPidDisconnected(pid: number): boolean {
     return State.players.disconnectedByPid[pid] === true;
 }
 
+// Normalizes engine Team handles into TeamID enum values.
 function getTeamNumber(team: mod.Team): TeamID | 0 {
     if (mod.Equals(team, mod.GetTeam(TeamID.Team1))) return TeamID.Team1;
     if (mod.Equals(team, mod.GetTeam(TeamID.Team2))) return TeamID.Team2;
     return 0;
 }
 
+// Guarded team lookup for players, with explicit fallback for invalid/unavailable states.
 function safeGetTeamNumberFromPlayer(
     player: mod.Player | null | undefined,
     fallback: TeamID | 0 = 0
@@ -48,6 +53,7 @@ function safeGetTeamNumberFromPlayer(
     }
 }
 
+// Returns deployed-state truth from script runtime for this player.
 function isPlayerDeployed(player: mod.Player): boolean {
     if (!player || !mod.IsPlayerValid(player)) return false;
     const pid = safeGetPlayerId(player);
@@ -70,6 +76,7 @@ function safeGetSoldierStateBool(player: mod.Player, stateKey: any, fallback: bo
     }
 }
 
+// Guarded vector soldier-state lookup that also clears deployed flag on engine access failures.
 function safeGetSoldierStateVector(player: mod.Player, stateKey: any): mod.Vector | undefined {
     if (!player || !mod.IsPlayerValid(player)) return undefined;
     if (!isPlayerDeployed(player)) return undefined;
@@ -84,12 +91,14 @@ function safeGetSoldierStateVector(player: mod.Player, stateKey: any): mod.Vecto
     }
 }
 
+// Resolves the localized team-name key for scoreboard/HUD labels.
 function getTeamNameKey(teamNum: TeamID | 0): number {
     if (teamNum === TeamID.Team1) return ACTIVE_MAP_CONFIG?.team1Name ?? mod.stringkeys.twl.teams.WEST;
     if (teamNum === TeamID.Team2) return ACTIVE_MAP_CONFIG?.team2Name ?? mod.stringkeys.twl.teams.EAST;
     return mod.stringkeys.twl.system.unknownPlayer;
 }
 
+// Best-effort UI widget lookup by name from UIRoot, then global fallback.
 function safeFind(name: string): mod.UIWidget | undefined {
     try {
         return mod.FindUIWidgetWithName(name, mod.GetUIRoot()) as mod.UIWidget;

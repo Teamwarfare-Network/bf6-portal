@@ -41,6 +41,7 @@ async function spawnReadyDialogInteractPoint(eventPlayer: mod.Player) {
     }
 }
 
+// Handles interact activation for the owning player's ready-dialog interact point.
 function teamSwitchInteractPointActivated(eventPlayer: mod.Player, eventInteractPoint: mod.InteractPoint) {
     const playerId = mod.GetObjId(eventPlayer);
     if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
@@ -64,6 +65,7 @@ function teamSwitchInteractPointActivated(eventPlayer: mod.Player, eventInteract
     }
 }
 
+// Removes and despawns a player's ready-dialog interact point by player or pid.
 function removeReadyDialogInteractPoint(eventPlayer: mod.Player | number) {
     let playerId: number;
 
@@ -86,6 +88,7 @@ function removeReadyDialogInteractPoint(eventPlayer: mod.Player | number) {
     }
 }
 
+// Returns true when player linear velocity magnitude sum exceeds configured threshold.
 function isVelocityBeyond(threshold: number, eventPlayer: mod.Player): boolean {
     if (!isPlayerDeployed(eventPlayer)) return false;
     const v = safeGetSoldierStateVector(eventPlayer, mod.SoldierStateVector.GetLinearVelocity);
@@ -96,6 +99,7 @@ function isVelocityBeyond(threshold: number, eventPlayer: mod.Player): boolean {
     return x + y + z > threshold;
 }
 
+// Evaluates whether an existing interact point should be removed due to movement or lifetime.
 function checkReadyDialogInteractPointRemoval(eventPlayer: mod.Player) {
     if (!isPlayerDeployed(eventPlayer)) return;
     const isDead = safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsDead);
@@ -116,6 +120,7 @@ function checkReadyDialogInteractPointRemoval(eventPlayer: mod.Player) {
     }
 }
 
+// Initializes per-player ready-dialog runtime state used by UI/interact workflows.
 function initReadyDialogData(eventPlayer: mod.Player) {
     const playerId = mod.GetObjId(eventPlayer);
     State.players.readyDialogData[playerId] = {

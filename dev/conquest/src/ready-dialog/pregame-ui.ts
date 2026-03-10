@@ -9,6 +9,7 @@ interface CountdownWidgetCacheEntry {
     widget?: mod.UIWidget;
 }
 
+// Ensures per-player countdown text exists and returns a cached widget handle.
 function ensureCountdownUIAndGetWidget(player: mod.Player): mod.UIWidget | undefined {
     if (!player || !mod.IsPlayerValid(player)) return undefined;
     const pid = mod.GetObjId(player);
@@ -49,6 +50,7 @@ function ensureCountdownUIAndGetWidget(player: mod.Player): mod.UIWidget | undef
     return widget;
 }
 
+// Applies pregame countdown label/color/size/visibility to every active player.
 function setPregameCountdownVisualForAllPlayers(
     labelKey: number,
     labelValue: number | undefined,
@@ -76,6 +78,7 @@ function setPregameCountdownVisualForAllPlayers(
     }
 }
 
+// Updates pregame countdown text size for all active players.
 function setPregameCountdownSizeForAllPlayers(size: number): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -88,6 +91,7 @@ function setPregameCountdownSizeForAllPlayers(size: number): void {
     }
 }
 
+// Hides the pregame countdown widget for all active players.
 function hidePregameCountdownForAllPlayers(): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);

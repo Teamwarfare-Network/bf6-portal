@@ -61,6 +61,7 @@ function addVehicleSpawnerSlot(teamId: TeamID, slotNumber: number, spawnPos: mod
     return State.vehicles.slots.length - 1;
 }
 
+// Resolves desired enabled-spawner counts per team for the selected matchup preset.
 function getDesiredSpawnerCountsForPreset(presetIndex: number): { team1: number; team2: number } {
     const preset = MATCHUP_PRESETS[presetIndex] ?? MATCHUP_PRESETS[0];
     // Rule: 1v0 still spawns 1 vehicle per side (practice + tooling consistency).
@@ -131,6 +132,7 @@ function applySpawnerEnablementForMatchup(presetIndex: number, spawnOnEnable: bo
     }
 }
 
+// Queues a new sequential spawn pass and invalidates any in-flight spawn sequence token.
 function queueSequentialSpawns(slotIndices: number[]): void {
     if (slotIndices.length === 0) return;
     // Token cancels any prior spawn sequence if a new one is queued.

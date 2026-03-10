@@ -34,7 +34,9 @@ type HudRefs = {
     conquestTicketsDebugRoot?: mod.UIWidget;
     conquestTicketsTeam1Container?: mod.UIWidget;
     conquestTicketsTeam2Container?: mod.UIWidget;
+    conquestTicketsDebugTeam1Shadow?: mod.UIWidget;
     conquestTicketsDebugTeam1?: mod.UIWidget;
+    conquestTicketsDebugTeam2Shadow?: mod.UIWidget;
     conquestTicketsDebugTeam2?: mod.UIWidget;
     conquestTicketsSlash?: mod.UIWidget;
     conquestTicketsDebugLeftBarTrack?: mod.UIWidget;
@@ -105,6 +107,8 @@ type HudRefs = {
     conquestFlagsEngageEnemyFill?: mod.UIWidget;
     conquestFlagsEngageFriendlyCountBg?: mod.UIWidget;
     conquestFlagsEngageEnemyCountBg?: mod.UIWidget;
+    conquestFlagsEngageFriendlyCountShadow?: mod.UIWidget;
+    conquestFlagsEngageEnemyCountShadow?: mod.UIWidget;
     conquestFlagsEngageFriendlyCount?: mod.UIWidget;
     conquestFlagsEngageEnemyCount?: mod.UIWidget;
     conquestFlagsEngageStatusShadowRight?: mod.UIWidget;

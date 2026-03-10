@@ -14,6 +14,7 @@ function onPlayerEnterVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Veh
     registerVehicleToTeam(eventVehicle, teamNum);
 }
 
+// Reserved exit hook: currently no-op to keep enter/spawn ownership flow authoritative.
 function onPlayerExitVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Vehicle) {
     if (!mod.IsPlayerValid(eventPlayer)) return;
     return;

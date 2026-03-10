@@ -38,7 +38,12 @@ function onPlayerEnterCapturePointImpl(eventPlayer: mod.Player, eventCapturePoin
         if (objId === undefined) return;
         if (!isMappedConquestCapturePointObjId(objId)) return;
         State.conquest.capture.engagedObjIdByPid[pid] = objId;
+        // Refresh capture-point sample immediately so engage counts + popout/top-row visual state
+        // do not wait for the next global live-tick polling pass.
+        conquestPhase2AOnCapturePointTick(eventCapturePoint);
         conquestPhase3MarkHudDirty();
+        // Enter/exit should feel atomic: apply top row + popout + engage in one immediate pass.
+        updateConquestPhase2ADebugHudForAllPlayers(true);
     } catch {
         return;
     }
@@ -55,13 +60,15 @@ function onPlayerExitCapturePointImpl(eventPlayer: mod.Player, eventCapturePoint
         const exitingObjId = safeGetObjId(eventCapturePoint);
         if (exitingObjId !== undefined && currentObjId !== exitingObjId) return;
         delete State.conquest.capture.engagedObjIdByPid[pid];
-        conquestPhase3ForceHideEngageWidgetsForPid(pid);
         conquestPhase3MarkHudDirty();
+        // Enter/exit should feel atomic: apply top row + popout + engage in one immediate pass.
+        updateConquestPhase2ADebugHudForAllPlayers(true);
     } catch {
         return;
     }
 }
 
+// Main-base enter updates per-player base-state used by pre-live UI gating.
 function onPlayerEnterAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger) {
     try {
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
@@ -76,6 +83,7 @@ function onPlayerEnterAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger:
     }
 }
 
+// Main-base exit enforces pre-live "not ready" behavior when a player leaves base.
 function onPlayerExitAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger) {
     try {
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;

@@ -80,6 +80,7 @@ function getActivePlayers(): ActivePlayers_t {
     return { all, team1, team2 };
 }
 
+// Converts active players plus debug placeholders into roster display entries.
 function buildRosterDisplayEntries(players: mod.Player[], debugCount: number): RosterDisplayEntry[] {
     const entries: RosterDisplayEntry[] = [];
     for (const p of players) entries.push({ player: p });
@@ -91,6 +92,7 @@ function buildRosterDisplayEntries(players: mod.Player[], debugCount: number): R
     return entries;
 }
 
+// Builds roster display data for both teams and returns the max row count for layout.
 function getRosterDisplayEntries(): RosterDisplay_t {
     const active = getActivePlayers();
     const team1 = buildRosterDisplayEntries(active.team1, DEBUG_TEST_NAMES_TEAM_1);
@@ -98,6 +100,7 @@ function getRosterDisplayEntries(): RosterDisplay_t {
     return { team1, team2, maxRows: Math.max(team1.length, team2.length) };
 }
 
+// Resolves roster entry label text from live player handle or debug placeholder key.
 function getRosterEntryNameMessage(entry: RosterDisplayEntry | undefined): mod.Message {
     if (!entry) return mod.Message(mod.stringkeys.twl.system.genericCounter, "");
     if (entry.player) return mod.Message(mod.stringkeys.twl.readyDialog.playerNameFormat, entry.player);
@@ -105,6 +108,7 @@ function getRosterEntryNameMessage(entry: RosterDisplayEntry | undefined): mod.M
     return mod.Message(mod.stringkeys.twl.system.genericCounter, "");
 }
 
+// Returns true when every currently active player satisfies ready state and min-player gate.
 function areAllActivePlayersReady(): boolean {
     const active = getActivePlayers();
     const activeCount = active.all.length;
