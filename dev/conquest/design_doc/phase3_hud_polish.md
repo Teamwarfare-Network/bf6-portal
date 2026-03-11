@@ -201,3 +201,50 @@ Rationale:
 1. These changes reduce stale-widget leakage during swap/rebuild windows.
 2. These changes target CQ_Bug_7 class behavior (active-lane/top-row border persistence) without changing conquest game-state ownership.
 3. Added projection instrumentation improves root-cause speed for future swap/render regressions (especially CQ_Bug_3/CQ_Bug_7 class issues) without introducing new render owners.
+
+## Helis vs Conquest Architecture Gap (2026-03-10)
+Goal: explain why Conquest HUD became hard to reason about and what we are changing.
+
+### What Helis Does Better
+1. One practical HUD owner path:
+- `ensureHudForPlayer(...)` builds/caches once.
+- Runtime mostly updates text/visibility values.
+2. Root hierarchy stays mostly static after build.
+3. Migration/recovery logic is minimal and isolated.
+
+### Why Conquest Drifted
+1. Multiple top-combat layout writers were active over time:
+- build-time absolute layout
+- live-tick top-root normalization
+- schema/repair probes in render path
+2. Migration/rebuild concerns leaked into frequent render/update loops.
+3. Repeated root reparent/anchor writes increased non-deterministic behavior and made aspect-ratio issues difficult to isolate.
+
+### Why Schema Exists
+1. Schema is a one-time rebuild gate when widget tree structure changes.
+2. Legitimate use:
+- force clean teardown of stale widgets after structural updates.
+3. Problematic use:
+- treating schema/migration as frequent runtime behavior instead of lifecycle-time behavior.
+
+### Why Reparenting Was Added
+1. Reparenting was used to recover stale HUD trees after hot-reload/swap churn.
+2. When done frequently in live paths, it becomes a second layout owner and can conflict with build-time placement.
+
+### Simplification Plan Now (Execution in Progress)
+1. Single-owner lifecycle for top combat HUD:
+- `ensureHudForPlayer(...)` owns root build/rebuild and placement.
+- live render path stops doing root normalization/migration probing.
+2. Keep per-player uniqueness hard guards:
+- validate cached conquest roots belong to current PID before reusing refs.
+3. Keep frequent updates pure:
+- visibility/labels/colors/fill geometry only.
+4. Keep create/delete reserved for:
+- team switch cleanup,
+- schema rebuild,
+- player leave teardown.
+
+### First Execution Step Completed
+1. Removed live-tick schema migration probing in `updateConquestPhase2ADebugHudForAllPlayers(...)`.
+2. Removed live-tick top combat root normalization call from render loop.
+3. Added cached-root PID ownership guard in HUD ensure path to reject shared/stale refs.

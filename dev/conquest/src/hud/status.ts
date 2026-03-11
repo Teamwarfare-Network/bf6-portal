@@ -55,6 +55,26 @@ function getClockTimeParts(remainingSeconds: number): { minutes: number; secTens
 
 // UI hardening helpers skip work if a widget is missing (ParseUI and safeFind can yield undefined).
 // This prevents runtime issues and also avoids TS errors from passing UIWidget | undefined into mod.* UI calls.
+const topHudRootInitializedByPid: Record<number, boolean> = {};
+
+// Deletes all matching top-HUD root instances by name to prevent duplicate-name frame ambiguity.
+function deleteAllTopHudRootsByName(name: string, maxPasses: number = 128): void {
+    for (let i = 0; i < maxPasses; i++) {
+        const widget = safeFind(name);
+        if (!widget) return;
+        try {
+            mod.DeleteUIWidget(widget);
+        } catch {
+            return;
+        }
+    }
+}
+
+// Clears one player's top-root initialization token so next ensure performs a duplicate purge.
+function resetTopHudRootInitializationForPid(pid: number): void {
+    delete topHudRootInitializedByPid[pid];
+}
+
 function safeSetUIWidgetVisible(widget: mod.UIWidget | undefined, visible: boolean): void {
     if (!widget) return;
     try {
@@ -163,39 +183,48 @@ function setWidgetVisible(widget: mod.UIWidget | undefined, visible: boolean): v
 // Ensures one shared top-HUD root exists for this player and reparents core top-HUD lanes under it.
 function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget | undefined {
     const rootName = `TopHudRoot_${pid}`;
+    const uiRoot = mod.GetUIRoot();
+    if (topHudRootInitializedByPid[pid] !== true) {
+        deleteAllTopHudRootsByName(rootName);
+    }
     let root = safeFind(rootName);
     if (!root && player) {
-        mod.AddUIContainer(
-            rootName,
-            mod.CreateVector(0, 0, 0),
-            mod.CreateVector(TOP_HUD_ROOT_WIDTH, TOP_HUD_ROOT_HEIGHT, 0),
-            mod.UIAnchor.TopCenter,
-            mod.GetUIRoot(),
-            true,
-            0,
-            mod.CreateVector(0, 0, 0),
-            0,
-            mod.UIBgFill.None,
-            mod.UIDepth.AboveGameUI,
-            player
-        );
-        root = safeFind(rootName);
+        const parsedRoot = modlib.ParseUI({
+            name: rootName,
+            type: "Container",
+            playerId: player,
+            position: [0, 0],
+            size: [TOP_HUD_ROOT_WIDTH, TOP_HUD_ROOT_HEIGHT],
+            anchor: mod.UIAnchor.TopCenter,
+            visible: true,
+            padding: 0,
+            bgAlpha: 0,
+            bgFill: mod.UIBgFill.None,
+        });
+        root = parsedRoot ?? safeFind(rootName);
     }
 
     if (!root) return undefined;
-    mod.SetUIWidgetDepth(root, mod.UIDepth.AboveGameUI);
-
-    const reparentIds = [
-        "Container_TopMiddle_CoreUI_",
-        "Container_TopLeft_CoreUI_",
-        "Container_TopRight_CoreUI_",
-    ];
-
-    for (const base of reparentIds) {
-        const widget = safeFind(base + pid);
-        if (!widget) continue;
-        mod.SetUIWidgetParent(widget, root);
-        mod.SetUIWidgetDepth(widget, mod.UIDepth.AboveGameUI);
+    // Root normalization is authoritative each ensure pass:
+    // stale HUD sessions can leave legacy parent/anchor/size, which drifts center lanes on aspect changes.
+    try {
+        mod.SetUIWidgetParent(root, uiRoot);
+        mod.SetUIWidgetAnchor(root, mod.UIAnchor.TopCenter);
+        mod.SetUIWidgetPosition(root, mod.CreateVector(0, 0, 0));
+        mod.SetUIWidgetSize(root, mod.CreateVector(TOP_HUD_ROOT_WIDTH, TOP_HUD_ROOT_HEIGHT, 0));
+        mod.SetUIWidgetDepth(root, mod.UIDepth.AboveGameUI);
+    } catch {
+        return undefined;
+    }
+    try {
+        const parent = mod.GetUIWidgetParent(root);
+        if (!parent || parent !== uiRoot) return undefined;
+        if (mod.GetUIWidgetAnchor(root) !== mod.UIAnchor.TopCenter) return undefined;
+        const pos = mod.GetUIWidgetPosition(root);
+        if (mod.AbsoluteValue(mod.XComponentOf(pos)) > 0.5) return undefined;
+        if (mod.AbsoluteValue(mod.YComponentOf(pos)) > 0.5) return undefined;
+    } catch {
+        return undefined;
     }
 
     const topHudDepthIds = [
@@ -207,6 +236,7 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
         if (widget) mod.SetUIWidgetDepth(widget, mod.UIDepth.AboveGameUI);
     }
 
+    topHudRootInitializedByPid[pid] = true;
     return root;
 }
 

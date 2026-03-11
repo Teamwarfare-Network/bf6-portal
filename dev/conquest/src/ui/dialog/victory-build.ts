@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Module: hud/build-victory-dialog -- victory dialog construction for per-player HUD cache.
+// Module: ui/dialog/victory-build -- victory dialog construction for per-player HUD cache.
 
 function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRefs): void {
     const modal = modlib.ParseUI({

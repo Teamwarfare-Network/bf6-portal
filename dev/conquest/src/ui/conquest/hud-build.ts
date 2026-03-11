@@ -1,199 +1,14 @@
 // @ts-nocheck
-// Module: hud/build -- HUD root ensure/build and per-player cache init
+// Module: ui/conquest/hud-build -- Conquest HUD ensure/build owner
 
 //#region -------------------- HUD Build/Ensure Function Start --------------------
 
-// Deletes all instances of a widget name (defensive against duplicate roots with identical ids).
-function deleteAllHudWidgetsByName(name: string, maxPasses: number = 128): void {
-    for (let i = 0; i < maxPasses; i++) {
-        const widget = safeFind(name);
-        if (!widget) return;
-        try {
-            mod.DeleteUIWidget(widget);
-        } catch {
-            return;
-        }
-    }
-}
+// HUD lifecycle/teardown helpers are defined in ui/conquest/lifecycle.ts.
+const conquestCombatRootInitializedByPid: Record<number, boolean> = {};
 
-const CONQUEST_TICKET_COUNTER_SHADOW_RING_LAYERS: { suffix: string; offsetX: number; offsetY: number }[] = [
-    { suffix: "ShadowRight", offsetX: CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET, offsetY: 0 },
-    { suffix: "ShadowLeft", offsetX: -CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET, offsetY: 0 },
-    { suffix: "ShadowUp", offsetX: 0, offsetY: -CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET },
-    { suffix: "ShadowDown", offsetX: 0, offsetY: CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET },
-    {
-        suffix: "ShadowUpLeft",
-        offsetX: -CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
-        offsetY: -CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
-    },
-    {
-        suffix: "ShadowUpRight",
-        offsetX: CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
-        offsetY: -CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
-    },
-    {
-        suffix: "ShadowDownRight",
-        offsetX: CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
-        offsetY: CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
-    },
-    {
-        suffix: "ShadowDownLeft",
-        offsetX: -CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
-        offsetY: CONQUEST_HUD_TICKET_COUNTER_SHADOW_RING_OFFSET,
-    },
-];
-
-// Authoritative conquest HUD teardown for one player id.
-// All lifecycle callers (swap, leave, schema-reset) should route through this to avoid drift.
-function destroyConquestHudForPid(pid: number): void {
-    State.conquest.debug.hudGenerationByPid[pid] = (State.conquest.debug.hudGenerationByPid[pid] ?? 0) + 1;
-
-    const baseNames = [
-        `ConquestTicketsHudRoot_${pid}`,
-        `ConquestFlagsHudRoot_${pid}`,
-        `ConquestTicketsDebugRoot_${pid}`,
-        `ConquestFlagsDebugRoot_${pid}`,
-        `ConquestTicketsHudTeam1Container_${pid}`,
-        `ConquestTicketsHudTeam2Container_${pid}`,
-        `ConquestTicketsHudTeam1Shadow_${pid}`,
-        `ConquestTicketsHudTeam1_${pid}`,
-        `ConquestTicketsHudTeam1CoreOverlay_${pid}`,
-        `ConquestTicketsHudTeam2Shadow_${pid}`,
-        `ConquestTicketsHudTeam2_${pid}`,
-        `ConquestTicketsHudTeam2CoreOverlay_${pid}`,
-        `ConquestTicketsHudSlash_${pid}`,
-        `ConquestTicketsHudLeftBarTrack_${pid}`,
-        `ConquestTicketsHudLeftBarFill_${pid}`,
-        `ConquestTicketsHudRightBarTrack_${pid}`,
-        `ConquestTicketsHudRightBarFill_${pid}`,
-        `ConquestTicketsHudLeadBorderLeft_${pid}`,
-        `ConquestTicketsHudLeadBorderRight_${pid}`,
-        `ConquestTicketsHudLeadCrownLeftShadow_${pid}`,
-        `ConquestTicketsHudLeadCrownRightShadow_${pid}`,
-        `ConquestTicketsHudLeadCrownLeft_${pid}`,
-        `ConquestTicketsHudLeadCrownRight_${pid}`,
-        `ConquestFlagHudActivePopoutRoot_${pid}`,
-        `ConquestFlagHudActivePopoutSlot_${pid}`,
-        `ConquestFlagHudActivePopoutBorder_${pid}`,
-        `ConquestFlagHudActivePopoutFill_${pid}`,
-        `ConquestFlagHudActivePopoutLabelShadowRight_${pid}`,
-        `ConquestFlagHudActivePopoutLabelShadowLeft_${pid}`,
-        `ConquestFlagHudActivePopoutLabelShadowUp_${pid}`,
-        `ConquestFlagHudActivePopoutLabelShadowDown_${pid}`,
-        `ConquestFlagHudActivePopoutLabelShadowUpLeft_${pid}`,
-        `ConquestFlagHudActivePopoutLabelShadowUpRight_${pid}`,
-        `ConquestFlagHudActivePopoutLabelShadowDownRight_${pid}`,
-        `ConquestFlagHudActivePopoutLabelShadowDownLeft_${pid}`,
-        `ConquestFlagHudActivePopoutLabel_${pid}`,
-        `ConquestFlagHudActivePopoutPercentRoot_${pid}`,
-        `ConquestFlagHudActivePopoutPercentShadowRight_${pid}`,
-        `ConquestFlagHudActivePopoutPercentShadowLeft_${pid}`,
-        `ConquestFlagHudActivePopoutPercentShadowUp_${pid}`,
-        `ConquestFlagHudActivePopoutPercentShadowDown_${pid}`,
-        `ConquestFlagHudActivePopoutPercentShadowUpLeft_${pid}`,
-        `ConquestFlagHudActivePopoutPercentShadowUpRight_${pid}`,
-        `ConquestFlagHudActivePopoutPercentShadowDownRight_${pid}`,
-        `ConquestFlagHudActivePopoutPercentShadowDownLeft_${pid}`,
-        `ConquestFlagHudActivePopoutPercentShadowInner_${pid}`,
-        `ConquestFlagHudActivePopoutPercentText_${pid}`,
-        `ConquestFlagHudEngageRoot_${pid}`,
-        `ConquestFlagHudEngageTrack_${pid}`,
-        `ConquestFlagHudEngageFriendlyFill_${pid}`,
-        `ConquestFlagHudEngageEnemyFill_${pid}`,
-        `ConquestFlagHudEngageFriendlyCountBg_${pid}`,
-        `ConquestFlagHudEngageEnemyCountBg_${pid}`,
-        `ConquestFlagHudEngageFriendlyCountShadow_${pid}`,
-        `ConquestFlagHudEngageEnemyCountShadow_${pid}`,
-        `ConquestFlagHudEngageFriendlyCount_${pid}`,
-        `ConquestFlagHudEngageEnemyCount_${pid}`,
-        `ConquestFlagHudEngageStatusShadowRight_${pid}`,
-        `ConquestFlagHudEngageStatusShadowLeft_${pid}`,
-        `ConquestFlagHudEngageStatusShadowUp_${pid}`,
-        `ConquestFlagHudEngageStatusShadowDown_${pid}`,
-        `ConquestFlagHudEngageStatusShadowUpLeft_${pid}`,
-        `ConquestFlagHudEngageStatusShadowUpRight_${pid}`,
-        `ConquestFlagHudEngageStatusShadowDownRight_${pid}`,
-        `ConquestFlagHudEngageStatusShadowDownLeft_${pid}`,
-        `ConquestFlagHudEngageStatus_${pid}`,
-    ];
-    for (let i = 0; i < baseNames.length; i++) {
-        deleteAllHudWidgetsByName(baseNames[i]);
-    }
-    for (let teamIndex = 1; teamIndex <= 2; teamIndex++) {
-        const teamPrefix = `ConquestTicketsHudTeam${teamIndex}`;
-        for (let layerIndex = 0; layerIndex < CONQUEST_TICKET_COUNTER_SHADOW_RING_LAYERS.length; layerIndex++) {
-            const layer = CONQUEST_TICKET_COUNTER_SHADOW_RING_LAYERS[layerIndex];
-            deleteAllHudWidgetsByName(`${teamPrefix}${layer.suffix}_${pid}`);
-        }
-    }
-    // Purges all bleed-chevron widgets, including shadow layers, across schema changes.
-    for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
-        const slot = chevronIndex + 1;
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowRight_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowLeft_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDown_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownRight_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownLeft_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowRight_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowLeft_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowDown_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownRight_${pid}`);
-        deleteAllHudWidgetsByName(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownLeft_${pid}`);
-    }
-    for (let slot = 0; slot < 7; slot++) {
-        deleteAllHudWidgetsByName(`ConquestFlagHudSlot_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudBorder_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudFill_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowRight_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowLeft_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowUp_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowDown_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowUpLeft_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowUpRight_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowDownRight_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowDownLeft_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowInner_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowInnerDeep_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowCenter_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadow_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowMid_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudLabelShadowOuter_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudPercentRoot_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowRight_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowLeft_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowUp_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowDown_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowUpLeft_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowUpRight_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowDownRight_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowDownLeft_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudPercentShadowInner_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudPercentText_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagHudLabel_${pid}_${slot}`);
-        // Legacy rows from older layouts.
-        deleteAllHudWidgetsByName(`ConquestFlagFriendly_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagCenter_${pid}_${slot}`);
-        deleteAllHudWidgetsByName(`ConquestFlagEnemy_${pid}_${slot}`);
-    }
-    delete State.hudCache.hudByPid[pid];
-    delete State.conquest.debug.hudStatusVmByPid[pid];
-    delete State.conquest.debug.hudHelpReadyVmByPid[pid];
-    delete State.conquest.debug.hudClockVmByPid[pid];
-    delete State.conquest.debug.bleedPulseQueueLeftByPid[pid];
-    delete State.conquest.debug.bleedPulseQueueRightByPid[pid];
-    delete State.conquest.debug.bleedPulseActiveSideByPid[pid];
-    delete State.conquest.debug.bleedPulseStepByPid[pid];
-    delete State.conquest.debug.bleedPulseLimitByPid[pid];
-    delete State.conquest.debug.bleedPulsePhaseByPid[pid];
-    delete State.conquest.debug.bleedPulseNextAtByPid[pid];
+// Clears one player's combat-root initialization token so next ensure performs duplicate-root purge.
+function resetConquestCombatRootInitializationForPid(pid: number): void {
+    delete conquestCombatRootInitializedByPid[pid];
 }
 
 // Ensures all persistent HUD widgets exist for a player.
@@ -209,15 +24,16 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     if (!player || !mod.IsPlayerValid(player)) return undefined;
 
     const pid = getObjId(player);
+    // Build-order authority:
+    // ensure the clock root exists before conquest lanes so parent selection is correct on first build.
+    ensureClockUIAndGetCache(player);
     // Phase 3B anchor package from reference_design_documentation/ui_location_starter.md
-    const CONQUEST_HUD_NON_CLOCK_SHIFT_Y = 0;
-    // Tickets + flag stack correction: keep non-clock global shift for other HUD groups,
-    // but move ticket/flag lane back down as requested.
-    const CONQUEST_HUD_TICKETS_FLAGS_SHIFT_Y = CONQUEST_HUD_NON_CLOCK_SHIFT_Y + 20;
-    const CONQUEST_TICKETS_ROOT_X = 0;
-    const CONQUEST_TICKETS_ROOT_Y = CONQUEST_HUD_TICKETS_FLAGS_SHIFT_Y;
+    // Uses shared layout constants so cache-path and build-path placement stay in sync.
     const CONQUEST_TICKETS_ROOT_WIDTH = 561.77;
     const CONQUEST_TICKETS_ROOT_HEIGHT = 50;
+    // Root-local offsets; global centering is handled by the single combat root below.
+    const CONQUEST_TICKETS_ROOT_X = 0;
+    const CONQUEST_TICKETS_ROOT_Y = 0;
     // Inward nudge for ticket-side UI cluster (counter boxes + lead borders + crowns).
     // Positive value moves each side toward center by that many units.
     const CONQUEST_TICKETS_SIDE_INNER_NUDGE_X = 2;
@@ -249,19 +65,16 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_TICKETS_TEAM_SHADOW_TEXT_SIZE = CONQUEST_TICKETS_TEAM_TEXT_SIZE + 1;
     const CONQUEST_TICKETS_BG_RGB: [number, number, number] = [0.0314, 0.0431, 0.0431];
     const CONQUEST_TICKETS_BG_ALPHA = 0.75;
-    const CONQUEST_FLAGS_ROOT_X = 0;
-    const CONQUEST_FLAGS_ROOT_Y = CONQUEST_HUD_TICKETS_FLAGS_SHIFT_Y;
     const CONQUEST_FLAGS_ROOT_WIDTH = 238.5;
     const CONQUEST_FLAGS_ROOT_HEIGHT = 46;
-    const CONQUEST_TICKETS_TEAM_LEFT_ABS_X_BASE = (719.15 - CONQUEST_TICKETS_TEAM_OUTER_EXPAND) + CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
-    const CONQUEST_TICKETS_TEAM_RIGHT_ABS_X_BASE = 1140.54 - CONQUEST_TICKETS_SIDE_INNER_NUDGE_X;
-    // Extra downward tuning for the objective/ticket stack (clock lane remains fixed).
-    const CONQUEST_HUD_OBJECTIVE_STACK_EXTRA_DOWN_Y = 10;
-    const CONQUEST_TICKETS_TEAM_ABS_Y = 68.85 + CONQUEST_HUD_OBJECTIVE_STACK_EXTRA_DOWN_Y;
-    const CONQUEST_TICKETS_LEFT_BAR_ABS_X_BASE = 782.54;
-    const CONQUEST_TICKETS_RIGHT_BAR_ABS_X_BASE = 964.05;
-    const CONQUEST_TICKETS_BASE_CENTER_GAP_X = CONQUEST_TICKETS_RIGHT_BAR_ABS_X_BASE
-        - (CONQUEST_TICKETS_LEFT_BAR_ABS_X_BASE + CONQUEST_HUD_TICKET_BAR_WIDTH);
+    const CONQUEST_FLAGS_ROOT_X = 0;
+    const CONQUEST_FLAGS_ROOT_Y = 0;
+    // One centered combat root owns all conquest top HUD placement.
+    const CONQUEST_COMBAT_ROOT_WIDTH = Math.max(CONQUEST_TICKETS_ROOT_WIDTH, CONQUEST_FLAGS_ROOT_WIDTH);
+    const CONQUEST_COMBAT_ROOT_HEIGHT = 180;
+    const CONQUEST_COMBAT_ROOT_Y = CONQUEST_HUD_TICKETS_FLAGS_SHIFT_Y;
+    const CONQUEST_TICKETS_BASE_CENTER_GAP_X = CONQUEST_TICKETS_RIGHT_BAR_X_BASE
+        - (CONQUEST_TICKETS_LEFT_BAR_X_BASE + CONQUEST_HUD_TICKET_BAR_WIDTH);
     // Keep one "between-flag" gap between the center flag lane and each ticket bar.
     // Inter-flag edge gap = slot step - slot width.
     const CONQUEST_FLAGS_TO_TICKET_SIDE_GAP_X = Math.max(
@@ -279,10 +92,11 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_TICKETS_TEAM_RIGHT_X = CONQUEST_TICKETS_TEAM_RIGHT_X_BASE + CONQUEST_TICKETS_OUTWARD_SHIFT_X;
     const CONQUEST_TICKETS_LEFT_BAR_X = CONQUEST_TICKETS_LEFT_BAR_X_BASE - CONQUEST_TICKETS_OUTWARD_SHIFT_X;
     const CONQUEST_TICKETS_RIGHT_BAR_X = CONQUEST_TICKETS_RIGHT_BAR_X_BASE + CONQUEST_TICKETS_OUTWARD_SHIFT_X;
-    const CONQUEST_TICKETS_TEAM_LEFT_ABS_X = CONQUEST_TICKETS_TEAM_LEFT_ABS_X_BASE - CONQUEST_TICKETS_OUTWARD_SHIFT_X;
-    const CONQUEST_TICKETS_TEAM_RIGHT_ABS_X = CONQUEST_TICKETS_TEAM_RIGHT_ABS_X_BASE + CONQUEST_TICKETS_OUTWARD_SHIFT_X;
-    const CONQUEST_TICKETS_LEFT_BAR_ABS_X = CONQUEST_TICKETS_LEFT_BAR_ABS_X_BASE - CONQUEST_TICKETS_OUTWARD_SHIFT_X;
-    const CONQUEST_TICKETS_RIGHT_BAR_ABS_X = CONQUEST_TICKETS_RIGHT_BAR_ABS_X_BASE + CONQUEST_TICKETS_OUTWARD_SHIFT_X;
+    // Keep absolute layout aliases rooted in centered, root-local coordinates.
+    const CONQUEST_TICKETS_TEAM_LEFT_ABS_X = CONQUEST_TICKETS_TEAM_LEFT_X;
+    const CONQUEST_TICKETS_TEAM_RIGHT_ABS_X = CONQUEST_TICKETS_TEAM_RIGHT_X;
+    const CONQUEST_TICKETS_LEFT_BAR_ABS_X = CONQUEST_TICKETS_LEFT_BAR_X;
+    const CONQUEST_TICKETS_RIGHT_BAR_ABS_X = CONQUEST_TICKETS_RIGHT_BAR_X;
     const CONQUEST_TICKETS_BLEED_Y = CONQUEST_TICKETS_BAR_Y
         + Math.floor((CONQUEST_HUD_TICKET_BAR_HEIGHT - CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT) / 2)
         + CONQUEST_HUD_TICKET_BLEED_CHEVRON_IN_BAR_OFFSET_Y
@@ -292,17 +106,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         + CONQUEST_HUD_TICKET_BAR_WIDTH
         - CONQUEST_HUD_TICKET_BLEED_CHEVRON_OUTER_INSET_X
         - CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH;
-    const CONQUEST_TICKETS_BAR_ABS_Y = 78.55 + CONQUEST_HUD_OBJECTIVE_STACK_EXTRA_DOWN_Y;
-    const CONQUEST_TICKETS_BLEED_ABS_Y = CONQUEST_TICKETS_BAR_ABS_Y
-        + Math.floor((CONQUEST_HUD_TICKET_BAR_HEIGHT - CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT) / 2)
-        + CONQUEST_HUD_TICKET_BLEED_CHEVRON_IN_BAR_OFFSET_Y
-        + CONQUEST_HUD_TICKETS_FLAGS_SHIFT_Y
-        - 20;
-    const CONQUEST_TICKETS_BLEED_LEFT_ABS_X = CONQUEST_TICKETS_LEFT_BAR_ABS_X + CONQUEST_HUD_TICKET_BLEED_CHEVRON_OUTER_INSET_X;
-    const CONQUEST_TICKETS_BLEED_RIGHT_ABS_X = CONQUEST_TICKETS_RIGHT_BAR_ABS_X
-        + CONQUEST_HUD_TICKET_BAR_WIDTH
-        - CONQUEST_HUD_TICKET_BLEED_CHEVRON_OUTER_INSET_X
-        - CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH;
+    const CONQUEST_TICKETS_TEAM_ABS_Y = CONQUEST_TICKETS_ROW_Y;
+    const CONQUEST_TICKETS_BAR_ABS_Y = CONQUEST_TICKETS_BAR_Y;
     const CONQUEST_TICKETS_LEAD_LEFT_BORDER_ABS_X = CONQUEST_TICKETS_TEAM_LEFT_ABS_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW;
     const CONQUEST_TICKETS_LEAD_RIGHT_BORDER_ABS_X = CONQUEST_TICKETS_TEAM_RIGHT_ABS_X - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW;
     const CONQUEST_TICKETS_LEAD_BORDER_ABS_Y = CONQUEST_TICKETS_TEAM_ABS_Y - CONQUEST_HUD_TICKET_LEAD_BORDER_GROW;
@@ -320,41 +125,37 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_TICKETS_LEAD_LEFT_CROWN_SHADOW_ABS_X = CONQUEST_TICKETS_LEAD_LEFT_CROWN_ABS_X - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET;
     const CONQUEST_TICKETS_LEAD_RIGHT_CROWN_SHADOW_ABS_X = CONQUEST_TICKETS_LEAD_RIGHT_CROWN_ABS_X - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET;
     const CONQUEST_TICKETS_LEAD_CROWN_SHADOW_ABS_Y = CONQUEST_TICKETS_LEAD_CROWN_ABS_Y - CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_CENTER_SHIFT + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_OFFSET + CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_TOP_BIAS;
-    const CONQUEST_TICKETS_SLASH_ABS_X = 952.0;
-    const CONQUEST_TICKETS_SLASH_ABS_Y = 46.73;
-    const CONQUEST_TICKETS_BAR_CENTER_ABS_Y = CONQUEST_TICKETS_BAR_ABS_Y + (CONQUEST_HUD_TICKET_BAR_HEIGHT / 2);
+    const CONQUEST_TICKETS_SLASH_ABS_X = Math.floor((CONQUEST_TICKETS_ROOT_WIDTH - 16) / 2);
+    const CONQUEST_TICKETS_SLASH_ABS_Y = CONQUEST_TICKETS_ROW_Y;
+    const CONQUEST_TICKETS_BAR_CENTER_Y = CONQUEST_TICKETS_BAR_Y + (CONQUEST_HUD_TICKET_BAR_HEIGHT / 2);
     // Align objective slots with ticket-bar centerline for higher top-stack density.
-    const CONQUEST_FLAGS_SLOT_ABS_Y = CONQUEST_TICKETS_BAR_CENTER_ABS_Y - (CONQUEST_HUD_FLAG_SLOT_HEIGHT / 2);
-    const CONQUEST_FLAGS_CENTER_GAP_LEFT_EDGE_ABS_X = CONQUEST_TICKETS_LEFT_BAR_ABS_X + CONQUEST_HUD_TICKET_BAR_WIDTH;
-    const CONQUEST_FLAGS_CENTER_GAP_RIGHT_EDGE_ABS_X = CONQUEST_TICKETS_RIGHT_BAR_ABS_X;
-    const CONQUEST_FLAGS_CENTER_ABS_X = (CONQUEST_FLAGS_CENTER_GAP_LEFT_EDGE_ABS_X + CONQUEST_FLAGS_CENTER_GAP_RIGHT_EDGE_ABS_X) / 2;
-    const CONQUEST_FLAGS_FIRST_VISIBLE_SLOT_ABS_X = CONQUEST_FLAGS_CENTER_ABS_X - (CONQUEST_FLAGS_VISIBLE_SPAN_WIDTH / 2);
-    const CONQUEST_FLAGS_SLOT0_ABS_X = CONQUEST_FLAGS_FIRST_VISIBLE_SLOT_ABS_X
-        - (CONQUEST_FLAGS_FIRST_VISIBLE_SLOT_INDEX * CONQUEST_FLAGS_SLOT_STEP_X);
-    const CONQUEST_FLAGS_SLOT_ABS_X: number[] = [];
+    const CONQUEST_FLAGS_SLOT_ABS_Y = CONQUEST_TICKETS_BAR_CENTER_Y - (CONQUEST_HUD_FLAG_SLOT_HEIGHT / 2);
+    const CONQUEST_FLAGS_ACTIVE_CENTER_INDEX = CONQUEST_FLAGS_FIRST_VISIBLE_SLOT_INDEX + ((CONQUEST_FLAGS_ACTIVE_COUNT - 1) / 2);
+    const CONQUEST_FLAGS_SLOT0_X =
+        ((CONQUEST_FLAGS_ROOT_WIDTH - CONQUEST_HUD_FLAG_SLOT_WIDTH) / 2)
+        - (CONQUEST_FLAGS_ACTIVE_CENTER_INDEX * CONQUEST_FLAGS_SLOT_STEP_X);
+    const CONQUEST_FLAGS_SLOT_X: number[] = [];
     for (let i = 0; i < CONQUEST_FLAGS_MAX_ROWS; i++) {
-        CONQUEST_FLAGS_SLOT_ABS_X[i] = CONQUEST_FLAGS_SLOT0_ABS_X + (i * CONQUEST_FLAGS_SLOT_STEP_X);
+        CONQUEST_FLAGS_SLOT_X[i] = CONQUEST_FLAGS_SLOT0_X + (i * CONQUEST_FLAGS_SLOT_STEP_X);
     }
+    const CONQUEST_FLAGS_SLOT_ABS_X: number[] = CONQUEST_FLAGS_SLOT_X.slice();
+    const CONQUEST_FLAGS_CENTER_ABS_X = CONQUEST_FLAGS_SLOT0_X
+        + (CONQUEST_FLAGS_ACTIVE_CENTER_INDEX * CONQUEST_FLAGS_SLOT_STEP_X)
+        + (CONQUEST_HUD_FLAG_SLOT_WIDTH / 2);
     const CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_X = CONQUEST_FLAGS_CENTER_ABS_X - (CONQUEST_HUD_FLAG_ACTIVE_POPOUT_ROOT_WIDTH / 2);
-    const CONQUEST_FLAGS_ACTIVE_POPOUT_GAP_Y = 4.00;
-    const CONQUEST_FLAGS_ACTIVE_POPOUT_NUDGE_UP_Y = 6.00;
-    // Popout-only correction: lift popout without moving engage row.
-    const CONQUEST_FLAGS_ACTIVE_POPOUT_EXTRA_UP_Y = 20.00;
+    // v0.319 spacing baseline:
+    // popout lane sits 22 px above the old percent+gap baseline and engage sits 14 px below popout.
+    const CONQUEST_FLAGS_ACTIVE_POPOUT_OFFSET_Y = -22.00;
     const CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_Y = CONQUEST_FLAGS_SLOT_ABS_Y
         + CONQUEST_HUD_FLAG_PERCENT_OFFSET_Y
         + CONQUEST_HUD_FLAG_PERCENT_ROOT_HEIGHT
-        + CONQUEST_FLAGS_ACTIVE_POPOUT_GAP_Y
-        - CONQUEST_FLAGS_ACTIVE_POPOUT_NUDGE_UP_Y
-        - CONQUEST_FLAGS_ACTIVE_POPOUT_EXTRA_UP_Y;
-    const CONQUEST_FLAGS_ENGAGE_GAP_Y = 4.00;
-    const CONQUEST_FLAGS_ENGAGE_NUDGE_UP_Y = 10.00;
+        + CONQUEST_FLAGS_ACTIVE_POPOUT_OFFSET_Y;
+    const CONQUEST_FLAGS_ENGAGE_GAP_Y = 14.00;
     const CONQUEST_FLAGS_ENGAGE_ABS_X = CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_X
         - ((CONQUEST_HUD_FLAG_ENGAGE_ROOT_WIDTH - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_ROOT_WIDTH) / 2);
     const CONQUEST_FLAGS_ENGAGE_ABS_Y = CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_Y
         + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_ROOT_HEIGHT
-        + CONQUEST_FLAGS_ENGAGE_GAP_Y
-        + CONQUEST_FLAGS_ACTIVE_POPOUT_EXTRA_UP_Y
-        - CONQUEST_FLAGS_ENGAGE_NUDGE_UP_Y;
+        + CONQUEST_FLAGS_ENGAGE_GAP_Y;
     const CONQUEST_HELP_CONTAINER_X = -223.60;
     const CONQUEST_HELP_CONTAINER_Y = 81.10;
     const CONQUEST_HELP_CONTAINER_WIDTH = 561.77;
@@ -370,12 +171,6 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_READY_TEXT_HEIGHT = 18;
     const CONQUEST_READY_ABS_X = 5.0;
     const CONQUEST_READY_ABS_Y = 131.0 + CONQUEST_HUD_NON_CLOCK_SHIFT_Y;
-    // Root-local slot layout keeps active row centered while preserving fixed 7-slot schema widgets.
-    const CONQUEST_FLAGS_SLOT0_X = 0 - (CONQUEST_FLAGS_FIRST_VISIBLE_SLOT_INDEX * CONQUEST_FLAGS_SLOT_STEP_X);
-    const CONQUEST_FLAGS_SLOT_X: number[] = [];
-    for (let i = 0; i < CONQUEST_FLAGS_MAX_ROWS; i++) {
-        CONQUEST_FLAGS_SLOT_X[i] = CONQUEST_FLAGS_SLOT0_X + (i * CONQUEST_FLAGS_SLOT_STEP_X);
-    }
     // Returns ticket-root-local X for one bleed chevron index.
     // Index 0 is outermost (closest to the ticket counter), increasing inward toward center.
     const getBleedChevronX = (isLeftSide: boolean, chevronIndex: number): number => {
@@ -384,24 +179,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         }
         return CONQUEST_TICKETS_BLEED_RIGHT_X - (chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STEP_X);
     };
-    // Returns bar-track-local X for one bleed chevron index.
-    const getBleedChevronTrackX = (isLeftSide: boolean, chevronIndex: number): number => {
-        if (isLeftSide) {
-            return CONQUEST_HUD_TICKET_BLEED_CHEVRON_OUTER_INSET_X + (chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STEP_X);
-        }
-        return CONQUEST_HUD_TICKET_BAR_WIDTH
-            - CONQUEST_HUD_TICKET_BLEED_CHEVRON_OUTER_INSET_X
-            - CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH
-            - (chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STEP_X);
-    };
-    // Returns absolute/root-local X for one bleed chevron index.
-    const getBleedChevronAbsX = (isLeftSide: boolean, chevronIndex: number): number => {
-        if (isLeftSide) {
-            return CONQUEST_TICKETS_BLEED_LEFT_ABS_X + (chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STEP_X);
-        }
-        return CONQUEST_TICKETS_BLEED_RIGHT_ABS_X - (chevronIndex * CONQUEST_HUD_TICKET_BLEED_CHEVRON_STEP_X);
-    };
-    // Ensures all foreground and shadow bleed-chevron widgets exist for the active schema.
+    // Ensures all foreground and shadow bleed-chevron widgets exist for the active HUD tree.
     // This upgrades legacy HUD trees (3 chevrons, no shadows) in-place to 7 horizontal slots with shadow layers.
     const ensureConquestBleedChevronWidgets = (): void => {
         const createTextWidgetIfMissing = (
@@ -536,1853 +314,423 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             ]
         );
     };
-    // Hides legacy triplet-row flag widgets left behind by prior HUD layouts.
-    const hideLegacyFlagTripletRows = (): void => {
+    // Hard-purges legacy triplet-row flag widgets left behind by prior HUD layouts.
+    // Delete-all is required here because stale duplicates can survive hot-reload churn.
+    const purgeLegacyFlagTripletRows = (): void => {
         for (let i = 0; i < CONQUEST_FLAGS_MAX_ROWS; i++) {
-            safeSetUIWidgetVisible(safeFind(`ConquestFlagFriendly_${pid}_${i}`), false);
-            safeSetUIWidgetVisible(safeFind(`ConquestFlagCenter_${pid}_${i}`), false);
-            safeSetUIWidgetVisible(safeFind(`ConquestFlagEnemy_${pid}_${i}`), false);
+            deleteAllHudWidgetsByName(`ConquestFlagFriendly_${pid}_${i}`);
+            deleteAllHudWidgetsByName(`ConquestFlagCenter_${pid}_${i}`);
+            deleteAllHudWidgetsByName(`ConquestFlagEnemy_${pid}_${i}`);
         }
     };
-    // Hides legacy conquest roots from earlier HUD iterations so only V2 roots are visible.
-    const hideLegacyConquestRoots = (): void => {
-        safeSetUIWidgetVisible(safeFind(`ConquestTicketsDebugRoot_${pid}`), false);
-        safeSetUIWidgetVisible(safeFind(`ConquestFlagsDebugRoot_${pid}`), false);
+    // Hard-purges legacy conquest roots from earlier HUD iterations.
+    // Keeping these around (even hidden) can leak stale duplicates that render on some aspect/layout chains.
+    const purgeLegacyConquestRoots = (): void => {
+        deleteAllHudWidgetsByName(`ConquestHudRoot_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestTicketsDebugRoot_${pid}`);
+        deleteAllHudWidgetsByName(`ConquestFlagsDebugRoot_${pid}`);
     };
-
-    // Applies absolute top-left layout per widget under UIRoot.
-    // This bypasses root/container frame ambiguity so ticket/flag widgets match ui_location_starter coordinates exactly.
-    const applyConquestAbsoluteLayout = (refsForPid?: HudRefs, resetDynamicFillGeometry: boolean = false): void => {
-        const uiRoot = mod.GetUIRoot();
-        const ticketsRoot = safeFind(`ConquestTicketsHudRoot_${pid}`);
-        if (ticketsRoot) {
-            try {
-                mod.SetUIWidgetAnchor(ticketsRoot, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(ticketsRoot, uiRoot);
-            mod.SetUIWidgetPosition(ticketsRoot, mod.CreateVector(CONQUEST_TICKETS_ROOT_X, CONQUEST_TICKETS_ROOT_Y, 0));
-            mod.SetUIWidgetSize(ticketsRoot, mod.CreateVector(TOP_HUD_ROOT_WIDTH, TOP_HUD_ROOT_HEIGHT, 0));
-        }
-        const flagsRoot = safeFind(`ConquestFlagsHudRoot_${pid}`);
-        if (flagsRoot) {
-            try {
-                mod.SetUIWidgetAnchor(flagsRoot, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(flagsRoot, uiRoot);
-            mod.SetUIWidgetPosition(flagsRoot, mod.CreateVector(CONQUEST_FLAGS_ROOT_X, CONQUEST_FLAGS_ROOT_Y, 0));
-            mod.SetUIWidgetSize(flagsRoot, mod.CreateVector(TOP_HUD_ROOT_WIDTH, TOP_HUD_ROOT_HEIGHT, 0));
-        }
-        const ticketsParent = ticketsRoot ?? uiRoot;
-        const flagsParent = flagsRoot ?? uiRoot;
-        const setTicketCounterShadowRingAbsoluteLayout = (
-            teamPrefix: string,
-            parent: mod.UIWidget,
-            baseX: number,
-            baseY: number
-        ): void => {
-            for (let layerIndex = 0; layerIndex < CONQUEST_TICKET_COUNTER_SHADOW_RING_LAYERS.length; layerIndex++) {
-                const layer = CONQUEST_TICKET_COUNTER_SHADOW_RING_LAYERS[layerIndex];
-                const shadow = safeFind(`${teamPrefix}${layer.suffix}_${pid}`);
-                if (!shadow) continue;
-                try {
-                    mod.SetUIWidgetAnchor(shadow, mod.UIAnchor.TopLeft);
-                } catch {
-                    // Best-effort anchor normalization only.
-                }
-                mod.SetUIWidgetParent(shadow, parent);
-                mod.SetUIWidgetPosition(
-                    shadow,
-                    mod.CreateVector(baseX + layer.offsetX, baseY + layer.offsetY, 0)
-                );
-                mod.SetUIWidgetSize(
-                    shadow,
-                    mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0)
-                );
-                mod.SetUITextSize(shadow, CONQUEST_TICKETS_TEAM_SHADOW_TEXT_SIZE);
-                mod.SetUITextAlpha(shadow, CONQUEST_HUD_TICKET_COUNTER_SHADOW_ALPHA);
-            }
-        };
-
-        const ticketT1Container = refsForPid?.conquestTicketsTeam1Container
-            ?? safeFind(`ConquestTicketsHudTeam1Container_${pid}`);
-        if (ticketT1Container) {
-            try {
-                mod.SetUIWidgetAnchor(ticketT1Container, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(ticketT1Container, ticketsParent);
-            mod.SetUIWidgetPosition(ticketT1Container, mod.CreateVector(CONQUEST_TICKETS_TEAM_LEFT_ABS_X, CONQUEST_TICKETS_TEAM_ABS_Y, 0));
-            mod.SetUIWidgetSize(ticketT1Container, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
-        }
-        const ticketT1 = refsForPid?.conquestTicketsDebugTeam1 ?? safeFind(`ConquestTicketsHudTeam1_${pid}`);
-        const ticketT1Shadow = refsForPid?.conquestTicketsDebugTeam1Shadow ?? safeFind(`ConquestTicketsHudTeam1Shadow_${pid}`);
-        if (ticketT1) {
-            try {
-                mod.SetUIWidgetAnchor(ticketT1, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(ticketT1, ticketT1Container ?? ticketsParent);
-            mod.SetUIWidgetPosition(
-                ticketT1,
-                ticketT1Container
-                    ? mod.CreateVector(CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X, 0, 0)
-                    : mod.CreateVector(CONQUEST_TICKETS_TEAM_LEFT_ABS_X, CONQUEST_TICKETS_TEAM_ABS_Y, 0)
-            );
-            mod.SetUIWidgetSize(ticketT1, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
-        }
-        if (ticketT1Shadow) {
-            try {
-                mod.SetUIWidgetAnchor(ticketT1Shadow, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(ticketT1Shadow, ticketT1Container ?? ticketsParent);
-            mod.SetUIWidgetPosition(
-                ticketT1Shadow,
-                ticketT1Container
-                    ? mod.CreateVector(
-                        CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
-                        CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
-                        0
-                    )
-                    : mod.CreateVector(
-                        CONQUEST_TICKETS_TEAM_LEFT_ABS_X + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
-                        CONQUEST_TICKETS_TEAM_ABS_Y + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
-                        0
-                    )
-            );
-            mod.SetUIWidgetSize(ticketT1Shadow, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
-            mod.SetUITextSize(ticketT1Shadow, CONQUEST_TICKETS_TEAM_SHADOW_TEXT_SIZE);
-            if (ticketT1) {
-                mod.SetUIWidgetParent(ticketT1, ticketT1Container ?? ticketsParent);
-                mod.SetUIWidgetPosition(
-                    ticketT1,
-                    ticketT1Container
-                        ? mod.CreateVector(CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X, 0, 0)
-                        : mod.CreateVector(CONQUEST_TICKETS_TEAM_LEFT_ABS_X, CONQUEST_TICKETS_TEAM_ABS_Y, 0)
-                );
-                mod.SetUIWidgetSize(ticketT1, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
-                mod.SetUITextSize(ticketT1, CONQUEST_TICKETS_TEAM_TEXT_SIZE);
-            }
-        }
-        const ticketT1ShadowParent = ticketT1Container ?? ticketsParent;
-        const ticketT1ShadowBaseX = ticketT1Container ? CONQUEST_TICKETS_TEAM_TEXT_LEFT_OFFSET_X : CONQUEST_TICKETS_TEAM_LEFT_ABS_X;
-        const ticketT1ShadowBaseY = ticketT1Container ? 0 : CONQUEST_TICKETS_TEAM_ABS_Y;
-        setTicketCounterShadowRingAbsoluteLayout(
-            "ConquestTicketsHudTeam1",
-            ticketT1ShadowParent,
-            ticketT1ShadowBaseX,
-            ticketT1ShadowBaseY
-        );
-        const ticketT2Container = refsForPid?.conquestTicketsTeam2Container
-            ?? safeFind(`ConquestTicketsHudTeam2Container_${pid}`);
-        if (ticketT2Container) {
-            try {
-                mod.SetUIWidgetAnchor(ticketT2Container, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(ticketT2Container, ticketsParent);
-            mod.SetUIWidgetPosition(ticketT2Container, mod.CreateVector(CONQUEST_TICKETS_TEAM_RIGHT_ABS_X, CONQUEST_TICKETS_TEAM_ABS_Y, 0));
-            mod.SetUIWidgetSize(ticketT2Container, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
-        }
-        const ticketT2 = refsForPid?.conquestTicketsDebugTeam2 ?? safeFind(`ConquestTicketsHudTeam2_${pid}`);
-        const ticketT2Shadow = refsForPid?.conquestTicketsDebugTeam2Shadow ?? safeFind(`ConquestTicketsHudTeam2Shadow_${pid}`);
-        if (ticketT2) {
-            try {
-                mod.SetUIWidgetAnchor(ticketT2, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(ticketT2, ticketT2Container ?? ticketsParent);
-            mod.SetUIWidgetPosition(
-                ticketT2,
-                ticketT2Container
-                    ? mod.CreateVector(CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X, 0, 0)
-                    : mod.CreateVector(CONQUEST_TICKETS_TEAM_RIGHT_ABS_X, CONQUEST_TICKETS_TEAM_ABS_Y, 0)
-            );
-            mod.SetUIWidgetSize(ticketT2, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
-        }
-        if (ticketT2Shadow) {
-            try {
-                mod.SetUIWidgetAnchor(ticketT2Shadow, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(ticketT2Shadow, ticketT2Container ?? ticketsParent);
-            mod.SetUIWidgetPosition(
-                ticketT2Shadow,
-                ticketT2Container
-                    ? mod.CreateVector(
-                        CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
-                        CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
-                        0
-                    )
-                    : mod.CreateVector(
-                        CONQUEST_TICKETS_TEAM_RIGHT_ABS_X + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
-                        CONQUEST_TICKETS_TEAM_ABS_Y + CONQUEST_HUD_TICKET_COUNTER_SHADOW_OFFSET,
-                        0
-                    )
-            );
-            mod.SetUIWidgetSize(ticketT2Shadow, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
-            mod.SetUITextSize(ticketT2Shadow, CONQUEST_TICKETS_TEAM_SHADOW_TEXT_SIZE);
-            if (ticketT2) {
-                mod.SetUIWidgetParent(ticketT2, ticketT2Container ?? ticketsParent);
-                mod.SetUIWidgetPosition(
-                    ticketT2,
-                    ticketT2Container
-                        ? mod.CreateVector(CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X, 0, 0)
-                        : mod.CreateVector(CONQUEST_TICKETS_TEAM_RIGHT_ABS_X, CONQUEST_TICKETS_TEAM_ABS_Y, 0)
-                );
-                mod.SetUIWidgetSize(ticketT2, mod.CreateVector(CONQUEST_TICKETS_TEAM_WIDTH, CONQUEST_TICKETS_TEAM_HEIGHT, 0));
-                mod.SetUITextSize(ticketT2, CONQUEST_TICKETS_TEAM_TEXT_SIZE);
-            }
-        }
-        const ticketT2ShadowParent = ticketT2Container ?? ticketsParent;
-        const ticketT2ShadowBaseX = ticketT2Container ? CONQUEST_TICKETS_TEAM_TEXT_RIGHT_OFFSET_X : CONQUEST_TICKETS_TEAM_RIGHT_ABS_X;
-        const ticketT2ShadowBaseY = ticketT2Container ? 0 : CONQUEST_TICKETS_TEAM_ABS_Y;
-        setTicketCounterShadowRingAbsoluteLayout(
-            "ConquestTicketsHudTeam2",
-            ticketT2ShadowParent,
-            ticketT2ShadowBaseX,
-            ticketT2ShadowBaseY
-        );
-
-        const leadLeftBorder = refsForPid?.conquestTicketsLeadLeftBorder ?? safeFind(`ConquestTicketsHudLeadBorderLeft_${pid}`);
-        if (leadLeftBorder) {
-            try {
-                mod.SetUIWidgetAnchor(leadLeftBorder, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(leadLeftBorder, ticketsParent);
-            mod.SetUIWidgetPosition(leadLeftBorder, mod.CreateVector(CONQUEST_TICKETS_LEAD_LEFT_BORDER_ABS_X, CONQUEST_TICKETS_LEAD_BORDER_ABS_Y, 0));
-            mod.SetUIWidgetSize(leadLeftBorder, mod.CreateVector(CONQUEST_TICKETS_LEAD_BORDER_WIDTH, CONQUEST_TICKETS_LEAD_BORDER_HEIGHT, 0));
-        }
-        const leadRightBorder = refsForPid?.conquestTicketsLeadRightBorder ?? safeFind(`ConquestTicketsHudLeadBorderRight_${pid}`);
-        if (leadRightBorder) {
-            try {
-                mod.SetUIWidgetAnchor(leadRightBorder, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(leadRightBorder, ticketsParent);
-            mod.SetUIWidgetPosition(leadRightBorder, mod.CreateVector(CONQUEST_TICKETS_LEAD_RIGHT_BORDER_ABS_X, CONQUEST_TICKETS_LEAD_BORDER_ABS_Y, 0));
-            mod.SetUIWidgetSize(leadRightBorder, mod.CreateVector(CONQUEST_TICKETS_LEAD_BORDER_WIDTH, CONQUEST_TICKETS_LEAD_BORDER_HEIGHT, 0));
-        }
-
-        const leadLeftCrownShadow = refsForPid?.conquestTicketsLeadLeftCrownShadow ?? safeFind(`ConquestTicketsHudLeadCrownLeftShadow_${pid}`);
-        if (leadLeftCrownShadow) {
-            try {
-                mod.SetUIWidgetAnchor(leadLeftCrownShadow, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(leadLeftCrownShadow, ticketsParent);
-            mod.SetUIWidgetPosition(leadLeftCrownShadow, mod.CreateVector(CONQUEST_TICKETS_LEAD_LEFT_CROWN_SHADOW_ABS_X, CONQUEST_TICKETS_LEAD_CROWN_SHADOW_ABS_Y, 0));
-            mod.SetUIWidgetSize(leadLeftCrownShadow, mod.CreateVector(CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE, 0));
-        }
-        const leadRightCrownShadow = refsForPid?.conquestTicketsLeadRightCrownShadow ?? safeFind(`ConquestTicketsHudLeadCrownRightShadow_${pid}`);
-        if (leadRightCrownShadow) {
-            try {
-                mod.SetUIWidgetAnchor(leadRightCrownShadow, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(leadRightCrownShadow, ticketsParent);
-            mod.SetUIWidgetPosition(leadRightCrownShadow, mod.CreateVector(CONQUEST_TICKETS_LEAD_RIGHT_CROWN_SHADOW_ABS_X, CONQUEST_TICKETS_LEAD_CROWN_SHADOW_ABS_Y, 0));
-            mod.SetUIWidgetSize(leadRightCrownShadow, mod.CreateVector(CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SHADOW_SIZE, 0));
-        }
-
-        const leadLeftCrown = refsForPid?.conquestTicketsLeadLeftCrown ?? safeFind(`ConquestTicketsHudLeadCrownLeft_${pid}`);
-        if (leadLeftCrown) {
-            try {
-                mod.SetUIWidgetAnchor(leadLeftCrown, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(leadLeftCrown, ticketsParent);
-            mod.SetUIWidgetPosition(leadLeftCrown, mod.CreateVector(CONQUEST_TICKETS_LEAD_LEFT_CROWN_ABS_X, CONQUEST_TICKETS_LEAD_CROWN_ABS_Y, 0));
-            mod.SetUIWidgetSize(leadLeftCrown, mod.CreateVector(CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE, 0));
-        }
-        const leadRightCrown = refsForPid?.conquestTicketsLeadRightCrown ?? safeFind(`ConquestTicketsHudLeadCrownRight_${pid}`);
-        if (leadRightCrown) {
-            try {
-                mod.SetUIWidgetAnchor(leadRightCrown, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(leadRightCrown, ticketsParent);
-            mod.SetUIWidgetPosition(leadRightCrown, mod.CreateVector(CONQUEST_TICKETS_LEAD_RIGHT_CROWN_ABS_X, CONQUEST_TICKETS_LEAD_CROWN_ABS_Y, 0));
-            mod.SetUIWidgetSize(leadRightCrown, mod.CreateVector(CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE, CONQUEST_HUD_TICKET_LEAD_CROWN_SIZE, 0));
-        }
-
-        const leftBleedChevrons = refsForPid?.conquestTicketsBleedLeftChevrons ?? [];
-        const rightBleedChevrons = refsForPid?.conquestTicketsBleedRightChevrons ?? [];
-        const chevronOverlayParent = uiRoot;
-        for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
-            // Keep chevrons under UIRoot overlay so ticket bar/fill layering cannot occlude the glyphs.
-            const leftParent = chevronOverlayParent;
-            const rightParent = chevronOverlayParent;
-            const leftX = getBleedChevronAbsX(true, chevronIndex);
-            const rightX = getBleedChevronAbsX(false, chevronIndex);
-            const leftY = CONQUEST_TICKETS_BLEED_ABS_Y;
-            const rightY = CONQUEST_TICKETS_BLEED_ABS_Y;
-            const leftChevron = leftBleedChevrons[chevronIndex] ?? safeFind(`ConquestTicketsHudBleedChevronLeft${chevronIndex + 1}_${pid}`);
-            if (leftChevron) {
-                try {
-                    mod.SetUIWidgetAnchor(leftChevron, mod.UIAnchor.TopLeft);
-                } catch {
-                    // Best-effort anchor normalization only.
-                }
-                mod.SetUIWidgetParent(leftChevron, leftParent);
-                mod.SetUIWidgetPosition(leftChevron, mod.CreateVector(leftX, leftY, 0));
-                mod.SetUIWidgetSize(
-                    leftChevron,
-                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
-                );
-            }
-
-            const rightChevron = rightBleedChevrons[chevronIndex] ?? safeFind(`ConquestTicketsHudBleedChevronRight${chevronIndex + 1}_${pid}`);
-            if (rightChevron) {
-                try {
-                    mod.SetUIWidgetAnchor(rightChevron, mod.UIAnchor.TopLeft);
-                } catch {
-                    // Best-effort anchor normalization only.
-                }
-                mod.SetUIWidgetParent(rightChevron, rightParent);
-                mod.SetUIWidgetPosition(rightChevron, mod.CreateVector(rightX, rightY, 0));
-                mod.SetUIWidgetSize(
-                    rightChevron,
-                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
-                );
-            }
-            const setBleedShadowAbsoluteLayout = (name: string, x: number, y: number, parent: mod.UIWidget): void => {
-                const shadow = safeFind(name);
-                if (!shadow) return;
-                try {
-                    mod.SetUIWidgetAnchor(shadow, mod.UIAnchor.TopLeft);
-                } catch {
-                    // Best-effort anchor normalization only.
-                }
-                mod.SetUIWidgetParent(shadow, parent);
-                mod.SetUIWidgetPosition(shadow, mod.CreateVector(x, y, 0));
-                mod.SetUIWidgetSize(
-                    shadow,
-                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
-                );
-            };
-            const slot = chevronIndex + 1;
-            const d = CONQUEST_HUD_TICKET_BLEED_CHEVRON_SHADOW_OFFSET;
-            const dUp = d * 0.5;
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowRight_${pid}`, leftX + d, leftY, leftParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowLeft_${pid}`, leftX - d, leftY, leftParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`, leftX, leftY - dUp, leftParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDown_${pid}`, leftX, leftY + d, leftParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`, leftX - d, leftY - dUp, leftParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`, leftX + d, leftY - dUp, leftParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownRight_${pid}`, leftX + d, leftY + d, leftParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownLeft_${pid}`, leftX - d, leftY + d, leftParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowRight_${pid}`, rightX + d, rightY, rightParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowLeft_${pid}`, rightX - d, rightY, rightParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`, rightX, rightY - dUp, rightParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowDown_${pid}`, rightX, rightY + d, rightParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`, rightX - d, rightY - dUp, rightParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`, rightX + d, rightY - dUp, rightParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownRight_${pid}`, rightX + d, rightY + d, rightParent);
-            setBleedShadowAbsoluteLayout(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownLeft_${pid}`, rightX - d, rightY + d, rightParent);
-            // Re-attach core chevrons after shadows so the colored glyph sits above the black drop-shadow ring.
-            if (leftChevron) {
-                mod.SetUIWidgetParent(leftChevron, leftParent);
-                mod.SetUIWidgetPosition(leftChevron, mod.CreateVector(leftX, leftY, 0));
-                mod.SetUIWidgetSize(
-                    leftChevron,
-                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
-                );
-            }
-            if (rightChevron) {
-                mod.SetUIWidgetParent(rightChevron, rightParent);
-                mod.SetUIWidgetPosition(rightChevron, mod.CreateVector(rightX, rightY, 0));
-                mod.SetUIWidgetSize(
-                    rightChevron,
-                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
-                );
-            }
-        }
-
-        const ticketSlash = refsForPid?.conquestTicketsSlash ?? safeFind(`ConquestTicketsHudSlash_${pid}`);
-        if (ticketSlash) {
-            try {
-                mod.SetUIWidgetAnchor(ticketSlash, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(ticketSlash, ticketsParent);
-            mod.SetUIWidgetPosition(ticketSlash, mod.CreateVector(CONQUEST_TICKETS_SLASH_ABS_X, CONQUEST_TICKETS_SLASH_ABS_Y, 0));
-            mod.SetUIWidgetVisible(ticketSlash, false);
-        }
-
-        const leftTrack = refsForPid?.conquestTicketsDebugLeftBarTrack ?? safeFind(`ConquestTicketsHudLeftBarTrack_${pid}`);
-        const leftFill = refsForPid?.conquestTicketsDebugLeftBarFill ?? safeFind(`ConquestTicketsHudLeftBarFill_${pid}`);
-        if (leftTrack) {
-            try {
-                mod.SetUIWidgetAnchor(leftTrack, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(leftTrack, ticketsParent);
-            mod.SetUIWidgetPosition(leftTrack, mod.CreateVector(CONQUEST_TICKETS_LEFT_BAR_ABS_X, CONQUEST_TICKETS_BAR_ABS_Y, 0));
-            mod.SetUIWidgetSize(leftTrack, mod.CreateVector(CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT, 0));
-        }
-        if (leftFill && leftTrack) {
-            mod.SetUIWidgetParent(leftFill, leftTrack);
-            mod.SetUIWidgetPosition(leftFill, mod.CreateVector(0, 0, 0));
-            if (resetDynamicFillGeometry) {
-                mod.SetUIWidgetSize(leftFill, mod.CreateVector(CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT, 0));
-            }
-        }
-
-        const rightTrack = refsForPid?.conquestTicketsDebugRightBarTrack ?? safeFind(`ConquestTicketsHudRightBarTrack_${pid}`);
-        const rightFill = refsForPid?.conquestTicketsDebugRightBarFill ?? safeFind(`ConquestTicketsHudRightBarFill_${pid}`);
-        if (rightTrack) {
-            try {
-                mod.SetUIWidgetAnchor(rightTrack, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(rightTrack, ticketsParent);
-            mod.SetUIWidgetPosition(rightTrack, mod.CreateVector(CONQUEST_TICKETS_RIGHT_BAR_ABS_X, CONQUEST_TICKETS_BAR_ABS_Y, 0));
-            mod.SetUIWidgetSize(rightTrack, mod.CreateVector(CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT, 0));
-        }
-        if (rightFill && rightTrack) {
-            mod.SetUIWidgetParent(rightFill, rightTrack);
-            mod.SetUIWidgetPosition(rightFill, mod.CreateVector(0, 0, 0));
-            if (resetDynamicFillGeometry) {
-                mod.SetUIWidgetSize(rightFill, mod.CreateVector(CONQUEST_HUD_TICKET_BAR_WIDTH, CONQUEST_HUD_TICKET_BAR_HEIGHT, 0));
-            }
-        }
-        // Final ordering pass for bleed chevrons in absolute layout:
-        // 1) bar track/fill (already parented above)
-        // 2) chevron shadows
-        // 3) chevron colored core (top-most)
-        const leftBleedChevronsFinal = refsForPid?.conquestTicketsBleedLeftChevrons ?? [];
-        const rightBleedChevronsFinal = refsForPid?.conquestTicketsBleedRightChevrons ?? [];
-        const chevronOverlayParentFinal = uiRoot;
-        for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
-            const leftParent = chevronOverlayParentFinal;
-            const rightParent = chevronOverlayParentFinal;
-            const leftX = getBleedChevronAbsX(true, chevronIndex);
-            const rightX = getBleedChevronAbsX(false, chevronIndex);
-            const leftY = CONQUEST_TICKETS_BLEED_ABS_Y;
-            const rightY = CONQUEST_TICKETS_BLEED_ABS_Y;
-            const slot = chevronIndex + 1;
-            const d = CONQUEST_HUD_TICKET_BLEED_CHEVRON_SHADOW_OFFSET;
-            const dUp = d * 0.5;
-            const setBleedShadowAbsoluteFinal = (name: string, x: number, y: number, parent: mod.UIWidget): void => {
-                const shadow = safeFind(name);
-                if (!shadow) return;
-                mod.SetUIWidgetParent(shadow, parent);
-                mod.SetUIWidgetPosition(shadow, mod.CreateVector(x, y, 0));
-                mod.SetUIWidgetSize(
-                    shadow,
-                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
-                );
-            };
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowRight_${pid}`, leftX + d, leftY, leftParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowLeft_${pid}`, leftX - d, leftY, leftParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUp_${pid}`, leftX, leftY - dUp, leftParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDown_${pid}`, leftX, leftY + d, leftParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpLeft_${pid}`, leftX - d, leftY - dUp, leftParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowUpRight_${pid}`, leftX + d, leftY - dUp, leftParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownRight_${pid}`, leftX + d, leftY + d, leftParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronLeft${slot}ShadowDownLeft_${pid}`, leftX - d, leftY + d, leftParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowRight_${pid}`, rightX + d, rightY, rightParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowLeft_${pid}`, rightX - d, rightY, rightParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowUp_${pid}`, rightX, rightY - dUp, rightParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowDown_${pid}`, rightX, rightY + d, rightParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpLeft_${pid}`, rightX - d, rightY - dUp, rightParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowUpRight_${pid}`, rightX + d, rightY - dUp, rightParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownRight_${pid}`, rightX + d, rightY + d, rightParent);
-            setBleedShadowAbsoluteFinal(`ConquestTicketsHudBleedChevronRight${slot}ShadowDownLeft_${pid}`, rightX - d, rightY + d, rightParent);
-
-            const leftChevron = leftBleedChevronsFinal[chevronIndex] ?? safeFind(`ConquestTicketsHudBleedChevronLeft${slot}_${pid}`);
-            if (leftChevron) {
-                mod.SetUIWidgetParent(leftChevron, leftParent);
-                mod.SetUIWidgetPosition(leftChevron, mod.CreateVector(leftX, leftY, 0));
-                mod.SetUIWidgetSize(
-                    leftChevron,
-                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
-                );
-            }
-            const rightChevron = rightBleedChevronsFinal[chevronIndex] ?? safeFind(`ConquestTicketsHudBleedChevronRight${slot}_${pid}`);
-            if (rightChevron) {
-                mod.SetUIWidgetParent(rightChevron, rightParent);
-                mod.SetUIWidgetPosition(rightChevron, mod.CreateVector(rightX, rightY, 0));
-                mod.SetUIWidgetSize(
-                    rightChevron,
-                    mod.CreateVector(CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH, CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT, 0)
-                );
-            }
-        }
-
-        const slotRoots = refsForPid?.conquestFlagsDebugSlotRoots ?? [];
-        const slotBorders = refsForPid?.conquestFlagsDebugBorderRows ?? [];
-        const slotFills = refsForPid?.conquestFlagsDebugFillRows ?? [];
-        const slotLabelShadowsRight = refsForPid?.conquestFlagsDebugLabelShadowRightRows ?? [];
-        const slotLabelShadowsLeft = refsForPid?.conquestFlagsDebugLabelShadowLeftRows ?? [];
-        const slotLabelShadowsUp = refsForPid?.conquestFlagsDebugLabelShadowUpRows ?? [];
-        const slotLabelShadowsDown = refsForPid?.conquestFlagsDebugLabelShadowDownRows ?? [];
-        const slotLabelShadowsUpLeft = refsForPid?.conquestFlagsDebugLabelShadowUpLeftRows ?? [];
-        const slotLabelShadowsUpRight = refsForPid?.conquestFlagsDebugLabelShadowUpRightRows ?? [];
-        const slotLabelShadowsDownRight = refsForPid?.conquestFlagsDebugLabelShadowDownRightRows ?? [];
-        const slotLabelShadowsDownLeft = refsForPid?.conquestFlagsDebugLabelShadowDownLeftRows ?? [];
-        const slotLabelShadowsInner = refsForPid?.conquestFlagsDebugLabelShadowInnerRows ?? [];
-        const slotLabelShadowsInnerDeep = refsForPid?.conquestFlagsDebugLabelShadowInnerDeepRows ?? [];
-        const slotLabels = refsForPid?.conquestFlagsDebugLabelRows ?? [];
-        const slotPercentRoots = refsForPid?.conquestFlagsDebugPercentRoots ?? [];
-        const slotPercentShadowsRight = refsForPid?.conquestFlagsDebugPercentShadowRightRows ?? [];
-        const slotPercentShadowsLeft = refsForPid?.conquestFlagsDebugPercentShadowLeftRows ?? [];
-        const slotPercentShadowsUp = refsForPid?.conquestFlagsDebugPercentShadowUpRows ?? [];
-        const slotPercentShadowsDown = refsForPid?.conquestFlagsDebugPercentShadowDownRows ?? [];
-        const slotPercentShadowsUpLeft = refsForPid?.conquestFlagsDebugPercentShadowUpLeftRows ?? [];
-        const slotPercentShadowsUpRight = refsForPid?.conquestFlagsDebugPercentShadowUpRightRows ?? [];
-        const slotPercentShadowsDownRight = refsForPid?.conquestFlagsDebugPercentShadowDownRightRows ?? [];
-        const slotPercentShadowsDownLeft = refsForPid?.conquestFlagsDebugPercentShadowDownLeftRows ?? [];
-        const slotPercentShadowsInner = refsForPid?.conquestFlagsDebugPercentShadowInnerRows ?? [];
-        const slotPercentTexts = refsForPid?.conquestFlagsDebugPercentTextRows ?? [];
-        for (let i = 0; i < CONQUEST_FLAGS_MAX_ROWS; i++) {
-            const slot = slotRoots[i] ?? safeFind(`ConquestFlagHudSlot_${pid}_${i}`);
-            const border = slotBorders[i] ?? safeFind(`ConquestFlagHudBorder_${pid}_${i}`);
-            const fill = slotFills[i] ?? safeFind(`ConquestFlagHudFill_${pid}_${i}`);
-            const labelShadowRight = slotLabelShadowsRight[i] ?? safeFind(`ConquestFlagHudLabelShadowRight_${pid}_${i}`);
-            const labelShadowLeft = slotLabelShadowsLeft[i] ?? safeFind(`ConquestFlagHudLabelShadowLeft_${pid}_${i}`);
-            const labelShadowUp = slotLabelShadowsUp[i] ?? safeFind(`ConquestFlagHudLabelShadowUp_${pid}_${i}`);
-            const labelShadowDown = slotLabelShadowsDown[i] ?? safeFind(`ConquestFlagHudLabelShadowDown_${pid}_${i}`);
-            const labelShadowUpLeft = slotLabelShadowsUpLeft[i] ?? safeFind(`ConquestFlagHudLabelShadowUpLeft_${pid}_${i}`);
-            const labelShadowUpRight = slotLabelShadowsUpRight[i] ?? safeFind(`ConquestFlagHudLabelShadowUpRight_${pid}_${i}`);
-            const labelShadowDownRight = slotLabelShadowsDownRight[i] ?? safeFind(`ConquestFlagHudLabelShadowDownRight_${pid}_${i}`);
-            const labelShadowDownLeft = slotLabelShadowsDownLeft[i] ?? safeFind(`ConquestFlagHudLabelShadowDownLeft_${pid}_${i}`);
-            const labelShadowInner = slotLabelShadowsInner[i] ?? safeFind(`ConquestFlagHudLabelShadowInner_${pid}_${i}`);
-            const labelShadowInnerDeep = slotLabelShadowsInnerDeep[i] ?? safeFind(`ConquestFlagHudLabelShadowInnerDeep_${pid}_${i}`);
-            const label = slotLabels[i] ?? safeFind(`ConquestFlagHudLabel_${pid}_${i}`);
-            const percentRoot = slotPercentRoots[i] ?? safeFind(`ConquestFlagHudPercentRoot_${pid}_${i}`);
-            const percentShadowRight = slotPercentShadowsRight[i] ?? safeFind(`ConquestFlagHudPercentShadowRight_${pid}_${i}`);
-            const percentShadowLeft = slotPercentShadowsLeft[i] ?? safeFind(`ConquestFlagHudPercentShadowLeft_${pid}_${i}`);
-            const percentShadowUp = slotPercentShadowsUp[i] ?? safeFind(`ConquestFlagHudPercentShadowUp_${pid}_${i}`);
-            const percentShadowDown = slotPercentShadowsDown[i] ?? safeFind(`ConquestFlagHudPercentShadowDown_${pid}_${i}`);
-            const percentShadowUpLeft = slotPercentShadowsUpLeft[i] ?? safeFind(`ConquestFlagHudPercentShadowUpLeft_${pid}_${i}`);
-            const percentShadowUpRight = slotPercentShadowsUpRight[i] ?? safeFind(`ConquestFlagHudPercentShadowUpRight_${pid}_${i}`);
-            const percentShadowDownRight = slotPercentShadowsDownRight[i] ?? safeFind(`ConquestFlagHudPercentShadowDownRight_${pid}_${i}`);
-            const percentShadowDownLeft = slotPercentShadowsDownLeft[i] ?? safeFind(`ConquestFlagHudPercentShadowDownLeft_${pid}_${i}`);
-            const percentShadowInner = slotPercentShadowsInner[i] ?? safeFind(`ConquestFlagHudPercentShadowInner_${pid}_${i}`);
-            const percentText = slotPercentTexts[i] ?? safeFind(`ConquestFlagHudPercentText_${pid}_${i}`);
-            const slotAbsX = CONQUEST_FLAGS_SLOT_ABS_X[i] ?? (840.50 + (i * 35.0));
-            if (slot) {
-                try {
-                    mod.SetUIWidgetAnchor(slot, mod.UIAnchor.TopLeft);
-                } catch {
-                    // Best-effort anchor normalization only.
-                }
-                mod.SetUIWidgetParent(slot, flagsParent);
-                mod.SetUIWidgetPosition(slot, mod.CreateVector(slotAbsX, CONQUEST_FLAGS_SLOT_ABS_Y, 0));
-                mod.SetUIWidgetSize(slot, mod.CreateVector(CONQUEST_HUD_FLAG_SLOT_WIDTH, CONQUEST_HUD_FLAG_SLOT_HEIGHT, 0));
-            }
-            if (fill && slot) {
-                mod.SetUIWidgetParent(fill, slot);
-                if (resetDynamicFillGeometry) {
-                    mod.SetUIWidgetPosition(fill, mod.CreateVector(CONQUEST_HUD_FLAG_FILL_INSET_X, CONQUEST_HUD_FLAG_FILL_INSET_Y, 0));
-                    mod.SetUIWidgetSize(fill, mod.CreateVector(CONQUEST_HUD_FLAG_FILL_MAX_WIDTH, CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT, 0));
-                }
-            }
-            if (border && slot) {
-                mod.SetUIWidgetParent(border, slot);
-                mod.SetUIWidgetPosition(border, mod.CreateVector(0, 0, 0));
-                mod.SetUIWidgetSize(border, mod.CreateVector(CONQUEST_HUD_FLAG_SLOT_WIDTH, CONQUEST_HUD_FLAG_SLOT_HEIGHT, 0));
-            }
-            if (labelShadowRight && slot) {
-                mod.SetUIWidgetParent(labelShadowRight, slot);
-                mod.SetUIWidgetPosition(labelShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(labelShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
-            }
-            if (labelShadowLeft && slot) {
-                mod.SetUIWidgetParent(labelShadowLeft, slot);
-                mod.SetUIWidgetPosition(labelShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(labelShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
-            }
-            if (labelShadowUp && slot) {
-                mod.SetUIWidgetParent(labelShadowUp, slot);
-                mod.SetUIWidgetPosition(labelShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
-            }
-            if (labelShadowDown && slot) {
-                mod.SetUIWidgetParent(labelShadowDown, slot);
-                mod.SetUIWidgetPosition(labelShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
-            }
-            if (labelShadowUpLeft && slot) {
-                mod.SetUIWidgetParent(labelShadowUpLeft, slot);
-                mod.SetUIWidgetPosition(labelShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
-            }
-            if (labelShadowUpRight && slot) {
-                mod.SetUIWidgetParent(labelShadowUpRight, slot);
-                mod.SetUIWidgetPosition(labelShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
-            }
-            if (labelShadowDownRight && slot) {
-                mod.SetUIWidgetParent(labelShadowDownRight, slot);
-                mod.SetUIWidgetPosition(labelShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
-            }
-            if (labelShadowDownLeft && slot) {
-                mod.SetUIWidgetParent(labelShadowDownLeft, slot);
-                mod.SetUIWidgetPosition(labelShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(labelShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
-            }
-            if (labelShadowInner && slot) {
-                mod.SetUIWidgetParent(labelShadowInner, slot);
-                mod.SetUIWidgetPosition(labelShadowInner, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(labelShadowInner, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
-            }
-            if (labelShadowInnerDeep && slot) {
-                mod.SetUIWidgetParent(labelShadowInnerDeep, slot);
-                mod.SetUIWidgetPosition(labelShadowInnerDeep, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(labelShadowInnerDeep, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
-            }
-            if (label && slot) {
-                mod.SetUIWidgetParent(label, slot);
-                mod.SetUIWidgetPosition(label, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_LABEL_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(label, mod.CreateVector(CONQUEST_HUD_FLAG_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_LABEL_WIDGET_HEIGHT, 0));
-            }
-            if (percentRoot) {
-                try {
-                    mod.SetUIWidgetAnchor(percentRoot, mod.UIAnchor.TopLeft);
-                } catch {
-                    // Best-effort anchor normalization only.
-                }
-                mod.SetUIWidgetParent(percentRoot, flagsParent);
-                mod.SetUIWidgetPosition(percentRoot, mod.CreateVector(slotAbsX + CONQUEST_HUD_FLAG_PERCENT_OFFSET_X, CONQUEST_FLAGS_SLOT_ABS_Y + CONQUEST_HUD_FLAG_PERCENT_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(percentRoot, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_ROOT_WIDTH, CONQUEST_HUD_FLAG_PERCENT_ROOT_HEIGHT, 0));
-            }
-            if (percentShadowRight && percentRoot) {
-                mod.SetUIWidgetParent(percentShadowRight, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(percentShadowRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
-            }
-            if (percentShadowLeft && percentRoot) {
-                mod.SetUIWidgetParent(percentShadowLeft, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(percentShadowLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
-            }
-            if (percentShadowUp && percentRoot) {
-                mod.SetUIWidgetParent(percentShadowUp, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowUp, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
-            }
-            if (percentShadowDown && percentRoot) {
-                mod.SetUIWidgetParent(percentShadowDown, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowDown, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
-            }
-            if (percentShadowUpLeft && percentRoot) {
-                mod.SetUIWidgetParent(percentShadowUpLeft, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowUpLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
-            }
-            if (percentShadowUpRight && percentRoot) {
-                mod.SetUIWidgetParent(percentShadowUpRight, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowUpRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
-            }
-            if (percentShadowDownRight && percentRoot) {
-                mod.SetUIWidgetParent(percentShadowDownRight, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowDownRight, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
-            }
-            if (percentShadowDownLeft && percentRoot) {
-                mod.SetUIWidgetParent(percentShadowDownLeft, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET, 0));
-                mod.SetUIWidgetSize(percentShadowDownLeft, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
-            }
-            if (percentShadowInner && percentRoot) {
-                mod.SetUIWidgetParent(percentShadowInner, percentRoot);
-                mod.SetUIWidgetPosition(percentShadowInner, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(percentShadowInner, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
-            }
-            if (percentText && percentRoot) {
-                mod.SetUIWidgetParent(percentText, percentRoot);
-                mod.SetUIWidgetPosition(percentText, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_PERCENT_WIDGET_OFFSET_Y, 0));
-                mod.SetUIWidgetSize(percentText, mod.CreateVector(CONQUEST_HUD_FLAG_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_PERCENT_WIDGET_HEIGHT, 0));
-            }
-        }
-
-        const activePopoutRoot = refsForPid?.conquestFlagsActivePopoutRoot ?? safeFind(`ConquestFlagHudActivePopoutRoot_${pid}`);
-        const activePopoutSlot = refsForPid?.conquestFlagsActivePopoutSlot ?? safeFind(`ConquestFlagHudActivePopoutSlot_${pid}`);
-        const activePopoutBorder = refsForPid?.conquestFlagsActivePopoutBorder ?? safeFind(`ConquestFlagHudActivePopoutBorder_${pid}`);
-        const activePopoutFill = refsForPid?.conquestFlagsActivePopoutFill ?? safeFind(`ConquestFlagHudActivePopoutFill_${pid}`);
-        const activePopoutLabelShadowRight = refsForPid?.conquestFlagsActivePopoutLabelShadowRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowRight_${pid}`);
-        const activePopoutLabelShadowLeft = refsForPid?.conquestFlagsActivePopoutLabelShadowLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowLeft_${pid}`);
-        const activePopoutLabelShadowUp = refsForPid?.conquestFlagsActivePopoutLabelShadowUp ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUp_${pid}`);
-        const activePopoutLabelShadowDown = refsForPid?.conquestFlagsActivePopoutLabelShadowDown ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDown_${pid}`);
-        const activePopoutLabelShadowUpLeft = refsForPid?.conquestFlagsActivePopoutLabelShadowUpLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUpLeft_${pid}`);
-        const activePopoutLabelShadowUpRight = refsForPid?.conquestFlagsActivePopoutLabelShadowUpRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUpRight_${pid}`);
-        const activePopoutLabelShadowDownRight = refsForPid?.conquestFlagsActivePopoutLabelShadowDownRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDownRight_${pid}`);
-        const activePopoutLabelShadowDownLeft = refsForPid?.conquestFlagsActivePopoutLabelShadowDownLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDownLeft_${pid}`);
-        const activePopoutLabel = refsForPid?.conquestFlagsActivePopoutLabel ?? safeFind(`ConquestFlagHudActivePopoutLabel_${pid}`);
-        const activePopoutPercentRoot = refsForPid?.conquestFlagsActivePopoutPercentRoot ?? safeFind(`ConquestFlagHudActivePopoutPercentRoot_${pid}`);
-        const activePopoutPercentShadowRight = refsForPid?.conquestFlagsActivePopoutPercentShadowRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowRight_${pid}`);
-        const activePopoutPercentShadowLeft = refsForPid?.conquestFlagsActivePopoutPercentShadowLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowLeft_${pid}`);
-        const activePopoutPercentShadowUp = refsForPid?.conquestFlagsActivePopoutPercentShadowUp ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUp_${pid}`);
-        const activePopoutPercentShadowDown = refsForPid?.conquestFlagsActivePopoutPercentShadowDown ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDown_${pid}`);
-        const activePopoutPercentShadowUpLeft = refsForPid?.conquestFlagsActivePopoutPercentShadowUpLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUpLeft_${pid}`);
-        const activePopoutPercentShadowUpRight = refsForPid?.conquestFlagsActivePopoutPercentShadowUpRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUpRight_${pid}`);
-        const activePopoutPercentShadowDownRight = refsForPid?.conquestFlagsActivePopoutPercentShadowDownRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDownRight_${pid}`);
-        const activePopoutPercentShadowDownLeft = refsForPid?.conquestFlagsActivePopoutPercentShadowDownLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDownLeft_${pid}`);
-        const activePopoutPercentShadowInner = refsForPid?.conquestFlagsActivePopoutPercentShadowInner ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowInner_${pid}`);
-        const activePopoutPercentText = refsForPid?.conquestFlagsActivePopoutPercentText ?? safeFind(`ConquestFlagHudActivePopoutPercentText_${pid}`);
-
-        if (activePopoutRoot) {
-            try {
-                mod.SetUIWidgetAnchor(activePopoutRoot, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(activePopoutRoot, flagsParent);
-            mod.SetUIWidgetPosition(activePopoutRoot, mod.CreateVector(CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_X, CONQUEST_FLAGS_ACTIVE_POPOUT_ABS_Y, 0));
-            mod.SetUIWidgetSize(
-                activePopoutRoot,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_ROOT_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_ROOT_HEIGHT, 0)
-            );
-        }
-        if (activePopoutSlot && activePopoutRoot) {
-            mod.SetUIWidgetParent(activePopoutSlot, activePopoutRoot);
-            mod.SetUIWidgetPosition(
-                activePopoutSlot,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_OFFSET_Y, 0)
-            );
-            mod.SetUIWidgetSize(
-                activePopoutSlot,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_HEIGHT, 0)
-            );
-        }
-        if (activePopoutBorder && activePopoutSlot) {
-            mod.SetUIWidgetParent(activePopoutBorder, activePopoutSlot);
-            mod.SetUIWidgetPosition(activePopoutBorder, mod.CreateVector(0, 0, 0));
-            mod.SetUIWidgetSize(
-                activePopoutBorder,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_SLOT_HEIGHT, 0)
-            );
-        }
-        if (activePopoutFill && activePopoutSlot) {
-            mod.SetUIWidgetParent(activePopoutFill, activePopoutSlot);
-            mod.SetUIWidgetPosition(
-                activePopoutFill,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_INSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_INSET_Y, 0)
-            );
-            if (resetDynamicFillGeometry) {
-                mod.SetUIWidgetSize(
-                    activePopoutFill,
-                    mod.CreateVector(
-                        CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_MAX_WIDTH,
-                        CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_MAX_HEIGHT,
-                        0
-                    )
-                );
-            }
-        }
-        if (activePopoutLabelShadowRight && activePopoutSlot) {
-            mod.SetUIWidgetParent(activePopoutLabelShadowRight, activePopoutSlot);
-            mod.SetUIWidgetPosition(
-                activePopoutLabelShadowRight,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutLabelShadowRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutLabelShadowLeft && activePopoutSlot) {
-            mod.SetUIWidgetParent(activePopoutLabelShadowLeft, activePopoutSlot);
-            mod.SetUIWidgetPosition(
-                activePopoutLabelShadowLeft,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutLabelShadowLeft,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutLabelShadowUp && activePopoutSlot) {
-            mod.SetUIWidgetParent(activePopoutLabelShadowUp, activePopoutSlot);
-            mod.SetUIWidgetPosition(
-                activePopoutLabelShadowUp,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutLabelShadowUp,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutLabelShadowDown && activePopoutSlot) {
-            mod.SetUIWidgetParent(activePopoutLabelShadowDown, activePopoutSlot);
-            mod.SetUIWidgetPosition(
-                activePopoutLabelShadowDown,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutLabelShadowDown,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutLabelShadowUpLeft && activePopoutSlot) {
-            mod.SetUIWidgetParent(activePopoutLabelShadowUpLeft, activePopoutSlot);
-            mod.SetUIWidgetPosition(
-                activePopoutLabelShadowUpLeft,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutLabelShadowUpLeft,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutLabelShadowUpRight && activePopoutSlot) {
-            mod.SetUIWidgetParent(activePopoutLabelShadowUpRight, activePopoutSlot);
-            mod.SetUIWidgetPosition(
-                activePopoutLabelShadowUpRight,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutLabelShadowUpRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutLabelShadowDownRight && activePopoutSlot) {
-            mod.SetUIWidgetParent(activePopoutLabelShadowDownRight, activePopoutSlot);
-            mod.SetUIWidgetPosition(
-                activePopoutLabelShadowDownRight,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutLabelShadowDownRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutLabelShadowDownLeft && activePopoutSlot) {
-            mod.SetUIWidgetParent(activePopoutLabelShadowDownLeft, activePopoutSlot);
-            mod.SetUIWidgetPosition(
-                activePopoutLabelShadowDownLeft,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutLabelShadowDownLeft,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutLabel && activePopoutSlot) {
-            mod.SetUIWidgetParent(activePopoutLabel, activePopoutSlot);
-            mod.SetUIWidgetPosition(
-                activePopoutLabel,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_OFFSET_Y, 0)
-            );
-            mod.SetUIWidgetSize(
-                activePopoutLabel,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutPercentRoot && activePopoutRoot) {
-            mod.SetUIWidgetParent(activePopoutPercentRoot, activePopoutRoot);
-            mod.SetUIWidgetPosition(
-                activePopoutPercentRoot,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_OFFSET_Y, 0)
-            );
-            mod.SetUIWidgetSize(
-                activePopoutPercentRoot,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_ROOT_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_ROOT_HEIGHT, 0)
-            );
-        }
-        if (activePopoutPercentShadowRight && activePopoutPercentRoot) {
-            mod.SetUIWidgetParent(activePopoutPercentShadowRight, activePopoutPercentRoot);
-            mod.SetUIWidgetPosition(
-                activePopoutPercentShadowRight,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutPercentShadowRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutPercentShadowLeft && activePopoutPercentRoot) {
-            mod.SetUIWidgetParent(activePopoutPercentShadowLeft, activePopoutPercentRoot);
-            mod.SetUIWidgetPosition(
-                activePopoutPercentShadowLeft,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutPercentShadowLeft,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutPercentShadowUp && activePopoutPercentRoot) {
-            mod.SetUIWidgetParent(activePopoutPercentShadowUp, activePopoutPercentRoot);
-            mod.SetUIWidgetPosition(
-                activePopoutPercentShadowUp,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutPercentShadowUp,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutPercentShadowDown && activePopoutPercentRoot) {
-            mod.SetUIWidgetParent(activePopoutPercentShadowDown, activePopoutPercentRoot);
-            mod.SetUIWidgetPosition(
-                activePopoutPercentShadowDown,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutPercentShadowDown,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutPercentShadowUpLeft && activePopoutPercentRoot) {
-            mod.SetUIWidgetParent(activePopoutPercentShadowUpLeft, activePopoutPercentRoot);
-            mod.SetUIWidgetPosition(
-                activePopoutPercentShadowUpLeft,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutPercentShadowUpLeft,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutPercentShadowUpRight && activePopoutPercentRoot) {
-            mod.SetUIWidgetParent(activePopoutPercentShadowUpRight, activePopoutPercentRoot);
-            mod.SetUIWidgetPosition(
-                activePopoutPercentShadowUpRight,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutPercentShadowUpRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutPercentShadowDownRight && activePopoutPercentRoot) {
-            mod.SetUIWidgetParent(activePopoutPercentShadowDownRight, activePopoutPercentRoot);
-            mod.SetUIWidgetPosition(
-                activePopoutPercentShadowDownRight,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutPercentShadowDownRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutPercentShadowDownLeft && activePopoutPercentRoot) {
-            mod.SetUIWidgetParent(activePopoutPercentShadowDownLeft, activePopoutPercentRoot);
-            mod.SetUIWidgetPosition(
-                activePopoutPercentShadowDownLeft,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X - CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y + CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                activePopoutPercentShadowDownLeft,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutPercentShadowInner && activePopoutPercentRoot) {
-            mod.SetUIWidgetParent(activePopoutPercentShadowInner, activePopoutPercentRoot);
-            mod.SetUIWidgetPosition(
-                activePopoutPercentShadowInner,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y, 0)
-            );
-            mod.SetUIWidgetSize(
-                activePopoutPercentShadowInner,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
-            );
-        }
-        if (activePopoutPercentText && activePopoutPercentRoot) {
-            mod.SetUIWidgetParent(activePopoutPercentText, activePopoutPercentRoot);
-            mod.SetUIWidgetPosition(
-                activePopoutPercentText,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_X, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_OFFSET_Y, 0)
-            );
-            mod.SetUIWidgetSize(
-                activePopoutPercentText,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_PERCENT_WIDGET_HEIGHT, 0)
-            );
-        }
-
-        const engageRoot = refsForPid?.conquestFlagsEngageRoot ?? safeFind(`ConquestFlagHudEngageRoot_${pid}`);
-        const engageTrack = refsForPid?.conquestFlagsEngageTrack ?? safeFind(`ConquestFlagHudEngageTrack_${pid}`);
-        const engageFriendlyFill = refsForPid?.conquestFlagsEngageFriendlyFill ?? safeFind(`ConquestFlagHudEngageFriendlyFill_${pid}`);
-        const engageEnemyFill = refsForPid?.conquestFlagsEngageEnemyFill ?? safeFind(`ConquestFlagHudEngageEnemyFill_${pid}`);
-        const engageFriendlyCountBg = refsForPid?.conquestFlagsEngageFriendlyCountBg ?? safeFind(`ConquestFlagHudEngageFriendlyCountBg_${pid}`);
-        const engageEnemyCountBg = refsForPid?.conquestFlagsEngageEnemyCountBg ?? safeFind(`ConquestFlagHudEngageEnemyCountBg_${pid}`);
-        const engageFriendlyCountShadow = refsForPid?.conquestFlagsEngageFriendlyCountShadow ?? safeFind(`ConquestFlagHudEngageFriendlyCountShadow_${pid}`);
-        const engageEnemyCountShadow = refsForPid?.conquestFlagsEngageEnemyCountShadow ?? safeFind(`ConquestFlagHudEngageEnemyCountShadow_${pid}`);
-        const engageFriendlyCount = refsForPid?.conquestFlagsEngageFriendlyCount ?? safeFind(`ConquestFlagHudEngageFriendlyCount_${pid}`);
-        const engageEnemyCount = refsForPid?.conquestFlagsEngageEnemyCount ?? safeFind(`ConquestFlagHudEngageEnemyCount_${pid}`);
-        const engageStatusShadowRight = refsForPid?.conquestFlagsEngageStatusShadowRight ?? safeFind(`ConquestFlagHudEngageStatusShadowRight_${pid}`);
-        const engageStatusShadowLeft = refsForPid?.conquestFlagsEngageStatusShadowLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowLeft_${pid}`);
-        const engageStatusShadowUp = refsForPid?.conquestFlagsEngageStatusShadowUp ?? safeFind(`ConquestFlagHudEngageStatusShadowUp_${pid}`);
-        const engageStatusShadowDown = refsForPid?.conquestFlagsEngageStatusShadowDown ?? safeFind(`ConquestFlagHudEngageStatusShadowDown_${pid}`);
-        const engageStatusShadowUpLeft = refsForPid?.conquestFlagsEngageStatusShadowUpLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowUpLeft_${pid}`);
-        const engageStatusShadowUpRight = refsForPid?.conquestFlagsEngageStatusShadowUpRight ?? safeFind(`ConquestFlagHudEngageStatusShadowUpRight_${pid}`);
-        const engageStatusShadowDownRight = refsForPid?.conquestFlagsEngageStatusShadowDownRight ?? safeFind(`ConquestFlagHudEngageStatusShadowDownRight_${pid}`);
-        const engageStatusShadowDownLeft = refsForPid?.conquestFlagsEngageStatusShadowDownLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowDownLeft_${pid}`);
-        const engageStatus = refsForPid?.conquestFlagsEngageStatus ?? safeFind(`ConquestFlagHudEngageStatus_${pid}`);
-        if (engageRoot) {
-            try {
-                mod.SetUIWidgetAnchor(engageRoot, mod.UIAnchor.TopLeft);
-            } catch {
-                // Best-effort anchor normalization only.
-            }
-            mod.SetUIWidgetParent(engageRoot, flagsParent);
-            mod.SetUIWidgetPosition(engageRoot, mod.CreateVector(CONQUEST_FLAGS_ENGAGE_ABS_X, CONQUEST_FLAGS_ENGAGE_ABS_Y, 0));
-            mod.SetUIWidgetSize(engageRoot, mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_ROOT_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_ROOT_HEIGHT, 0));
-        }
-        if (engageTrack && engageRoot) {
-            mod.SetUIWidgetParent(engageTrack, engageRoot);
-            mod.SetUIWidgetPosition(
-                engageTrack,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_TRACK_X, CONQUEST_HUD_FLAG_ENGAGE_TRACK_Y, 0)
-            );
-            mod.SetUIWidgetSize(
-                engageTrack,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT, 0)
-            );
-        }
-        if (engageFriendlyFill && engageTrack) {
-            mod.SetUIWidgetParent(engageFriendlyFill, engageTrack);
-            mod.SetUIWidgetPosition(engageFriendlyFill, mod.CreateVector(0, 0, 0));
-            if (resetDynamicFillGeometry) {
-                mod.SetUIWidgetSize(
-                    engageFriendlyFill,
-                    mod.CreateVector(Math.floor(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH / 2), CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT, 0)
-                );
-            }
-        }
-        if (engageEnemyFill && engageTrack) {
-            mod.SetUIWidgetParent(engageEnemyFill, engageTrack);
-            if (resetDynamicFillGeometry) {
-                const halfTrack = Math.floor(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH / 2);
-                mod.SetUIWidgetPosition(engageEnemyFill, mod.CreateVector(halfTrack, 0, 0));
-                mod.SetUIWidgetSize(
-                    engageEnemyFill,
-                    mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_TRACK_WIDTH - halfTrack, CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT, 0)
-                );
-            }
-        }
-        if (engageFriendlyCountBg && engageRoot) {
-            mod.SetUIWidgetParent(engageFriendlyCountBg, engageRoot);
-            mod.SetUIWidgetPosition(
-                engageFriendlyCountBg,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_FRIENDLY_COUNT_BG_X, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_Y, 0)
-            );
-            mod.SetUIWidgetSize(
-                engageFriendlyCountBg,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
-            );
-        }
-        if (engageEnemyCountBg && engageRoot) {
-            mod.SetUIWidgetParent(engageEnemyCountBg, engageRoot);
-            mod.SetUIWidgetPosition(
-                engageEnemyCountBg,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_ENEMY_COUNT_BG_X, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_Y, 0)
-            );
-            mod.SetUIWidgetSize(
-                engageEnemyCountBg,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
-            );
-        }
-        if (engageFriendlyCount && engageFriendlyCountBg) {
-            mod.SetUIWidgetParent(engageFriendlyCount, engageFriendlyCountBg);
-            mod.SetUIWidgetPosition(
-                engageFriendlyCount,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X, CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y, 0)
-            );
-            mod.SetUIWidgetSize(
-                engageFriendlyCount,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
-            );
-        }
-        if (engageFriendlyCountShadow && engageFriendlyCountBg) {
-            mod.SetUIWidgetParent(engageFriendlyCountShadow, engageFriendlyCountBg);
-            mod.SetUIWidgetPosition(
-                engageFriendlyCountShadow,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
-                    CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                engageFriendlyCountShadow,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
-            );
-            if (engageFriendlyCount) {
-                mod.SetUIWidgetParent(engageFriendlyCount, engageFriendlyCountBg);
-                mod.SetUIWidgetPosition(
-                    engageFriendlyCount,
-                    mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X, CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y, 0)
-                );
-                mod.SetUIWidgetSize(
-                    engageFriendlyCount,
-                    mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
-                );
-            }
-        }
-        if (engageEnemyCount && engageEnemyCountBg) {
-            mod.SetUIWidgetParent(engageEnemyCount, engageEnemyCountBg);
-            mod.SetUIWidgetPosition(
-                engageEnemyCount,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X, CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y, 0)
-            );
-            mod.SetUIWidgetSize(
-                engageEnemyCount,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
-            );
-        }
-        if (engageEnemyCountShadow && engageEnemyCountBg) {
-            mod.SetUIWidgetParent(engageEnemyCountShadow, engageEnemyCountBg);
-            mod.SetUIWidgetPosition(
-                engageEnemyCountShadow,
-                mod.CreateVector(
-                    CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
-                    CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y + CONQUEST_HUD_FLAG_ENGAGE_COUNT_SHADOW_OFFSET,
-                    0
-                )
-            );
-            mod.SetUIWidgetSize(
-                engageEnemyCountShadow,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
-            );
-            if (engageEnemyCount) {
-                mod.SetUIWidgetParent(engageEnemyCount, engageEnemyCountBg);
-                mod.SetUIWidgetPosition(
-                    engageEnemyCount,
-                    mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_X, CONQUEST_HUD_FLAG_ENGAGE_COUNT_TEXT_Y, 0)
-                );
-                mod.SetUIWidgetSize(
-                    engageEnemyCount,
-                    mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_COUNT_BG_HEIGHT, 0)
-                );
-            }
-        }
-        if (engageStatusShadowRight && engageRoot) {
-            mod.SetUIWidgetParent(engageStatusShadowRight, engageRoot);
-            mod.SetUIWidgetPosition(
-                engageStatusShadowRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y, 0)
-            );
-            mod.SetUIWidgetSize(
-                engageStatusShadowRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT, 0)
-            );
-        }
-        if (engageStatusShadowLeft && engageRoot) {
-            mod.SetUIWidgetParent(engageStatusShadowLeft, engageRoot);
-            mod.SetUIWidgetPosition(
-                engageStatusShadowLeft,
-                mod.CreateVector(-CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y, 0)
-            );
-            mod.SetUIWidgetSize(
-                engageStatusShadowLeft,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT, 0)
-            );
-        }
-        if (engageStatusShadowUp && engageRoot) {
-            mod.SetUIWidgetParent(engageStatusShadowUp, engageRoot);
-            mod.SetUIWidgetPosition(
-                engageStatusShadowUp,
-                mod.CreateVector(0, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
-            );
-            mod.SetUIWidgetSize(
-                engageStatusShadowUp,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT, 0)
-            );
-        }
-        if (engageStatusShadowDown && engageRoot) {
-            mod.SetUIWidgetParent(engageStatusShadowDown, engageRoot);
-            mod.SetUIWidgetPosition(
-                engageStatusShadowDown,
-                mod.CreateVector(0, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
-            );
-            mod.SetUIWidgetSize(
-                engageStatusShadowDown,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT, 0)
-            );
-        }
-        if (engageStatusShadowUpLeft && engageRoot) {
-            mod.SetUIWidgetParent(engageStatusShadowUpLeft, engageRoot);
-            mod.SetUIWidgetPosition(
-                engageStatusShadowUpLeft,
-                mod.CreateVector(-CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
-            );
-            mod.SetUIWidgetSize(
-                engageStatusShadowUpLeft,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT, 0)
-            );
-        }
-        if (engageStatusShadowUpRight && engageRoot) {
-            mod.SetUIWidgetParent(engageStatusShadowUpRight, engageRoot);
-            mod.SetUIWidgetPosition(
-                engageStatusShadowUpRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y - CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
-            );
-            mod.SetUIWidgetSize(
-                engageStatusShadowUpRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT, 0)
-            );
-        }
-        if (engageStatusShadowDownRight && engageRoot) {
-            mod.SetUIWidgetParent(engageStatusShadowDownRight, engageRoot);
-            mod.SetUIWidgetPosition(
-                engageStatusShadowDownRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
-            );
-            mod.SetUIWidgetSize(
-                engageStatusShadowDownRight,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT, 0)
-            );
-        }
-        if (engageStatusShadowDownLeft && engageRoot) {
-            mod.SetUIWidgetParent(engageStatusShadowDownLeft, engageRoot);
-            mod.SetUIWidgetPosition(
-                engageStatusShadowDownLeft,
-                mod.CreateVector(-CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y + CONQUEST_HUD_FLAG_ENGAGE_STATUS_SHADOW_OFFSET, 0)
-            );
-            mod.SetUIWidgetSize(
-                engageStatusShadowDownLeft,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT, 0)
-            );
-        }
-        if (engageStatus && engageRoot) {
-            mod.SetUIWidgetParent(engageStatus, engageRoot);
-            mod.SetUIWidgetPosition(engageStatus, mod.CreateVector(0, CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y, 0));
-            mod.SetUIWidgetSize(
-                engageStatus,
-                mod.CreateVector(CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT, 0)
-            );
-        }
-    };
-
-    hideLegacyConquestRoots();
-    hideLegacyFlagTripletRows();
-
-    // If no cache entry exists yet (for example after script reload), delete stale top HUD roots.
-    // This prevents old child widgets from previous layout iterations from persisting across script reloads.
-    const hasCachedHudRefs = Object.prototype.hasOwnProperty.call(State.hudCache.hudByPid, pid);
-    let cached: HudRefs | undefined = hasCachedHudRefs ? State.hudCache.hudByPid[pid] : undefined;
-    const CONQUEST_HUD_SCHEMA_VERSION = 8;
-    const conquestHudSchemaByPid = ((State.conquest.debug as any).hudSchemaVersionByPid ??= {}) as Record<number, number>;
-    if (conquestHudSchemaByPid[pid] !== CONQUEST_HUD_SCHEMA_VERSION) {
-        // Force one clean rebuild when HUD schema changes to purge stale duplicate widgets.
-        delete State.hudCache.hudByPid[pid];
-        cached = undefined;
-        conquestHudSchemaByPid[pid] = CONQUEST_HUD_SCHEMA_VERSION;
-    }
-    if (!cached) {
-        // Root widgets may exist in duplicate instances after hot reload/swap churn.
-        // Always delete all instances by name before rebuilding to avoid stacked ticket texts.
+    // Hard-purges legacy top-core containers from older HUD trees.
+    // These containers historically hosted top-lane variants and can survive as stale duplicates.
+    const purgeLegacyTopCoreContainers = (): void => {
         deleteAllHudWidgetsByName(`Container_TopLeft_CoreUI_${pid}`);
         deleteAllHudWidgetsByName(`Container_TopMiddle_CoreUI_${pid}`);
         deleteAllHudWidgetsByName(`Container_TopRight_CoreUI_${pid}`);
-        destroyConquestHudForPid(pid);
-    }
+    };
 
-    // If cached, reuse that HUD instance to avoid duplicate ParseUI trees with the same widget names.
-    if (cached) {
-        // Recover missing root refs from existing widgets if needed.
-        cached.conquestTicketsDebugRoot = cached.conquestTicketsDebugRoot ?? safeFind(`ConquestTicketsHudRoot_${pid}`);
-        cached.conquestFlagsDebugRoot = cached.conquestFlagsDebugRoot ?? safeFind(`ConquestFlagsHudRoot_${pid}`);
-        // If both roots are truly gone, clear cache so we can rebuild once.
-        if (!cached.conquestTicketsDebugRoot && !cached.conquestFlagsDebugRoot) {
-            delete State.hudCache.hudByPid[pid];
-            return ensureHudForPlayer(player);
+    // Ensures ConquestCombatHudRoot exists so tickets/flags always share one centered parent frame.
+    const ensureConquestCombatHudRootForPid = (): mod.UIWidget | undefined => {
+        const combatRootName = `ConquestCombatHudRoot_${pid}`;
+        if (conquestCombatRootInitializedByPid[pid] !== true) {
+            deleteAllHudWidgetsByName(combatRootName);
+        }
+        let combatRoot = safeFind(combatRootName);
+        if (!combatRoot) {
+            const parsedCombatRoot = modlib.ParseUI({
+                name: combatRootName,
+                type: "Container",
+                playerId: player,
+                position: [0, CONQUEST_COMBAT_ROOT_Y],
+                size: [CONQUEST_COMBAT_ROOT_WIDTH, CONQUEST_COMBAT_ROOT_HEIGHT],
+                anchor: mod.UIAnchor.TopCenter,
+                visible: true,
+                padding: 0,
+                bgAlpha: 0,
+                bgFill: mod.UIBgFill.None,
+            });
+            combatRoot = parsedCombatRoot ?? safeFind(combatRootName);
+        }
+        if (combatRoot) {
+            conquestCombatRootInitializedByPid[pid] = true;
+        }
+        return combatRoot;
+    };
+
+    // Returns true when widget has the expected direct parent handle.
+    const widgetHasDirectParent = (widget: mod.UIWidget | undefined, parent: mod.UIWidget | undefined): boolean => {
+        if (!widget || !parent) return false;
+        try {
+            const actualParent = mod.GetUIWidgetParent(widget);
+            return !!actualParent && actualParent === parent;
+        } catch {
+            return false;
+        }
+    };
+    // Returns true when widget has the expected direct parent by widget name.
+    const widgetHasParentName = (widget: mod.UIWidget | undefined, parentName: string): boolean => {
+        if (!widget) return false;
+        try {
+            const parent = mod.GetUIWidgetParent(widget);
+            return !!parent && mod.GetUIWidgetName(parent) === parentName;
+        } catch {
+            return false;
+        }
+    };
+    // Returns true when the widget anchor matches the expected value.
+    const widgetHasAnchor = (widget: mod.UIWidget | undefined, anchor: mod.UIAnchor): boolean => {
+        if (!widget) return false;
+        try {
+            return mod.GetUIWidgetAnchor(widget) === anchor;
+        } catch {
+            return false;
+        }
+    };
+    // Returns true when widget XY position is within tolerance of expected local coordinates.
+    const widgetHasPositionXY = (
+        widget: mod.UIWidget | undefined,
+        x: number,
+        y: number,
+        tolerance: number = 0.5
+    ): boolean => {
+        if (!widget) return false;
+        try {
+            const pos = mod.GetUIWidgetPosition(widget);
+            return (mod.AbsoluteValue(mod.XComponentOf(pos) - x) <= tolerance)
+                && (mod.AbsoluteValue(mod.YComponentOf(pos) - y) <= tolerance);
+        } catch {
+            return false;
+        }
+    };
+
+    // Returns true when the current HUD tree already satisfies the teardown root chain contract.
+    const hasValidCombatRootChain = (
+        refsForPid: HudRefs,
+        topHudRoot: mod.UIWidget,
+        combatRoot: mod.UIWidget
+    ): boolean => {
+        const ticketsRoot = refsForPid.conquestTicketsDebugRoot;
+        const flagsRoot = refsForPid.conquestFlagsDebugRoot;
+        if (!ticketsRoot || !flagsRoot || !combatRoot) return false;
+        if (!widgetHasDirectParent(combatRoot, topHudRoot)) return false;
+        if (!widgetHasDirectParent(ticketsRoot, combatRoot)) return false;
+        if (!widgetHasDirectParent(flagsRoot, combatRoot)) return false;
+        if (!widgetHasParentName(combatRoot, `TopHudRoot_${pid}`)) return false;
+        if (!widgetHasParentName(ticketsRoot, `ConquestCombatHudRoot_${pid}`)) return false;
+        if (!widgetHasParentName(flagsRoot, `ConquestCombatHudRoot_${pid}`)) return false;
+        if (!widgetHasAnchor(topHudRoot, mod.UIAnchor.TopCenter)) return false;
+        if (!widgetHasPositionXY(topHudRoot, 0, 0)) return false;
+        if (!widgetHasAnchor(combatRoot, mod.UIAnchor.TopCenter)) return false;
+        if (!widgetHasAnchor(ticketsRoot, mod.UIAnchor.TopCenter)) return false;
+        if (!widgetHasAnchor(flagsRoot, mod.UIAnchor.TopCenter)) return false;
+        if (!widgetHasPositionXY(combatRoot, 0, CONQUEST_COMBAT_ROOT_Y)) return false;
+        if (!widgetHasPositionXY(ticketsRoot, 0, 0)) return false;
+        if (!widgetHasPositionXY(flagsRoot, 0, 0)) return false;
+        return true;
+    };
+
+    // One authoritative root-chain placement pass for conquest top combat HUD.
+    // Contract: TopHudRoot -> ConquestCombatHudRoot -> (ConquestTicketsHudRoot + ConquestFlagsHudRoot).
+    const pinConquestCombatRootsToTopHudRoot = (refsForPid: HudRefs): boolean => {
+        const topHudRoot = ensureTopHudRootForPid(pid, player);
+        const combatRoot = refsForPid.conquestCombatRoot;
+        const ticketsRoot = refsForPid.conquestTicketsDebugRoot;
+        const flagsRoot = refsForPid.conquestFlagsDebugRoot;
+
+        if (!topHudRoot || !combatRoot || !ticketsRoot || !flagsRoot) return false;
+        refsForPid.topHudRoot = topHudRoot;
+        try {
+            mod.SetUIWidgetParent(combatRoot, topHudRoot);
+            mod.SetUIWidgetAnchor(combatRoot, mod.UIAnchor.TopCenter);
+            mod.SetUIWidgetPosition(combatRoot, mod.CreateVector(0, CONQUEST_COMBAT_ROOT_Y, 0));
+            mod.SetUIWidgetSize(combatRoot, mod.CreateVector(CONQUEST_COMBAT_ROOT_WIDTH, CONQUEST_COMBAT_ROOT_HEIGHT, 0));
+            mod.SetUIWidgetDepth(combatRoot, mod.UIDepth.AboveGameUI);
+        } catch {
+            return false;
         }
 
-        hideLegacyConquestRoots();
-        hideLegacyFlagTripletRows();
-        ensureTopHudRootForPid(pid, player);
-        ensureConquestBleedChevronWidgets();
-        const helpContainer = safeFind(`Container_HelpText_${pid}`);
-        if (helpContainer) {
-            mod.SetUIWidgetPosition(helpContainer, mod.CreateVector(CONQUEST_HELP_CONTAINER_X, CONQUEST_HELP_CONTAINER_Y, 0));
-            mod.SetUIWidgetSize(helpContainer, mod.CreateVector(CONQUEST_HELP_CONTAINER_WIDTH, CONQUEST_HELP_CONTAINER_HEIGHT, 0));
-        }
-        const helpText = safeFind(`HelpText_${pid}`);
-        if (helpText) {
-            mod.SetUIWidgetPosition(helpText, mod.CreateVector(0, CONQUEST_HELP_TEXT_OFFSET_Y, 0));
-            mod.SetUIWidgetSize(helpText, mod.CreateVector(CONQUEST_HELP_CONTAINER_WIDTH, CONQUEST_HELP_TEXT_HEIGHT, 0));
-        }
-        const readyContainer = safeFind(`Container_ReadyStatus_${pid}`);
-        if (readyContainer) {
-            const topHudRoot = mod.GetUIRoot();
+        const pinChildRoot = (
+            root: mod.UIWidget,
+            width: number,
+            height: number
+        ): boolean => {
             try {
-                mod.SetUIWidgetAnchor(readyContainer, mod.UIAnchor.TopLeft);
+                mod.SetUIWidgetParent(root, combatRoot);
+                mod.SetUIWidgetAnchor(root, mod.UIAnchor.TopCenter);
+                mod.SetUIWidgetPosition(root, mod.CreateVector(0, 0, 0));
+                mod.SetUIWidgetSize(root, mod.CreateVector(width, height, 0));
+                mod.SetUIWidgetDepth(root, mod.UIDepth.AboveGameUI);
             } catch {
-                // Best-effort anchor normalization only.
+                return false;
             }
-            mod.SetUIWidgetParent(readyContainer, topHudRoot);
-            mod.SetUIWidgetPosition(readyContainer, mod.CreateVector(CONQUEST_READY_ABS_X, CONQUEST_READY_ABS_Y, 0));
-            mod.SetUIWidgetSize(readyContainer, mod.CreateVector(CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_CONTAINER_HEIGHT, 0));
-        }
-        const readyText = safeFind(`ReadyStatusText_${pid}`);
-        if (readyText && readyContainer) {
-            mod.SetUIWidgetParent(readyText, readyContainer);
-            mod.SetUIWidgetPosition(readyText, mod.CreateVector(0, CONQUEST_READY_TEXT_OFFSET_Y, 0));
-            mod.SetUIWidgetSize(readyText, mod.CreateVector(CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_TEXT_HEIGHT, 0));
-        }
-        const adminActionCounter = safeFind(`AdminPanelActionCount_${pid}`);
-        if (adminActionCounter) {
-            mod.SetUIWidgetPosition(adminActionCounter, mod.CreateVector(20, 22, 0));
-        }
-        // Cached HUD path: avoid legacy root-local layout writes.
-        // Mixed frame writes (root-local then absolute) can cause one-frame flicker.
-        const conquestTicketsRoot = cached.conquestTicketsDebugRoot ?? safeFind(`ConquestTicketsHudRoot_${pid}`);
-        if (conquestTicketsRoot) {
-            mod.SetUIWidgetDepth(conquestTicketsRoot, mod.UIDepth.AboveGameUI);
-        }
-        const conquestFlagsRoot = cached.conquestFlagsDebugRoot ?? safeFind(`ConquestFlagsHudRoot_${pid}`);
-        if (conquestFlagsRoot) {
-            mod.SetUIWidgetDepth(conquestFlagsRoot, mod.UIDepth.AboveGameUI);
-        }
-        setHudHelpDepthForPid(pid);
-        updateSettingsSummaryHudForPid(pid);
-        // Keep cached refs stable once established.
-        // Re-binding from global name lookups each tick can target stale duplicates and cause color/overlay drift.
-        cached.conquestTicketsTeam1Container = cached.conquestTicketsTeam1Container ?? safeFind(`ConquestTicketsHudTeam1Container_${pid}`);
-        cached.conquestTicketsTeam2Container = cached.conquestTicketsTeam2Container ?? safeFind(`ConquestTicketsHudTeam2Container_${pid}`);
-        cached.conquestTicketsDebugTeam1Shadow = cached.conquestTicketsDebugTeam1Shadow ?? safeFind(`ConquestTicketsHudTeam1Shadow_${pid}`);
-        cached.conquestTicketsDebugTeam2Shadow = cached.conquestTicketsDebugTeam2Shadow ?? safeFind(`ConquestTicketsHudTeam2Shadow_${pid}`);
-        cached.conquestTicketsDebugLeftBarTrack = cached.conquestTicketsDebugLeftBarTrack ?? safeFind(`ConquestTicketsHudLeftBarTrack_${pid}`);
-        cached.conquestTicketsDebugLeftBarFill = cached.conquestTicketsDebugLeftBarFill ?? safeFind(`ConquestTicketsHudLeftBarFill_${pid}`);
-        cached.conquestTicketsDebugRightBarTrack = cached.conquestTicketsDebugRightBarTrack ?? safeFind(`ConquestTicketsHudRightBarTrack_${pid}`);
-        cached.conquestTicketsDebugRightBarFill = cached.conquestTicketsDebugRightBarFill ?? safeFind(`ConquestTicketsHudRightBarFill_${pid}`);
-        cached.conquestTicketsSlash = cached.conquestTicketsSlash ?? safeFind(`ConquestTicketsHudSlash_${pid}`);
-        cached.conquestTicketsLeadLeftBorder = cached.conquestTicketsLeadLeftBorder ?? safeFind(`ConquestTicketsHudLeadBorderLeft_${pid}`);
-        cached.conquestTicketsLeadRightBorder = cached.conquestTicketsLeadRightBorder ?? safeFind(`ConquestTicketsHudLeadBorderRight_${pid}`);
-        cached.conquestTicketsLeadLeftCrownShadow = cached.conquestTicketsLeadLeftCrownShadow ?? safeFind(`ConquestTicketsHudLeadCrownLeftShadow_${pid}`);
-        cached.conquestTicketsLeadRightCrownShadow = cached.conquestTicketsLeadRightCrownShadow ?? safeFind(`ConquestTicketsHudLeadCrownRightShadow_${pid}`);
-        cached.conquestTicketsLeadLeftCrown = cached.conquestTicketsLeadLeftCrown ?? safeFind(`ConquestTicketsHudLeadCrownLeft_${pid}`);
-        cached.conquestTicketsLeadRightCrown = cached.conquestTicketsLeadRightCrown ?? safeFind(`ConquestTicketsHudLeadCrownRight_${pid}`);
-        if (!cached.conquestTicketsBleedLeftChevrons) cached.conquestTicketsBleedLeftChevrons = [];
-        if (!cached.conquestTicketsBleedRightChevrons) cached.conquestTicketsBleedRightChevrons = [];
-        for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
-            cached.conquestTicketsBleedLeftChevrons[chevronIndex] = cached.conquestTicketsBleedLeftChevrons[chevronIndex]
-                ?? safeFind(`ConquestTicketsHudBleedChevronLeft${chevronIndex + 1}_${pid}`);
-            cached.conquestTicketsBleedRightChevrons[chevronIndex] = cached.conquestTicketsBleedRightChevrons[chevronIndex]
-                ?? safeFind(`ConquestTicketsHudBleedChevronRight${chevronIndex + 1}_${pid}`);
-        }
-        cached.conquestFlagsActivePopoutRoot = cached.conquestFlagsActivePopoutRoot ?? safeFind(`ConquestFlagHudActivePopoutRoot_${pid}`);
-        cached.conquestFlagsActivePopoutSlot = cached.conquestFlagsActivePopoutSlot ?? safeFind(`ConquestFlagHudActivePopoutSlot_${pid}`);
-        cached.conquestFlagsActivePopoutBorder = cached.conquestFlagsActivePopoutBorder ?? safeFind(`ConquestFlagHudActivePopoutBorder_${pid}`);
-        cached.conquestFlagsActivePopoutFill = cached.conquestFlagsActivePopoutFill ?? safeFind(`ConquestFlagHudActivePopoutFill_${pid}`);
-        cached.conquestFlagsActivePopoutLabelShadowRight = cached.conquestFlagsActivePopoutLabelShadowRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowRight_${pid}`);
-        cached.conquestFlagsActivePopoutLabelShadowLeft = cached.conquestFlagsActivePopoutLabelShadowLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowLeft_${pid}`);
-        cached.conquestFlagsActivePopoutLabelShadowUp = cached.conquestFlagsActivePopoutLabelShadowUp ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUp_${pid}`);
-        cached.conquestFlagsActivePopoutLabelShadowDown = cached.conquestFlagsActivePopoutLabelShadowDown ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDown_${pid}`);
-        cached.conquestFlagsActivePopoutLabelShadowUpLeft = cached.conquestFlagsActivePopoutLabelShadowUpLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUpLeft_${pid}`);
-        cached.conquestFlagsActivePopoutLabelShadowUpRight = cached.conquestFlagsActivePopoutLabelShadowUpRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUpRight_${pid}`);
-        cached.conquestFlagsActivePopoutLabelShadowDownRight = cached.conquestFlagsActivePopoutLabelShadowDownRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDownRight_${pid}`);
-        cached.conquestFlagsActivePopoutLabelShadowDownLeft = cached.conquestFlagsActivePopoutLabelShadowDownLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDownLeft_${pid}`);
-        cached.conquestFlagsActivePopoutLabel = cached.conquestFlagsActivePopoutLabel ?? safeFind(`ConquestFlagHudActivePopoutLabel_${pid}`);
-        cached.conquestFlagsActivePopoutPercentRoot = cached.conquestFlagsActivePopoutPercentRoot ?? safeFind(`ConquestFlagHudActivePopoutPercentRoot_${pid}`);
-        cached.conquestFlagsActivePopoutPercentShadowRight = cached.conquestFlagsActivePopoutPercentShadowRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowRight_${pid}`);
-        cached.conquestFlagsActivePopoutPercentShadowLeft = cached.conquestFlagsActivePopoutPercentShadowLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowLeft_${pid}`);
-        cached.conquestFlagsActivePopoutPercentShadowUp = cached.conquestFlagsActivePopoutPercentShadowUp ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUp_${pid}`);
-        cached.conquestFlagsActivePopoutPercentShadowDown = cached.conquestFlagsActivePopoutPercentShadowDown ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDown_${pid}`);
-        cached.conquestFlagsActivePopoutPercentShadowUpLeft = cached.conquestFlagsActivePopoutPercentShadowUpLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUpLeft_${pid}`);
-        cached.conquestFlagsActivePopoutPercentShadowUpRight = cached.conquestFlagsActivePopoutPercentShadowUpRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUpRight_${pid}`);
-        cached.conquestFlagsActivePopoutPercentShadowDownRight = cached.conquestFlagsActivePopoutPercentShadowDownRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDownRight_${pid}`);
-        cached.conquestFlagsActivePopoutPercentShadowDownLeft = cached.conquestFlagsActivePopoutPercentShadowDownLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDownLeft_${pid}`);
-        cached.conquestFlagsActivePopoutPercentShadowInner = cached.conquestFlagsActivePopoutPercentShadowInner ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowInner_${pid}`);
-        cached.conquestFlagsActivePopoutPercentText = cached.conquestFlagsActivePopoutPercentText ?? safeFind(`ConquestFlagHudActivePopoutPercentText_${pid}`);
-        cached.conquestFlagsEngageRoot = cached.conquestFlagsEngageRoot ?? safeFind(`ConquestFlagHudEngageRoot_${pid}`);
-        cached.conquestFlagsEngageTrack = cached.conquestFlagsEngageTrack ?? safeFind(`ConquestFlagHudEngageTrack_${pid}`);
-        cached.conquestFlagsEngageFriendlyFill = cached.conquestFlagsEngageFriendlyFill ?? safeFind(`ConquestFlagHudEngageFriendlyFill_${pid}`);
-        cached.conquestFlagsEngageEnemyFill = cached.conquestFlagsEngageEnemyFill ?? safeFind(`ConquestFlagHudEngageEnemyFill_${pid}`);
-        cached.conquestFlagsEngageFriendlyCountBg = cached.conquestFlagsEngageFriendlyCountBg ?? safeFind(`ConquestFlagHudEngageFriendlyCountBg_${pid}`);
-        cached.conquestFlagsEngageEnemyCountBg = cached.conquestFlagsEngageEnemyCountBg ?? safeFind(`ConquestFlagHudEngageEnemyCountBg_${pid}`);
-        cached.conquestFlagsEngageFriendlyCountShadow = cached.conquestFlagsEngageFriendlyCountShadow ?? safeFind(`ConquestFlagHudEngageFriendlyCountShadow_${pid}`);
-        cached.conquestFlagsEngageEnemyCountShadow = cached.conquestFlagsEngageEnemyCountShadow ?? safeFind(`ConquestFlagHudEngageEnemyCountShadow_${pid}`);
-        cached.conquestFlagsEngageFriendlyCount = cached.conquestFlagsEngageFriendlyCount ?? safeFind(`ConquestFlagHudEngageFriendlyCount_${pid}`);
-        cached.conquestFlagsEngageEnemyCount = cached.conquestFlagsEngageEnemyCount ?? safeFind(`ConquestFlagHudEngageEnemyCount_${pid}`);
-        cached.conquestFlagsEngageStatusShadowRight = cached.conquestFlagsEngageStatusShadowRight ?? safeFind(`ConquestFlagHudEngageStatusShadowRight_${pid}`);
-        cached.conquestFlagsEngageStatusShadowLeft = cached.conquestFlagsEngageStatusShadowLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowLeft_${pid}`);
-        cached.conquestFlagsEngageStatusShadowUp = cached.conquestFlagsEngageStatusShadowUp ?? safeFind(`ConquestFlagHudEngageStatusShadowUp_${pid}`);
-        cached.conquestFlagsEngageStatusShadowDown = cached.conquestFlagsEngageStatusShadowDown ?? safeFind(`ConquestFlagHudEngageStatusShadowDown_${pid}`);
-        cached.conquestFlagsEngageStatusShadowUpLeft = cached.conquestFlagsEngageStatusShadowUpLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowUpLeft_${pid}`);
-        cached.conquestFlagsEngageStatusShadowUpRight = cached.conquestFlagsEngageStatusShadowUpRight ?? safeFind(`ConquestFlagHudEngageStatusShadowUpRight_${pid}`);
-        cached.conquestFlagsEngageStatusShadowDownRight = cached.conquestFlagsEngageStatusShadowDownRight ?? safeFind(`ConquestFlagHudEngageStatusShadowDownRight_${pid}`);
-        cached.conquestFlagsEngageStatusShadowDownLeft = cached.conquestFlagsEngageStatusShadowDownLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowDownLeft_${pid}`);
-        cached.conquestFlagsEngageStatus = cached.conquestFlagsEngageStatus ?? safeFind(`ConquestFlagHudEngageStatus_${pid}`);
-        if (!cached.conquestFlagsDebugSlotRoots) cached.conquestFlagsDebugSlotRoots = [];
-        if (!cached.conquestFlagsDebugBorderRows) cached.conquestFlagsDebugBorderRows = [];
-        if (!cached.conquestFlagsDebugFillRows) cached.conquestFlagsDebugFillRows = [];
-        if (!cached.conquestFlagsDebugLabelShadowRightRows) cached.conquestFlagsDebugLabelShadowRightRows = [];
-        if (!cached.conquestFlagsDebugLabelShadowLeftRows) cached.conquestFlagsDebugLabelShadowLeftRows = [];
-        if (!cached.conquestFlagsDebugLabelShadowUpRows) cached.conquestFlagsDebugLabelShadowUpRows = [];
-        if (!cached.conquestFlagsDebugLabelShadowDownRows) cached.conquestFlagsDebugLabelShadowDownRows = [];
-        if (!cached.conquestFlagsDebugLabelShadowUpLeftRows) cached.conquestFlagsDebugLabelShadowUpLeftRows = [];
-        if (!cached.conquestFlagsDebugLabelShadowUpRightRows) cached.conquestFlagsDebugLabelShadowUpRightRows = [];
-        if (!cached.conquestFlagsDebugLabelShadowDownRightRows) cached.conquestFlagsDebugLabelShadowDownRightRows = [];
-        if (!cached.conquestFlagsDebugLabelShadowDownLeftRows) cached.conquestFlagsDebugLabelShadowDownLeftRows = [];
-        if (!cached.conquestFlagsDebugLabelShadowInnerRows) cached.conquestFlagsDebugLabelShadowInnerRows = [];
-        if (!cached.conquestFlagsDebugLabelShadowInnerDeepRows) cached.conquestFlagsDebugLabelShadowInnerDeepRows = [];
-        if (!cached.conquestFlagsDebugLabelRows) cached.conquestFlagsDebugLabelRows = [];
-        if (!cached.conquestFlagsDebugPercentRoots) cached.conquestFlagsDebugPercentRoots = [];
-        if (!cached.conquestFlagsDebugPercentShadowRightRows) cached.conquestFlagsDebugPercentShadowRightRows = [];
-        if (!cached.conquestFlagsDebugPercentShadowLeftRows) cached.conquestFlagsDebugPercentShadowLeftRows = [];
-        if (!cached.conquestFlagsDebugPercentShadowUpRows) cached.conquestFlagsDebugPercentShadowUpRows = [];
-        if (!cached.conquestFlagsDebugPercentShadowDownRows) cached.conquestFlagsDebugPercentShadowDownRows = [];
-        if (!cached.conquestFlagsDebugPercentShadowUpLeftRows) cached.conquestFlagsDebugPercentShadowUpLeftRows = [];
-        if (!cached.conquestFlagsDebugPercentShadowUpRightRows) cached.conquestFlagsDebugPercentShadowUpRightRows = [];
-        if (!cached.conquestFlagsDebugPercentShadowDownRightRows) cached.conquestFlagsDebugPercentShadowDownRightRows = [];
-        if (!cached.conquestFlagsDebugPercentShadowDownLeftRows) cached.conquestFlagsDebugPercentShadowDownLeftRows = [];
-        if (!cached.conquestFlagsDebugPercentShadowInnerRows) cached.conquestFlagsDebugPercentShadowInnerRows = [];
-        if (!cached.conquestFlagsDebugPercentTextRows) cached.conquestFlagsDebugPercentTextRows = [];
-        for (let i = 0; i < CONQUEST_FLAGS_MAX_ROWS; i++) {
-            cached.conquestFlagsDebugSlotRoots[i] = cached.conquestFlagsDebugSlotRoots[i] ?? safeFind(`ConquestFlagHudSlot_${pid}_${i}`);
-            cached.conquestFlagsDebugBorderRows[i] = cached.conquestFlagsDebugBorderRows[i] ?? safeFind(`ConquestFlagHudBorder_${pid}_${i}`);
-            cached.conquestFlagsDebugFillRows[i] = cached.conquestFlagsDebugFillRows[i] ?? safeFind(`ConquestFlagHudFill_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowRightRows[i] = cached.conquestFlagsDebugLabelShadowRightRows[i] ?? safeFind(`ConquestFlagHudLabelShadowRight_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowLeftRows[i] = cached.conquestFlagsDebugLabelShadowLeftRows[i] ?? safeFind(`ConquestFlagHudLabelShadowLeft_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowUpRows[i] = cached.conquestFlagsDebugLabelShadowUpRows[i] ?? safeFind(`ConquestFlagHudLabelShadowUp_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowDownRows[i] = cached.conquestFlagsDebugLabelShadowDownRows[i] ?? safeFind(`ConquestFlagHudLabelShadowDown_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowUpLeftRows[i] = cached.conquestFlagsDebugLabelShadowUpLeftRows[i] ?? safeFind(`ConquestFlagHudLabelShadowUpLeft_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowUpRightRows[i] = cached.conquestFlagsDebugLabelShadowUpRightRows[i] ?? safeFind(`ConquestFlagHudLabelShadowUpRight_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowDownRightRows[i] = cached.conquestFlagsDebugLabelShadowDownRightRows[i] ?? safeFind(`ConquestFlagHudLabelShadowDownRight_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowDownLeftRows[i] = cached.conquestFlagsDebugLabelShadowDownLeftRows[i] ?? safeFind(`ConquestFlagHudLabelShadowDownLeft_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowInnerRows[i] = cached.conquestFlagsDebugLabelShadowInnerRows[i] ?? safeFind(`ConquestFlagHudLabelShadowInner_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelShadowInnerDeepRows[i] = cached.conquestFlagsDebugLabelShadowInnerDeepRows[i] ?? safeFind(`ConquestFlagHudLabelShadowInnerDeep_${pid}_${i}`);
-            cached.conquestFlagsDebugLabelRows[i] = cached.conquestFlagsDebugLabelRows[i] ?? safeFind(`ConquestFlagHudLabel_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentRoots[i] = cached.conquestFlagsDebugPercentRoots[i] ?? safeFind(`ConquestFlagHudPercentRoot_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowRightRows[i] = cached.conquestFlagsDebugPercentShadowRightRows[i] ?? safeFind(`ConquestFlagHudPercentShadowRight_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowLeftRows[i] = cached.conquestFlagsDebugPercentShadowLeftRows[i] ?? safeFind(`ConquestFlagHudPercentShadowLeft_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowUpRows[i] = cached.conquestFlagsDebugPercentShadowUpRows[i] ?? safeFind(`ConquestFlagHudPercentShadowUp_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowDownRows[i] = cached.conquestFlagsDebugPercentShadowDownRows[i] ?? safeFind(`ConquestFlagHudPercentShadowDown_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowUpLeftRows[i] = cached.conquestFlagsDebugPercentShadowUpLeftRows[i] ?? safeFind(`ConquestFlagHudPercentShadowUpLeft_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowUpRightRows[i] = cached.conquestFlagsDebugPercentShadowUpRightRows[i] ?? safeFind(`ConquestFlagHudPercentShadowUpRight_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowDownRightRows[i] = cached.conquestFlagsDebugPercentShadowDownRightRows[i] ?? safeFind(`ConquestFlagHudPercentShadowDownRight_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowDownLeftRows[i] = cached.conquestFlagsDebugPercentShadowDownLeftRows[i] ?? safeFind(`ConquestFlagHudPercentShadowDownLeft_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentShadowInnerRows[i] = cached.conquestFlagsDebugPercentShadowInnerRows[i] ?? safeFind(`ConquestFlagHudPercentShadowInner_${pid}_${i}`);
-            cached.conquestFlagsDebugPercentTextRows[i] = cached.conquestFlagsDebugPercentTextRows[i] ?? safeFind(`ConquestFlagHudPercentText_${pid}_${i}`);
-        }
-        applyConquestAbsoluteLayout(cached, false);
+            return true;
+        };
 
-        return cached;
+        if (!pinChildRoot(ticketsRoot, CONQUEST_TICKETS_ROOT_WIDTH, CONQUEST_TICKETS_ROOT_HEIGHT)) return false;
+        if (!pinChildRoot(flagsRoot, CONQUEST_FLAGS_ROOT_WIDTH, CONQUEST_FLAGS_ROOT_HEIGHT)) return false;
+        return hasValidCombatRootChain(refsForPid, topHudRoot, combatRoot);
+    };
+
+    // Resolves one widget name from a specific subtree only.
+    // This avoids global same-name collisions selecting off-root stale instances.
+    const findWidgetInSubtree = (
+        subtreeRoot: mod.UIWidget | undefined,
+        name: string
+    ): mod.UIWidget | undefined => {
+        if (!subtreeRoot) return undefined;
+        try {
+            return mod.FindUIWidgetWithName(name, subtreeRoot) as mod.UIWidget;
+        } catch {
+            return undefined;
+        }
+    };
+
+    // Rebinds all ticket refs from the pinned ticket subtree so render paths never use off-root handles.
+    const rebindConquestTicketRefsFromPinnedTree = (refsForPid: HudRefs): boolean => {
+        const refsPid = refsForPid.pid;
+        const ticketsRoot = refsForPid.conquestTicketsDebugRoot;
+        if (!ticketsRoot) return false;
+
+        refsForPid.conquestTicketsTeam1Container = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudTeam1Container_${refsPid}`);
+        refsForPid.conquestTicketsTeam2Container = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudTeam2Container_${refsPid}`);
+        refsForPid.conquestTicketsDebugTeam1Shadow = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudTeam1Shadow_${refsPid}`);
+        refsForPid.conquestTicketsDebugTeam2Shadow = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudTeam2Shadow_${refsPid}`);
+        refsForPid.conquestTicketsDebugTeam1 = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudTeam1CoreOverlay_${refsPid}`)
+            ?? findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudTeam1_${refsPid}`);
+        refsForPid.conquestTicketsDebugTeam2 = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudTeam2CoreOverlay_${refsPid}`)
+            ?? findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudTeam2_${refsPid}`);
+        refsForPid.conquestTicketsSlash = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudSlash_${refsPid}`);
+        refsForPid.conquestTicketsDebugLeftBarTrack = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudLeftBarTrack_${refsPid}`);
+        refsForPid.conquestTicketsDebugLeftBarFill = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudLeftBarFill_${refsPid}`);
+        refsForPid.conquestTicketsDebugRightBarTrack = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudRightBarTrack_${refsPid}`);
+        refsForPid.conquestTicketsDebugRightBarFill = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudRightBarFill_${refsPid}`);
+        refsForPid.conquestTicketsLeadLeftBorder = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudLeadBorderLeft_${refsPid}`);
+        refsForPid.conquestTicketsLeadRightBorder = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudLeadBorderRight_${refsPid}`);
+        refsForPid.conquestTicketsLeadLeftCrownShadow = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudLeadCrownLeftShadow_${refsPid}`);
+        refsForPid.conquestTicketsLeadRightCrownShadow = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudLeadCrownRightShadow_${refsPid}`);
+        refsForPid.conquestTicketsLeadLeftCrown = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudLeadCrownLeft_${refsPid}`);
+        refsForPid.conquestTicketsLeadRightCrown = findWidgetInSubtree(ticketsRoot, `ConquestTicketsHudLeadCrownRight_${refsPid}`);
+
+        refsForPid.conquestTicketsBleedLeftChevrons = [];
+        refsForPid.conquestTicketsBleedRightChevrons = [];
+        for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
+            const slot = chevronIndex + 1;
+            refsForPid.conquestTicketsBleedLeftChevrons[chevronIndex] = findWidgetInSubtree(
+                ticketsRoot,
+                `ConquestTicketsHudBleedChevronLeft${slot}_${refsPid}`
+            );
+            refsForPid.conquestTicketsBleedRightChevrons[chevronIndex] = findWidgetInSubtree(
+                ticketsRoot,
+                `ConquestTicketsHudBleedChevronRight${slot}_${refsPid}`
+            );
+        }
+
+        return !!(
+            refsForPid.conquestTicketsTeam1Container
+            && refsForPid.conquestTicketsTeam2Container
+            && refsForPid.conquestTicketsDebugTeam1
+            && refsForPid.conquestTicketsDebugTeam2
+            && refsForPid.conquestTicketsDebugLeftBarTrack
+            && refsForPid.conquestTicketsDebugLeftBarFill
+            && refsForPid.conquestTicketsDebugRightBarTrack
+            && refsForPid.conquestTicketsDebugRightBarFill
+        );
+    };
+
+    // Rebinds all flag/popout/engage refs from the pinned flags subtree.
+    const rebindConquestFlagRefsFromPinnedTree = (refsForPid: HudRefs): boolean => {
+        const refsPid = refsForPid.pid;
+        const flagsRoot = refsForPid.conquestFlagsDebugRoot;
+        if (!flagsRoot) return false;
+
+        refsForPid.conquestFlagsDebugSlotRoots = [];
+        refsForPid.conquestFlagsDebugBorderRows = [];
+        refsForPid.conquestFlagsDebugFillRows = [];
+        refsForPid.conquestFlagsDebugLabelShadowRightRows = [];
+        refsForPid.conquestFlagsDebugLabelShadowLeftRows = [];
+        refsForPid.conquestFlagsDebugLabelShadowUpRows = [];
+        refsForPid.conquestFlagsDebugLabelShadowDownRows = [];
+        refsForPid.conquestFlagsDebugLabelShadowUpLeftRows = [];
+        refsForPid.conquestFlagsDebugLabelShadowUpRightRows = [];
+        refsForPid.conquestFlagsDebugLabelShadowDownRightRows = [];
+        refsForPid.conquestFlagsDebugLabelShadowDownLeftRows = [];
+        refsForPid.conquestFlagsDebugLabelShadowInnerRows = [];
+        refsForPid.conquestFlagsDebugLabelShadowInnerDeepRows = [];
+        refsForPid.conquestFlagsDebugLabelRows = [];
+        refsForPid.conquestFlagsDebugPercentRoots = [];
+        refsForPid.conquestFlagsDebugPercentShadowRightRows = [];
+        refsForPid.conquestFlagsDebugPercentShadowLeftRows = [];
+        refsForPid.conquestFlagsDebugPercentShadowUpRows = [];
+        refsForPid.conquestFlagsDebugPercentShadowDownRows = [];
+        refsForPid.conquestFlagsDebugPercentShadowUpLeftRows = [];
+        refsForPid.conquestFlagsDebugPercentShadowUpRightRows = [];
+        refsForPid.conquestFlagsDebugPercentShadowDownRightRows = [];
+        refsForPid.conquestFlagsDebugPercentShadowDownLeftRows = [];
+        refsForPid.conquestFlagsDebugPercentShadowInnerRows = [];
+        refsForPid.conquestFlagsDebugPercentTextRows = [];
+        for (let i = 0; i < CONQUEST_FLAGS_MAX_ROWS; i++) {
+            refsForPid.conquestFlagsDebugSlotRoots[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudSlot_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugBorderRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudBorder_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugFillRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudFill_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugLabelShadowRightRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudLabelShadowRight_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugLabelShadowLeftRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudLabelShadowLeft_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugLabelShadowUpRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudLabelShadowUp_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugLabelShadowDownRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudLabelShadowDown_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugLabelShadowUpLeftRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudLabelShadowUpLeft_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugLabelShadowUpRightRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudLabelShadowUpRight_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugLabelShadowDownRightRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudLabelShadowDownRight_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugLabelShadowDownLeftRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudLabelShadowDownLeft_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugLabelShadowInnerRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudLabelShadowInner_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugLabelShadowInnerDeepRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudLabelShadowInnerDeep_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugLabelRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudLabel_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugPercentRoots[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudPercentRoot_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugPercentShadowRightRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudPercentShadowRight_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugPercentShadowLeftRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudPercentShadowLeft_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugPercentShadowUpRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudPercentShadowUp_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugPercentShadowDownRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudPercentShadowDown_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugPercentShadowUpLeftRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudPercentShadowUpLeft_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugPercentShadowUpRightRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudPercentShadowUpRight_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugPercentShadowDownRightRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudPercentShadowDownRight_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugPercentShadowDownLeftRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudPercentShadowDownLeft_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugPercentShadowInnerRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudPercentShadowInner_${refsPid}_${i}`);
+            refsForPid.conquestFlagsDebugPercentTextRows[i] = findWidgetInSubtree(flagsRoot, `ConquestFlagHudPercentText_${refsPid}_${i}`);
+        }
+
+        refsForPid.conquestFlagsActivePopoutRoot = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutRoot_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutSlot = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutSlot_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutBorder = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutBorder_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutFill = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutFill_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutLabelShadowRight = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutLabelShadowRight_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutLabelShadowLeft = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutLabelShadowLeft_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutLabelShadowUp = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutLabelShadowUp_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutLabelShadowDown = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutLabelShadowDown_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutLabelShadowUpLeft = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutLabelShadowUpLeft_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutLabelShadowUpRight = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutLabelShadowUpRight_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutLabelShadowDownRight = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutLabelShadowDownRight_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutLabelShadowDownLeft = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutLabelShadowDownLeft_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutLabel = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutLabel_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutPercentRoot = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutPercentRoot_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutPercentShadowRight = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutPercentShadowRight_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutPercentShadowLeft = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutPercentShadowLeft_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutPercentShadowUp = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutPercentShadowUp_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutPercentShadowDown = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutPercentShadowDown_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutPercentShadowUpLeft = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutPercentShadowUpLeft_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutPercentShadowUpRight = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutPercentShadowUpRight_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutPercentShadowDownRight = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutPercentShadowDownRight_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutPercentShadowDownLeft = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutPercentShadowDownLeft_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutPercentShadowInner = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutPercentShadowInner_${refsPid}`);
+        refsForPid.conquestFlagsActivePopoutPercentText = findWidgetInSubtree(flagsRoot, `ConquestFlagHudActivePopoutPercentText_${refsPid}`);
+
+        refsForPid.conquestFlagsEngageRoot = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageRoot_${refsPid}`);
+        refsForPid.conquestFlagsEngageTrack = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageTrack_${refsPid}`);
+        refsForPid.conquestFlagsEngageFriendlyFill = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageFriendlyFill_${refsPid}`);
+        refsForPid.conquestFlagsEngageEnemyFill = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageEnemyFill_${refsPid}`);
+        refsForPid.conquestFlagsEngageFriendlyCountBg = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageFriendlyCountBg_${refsPid}`);
+        refsForPid.conquestFlagsEngageEnemyCountBg = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageEnemyCountBg_${refsPid}`);
+        refsForPid.conquestFlagsEngageFriendlyCountShadow = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageFriendlyCountShadow_${refsPid}`);
+        refsForPid.conquestFlagsEngageEnemyCountShadow = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageEnemyCountShadow_${refsPid}`);
+        refsForPid.conquestFlagsEngageFriendlyCount = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageFriendlyCount_${refsPid}`);
+        refsForPid.conquestFlagsEngageEnemyCount = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageEnemyCount_${refsPid}`);
+        refsForPid.conquestFlagsEngageStatusShadowRight = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageStatusShadowRight_${refsPid}`);
+        refsForPid.conquestFlagsEngageStatusShadowLeft = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageStatusShadowLeft_${refsPid}`);
+        refsForPid.conquestFlagsEngageStatusShadowUp = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageStatusShadowUp_${refsPid}`);
+        refsForPid.conquestFlagsEngageStatusShadowDown = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageStatusShadowDown_${refsPid}`);
+        refsForPid.conquestFlagsEngageStatusShadowUpLeft = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageStatusShadowUpLeft_${refsPid}`);
+        refsForPid.conquestFlagsEngageStatusShadowUpRight = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageStatusShadowUpRight_${refsPid}`);
+        refsForPid.conquestFlagsEngageStatusShadowDownRight = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageStatusShadowDownRight_${refsPid}`);
+        refsForPid.conquestFlagsEngageStatusShadowDownLeft = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageStatusShadowDownLeft_${refsPid}`);
+        refsForPid.conquestFlagsEngageStatus = findWidgetInSubtree(flagsRoot, `ConquestFlagHudEngageStatus_${refsPid}`);
+
+        return !!(
+            refsForPid.conquestFlagsDebugSlotRoots[0]
+            && refsForPid.conquestFlagsActivePopoutRoot
+            && refsForPid.conquestFlagsEngageRoot
+            && refsForPid.conquestFlagsEngageTrack
+        );
+    };
+
+    // Rebinds all critical Conquest HUD refs from centered pinned subtrees.
+    const rebindConquestHudRefsFromPinnedTree = (refsForPid: HudRefs): boolean => {
+        return rebindConquestTicketRefsFromPinnedTree(refsForPid)
+            && rebindConquestFlagRefsFromPinnedTree(refsForPid);
+    };
+
+    const purgeLegacyConquestArtifacts = (): void => {
+        purgeLegacyConquestRoots();
+        purgeLegacyFlagTripletRows();
+        purgeLegacyTopCoreContainers();
+    };
+    const hardResetConquestHudTreeForPid = (): void => {
+        destroyConquestHudForPid(pid);
+        resetConquestCombatRootInitializationForPid(pid);
+        purgeLegacyConquestArtifacts();
+    };
+    // Returns true when cached root handles are complete for authoritative root-chain pinning.
+    const hasCachedCombatRootRefs = (refsForPid: HudRefs): boolean => {
+        return !!(
+            refsForPid.conquestCombatRoot
+            && refsForPid.conquestTicketsDebugRoot
+            && refsForPid.conquestFlagsDebugRoot
+        );
+    };
+
+    const cached = State.hudCache.hudByPid[pid];
+    purgeLegacyConquestArtifacts();
+    if (cached) {
+        if (hasCachedCombatRootRefs(cached) && pinConquestCombatRootsToTopHudRoot(cached)) {
+            if (!rebindConquestHudRefsFromPinnedTree(cached)) {
+                delete State.hudCache.hudByPid[pid];
+            } else {
+                State.hudCache.hudByPid[pid] = cached;
+                setHudHelpDepthForPid(pid);
+                updateSettingsSummaryHudForPid(pid);
+                return cached;
+            }
+        } else {
+            delete State.hudCache.hudByPid[pid];
+        }
     }
+
+    // Build path: destroy stale/wrong trees and create one deterministic PID-owned tree.
+    hardResetConquestHudTreeForPid();
 
     const refs: HudRefs = { pid, roots: [] };
+    refs.conquestCombatRoot = ensureConquestCombatHudRootForPid();
 
     //#endregion -------------------- HUD Build/Ensure Function Start --------------------
 
 
 
-    //#region -------------------- HUD Build/Ensure - Upper-Left HUD --------------------
-
-    // --- Static HUD: Upper-left small box ---
-    {
-        const rootName = `Upper_Left_Container_${pid}`;
-        const upperLeft = modlib.ParseUI({
-            name: rootName,
-            type: "Container",
-            playerId: player,
-            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-            position: [5, 5 + TOP_HUD_OFFSET_Y + CONQUEST_HUD_NON_CLOCK_SHIFT_Y],
-            size: [200, 30],
-            anchor: mod.UIAnchor.TopLeft,
-            visible: true,
-            padding: 1,
-            bgColor: [0.251, 0.0941, 0.0667],
-            bgAlpha: 0.5625,
-            bgFill: mod.UIBgFill.Blur,
-            children: [
-                {
-                    // UI element: Upper_Left_Text_${pid}
-                    name: `Upper_Left_Text_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [5, -5.5],
-                    size: [200, 17],
-                    anchor: mod.UIAnchor.CenterLeft,
-                    visible: true,
-                    padding: 0,
-                    bgColor: [0.8353, 0.9216, 0.9765],
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.Blur,
-                    textLabel: mod.stringkeys.twl.hud.branding.title,
-                    textColor: [0.6784, 0.9922, 0.5255],
-                    textAlpha: 1,
-                    textSize: 9,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // UI element: Upper_Left_Text_2_${pid}
-                    name: `Upper_Left_Text_2_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [7.25, 12.5],
-                    size: [200, 16.5],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgColor: [0.2, 0.2, 0.2],
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.branding.subtitle,
-                    textColor: [0.6784, 0.9922, 0.5255],
-                    textAlpha: 1,
-                    textSize: 9,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-            ],
-        });
-        if (upperLeft) refs.roots.push(upperLeft);
-    }
-
-    // --- Static HUD: Upper-left settings summary (below branding) ---
-    {
-        const SETTINGS_CONTAINER_X = 5;
-        const SETTINGS_CONTAINER_Y = 5 + TOP_HUD_OFFSET_Y + 30 + 6 + CONQUEST_HUD_NON_CLOCK_SHIFT_Y;
-        const SETTINGS_LINE_HEIGHT = 12;
-        const SETTINGS_TEXT_WIDTH = 200;
-        const SETTINGS_TEXT_SIZE = 9;
-        const SETTINGS_TEXT_COLOR: [number, number, number] = [0.6784, 0.9922, 0.5255];
-
-        const settingsSummary = modlib.ParseUI({
-            name: `Upper_Left_Settings_${pid}`,
-            type: "Container",
-            playerId: player,
-            position: [SETTINGS_CONTAINER_X, SETTINGS_CONTAINER_Y],
-            size: [SETTINGS_TEXT_WIDTH, SETTINGS_LINE_HEIGHT * 6],
-            anchor: mod.UIAnchor.TopLeft,
-            visible: true,
-            padding: 1,
-            bgColor: [0.251, 0.0941, 0.0667],
-            bgAlpha: 0.5625,
-            bgFill: mod.UIBgFill.Blur,
-            children: [
-                {
-                    name: `Settings_GameMode_${pid}`,
-                    type: "Text",
-                    position: [6, 0],
-                    size: [SETTINGS_TEXT_WIDTH - 12, 16],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(STR_HUD_SETTINGS_GAME_MODE_FORMAT, STR_HUD_SETTINGS_GAME_MODE_DEFAULT),
-                    textColor: SETTINGS_TEXT_COLOR,
-                    textAlpha: 1,
-                    textSize: SETTINGS_TEXT_SIZE,
-                    textAnchor: mod.UIAnchor.TopLeft,
-                },
-                {
-                    name: `Settings_Ceiling_${pid}`,
-                    type: "Text",
-                    position: [6, SETTINGS_LINE_HEIGHT],
-                    size: [SETTINGS_TEXT_WIDTH - 12, 16],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT, STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA),
-                    textColor: SETTINGS_TEXT_COLOR,
-                    textAlpha: 1,
-                    textSize: SETTINGS_TEXT_SIZE,
-                    textAnchor: mod.UIAnchor.TopLeft,
-                },
-                {
-                    name: `Settings_VehiclesT1_${pid}`,
-                    type: "Text",
-                    position: [6, SETTINGS_LINE_HEIGHT * 2],
-                    size: [SETTINGS_TEXT_WIDTH - 12, 16],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(
-                        STR_HUD_SETTINGS_VEHICLES_TEAM_FORMAT,
-                        getTeamNameKey(TeamID.Team1),
-                        STR_HUD_SETTINGS_VALUE_DEFAULT
-                    ),
-                    textColor: SETTINGS_TEXT_COLOR,
-                    textAlpha: 1,
-                    textSize: SETTINGS_TEXT_SIZE,
-                    textAnchor: mod.UIAnchor.TopLeft,
-                },
-                {
-                    name: `Settings_VehiclesT2_${pid}`,
-                    type: "Text",
-                    position: [6, SETTINGS_LINE_HEIGHT * 3],
-                    size: [SETTINGS_TEXT_WIDTH - 12, 16],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(
-                        STR_HUD_SETTINGS_VEHICLES_TEAM_FORMAT,
-                        getTeamNameKey(TeamID.Team2),
-                        STR_HUD_SETTINGS_VALUE_DEFAULT
-                    ),
-                    textColor: SETTINGS_TEXT_COLOR,
-                    textAlpha: 1,
-                    textSize: SETTINGS_TEXT_SIZE,
-                    textAnchor: mod.UIAnchor.TopLeft,
-                },
-                {
-                    name: `Settings_VehiclesMatchup_${pid}`,
-                    type: "Text",
-                    position: [6, SETTINGS_LINE_HEIGHT * 4],
-                    size: [SETTINGS_TEXT_WIDTH - 12, 16],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(STR_HUD_SETTINGS_VEHICLES_MATCHUP_FORMAT, 1, 1),
-                    textColor: SETTINGS_TEXT_COLOR,
-                    textAlpha: 1,
-                    textSize: SETTINGS_TEXT_SIZE,
-                    textAnchor: mod.UIAnchor.TopLeft,
-                },
-                {
-                    name: `Settings_Players_${pid}`,
-                    type: "Text",
-                    position: [6, SETTINGS_LINE_HEIGHT * 5],
-                    size: [SETTINGS_TEXT_WIDTH - 12, 16],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(STR_HUD_SETTINGS_PLAYERS_FORMAT, 1, 1),
-                    textColor: SETTINGS_TEXT_COLOR,
-                    textAlpha: 1,
-                    textSize: SETTINGS_TEXT_SIZE,
-                    textAnchor: mod.UIAnchor.TopLeft,
-                },
-            ],
-        });
-        if (settingsSummary) refs.roots.push(settingsSummary);
-    }
-
-    //#endregion ----------------- HUD Build/Ensure - Upper-Left HUD --------------------
-
-
-
-    //#region -------------------- HUD Build/Ensure - Top-Center Panels --------------------
-
-    // --- Static HUD: Top-center panels (TeamLeft / Middle / TeamRight) ---
-    {
-        const TOP_PANEL_Y = 47.73;
-        const PANEL_WIDTH = 99.01;
-        const PANEL_HEIGHT = 28.11;
-        const MID_PANEL_X = 910;
-        const LEFT_PANEL_X = 783.86;
-        const RIGHT_PANEL_X = 1021.64;
-        const PANEL_GAP = MID_PANEL_X - LEFT_PANEL_X - PANEL_WIDTH;
-        const ROUND_KILLS_PANEL_SIZE = PANEL_HEIGHT;
-        const ROUND_KILLS_LEFT_X = LEFT_PANEL_X - ROUND_KILLS_PANEL_SIZE - PANEL_GAP;
-        const ROUND_KILLS_RIGHT_X = RIGHT_PANEL_X + PANEL_WIDTH + PANEL_GAP;
-        const TRENDING_CROWN_SIZE = 18;
-        const TRENDING_CROWN_OFFSET_Y = 4;
-        const TRENDING_CROWN_LEFT_X = PANEL_WIDTH - TRENDING_CROWN_SIZE - 10;
-        const TRENDING_CROWN_RIGHT_X = 10;
-        const mid = modlib.ParseUI({
-            // UI element: Container_TopMiddle_CoreUI_${pid}
-            name: `Container_TopMiddle_CoreUI_${pid}`,
-            type: "Container",
-            playerId: player,
-            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-            position: [MID_PANEL_X, TOP_PANEL_Y],
-            size: [PANEL_WIDTH, PANEL_HEIGHT],
-            anchor: mod.UIAnchor.TopLeft,
-            visible: true,
-            padding: 0,
-            bgColor: [0.0314, 0.0431, 0.0431],
-            bgAlpha: 0.75,
-            bgFill: mod.UIBgFill.Blur,
-            children: [
-                {
-                    // Help/instructions text shown when enabled for this player
-                    name: `Container_HelpText_${pid}`,
-                    type: "Container",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [CONQUEST_HELP_CONTAINER_X, CONQUEST_HELP_CONTAINER_Y],
-                    size: [CONQUEST_HELP_CONTAINER_WIDTH, CONQUEST_HELP_CONTAINER_HEIGHT],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgColor: [1, 0.9882, 0.6118],
-                    bgAlpha: 1,
-                    bgFill: mod.UIBgFill.Solid,
-                    children: [
-                        {
-                            // Help/instructions text shown when enabled for this player
-                            name: `HelpText_${pid}`,
-                            type: "Text",
-                            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                            position: [0, CONQUEST_HELP_TEXT_OFFSET_Y],
-                            size: [CONQUEST_HELP_CONTAINER_WIDTH, CONQUEST_HELP_TEXT_HEIGHT],
-                            anchor: mod.UIAnchor.TopLeft,
-                            visible: true,
-                            padding: 0,
-                            bgColor: [0.2, 0.2, 0.2],
-                            bgAlpha: 1,
-                            bgFill: mod.UIBgFill.None,
-                            textLabel: mod.stringkeys.twl.hud.helpText,
-                            textColor: [0.251, 0.0941, 0.0667],
-                            textAlpha: 1,
-                            textSize: 12,
-                            textAnchor: mod.UIAnchor.Center,
-                        },
-                    ],
-                },
-                {
-                    // Ready status text shown when the player is READY and the match is not live.
-                    name: `Container_ReadyStatus_${pid}`,
-                    type: "Container",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [CONQUEST_READY_CONTAINER_X, CONQUEST_READY_CONTAINER_Y],
-                    size: [CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_CONTAINER_HEIGHT],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: false,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    children: [
-                        {
-                            // Ready status text shown when enabled for this player
-                            name: `ReadyStatusText_${pid}`,
-                            type: "Text",
-                            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                            position: [0, CONQUEST_READY_TEXT_OFFSET_Y],
-                            size: [CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_TEXT_HEIGHT],
-                            anchor: mod.UIAnchor.TopLeft,
-                            visible: true,
-                            padding: 0,
-                            bgAlpha: 0,
-                            bgFill: mod.UIBgFill.None,
-                            textLabel: mod.stringkeys.twl.hud.readyText,
-                            textColor: [0.6784, 0.9922, 0.5255],
-                            textAlpha: 1,
-                            textSize: 12,
-                            textAnchor: mod.UIAnchor.Center,
-                        },
-                    ],
-                },
-            ],
-        });
-        if (mid) refs.roots.push(mid);
-    }
-
-    //#endregion ----------------- HUD Build/Ensure - Top-Center Panels --------------------
-
-
-
-    //#region -------------------- HUD Build/Ensure - Admin Action Counter --------------------
-
-    {
-        // Admin action audit counter (top-right)
-        const auditCounter = modlib.ParseUI({
-            name: `AdminPanelActionCount_${pid}`,
-            type: "Text",
-            playerId: player,
-            // position: [x, y] offset; increase X to move right, increase Y to move down
-            position: [20, 22 + CONQUEST_HUD_NON_CLOCK_SHIFT_Y],
-            size: [60, 12],
-            anchor: mod.UIAnchor.TopRight,
-            visible: true,
-            padding: 0,
-            bgAlpha: 0,
-            bgFill: mod.UIBgFill.None,
-            textLabel: mod.Message(mod.stringkeys.twl.adminPanel.actionCountFormat, 0),
-            textColor: [1, 1, 1],
-            textAlpha: 1,
-            textSize: 10,
-            textAnchor: mod.UIAnchor.CenterRight,
-        });
-        if (auditCounter) refs.roots.push(auditCounter);
-    }
-
-    refs.adminPanelActionCountText = safeFind(`AdminPanelActionCount_${pid}`);
+    buildConquestBrandingTopLeftWidgets(player, pid, refs);
+    buildConquestTopCenterAuxWidgets(
+        player,
+        pid,
+        refs,
+        {
+            helpContainerX: CONQUEST_HELP_CONTAINER_X,
+            helpContainerY: CONQUEST_HELP_CONTAINER_Y,
+            helpContainerWidth: CONQUEST_HELP_CONTAINER_WIDTH,
+            helpContainerHeight: CONQUEST_HELP_CONTAINER_HEIGHT,
+            helpTextOffsetY: CONQUEST_HELP_TEXT_OFFSET_Y,
+            helpTextHeight: CONQUEST_HELP_TEXT_HEIGHT,
+            readyContainerX: CONQUEST_READY_CONTAINER_X,
+            readyContainerY: CONQUEST_READY_CONTAINER_Y,
+            readyContainerWidth: CONQUEST_READY_CONTAINER_WIDTH,
+            readyContainerHeight: CONQUEST_READY_CONTAINER_HEIGHT,
+            readyTextOffsetY: CONQUEST_READY_TEXT_OFFSET_Y,
+            readyTextHeight: CONQUEST_READY_TEXT_HEIGHT,
+        }
+    );
+    buildConquestAdminActionCounterWidget(player, pid, refs);
 
     {
         const conquestTickets = modlib.ParseUI({
@@ -2392,7 +740,6 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             position: [CONQUEST_TICKETS_ROOT_X, CONQUEST_TICKETS_ROOT_Y],
             size: [CONQUEST_TICKETS_ROOT_WIDTH, CONQUEST_TICKETS_ROOT_HEIGHT],
             anchor: mod.UIAnchor.TopCenter,
-            // Start hidden so swap-time rebuilds cannot show incremental construction frames.
             visible: false,
             padding: 0,
             bgAlpha: 0,
@@ -2882,12 +1229,14 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 },
             ],
         });
-        if (conquestTickets) refs.roots.push(conquestTickets);
+        if (conquestTickets) {
+            refs.roots.push(conquestTickets);
+            refs.conquestTicketsDebugRoot = conquestTickets;
+        }
     }
     ensureConquestTicketCounterShadowWidgets();
     ensureConquestBleedChevronWidgets();
 
-    refs.conquestTicketsDebugRoot = safeFind(`ConquestTicketsHudRoot_${pid}`);
     refs.conquestTicketsTeam1Container = safeFind(`ConquestTicketsHudTeam1Container_${pid}`);
     refs.conquestTicketsTeam2Container = safeFind(`ConquestTicketsHudTeam2Container_${pid}`);
     refs.conquestTicketsDebugTeam1Shadow = safeFind(`ConquestTicketsHudTeam1Shadow_${pid}`);
@@ -3197,15 +1546,15 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         }
         const leftBleedChevrons = refs.conquestTicketsBleedLeftChevrons ?? [];
         const rightBleedChevrons = refs.conquestTicketsBleedRightChevrons ?? [];
-        const chevronOverlayParent = mod.GetUIRoot();
+        const chevronOverlayParent = refs.conquestTicketsDebugRoot ?? mod.GetUIRoot();
         for (let chevronIndex = 0; chevronIndex < CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; chevronIndex++) {
-            // Keep chevrons under UIRoot overlay so ticket bar/fill layering cannot occlude the glyphs.
+            // Keep chevrons under the ticket root so they inherit the same centered lane frame.
             const leftParent = chevronOverlayParent;
             const rightParent = chevronOverlayParent;
-            const leftX = getBleedChevronAbsX(true, chevronIndex);
-            const rightX = getBleedChevronAbsX(false, chevronIndex);
-            const leftY = CONQUEST_TICKETS_BLEED_ABS_Y;
-            const rightY = CONQUEST_TICKETS_BLEED_ABS_Y;
+            const leftX = getBleedChevronX(true, chevronIndex);
+            const rightX = getBleedChevronX(false, chevronIndex);
+            const leftY = CONQUEST_TICKETS_BLEED_Y;
+            const rightY = CONQUEST_TICKETS_BLEED_Y;
             const leftChevron = leftBleedChevrons[chevronIndex];
             if (leftChevron) {
                 mod.SetUIWidgetParent(leftChevron, leftParent);
@@ -3780,7 +2129,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             type: "Container",
             position: [0, 0],
             size: [CONQUEST_HUD_FLAG_ACTIVE_POPOUT_ROOT_WIDTH, CONQUEST_HUD_FLAG_ACTIVE_POPOUT_ROOT_HEIGHT],
-            anchor: mod.UIAnchor.TopLeft,
+            anchor: mod.UIAnchor.TopCenter,
             visible: false,
             padding: 0,
             bgAlpha: 0,
@@ -4177,7 +2526,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             type: "Container",
             position: [0, 0],
             size: [CONQUEST_HUD_FLAG_ENGAGE_ROOT_WIDTH, CONQUEST_HUD_FLAG_ENGAGE_ROOT_HEIGHT],
-            anchor: mod.UIAnchor.TopLeft,
+            anchor: mod.UIAnchor.TopCenter,
             visible: false,
             padding: 0,
             bgAlpha: 0,
@@ -4496,17 +2845,18 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             position: [CONQUEST_FLAGS_ROOT_X, CONQUEST_FLAGS_ROOT_Y],
             size: [CONQUEST_FLAGS_ROOT_WIDTH, CONQUEST_FLAGS_ROOT_HEIGHT],
             anchor: mod.UIAnchor.TopCenter,
-            // Start hidden so swap-time rebuilds cannot show incremental construction frames.
             visible: false,
             padding: 0,
             bgAlpha: 0,
             bgFill: mod.UIBgFill.None,
             children: flagChildren,
         });
-        if (conquestFlags) refs.roots.push(conquestFlags);
+        if (conquestFlags) {
+            refs.roots.push(conquestFlags);
+            refs.conquestFlagsDebugRoot = conquestFlags;
+        }
     }
 
-    refs.conquestFlagsDebugRoot = safeFind(`ConquestFlagsHudRoot_${pid}`);
     refs.conquestFlagsDebugSlotRoots = [];
     refs.conquestFlagsDebugBorderRows = [];
     refs.conquestFlagsDebugFillRows = [];
@@ -4781,7 +3131,12 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             }
         }
 
-        if (refs.conquestFlagsEngageRoot) {
+        if (refs.conquestFlagsEngageRoot && refs.conquestFlagsDebugRoot) {
+            try {
+                mod.SetUIWidgetAnchor(refs.conquestFlagsEngageRoot, mod.UIAnchor.TopLeft);
+            } catch {
+                // Best-effort anchor normalization only.
+            }
             mod.SetUIWidgetParent(refs.conquestFlagsEngageRoot, refs.conquestFlagsDebugRoot);
             mod.SetUIWidgetPosition(
                 refs.conquestFlagsEngageRoot,
@@ -5035,8 +3390,9 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         }
     }
     safeSetUIWidgetDepth(refs.conquestFlagsDebugRoot, mod.UIDepth.AboveGameUI);
-    hideLegacyConquestRoots();
-    hideLegacyFlagTripletRows();
+    purgeLegacyConquestRoots();
+    purgeLegacyFlagTripletRows();
+    purgeLegacyTopCoreContainers();
 
     //#endregion ----------------- HUD Build/Ensure - Admin Action Counter --------------------
 
@@ -5073,14 +3429,24 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     refs.settingsVehiclesMatchupText = safeFind(`Settings_VehiclesMatchup_${pid}`);
     refs.settingsPlayersText = safeFind(`Settings_Players_${pid}`);
     State.conquest.debug.hudGenerationByPid[pid] = (State.conquest.debug.hudGenerationByPid[pid] ?? 0) + 1;
-    State.hudCache.hudByPid[pid] = refs;
 
     // Keep only HUD elements used by conquest's simplified center HUD + overlays.
     setAdminPanelActionCountText(refs.adminPanelActionCountText, State.admin.actionCount);
-    updateSettingsSummaryHudForPid(pid);
 
-    ensureTopHudRootForPid(pid, player);
-    applyConquestAbsoluteLayout(refs, true);
+    const pinnedCombatRoots = pinConquestCombatRootsToTopHudRoot(refs);
+    if (!pinnedCombatRoots) {
+        // Root-chain placement is mandatory for Conquest combat HUD.
+        // If pinning fails, tear down immediately so no unpinned top-left roots leak on-screen.
+        destroyConquestHudForPid(pid);
+        return undefined;
+    }
+    if (!rebindConquestHudRefsFromPinnedTree(refs)) {
+        // Subtree-scoped rebind is mandatory so render refs always belong to pinned centered roots.
+        destroyConquestHudForPid(pid);
+        return undefined;
+    }
+    State.hudCache.hudByPid[pid] = refs;
+    updateSettingsSummaryHudForPid(pid);
     const readyContainer = safeFind(`Container_ReadyStatus_${pid}`);
     if (readyContainer) {
         try {

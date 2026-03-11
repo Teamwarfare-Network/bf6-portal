@@ -124,3 +124,11 @@ Prompting examples:
 4. When methodology references influence design, describe the pattern adapted without pasting their code.
 5. Include task list status (completed work and any remaining items).
 6. If string edits were made, include the explicit human approval reference in the output.
+
+## IDE Link Policy
+
+1. Local file references in responses must be IDE-openable paths, not browser URLs.
+2. Use absolute workspace paths in markdown links with an IDE-safe target format:
+   `/c:/Users/Soldat/TypeScriptProjects/twlmain/...`
+3. Include line numbers when possible (for example `:42`) so navigation lands directly in the file.
+4. Do not use drive-letter markdown targets like `C:\...` because some clients route those to a browser.

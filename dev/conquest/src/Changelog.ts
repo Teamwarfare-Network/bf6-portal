@@ -3,6 +3,71 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.391: HUD subtree ref-owner enforcement: Conquest cached/build ensure now rebinds tickets/flags/popout/engage refs from pinned centered subtrees only (no global same-name lookup), and live critical checks now validate child-parent ownership for ticket containers/bars and flag slot roots so off-root/top-left handles are hard-rejected and rebuilt
+// v0.390: HUD critical-ref geometry gate: live render critical checks now require centered anchor+position for TopHudRoot/ConquestCombatHudRoot/TicketsRoot/FlagsRoot (not just parent-chain), forcing rebuild whenever a top-left root chain appears
+// v0.389: HUD root-owner hardening: removed cached name-based combat-root hydration, moved critical/ref validation to cached root-handle identity (`topHudRoot` + `conquestCombatRoot`), and removed ticket-counter hot-path parent rebinding so render updates cannot drift core widgets to top-left frames
+// v0.388: HUD rebuild-loop fix: replaced fragile parent-name critical check with direct parent-widget identity validation and enforced layout-revision rebuild from the live render loop so stale cached trees are rebuilt once instead of oscillating/flickering
+// v0.387: HUD centering architecture shift: moved Conquest tickets/flags roots to direct UIRoot TopCenter centering (clock-style), removed ConquestCombatHudRoot as active parent authority, and relaxed critical-ref parent validation to shared-parent consistency for deterministic center-frame rendering
+// v0.386: HUD centering reliability pass: switched TopHudRoot/ConquestCombatHudRoot creation to ParseUI containers and added one-time per-PID HUD layout revision rebuild so stale cached root trees cannot bypass centered parent-chain normalization
+// v0.385: HUD root-chain correction: switched combat HUD authority to TopHudRoot->ConquestCombatHudRoot, removed ConquestHudRoot active path, and aligned critical-ref parent checks to teardown spec
+// v0.384: Conquest root enforcement: ensure now rejects stale cached HUD trees not parented under ConquestHudRoot->ConquestCombatHudRoot, hard-purges them, and rebuilds a single deterministic per-PID Conquest HUD tree.
+// v0.383: Conquest HUD file split: moved Conquest HUD ensure/build owner from hud/build.ts into ui/conquest/hud-build.ts and switched index wiring; Conquest combat parent chain now uses dedicated ConquestHudRoot.
+// v0.382: Conquest HUD root isolation: added dedicated ConquestHudRoot per PID, reparented combat HUD under it (no shared TopHudRoot parent), and updated lifecycle/cleanup/critical-ref parent-chain checks.
+// v0.381: HUD lifecycle simplification: removed cached parent-chain validation/recovery path and replaced with hard stale-tree purge + deterministic rebuild when no per-PID HUD cache exists.
+// v0.380: HUD teardown pass: centralized conquest lifecycle ownership, removed dead absolute-layout path, pinned tickets/flags roots to centered combat root x=0, and made bleed chevrons ticket-root local.
+// v0.379: HUD centering anchor unification: ticket/flag roots now stay TopCenter under ConquestCombatHudRoot and pin to combat-center X, removing TopLeft conversion drift in root placement
+// v0.378: HUD parent-chain authority gate: critical-ref validation now requires TopHudRoot -> ConquestCombatHudRoot -> Tickets/Flags chain and forces a clean per-PID rebuild when stale/left-anchored roots are detected
+// v0.377: HUD centering simplification: introduced one centered ConquestCombatHudRoot per PID under TopHudRoot and pinned tickets/flags as static local children to eliminate split parent-chain drift on aspect changes
+// v0.376: HUD centering fix: root pin path now reparents before setting TopCenter anchor so tickets/flags roots cannot reset to top-left during parent assignment
+// v0.375: HUD root simplification: removed lifecycle-version mechanism, collapsed combat roots back under centered TopHudRoot, and stripped per-refresh clock reparent/position rewrites from cached path
+// v0.374: HUD legacy-chain removal: removed TopHudRoot legacy Container_Top* reparent path so only explicit centered Conquest combat root chain controls top combat HUD placement
+// v0.373: HUD owner-path simplification: removed lifecycle-token gating and made update loop always use ensureHudForPlayer so centered combat base-root parenting is enforced through a single per-PID owner path
+// v0.372: HUD lifecycle migration: bumped per-PID lifecycle version to force one-time rebuild into centered ConquestCombatHudRoot base container for all existing players
+// v0.371: HUD base-root centering pass: moved combat tickets/flags under single centered ConquestCombatHudRoot and removed magic combat root width by deriving from ticket root geometry
+// v0.370: HUD stability pass: set tickets/flags combat roots visible by default and rely on per-element state visibility to prevent native HUD fallback windows while preserving per-PID lifecycle ownership
+// v0.369: CQ_Bug_9 lifecycle hardening: added one-time per-PID HUD lifecycle migration token to rebuild stale trees, while keeping runtime HUD updates cache/visibility-driven and root placement deterministic
+// v0.368: CQ_Bug_9 architecture pass: removed schema-coupled live HUD bootstrap, added strict per-PID critical-ref ownership validation, and pinned top combat roots to centered TopHudRoot with cached-path layout churn removed
+// v0.367: HUD architecture simplification: removed runtime top-combat absolute-layout writer (cached/build ensure path) and moved to static ParseUI creation flow with schema 41 rebuild
+// v0.366: HUD lifecycle cleanup: include centered lane roots in join/leave teardown to prevent stale top-lane containers across reconnects/swap churn
+// v0.365: HUD centering hardening: added centered lane roots for tickets/flags under TopHudRoot and migrated combat-root normalization to lane-local [0,0] with schema 40 rebuild
+// v0.364: HUD centering chain: parent Conquest tickets/flags roots to centered TopHudRoot (clock frame) and schema 39 rebuild to purge stale left-anchored trees
+// v0.363: CQ_Bug_9 simplification pass: removed unused live root normalizer and migration probes from capture HUD loop; retained ensureHudForPlayer as single top-combat layout owner with PID root-ownership guard.
+// v0.362: CQ_Bug_9 kickoff: added per-player cached-root ownership guard and removed live-tick root normalization/schema probing from conquest HUD render path to enforce single-owner HUD lifecycle.
+// v0.361: HUD centering migration: bumped schema to force one-time rebuild after reparent-before-anchor root fix so stale top-lane trees are fully replaced.
+// v0.360: HUD centering fix: reparent-before-anchor on top combat root normalization to prevent anchor reset to TopLeft on tickets/flags/engage chain.
+// v0.359: HUD centering hard reset: top combat roots now parent directly to UIRoot (TopCenter, X=0) and schema bumped to rebuild stale left-anchored trees.
+// v0.358: HUD centering: apply top-root normalization in ensure/build path so tickets/flags/engage do not default left in pre-live phases.
+// v0.357: HUD root-missing guardrail: rebuild on any missing top combat root and block fallback child/engage projection to prevent left-edge drift; schema 36
+// v0.356: HUD centering authority reset: ticket/flag roots now TopCenter X=0 with capture-normalizer as single runtime writer; removed competing root writes from build/status and forced schema rebuild
+// v0.355: HUD centering model shift: tickets/flags roots now TopLeft with explicit centered X under TopHudRoot; schema 34 rebuild for stale-root purge
+// v0.354: HUD centering chain: force schema rebuild and normalize tickets/flags top roots under TopHudRoot at X=0 TopCenter
+// v0.352: Top HUD centering hardening: explicit centered X projection for tickets/flags roots on top-lane canvas, engage root explicit local centering, and runtime purge of legacy top-core container trees
+// v0.351: HUD legacy-root purge: delete all Conquest DebugRoot/triplet leftovers every ensure and force schema rebuild to remove left/top-left stale overlays
+// v0.350: HUD centering chain fix: parent tickets/flags/engage to TopHudRoot, remove clock-parent fallback, reset live root X offsets, and force schema rebuild for stale tree cleanup
+// v0.349: HUD diagnostics: forced runtime X-shift probe on top combat roots to verify active HUD writer path and isolate non-responsive centering chain
+// v0.348: HUD root authority normalization: live update now reapplies centered parent/anchor/position for tickets/flags/engage roots on active refs/name chain to prevent stale root drift
+// v0.347: HUD migration chain completion: migration bootstrap now purges top-root/clock duplicates and forces schema rebuild path before HUD ensure to eliminate stale lane transforms
+// v0.346: HUD migration dependency hardening: one-time per-player migration token now forces full HUD rebuild on this schema so stale-but-populated trees cannot bypass centering fixes
+// v0.345: HUD bootstrap dependency fix: clean-frame cache/schema probe now forces rebuild when HUD cache is missing/stale after hot reload, preventing stale top-lane trees from persisting
+// v0.344: HUD centering chain fix: deterministic top-frame/clock schema purge, refs-first root resolution, and runtime stale-lookup hardening for tickets/flags/engage
+// v0.343: HUD centering-only correction: reverted top combat roots to TopCenter with zero-X placement (no TopLeft centering math), schema rebuild
+// v0.342: HUD first-build alignment fix: removed post-clock realignment path and enforced build order so clock root is ensured before conquest HUD roots are created/positioned
+// v0.341: HUD alignment reliability fix: added one-time post-clock lane realignment pass so tickets/flags bind to MatchTimerRoot even when HUD builds before clock root creation
+// v0.340: HUD centerline hard-lock: bootstrap now parents tickets/flags to MatchTimerRoot when available (TopHudRoot fallback) so top lanes share the exact clock centerline on all aspects
+// v0.339: HUD parent-frame audit fix: unified clock + tickets/flags/engage bootstrap parenting under centered TopHudRoot and schema-rebuilt to eliminate split-frame aspect-ratio drift
+// v0.338: HUD centering authority cleanup: removed runtime root normalization path, set tickets/flags/engage roots TopCenter at build/bootstrap only, and bumped HUD schema for clean tree rebuilds
+// v0.337: HUD root authority pass: re-center ticket/flag roots each render against clock/top-center parent to eliminate stale parent/anchor drift
+// v0.336: HUD centering anchor shift: parent ticket/flag lanes to MatchTimerRoot centerline and keep relative deltas; schema rebuild
+// v0.335: HUD centerline rebuild: derive ticket/flag root X from top-center line and preserve B-slot-relative deltas; normalize bootstrap path to parent-only
+// v0.334: Center-space HUD fix: unified ticket/flag layout to centered root-local coordinates (TopCenter roots), removed mixed absolute/root sizing in update path
+// v0.333: HUD centering fix follow-up: ticket/flag roots now TopLeft under centered TopHudRoot canvas (static placement), schema rebuild
+// v0.332: HUD centering fix: removed per-update root normalization, enforced TopCenter on ticket/flag roots, schema bump for one-time rebuild
+// v0.331: HUD centering pass: static TopCenter anchors for tickets/flags roots and engage root; removed per-update alignment path
+// v0.330: HUD centering hardening: live-name-first widget rebinding, centered root normalization for tickets/flags/engage, stale-cache mitigation
+// v0.317: HUD projection finalization: removed temporary absolute-layout toggle branches and normalized TopHudRoot parent/anchor/size each ensure pass to prevent stale-root drift across aspect-ratio/layout iterations
+// v0.316: HUD centering correction: restored authoritative absolute layout path and added runtime root-width X compensation offset for conquest combat HUD projection (keeps existing Y geometry/tuning unchanged)
+// v0.315: HUD centering fallback: disabled absolute UIRoot projection for conquest combat HUD so tickets/flags/popout/engage remain in native TopCenter root-local layout for better non-16:9 alignment
+// v0.314: HUD alignment hardening: parent conquest tickets/flags lanes and bleed-chevron overlays to centered TopHudRoot so top combat HUD stays centered across non-16:9 aspect ratios (Y geometry unchanged)
 // v0.313: HUD layout: global +10 Y shift for non-clock HUD groups (tickets/flags/help/ready/upper-left/admin), while match clock position remains unchanged
 // v0.312: HUD layout scaling: objective-count-driven outward ticket spacing, flag row centered in middle lane at ticket-bar centerline, and upward stack shift for percent/popout/engage
 // v0.295: HUD polish: synchronize popout+engage force-hide timing, shift engage status text up 1px, and tint active top-row muted slot dark blue/red by owner (neutral stays gray)

@@ -58,32 +58,6 @@ const pid = mod.GetObjId(player);
         const probeClock = safeFind(cached.rootName);
         const probeState = safeFind(cached.roundStateRootName);
         if (probeClock && probeState) {
-            ensureTopHudRootForPid(pid, player);
-            // Keep cached widgets synchronized with latest layout constants.
-            mod.SetUIWidgetPosition(probeClock, mod.CreateVector(CLOCK_POSITION_X, CLOCK_POSITION_Y, 0));
-            mod.SetUIWidgetPosition(cached.minTens, mod.CreateVector(xOffsets.minTens, CLOCK_TEXT_OFFSET_Y, 0));
-            mod.SetUIWidgetPosition(cached.minOnes, mod.CreateVector(xOffsets.minOnes, CLOCK_TEXT_OFFSET_Y, 0));
-            mod.SetUIWidgetPosition(cached.colon, mod.CreateVector(xOffsets.colon, CLOCK_TEXT_OFFSET_Y, 0));
-            mod.SetUIWidgetPosition(cached.secTens, mod.CreateVector(xOffsets.secTens, CLOCK_TEXT_OFFSET_Y, 0));
-            mod.SetUIWidgetPosition(cached.secOnes, mod.CreateVector(xOffsets.secOnes, CLOCK_TEXT_OFFSET_Y, 0));
-            // Reparent legacy detached status text under the clock root so state labels move with the clock.
-            mod.SetUIWidgetParent(probeState, probeClock);
-            mod.SetUIWidgetPosition(probeState, mod.CreateVector(0, roundStateOffsetY, 0));
-            mod.SetUIWidgetSize(probeState, mod.CreateVector(roundStateWidth, roundStateHeight, 0));
-            if (cached.roundStateText) {
-                // Authoritatively drive the visible LIVE/GAME OVER text from the clock root itself.
-                // This avoids stale parent/container transforms from older HUD trees.
-                mod.SetUIWidgetParent(cached.roundStateText, probeClock);
-                mod.SetUIWidgetAnchor(cached.roundStateText, mod.UIAnchor.TopCenter);
-                mod.SetUIWidgetPosition(cached.roundStateText, mod.CreateVector(0, roundStateTextOffsetY, 0));
-                mod.SetUIWidgetSize(cached.roundStateText, mod.CreateVector(roundStateWidth, roundStateHeight, 0));
-            }
-            if (cached.playersReadyText) {
-                mod.SetUIWidgetParent(cached.playersReadyText, mod.GetUIRoot());
-                mod.SetUIWidgetAnchor(cached.playersReadyText, mod.UIAnchor.TopLeft);
-                mod.SetUIWidgetPosition(cached.playersReadyText, mod.CreateVector(playersReadyLeftX, playersReadyLeftY, 0));
-                mod.SetUIWidgetSize(cached.playersReadyText, mod.CreateVector(playersReadyWidth, playersReadyHeight, 0));
-            }
             setHudHelpDepthForPid(pid);
             return cached;
         }
@@ -199,28 +173,10 @@ const pid = mod.GetObjId(player);
     // if a stale RoundStateRoot survived an earlier build, force it under the clock root
     // so LIVE/GAME OVER and ready count always follow the clock widget container.
     {
-        ensureTopHudRootForPid(pid, player);
+        const topHudRoot = ensureTopHudRootForPid(pid, player);
         const probeClock = safeFind(rootName);
-        const probeState = safeFind(roundStateRootName);
-        if (probeClock && probeState) {
-            mod.SetUIWidgetParent(probeState, probeClock);
-            mod.SetUIWidgetPosition(probeState, mod.CreateVector(0, roundStateOffsetY, 0));
-            mod.SetUIWidgetSize(probeState, mod.CreateVector(roundStateWidth, roundStateHeight, 0));
-        }
-        const roundStateText = safeFind("RoundStateText_" + pid);
-        if (probeClock && roundStateText) {
-            // Keep the runtime label directly under the clock digits regardless of legacy container state.
-            mod.SetUIWidgetParent(roundStateText, probeClock);
-            mod.SetUIWidgetAnchor(roundStateText, mod.UIAnchor.TopCenter);
-            mod.SetUIWidgetPosition(roundStateText, mod.CreateVector(0, roundStateTextOffsetY, 0));
-            mod.SetUIWidgetSize(roundStateText, mod.CreateVector(roundStateWidth, roundStateHeight, 0));
-        }
-        const playersReady = safeFind("PlayersReadyText_" + pid);
-        if (playersReady) {
-            mod.SetUIWidgetParent(playersReady, mod.GetUIRoot());
-            mod.SetUIWidgetAnchor(playersReady, mod.UIAnchor.TopLeft);
-            mod.SetUIWidgetPosition(playersReady, mod.CreateVector(playersReadyLeftX, playersReadyLeftY, 0));
-            mod.SetUIWidgetSize(playersReady, mod.CreateVector(playersReadyWidth, playersReadyHeight, 0));
+        if (probeClock) {
+            if (topHudRoot) mod.SetUIWidgetParent(probeClock, topHudRoot);
         }
     }
 

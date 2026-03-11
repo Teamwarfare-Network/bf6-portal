@@ -656,14 +656,133 @@ function conquestPhase3TrackSinglePassRenderForPid(pid: number): boolean {
 
 // Returns true when the minimum conquest HUD refs required for safe render are present.
 // If false, caller should rebuild the player's conquest HUD instead of rendering partial state.
+function conquestPhase3WidgetBelongsToPid(widget: mod.UIWidget | undefined, pid: number): boolean {
+    if (!widget) return false;
+    try {
+        const widgetName = mod.GetUIWidgetName(widget);
+        return widgetName.indexOf(`_${pid}`) !== -1;
+    } catch {
+        return false;
+    }
+}
+
+function conquestPhase3GetWidgetName(widget: mod.UIWidget | undefined): string {
+    if (!widget) return "";
+    try {
+        return mod.GetUIWidgetName(widget);
+    } catch {
+        return "";
+    }
+}
+
+function conquestPhase3GetWidgetParentName(widget: mod.UIWidget | undefined): string {
+    if (!widget) return "";
+    try {
+        const parent = mod.GetUIWidgetParent(widget);
+        return conquestPhase3GetWidgetName(parent);
+    } catch {
+        return "";
+    }
+}
+
+// Returns true when the widget's direct parent resolves to the requested widget name.
+function conquestPhase3WidgetHasNamedParent(widget: mod.UIWidget | undefined, parentName: string): boolean {
+    if (!widget) return false;
+    try {
+        const parent = mod.GetUIWidgetParent(widget);
+        return conquestPhase3GetWidgetName(parent) === parentName;
+    } catch {
+        return false;
+    }
+}
+
+// Returns true when the widget's direct parent is exactly the provided parent handle.
+function conquestPhase3WidgetHasParentHandle(
+    widget: mod.UIWidget | undefined,
+    parent: mod.UIWidget | undefined
+): boolean {
+    if (!widget || !parent) return false;
+    try {
+        const resolvedParent = mod.GetUIWidgetParent(widget);
+        return !!resolvedParent && resolvedParent === parent;
+    } catch {
+        return false;
+    }
+}
+
+// Returns true when the widget anchor matches the expected value.
+function conquestPhase3WidgetHasAnchor(widget: mod.UIWidget | undefined, anchor: mod.UIAnchor): boolean {
+    if (!widget) return false;
+    try {
+        return mod.GetUIWidgetAnchor(widget) === anchor;
+    } catch {
+        return false;
+    }
+}
+
+// Returns true when widget XY position is within tolerance of expected local coordinates.
+function conquestPhase3WidgetHasPositionXY(
+    widget: mod.UIWidget | undefined,
+    x: number,
+    y: number,
+    tolerance: number = 1
+): boolean {
+    if (!widget) return false;
+    try {
+        const pos = mod.GetUIWidgetPosition(widget);
+        return (mod.AbsoluteValue(mod.XComponentOf(pos) - x) <= tolerance)
+            && (mod.AbsoluteValue(mod.YComponentOf(pos) - y) <= tolerance);
+    } catch {
+        return false;
+    }
+}
+
 function conquestPhase3HasCriticalHudRefs(refs: HudRefs): boolean {
-    if (!refs.conquestTicketsDebugRoot) return false;
-    if (!refs.conquestTicketsTeam1Container || !refs.conquestTicketsTeam2Container) return false;
-    if (!refs.conquestTicketsDebugTeam1 || !refs.conquestTicketsDebugTeam2) return false;
-    if (!refs.conquestTicketsDebugLeftBarTrack || !refs.conquestTicketsDebugLeftBarFill) return false;
-    if (!refs.conquestTicketsDebugRightBarTrack || !refs.conquestTicketsDebugRightBarFill) return false;
-    if (!refs.conquestFlagsDebugRoot) return false;
-    if (!refs.conquestFlagsEngageRoot || !refs.conquestFlagsEngageTrack) return false;
+    const pid = refs.pid;
+    if (!conquestPhase3WidgetBelongsToPid(refs.conquestTicketsDebugRoot, pid)) return false;
+    if (!conquestPhase3WidgetBelongsToPid(refs.conquestTicketsTeam1Container, pid)) return false;
+    if (!conquestPhase3WidgetBelongsToPid(refs.conquestTicketsTeam2Container, pid)) return false;
+    if (!conquestPhase3WidgetBelongsToPid(refs.conquestTicketsDebugTeam1, pid)) return false;
+    if (!conquestPhase3WidgetBelongsToPid(refs.conquestTicketsDebugTeam2, pid)) return false;
+    if (!conquestPhase3WidgetBelongsToPid(refs.conquestTicketsDebugLeftBarTrack, pid)) return false;
+    if (!conquestPhase3WidgetBelongsToPid(refs.conquestTicketsDebugLeftBarFill, pid)) return false;
+    if (!conquestPhase3WidgetBelongsToPid(refs.conquestTicketsDebugRightBarTrack, pid)) return false;
+    if (!conquestPhase3WidgetBelongsToPid(refs.conquestTicketsDebugRightBarFill, pid)) return false;
+    if (!conquestPhase3WidgetBelongsToPid(refs.conquestFlagsDebugRoot, pid)) return false;
+    if (!conquestPhase3WidgetBelongsToPid(refs.conquestFlagsEngageRoot, pid)) return false;
+    if (!conquestPhase3WidgetBelongsToPid(refs.conquestFlagsEngageTrack, pid)) return false;
+
+    // Root-chain authority:
+    // TopHudRoot_{pid} -> ConquestCombatHudRoot_{pid} -> tickets/flags roots.
+    const combatRootName = `ConquestCombatHudRoot_${pid}`;
+    const combatRoot = refs.conquestCombatRoot;
+    const topHudRoot = refs.topHudRoot;
+    if (!combatRoot || !topHudRoot) return false;
+    if (!conquestPhase3WidgetHasParentHandle(combatRoot, topHudRoot)) return false;
+    if (!conquestPhase3WidgetHasParentHandle(refs.conquestTicketsDebugRoot, combatRoot)) return false;
+    if (!conquestPhase3WidgetHasParentHandle(refs.conquestFlagsDebugRoot, combatRoot)) return false;
+    if (!conquestPhase3WidgetHasNamedParent(refs.conquestTicketsDebugRoot, combatRootName)) return false;
+    if (!conquestPhase3WidgetHasNamedParent(refs.conquestFlagsDebugRoot, combatRootName)) return false;
+    if (!conquestPhase3WidgetHasNamedParent(combatRoot, `TopHudRoot_${pid}`)) return false;
+    if (!conquestPhase3WidgetHasAnchor(topHudRoot, mod.UIAnchor.TopCenter)) return false;
+    if (!conquestPhase3WidgetHasPositionXY(topHudRoot, 0, 0)) return false;
+    if (!conquestPhase3WidgetHasAnchor(combatRoot, mod.UIAnchor.TopCenter)) return false;
+    if (!conquestPhase3WidgetHasPositionXY(combatRoot, 0, CONQUEST_HUD_TICKETS_FLAGS_SHIFT_Y)) return false;
+    if (!conquestPhase3WidgetHasAnchor(refs.conquestTicketsDebugRoot, mod.UIAnchor.TopCenter)) return false;
+    if (!conquestPhase3WidgetHasPositionXY(refs.conquestTicketsDebugRoot, 0, 0)) return false;
+    if (!conquestPhase3WidgetHasAnchor(refs.conquestFlagsDebugRoot, mod.UIAnchor.TopCenter)) return false;
+    if (!conquestPhase3WidgetHasPositionXY(refs.conquestFlagsDebugRoot, 0, 0)) return false;
+    if (!conquestPhase3WidgetHasParentHandle(refs.conquestTicketsTeam1Container, refs.conquestTicketsDebugRoot)) return false;
+    if (!conquestPhase3WidgetHasParentHandle(refs.conquestTicketsTeam2Container, refs.conquestTicketsDebugRoot)) return false;
+    if (!conquestPhase3WidgetHasParentHandle(refs.conquestTicketsDebugTeam1, refs.conquestTicketsTeam1Container)) return false;
+    if (!conquestPhase3WidgetHasParentHandle(refs.conquestTicketsDebugTeam2, refs.conquestTicketsTeam2Container)) return false;
+    if (!conquestPhase3WidgetHasParentHandle(refs.conquestTicketsDebugLeftBarTrack, refs.conquestTicketsDebugRoot)) return false;
+    if (!conquestPhase3WidgetHasParentHandle(refs.conquestTicketsDebugLeftBarFill, refs.conquestTicketsDebugLeftBarTrack)) return false;
+    if (!conquestPhase3WidgetHasParentHandle(refs.conquestTicketsDebugRightBarTrack, refs.conquestTicketsDebugRoot)) return false;
+    if (!conquestPhase3WidgetHasParentHandle(refs.conquestTicketsDebugRightBarFill, refs.conquestTicketsDebugRightBarTrack)) return false;
+    if (!conquestPhase3WidgetHasParentHandle(refs.conquestFlagsEngageRoot, refs.conquestFlagsDebugRoot)) return false;
+    if (!conquestPhase3WidgetHasParentHandle(refs.conquestFlagsEngageTrack, refs.conquestFlagsEngageRoot)) return false;
+    if (refs.conquestFlagsActivePopoutRoot && !conquestPhase3WidgetHasParentHandle(refs.conquestFlagsActivePopoutRoot, refs.conquestFlagsDebugRoot)) return false;
 
     const mappedCount = Math.max(1, Math.min(7, State.conquest.capture.mappedObjIdsInOrder.length));
     const slotRoots = refs.conquestFlagsDebugSlotRoots ?? [];
@@ -671,10 +790,14 @@ function conquestPhase3HasCriticalHudRefs(refs: HudRefs): boolean {
     const slotLabels = refs.conquestFlagsDebugLabelRows ?? [];
     const slotPercents = refs.conquestFlagsDebugPercentRoots ?? [];
     for (let i = 0; i < mappedCount; i++) {
-        if (!slotRoots[i]) return false;
-        if (!slotFills[i]) return false;
-        if (!slotLabels[i]) return false;
-        if (!slotPercents[i]) return false;
+        if (!conquestPhase3WidgetBelongsToPid(slotRoots[i], pid)) return false;
+        if (!conquestPhase3WidgetBelongsToPid(slotFills[i], pid)) return false;
+        if (!conquestPhase3WidgetBelongsToPid(slotLabels[i], pid)) return false;
+        if (!conquestPhase3WidgetBelongsToPid(slotPercents[i], pid)) return false;
+        if (!conquestPhase3WidgetHasParentHandle(slotRoots[i], refs.conquestFlagsDebugRoot)) return false;
+        if (!conquestPhase3WidgetHasParentHandle(slotFills[i], slotRoots[i])) return false;
+        if (!conquestPhase3WidgetHasParentHandle(slotLabels[i], slotRoots[i])) return false;
+        if (!conquestPhase3WidgetHasParentHandle(slotPercents[i], refs.conquestFlagsDebugRoot)) return false;
     }
     return true;
 }
@@ -976,7 +1099,7 @@ function conquestPhase3ForceHideEngageWidgetsForPid(pid: number): void {
     // multi-tick unsuppress confirmation from ever completing.
     // Swap/undeploy owners explicitly reset confirmation when state transitions occur.
     const refs = State.hudCache.hudByPid[pid];
-    // Resolve by name first each call so stale cached handles cannot bypass hide on swap/undeploy transitions.
+    // Keep cached refs authoritative; only fallback to global lookup when refs are missing.
     const engageRoot = refs?.conquestFlagsEngageRoot ?? safeFind(`ConquestFlagHudEngageRoot_${pid}`);
     const engageTrack = refs?.conquestFlagsEngageTrack ?? safeFind(`ConquestFlagHudEngageTrack_${pid}`);
     const engageFriendlyFill = refs?.conquestFlagsEngageFriendlyFill ?? safeFind(`ConquestFlagHudEngageFriendlyFill_${pid}`);
@@ -1231,7 +1354,6 @@ function conquestPhase3ApplyTicketBleedIndicatorCounts(
     rightCount: number
 ): void {
     const restackChevronGroup = (group: ConquestShadowTextWidgetSet): void => {
-        const uiRoot = mod.GetUIRoot();
         const shadowWidgets: (mod.UIWidget | undefined)[] = [
             group.right,
             group.left,
@@ -1247,19 +1369,9 @@ function conquestPhase3ApplyTicketBleedIndicatorCounts(
         for (let i = 0; i < shadowWidgets.length; i++) {
             const shadow = shadowWidgets[i];
             if (!shadow) continue;
-            try {
-                mod.SetUIWidgetParent(shadow, uiRoot);
-            } catch {
-                // Best-effort restack only.
-            }
             safeSetUIWidgetDepth(shadow, mod.UIDepth.AboveGameUI);
         }
         if (group.text) {
-            try {
-                mod.SetUIWidgetParent(group.text, uiRoot);
-            } catch {
-                // Best-effort restack only.
-            }
             safeSetUIWidgetDepth(group.text, mod.UIDepth.AboveGameUI);
         }
     };
@@ -1765,26 +1877,37 @@ function renderConquestRootsForPid(refs: HudRefs): void {
 // Renders ticket number containers/text only.
 function renderConquestTicketCountersForPid(refs: HudRefs, tickets: ConquestHudTicketViewModel): void {
     const pid = refs.pid;
-    const overlayCoreTeam1 = safeFind(`ConquestTicketsHudTeam1CoreOverlay_${pid}`);
-    const overlayCoreTeam2 = safeFind(`ConquestTicketsHudTeam2CoreOverlay_${pid}`);
-    if (!overlayCoreTeam1 || !overlayCoreTeam2) {
+    const hasTicketCounterCoreRefs = (r: HudRefs | undefined): boolean => {
+        if (!r) return false;
+        return !!(
+            r.conquestTicketsDebugRoot
+            && r.conquestTicketsTeam1Container
+            && r.conquestTicketsTeam2Container
+            && r.conquestTicketsDebugTeam1
+            && r.conquestTicketsDebugTeam2
+        );
+    };
+    let targetRefs = refs;
+    if (!hasTicketCounterCoreRefs(targetRefs)) {
         const viewer = safeFindPlayer(pid);
         if (viewer && mod.IsPlayerValid(viewer)) {
             ensureHudForPlayer(viewer);
         }
+        targetRefs = State.hudCache.hudByPid[pid] ?? targetRefs;
     }
-    const team1Container = refs.conquestTicketsTeam1Container ?? safeFind(`ConquestTicketsHudTeam1Container_${pid}`);
-    const team2Container = refs.conquestTicketsTeam2Container ?? safeFind(`ConquestTicketsHudTeam2Container_${pid}`);
-    const ticketsRoot = refs.conquestTicketsDebugRoot ?? safeFind(`ConquestTicketsHudRoot_${pid}`);
-    refs.conquestTicketsTeam1Container = team1Container;
-    refs.conquestTicketsTeam2Container = team2Container;
-    refs.conquestTicketsDebugRoot = ticketsRoot;
-    const parentTeam1 = team1Container ?? ticketsRoot;
-    const parentTeam2 = team2Container ?? ticketsRoot;
+    if (!hasTicketCounterCoreRefs(targetRefs)) {
+        conquestPhase3MarkHudDirty();
+        return;
+    }
+
+    const team1Container = targetRefs.conquestTicketsTeam1Container;
+    const team2Container = targetRefs.conquestTicketsTeam2Container;
+    const coreTeam1 = targetRefs.conquestTicketsDebugTeam1;
+    const coreTeam2 = targetRefs.conquestTicketsDebugTeam2;
 
     // Ticket counters are intentionally shadowless; hide all legacy + ring shadow layers.
-    safeSetUIWidgetVisible(refs.conquestTicketsDebugTeam1Shadow ?? safeFind(`ConquestTicketsHudTeam1Shadow_${pid}`), false);
-    safeSetUIWidgetVisible(refs.conquestTicketsDebugTeam2Shadow ?? safeFind(`ConquestTicketsHudTeam2Shadow_${pid}`), false);
+    safeSetUIWidgetVisible(targetRefs.conquestTicketsDebugTeam1Shadow, false);
+    safeSetUIWidgetVisible(targetRefs.conquestTicketsDebugTeam2Shadow, false);
     const counterShadowSuffixes = [
         "ShadowRight",
         "ShadowLeft",
@@ -1801,14 +1924,9 @@ function renderConquestTicketCountersForPid(refs: HudRefs, tickets: ConquestHudT
         safeSetUIWidgetVisible(safeFind(`ConquestTicketsHudTeam2${suffix}_${pid}`), false);
     }
 
+    // Keep legacy base counters hidden when the overlay counters are active.
     const legacyCoreTeam1 = safeFind(`ConquestTicketsHudTeam1_${pid}`);
     const legacyCoreTeam2 = safeFind(`ConquestTicketsHudTeam2_${pid}`);
-    const coreTeam1 = safeFind(`ConquestTicketsHudTeam1CoreOverlay_${pid}`) ?? legacyCoreTeam1;
-    const coreTeam2 = safeFind(`ConquestTicketsHudTeam2CoreOverlay_${pid}`) ?? legacyCoreTeam2;
-    refs.conquestTicketsDebugTeam1 = coreTeam1;
-    refs.conquestTicketsDebugTeam2 = coreTeam2;
-
-    // If overlay cores are present, keep legacy cores hidden to prevent double-rendering.
     if (coreTeam1 && coreTeam1 !== legacyCoreTeam1) {
         safeSetUIWidgetVisible(legacyCoreTeam1, false);
     }
@@ -1819,8 +1937,6 @@ function renderConquestTicketCountersForPid(refs: HudRefs, tickets: ConquestHudT
     safeSetUIWidgetVisible(team1Container, true);
     safeSetUIWidgetVisible(team2Container, true);
 
-    safeSetUIWidgetParent(coreTeam1, parentTeam1);
-    safeSetUIWidgetParent(coreTeam2, parentTeam2);
     safeSetUIWidgetVisible(coreTeam1, true);
     safeSetUIWidgetVisible(coreTeam2, true);
     safeSetUITextLabel(coreTeam1, tickets.friendlyTicketLabel);
@@ -1831,8 +1947,6 @@ function renderConquestTicketCountersForPid(refs: HudRefs, tickets: ConquestHudT
     safeSetUITextAlpha(coreTeam2, 1);
     safeSetUIWidgetDepth(coreTeam1, mod.UIDepth.AboveGameUI);
     safeSetUIWidgetDepth(coreTeam2, mod.UIDepth.AboveGameUI);
-    safeSetUIWidgetParent(coreTeam1, parentTeam1);
-    safeSetUIWidgetParent(coreTeam2, parentTeam2);
 }
 
 // Renders ticket bar tracks/fills only.
@@ -1887,18 +2001,8 @@ function renderConquestTicketBleedForPid(refs: HudRefs, tickets: ConquestHudTick
         }
     }
     if (!chevronsReady && bleedExpected) {
-        const viewer = safeFindPlayer(refs.pid);
-        if (viewer && mod.IsPlayerValid(viewer)) {
-            // Escalation path: if chevron cores are still missing, hard-rebuild this player's HUD once.
-            // This recovers from rare stale/partial widget trees where ensure-only cannot rebind cores.
-            destroyConquestHudForPid(refs.pid);
-            const rebuilt = ensureHudForPlayer(viewer);
-            targetRefs = rebuilt ?? State.hudCache.hudByPid[refs.pid] ?? targetRefs;
-            chevronsReady = conquestPhase3BackfillBleedChevronCoreRefs(targetRefs);
-        }
-    }
-    if (!chevronsReady && bleedExpected) {
-        // Keep a retry render queued until all core chevron refs are bound.
+        // Teardown contract: render paths must not hard-destroy/rebuild HUD trees.
+        // Queue a retry and let authoritative lifecycle owners handle rebuild decisions.
         conquestPhase3MarkHudDirty();
     }
     conquestPhase3ApplyTicketBleedIndicatorCounts(
@@ -1933,13 +2037,6 @@ function conquestPhase3RefreshTicketBleedWhenHudClean(): void {
         if (!chevronsReady && bleedExpected) {
             ensureHudForPlayer(viewer);
             targetRefs = State.hudCache.hudByPid[pid] ?? targetRefs;
-            chevronsReady = conquestPhase3BackfillBleedChevronCoreRefs(targetRefs);
-        }
-        if (!chevronsReady && bleedExpected) {
-            // Escalation path for clean ticks: force one hard rebuild if ensure-only cannot recover chevrons.
-            destroyConquestHudForPid(pid);
-            const rebuilt = ensureHudForPlayer(viewer);
-            targetRefs = rebuilt ?? State.hudCache.hudByPid[pid] ?? targetRefs;
             chevronsReady = conquestPhase3BackfillBleedChevronCoreRefs(targetRefs);
         }
         if (!chevronsReady && bleedExpected) {
@@ -3499,285 +3596,6 @@ function renderConquestFlagSlotsForPid(
     }
 }
 
-// Renders the active-objective pop-out widgets only.
-function renderConquestActiveFlagPopoutForPid(
-    refs: HudRefs,
-    popout: ConquestHudActiveFlagPopoutViewModel
-): void {
-    const pid = refs.pid;
-    const popoutRoot = refs.conquestFlagsActivePopoutRoot ?? safeFind(`ConquestFlagHudActivePopoutRoot_${pid}`);
-    const popoutSlot = refs.conquestFlagsActivePopoutSlot ?? safeFind(`ConquestFlagHudActivePopoutSlot_${pid}`);
-    const popoutBorder = refs.conquestFlagsActivePopoutBorder ?? safeFind(`ConquestFlagHudActivePopoutBorder_${pid}`);
-    const popoutFill = refs.conquestFlagsActivePopoutFill ?? safeFind(`ConquestFlagHudActivePopoutFill_${pid}`);
-    const popoutLabelShadowRight = refs.conquestFlagsActivePopoutLabelShadowRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowRight_${pid}`);
-    const popoutLabelShadowLeft = refs.conquestFlagsActivePopoutLabelShadowLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowLeft_${pid}`);
-    const popoutLabelShadowUp = refs.conquestFlagsActivePopoutLabelShadowUp ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUp_${pid}`);
-    const popoutLabelShadowDown = refs.conquestFlagsActivePopoutLabelShadowDown ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDown_${pid}`);
-    const popoutLabelShadowUpLeft = refs.conquestFlagsActivePopoutLabelShadowUpLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUpLeft_${pid}`);
-    const popoutLabelShadowUpRight = refs.conquestFlagsActivePopoutLabelShadowUpRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowUpRight_${pid}`);
-    const popoutLabelShadowDownRight = refs.conquestFlagsActivePopoutLabelShadowDownRight ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDownRight_${pid}`);
-    const popoutLabelShadowDownLeft = refs.conquestFlagsActivePopoutLabelShadowDownLeft ?? safeFind(`ConquestFlagHudActivePopoutLabelShadowDownLeft_${pid}`);
-    const popoutLabel = refs.conquestFlagsActivePopoutLabel ?? safeFind(`ConquestFlagHudActivePopoutLabel_${pid}`);
-    const popoutPercentRoot = refs.conquestFlagsActivePopoutPercentRoot ?? safeFind(`ConquestFlagHudActivePopoutPercentRoot_${pid}`);
-    const popoutPercentShadowRight = refs.conquestFlagsActivePopoutPercentShadowRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowRight_${pid}`);
-    const popoutPercentShadowLeft = refs.conquestFlagsActivePopoutPercentShadowLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowLeft_${pid}`);
-    const popoutPercentShadowUp = refs.conquestFlagsActivePopoutPercentShadowUp ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUp_${pid}`);
-    const popoutPercentShadowDown = refs.conquestFlagsActivePopoutPercentShadowDown ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDown_${pid}`);
-    const popoutPercentShadowUpLeft = refs.conquestFlagsActivePopoutPercentShadowUpLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUpLeft_${pid}`);
-    const popoutPercentShadowUpRight = refs.conquestFlagsActivePopoutPercentShadowUpRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowUpRight_${pid}`);
-    const popoutPercentShadowDownRight = refs.conquestFlagsActivePopoutPercentShadowDownRight ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDownRight_${pid}`);
-    const popoutPercentShadowDownLeft = refs.conquestFlagsActivePopoutPercentShadowDownLeft ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowDownLeft_${pid}`);
-    const popoutPercentShadowInner = refs.conquestFlagsActivePopoutPercentShadowInner ?? safeFind(`ConquestFlagHudActivePopoutPercentShadowInner_${pid}`);
-    const popoutPercentText = refs.conquestFlagsActivePopoutPercentText ?? safeFind(`ConquestFlagHudActivePopoutPercentText_${pid}`);
-
-    refs.conquestFlagsActivePopoutRoot = popoutRoot;
-    refs.conquestFlagsActivePopoutSlot = popoutSlot;
-    refs.conquestFlagsActivePopoutBorder = popoutBorder;
-    refs.conquestFlagsActivePopoutFill = popoutFill;
-    refs.conquestFlagsActivePopoutLabelShadowRight = popoutLabelShadowRight;
-    refs.conquestFlagsActivePopoutLabelShadowLeft = popoutLabelShadowLeft;
-    refs.conquestFlagsActivePopoutLabelShadowUp = popoutLabelShadowUp;
-    refs.conquestFlagsActivePopoutLabelShadowDown = popoutLabelShadowDown;
-    refs.conquestFlagsActivePopoutLabelShadowUpLeft = popoutLabelShadowUpLeft;
-    refs.conquestFlagsActivePopoutLabelShadowUpRight = popoutLabelShadowUpRight;
-    refs.conquestFlagsActivePopoutLabelShadowDownRight = popoutLabelShadowDownRight;
-    refs.conquestFlagsActivePopoutLabelShadowDownLeft = popoutLabelShadowDownLeft;
-    refs.conquestFlagsActivePopoutLabel = popoutLabel;
-    refs.conquestFlagsActivePopoutPercentRoot = popoutPercentRoot;
-    refs.conquestFlagsActivePopoutPercentShadowRight = popoutPercentShadowRight;
-    refs.conquestFlagsActivePopoutPercentShadowLeft = popoutPercentShadowLeft;
-    refs.conquestFlagsActivePopoutPercentShadowUp = popoutPercentShadowUp;
-    refs.conquestFlagsActivePopoutPercentShadowDown = popoutPercentShadowDown;
-    refs.conquestFlagsActivePopoutPercentShadowUpLeft = popoutPercentShadowUpLeft;
-    refs.conquestFlagsActivePopoutPercentShadowUpRight = popoutPercentShadowUpRight;
-    refs.conquestFlagsActivePopoutPercentShadowDownRight = popoutPercentShadowDownRight;
-    refs.conquestFlagsActivePopoutPercentShadowDownLeft = popoutPercentShadowDownLeft;
-    refs.conquestFlagsActivePopoutPercentShadowInner = popoutPercentShadowInner;
-    refs.conquestFlagsActivePopoutPercentText = popoutPercentText;
-
-    const labelGroup: ConquestShadowTextWidgetSet = {
-        right: popoutLabelShadowRight,
-        left: popoutLabelShadowLeft,
-        up: popoutLabelShadowUp,
-        down: popoutLabelShadowDown,
-        upLeft: popoutLabelShadowUpLeft,
-        upRight: popoutLabelShadowUpRight,
-        downRight: popoutLabelShadowDownRight,
-        downLeft: popoutLabelShadowDownLeft,
-        text: popoutLabel,
-    };
-    const percentGroup: ConquestShadowTextWidgetSet = {
-        right: popoutPercentShadowRight,
-        left: popoutPercentShadowLeft,
-        up: popoutPercentShadowUp,
-        down: popoutPercentShadowDown,
-        upLeft: popoutPercentShadowUpLeft,
-        upRight: popoutPercentShadowUpRight,
-        downRight: popoutPercentShadowDownRight,
-        downLeft: popoutPercentShadowDownLeft,
-        inner: popoutPercentShadowInner,
-        text: popoutPercentText,
-    };
-
-    safeSetUIWidgetVisible(popoutRoot, popout.visible);
-    if (!popout.visible) {
-        safeSetUIWidgetVisible(popoutSlot, false);
-        safeSetUIWidgetVisible(popoutBorder, false);
-        safeSetUIWidgetVisible(popoutFill, false);
-        safeSetUIWidgetVisible(popoutPercentRoot, false);
-        conquestPhase3SetShadowTextGroupVisible(labelGroup, false);
-        conquestPhase3SetShadowTextGroupVisible(percentGroup, false);
-        return;
-    }
-
-    safeSetUIWidgetVisible(popoutSlot, true);
-    safeSetUIWidgetBgColor(
-        popoutSlot,
-        popout.slotBgColor ?? mod.CreateVector(
-            CONQUEST_HUD_FLAG_SLOT_TRACK_RGB[0],
-            CONQUEST_HUD_FLAG_SLOT_TRACK_RGB[1],
-            CONQUEST_HUD_FLAG_SLOT_TRACK_RGB[2]
-        )
-    );
-    safeSetUIWidgetVisible(popoutBorder, popout.borderVisible && !!popout.borderColor);
-    if (popout.borderVisible && popout.borderColor) {
-        safeSetUIWidgetBgColor(popoutBorder, popout.borderColor);
-    }
-    conquestPhase3SetShadowTextGroupVisible(labelGroup, popout.labelVisible);
-    if (popout.labelVisible && popout.labelMessage && popout.labelColor) {
-        conquestPhase3SetShadowTextGroupLabel(labelGroup, popout.labelMessage);
-        conquestPhase3SetShadowTextGroupColors(labelGroup, popout.labelColor);
-    }
-
-    if (popout.fillVisible && popout.fillColor) {
-        safeSetUIWidgetVisible(popoutFill, true);
-        safeSetUIWidgetPosition(
-            popoutFill,
-            mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_INSET_X, popout.fillY, 0)
-        );
-        safeSetUIWidgetSize(
-            popoutFill,
-            mod.CreateVector(CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_MAX_WIDTH, popout.fillHeight, 0)
-        );
-        safeSetUIWidgetBgColor(popoutFill, popout.fillColor);
-    } else {
-        safeSetUIWidgetVisible(popoutFill, false);
-    }
-
-    safeSetUIWidgetVisible(popoutPercentRoot, popout.percentVisible);
-    if (popout.percentVisible && popout.percentMessage && popout.percentColor) {
-        conquestPhase3SetShadowTextGroupVisible(percentGroup, true);
-        conquestPhase3SetShadowTextGroupLabel(percentGroup, popout.percentMessage);
-        conquestPhase3SetShadowTextGroupColors(percentGroup, popout.percentColor);
-    } else {
-        conquestPhase3SetShadowTextGroupVisible(percentGroup, false);
-    }
-}
-
-// Renders conquest engage status widgets only.
-function renderConquestEngageForPid(
-    refs: HudRefs,
-    engage: ConquestHudEngageViewModel
-): void {
-    const pid = refs.pid;
-    // Resolve by name first each pass so stale cached handles cannot block engage hide/show writes.
-    const engageRoot = refs.conquestFlagsEngageRoot ?? safeFind(`ConquestFlagHudEngageRoot_${pid}`);
-    const engageTrack = refs.conquestFlagsEngageTrack ?? safeFind(`ConquestFlagHudEngageTrack_${pid}`);
-    const engageFriendlyFill = refs.conquestFlagsEngageFriendlyFill ?? safeFind(`ConquestFlagHudEngageFriendlyFill_${pid}`);
-    const engageEnemyFill = refs.conquestFlagsEngageEnemyFill ?? safeFind(`ConquestFlagHudEngageEnemyFill_${pid}`);
-    const engageFriendlyCountBg = refs.conquestFlagsEngageFriendlyCountBg ?? safeFind(`ConquestFlagHudEngageFriendlyCountBg_${pid}`);
-    const engageEnemyCountBg = refs.conquestFlagsEngageEnemyCountBg ?? safeFind(`ConquestFlagHudEngageEnemyCountBg_${pid}`);
-    const engageFriendlyCountShadow = refs.conquestFlagsEngageFriendlyCountShadow ?? safeFind(`ConquestFlagHudEngageFriendlyCountShadow_${pid}`);
-    const engageEnemyCountShadow = refs.conquestFlagsEngageEnemyCountShadow ?? safeFind(`ConquestFlagHudEngageEnemyCountShadow_${pid}`);
-    const engageFriendlyCount = refs.conquestFlagsEngageFriendlyCount ?? safeFind(`ConquestFlagHudEngageFriendlyCount_${pid}`);
-    const engageEnemyCount = refs.conquestFlagsEngageEnemyCount ?? safeFind(`ConquestFlagHudEngageEnemyCount_${pid}`);
-    const engageStatusShadowRight = refs.conquestFlagsEngageStatusShadowRight ?? safeFind(`ConquestFlagHudEngageStatusShadowRight_${pid}`);
-    const engageStatusShadowLeft = refs.conquestFlagsEngageStatusShadowLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowLeft_${pid}`);
-    const engageStatusShadowUp = refs.conquestFlagsEngageStatusShadowUp ?? safeFind(`ConquestFlagHudEngageStatusShadowUp_${pid}`);
-    const engageStatusShadowDown = refs.conquestFlagsEngageStatusShadowDown ?? safeFind(`ConquestFlagHudEngageStatusShadowDown_${pid}`);
-    const engageStatusShadowUpLeft = refs.conquestFlagsEngageStatusShadowUpLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowUpLeft_${pid}`);
-    const engageStatusShadowUpRight = refs.conquestFlagsEngageStatusShadowUpRight ?? safeFind(`ConquestFlagHudEngageStatusShadowUpRight_${pid}`);
-    const engageStatusShadowDownRight = refs.conquestFlagsEngageStatusShadowDownRight ?? safeFind(`ConquestFlagHudEngageStatusShadowDownRight_${pid}`);
-    const engageStatusShadowDownLeft = refs.conquestFlagsEngageStatusShadowDownLeft ?? safeFind(`ConquestFlagHudEngageStatusShadowDownLeft_${pid}`);
-    const engageStatus = refs.conquestFlagsEngageStatus ?? safeFind(`ConquestFlagHudEngageStatus_${pid}`);
-    refs.conquestFlagsEngageRoot = engageRoot;
-    refs.conquestFlagsEngageTrack = engageTrack;
-    refs.conquestFlagsEngageFriendlyFill = engageFriendlyFill;
-    refs.conquestFlagsEngageEnemyFill = engageEnemyFill;
-    refs.conquestFlagsEngageFriendlyCountBg = engageFriendlyCountBg;
-    refs.conquestFlagsEngageEnemyCountBg = engageEnemyCountBg;
-    refs.conquestFlagsEngageFriendlyCountShadow = engageFriendlyCountShadow;
-    refs.conquestFlagsEngageEnemyCountShadow = engageEnemyCountShadow;
-    refs.conquestFlagsEngageFriendlyCount = engageFriendlyCount;
-    refs.conquestFlagsEngageEnemyCount = engageEnemyCount;
-    refs.conquestFlagsEngageStatusShadowRight = engageStatusShadowRight;
-    refs.conquestFlagsEngageStatusShadowLeft = engageStatusShadowLeft;
-    refs.conquestFlagsEngageStatusShadowUp = engageStatusShadowUp;
-    refs.conquestFlagsEngageStatusShadowDown = engageStatusShadowDown;
-    refs.conquestFlagsEngageStatusShadowUpLeft = engageStatusShadowUpLeft;
-    refs.conquestFlagsEngageStatusShadowUpRight = engageStatusShadowUpRight;
-    refs.conquestFlagsEngageStatusShadowDownRight = engageStatusShadowDownRight;
-    refs.conquestFlagsEngageStatusShadowDownLeft = engageStatusShadowDownLeft;
-    refs.conquestFlagsEngageStatus = engageStatus;
-    const engageStatusGroup: ConquestShadowTextWidgetSet = {
-        right: engageStatusShadowRight,
-        left: engageStatusShadowLeft,
-        up: engageStatusShadowUp,
-        down: engageStatusShadowDown,
-        upLeft: engageStatusShadowUpLeft,
-        upRight: engageStatusShadowUpRight,
-        downRight: engageStatusShadowDownRight,
-        downLeft: engageStatusShadowDownLeft,
-        text: engageStatus,
-    };
-    safeSetUIWidgetVisible(engageRoot, engage.visible);
-    if (!engage.visible) {
-        safeSetUIWidgetVisible(engageTrack, false);
-        safeSetUIWidgetVisible(engageFriendlyFill, false);
-        safeSetUIWidgetVisible(engageEnemyFill, false);
-        safeSetUIWidgetVisible(engageFriendlyCountBg, false);
-        safeSetUIWidgetVisible(engageEnemyCountBg, false);
-        safeSetUIWidgetVisible(engageFriendlyCountShadow, false);
-        safeSetUIWidgetVisible(engageEnemyCountShadow, false);
-        safeSetUIWidgetVisible(engageFriendlyCount, false);
-        safeSetUIWidgetVisible(engageEnemyCount, false);
-        conquestPhase3SetShadowTextGroupVisible(engageStatusGroup, false);
-        return;
-    }
-
-    safeSetUIWidgetVisible(engageTrack, true);
-    safeSetUIWidgetVisible(engageFriendlyCountBg, true);
-    safeSetUIWidgetVisible(engageEnemyCountBg, true);
-    safeSetUIWidgetVisible(engageFriendlyCountShadow, true);
-    safeSetUIWidgetVisible(engageEnemyCountShadow, true);
-    safeSetUIWidgetVisible(engageFriendlyCount, true);
-    safeSetUIWidgetVisible(engageEnemyCount, true);
-    conquestPhase3SetShadowTextGroupVisible(engageStatusGroup, true);
-    // Reassert count-layer ordering each frame to prevent shadow/core inversion drift.
-    safeSetUIWidgetParent(engageFriendlyCountShadow, engageFriendlyCountBg);
-    safeSetUIWidgetParent(engageFriendlyCount, engageFriendlyCountBg);
-    safeSetUIWidgetParent(engageEnemyCountShadow, engageEnemyCountBg);
-    safeSetUIWidgetParent(engageEnemyCount, engageEnemyCountBg);
-
-    const friendlyCountLabel = engage.friendlyCountLabel ?? mod.Message(mod.stringkeys.twl.system.genericCounter, 0);
-    const enemyCountLabel = engage.enemyCountLabel ?? mod.Message(mod.stringkeys.twl.system.genericCounter, 0);
-    const statusLabel = engage.statusLabel ?? mod.Message(STR_HUD_CONQUEST_CAPTURE_STATUS_CONTESTING);
-    safeSetUITextLabel(
-        engageFriendlyCountShadow,
-        friendlyCountLabel
-    );
-    safeSetUITextLabel(
-        engageEnemyCountShadow,
-        enemyCountLabel
-    );
-    safeSetUITextLabel(
-        engageFriendlyCount,
-        friendlyCountLabel
-    );
-    safeSetUITextLabel(
-        engageEnemyCount,
-        enemyCountLabel
-    );
-    conquestPhase3SetShadowTextGroupLabel(engageStatusGroup, statusLabel);
-    conquestPhase3SetShadowTextGroupColors(engageStatusGroup, COLOR_WHITE);
-    safeSetUITextColor(engageFriendlyCountShadow, CONQUEST_SHADOW_TEXT_COLOR_BLACK);
-    safeSetUITextColor(engageEnemyCountShadow, CONQUEST_SHADOW_TEXT_COLOR_BLACK);
-    safeSetUITextColor(engageFriendlyCount, COLOR_BLUE);
-    safeSetUITextColor(engageEnemyCount, COLOR_RED);
-    safeSetUIWidgetBgColor(engageTrack, COLOR_GRAY_DARK);
-    // Final core-on-top pass (core attached last and visible).
-    safeSetUIWidgetDepth(engageFriendlyCountShadow, mod.UIDepth.AboveGameUI);
-    safeSetUIWidgetDepth(engageEnemyCountShadow, mod.UIDepth.AboveGameUI);
-    safeSetUIWidgetParent(engageFriendlyCount, engageFriendlyCountBg);
-    safeSetUIWidgetParent(engageEnemyCount, engageEnemyCountBg);
-    safeSetUIWidgetDepth(engageFriendlyCount, mod.UIDepth.AboveGameUI);
-    safeSetUIWidgetDepth(engageEnemyCount, mod.UIDepth.AboveGameUI);
-    safeSetUIWidgetVisible(engageFriendlyCount, true);
-    safeSetUIWidgetVisible(engageEnemyCount, true);
-
-    const friendlyWidth = engage.friendlyWidth;
-    const enemyWidth = engage.enemyWidth;
-
-    safeSetUIWidgetVisible(engageFriendlyFill, friendlyWidth > 0);
-    safeSetUIWidgetVisible(engageEnemyFill, enemyWidth > 0);
-    if (friendlyWidth > 0) {
-        safeSetUIWidgetPosition(engageFriendlyFill, mod.CreateVector(0, 0, 0));
-        safeSetUIWidgetSize(
-            engageFriendlyFill,
-            mod.CreateVector(friendlyWidth, CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT, 0)
-        );
-        safeSetUIWidgetBgColor(engageFriendlyFill, COLOR_BLUE);
-    }
-    if (enemyWidth > 0) {
-        safeSetUIWidgetPosition(engageEnemyFill, mod.CreateVector(friendlyWidth, 0, 0));
-        safeSetUIWidgetSize(
-            engageEnemyFill,
-            mod.CreateVector(enemyWidth, CONQUEST_HUD_FLAG_ENGAGE_TRACK_HEIGHT, 0)
-        );
-        safeSetUIWidgetBgColor(engageEnemyFill, COLOR_RED);
-    }
-}
-
 // Updates per-player conquest ticket/flag HUD from authoritative state using viewer perspective colors.
 function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
     if (!State.conquest.debug.hudEnabled) return;
@@ -3803,18 +3621,14 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
         if (pid === undefined) continue;
         if (!force && !conquestPhase3TrackSinglePassRenderForPid(pid)) continue;
         const swapResetPending = State.conquest.debug.teamSwapHudResetPendingByPid[pid] === true;
-        const refsDuringSwap = State.hudCache.hudByPid[pid];
         if (swapResetPending) {
             // Hard swap gate:
-            // never build/recover/render while pending; only force-hide any existing widgets.
+            // suppress engage/popout while pending, but keep top tickets/flags rendering so
+            // the custom HUD does not disappear and fall back to native top HUD lanes.
             State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
             delete State.conquest.capture.engagedObjIdByPid[pid];
             conquestPhase3ForceHideEngageWidgetsForPid(pid);
-            if (refsDuringSwap) {
-                conquestPhase3ForceHideAllV2Widgets(refsDuringSwap);
-            }
-            conquestPhase3PublishHudProjectionDebugSnapshotForPid(pid, undefined);
-            continue;
+            conquestPhase3ForceHideActivePopoutWidgetsForPid(pid);
         }
         const topHelpReadyVm = deriveConquestHudHelpReadyViewModel(pid);
         const topStatusVm = deriveConquestHudStatusViewModel(topHelpReadyVm);
@@ -3823,7 +3637,9 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
 
         const perspective = conquestPhase3GetPerspectiveTeams(p);
         let refs: HudRefs | undefined = State.hudCache.hudByPid[pid];
-        if (!refs) {
+        const needsHudBootstrap = !refs;
+        if (needsHudBootstrap) {
+            // Single-owner lifecycle: ensureHudForPlayer() owns per-PID build/rebuild.
             refs = ensureHudForPlayer(p);
         }
         if (!refs) {
@@ -3839,11 +3655,8 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
             }
         }
         if (!perspective.resolved) {
-            // Never paint conquest team colors with an unresolved perspective.
-            // Hide this frame and wait for authoritative team resolution.
-            conquestPhase3ForceHideAllV2Widgets(refs);
-            conquestPhase3PublishHudProjectionDebugSnapshotForPid(pid, undefined);
-            continue;
+            // Keep custom HUD visible with fallback team orientation while perspective resolves.
+            // This avoids full custom HUD drops that expose native top HUD lanes.
         }
         const maxFlagSlots = conquestPhase3GetFlagMaxSlotsFromRefs(refs);
         const hudVm = deriveHudViewModelForPlayer(pid, perspective, mappedCaptureStates, maxFlagSlots);

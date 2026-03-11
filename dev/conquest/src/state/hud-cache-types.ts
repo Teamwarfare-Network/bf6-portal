@@ -6,6 +6,9 @@
 // We build HUD per-player (playerId receiver) and suffix names with pid to avoid collisions.
 type HudRefs = {
     pid: number;
+    // Authoritative centered root chain handles for this player's Conquest top HUD.
+    topHudRoot?: mod.UIWidget;
+    conquestCombatRoot?: mod.UIWidget;
 
     settingsGameModeText?: mod.UIWidget;
     settingsAircraftCeilingText?: mod.UIWidget;

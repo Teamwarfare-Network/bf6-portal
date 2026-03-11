@@ -5,9 +5,8 @@
 
 const TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS = 0.6;
 
-// Performs a focused conquest HUD reset for one player before team-swap redraw.
-// This is intentionally non-destructive: keep the existing widget tree cached, hide it immediately,
-// then repaint once from authoritative state after swap settles.
+// Performs the authoritative conquest HUD reset for one player before team-swap redraw.
+// Contract: hide -> destroy -> delayed rebuild -> resume updates after deploy release.
 function cleanupConquestHudForTeamSwap(pid: number): void {
     delete State.conquest.capture.engagedObjIdByPid[pid];
     State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
@@ -23,6 +22,8 @@ function cleanupConquestHudForTeamSwap(pid: number): void {
     }
     // Always force-hide engage row explicitly for swap transitions.
     conquestPhase3ForceHideEngageWidgetsForPid(pid);
+    // Strict teardown ownership: destroy stale per-PID conquest HUD tree before rebuild.
+    destroyConquestHudForPid(pid);
 }
 
 // Handles a player-initiated team swap.
@@ -46,8 +47,8 @@ async function forceUndeployPlayer(
     mod.UndeployPlayer(eventPlayer);
 }
 
-// Forces conquest HUD to reproject after team assignment changes without tearing down roots.
-// Use one authoritative redraw pass after SetTeam() settles to avoid multi-pass repaint drift.
+// Rebuilds conquest HUD once after team assignment settles.
+// Rebuild is delayed to avoid overlapping SetTeam/undeploy timing windows.
 async function refreshConquestHudAfterTeamSwap(eventPlayer: mod.Player): Promise<void> {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     const pid = safeGetPlayerId(eventPlayer);
@@ -62,9 +63,9 @@ async function refreshConquestHudAfterTeamSwap(eventPlayer: mod.Player): Promise
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     if ((State.conquest.debug.teamSwapRefreshTokenByPid[pid] ?? 0) !== nextToken) return;
 
-    // Non-destructive swap refresh:
-    // keep existing cached widgets hidden while swap is pending; do not destroy/rebuild here.
-    const refs = State.hudCache.hudByPid[pid];
+    // Authoritative swap refresh:
+    // rebuild one deterministic per-PID HUD tree after swap settles.
+    const refs = ensureHudForPlayer(eventPlayer);
     if (refs) conquestPhase3ForceHideAllV2Widgets(refs);
     // Hard clear engage state before releasing swap-pending gate.
     // This prevents stale Neutralizing/Defending rows from carrying to the new team context.
@@ -97,7 +98,7 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
     if (pid !== undefined) {
         // Treat swap as immediately undeployed for HUD authority until the engine undeploy callback lands.
         State.players.deployedByPid[pid] = false;
-        // Force one clean conquest HUD reset (non-destructive) after swap to prevent stale overlays/duplicates.
+        // Force one clean conquest HUD reset (destructive) after swap to prevent stale overlays/duplicates.
         cleanupConquestHudForTeamSwap(pid);
         // Pre-seed swap perspective so post-SetTeam transient reads cannot repaint as Team1 fallback.
         State.conquest.debug.perspectiveTeamByPid[pid] = newTeamNum;

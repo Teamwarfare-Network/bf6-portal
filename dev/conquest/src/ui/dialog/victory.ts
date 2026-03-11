@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Module: hud/victory -- victory dialog content + winner presentation
+// Module: ui/dialog/victory -- victory dialog content + winner presentation
 
 //#region -------------------- HUD Victory Dialog Updates --------------------
 

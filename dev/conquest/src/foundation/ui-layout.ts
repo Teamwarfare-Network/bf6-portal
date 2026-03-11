@@ -3,6 +3,9 @@
 
 // Clock + HUD layout constants (pixels unless noted).
 const TOP_HUD_OFFSET_Y = 10;
+// Shared top-stack offsets: keep ticket/flag/engage lanes aligned from one source of truth.
+const CONQUEST_HUD_NON_CLOCK_SHIFT_Y = 0;
+const CONQUEST_HUD_TICKETS_FLAGS_SHIFT_Y = CONQUEST_HUD_NON_CLOCK_SHIFT_Y + 20;
 const CLOCK_POSITION_X = 0;
 const CLOCK_POSITION_Y = 47.73;
 const CLOCK_WIDTH = 220;

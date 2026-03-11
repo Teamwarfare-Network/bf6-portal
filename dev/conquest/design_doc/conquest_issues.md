@@ -1,7 +1,7 @@
 # Conquest Issues
 
-Last Updated: 2026-03-09  
-Last Tested Build: `v0.294`
+Last Updated: 2026-03-10  
+Last Tested Build: `v0.391`
 
 ## Current Snapshot
 - `CQ_Bug_1`: Fixed
@@ -12,6 +12,7 @@ Last Tested Build: `v0.294`
 - `CQ_Bug_6`: Fixed
 - `CQ_Bug_7`: Resolved
 - `CQ_Bug_8`: Resolved
+- `CQ_Bug_9`: Open
 
 ## CQ_Bug_1
 Title: Ticket Counter Overlay / Doubling During Bleed
@@ -202,3 +203,51 @@ Status:
 Potential Resolution Drivers:
 - Differential ownership counting remains capture-state authoritative (`capture.byObjId.ownerTeam`).
 - Authoritative owner resolver now includes pre-event edge inference for strong neutralization/recapture thresholds when edge callbacks are missed, so owner differential cannot stall until a later interaction.
+
+## CQ_Bug_9
+Title: Cross-Player HUD Clash / Double Draw
+
+Observed:
+- In multiplayer sessions, HUD elements can redraw/clash across players.
+- Some HUD lanes appear to behave like shared/global UI instead of strict per-player ownership.
+- Aspect-ratio alignment issues became harder to isolate due to mixed HUD ownership and repeated root rewrites.
+
+Expected:
+- Every Conquest HUD widget is unique per player and PID-scoped.
+- No gameplay HUD widget is shared globally across players.
+- Top combat HUD uses one deterministic centered root chain across aspect ratios.
+
+Status:
+- Open.
+
+Scope/Intent:
+- Align Conquest HUD lifecycle to Helis pattern:
+  1. Frequent HUD widgets are pre-created once per player and toggled.
+  2. Rare/ephemeral widgets are create-on-demand + delete-on-close.
+  3. Team switch is hide-first, clean rebuild, then resume updates.
+
+Current Workstream:
+- Simplification pass started to remove competing runtime layout owners and reduce HUD migration churn in live tick paths.
+- Added cached-root PID ownership guardrails in HUD bootstrap to prevent stale/shared ref collisions from surviving cache reuse.
+- Removed schema-coupled live HUD bootstrap checks from the Conquest tick loop; HUD bootstrap is now cache/critical-ref driven.
+- Added strict PID ownership validation for critical HUD refs before render, forcing per-player rebuild on ownership mismatch.
+- Removed cached-path per-refresh layout rewrite calls (legacy purge/reposition churn) so HUD roots stay in their authored centered positions.
+- Restored teardown root contract: `TopHudRoot_{pid} -> ConquestCombatHudRoot_{pid} -> ConquestTicketsHudRoot_{pid}/ConquestFlagsHudRoot_{pid}`.
+- Removed render-loop layout revision rebuild logic; rebuild authority is back to `ensureHudForPlayer()` lifecycle ownership only.
+- Tightened critical-ref parent validation to named parent-chain checks (combat root under top root; ticket/flag roots under combat root).
+- Regression check pending in-game: confirm ready-dialog open path and triple-tap interact flow after the root-chain rebuild pass.
+- End-to-end trace finding: startup + live loop + capture-event forced refresh all route through `ensureHudForPlayer()`; root placement failure was in build path silently returning refs even when pinning failed.
+- Hardening applied: `ParseUI` return handles are now used for TopHud/Combat root creation; combat root pin success is now mandatory before returning refs.
+- Visual leak guard applied: combat tickets/flags roots now build hidden and are only revealed by render owner after successful ensure.
+- Additional root-cause refinement: duplicate-name `TopHudRoot_{pid}` instances could survive and still satisfy name-based parent checks, producing intermittent top-left/flicker behavior.
+- Additional hardening applied: `ensureTopHudRootForPid()` now performs one-time per-runtime duplicate purge for `TopHudRoot_{pid}` before creation, and combat-root chain validation now requires direct parent-handle identity (not name-only checks).
+- Hot-path root drift found in render owner: ticket counter renderer was still resolving by `safeFind(...)` and reparenting core counter widgets during normal updates, which could override build-time parent ownership.
+- Hot-path hardening applied: ticket counter renderer is now refs-only for core counter widgets (no runtime parent rebinding), and critical-ref validation in `capture-tickets.ts` now enforces parent-handle identity for `TopHudRoot -> CombatRoot -> Tickets/Flags`.
+- Cached-root drift found in ensure lifecycle: cached combat roots were still being rehydrated by name (`safeFind`) in `hud-build.ts`, allowing wrong duplicate handle selection despite valid cache objects.
+- Lifecycle hardening applied: cache path now requires authoritative cached root handles (`topHudRoot`, `conquestCombatRoot`, tickets root, flags root) and no longer hydrates core roots by name; invalid/missing handles force a teardown rebuild.
+- Combat-root duplicate hardening applied: `ConquestCombatHudRoot_{pid}` now gets one-time duplicate-name purge before first ensure per PID, with init-token reset on hard reset/leave cleanup.
+- Critical-ref geometry hole found: live critical checks could still pass a top-left chain when parent handles were correct but anchors/positions were wrong.
+- Geometry gate applied: critical checks now require centered anchor+position for `TopHudRoot`, `ConquestCombatHudRoot`, `ConquestTicketsHudRoot`, and `ConquestFlagsHudRoot`; failing geometry now forces teardown rebuild before render.
+- Root-subtree ref drift found: global name lookups (`safeFind`) could still bind gameplay refs to off-root same-name widgets even when the centered root chain was valid.
+- Ref-owner hardening applied: after centered root pin, gameplay refs are now rebound via subtree-scoped lookup (`FindUIWidgetWithName(name, ticketsRoot/flagsRoot)`) so runtime paths cannot target off-root duplicates.
+- Critical-ref ownership expanded: validation now requires ticket container/bar parent contracts and flag slot/engage/popout parent contracts, forcing immediate teardown rebuild on any off-root handle selection.

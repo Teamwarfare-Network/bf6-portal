@@ -1,0 +1,2 @@
+We need to ensure the UI is correctly scalable across all Aspect ratios
+We need to ensure all HUD elements are unique for players. No elements of the UI should be shared globally. So every HUD element currently needs to be PID sourced, similar to the Helis code. Examine the Helis code to understand this pattern.

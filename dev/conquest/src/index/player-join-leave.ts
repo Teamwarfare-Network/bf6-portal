@@ -45,6 +45,10 @@ function cleanupHudForPid(pid: number): void {
 
     const rootNames = [
         `TopHudRoot_${pid}`,
+        `ConquestHudRoot_${pid}`,
+        `ConquestCombatHudRoot_${pid}`,
+        `ConquestTicketsLaneRoot_${pid}`,
+        `ConquestFlagsLaneRoot_${pid}`,
         `Container_TopMiddle_CoreUI_${pid}`,
         `Container_TopLeft_CoreUI_${pid}`,
         `Container_TopRight_CoreUI_${pid}`,
@@ -59,6 +63,8 @@ function cleanupHudForPid(pid: number): void {
     for (const name of rootNames) {
         deleteAllByName(name);
     }
+    resetTopHudRootInitializationForPid(pid);
+    resetConquestCombatRootInitializationForPid(pid);
 
     delete State.hudCache.clockWidgetCache[pid];
     delete State.hudCache.countdownWidgetCache[pid];
