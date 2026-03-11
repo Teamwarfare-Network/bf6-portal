@@ -1,0 +1,30 @@
+{
+    "name": "bf6-portal",
+    "private": true,
+    "type": "module",
+    "description": "TWL Battlefield 6 Portal experiences — shared tooling and modular builds",
+    "engines": {
+        "node": ">=20.0.0"
+    },
+    "scripts": {
+        "deploy": "node scripts/deploy.js",
+        "deploy:patch": "node scripts/deploy.js --versionBump patch",
+        "deploy:minor": "node scripts/deploy.js --versionBump minor",
+        "deploy:major": "node scripts/deploy.js --versionBump major",
+        "update": "node scripts/update.js",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "prettier": "prettier --no-error-on-unmatched-pattern --write '**/*.{js,json,md,mjs,ts}'",
+        "prettier:check": "prettier --no-error-on-unmatched-pattern --check '**/*.{js,json,md,mjs,ts}'"
+    },
+    "devDependencies": {
+        "@bf6mods/portal": "^1.1.0",
+        "@eslint/js": "^9.0.0",
+        "dotenv": "^16.4.0",
+        "eslint": "^9.0.0",
+        "eslint-config-prettier": "^10.0.0",
+        "eslint-plugin-prettier": "^5.2.0",
+        "prettier": "^3.4.0",
+        "typescript-eslint": "^8.20.0"
+    }
+}

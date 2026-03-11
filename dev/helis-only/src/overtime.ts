@@ -26,9 +26,9 @@ function getOvertimeZoneLettersForGameMode(gameModeKey: number): string[] | unde
     const mapping = ACTIVE_MAP_CONFIG.overtimeZoneLettersByMode;
     if (!mapping) return undefined;
     if (isHeliGameMode(gameModeKey)) {
-        return (mapping.helis && mapping.helis.length > 0) ? mapping.helis : mapping.tanks;
+        return mapping.helis && mapping.helis.length > 0 ? mapping.helis : mapping.tanks;
     }
-    return (mapping.tanks && mapping.tanks.length > 0) ? mapping.tanks : mapping.helis;
+    return mapping.tanks && mapping.tanks.length > 0 ? mapping.tanks : mapping.helis;
 }
 
 function getConfirmedGameModeKey(): number {
@@ -69,7 +69,7 @@ function isHelisOvertimeSingleZoneMode(): boolean {
     if (!isHeliGameMode(gameModeKey)) return false;
     const letters = getOvertimeZoneLettersForGameMode(gameModeKey);
     if (!letters || letters.length !== 1) return false;
-    return normalizeOvertimeZoneLetter(letters[0]) === "H";
+    return normalizeOvertimeZoneLetter(letters[0]) === 'H';
 }
 
 function refreshOvertimeZonesFromMapConfig(): void {
@@ -95,8 +95,20 @@ function validateOvertimeZoneSpecs(zones: OvertimeZoneSpec[]): boolean {
         const sectorId = Math.floor(zones[i].sectorId);
         const worldIconId = Math.floor(zones[i].worldIconObjId);
         const capturePointId = Math.floor(zones[i].capturePointObjId);
-        if (!Number.isFinite(triggerId) || !Number.isFinite(sectorId) || !Number.isFinite(worldIconId) || !Number.isFinite(capturePointId)) return false;
-        if (seenTriggers[triggerId] || seenSectors[sectorId] || seenWorldIcons[worldIconId] || seenCapturePoints[capturePointId]) return false;
+        if (
+            !Number.isFinite(triggerId) ||
+            !Number.isFinite(sectorId) ||
+            !Number.isFinite(worldIconId) ||
+            !Number.isFinite(capturePointId)
+        )
+            return false;
+        if (
+            seenTriggers[triggerId] ||
+            seenSectors[sectorId] ||
+            seenWorldIcons[worldIconId] ||
+            seenCapturePoints[capturePointId]
+        )
+            return false;
         seenTriggers[triggerId] = true;
         seenSectors[sectorId] = true;
         seenWorldIcons[worldIconId] = true;
@@ -141,18 +153,18 @@ function getActiveOvertimeFlagLetterKey(): number {
 }
 
 function getOvertimeFlagLetterTextForIndex(index: number | undefined): string {
-    if (index === undefined || index < 0 || index >= STR_FLAG_LETTER_KEYS.length) return "?";
+    if (index === undefined || index < 0 || index >= STR_FLAG_LETTER_KEYS.length) return '?';
     return String.fromCharCode(65 + index);
 }
 
 function getOvertimeFlagLetterTextForCandidateIndex(candidateIndex: number | undefined): string {
     const letterIndex = getOvertimeFlagLetterIndexForCandidate(candidateIndex);
-    if (letterIndex === undefined || letterIndex < 0 || letterIndex >= STR_FLAG_LETTER_KEYS.length) return "?";
+    if (letterIndex === undefined || letterIndex < 0 || letterIndex >= STR_FLAG_LETTER_KEYS.length) return '?';
     return String.fromCharCode(65 + letterIndex);
 }
 
 function getActiveOvertimeFlagLetterText(): string {
-    if (State.flag.activeCandidateIndex === undefined) return "?";
+    if (State.flag.activeCandidateIndex === undefined) return '?';
     return getOvertimeFlagLetterTextForCandidateIndex(State.flag.activeCandidateIndex);
 }
 
@@ -217,8 +229,6 @@ function showOvertimeFlagPreviewIcon(isLocked: boolean): void {
 }
 
 //#endregion -------------------- Overtime Flag Capture - Zone Config + Preview Icon --------------------
-
-
 
 //#region -------------------- Overtime Flag Capture - Marker Visibility + Suppression --------------------
 
@@ -409,8 +419,6 @@ function setOvertimeSectorsForSelected(selectedId?: number): void {
 
 //#endregion -------------------- Overtime Flag Capture - Marker Visibility + Suppression --------------------
 
-
-
 //#region -------------------- Admin Panel - Tie-Breaker + Live Respawn + Round Length Helpers --------------------
 
 function normalizeTieBreakerModeIndex(index: number): number {
@@ -489,14 +497,17 @@ function syncAdminRoundLengthLabelForAllPlayers(): void {
         if (!label) continue;
         safeSetUITextLabel(
             label,
-            mod.Message(mod.stringkeys.twl.adminPanel.labels.roundLengthFormat, time.minutes, time.secTens, time.secOnes)
+            mod.Message(
+                mod.stringkeys.twl.adminPanel.labels.roundLengthFormat,
+                time.minutes,
+                time.secTens,
+                time.secOnes
+            )
         );
     }
 }
 
 //#endregion ----------------- Admin Panel - Tie-Breaker + Live Respawn + Round Length Helpers --------------------
-
-
 
 //#region -------------------- Overtime Flag Capture - Selection + Overrides --------------------
 
@@ -600,7 +611,12 @@ function selectOvertimeZoneForRound(): boolean {
     State.flag.activeCapturePointId = selectedZone.capturePointObjId;
     State.flag.activeCapturePoint = mod.GetCapturePoint(selectedZone.capturePointObjId);
 
-    if (!State.flag.activeAreaTrigger || !State.flag.activeSector || !State.flag.activeWorldIcon || !State.flag.activeCapturePoint) {
+    if (
+        !State.flag.activeAreaTrigger ||
+        !State.flag.activeSector ||
+        !State.flag.activeWorldIcon ||
+        !State.flag.activeCapturePoint
+    ) {
         State.flag.configValid = false;
         return false;
     }
@@ -640,8 +656,6 @@ function applyAdminTieBreakerOverride(selectedIndex: number): void {
 }
 
 //#endregion -------------------- Overtime Flag Capture - Selection + Overrides --------------------
-
-
 
 //#region -------------------- Overtime Flag Capture - Reset + State --------------------
 
@@ -688,8 +702,6 @@ function isRoundKillTargetReached(): boolean {
 }
 
 //#endregion -------------------- Overtime Flag Capture - Reset + State --------------------
-
-
 
 //#region -------------------- Overtime Flag Capture - Vehicle + Zone Membership Tracking --------------------
 
@@ -933,8 +945,6 @@ function handleOvertimeVehicleDestroyed(eventVehicle: mod.Vehicle): void {
 
 //#endregion -------------------- Overtime Flag Capture - Vehicle + Zone Membership Tracking --------------------
 
-
-
 //#region -------------------- Overtime Flag Capture - Capture Loop + Progress --------------------
 
 function stopOvertimeCaptureLoop(): void {
@@ -1071,7 +1081,7 @@ function updateOvertimeCaptureProgress(): void {
         const soloTeam2 = t2Count > 0 && t1Count === 0;
         const team1CatchingUp = soloTeam1 && State.flag.progress < 0.5;
         const team2CatchingUp = soloTeam2 && State.flag.progress > 0.5;
-        const catchupBoost = (team1CatchingUp || team2CatchingUp) ? OVERTIME_NEUTRAL_ACCELERATION_MULTIPLIER : 1;
+        const catchupBoost = team1CatchingUp || team2CatchingUp ? OVERTIME_NEUTRAL_ACCELERATION_MULTIPLIER : 1;
         const step = baseStep * scaled * catchupBoost;
         State.flag.progress = State.flag.progress + (delta > 0 ? step : -step);
         if (team1CatchingUp && State.flag.progress > 0.5) {
@@ -1083,7 +1093,8 @@ function updateOvertimeCaptureProgress(): void {
     } else if (t1Count === 0 && t2Count === 0) {
         if (State.flag.progress !== 0 && State.flag.progress !== 1) {
             const decayStep = (OVERTIME_TICK_SECONDS / OVERTIME_DECAY_SECONDS_TO_TARGET) * 0.5;
-            const neutralStep = (State.flag.ownerTeam === 0) ? (decayStep * OVERTIME_NEUTRAL_ACCELERATION_MULTIPLIER) : decayStep;
+            const neutralStep =
+                State.flag.ownerTeam === 0 ? decayStep * OVERTIME_NEUTRAL_ACCELERATION_MULTIPLIER : decayStep;
             if (State.flag.ownerTeam === TeamID.Team1) {
                 State.flag.progress = Math.min(1, State.flag.progress + decayStep);
             } else if (State.flag.ownerTeam === TeamID.Team2) {
@@ -1140,8 +1151,6 @@ function getOvertimeDisplayPercents(progress: number): { left: number; right: nu
 }
 
 //#endregion -------------------- Overtime Flag Capture - Capture Loop + Progress --------------------
-
-
 
 //#region -------------------- Overtime Flag Capture - HUD Update + Visibility --------------------
 
@@ -1269,24 +1278,24 @@ function updateOvertimeHudForPlayer(player: mod.Player): void {
     const snapshot = State.flag.lastUiSnapshotByPid[pid];
     // Avoid touching UI if nothing changed since the last tick.
     if (
-        snapshot
-        && snapshot.progressPercent === progressPercent
-        && snapshot.leftPercent === leftPercent
-        && snapshot.rightPercent === rightPercent
-        && snapshot.barFillT1Width === t1Width
-        && snapshot.barFillT2Width === t2Width
-        && snapshot.t1Count === State.flag.t1Count
-        && snapshot.t2Count === State.flag.t2Count
-        && snapshot.statusKey === statusKey
-        && snapshot.statusValue === statusValue
-        && snapshot.statusVisible === statusVisible
-        && snapshot.titleKey === titleKey
-        && snapshot.titleValue === titleValue
-        && snapshot.countsVisible === countsVisible
-        && snapshot.countsUseX === countsUseX
-        && snapshot.leftBorderVisible === leftBorderVisible
-        && snapshot.rightBorderVisible === rightBorderVisible
-        && snapshot.vehicleRequiredVisible === vehicleRequiredVisible
+        snapshot &&
+        snapshot.progressPercent === progressPercent &&
+        snapshot.leftPercent === leftPercent &&
+        snapshot.rightPercent === rightPercent &&
+        snapshot.barFillT1Width === t1Width &&
+        snapshot.barFillT2Width === t2Width &&
+        snapshot.t1Count === State.flag.t1Count &&
+        snapshot.t2Count === State.flag.t2Count &&
+        snapshot.statusKey === statusKey &&
+        snapshot.statusValue === statusValue &&
+        snapshot.statusVisible === statusVisible &&
+        snapshot.titleKey === titleKey &&
+        snapshot.titleValue === titleValue &&
+        snapshot.countsVisible === countsVisible &&
+        snapshot.countsUseX === countsUseX &&
+        snapshot.leftBorderVisible === leftBorderVisible &&
+        snapshot.rightBorderVisible === rightBorderVisible &&
+        snapshot.vehicleRequiredVisible === vehicleRequiredVisible
     ) {
         return;
     }
@@ -1510,8 +1519,6 @@ function hideOvertimeUiForAllPlayers(): void {
 
 //#endregion -------------------- Overtime Flag Capture - HUD Update + Visibility --------------------
 
-
-
 //#region -------------------- Overtime Flag Capture - HUD Build + Cache --------------------
 
 function safeDeleteUiWidget(widget: mod.UIWidget | undefined): void {
@@ -1612,7 +1619,7 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
     try {
         modlib.ParseUI({
             name: rootName,
-            type: "Container",
+            type: 'Container',
             playerId: player,
             anchor: mod.UIAnchor.TopCenter,
             position: [OVERTIME_UI_OFFSET_X, OVERTIME_UI_OFFSET_Y],
@@ -1624,7 +1631,7 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
             children: [
                 {
                     name: `OvertimeFlag_TitleShadow_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [HUD_TEXT_SHADOW_OFFSET_X, 18 + HUD_TEXT_SHADOW_OFFSET_Y],
                     size: [OVERTIME_UI_WIDTH, 18],
                     anchor: mod.UIAnchor.TopCenter,
@@ -1640,7 +1647,7 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
                 },
                 {
                     name: `OvertimeFlag_Title_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [0, 18],
                     size: [OVERTIME_UI_WIDTH, 18],
                     anchor: mod.UIAnchor.TopCenter,
@@ -1656,7 +1663,7 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
                 },
                 {
                     name: `OvertimeFlag_CountsLeft_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [-OVERTIME_COUNT_OFFSET_X, OVERTIME_COUNT_OFFSET_Y],
                     size: [OVERTIME_COUNT_TEXT_WIDTH, OVERTIME_COUNT_TEXT_HEIGHT],
                     anchor: mod.UIAnchor.TopCenter,
@@ -1673,7 +1680,7 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
                 },
                 {
                     name: `OvertimeFlag_CountsRight_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [OVERTIME_COUNT_OFFSET_X, OVERTIME_COUNT_OFFSET_Y],
                     size: [OVERTIME_COUNT_TEXT_WIDTH, OVERTIME_COUNT_TEXT_HEIGHT],
                     anchor: mod.UIAnchor.TopCenter,
@@ -1690,7 +1697,7 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
                 },
                 {
                     name: `OvertimeFlag_PercentLeft_${pid}`,
-                    type: "Container",
+                    type: 'Container',
                     position: [-OVERTIME_PERCENT_OFFSET_X, OVERTIME_PERCENT_OFFSET_Y],
                     size: [OVERTIME_PERCENT_TEXT_WIDTH, OVERTIME_PERCENT_TEXT_HEIGHT],
                     anchor: mod.UIAnchor.TopCenter,
@@ -1702,7 +1709,7 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
                     children: [
                         {
                             name: `OvertimeFlag_PercentLeft_Text_${pid}`,
-                            type: "Text",
+                            type: 'Text',
                             position: [-OVERTIME_PERCENT_TEXT_NUDGE, 0],
                             size: [OVERTIME_PERCENT_TEXT_WIDTH, OVERTIME_PERCENT_TEXT_HEIGHT],
                             anchor: mod.UIAnchor.Center,
@@ -1720,7 +1727,7 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
                 },
                 {
                     name: `OvertimeFlag_PercentRight_${pid}`,
-                    type: "Container",
+                    type: 'Container',
                     position: [OVERTIME_PERCENT_OFFSET_X, OVERTIME_PERCENT_OFFSET_Y],
                     size: [OVERTIME_PERCENT_TEXT_WIDTH, OVERTIME_PERCENT_TEXT_HEIGHT],
                     anchor: mod.UIAnchor.TopCenter,
@@ -1732,7 +1739,7 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
                     children: [
                         {
                             name: `OvertimeFlag_PercentRight_Text_${pid}`,
-                            type: "Text",
+                            type: 'Text',
                             position: [OVERTIME_PERCENT_TEXT_NUDGE, 0],
                             size: [OVERTIME_PERCENT_TEXT_WIDTH, OVERTIME_PERCENT_TEXT_HEIGHT],
                             anchor: mod.UIAnchor.Center,
@@ -1750,7 +1757,7 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
                 },
                 {
                     name: `OvertimeFlag_CountsLeft_Crown_${pid}`,
-                    type: "Image",
+                    type: 'Image',
                     position: [-OVERTIME_PERCENT_OFFSET_X, OVERTIME_PERCENT_CROWN_OFFSET_Y],
                     size: [OVERTIME_COUNT_CROWN_SIZE, OVERTIME_COUNT_CROWN_SIZE],
                     anchor: mod.UIAnchor.TopCenter,
@@ -1764,7 +1771,7 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
                 },
                 {
                     name: `OvertimeFlag_CountsRight_Crown_${pid}`,
-                    type: "Image",
+                    type: 'Image',
                     position: [OVERTIME_PERCENT_OFFSET_X, OVERTIME_PERCENT_CROWN_OFFSET_Y],
                     size: [OVERTIME_COUNT_CROWN_SIZE, OVERTIME_COUNT_CROWN_SIZE],
                     anchor: mod.UIAnchor.TopCenter,
@@ -1778,7 +1785,7 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
                 },
                 {
                     name: `OvertimeFlag_StatusShadow_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [HUD_TEXT_SHADOW_OFFSET_X, 54 + HUD_TEXT_SHADOW_OFFSET_Y],
                     size: [OVERTIME_UI_WIDTH, 16],
                     anchor: mod.UIAnchor.TopCenter,
@@ -1794,7 +1801,7 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
                 },
                 {
                     name: `OvertimeFlag_Status_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [0, 54],
                     size: [OVERTIME_UI_WIDTH, 16],
                     anchor: mod.UIAnchor.TopCenter,
@@ -1810,7 +1817,7 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
                 },
                 {
                     name: `OvertimeFlag_VehicleRequired_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [0, 70],
                     size: [OVERTIME_UI_WIDTH, 14],
                     anchor: mod.UIAnchor.TopCenter,
@@ -1842,8 +1849,8 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
         countsLeftBorderId,
         mod.CreateVector(-OVERTIME_COUNT_OFFSET_X, OVERTIME_COUNT_OFFSET_Y - OVERTIME_COUNT_BORDER_GROW, 0),
         mod.CreateVector(
-            OVERTIME_COUNT_TEXT_WIDTH + (OVERTIME_COUNT_BORDER_GROW * 2),
-            OVERTIME_COUNT_TEXT_HEIGHT + (OVERTIME_COUNT_BORDER_GROW * 2),
+            OVERTIME_COUNT_TEXT_WIDTH + OVERTIME_COUNT_BORDER_GROW * 2,
+            OVERTIME_COUNT_TEXT_HEIGHT + OVERTIME_COUNT_BORDER_GROW * 2,
             0
         ),
         mod.UIAnchor.TopCenter,
@@ -1863,8 +1870,8 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
         countsRightBorderId,
         mod.CreateVector(OVERTIME_COUNT_OFFSET_X, OVERTIME_COUNT_OFFSET_Y - OVERTIME_COUNT_BORDER_GROW, 0),
         mod.CreateVector(
-            OVERTIME_COUNT_TEXT_WIDTH + (OVERTIME_COUNT_BORDER_GROW * 2),
-            OVERTIME_COUNT_TEXT_HEIGHT + (OVERTIME_COUNT_BORDER_GROW * 2),
+            OVERTIME_COUNT_TEXT_WIDTH + OVERTIME_COUNT_BORDER_GROW * 2,
+            OVERTIME_COUNT_TEXT_HEIGHT + OVERTIME_COUNT_BORDER_GROW * 2,
             0
         ),
         mod.UIAnchor.TopCenter,
@@ -1969,7 +1976,7 @@ function ensureOvertimeGlobalHudForPlayer(player: mod.Player): OvertimeFlagGloba
     try {
         modlib.ParseUI({
             name: rootName,
-            type: "Container",
+            type: 'Container',
             playerId: player,
             anchor: mod.UIAnchor.TopCenter,
             position: [OVERTIME_GLOBAL_UI_OFFSET_X, OVERTIME_GLOBAL_UI_OFFSET_Y],
@@ -1981,7 +1988,7 @@ function ensureOvertimeGlobalHudForPlayer(player: mod.Player): OvertimeFlagGloba
             children: [
                 {
                     name: `OvertimeGlobal_Title_${pid}`,
-                    type: "Text",
+                    type: 'Text',
                     position: [0, 4],
                     size: [OVERTIME_GLOBAL_UI_WIDTH, 16],
                     anchor: mod.UIAnchor.TopCenter,
@@ -2067,8 +2074,6 @@ function ensureOvertimeGlobalHudForPlayer(player: mod.Player): OvertimeFlagGloba
 }
 
 //#endregion -------------------- Overtime Flag Capture - HUD Build + Cache --------------------
-
-
 
 //#region -------------------- Overtime Flag Capture - Stage Transitions + Messaging --------------------
 
@@ -2161,14 +2166,14 @@ function updateOvertimeStage(): void {
             enterOvertimeNoticeStage(remaining);
         }
     }
-
 }
 
 function getOvertimeVisibleSeconds(): number {
     const roundLength = State.round.clock.roundLengthSeconds;
-    const duration = (roundLength !== undefined && roundLength > 0)
-        ? roundLength
-        : (State.round.clock.durationSeconds ?? ROUND_START_SECONDS);
+    const duration =
+        roundLength !== undefined && roundLength > 0
+            ? roundLength
+            : (State.round.clock.durationSeconds ?? ROUND_START_SECONDS);
     return Math.max(0, Math.floor(duration / 2));
 }
 

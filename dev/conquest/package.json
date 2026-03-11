@@ -1,13 +1,16 @@
 {
-  "name": "twl-helis-only",
+  "name": "twl-conquest",
   "version": "0.621.0",
+  "experienceName": "TWL Conquest",
+  "modId": "",
   "private": true,
-  "description": "Modular build for TWL Helis Only v0.621 BF6 Portal experience",
+  "description": "Modular build for TWL Conquest BF6 Portal experience",
   "scripts": {
     "build": "bf6-portal-bundler --entrypoint ./src/index.ts --outDir ./dist && node scripts/postbuild.js && node scripts/verify.js",
     "verify": "node scripts/verify.js",
     "update": "node scripts/update.js",
-    "bumpVersion": "node scripts/bump-version.js"
+    "bumpVersion": "node scripts/bump-version.js",
+    "deploy": "node ../../scripts/deploy.js --experience conquest"
   },
   "devDependencies": {
     "bf6-portal-bundler": "^1.2.0",
