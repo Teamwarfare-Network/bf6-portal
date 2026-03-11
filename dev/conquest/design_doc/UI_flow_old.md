@@ -2,6 +2,19 @@
 
 This document captures the existing/old UI flow exactly as traced in code, including startup, ongoing loops, cache behavior, positioning chain, refresh rules, team swap/reconnect behavior, and `safeFind` behavior.
 
+Status: LOCKED LEGACY REFERENCE (READ-ONLY)  
+Rule: Do not edit this document further.
+
+## 0) Legacy Mapping (Locked Reference)
+
+This document is explicitly mapped to the locked legacy snapshot at:
+- `reference_implementations/reference_conquest_attempt_a/src`
+- `reference_implementations/reference_conquest_attempt_a/src_legacy_rebuild_start`
+
+Mapping rule:
+- Treat the locked snapshot as source-of-truth.
+- This document remains read-only and is retained as historical context only.
+
 ## 1) Simple Mental Model
 
 1. `State` is the source of truth (tickets, capture ownership, readiness, deploy status, swap flags, etc.).
@@ -271,18 +284,13 @@ Important consequence:
 11. Remove any fallback path that can revive stale core roots silently.
 12. If critical refs fail twice consecutively, stop rendering that slice and emit diagnostic.
 
-## 15) Version Timeline (`v0.319` -> Current)
+## 15) Version Timeline (Intentionally Omitted)
 
-Use this as the historical backbone for architectural decisions.
+This document does not keep a per-version timeline table.
 
-| Version | Date | Change Summary | Intended Benefit | Observed Outcome | Regressions | Rollback Candidate |
-|---|---|---|---|---|---|---|
-| v0.319 | TBD | Baseline reference | Known working baseline | TBD | TBD | No |
-| v0.320+ | TBD | TBD | TBD | TBD | TBD | TBD |
-
-Notes:
-- Always include concrete screenshot/video references for "Observed Outcome".
-- Include exact files touched for each version row.
+Use these canonical historical artifacts instead:
+- `src/Changelog.ts` for versioned change entries
+- `reference_implementations/reference_conquest_attempt_a` for the locked legacy code snapshot
 
 ## 16) Widget Ownership Matrix
 
@@ -290,15 +298,15 @@ Define one authoritative writer/owner per widget family.
 
 | Widget Family | Create Owner | Parent/Anchor Owner | Value/Color Owner | Visibility Owner | Delete Owner | Notes |
 |---|---|---|---|---|---|---|
-| Top root (`TopHudRoot_*`) | TBD | TBD | N/A | TBD | TBD | |
-| Combat root (`ConquestCombatHudRoot_*`) | TBD | TBD | N/A | TBD | TBD | |
-| Tickets roots/children | TBD | TBD | TBD | TBD | TBD | |
-| Flags roots/slots | TBD | TBD | TBD | TBD | TBD | |
-| Popout | TBD | TBD | TBD | TBD | TBD | |
-| Engage | TBD | TBD | TBD | TBD | TBD | |
-| Clock/round-state | TBD | TBD | TBD | TBD | TBD | |
-| Ready/help lanes | TBD | TBD | TBD | TBD | TBD | |
-| Ready dialog/admin panel | TBD | TBD | TBD | TBD | TBD | |
+| Top root (`TopHudRoot_*`) | `ensureTopHudRootForPid` (`src/hud/status.ts`) | `ensureTopHudRootForPid` (`src/hud/status.ts`) | N/A | `ensureTopHudRootForPid` (always visible, normalized each ensure) | `cleanupHudForPid` + `deleteAllTopHudRootsByName` (`src/index/player-join-leave.ts`, `src/hud/status.ts`) | Duplicate-name purge is part of root init contract. |
+| Combat root (`ConquestCombatHudRoot_*`) | `ensureHudForPlayer` -> `ensureConquestCombatHudRootForPid` (`src/ui/conquest/hud-build.ts`) | `pinConquestCombatRootsToTopHudRoot` (`src/ui/conquest/hud-build.ts`) | N/A | `ensureHudForPlayer` (root visibility) + child-root reveal delegated to render owner | `destroyConquestHudForPid` (`src/ui/conquest/lifecycle.ts`) | Single centered parent for tickets + flags lanes. |
+| Tickets roots/children | `ensureHudForPlayer` ParseUI build (`src/ui/conquest/hud-build.ts`) | `pinConquestCombatRootsToTopHudRoot` + build-time local anchors (`src/ui/conquest/hud-build.ts`) | `renderConquestTicketCountersForPid` + bars/leader/bleed renderers (`src/index/capture-tickets.ts`) | `renderConquestRootsForPid` + ticket renderers (`src/index/capture-tickets.ts`) | `destroyConquestHudForPid` (`src/ui/conquest/lifecycle.ts`) | Runtime parent ownership should never be rewritten in render path. |
+| Flags roots/slots | `ensureHudForPlayer` ParseUI build (`src/ui/conquest/hud-build.ts`) | `pinConquestCombatRootsToTopHudRoot` + build-time local anchors (`src/ui/conquest/hud-build.ts`) | `renderConquestFlagSlotsForPid` (`src/index/capture-tickets.ts`) | `renderConquestRootsForPid` + slot renderer (`src/index/capture-tickets.ts`) | `destroyConquestHudForPid` (`src/ui/conquest/lifecycle.ts`) | Slot refs are rebound from flags subtree in ensure path. |
+| Popout | `ensureHudForPlayer` ParseUI build under flags root (`src/ui/conquest/hud-build.ts`) | Build-time local ownership in ensure (`src/ui/conquest/hud-build.ts`) | `renderConquestActiveFlagPopoutForPid` (`src/ui/conquest/popout-render.ts`) | `renderConquestActiveFlagPopoutForPid` + suppression force-hide path (`src/ui/conquest/popout-render.ts`, `src/index/capture-tickets.ts`) | `destroyConquestHudForPid` (`src/ui/conquest/lifecycle.ts`) | Force-hide still uses fallback lookups in legacy path. |
+| Engage | `ensureHudForPlayer` ParseUI build under flags root (`src/ui/conquest/hud-build.ts`) | Build-time local ownership in ensure (`src/ui/conquest/hud-build.ts`) | `renderConquestEngageForPid` (`src/ui/conquest/engage-render.ts`) | `renderConquestEngageForPid` + suppression force-hide path (`src/ui/conquest/engage-render.ts`, `src/index/capture-tickets.ts`) | `destroyConquestHudForPid` (`src/ui/conquest/lifecycle.ts`) | Visibility also depends on deploy/swap suppression state. |
+| Clock/round-state | `ensureClockUIAndGetCache` (`src/clock/ui.ts`) | `ensureClockUIAndGetCache` + `ensureTopHudRootForPid` reparent (`src/clock/ui.ts`, `src/hud/status.ts`) | `updateAllPlayersClock` + `setMatchStateTextForAllPlayers` (`src/hud/status.ts` and clock update owner) | `setMatchStateTextForAllPlayers` + `updatePlayersReadyHudTextForAllPlayers` (`src/hud/status.ts`) | `cleanupHudForPid` + `clockWidgetCache` cleanup (`src/index/player-join-leave.ts`) | Round-state lane is clock-owned, not conquest combat root-owned. |
+| Ready/help lanes | `buildConquestTopCenterAuxWidgets` via `ensureHudForPlayer` (`src/ui/ready/ready-line.ts`, `src/ui/conquest/hud-build.ts`) | `buildConquestTopCenterAuxWidgets` (layout) + `setHudHelpDepthForPid` (depth) (`src/ui/ready/ready-line.ts`, `src/hud/status.ts`) | `updateHelpTextVisibilityForPid` + `getHudVisibilitySnapshotForPid` (`src/hud/help-visibility.ts`, `src/hud/status.ts`) | `updateHelpTextVisibilityForPid` (`src/hud/help-visibility.ts`) | No single dedicated delete owner for `ConquestTopCenterAuxRoot_*` in legacy path | Historical cleanup gap; relies on overwrite/reuse behavior. |
+| Ready dialog/admin panel | `createReadyDialogUI` + admin ensure/build (`src/ready-dialog/dialog-build.ts`, `src/admin-panel/build.ts`) | Dialog/admin build modules (`src/ready-dialog/dialog-build.ts`, `src/admin-panel/build.ts`) | Ready-dialog render modules + admin visibility/update modules (`src/ready-dialog/*`, `src/admin-panel/*`) | `hideReadyDialogUI` + admin visibility owner (`src/interaction/actions.ts`, `src/admin-panel/visibility.ts`) | `destroyReadyDialogUI` (`src/interaction/actions.ts`) | Separate lifecycle from conquest combat HUD; hide for reopen, hard-delete on leave. |
 
 Rules:
 - If a cell has more than one owner, architecture is invalid.
@@ -309,12 +317,12 @@ Define authoritative writers for critical state fields.
 
 | State Field | Authoritative Writer | Allowed Secondary Writers | Invalidation Trigger | Notes |
 |---|---|---|---|---|
-| `State.hudCache.hudByPid[pid]` | TBD | None | TBD | |
-| `State.conquest.debug.hudDirty` | TBD | TBD | N/A | |
-| `State.conquest.debug.teamSwapHudResetPendingByPid[pid]` | TBD | TBD | N/A | |
-| `State.conquest.capture.engagedObjIdByPid[pid]` | TBD | TBD | TBD | |
-| `State.players.deployedByPid[pid]` | TBD | TBD | N/A | |
-| `State.players.readyByPid[pid]` | TBD | TBD | N/A | |
+| `State.hudCache.hudByPid[pid]` | `ensureHudForPlayer` (`src/ui/conquest/hud-build.ts`) | `destroyConquestHudForPid` (delete only) (`src/ui/conquest/lifecycle.ts`) | Root pin failure, critical-ref failure, explicit swap/leave teardown | Cache is authoritative only when root chain + critical refs validate. |
+| `State.conquest.debug.hudDirty` | `conquestPhase3MarkHudDirty` (`src/index/capture-tickets.ts`) | Startup baseline set + render pass clear (`src/index/conquest-scaffold.ts`, `src/index/capture-tickets.ts`) | N/A | `true` requests render pass; render owner clears after update cycle. |
+| `State.conquest.debug.teamSwapHudResetPendingByPid[pid]` | `cleanupConquestHudForTeamSwap` sets `true` (`src/interaction/actions.ts`) | `onPlayerDeployedImpl` sets `false`; leave cleanup deletes (`src/index/player-deploy.ts`, `src/index/player-join-leave.ts`) | N/A | Deploy callback is release gate for post-swap HUD projection. |
+| `State.conquest.capture.engagedObjIdByPid[pid]` | Capture enter/exit trigger handlers (`src/index/area-triggers.ts`) | Swap/undeploy/suppression cleanup clears (`src/interaction/actions.ts`, `src/index/player-deploy.ts`, `src/index/capture-tickets.ts`) | Undeploy, swap reset, leave cleanup, objective exit | Engage panel should project only from this authoritative map + gates. |
+| `State.players.deployedByPid[pid]` | Deploy/undeploy handlers (`src/index/player-deploy.ts`) | Join/cleanup safety clears (`src/index/player-join-leave.ts`, `src/state/id-helpers.ts`) | N/A | Used as hard gate in engage and ready/help visibility logic. |
+| `State.players.readyByPid[pid]` | Ready interaction events (`src/interaction/ui-events-ready.ts`) | Deploy/swap/base-transition resets (`src/index/player-deploy.ts`, `src/ready-dialog/*`, `src/index/area-triggers.ts`) | N/A | Must stay synchronized with roster + HUD ready count updates. |
 
 ## 18) Lifecycle Sequence Charts
 
@@ -369,9 +377,9 @@ Define exact cache semantics for each map.
 
 | Cache | Key | Populate When | Read When | Validity Check | Invalidate When | Hard Rebuild Trigger |
 |---|---|---|---|---|---|---|
-| `hudByPid` | `pid` | TBD | TBD | TBD | TBD | TBD |
-| `clockWidgetCache` | `pid` | TBD | TBD | TBD | TBD | TBD |
-| `countdownWidgetCache` | `pid` | TBD | TBD | TBD | TBD | TBD |
+| `hudByPid` | `pid` | `ensureHudForPlayer` succeeds and refs are pinned/rebound (`src/ui/conquest/hud-build.ts`) | Live tick render + suppression/render helpers (`src/index/capture-tickets.ts`, `src/ui/conquest/*`) | Ensure path: cached root refs present, root pin pass, subtree rebind pass; render path: `conquestPhase3HasCriticalHudRefs` | Explicit teardown (`destroyConquestHudForPid`), leave cleanup, failed cache/pin/rebind validation | Any critical-ref or geometry/parent mismatch forces destroy + ensure rebuild before render |
+| `clockWidgetCache` | `pid` | `ensureClockUIAndGetCache` creates/recovers root and writes entry (`src/clock/ui.ts`) | Clock/round-state/ready-line updates (`src/hud/status.ts` and clock update owner) | Cache probe requires both `rootName` and `roundStateRootName` to resolve | Leave cleanup deletes cache entry (`src/index/player-join-leave.ts`) | Probe failure triggers delete-by-name + full ParseUI rebuild in `ensureClockUIAndGetCache` |
+| `countdownWidgetCache` | `pid` | `ensureCountdownUIAndGetWidget` creates or resolves widget (`src/ready-dialog/pregame-ui.ts`) | Pregame countdown update/hide broadcasts (`src/ready-dialog/pregame-ui.ts`) | Valid if cached widget exists or `safeFind(cached.rootName)` resolves | Leave cleanup deletes cache entry (`src/index/player-join-leave.ts`) | Missing cache widget/name resolve triggers ParseUI recreate and cache rewrite |
 
 ## 20) Root-Chain Invariants (Numerical)
 
@@ -380,9 +388,9 @@ Record hard invariants with tolerances used in code.
 | Widget | Expected Parent | Expected Anchor | Expected Position (x,y) | Expected Size | Depth | Tolerance |
 |---|---|---|---|---|---|---|
 | `TopHudRoot_{pid}` | `UIRoot` | `TopCenter` | `(0,0)` | `(1920,260)` | `AboveGameUI` | `<= 0.5` |
-| `ConquestCombatHudRoot_{pid}` | `TopHudRoot_{pid}` | `TopCenter` | `(0, CONQUEST_HUD_TICKETS_FLAGS_SHIFT_Y)` | TBD | `AboveGameUI` | `<= 1` |
-| `ConquestTicketsHudRoot_{pid}` | `ConquestCombatHudRoot_{pid}` | `TopCenter` | `(0,0)` | TBD | `AboveGameUI` | `<= 1` |
-| `ConquestFlagsHudRoot_{pid}` | `ConquestCombatHudRoot_{pid}` | `TopCenter` | `(0,0)` | TBD | `AboveGameUI` | `<= 1` |
+| `ConquestCombatHudRoot_{pid}` | `TopHudRoot_{pid}` | `TopCenter` | `(0, CONQUEST_HUD_TICKETS_FLAGS_SHIFT_Y)` | `(561.77,180)` | `AboveGameUI` | `<= 1` |
+| `ConquestTicketsHudRoot_{pid}` | `ConquestCombatHudRoot_{pid}` | `TopCenter` | `(0,0)` | `(561.77,50)` | `AboveGameUI` | `<= 1` |
+| `ConquestFlagsHudRoot_{pid}` | `ConquestCombatHudRoot_{pid}` | `TopCenter` | `(0,0)` | `(238.5,46)` | `AboveGameUI` | `<= 1` |
 
 ## 21) Failure Taxonomy (Historical)
 
@@ -390,10 +398,10 @@ Track every symptom with reproducible evidence.
 
 | Failure ID | Symptom | Trigger Steps | Expected | Actual | First Seen Version | Last Seen Version | Evidence |
 |---|---|---|---|---|---|---|---|
-| F-001 | HUD top-left | TBD | Centered | Top-left | TBD | TBD | `testing_images/*.PNG` |
-| F-002 | Flicker center/top-left | TBD | Stable center | Oscillation | TBD | TBD | |
-| F-003 | Ready dialog broken | TBD | Open/close works | Broken | TBD | TBD | |
-| F-004 | Triple tap broken | TBD | Interact spawns | No spawn | TBD | TBD | |
+| F-001 | HUD top-left | Fresh boot or post-swap rebuild; centered clock but combat HUD collapses to upper-left | Centered combat HUD chain | Tickets/flags/popout/engage render in upper-left frame | Pre-`v0.391` session window | `v0.391` snapshot still open | `reference_design_documentation/testing_images/current_testing.PNG`, `current_testing3.PNG`, `design_doc/conquest_issues.md` (`CQ_Bug_9`) |
+| F-002 | Flicker center/top-left | Rebuild/ensure cycles during swap or root duplicate churn | Stable centered ownership | Intermittent oscillation between centered and top-left chains | Pre-`v0.391` session window | `v0.391` snapshot still open | Session repro notes + `design_doc/conquest_issues.md` (`CQ_Bug_9` workstream bullets) |
+| F-003 | Ready dialog broken | HUD refactor regressions during swap/cleanup pass | Ready dialog opens/closes and updates roster/config | Dialog open/close flow temporarily broken in regression window | Session regression window (exact version not logged) | Restored in same session before reference lock | Session validation notes + `src/interaction/actions.ts` / `src/ready-dialog/*` recovery paths |
+| F-004 | Triple tap broken | Same regression window as F-003 (interaction routing disturbed) | Triple tap interact spawns/opens expected flow | Triple tap path temporarily non-functional | Session regression window (exact version not logged) | Restored in same session before reference lock | Session validation notes + `src/interaction/actions.ts` + deploy/join handlers |
 
 ## 22) Race-Window Inventory
 
@@ -401,9 +409,30 @@ Document asynchronous hazards and required guards.
 
 | Race Window | Start Event | End Event | Shared State | Hazard | Existing Guard | Required Guard |
 |---|---|---|---|---|---|---|
-| Swap team settle | `SetTeam` | deploy callback | `teamSwap*`, cache refs | stale team/frame | token + delay | TBD |
-| Rebuild vs render tick | `destroy/ensure` | next render pass | `hudByPid` | stale handles | critical-ref check | TBD |
-| Leave/join churn | leave | rejoin ensure | per-pid maps | leaked refs | cleanup path | TBD |
+| Swap team settle | `SetTeam` | deploy callback | `teamSwap*`, cache refs | stale team/frame | token + delay (`refreshConquestHudAfterTeamSwap`) | Keep `teamSwapHudResetPendingByPid` hard-gated until `onPlayerDeployedImpl` releases it; no alternate release path |
+| Rebuild vs render tick | `destroy/ensure` | next render pass | `hudByPid` | stale handles | critical-ref + geometry checks (`conquestPhase3HasCriticalHudRefs`) | Render only after ensure pin/rebind success; if critical check fails, destroy+ensure before any root reveal |
+| Leave/join churn | leave | rejoin ensure | per-pid maps | leaked refs | `cleanupHudForPid` + cache clears | Cleanup must clear caches + init tokens + roots before join ensure; join path must force refresh after ensure |
+
+### 22.1 Team Swap Reset Contract (Historical)
+
+| Field | Set/Mutated At | Cleared/Released At | Authoritative Owner | Contract |
+|---|---|---|---|---|
+| `State.conquest.debug.teamSwapHudResetPendingByPid[pid]` | `cleanupConquestHudForTeamSwap` sets `true` | `onPlayerDeployedImpl` sets `false`; leave cleanup deletes | Swap action + deploy lifecycle | While `true`, suppress engage/popout and block normal swap-completion visuals. |
+| `State.conquest.capture.engagedObjIdByPid[pid]` | Capture enter sets value | Swap/undeploy/suppression/leave paths clear | Capture triggers + lifecycle cleanup | Never carry objective engagement ownership through team swap windows. |
+| `State.players.deployedByPid[pid]` | Swap flow pre-sets `false`; deploy sets `true`; undeploy sets `false` | Leave cleanup deletes | Deploy lifecycle | Deploy callback is the release checkpoint for post-swap HUD authority. |
+| `State.conquest.debug.perspectiveTeamByPid[pid]` | Swap flow pre-seeds target team | Leave cleanup deletes (or overwritten on next deploy/join) | Swap + deploy/join lifecycle | Prevent transient wrong-team frame during `SetTeam` settle window. |
+| `State.conquest.debug.teamSwapRefreshTokenByPid[pid]` | Incremented in delayed swap refresh | Overwritten on next refresh; deleted on leave | `refreshConquestHudAfterTeamSwap` | Prevent overlapping delayed refresh passes from stale async tasks. |
+
+### 22.2 Reconnect/Leave Reset Contract (Historical)
+
+| Field/Cache | Leave Path Action | Join/Reconnect Action | Contract |
+|---|---|---|---|
+| `State.hudCache.hudByPid[pid]` | Destroy + delete via `cleanupHudForPid`/`destroyConquestHudForPid` | `ensureHudForPlayer` rebuilds deterministic tree | Reconnect must never reuse stale widget handles. |
+| `State.hudCache.clockWidgetCache[pid]` | Deleted in `cleanupHudForPid` | `ensureClockUIAndGetCache` recreates/probes | Clock root must be rebuilt or revalidated per reconnect. |
+| `State.hudCache.countdownWidgetCache[pid]` | Deleted in `cleanupHudForPid` | `ensureCountdownUIAndGetWidget` recreates on demand | Pregame countdown widgets are per-session/pid scoped. |
+| `State.players.readyByPid[pid]` | Deleted on leave | Reinitialized via ready-flow defaults (`false`) | Rejoin starts NOT READY by design. |
+| `State.players.deployedByPid[pid]` | Deleted on leave | Join initializes `false`; deploy sets `true` | Deploy state must be authoritative after reconnect. |
+| Top/combat root init tokens | `resetTopHudRootInitializationForPid` + `resetConquestCombatRootInitializationForPid` | Reinitialized during ensure | Prevent duplicate-root drift across disconnect/reconnect cycles. |
 
 ## 23) Unsafe Pattern Log (Banned For New Architecture)
 
@@ -413,6 +442,27 @@ Document asynchronous hazards and required guards.
 | Multiple writers for parent/anchor | non-deterministic layout | mixed ensure/render ownership | single parent/anchor owner |
 | Reparenting core roots during render | frame drift and flicker | render-time restacks | build-time only |
 | Silent fallback to stale refs | hidden corruption | cache hits without strict validation | fail-close rebuild |
+
+### 23.1 `safeFind` Usage Inventory (Historical)
+
+Observed `safeFind(...)` footprint in `src` at lock time: `365` call sites.
+
+Top concentration by file:
+
+| File | Approx Call Sites | Classification | Notes |
+|---|---:|---|---|
+| `src/ui/conquest/hud-build.ts` | 136 | combat-critical migrate | Root/refs path had highest stale-handle risk. |
+| `src/index/capture-tickets.ts` | 88 | combat-critical migrate | Runtime force-hide and fallback lookups still present. |
+| `src/interaction/actions.ts` | 26 | keep-noncombat | Ready dialog/admin close/delete ownership. |
+| `src/state/ui-helpers.ts` | 19 | mixed | Utility wrappers; validate callsite-level usage. |
+| `src/ui/dialog/victory-build.ts` | 14 | keep-noncombat | Modal UI path, not combat-lane ownership. |
+| `src/clock/ui.ts` | 11 | bounded keep | Clock cache probe/recovery with explicit root contract. |
+| `src/admin-panel/build.ts` | 11 | keep-noncombat | Admin modal ownership path. |
+| `src/admin-panel/visibility.ts` | 11 | keep-noncombat | Admin visibility toggles. |
+
+Migration rule for new architecture:
+- Combat HUD critical paths use cached refs or subtree-scoped lookup only.
+- Global `safeFind` is allowed only for non-combat modal/debug lanes with explicit PID naming.
 
 ## 24) Diagnostic Schema (For Runtime Logs)
 
@@ -445,14 +495,14 @@ Log points:
 
 | Test ID | Scenario | Players | Steps | Expected Result | Pass/Fail | Notes |
 |---|---|---|---|---|---|---|
-| T-001 | Fresh boot HUD center | 1 | start -> deploy | centered HUD | TBD | |
-| T-002 | Swap once | 1 | ready dialog swap -> deploy | centered + functional | TBD | |
-| T-003 | Swap spam | 1 | rapid swaps | no flicker/drift | TBD | |
-| T-004 | Reconnect | 1 | leave -> rejoin | clean rebuild | TBD | |
-| T-005 | Two-player isolation | 2 | both live | no cross-player clashes | TBD | |
-| T-006 | Aspect ratio change | 1 | different resolutions | still centered | TBD | |
-| T-007 | Triple tap interact | 1 | live + not live paths | interact works | TBD | |
-| T-008 | Ready dialog open/close | 1 | repeated toggles | no breakage | TBD | |
+| T-001 | Fresh boot HUD center | 1 | start -> deploy | centered HUD | Fail | Top-left drift still observed (`current_testing3.PNG`, `CQ_Bug_9` open). |
+| T-002 | Swap once | 1 | ready dialog swap -> deploy | centered + functional | Fail | Functional recovery possible, but positional contract still fails (`CQ_Bug_9`). |
+| T-003 | Swap spam | 1 | rapid swaps | no flicker/drift | Fail | Flicker/oscillation historically observed during swap churn. |
+| T-004 | Reconnect | 1 | leave -> rejoin | clean rebuild | Not fully validated | Contract exists; full stable pass evidence not captured in this snapshot. |
+| T-005 | Two-player isolation | 2 | both live | no cross-player clashes | Fail | `CQ_Bug_9` remains open for cross-player ownership clash risk. |
+| T-006 | Aspect ratio change | 1 | different resolutions | still centered | Not fully validated | Outstanding while centered root-chain failure persists. |
+| T-007 | Triple tap interact | 1 | live + not live paths | interact works | Pass (restored) | Was broken in regression window, then restored before reference lock. |
+| T-008 | Ready dialog open/close | 1 | repeated toggles | no breakage | Pass (restored) | Was broken in regression window, then restored before reference lock. |
 
 ## 26) Acceptance Criteria (New Architecture Gate)
 
@@ -472,9 +522,9 @@ Capture unresolved areas explicitly.
 
 | Unknown | Why Unknown | Needed Evidence | Owner | Status |
 |---|---|---|---|---|
-| Engine duplicate-name resolution order | not guaranteed by API docs | runtime instrumented traces | TBD | Open |
-| Timing guarantees around `SetTeam` and deploy callbacks | async engine behavior | high-frequency timestamped logs | TBD | Open |
-| Widget invalidation semantics after delete/recreate in same frame | observed inconsistencies | synthetic stress test harness | TBD | Open |
+| Engine duplicate-name resolution order | not guaranteed by API docs | runtime instrumented traces | Conquest HUD architecture rebuild owner | Open |
+| Timing guarantees around `SetTeam` and deploy callbacks | async engine behavior | high-frequency timestamped logs | Conquest HUD architecture rebuild owner | Open |
+| Widget invalidation semantics after delete/recreate in same frame | observed inconsistencies | synthetic stress test harness | Conquest HUD architecture rebuild owner | Open |
 
 ## 28) Legacy Artifact Appendix (Do Not Reintroduce)
 

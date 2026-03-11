@@ -69,6 +69,24 @@ Prompting examples:
 2. Comment must state purpose and any key/critical behavior or constraint needed for safe maintenance.
 3. For transactional/authority-sensitive functions, include concise notes about ordering, guards, and side effects.
 4. When modifying existing functions substantially, add/update comments if current comments are missing or stale.
+5. When removing or refactoring code, update nearby comments so they remain accurate and do not describe deleted behavior.
+6. Function names must describe the end-goal behavior clearly (not temporary/mechanical naming).
+
+## Code Placement and Structure Policy
+
+1. Place new code in the correct domain file/module for the behavior being changed.
+2. Do not centralize unrelated logic into monolith files when a domain-specific file already exists.
+3. If a file grows beyond practical review/maintenance size, split by ownership/lifecycle boundaries before adding more logic.
+4. Keep call flow logical: build/ensure, render/update, lifecycle/cleanup, and interaction code should remain separated.
+
+## Change Log and Versioning Policy
+
+1. Every implemented code change must include a matching `src/Changelog.ts` entry.
+2. Use the existing bump-version workflow whenever a new change is landed:
+   - Script path: `./scripts/bump-version.js`
+   - Package script: `npm run bumpVersion`
+   - Preferred usage: `npm run bumpVersion -- -c "brief changelog entry"`
+3. Do not defer changelog/version updates to later cleanup; update them in the same change set.
 
 ## UI Layout Change Protocol
 
@@ -80,7 +98,7 @@ Prompting examples:
 6. Strategy B: container-local positioning with explicit parent anchor/frame conversion.
 7. If converting from design-doc absolute coordinates to container-local offsets, document the conversion math in code comments before applying edits.
 8. Apply layout updates in all active code paths for that widget set: initial creation path and cached/reapply path.
-9. After each UI layout change, require a visual verification checkpoint (new screenshot) before additional UI refactors.
+9. After each UI layout change, require a visual verification checkpoint (new screenshot) or user confirmation, before additional UI refactors.
 10. Ownership probes (temporary hide/move) are a fallback tool, not default workflow.
 11. Use ownership probes only when one verified build shows no expected movement, to confirm actual rendering widget ownership.
 
@@ -97,6 +115,7 @@ Prompting examples:
 9. Implement original code using only verified APIs.
 10. In outputs, cite local reference file path(s) used for design decisions and API validation.
 11. Once completed, present a test plan which will be used by a human to confirm the implementation's quality. This test plan should be professional, robust, but succinct and accurate.
+12. For every code change, include changelog/version updates per the Change Log and Versioning Policy before finalizing.
 
 ## Task List Protocol
 
@@ -132,3 +151,5 @@ Prompting examples:
    `/c:/Users/Soldat/TypeScriptProjects/twlmain/...`
 3. Include line numbers when possible (for example `:42`) so navigation lands directly in the file.
 4. Do not use drive-letter markdown targets like `C:\...` because some clients route those to a browser.
+5. Link labels must include the project-relative folder path (for example `src/interaction/actions.ts`), not just a bare filename like `actions.ts`.
+6. Always prefer IDE-native local file links for local code/doc references.
