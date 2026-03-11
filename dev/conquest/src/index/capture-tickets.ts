@@ -533,6 +533,24 @@ function conquestPhase3MarkHudDirty(): void {
     State.conquest.debug.hudDirty = true;
 }
 
+// Returns true when combat HUD projection is enabled in both runtime debug and config gates.
+function conquestPhase3ShouldRunCombatHud(): boolean {
+    return State.conquest.debug.hudEnabled && CONQUEST_COMBAT_HUD_ENABLED;
+}
+
+// Force-hides combat HUD widgets for all cached players without rebuilding trees.
+// This supports staged rebuild work where non-combat UI must remain available.
+function conquestPhase3ForceHideCombatHudForAllPlayersFromCache(): void {
+    const cachedHudByPid = State.hudCache.hudByPid;
+    for (const pidKey in cachedHudByPid) {
+        if (!Object.prototype.hasOwnProperty.call(cachedHudByPid, pidKey)) continue;
+        const refs = cachedHudByPid[Number(pidKey)];
+        if (!refs) continue;
+        conquestPhase3ForceHideAllV2Widgets(refs);
+        safeSetUIWidgetVisible(refs.conquestCombatRoot, false);
+    }
+}
+
 // Publishes derived top-HUD slices shared by status/help/clock owners.
 function conquestPhase3PublishTopHudDerivedSlicesForPid(
     pid: number,
@@ -2014,6 +2032,7 @@ function renderConquestTicketBleedForPid(refs: HudRefs, tickets: ConquestHudTick
 
 // Refreshes bleed chevrons on non-dirty ticks so first-life indicators do not depend on unrelated HUD writes.
 function conquestPhase3RefreshTicketBleedWhenHudClean(): void {
+    if (!conquestPhase3ShouldRunCombatHud()) return;
     if (!isMatchLive()) return;
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -3598,7 +3617,11 @@ function renderConquestFlagSlotsForPid(
 
 // Updates per-player conquest ticket/flag HUD from authoritative state using viewer perspective colors.
 function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
-    if (!State.conquest.debug.hudEnabled) return;
+    if (!conquestPhase3ShouldRunCombatHud()) {
+        conquestPhase3ForceHideCombatHudForAllPlayersFromCache();
+        State.conquest.debug.hudDirty = false;
+        return;
+    }
     if (!force && !State.conquest.debug.hudDirty) {
         conquestPhase3RefreshTicketBleedWhenHudClean();
         return;

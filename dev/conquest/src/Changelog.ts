@@ -3,6 +3,7 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.396: combat HUD isolation gate; preserve ready/admin/branding/victory paths while combat HUD is disabled
 // v0.391: HUD subtree ref-owner enforcement: Conquest cached/build ensure now rebinds tickets/flags/popout/engage refs from pinned centered subtrees only (no global same-name lookup), and live critical checks now validate child-parent ownership for ticket containers/bars and flag slot roots so off-root/top-left handles are hard-rejected and rebuilt
 // v0.390: HUD critical-ref geometry gate: live render critical checks now require centered anchor+position for TopHudRoot/ConquestCombatHudRoot/TicketsRoot/FlagsRoot (not just parent-chain), forcing rebuild whenever a top-left root chain appears
 // v0.389: HUD root-owner hardening: removed cached name-based combat-root hydration, moved critical/ref validation to cached root-handle identity (`topHudRoot` + `conquestCombatRoot`), and removed ticket-counter hot-path parent rebinding so render updates cannot drift core widgets to top-left frames

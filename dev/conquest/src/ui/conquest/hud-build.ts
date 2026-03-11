@@ -24,6 +24,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     if (!player || !mod.IsPlayerValid(player)) return undefined;
 
     const pid = getObjId(player);
+    const combatHudEnabled = CONQUEST_COMBAT_HUD_ENABLED;
     // Build-order authority:
     // ensure the clock root exists before conquest lanes so parent selection is correct on first build.
     ensureClockUIAndGetCache(player);
@@ -686,6 +687,19 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const cached = State.hudCache.hudByPid[pid];
     purgeLegacyConquestArtifacts();
     if (cached) {
+        if (!combatHudEnabled) {
+            // Combat HUD is explicitly disabled for rebuild isolation:
+            // keep stable UI refs cached, but force-hide all combat roots/widgets.
+            safeSetUIWidgetVisible(cached.conquestCombatRoot, false);
+            safeSetUIWidgetVisible(cached.conquestTicketsDebugRoot, false);
+            safeSetUIWidgetVisible(cached.conquestFlagsDebugRoot, false);
+            safeSetUIWidgetVisible(cached.conquestFlagsActivePopoutRoot, false);
+            safeSetUIWidgetVisible(cached.conquestFlagsEngageRoot, false);
+            State.hudCache.hudByPid[pid] = cached;
+            setHudHelpDepthForPid(pid);
+            updateSettingsSummaryHudForPid(pid);
+            return cached;
+        }
         if (hasCachedCombatRootRefs(cached) && pinConquestCombatRootsToTopHudRoot(cached)) {
             if (!rebindConquestHudRefsFromPinnedTree(cached)) {
                 delete State.hudCache.hudByPid[pid];
@@ -3433,17 +3447,26 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     // Keep only HUD elements used by conquest's simplified center HUD + overlays.
     setAdminPanelActionCountText(refs.adminPanelActionCountText, State.admin.actionCount);
 
-    const pinnedCombatRoots = pinConquestCombatRootsToTopHudRoot(refs);
-    if (!pinnedCombatRoots) {
-        // Root-chain placement is mandatory for Conquest combat HUD.
-        // If pinning fails, tear down immediately so no unpinned top-left roots leak on-screen.
-        destroyConquestHudForPid(pid);
-        return undefined;
-    }
-    if (!rebindConquestHudRefsFromPinnedTree(refs)) {
-        // Subtree-scoped rebind is mandatory so render refs always belong to pinned centered roots.
-        destroyConquestHudForPid(pid);
-        return undefined;
+    if (combatHudEnabled) {
+        const pinnedCombatRoots = pinConquestCombatRootsToTopHudRoot(refs);
+        if (!pinnedCombatRoots) {
+            // Root-chain placement is mandatory for Conquest combat HUD.
+            // If pinning fails, tear down immediately so no unpinned top-left roots leak on-screen.
+            destroyConquestHudForPid(pid);
+            return undefined;
+        }
+        if (!rebindConquestHudRefsFromPinnedTree(refs)) {
+            // Subtree-scoped rebind is mandatory so render refs always belong to pinned centered roots.
+            destroyConquestHudForPid(pid);
+            return undefined;
+        }
+    } else {
+        // Combat HUD is intentionally disabled while stable non-combat UI is validated.
+        safeSetUIWidgetVisible(refs.conquestCombatRoot, false);
+        safeSetUIWidgetVisible(refs.conquestTicketsDebugRoot, false);
+        safeSetUIWidgetVisible(refs.conquestFlagsDebugRoot, false);
+        safeSetUIWidgetVisible(refs.conquestFlagsActivePopoutRoot, false);
+        safeSetUIWidgetVisible(refs.conquestFlagsEngageRoot, false);
     }
     State.hudCache.hudByPid[pid] = refs;
     updateSettingsSummaryHudForPid(pid);
