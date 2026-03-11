@@ -8,6 +8,8 @@ const TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS = 0.6;
 // Performs the authoritative conquest HUD reset for one player before team-swap redraw.
 // Contract: hide -> destroy -> delayed rebuild -> resume updates after deploy release.
 function cleanupConquestHudForTeamSwap(pid: number): void {
+    setConquestCombatHudV2TeamSwapPending(pid, true);
+    destroyConquestCombatHudV2ForPid(pid);
     delete State.conquest.capture.engagedObjIdByPid[pid];
     State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
     State.conquest.debug.teamSwapHudResetPendingByPid[pid] = true;
@@ -74,6 +76,9 @@ async function refreshConquestHudAfterTeamSwap(eventPlayer: mod.Player): Promise
     conquestPhase3ForceHideEngageWidgetsForPid(pid);
     // Keep swap gate engaged until deploy callback confirms the new team context.
     // onPlayerDeployedImpl is the only owner that releases teamSwapHudResetPendingByPid.
+    setConquestCombatHudV2TeamSwapPending(pid, true);
+    markConquestCombatHudV2DirtyForPid(pid);
+    markConquestCombatHudV2AnimationDirtyForPid(pid);
     conquestPhase3MarkHudDirty();
     updateConquestPhase2ADebugHudForAllPlayers(true);
 }

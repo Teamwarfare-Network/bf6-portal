@@ -42,6 +42,7 @@ function cleanupHudForPid(pid: number): void {
 
     // Conquest HUD widgets are torn down through one authoritative lifecycle owner.
     destroyConquestHudForPid(pid);
+    resetConquestCombatHudV2ForPid(pid);
 
     const rootNames = [
         `TopHudRoot_${pid}`,
@@ -169,6 +170,10 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.joinPromptTipIndexByPid[pid];
     delete State.players.joinPromptTipsUnlockedByPid[pid];
     delete State.players.joinPromptTripleTapArmedByPid[pid];
+    delete State.players.joinPromptPolicyDisabledByPid[pid];
+    delete State.players.joinPromptPolicySuppressedCountByPid[pid];
+    delete State.players.joinPromptLastPolicySuppressedAtSecondsByPid[pid];
+    delete State.players.joinPromptLastSuppressionReasonByPid[pid];
     delete State.players.uiInputEnabledByPid[pid];
     delete State.players.inMainBaseByPid[pid];
     delete State.players.overTakeoffLimitByPid[pid];

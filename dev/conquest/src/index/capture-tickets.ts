@@ -538,6 +538,38 @@ function conquestPhase3ShouldRunCombatHud(): boolean {
     return State.conquest.debug.hudEnabled && CONQUEST_COMBAT_HUD_ENABLED;
 }
 
+// Refreshes top-HUD derived slices for all viewers without touching combat lane refs.
+function conquestPhase3RefreshTopHudDerivedSlicesForAllPlayers(): void {
+    const players = mod.AllPlayers();
+    const count = mod.CountOf(players);
+    for (let i = 0; i < count; i++) {
+        const player = mod.ValueInArray(players, i) as mod.Player;
+        if (!player || !mod.IsPlayerValid(player)) continue;
+        const pid = safeGetPlayerId(player);
+        if (pid === undefined) continue;
+        const topHelpReadyVm = deriveConquestHudHelpReadyViewModel(pid);
+        const topStatusVm = deriveConquestHudStatusViewModel(topHelpReadyVm);
+        const topClockVm = deriveConquestHudClockViewModel();
+        conquestPhase3PublishTopHudDerivedSlicesForPid(pid, topStatusVm, topHelpReadyVm, topClockVm);
+    }
+}
+
+// Runs the isolated combat-loop owner path.
+// v2 and legacy combat lanes are intentionally updated through separate owner branches.
+function conquestPhase3RunCombatLoopByOwner(force?: boolean): void {
+    if (isConquestCombatRenderOwnerV2()) {
+        if (!conquestPhase3ShouldRunCombatHud()) {
+            hideAllConquestCombatHudV2();
+            return;
+        }
+        conquestCombatHudV2TickMain(force);
+        conquestCombatHudV2TickAnimation(force);
+        return;
+    }
+    // Legacy-owner mode keeps v2 hidden.
+    hideAllConquestCombatHudV2();
+}
+
 // Force-hides combat HUD widgets for all cached players without rebuilding trees.
 // This supports staged rebuild work where non-combat UI must remain available.
 function conquestPhase3ForceHideCombatHudForAllPlayersFromCache(): void {
@@ -3617,6 +3649,16 @@ function renderConquestFlagSlotsForPid(
 
 // Updates per-player conquest ticket/flag HUD from authoritative state using viewer perspective colors.
 function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
+    const useCombatV2Owner = isConquestCombatRenderOwnerV2();
+    conquestPhase3RefreshTopHudDerivedSlicesForAllPlayers();
+    conquestPhase3RunCombatLoopByOwner(force);
+    if (useCombatV2Owner) {
+        if (force) {
+            State.conquest.debug.hudLastUpdatedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
+        }
+        State.conquest.debug.hudDirty = false;
+        return;
+    }
     if (!conquestPhase3ShouldRunCombatHud()) {
         conquestPhase3ForceHideCombatHudForAllPlayersFromCache();
         State.conquest.debug.hudDirty = false;
@@ -3653,10 +3695,6 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
             conquestPhase3ForceHideEngageWidgetsForPid(pid);
             conquestPhase3ForceHideActivePopoutWidgetsForPid(pid);
         }
-        const topHelpReadyVm = deriveConquestHudHelpReadyViewModel(pid);
-        const topStatusVm = deriveConquestHudStatusViewModel(topHelpReadyVm);
-        const topClockVm = deriveConquestHudClockViewModel();
-        conquestPhase3PublishTopHudDerivedSlicesForPid(pid, topStatusVm, topHelpReadyVm, topClockVm);
 
         const perspective = conquestPhase3GetPerspectiveTeams(p);
         let refs: HudRefs | undefined = State.hudCache.hudByPid[pid];
@@ -3685,7 +3723,6 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
         const hudVm = deriveHudViewModelForPlayer(pid, perspective, mappedCaptureStates, maxFlagSlots);
         conquestPhase3PublishDerivedHudSlicesForPid(pid, hudVm);
         conquestPhase3PublishHudProjectionDebugSnapshotForPid(pid, hudVm);
-
         if (CONQUEST_PHASE3_UI_OWNERSHIP_PROBE_HIDE_V2) {
             conquestPhase3ForceHideAllV2Widgets(refs);
             continue;
@@ -3717,7 +3754,9 @@ function conquestPhase2AOnLiveTick(): void {
     // Keep capture-state authoritative even if event-driven capture callbacks miss a transition frame.
     conquestPhase2ASyncMappedCapturePointsFromEngine();
     // Run suppression outside the regular dirty-render gate so stale engage rows never linger.
-    conquestPhase3EnforceSuppressedEngageWidgets();
+    if (!isConquestCombatRenderOwnerV2()) {
+        conquestPhase3EnforceSuppressedEngageWidgets();
+    }
     conquestPhase2AApplyBleedTick();
     conquestPhase2ACheckEndCondition();
     updateConquestPhase2ADebugHudForAllPlayers();

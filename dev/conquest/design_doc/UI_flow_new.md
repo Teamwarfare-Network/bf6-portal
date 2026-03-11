@@ -61,6 +61,7 @@ Out of scope for first implementation pass:
 18. No schema/internal lifecycle versioning for HUD ownership resets; each game load is treated as fresh script runtime.
 19. UI/HUD projection is script-authoritative from game state; if visual state must persist, it is stored in per-player state (not hidden in UI code paths).
 20. Telemetry requirements are part of architecture planning (per-player UI instance count and update-rate tracking), implementation deferred.
+21. Join prompt can be intentionally policy-disabled, but suppression state/events must still be tracked per player.
 
 ### 3.1 UI Classification Contract (Locked)
 
@@ -162,6 +163,12 @@ Pending:
 ### 6.6 Reconnect/Leave
 1. Full per-pid cleanup (roots, cache, lifecycle tokens).
 2. Rejoin path behaves like fresh join.
+
+### 6.7 Join Prompt Policy
+1. Join prompt remains disabled by policy unless explicitly enabled.
+2. Disabled policy must still write per-player suppression telemetry/state.
+3. Suppression state must be explicit in runtime state (not implied by early returns alone).
+4. Existing widget cleanup must still run when policy disables prompt rendering.
 
 ## 7) Cache Contract (New)
 

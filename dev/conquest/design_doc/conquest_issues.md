@@ -251,3 +251,29 @@ Current Workstream:
 - Root-subtree ref drift found: global name lookups (`safeFind`) could still bind gameplay refs to off-root same-name widgets even when the centered root chain was valid.
 - Ref-owner hardening applied: after centered root pin, gameplay refs are now rebound via subtree-scoped lookup (`FindUIWidgetWithName(name, ticketsRoot/flagsRoot)`) so runtime paths cannot target off-root duplicates.
 - Critical-ref ownership expanded: validation now requires ticket container/bar parent contracts and flag slot/engage/popout parent contracts, forcing immediate teardown rebuild on any off-root handle selection.
+- Latest regression evidence (2026-03-11):
+  - `reference_design_documentation/testing_images/current_testing2.PNG` shows top combat lane collapse/off-center behavior after enabling combat owner `v2`, while ready/triple-tap flows remain functional.
+- Code-trace findings (2026-03-11):
+  - `src/config/conquest-constants.ts` now sets `CONQUEST_COMBAT_RENDER_OWNER = "v2"`.
+  - `src/index/capture-tickets.ts` returns early to the v2 owner path and bypasses legacy combat-lane critical-ref geometry validation.
+  - `src/ui/conquest/combat-v2/render.ts` critical-ref gate currently checks handle presence only (no parent-chain/anchor/position validation).
+  - `src/ui/conquest/combat-v2/build.ts` uses `safeFind(name)` first and does not perform duplicate-name purge or subtree ownership validation before reuse.
+  - `src/ui/conquest/combat-v2/lifecycle.ts` `resetAllConquestCombatHudV2()` only destroys entries present in v2 cache; stale same-name widgets can survive when runtime/cache state is reset by crash/reload.
+- Immediate containment plan:
+  1. Add v2 root-chain validation (parent handle + anchor + position geometry) and fail-close rebuild.
+  2. Add one-time duplicate purge for v2 root chain per PID before first ensure.
+  3. Add startup hard-purge of v2 widget names for active players before first v2 render pass.
+- Additional regression evidence (2026-03-11):
+  - `reference_design_documentation/testing_images/current_testing3.PNG` still shows legacy-style left-aligned combat lane fragments while centered v2 lane is expected.
+- Additional root-cause finding (2026-03-11):
+  - `src/ui/conquest/hud-build.ts` still built legacy combat roots/widgets during `ensureHudForPlayer()` even when combat owner was `v2` (`combatHudEnabled === false`).
+  - This allowed legacy combat artifacts to survive/render in mixed-owner sessions and visually mask v2 ownership behavior.
+- Mitigation applied (2026-03-11):
+  - Legacy combat build block in `ensureHudForPlayer()` is now gated by `combatHudEnabled`; when owner is `v2`, legacy combat roots are not built and only non-combat HUD lanes remain.
+- Architecture cutover requirement (2026-03-11):
+  - Mixed-owner regressions confirm containment patches are insufficient as a long-term strategy.
+  - Hard-cut replacement plan is now authored in `design_doc/UI_flow_new_v2.md` with:
+    - all-new `twlConquestHud*` function namespace,
+    - all-new `TwlConquestHud_*` widget naming contract,
+    - runtime mode toggle (`off` / `legacy` / `core`),
+    - explicit ban on legacy combat function/name reuse in `core` mode.

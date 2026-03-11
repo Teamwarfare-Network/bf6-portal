@@ -242,6 +242,11 @@ interface GameState {
         joinPromptTipIndexByPid: Record<number, number>;
         joinPromptTipsUnlockedByPid: Record<number, boolean>;
         joinPromptTripleTapArmedByPid: Record<number, boolean>;
+        // Join prompt policy/telemetry tracking (prompt can be intentionally disabled by design).
+        joinPromptPolicyDisabledByPid: Record<number, boolean>;
+        joinPromptPolicySuppressedCountByPid: Record<number, number>;
+        joinPromptLastPolicySuppressedAtSecondsByPid: Record<number, number>;
+        joinPromptLastSuppressionReasonByPid: Record<number, number>;
         inMainBaseByPid: Record<number, boolean>;
         overTakeoffLimitByPid: Record<number, boolean>;
         deployedByPid: Record<number, boolean>;

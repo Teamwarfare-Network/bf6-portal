@@ -27,6 +27,9 @@ async function onGameModeStartedImpl(): Promise<void> {
     initializeConquestPhase1Scaffold();
     conquestPhase2AResetNotLiveState();
     conquestPhase2BOnNotLiveReset();
+    resetAllConquestCombatHudV2();
+    hardPurgeConquestCombatHudV2ForConnectedPlayers();
+    resetConquestCombatHudV2Scheduler();
 
     // Apply initial engine variables/settings used by the mode (authoritative baseline).
     mod.SetGameModeTargetScore(GAMEMODE_TARGET_SCORE_SAFETY_CAP);

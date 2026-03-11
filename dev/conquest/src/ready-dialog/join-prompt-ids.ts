@@ -23,6 +23,11 @@ function joinPromptNeverShowButtonBorderName(pid: number): string { return joinP
 // Returns the never-show button text widget id for the player's join prompt.
 function joinPromptNeverShowButtonTextName(pid: number): string { return "join_prompt_never_show_text_" + pid; }
 
+const JOIN_PROMPT_SUPPRESSION_REASON_NONE = 0;
+const JOIN_PROMPT_SUPPRESSION_REASON_POLICY_DISABLED = 1;
+const JOIN_PROMPT_SUPPRESSION_REASON_NEVER_SHOW = 2;
+const JOIN_PROMPT_SUPPRESSION_REASON_ALREADY_OPEN = 3;
+
 // Deletes a join prompt widget safely when tearing down prompt UI elements.
 function deleteJoinPromptWidget(name: string): void {
     const w = safeFind(name);
@@ -40,22 +45,47 @@ function isJoinPromptSuppressedForPlayer(pid: number): boolean {
     return !!State.players.joinPromptNeverShowByPidMap[pid]?.[ACTIVE_MAP_KEY];
 }
 
+// Records join-prompt suppression policy telemetry so disabled behavior is explicit in state.
+function setJoinPromptSuppressionStateForPid(pid: number, suppressionReason: number): void {
+    State.players.joinPromptLastSuppressionReasonByPid[pid] = suppressionReason;
+    if (suppressionReason === JOIN_PROMPT_SUPPRESSION_REASON_POLICY_DISABLED) {
+        State.players.joinPromptPolicyDisabledByPid[pid] = true;
+        State.players.joinPromptPolicySuppressedCountByPid[pid] = (State.players.joinPromptPolicySuppressedCountByPid[pid] ?? 0) + 1;
+        State.players.joinPromptLastPolicySuppressedAtSecondsByPid[pid] = Math.floor(mod.GetMatchTimeElapsed());
+        return;
+    }
+    State.players.joinPromptPolicyDisabledByPid[pid] = false;
+}
+
 // Persist "Never Show Again" per-map so other maps can still show the prompt
 function setJoinPromptSuppressedForPlayer(pid: number): void {
     if (!State.players.joinPromptNeverShowByPidMap[pid]) {
         State.players.joinPromptNeverShowByPidMap[pid] = {};
     }
     State.players.joinPromptNeverShowByPidMap[pid][ACTIVE_MAP_KEY] = true;
+    setJoinPromptSuppressionStateForPid(pid, JOIN_PROMPT_SUPPRESSION_REASON_NEVER_SHOW);
 }
 
 // Lightweight gating used for both join-time and undeploy prompts (join-time "only once" is tracked separately).
 function shouldShowJoinPromptForPlayer(player: mod.Player): boolean {
-    if (!SHOW_HELP_TEXT_PROMPT_ON_JOIN) return false;
     if (!player || !mod.IsPlayerValid(player)) return false;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return false;
-    if (isJoinPromptSuppressedForPlayer(pid)) return false;
-    if (safeFind(joinPromptRootName(pid))) return false;
+    ensureJoinPromptStateForPid(pid);
+    if (!SHOW_HELP_TEXT_PROMPT_ON_JOIN) {
+        setJoinPromptSuppressionStateForPid(pid, JOIN_PROMPT_SUPPRESSION_REASON_POLICY_DISABLED);
+        deleteJoinPromptWidget(joinPromptRootName(pid));
+        return false;
+    }
+    if (isJoinPromptSuppressedForPlayer(pid)) {
+        setJoinPromptSuppressionStateForPid(pid, JOIN_PROMPT_SUPPRESSION_REASON_NEVER_SHOW);
+        return false;
+    }
+    if (safeFind(joinPromptRootName(pid))) {
+        setJoinPromptSuppressionStateForPid(pid, JOIN_PROMPT_SUPPRESSION_REASON_ALREADY_OPEN);
+        return false;
+    }
+    setJoinPromptSuppressionStateForPid(pid, JOIN_PROMPT_SUPPRESSION_REASON_NONE);
     return true;
 }
 

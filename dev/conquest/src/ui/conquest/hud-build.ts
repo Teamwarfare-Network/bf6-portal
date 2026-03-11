@@ -24,7 +24,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     if (!player || !mod.IsPlayerValid(player)) return undefined;
 
     const pid = getObjId(player);
-    const combatHudEnabled = CONQUEST_COMBAT_HUD_ENABLED;
+    const combatHudEnabled = CONQUEST_COMBAT_HUD_ENABLED && !isConquestCombatRenderOwnerV2();
     // Build-order authority:
     // ensure the clock root exists before conquest lanes so parent selection is correct on first build.
     ensureClockUIAndGetCache(player);
@@ -746,6 +746,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     );
     buildConquestAdminActionCounterWidget(player, pid, refs);
 
+    if (combatHudEnabled) {
     {
         const conquestTickets = modlib.ParseUI({
             name: `ConquestTicketsHudRoot_${pid}`,
@@ -3407,6 +3408,14 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     purgeLegacyConquestRoots();
     purgeLegacyFlagTripletRows();
     purgeLegacyTopCoreContainers();
+    } else {
+        // v2-owner isolation:
+        // do not build legacy combat trees when combat-v2 owns rendering.
+        // Keep only non-combat top HUD surfaces and remove any legacy combat leftovers.
+        purgeLegacyConquestRoots();
+        purgeLegacyFlagTripletRows();
+        purgeLegacyTopCoreContainers();
+    }
 
     //#endregion ----------------- HUD Build/Ensure - Admin Action Counter --------------------
 

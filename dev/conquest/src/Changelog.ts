@@ -3,6 +3,22 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.412: CQ_Bug_9 isolate v2 owner: stop legacy combat build in ensureHudForPlayer
+// v0.411: CQ_Bug_9 v2 containment: startup hard purge + first-ensure duplicate purge + centered root-chain validation
+// v0.410: phase3 hud: isolate v2 combat loop + fail-open optional widgets
+// v0.409: v2 owner flow fix: keep non-combat HUD updates active while suppressing legacy combat lanes
+// v0.408: enable combat HUD gate for v2-only centering validation pass
+// v0.407: combat HUD single-owner cutover: suppress legacy combat render path when v2 owner is active
+// v0.406: disable combat HUD feature gate to restore baseline non-combat verification
+// v0.405: enable combat HUD feature gate for in-game v2 testing
+// v0.404: combat-v2: add ticket bleed-chevron widgets and render counts from bleed differential
+// v0.403: combat-v2: add ticket leader border widgets with per-side render + lifecycle cleanup
+// v0.402: combat-v2: run main lane render each cadence tick (remove stale dirty gating)
+// v0.401: combat-v2: render active popout/engage lanes and add lifecycle hide/destroy coverage
+// v0.400: combat v2 flags lane scaffolded (7 centered slots with label/fill render) and lifecycle hide/destroy coverage added
+// v0.399: combat v2 tickets lane scaffolded (bars/counters) under deterministic v2 root chain; hidden when combat gate is off
+// v0.398: combat v2 now builds/pins deterministic root chain (TopHudRoot->CombatV2->tickets/flags) with explicit hide/destroy lifecycle on swap/cleanup
+// v0.397: combat v2 scaffold added (layout/cache/lifecycle/render/scheduler owners) plus join prompt policy-disabled suppression tracking
 // v0.396: combat HUD isolation gate; preserve ready/admin/branding/victory paths while combat HUD is disabled
 // v0.391: HUD subtree ref-owner enforcement: Conquest cached/build ensure now rebinds tickets/flags/popout/engage refs from pinned centered subtrees only (no global same-name lookup), and live critical checks now validate child-parent ownership for ticket containers/bars and flag slot roots so off-root/top-left handles are hard-rejected and rebuilt
 // v0.390: HUD critical-ref geometry gate: live render critical checks now require centered anchor+position for TopHudRoot/ConquestCombatHudRoot/TicketsRoot/FlagsRoot (not just parent-chain), forcing rebuild whenever a top-left root chain appears

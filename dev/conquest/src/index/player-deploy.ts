@@ -36,6 +36,9 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
 
     const wasAlreadyDeployed = !!State.players.deployedByPid[pid];
     conquestPhase2BOnPlayerDeployed(eventPlayer, wasAlreadyDeployed);
+    setConquestCombatHudV2TeamSwapPending(pid, false);
+    markConquestCombatHudV2DirtyForPid(pid);
+    markConquestCombatHudV2AnimationDirtyForPid(pid);
     State.players.deployedByPid[pid] = true;
     State.conquest.debug.teamSwapHudResetPendingByPid[pid] = false;
     State.players.joinPromptTripleTapArmedByPid[pid] = false;
