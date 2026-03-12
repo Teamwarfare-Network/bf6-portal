@@ -221,4 +221,25 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
     );
 }
 
+// Warms and caches the Ready dialog once so first real open is instant and does not rely on per-tick timing.
+function ensureReadyDialogUiWarmCacheForPlayer(eventPlayer: mod.Player): void {
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    const playerId = safeGetPlayerId(eventPlayer);
+    if (playerId === undefined) return;
+    if (!State.players.readyDialogData[playerId]) {
+        initReadyDialogData(eventPlayer);
+    }
+    const readyData = State.players.readyDialogData[playerId];
+    if (!readyData || readyData.uiBuilt) return;
+    try {
+        createReadyDialogUI(eventPlayer);
+        // Warm-up build must not count as visible/open state.
+        readyData.dialogVisible = false;
+        hideReadyDialogUI(eventPlayer);
+        readyData.uiBuilt = true;
+    } catch {
+        // Leave uiBuilt=false so a later attempt can recover.
+    }
+}
+
 //#endregion ----------------- Dialog Buttons (Left Side) - Cancel --------------------

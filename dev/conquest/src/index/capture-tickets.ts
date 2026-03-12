@@ -588,6 +588,23 @@ function conquestPhase3ForceHideCombatHudForAllPlayersFromCache(): void {
     }
 }
 
+// One-shot legacy suppression gate for core HUD mode.
+// Running full legacy hide on every 0.25s core tick is expensive and can delay UI/input callbacks.
+let conquestPhase3CoreLegacySuppressionArmed = true;
+
+// Applies legacy HUD suppression when core mode starts or when a force refresh explicitly requests it.
+function conquestPhase3ApplyCoreLegacySuppression(force?: boolean): void {
+    if (!force && !conquestPhase3CoreLegacySuppressionArmed) return;
+    hideAllConquestCombatHudV2();
+    conquestPhase3ForceHideCombatHudForAllPlayersFromCache();
+    conquestPhase3CoreLegacySuppressionArmed = false;
+}
+
+// Re-arms core suppression so the next transition back to core mode performs one cleanup pass.
+function conquestPhase3ArmCoreLegacySuppression(): void {
+    conquestPhase3CoreLegacySuppressionArmed = true;
+}
+
 // Publishes derived top-HUD slices shared by status/help/clock owners.
 function conquestPhase3PublishTopHudDerivedSlicesForPid(
     pid: number,
@@ -1514,7 +1531,8 @@ function deriveConquestHudHelpReadyViewModel(pid: number): ConquestHudHelpReadyV
         && (!State.round.flow.cleanupActive)
         && isDeployed;
     const showHelp = canShow && (!isMatchLive()) && (!isReady) && (!isDialogOpen);
-    const showReady = canShow && (!isMatchLive()) && isReady && (!isDialogOpen);
+    // Keep ready acknowledgment visible in top-left status lane even while the dialog is open.
+    const showReady = canShow && (!isMatchLive()) && isReady;
     return {
         showHelp,
         showReady,
@@ -3676,13 +3694,11 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
             // Hard-cut mode: new TwlConquestHud pipeline is the only combat HUD owner.
             twlConquestHudTickFrame(force);
             twlConquestHudTickAnimation(force);
-            hideAllConquestCombatHudV2();
-            conquestPhase3ForceHideCombatHudForAllPlayersFromCache();
+            conquestPhase3ApplyCoreLegacySuppression(force);
         } catch {
             // HUD core is optional for gameplay; keep mode alive and allow core to self-recover on next tick.
             twlConquestHudHideAllPlayers();
-            hideAllConquestCombatHudV2();
-            conquestPhase3ForceHideCombatHudForAllPlayersFromCache();
+            conquestPhase3ApplyCoreLegacySuppression(force);
         }
         if (force) {
             State.conquest.debug.hudLastUpdatedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
@@ -3691,6 +3707,7 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
         return;
     }
     if (hudMode === "off") {
+        conquestPhase3ArmCoreLegacySuppression();
         twlConquestHudHideAllPlayers();
         hideAllConquestCombatHudV2();
         conquestPhase3ForceHideCombatHudForAllPlayersFromCache();
@@ -3698,6 +3715,7 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
         return;
     }
 
+    conquestPhase3ArmCoreLegacySuppression();
     const useCombatV2Owner = isConquestCombatRenderOwnerV2();
     conquestPhase3RunCombatLoopByOwner(force);
     if (useCombatV2Owner) {

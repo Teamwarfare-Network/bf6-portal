@@ -4,6 +4,7 @@
 //#region -------------------- Ready Dialog Interaction Actions --------------------
 
 const TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS = 0.6;
+const TEAM_SWAP_FORCE_REDEPLOY_SECONDS = 0;
 
 // Performs the authoritative conquest HUD reset for one player before team-swap redraw.
 // Contract: hide -> destroy -> delayed rebuild -> resume updates after deploy release.
@@ -120,11 +121,9 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
     conquestPhase3MarkHudDirty();
     void refreshConquestHudAfterTeamSwap(eventPlayer);
 
-    // Force a rapid return to the deploy screen so the player respawns on the new team.
-    // Note: do not modify redeploy timers globally; we only force an undeploy so the player can choose spawn manually.
-    // Ensure team swapping does not grant faster-than-normal respawn timing.
-    // Reuse the shared redeploy delay constant for consistent forced-undeploy behavior.
-    mod.SetRedeployTime(eventPlayer, ROUND_END_REDEPLOY_DELAY_SECONDS);
+    // Force a rapid return to the deploy screen so the player can immediately redeploy on the new team.
+    // Keep this path latency-free to avoid long HUD/ready-dialog blackout after a team swap.
+    mod.SetRedeployTime(eventPlayer, TEAM_SWAP_FORCE_REDEPLOY_SECONDS);
     void forceUndeployPlayer(eventPlayer, "team_switch");
 
     sendHighlightedWorldLogMessage(

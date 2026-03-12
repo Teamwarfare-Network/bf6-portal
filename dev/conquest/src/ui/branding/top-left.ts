@@ -1,7 +1,16 @@
 // @ts-nocheck
-// Module: ui/branding/top-left -- static top-left branding and settings summary widgets
+// Module: ui/branding/top-left -- static top-left branding and status widgets
 
-// Deletes all widgets by one name so top-left branding roots cannot accumulate duplicate instances across rebuild churn.
+const TOP_LEFT_BASE_X = 5;
+const TOP_LEFT_BASE_Y_OFFSET = 5;
+const TOP_LEFT_BRANDING_WIDTH = 200;
+const TOP_LEFT_STATUS_WIDTH = 144;
+const TOP_LEFT_STATUS_HEIGHT = 30;
+const TOP_LEFT_STATUS_GAP_X = 8;
+const TOP_LEFT_STATUS_LINE_ONE_Y = 1;
+const TOP_LEFT_STATUS_LINE_TWO_Y = 15;
+
+// Deletes all widgets by one name so top-left roots cannot accumulate duplicate instances across rebuild churn.
 function deleteAllBrandingWidgetsByName(name: string, maxPasses: number = 96): void {
     for (let i = 0; i < maxPasses; i++) {
         const widget = safeFind(name);
@@ -14,22 +23,20 @@ function deleteAllBrandingWidgetsByName(name: string, maxPasses: number = 96): v
     }
 }
 
+// Builds only the static branding panel in the top-left lane.
 function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, refs: HudRefs): void {
-    const TOP_LEFT_BASE_X = 5;
-    const TOP_LEFT_BASE_Y = 5 + TOP_HUD_OFFSET_Y + CONQUEST_HUD_NON_CLOCK_SHIFT_Y;
-    const BRANDING_WIDTH = 200;
+    const topLeftBaseY = TOP_LEFT_BASE_Y_OFFSET + TOP_HUD_OFFSET_Y + CONQUEST_HUD_NON_CLOCK_SHIFT_Y;
 
-    // Build-path cleanup: force single-instance naming for branding/status stacks before ParseUI creates fresh roots.
+    // Build-path cleanup for branding only (plus legacy settings root removal).
     deleteAllBrandingWidgetsByName(`Upper_Left_Container_${pid}`);
-    deleteAllBrandingWidgetsByName(`Upper_Left_Status_${pid}`);
     deleteAllBrandingWidgetsByName(`Upper_Left_Settings_${pid}`);
 
     const upperLeft = modlib.ParseUI({
         name: `Upper_Left_Container_${pid}`,
         type: "Container",
         playerId: player,
-        position: [TOP_LEFT_BASE_X, TOP_LEFT_BASE_Y],
-        size: [BRANDING_WIDTH, 30],
+        position: [TOP_LEFT_BASE_X, topLeftBaseY],
+        size: [TOP_LEFT_BRANDING_WIDTH, 30],
         anchor: mod.UIAnchor.TopLeft,
         visible: true,
         padding: 1,
@@ -77,186 +84,119 @@ function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, re
         refs.roots.push(upperLeft);
         refs.upperLeftContainer = upperLeft;
     }
+}
 
-    const statusStack = modlib.ParseUI({
-        name: `Upper_Left_Status_${pid}`,
+// Builds one static top-left status lane using fixed absolute placement for box + state/ready text lines.
+function buildConquestStaticStatusLaneWidgets(player: mod.Player, pid: number, refs: HudRefs): void {
+    const topLeftBaseY = TOP_LEFT_BASE_Y_OFFSET + TOP_HUD_OFFSET_Y + CONQUEST_HUD_NON_CLOCK_SHIFT_Y;
+    const statusRootName = `TwlConquestStatusDockRoot_${pid}`;
+    const statusPrimaryTextName = `TwlConquestStatusDockState_${pid}`;
+    const statusSecondaryTextName = `TwlConquestStatusDockReady_${pid}`;
+
+    // Hard-cut cleanup: remove all current + prior status lane names before creating one authoritative static lane.
+    deleteAllBrandingWidgetsByName(statusRootName);
+    deleteAllBrandingWidgetsByName(statusPrimaryTextName);
+    deleteAllBrandingWidgetsByName(statusSecondaryTextName);
+    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusPanelRoot_${pid}`);
+    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusPanelStateText_${pid}`);
+    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusPanelReadyText_${pid}`);
+    deleteAllBrandingWidgetsByName(`TwlConquestStatusStaticBox_${pid}`);
+    deleteAllBrandingWidgetsByName(`TwlConquestStatusStaticText_${pid}`);
+    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusLaneRoot_${pid}`);
+    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusLanePrimaryText_${pid}`);
+    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusLaneSecondaryText_${pid}`);
+    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusContainer_${pid}`);
+    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusStateText_${pid}`);
+    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusReadyText_${pid}`);
+    deleteAllBrandingWidgetsByName(`TwlConquestStatusPanel_${pid}`);
+    deleteAllBrandingWidgetsByName(`TwlConquestStatusStateLine_${pid}`);
+    deleteAllBrandingWidgetsByName(`TwlConquestStatusReadyLine_${pid}`);
+    deleteAllBrandingWidgetsByName(`Upper_Left_Status_${pid}`);
+    deleteAllBrandingWidgetsByName(`Upper_Left_Status_StateText_${pid}`);
+    deleteAllBrandingWidgetsByName(`Upper_Left_Status_ReadyText_${pid}`);
+    deleteAllBrandingWidgetsByName(`RoundStateRoot_${pid}`);
+    deleteAllBrandingWidgetsByName(`RoundStateText_${pid}`);
+    deleteAllBrandingWidgetsByName(`PlayersReadyText_${pid}`);
+    deleteAllBrandingWidgetsByName(`Container_ReadyStatus_${pid}`);
+    deleteAllBrandingWidgetsByName(`ReadyStatusText_${pid}`);
+
+    const statusX = TOP_LEFT_BASE_X + TOP_LEFT_BRANDING_WIDTH + TOP_LEFT_STATUS_GAP_X;
+    const statusY = topLeftBaseY;
+    const statusLane = modlib.ParseUI({
+        name: statusRootName,
         type: "Container",
         playerId: player,
-        position: [TOP_LEFT_BASE_X + BRANDING_WIDTH + 8, TOP_LEFT_BASE_Y],
-        size: [206, 30],
+        position: [statusX, statusY],
+        size: [TOP_LEFT_STATUS_WIDTH, TOP_LEFT_STATUS_HEIGHT],
         anchor: mod.UIAnchor.TopLeft,
         visible: true,
         padding: 1,
         bgColor: [0.251, 0.0941, 0.0667],
         bgAlpha: 0.5625,
         bgFill: mod.UIBgFill.Blur,
-        children: [
-            {
-                name: `Upper_Left_Status_StateText_${pid}`,
-                type: "Text",
-                position: [0, 1],
-                size: [206, 14],
-                anchor: mod.UIAnchor.TopLeft,
-                visible: true,
-                padding: 0,
-                bgAlpha: 0,
-                bgFill: mod.UIBgFill.None,
-                textLabel: mod.stringkeys.twl.hud.roundStateNotReady,
-                textColor: [0.95, 0.95, 0.95],
-                textAlpha: 1,
-                textSize: 11,
-                textAnchor: mod.UIAnchor.Center,
-            },
-            {
-                name: `Upper_Left_Status_ReadyText_${pid}`,
-                type: "Text",
-                position: [0, 15],
-                size: [206, 15],
-                anchor: mod.UIAnchor.TopLeft,
-                visible: false,
-                padding: 0,
-                bgAlpha: 0,
-                bgFill: mod.UIBgFill.None,
-                textLabel: "",
-                textColor: [1, 0.9059, 0.3373],
-                textAlpha: 1,
-                textSize: 11,
-                textAnchor: mod.UIAnchor.Center,
-            },
-        ],
     });
-    if (statusStack) {
-        refs.roots.push(statusStack);
-        refs.upperLeftStatusContainer = statusStack;
-        refs.upperLeftStatusStateText = safeFind(`Upper_Left_Status_StateText_${pid}`);
-        refs.upperLeftStatusReadyText = safeFind(`Upper_Left_Status_ReadyText_${pid}`);
+    const statusPrimaryText = modlib.ParseUI({
+        name: statusPrimaryTextName,
+        type: "Text",
+        playerId: player,
+        position: [statusX, statusY + TOP_LEFT_STATUS_LINE_ONE_Y],
+        size: [TOP_LEFT_STATUS_WIDTH, 15],
+        anchor: mod.UIAnchor.TopLeft,
+        visible: true,
+        padding: 0,
+        bgAlpha: 0,
+        bgFill: mod.UIBgFill.None,
+        textLabel: mod.stringkeys.twl.hud.roundStateNotReady,
+        textColor: [0.6784, 0.9922, 0.5255],
+        textAlpha: 1,
+        textSize: 9,
+        textAnchor: mod.UIAnchor.Center,
+    });
+    const statusSecondaryText = modlib.ParseUI({
+        name: statusSecondaryTextName,
+        type: "Text",
+        playerId: player,
+        position: [statusX, statusY + TOP_LEFT_STATUS_LINE_TWO_Y],
+        size: [TOP_LEFT_STATUS_WIDTH, 15],
+        anchor: mod.UIAnchor.TopLeft,
+        visible: false,
+        padding: 0,
+        bgAlpha: 0,
+        bgFill: mod.UIBgFill.None,
+        textLabel: mod.Message(mod.stringkeys.twl.hud.playersReadyFormat, 0, 0),
+        textColor: [1, 0.9059, 0.3373],
+        textAlpha: 1,
+        textSize: 9,
+        textAnchor: mod.UIAnchor.Center,
+    });
+
+    if (statusLane) {
+        refs.roots.push(statusLane);
+        try {
+            mod.SetUIWidgetDepth(statusLane, mod.UIDepth.AboveGameUI);
+        } catch {
+            // Keep HUD build resilient if one static layout write fails.
+        }
     }
-
-    const SETTINGS_CONTAINER_X = TOP_LEFT_BASE_X;
-    const SETTINGS_CONTAINER_Y = TOP_LEFT_BASE_Y + 30 + 6;
-    const SETTINGS_LINE_HEIGHT = 12;
-    const SETTINGS_TEXT_WIDTH = BRANDING_WIDTH;
-    const SETTINGS_TEXT_SIZE = 9;
-    const SETTINGS_TEXT_COLOR: [number, number, number] = [0.6784, 0.9922, 0.5255];
-
-    const settingsSummary = modlib.ParseUI({
-        name: `Upper_Left_Settings_${pid}`,
-        type: "Container",
-        playerId: player,
-        position: [SETTINGS_CONTAINER_X, SETTINGS_CONTAINER_Y],
-        size: [SETTINGS_TEXT_WIDTH, SETTINGS_LINE_HEIGHT * 6],
-        anchor: mod.UIAnchor.TopLeft,
-        visible: true,
-        padding: 1,
-        bgColor: [0.251, 0.0941, 0.0667],
-        bgAlpha: 0.5625,
-        bgFill: mod.UIBgFill.Blur,
-        children: [
-            {
-                name: `Settings_GameMode_${pid}`,
-                type: "Text",
-                position: [6, 0],
-                size: [SETTINGS_TEXT_WIDTH - 12, 16],
-                anchor: mod.UIAnchor.TopLeft,
-                visible: true,
-                padding: 0,
-                bgAlpha: 0,
-                bgFill: mod.UIBgFill.None,
-                textLabel: mod.Message(STR_HUD_SETTINGS_GAME_MODE_FORMAT, STR_HUD_SETTINGS_GAME_MODE_DEFAULT),
-                textColor: SETTINGS_TEXT_COLOR,
-                textAlpha: 1,
-                textSize: SETTINGS_TEXT_SIZE,
-                textAnchor: mod.UIAnchor.TopLeft,
-            },
-            {
-                name: `Settings_Ceiling_${pid}`,
-                type: "Text",
-                position: [6, SETTINGS_LINE_HEIGHT],
-                size: [SETTINGS_TEXT_WIDTH - 12, 16],
-                anchor: mod.UIAnchor.TopLeft,
-                visible: true,
-                padding: 0,
-                bgAlpha: 0,
-                bgFill: mod.UIBgFill.None,
-                textLabel: mod.Message(STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT, STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA),
-                textColor: SETTINGS_TEXT_COLOR,
-                textAlpha: 1,
-                textSize: SETTINGS_TEXT_SIZE,
-                textAnchor: mod.UIAnchor.TopLeft,
-            },
-            {
-                name: `Settings_VehiclesT1_${pid}`,
-                type: "Text",
-                position: [6, SETTINGS_LINE_HEIGHT * 2],
-                size: [SETTINGS_TEXT_WIDTH - 12, 16],
-                anchor: mod.UIAnchor.TopLeft,
-                visible: true,
-                padding: 0,
-                bgAlpha: 0,
-                bgFill: mod.UIBgFill.None,
-                textLabel: mod.Message(
-                    STR_HUD_SETTINGS_VEHICLES_TEAM_FORMAT,
-                    getTeamNameKey(TeamID.Team1),
-                    STR_HUD_SETTINGS_VALUE_DEFAULT
-                ),
-                textColor: SETTINGS_TEXT_COLOR,
-                textAlpha: 1,
-                textSize: SETTINGS_TEXT_SIZE,
-                textAnchor: mod.UIAnchor.TopLeft,
-            },
-            {
-                name: `Settings_VehiclesT2_${pid}`,
-                type: "Text",
-                position: [6, SETTINGS_LINE_HEIGHT * 3],
-                size: [SETTINGS_TEXT_WIDTH - 12, 16],
-                anchor: mod.UIAnchor.TopLeft,
-                visible: true,
-                padding: 0,
-                bgAlpha: 0,
-                bgFill: mod.UIBgFill.None,
-                textLabel: mod.Message(
-                    STR_HUD_SETTINGS_VEHICLES_TEAM_FORMAT,
-                    getTeamNameKey(TeamID.Team2),
-                    STR_HUD_SETTINGS_VALUE_DEFAULT
-                ),
-                textColor: SETTINGS_TEXT_COLOR,
-                textAlpha: 1,
-                textSize: SETTINGS_TEXT_SIZE,
-                textAnchor: mod.UIAnchor.TopLeft,
-            },
-            {
-                name: `Settings_VehiclesMatchup_${pid}`,
-                type: "Text",
-                position: [6, SETTINGS_LINE_HEIGHT * 4],
-                size: [SETTINGS_TEXT_WIDTH - 12, 16],
-                anchor: mod.UIAnchor.TopLeft,
-                visible: true,
-                padding: 0,
-                bgAlpha: 0,
-                bgFill: mod.UIBgFill.None,
-                textLabel: mod.Message(STR_HUD_SETTINGS_VEHICLES_MATCHUP_FORMAT, 1, 1),
-                textColor: SETTINGS_TEXT_COLOR,
-                textAlpha: 1,
-                textSize: SETTINGS_TEXT_SIZE,
-                textAnchor: mod.UIAnchor.TopLeft,
-            },
-            {
-                name: `Settings_Players_${pid}`,
-                type: "Text",
-                position: [6, SETTINGS_LINE_HEIGHT * 5],
-                size: [SETTINGS_TEXT_WIDTH - 12, 16],
-                anchor: mod.UIAnchor.TopLeft,
-                visible: true,
-                padding: 0,
-                bgAlpha: 0,
-                bgFill: mod.UIBgFill.None,
-                textLabel: mod.Message(STR_HUD_SETTINGS_PLAYERS_FORMAT, 1, 1),
-                textColor: SETTINGS_TEXT_COLOR,
-                textAlpha: 1,
-                textSize: SETTINGS_TEXT_SIZE,
-                textAnchor: mod.UIAnchor.TopLeft,
-            },
-        ],
-    });
-    if (settingsSummary) refs.roots.push(settingsSummary);
+    if (statusPrimaryText) {
+        refs.roots.push(statusPrimaryText);
+        try {
+            mod.SetUIWidgetDepth(statusPrimaryText, mod.UIDepth.AboveGameUI);
+            mod.SetUIWidgetVisible(statusPrimaryText, true);
+        } catch {
+            // Keep HUD build resilient if one static layout write fails.
+        }
+    }
+    if (statusSecondaryText) {
+        refs.roots.push(statusSecondaryText);
+        try {
+            mod.SetUIWidgetDepth(statusSecondaryText, mod.UIDepth.AboveGameUI);
+            mod.SetUIWidgetVisible(statusSecondaryText, false);
+        } catch {
+            // Keep HUD build resilient if one static layout write fails.
+        }
+    }
+    refs.upperLeftStatusContainer = statusLane;
+    refs.upperLeftStatusStateText = statusPrimaryText;
+    refs.upperLeftStatusReadyText = statusSecondaryText;
 }

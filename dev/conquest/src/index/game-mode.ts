@@ -65,6 +65,8 @@ async function onGameModeStartedImpl(): Promise<void> {
         for (let i = 0; i < count; i++) {
             const p = mod.ValueInArray(players, i) as mod.Player;
             if (!p || !mod.IsPlayerValid(p)) continue;
+            // Startup baseline: clear inherited redeploy delay so connected players are not held by stale forced timers.
+            mod.SetRedeployTime(p, 0);
             // Build/rebuild the player's HUD (widgets) and immediately reflect current authoritative state.
             ensureHudForPlayer(p);
         }

@@ -15,13 +15,6 @@ type HudRefs = {
     upperLeftStatusReadyText?: mod.UIWidget;
     topCenterAuxRoot?: mod.UIWidget;
 
-    settingsGameModeText?: mod.UIWidget;
-    settingsAircraftCeilingText?: mod.UIWidget;
-    settingsVehiclesT1Text?: mod.UIWidget;
-    settingsVehiclesT2Text?: mod.UIWidget;
-    settingsVehiclesMatchupText?: mod.UIWidget;
-    settingsPlayersText?: mod.UIWidget;
-
     // Victory results dialog widgets (shown during match end countdown)
     victoryRoot?: mod.UIWidget;
     victoryRestartText?: mod.UIWidget;

@@ -1,7 +1,7 @@
 // @ts-nocheck
-// Module: ready-dialog/matchup-summary -- team names, matchup readouts, and settings summary HUD
+// Module: ready-dialog/matchup-summary -- team names and matchup/min-player readouts
 
-//#region -------------------- Ready Dialog - Team/Matchup Readouts + Summary HUD --------------------
+//#region -------------------- Ready Dialog - Team/Matchup Readouts --------------------
 
 function updateTeamNameWidgetsForPid(pid: number): void {
     const t1NameKey = getTeamNameKey(TeamID.Team1);
@@ -20,7 +20,7 @@ function updateTeamNameWidgetsForPid(pid: number): void {
     updateReadyDialogModeConfigForPid(pid);
 }
 
-// Refreshes team-name labels for every connected player and then updates summary HUD.
+// Refreshes team-name labels for every connected player.
 function updateTeamNameWidgetsForAllPlayers(): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -29,7 +29,6 @@ function updateTeamNameWidgetsForAllPlayers(): void {
         if (!p || !mod.IsPlayerValid(p)) continue;
         updateTeamNameWidgetsForPid(mod.GetObjId(p));
     }
-    updateSettingsSummaryHudForAllPlayers();
 }
 
 // Refreshes the per-player matchup label (for example, "1 vs 1") while match is not live.
@@ -104,67 +103,11 @@ function updateMatchupReadoutsForAllPlayers(): void {
         if (!p || !mod.IsPlayerValid(p)) continue;
         updateMatchupReadoutsForPid(mod.GetObjId(p));
     }
-    updateSettingsSummaryHudForAllPlayers();
 }
 
-// Uses confirmed mode settings only (pending Ready dialog tweaks are not shown here).
-function updateSettingsSummaryHudForPid(pid: number): void {
-    const refs = State.hudCache.hudByPid[pid];
-    if (!refs) return;
-
-    const cfg = State.round.modeConfig;
-    const gameModeValue = cfg.confirmed.gameMode;
-    const applyCustomCeiling = shouldApplyCustomCeilingForConfig(gameModeValue, cfg.confirmed.aircraftCeilingOverrideEnabled);
-    const ceilingValue = applyCustomCeiling
-        ? Math.floor(cfg.confirmed.aircraftCeiling)
-        : STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA;
-    const vehiclesT1Value = cfg.confirmed.vehiclesT1;
-    const vehiclesT2Value = cfg.confirmed.vehiclesT2;
-
-    const preset = MATCHUP_PRESETS[State.round.matchupPresetIndex] ?? MATCHUP_PRESETS[0];
-    const vehiclesLeft = preset?.leftPlayers ?? 1;
-    const vehiclesRight = preset?.rightPlayers ?? 1;
-    const autoStartCounts = getAutoStartMinPlayerCounts();
-
-    if (refs.settingsGameModeText) {
-        mod.SetUITextLabel(refs.settingsGameModeText, mod.Message(STR_HUD_SETTINGS_GAME_MODE_FORMAT, gameModeValue));
-    }
-    if (refs.settingsAircraftCeilingText) {
-        mod.SetUITextLabel(refs.settingsAircraftCeilingText, mod.Message(STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT, ceilingValue));
-    }
-    if (refs.settingsVehiclesT1Text) {
-        mod.SetUITextLabel(
-            refs.settingsVehiclesT1Text,
-            mod.Message(STR_HUD_SETTINGS_VEHICLES_TEAM_FORMAT, getTeamNameKey(TeamID.Team1), vehiclesT1Value)
-        );
-    }
-    if (refs.settingsVehiclesT2Text) {
-        mod.SetUITextLabel(
-            refs.settingsVehiclesT2Text,
-            mod.Message(STR_HUD_SETTINGS_VEHICLES_TEAM_FORMAT, getTeamNameKey(TeamID.Team2), vehiclesT2Value)
-        );
-    }
-    if (refs.settingsVehiclesMatchupText) {
-        const showMatchupText = !isMatchLive();
-        mod.SetUIWidgetVisible(refs.settingsVehiclesMatchupText, showMatchupText);
-        if (showMatchupText) {
-            mod.SetUITextLabel(refs.settingsVehiclesMatchupText, mod.Message(STR_HUD_SETTINGS_VEHICLES_MATCHUP_FORMAT, vehiclesLeft, vehiclesRight));
-        }
-    }
-    if (refs.settingsPlayersText) {
-        mod.SetUITextLabel(refs.settingsPlayersText, mod.Message(STR_HUD_SETTINGS_PLAYERS_FORMAT, autoStartCounts.left, autoStartCounts.right));
-    }
-}
-
-// Recomputes and applies settings summary HUD text for all connected players.
+// Compatibility no-op: the top-left settings summary widget was removed, but flow callers still invoke this refresh hook.
 function updateSettingsSummaryHudForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        updateSettingsSummaryHudForPid(mod.GetObjId(p));
-    }
+    return;
 }
 
 // Sets minimum active players-per-side with clamping, UI refresh, and optional announce/start check.
@@ -174,6 +117,8 @@ function setAutoStartMinActivePlayers(value: number, eventPlayer?: mod.Player): 
     ensureCustomGameModeForManualChange();
     State.round.autoStartMinActivePlayers = clamped;
     updateMatchupReadoutsForAllPlayers();
+    // Keep top-left status dock ready counts in immediate sync with min-player configuration changes.
+    setMatchStateTextForAllPlayers();
     if (eventPlayer) {
         const counts = getAutoStartMinPlayerCounts();
         sendHighlightedWorldLogMessage(
@@ -231,4 +176,4 @@ function applyMatchupPreset(index: number, eventPlayer: mod.Player): void {
     applyMatchupPresetInternal(index, eventPlayer, true, false);
 }
 
-//#endregion ----------------- Ready Dialog - Team/Matchup Readouts + Summary HUD --------------------
+//#endregion ----------------- Ready Dialog - Team/Matchup Readouts --------------------

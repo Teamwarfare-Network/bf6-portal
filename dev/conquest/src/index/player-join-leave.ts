@@ -23,6 +23,43 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
     deleteJoinPromptWidget(joinPromptRootName(pid));
 
     hideReadyDialogUI(player);
+
+    const deleteAllByName = (name: string, maxPasses: number = 64): void => {
+        for (let i = 0; i < maxPasses; i++) {
+            const widget = safeFind(name);
+            if (!widget) return;
+            try {
+                mod.DeleteUIWidget(widget);
+            } catch {
+                return;
+            }
+        }
+    };
+    deleteAllByName(`TwlConquestHudStatusLaneRoot_${pid}`);
+    deleteAllByName(`TwlConquestHudStatusLanePrimaryText_${pid}`);
+    deleteAllByName(`TwlConquestHudStatusLaneSecondaryText_${pid}`);
+    deleteAllByName(`TwlConquestStatusDockRoot_${pid}`);
+    deleteAllByName(`TwlConquestStatusDockState_${pid}`);
+    deleteAllByName(`TwlConquestStatusDockReady_${pid}`);
+    deleteAllByName(`TwlConquestHudStatusPanelRoot_${pid}`);
+    deleteAllByName(`TwlConquestHudStatusPanelStateText_${pid}`);
+    deleteAllByName(`TwlConquestHudStatusPanelReadyText_${pid}`);
+    deleteAllByName(`TwlConquestStatusStaticBox_${pid}`);
+    deleteAllByName(`TwlConquestStatusStaticText_${pid}`);
+    deleteAllByName(`TwlConquestHudStatusContainer_${pid}`);
+    deleteAllByName(`TwlConquestHudStatusStateText_${pid}`);
+    deleteAllByName(`TwlConquestHudStatusReadyText_${pid}`);
+    deleteAllByName(`TwlConquestStatusPanel_${pid}`);
+    deleteAllByName(`TwlConquestStatusStateLine_${pid}`);
+    deleteAllByName(`TwlConquestStatusReadyLine_${pid}`);
+    deleteAllByName(`Upper_Left_Status_${pid}`);
+    deleteAllByName(`Upper_Left_Status_StateText_${pid}`);
+    deleteAllByName(`Upper_Left_Status_ReadyText_${pid}`);
+    deleteAllByName(`RoundStateRoot_${pid}`);
+    deleteAllByName(`RoundStateText_${pid}`);
+    deleteAllByName(`PlayersReadyText_${pid}`);
+    deleteAllByName(`Container_ReadyStatus_${pid}`);
+    deleteAllByName(`ReadyStatusText_${pid}`);
 }
 
 // Deletes all known per-player HUD roots and cache entries for disconnect/reconnect safety.
@@ -55,11 +92,35 @@ function cleanupHudForPid(pid: number): void {
         `Container_TopLeft_CoreUI_${pid}`,
         `Container_TopRight_CoreUI_${pid}`,
         `Upper_Left_Container_${pid}`,
+        `TwlConquestHudStatusLaneRoot_${pid}`,
+        `TwlConquestHudStatusLanePrimaryText_${pid}`,
+        `TwlConquestHudStatusLaneSecondaryText_${pid}`,
+        `TwlConquestStatusDockRoot_${pid}`,
+        `TwlConquestStatusDockState_${pid}`,
+        `TwlConquestStatusDockReady_${pid}`,
+        `TwlConquestHudStatusPanelRoot_${pid}`,
+        `TwlConquestHudStatusPanelStateText_${pid}`,
+        `TwlConquestHudStatusPanelReadyText_${pid}`,
+        `TwlConquestStatusStaticBox_${pid}`,
+        `TwlConquestStatusStaticText_${pid}`,
+        `TwlConquestHudStatusContainer_${pid}`,
+        `TwlConquestHudStatusStateText_${pid}`,
+        `TwlConquestHudStatusReadyText_${pid}`,
+        `TwlConquestStatusPanel_${pid}`,
+        `TwlConquestStatusStateLine_${pid}`,
+        `TwlConquestStatusReadyLine_${pid}`,
+        `Upper_Left_Status_${pid}`,
+        `Upper_Left_Status_StateText_${pid}`,
+        `Upper_Left_Status_ReadyText_${pid}`,
         `Upper_Left_Settings_${pid}`,
+        `Container_ReadyStatus_${pid}`,
+        `ReadyStatusText_${pid}`,
         `AdminPanelActionCount_${pid}`,
         `VictoryDialogRoot_${pid}`,
         `MatchTimerRoot_${pid}`,
         `RoundStateRoot_${pid}`,
+        `RoundStateText_${pid}`,
+        `PlayersReadyText_${pid}`,
         `PregameCountdownText_${pid}`,
     ];
     for (const name of rootNames) {
@@ -87,6 +148,8 @@ function cleanupHudForPid(pid: number): void {
 // Join entrypoint: initializes per-player state, rebuilds HUD, and re-syncs shared UI projections.
 async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     initReadyDialogData(eventPlayer);
+    // Reset per-player redeploy delay on join so startup HUD/deploy readiness cannot inherit prior forced timers.
+    mod.SetRedeployTime(eventPlayer, 0);
     const joinPid = safeGetPlayerId(eventPlayer);
     const wasDisconnected = joinPid !== undefined && State.players.disconnectedByPid[joinPid] === true;
     if (joinPid !== undefined) {
@@ -109,6 +172,8 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     resetUiForPlayerOnJoin(eventPlayer);
 
     ensureHudForPlayer(eventPlayer);
+    // Deterministic warm-up so first Ready dialog open does not depend on OngoingPlayer cadence.
+    ensureReadyDialogUiWarmCacheForPlayer(eventPlayer);
     // Force a conquest HUD refresh so late joiners immediately receive current tickets/flag state.
     updateConquestPhase2ADebugHudForAllPlayers(true);
     if (joinPid !== undefined) {

@@ -15,28 +15,73 @@ function setAdminPanelActionCountText(widget: mod.UIWidget | undefined, value: n
 
 //#region -------------------- HUD Phase State + Help Text --------------------
 
-function setMatchStateText(
-    widget: mod.UIWidget | undefined,
-    derivedStatus: {
-        isLive: boolean;
-        isGameOver: boolean;
-    }
-): void {
-    if (!widget) return;
+// Builds the live/game-over line-1 status label: "{left}v{right} {gameMode}".
+function getModePlayersHeaderLabel(): mod.Message {
+    const counts = getAutoStartMinPlayerCounts();
+    const cfg = State.round.modeConfig;
+    const gameModeValue = cfg && cfg.confirmed
+        ? cfg.confirmed.gameMode
+        : STR_HUD_SETTINGS_GAME_MODE_DEFAULT;
+    return mod.Message(mod.stringkeys.twl.hud.statusLiveModePlayersFormat, counts.left, counts.right, gameModeValue);
+}
 
-    const isGameOver = derivedStatus.isGameOver;
-    if (isGameOver) {
-        mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.roundStateGameOver));
-        mod.SetUITextColor(widget, COLOR_WARNING_YELLOW);
+// Renders both top-left status lines from one authoritative phase+ready snapshot.
+function renderTopLeftStatusDockForPid(
+    pid: number,
+    readyCount: number,
+    totalCount: number,
+    activeCount: number
+): void {
+    const statusRoot = resolveUpperLeftStatusRootForPid(pid);
+    const statusStateText = resolveTopLeftStatusStateTextForPid(pid);
+    const statusReadyText = resolveTopLeftStatusReadyTextForPid(pid);
+    const visibility = getHudVisibilitySnapshotForPid(pid);
+
+    safeSetUIWidgetVisible(statusRoot, true);
+    safeSetUIWidgetVisible(statusStateText, true);
+    safeSetUIWidgetVisible(statusReadyText, true);
+
+    if (visibility.status.isLive) {
+        safeSetUITextLabel(statusStateText, getModePlayersHeaderLabel());
+        safeSetUITextColor(statusStateText, COLOR_READY_GREEN);
+        safeSetUITextLabel(statusReadyText, mod.Message(mod.stringkeys.twl.hud.roundStateLive));
+        safeSetUITextColor(statusReadyText, COLOR_READY_GREEN);
         return;
     }
 
-    const isLive = derivedStatus.isLive;
-    const stateKey = isLive ? mod.stringkeys.twl.hud.roundStateLive : mod.stringkeys.twl.hud.roundStateNotReady;
-    mod.SetUITextLabel(widget, mod.Message(stateKey));
+    if (visibility.status.isGameOver) {
+        safeSetUITextLabel(statusStateText, getModePlayersHeaderLabel());
+        safeSetUITextColor(statusStateText, COLOR_READY_GREEN);
+        safeSetUITextLabel(statusReadyText, mod.Message(mod.stringkeys.twl.hud.roundStateGameOver));
+        safeSetUITextColor(statusReadyText, COLOR_READY_GREEN);
+        return;
+    }
 
-    // Color: white when LIVE, red when NOT READY
-    mod.SetUITextColor(widget, isLive ? COLOR_NORMAL : COLOR_NOT_READY_RED);
+    const isViewerReady = !!State.players.readyByPid[pid];
+    if (isViewerReady) {
+        safeSetUITextLabel(statusStateText, mod.Message(mod.stringkeys.twl.hud.readyText));
+        safeSetUITextColor(statusStateText, COLOR_READY_GREEN);
+    } else {
+        safeSetUITextLabel(statusStateText, mod.Message(mod.stringkeys.twl.hud.roundStateNotReady));
+        safeSetUITextColor(statusStateText, COLOR_READY_GREEN);
+    }
+
+    safeSetUITextLabel(
+        statusReadyText,
+        activeCount > totalCount
+            ? mod.Message(
+                mod.stringkeys.twl.hud.playersReadyWithServerFormat,
+                Math.floor(readyCount),
+                Math.floor(totalCount),
+                Math.floor(activeCount)
+            )
+            : mod.Message(
+                mod.stringkeys.twl.hud.playersReadyFormat,
+                Math.floor(readyCount),
+                Math.floor(totalCount)
+            )
+    );
+    safeSetUITextColor(statusReadyText, COLOR_WARNING_YELLOW);
 }
 
 // Splits remaining clock seconds into minute and second digit parts for HUD glyph widgets.
@@ -137,64 +182,19 @@ function safeSetUIWidgetBgAlpha(widget: mod.UIWidget | undefined, alpha: number)
 // Resolves the authoritative top-left status state text widget for one player.
 function resolveTopLeftStatusStateTextForPid(pid: number): mod.UIWidget | undefined {
     const refs = State.hudCache.hudByPid[pid];
-    return refs?.upperLeftStatusStateText ?? safeFind(`Upper_Left_Status_StateText_${pid}`);
+    return refs?.upperLeftStatusStateText;
+}
+
+// Resolves the authoritative static status-lane root for one player from HUD cache first, then current static status name.
+function resolveUpperLeftStatusRootForPid(pid: number): mod.UIWidget | undefined {
+    const refs = State.hudCache.hudByPid[pid];
+    return refs?.upperLeftStatusContainer;
 }
 
 // Resolves the authoritative top-left status ready text widget for one player.
 function resolveTopLeftStatusReadyTextForPid(pid: number): mod.UIWidget | undefined {
     const refs = State.hudCache.hudByPid[pid];
-    return refs?.upperLeftStatusReadyText ?? safeFind(`Upper_Left_Status_ReadyText_${pid}`);
-}
-
-// Hides legacy clock-owned status widgets so only the top-left status container remains visible.
-function hideLegacyClockStatusLaneForPid(pid: number): void {
-    safeSetUIWidgetVisible(safeFind(`RoundStateRoot_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`RoundStateText_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`PlayersReadyText_${pid}`), false);
-}
-
-// Enforces one deterministic layout for top-left status texts each refresh so stray legacy parent chains cannot pull them out of place.
-function ensureTopLeftStatusTextLayoutForPid(pid: number): void {
-    const statusRoot = resolveUpperLeftStatusRootForPid(pid);
-    const statusStateText = resolveTopLeftStatusStateTextForPid(pid);
-    const statusReadyText = resolveTopLeftStatusReadyTextForPid(pid);
-    if (!statusRoot) return;
-    const statusWidth = 206;
-    const stateY = 1;
-    const readyY = 15;
-    const stateHeight = 14;
-    const readyHeight = 15;
-    try {
-        mod.SetUIWidgetAnchor(statusRoot, mod.UIAnchor.TopLeft);
-        mod.SetUIWidgetSize(statusRoot, mod.CreateVector(statusWidth, 30, 0));
-        mod.SetUIWidgetDepth(statusRoot, mod.UIDepth.AboveGameUI);
-    } catch {
-        // Keep HUD lane alive even if one transform write fails.
-    }
-    if (statusStateText) {
-        try {
-            mod.SetUIWidgetParent(statusStateText, statusRoot);
-            mod.SetUIWidgetAnchor(statusStateText, mod.UIAnchor.TopLeft);
-            mod.SetUIWidgetPosition(statusStateText, mod.CreateVector(0, stateY, 0));
-            mod.SetUIWidgetSize(statusStateText, mod.CreateVector(statusWidth, stateHeight, 0));
-            mod.SetUITextAnchor(statusStateText, mod.UIAnchor.Center);
-            mod.SetUIWidgetDepth(statusStateText, mod.UIDepth.AboveGameUI);
-        } catch {
-            // Keep HUD lane alive even if one transform write fails.
-        }
-    }
-    if (statusReadyText) {
-        try {
-            mod.SetUIWidgetParent(statusReadyText, statusRoot);
-            mod.SetUIWidgetAnchor(statusReadyText, mod.UIAnchor.TopLeft);
-            mod.SetUIWidgetPosition(statusReadyText, mod.CreateVector(0, readyY, 0));
-            mod.SetUIWidgetSize(statusReadyText, mod.CreateVector(statusWidth, readyHeight, 0));
-            mod.SetUITextAnchor(statusReadyText, mod.UIAnchor.Center);
-            mod.SetUIWidgetDepth(statusReadyText, mod.UIDepth.AboveGameUI);
-        } catch {
-            // Keep HUD lane alive even if one transform write fails.
-        }
-    }
+    return refs?.upperLeftStatusReadyText;
 }
 
 // Safe depth write helper used by HUD render/restack paths.
@@ -313,14 +313,17 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
 function setHudHelpDepthForPid(pid: number): void {
     // Top-left status lane must remain above its own blur container after reparenting.
     const statusLaneIds = [
-        `Upper_Left_Status_${pid}`,
-        `Upper_Left_Status_StateText_${pid}`,
-        `Upper_Left_Status_ReadyText_${pid}`,
-        `Container_ReadyStatus_${pid}`,
-        `ReadyStatusText_${pid}`,
-        `RoundStateRoot_${pid}`,
-        `RoundStateText_${pid}`,
-        `PlayersReadyText_${pid}`,
+        `TwlConquestStatusDockRoot_${pid}`,
+        `TwlConquestStatusDockState_${pid}`,
+        `TwlConquestStatusDockReady_${pid}`,
+        `TwlConquestHudStatusPanelRoot_${pid}`,
+        `TwlConquestHudStatusPanelStateText_${pid}`,
+        `TwlConquestHudStatusPanelReadyText_${pid}`,
+        `TwlConquestStatusStaticBox_${pid}`,
+        `TwlConquestStatusStaticText_${pid}`,
+        `TwlConquestHudStatusLaneRoot_${pid}`,
+        `TwlConquestHudStatusLanePrimaryText_${pid}`,
+        `TwlConquestHudStatusLaneSecondaryText_${pid}`,
     ];
     for (const name of statusLaneIds) {
         const widget = safeFind(name);
@@ -407,29 +410,22 @@ function getHudVisibilitySnapshotForPid(pid: number): HudVisibilitySnapshot {
  * - It should be called after any change that affects phase state so HUDs remain consistent.
  */
 
-// Refreshes one player's round-state lane placement + label so post-build HUDs never wait on a later broadcast to reparent.
+// Refreshes one player's two-line top-left status dock using phase + ready-count state.
 function setMatchStateTextForPid(pid: number): void {
-    ensureTopLeftStatusTextLayoutForPid(pid);
-    const statusRoot = resolveUpperLeftStatusRootForPid(pid);
-    const statusStateText = resolveTopLeftStatusStateTextForPid(pid);
-    const visibility = getHudVisibilitySnapshotForPid(pid);
-    safeSetUIWidgetVisible(statusRoot, true);
-    safeSetUIWidgetVisible(statusStateText, true);
-    setMatchStateText(statusStateText, visibility.status);
-    hideLegacyClockStatusLaneForPid(pid);
+    const counts = getReadyCountsForStatusHud();
+    renderTopLeftStatusDockForPid(pid, counts.readyCount, counts.totalCount, counts.activeCount);
 }
 
 function setMatchStateTextForAllPlayers(): void {
+    const counts = getReadyCountsForStatusHud();
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
         const pid = mod.GetObjId(p);
-        setMatchStateTextForPid(pid);
+        renderTopLeftStatusDockForPid(pid, counts.readyCount, counts.totalCount, counts.activeCount);
     }
-    // Keep the pre-live ready count line in sync with phase-state HUD refreshes.
-    updatePlayersReadyHudTextForAllPlayers();
 }
 
 //#endregion ----------------- HUD Phase State + Help Text --------------------
@@ -439,73 +435,73 @@ function setMatchStateTextForAllPlayers(): void {
 //#region -------------------- HUD Ready Count --------------------
 
 /**
- * Updates the yellow HUD line: "X / Y PLAYERS READY" (pre-live only).
- * Visibility rules:
- * - Only shown while preparing for live start (phase NOT live).
- * - Hidden during game-over / victory dialog phases.
- * - Remains visible until the phase is live (isMatchLive() === true).
+ * Refreshes top-left status lines for every player after ready-state changes.
+ * Mapping:
+ * - Pre-live: line1 = NOT READY/You are Ready, line2 = X / Y PLAYERS READY
+ * - Live: line1 = {left}v{right} {mode}, line2 = LIVE
+ * - Game over: line1 = {left}v{right} {mode}, line2 = GAME OVER
  * IMPORTANT: Any code path that changes State.players.readyByPid MUST also refresh:
  *   - updatePlayersReadyHudTextForAllPlayers()
  *   - renderReadyDialogForAllVisibleViewers() (if the dialog can be open)
  * to prevent stale HUD/roster state (e.g., after swap teams or leaving base forces NOT READY).
  */
-function updatePlayersReadyHudTextForAllPlayers(): void {
-    // Compute counts once, then broadcast the same label to all viewers.
+// Computes ready progress for top-left status HUD:
+// - X = ready active players (with team-0 valid-player fallback)
+// - Y = configured minimum total players-to-start
+// - Z = total active players in server (fallback: valid connected players when team assignment is not available yet)
+function getReadyCountsForStatusHud(): { readyCount: number; totalCount: number; activeCount: number } {
     const active = getActivePlayers();
-    const total = active.all.length;
+    const activeCount = active.all.length;
+    const requiredTotal = getAutoStartMinPlayerCounts().total;
 
-    let readyCount = 0;
-    for (let i = 0; i < total; i++) {
+    let activeReadyCount = 0;
+    for (let i = 0; i < activeCount; i++) {
         const pid = safeGetPlayerId(active.all[i]);
         if (pid === undefined) continue;
-        if (State.players.readyByPid[pid]) readyCount++;
+        if (State.players.readyByPid[pid]) activeReadyCount++;
     }
 
-    const shouldShow = (!State.match.victoryDialogActive) && (!isMatchLive());
+    if (activeCount > 0) {
+        return { readyCount: activeReadyCount, totalCount: requiredTotal, activeCount };
+    }
+
+    // Team-0 fallback: count valid connected players when no Team1/2 assignment exists yet.
+    const players = mod.AllPlayers();
+    const count = mod.CountOf(players);
+    let validPlayerCount = 0;
+    let validReadyCount = 0;
+    for (let i = 0; i < count; i++) {
+        const p = mod.ValueInArray(players, i) as mod.Player;
+        if (!p || !mod.IsPlayerValid(p)) continue;
+        const pid = safeGetPlayerId(p);
+        if (pid === undefined) continue;
+        validPlayerCount++;
+        if (State.players.readyByPid[pid]) validReadyCount++;
+    }
+    return { readyCount: validReadyCount, totalCount: requiredTotal, activeCount: validPlayerCount };
+}
+
+function updatePlayersReadyHudTextForAllPlayers(): void {
+    // Compute counts once, then broadcast the same label to all viewers.
+    const readyCounts = getReadyCountsForStatusHud();
 
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
-
         const pid = mod.GetObjId(p);
-        ensureTopLeftStatusTextLayoutForPid(pid);
-        const statusRoot = resolveUpperLeftStatusRootForPid(pid);
-        const statusReadyText = resolveTopLeftStatusReadyTextForPid(pid);
-        if (!statusReadyText) continue;
-        const visibility = getHudVisibilitySnapshotForPid(pid);
-        const showReadyLine = shouldShow && visibility.showPlayersReadyLine;
-        const showReadyPrompt = visibility.showReady && !showReadyLine;
-        safeSetUIWidgetVisible(statusRoot, true);
-
-        // Toggle visibility first so we can avoid unnecessary label churn when hidden.
-        safeSetUIWidgetVisible(statusReadyText, showReadyLine || showReadyPrompt);
-        hideLegacyClockStatusLaneForPid(pid);
-        if (showReadyLine) {
-            const label = mod.Message(mod.stringkeys.twl.hud.playersReadyFormat, readyCount, total);
-            mod.SetUITextLabel(statusReadyText, label);
-            mod.SetUITextColor(statusReadyText, COLOR_WARNING_YELLOW);
-            continue;
-        }
-        if (showReadyPrompt) {
-            mod.SetUITextLabel(statusReadyText, mod.Message(mod.stringkeys.twl.hud.readyText));
-            mod.SetUITextColor(statusReadyText, COLOR_READY_GREEN);
-        }
+        renderTopLeftStatusDockForPid(pid, readyCounts.readyCount, readyCounts.totalCount, readyCounts.activeCount);
     }
 }
 
 // Lightweight helper for ready-up broadcasts (avoids recomputing counts in UI handlers).
 function getReadyCountsForMessage(): { readyCount: number; totalCount: number } {
-    const active = getActivePlayers();
-    const totalCount = active.all.length;
-    let readyCount = 0;
-    for (let i = 0; i < totalCount; i++) {
-        const pid = safeGetPlayerId(active.all[i]);
-        if (pid === undefined) continue;
-        if (State.players.readyByPid[pid]) readyCount++;
-    }
-    return { readyCount, totalCount };
+    const statusCounts = getReadyCountsForStatusHud();
+    return {
+        readyCount: statusCounts.readyCount,
+        totalCount: statusCounts.totalCount,
+    };
 }
 
 //#endregion ----------------- HUD Ready Count --------------------

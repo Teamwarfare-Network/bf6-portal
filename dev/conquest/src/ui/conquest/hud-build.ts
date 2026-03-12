@@ -701,7 +701,6 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             safeSetUIWidgetVisible(cached.conquestFlagsEngageRoot, false);
             State.hudCache.hudByPid[pid] = cached;
             setHudHelpDepthForPid(pid);
-            updateSettingsSummaryHudForPid(pid);
             return cached;
         }
         if (hasCachedCombatRootRefs(cached) && pinConquestCombatRootsToTopHudRoot(cached)) {
@@ -710,7 +709,6 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             } else {
                 State.hudCache.hudByPid[pid] = cached;
                 setHudHelpDepthForPid(pid);
-                updateSettingsSummaryHudForPid(pid);
                 return cached;
             }
         } else {
@@ -731,6 +729,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
 
     buildConquestBrandingTopLeftWidgets(player, pid, refs);
+    buildConquestStaticStatusLaneWidgets(player, pid, refs);
     buildConquestTopCenterAuxWidgets(
         player,
         pid,
@@ -3450,13 +3449,6 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     //#region -------------------- HUD Build/Ensure - Cache Init + Defaults --------------------
 
     refs.helpTextContainer = safeFind(`Container_HelpText_${pid}`);
-    refs.readyStatusContainer = safeFind(`Container_ReadyStatus_${pid}`);
-    refs.settingsGameModeText = safeFind(`Settings_GameMode_${pid}`);
-    refs.settingsAircraftCeilingText = safeFind(`Settings_Ceiling_${pid}`);
-    refs.settingsVehiclesT1Text = safeFind(`Settings_VehiclesT1_${pid}`);
-    refs.settingsVehiclesT2Text = safeFind(`Settings_VehiclesT2_${pid}`);
-    refs.settingsVehiclesMatchupText = safeFind(`Settings_VehiclesMatchup_${pid}`);
-    refs.settingsPlayersText = safeFind(`Settings_Players_${pid}`);
     State.conquest.debug.hudGenerationByPid[pid] = (State.conquest.debug.hudGenerationByPid[pid] ?? 0) + 1;
 
     // Keep only HUD elements used by conquest's simplified center HUD + overlays.
@@ -3484,30 +3476,6 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         safeSetUIWidgetVisible(refs.conquestFlagsEngageRoot, false);
     }
     State.hudCache.hudByPid[pid] = refs;
-    updateSettingsSummaryHudForPid(pid);
-    const readyContainer = safeFind(`Container_ReadyStatus_${pid}`);
-    const topLeftStatusRoot = refs.upperLeftStatusContainer ?? safeFind(`Upper_Left_Status_${pid}`);
-    if (readyContainer) {
-        try {
-            mod.SetUIWidgetAnchor(readyContainer, mod.UIAnchor.TopLeft);
-        } catch {
-            // Best-effort anchor normalization only.
-        }
-        if (topLeftStatusRoot) {
-            mod.SetUIWidgetParent(readyContainer, topLeftStatusRoot);
-            mod.SetUIWidgetPosition(readyContainer, mod.CreateVector(CONQUEST_READY_IN_STATUS_X, CONQUEST_READY_IN_STATUS_Y, 0));
-        } else {
-            mod.SetUIWidgetParent(readyContainer, mod.GetUIRoot());
-            mod.SetUIWidgetPosition(readyContainer, mod.CreateVector(CONQUEST_READY_ABS_X, CONQUEST_READY_ABS_Y, 0));
-        }
-        mod.SetUIWidgetSize(readyContainer, mod.CreateVector(CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_CONTAINER_HEIGHT, 0));
-    }
-    const readyText = safeFind(`ReadyStatusText_${pid}`);
-    if (readyText && readyContainer) {
-        mod.SetUIWidgetParent(readyText, readyContainer);
-        mod.SetUIWidgetPosition(readyText, mod.CreateVector(0, CONQUEST_READY_TEXT_OFFSET_Y, 0));
-        mod.SetUIWidgetSize(readyText, mod.CreateVector(CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_TEXT_HEIGHT, 0));
-    }
     // Force immediate post-build status-lane placement so LIVE/NOT READY/GAME OVER never waits on a later broadcast tick.
     setMatchStateTextForPid(pid);
     updatePlayersReadyHudTextForAllPlayers();

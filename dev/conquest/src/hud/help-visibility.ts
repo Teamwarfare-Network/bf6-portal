@@ -26,18 +26,6 @@ function updateHelpTextVisibilityForPid(pid: number): void {
         mod.SetUITextLabel(helpText, mod.Message(mod.stringkeys.twl.hud.helpText));
     }
 
-    const readyContainer = refs?.readyStatusContainer ?? safeFind(`Container_ReadyStatus_${pid}`);
-    if (readyContainer) {
-        // Legacy ready lane is retired; top-left status lane owns ready messaging now.
-        safeSetUIWidgetVisible(readyContainer, false);
-    }
-
-    const readyText = safeFind(`ReadyStatusText_${pid}`);
-    if (readyText) {
-        // Keep legacy ready text hidden so duplicate labels cannot leak outside the status stack.
-        safeSetUIWidgetVisible(readyText, false);
-    }
-
     // Round-state and players-ready line visibility are owned by hud/status.ts.
 }
 

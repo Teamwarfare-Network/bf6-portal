@@ -7,7 +7,6 @@
 // Units: seconds unless otherwise noted.
 const ROUND_START_SECONDS = 25 * 60; // Initial match clock duration before the live phase starts.
 const MATCH_END_DELAY_SECONDS = 45; // Victory dialog duration before match end.
-const ROUND_END_REDEPLOY_DELAY_SECONDS = 10; // Redeploy delay used by forced undeploy flows (ready-dialog swap/admin transitions).
 const READY_UP_MESSAGE_COOLDOWN_SECONDS = 2.0; // Throttle ready-up broadcast spam per player.
 const SHOW_HELP_TEXT_PROMPT_ON_JOIN = false; // Show the join help prompt overlay on first connect.
 const ROUND_CLOCK_DEFAULT_SECONDS = ROUND_START_SECONDS; // Source of truth for clock reset.

@@ -2,16 +2,19 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v0.454)",
+        "title": "teamwarfare . net | TWL Conquest (v0.486)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
-      "readyText": "You are Ready",
+      "statusProbeCodex": "I'm Codex and I'm stupid",
+      "readyText": "YOU ARE READY",
       "labels": {},
       "roundStateLive": "LIVE",
       "roundStateNotReady": "NOT READY",
       "roundStateGameOver": "GAME OVER",
+      "statusLiveModePlayersFormat": "{0}v{1} {2}",
       "playersReadyFormat": "{0} / {1} PLAYERS READY",
+      "playersReadyWithServerFormat": "{0} / {1} PLAYERS READY ({2} IN SERVER)",
       "clock": {
         "digit": "{0}",
         "colon": ":"

@@ -3,6 +3,38 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.486: Core HUD perf fix: run legacy suppression one-shot instead of every 0.25s tick; remove extra pre-live HUD tick
+// v0.485: Move Ready-dialog warm-cache to join/deploy and keep core HUD refresh active pre-live to remove first-load/team-switch UI latency
+// v0.484: Remove lower-left settings summary widget; clear redeploy-delay carryover to reduce startup/team-swap HUD readiness lag
+// v0.483: Immediate status-dock refresh on min-player config change and reduce status box width by ~30%
+// v0.482: Status line2: show optional '(Z in Server)' when active players exceed configured min total; keep X/Y based on ready/min
+// v0.481: Status ready progress now mirrors actual start gate (min-total vs all-active requirement, including team-0 fallback)
+// v0.480: Status dock: use configured min-player total for ready denominator and align status text style to upper-left green (keep X/Y yellow)
+// v0.479: Status dock phase map: pre-live line1 ready/not-ready + line2 ready count; live/game-over line1 players+mode with line2 LIVE/GAME OVER
+// v0.478: Status box live layout: line1 shows players+mode and line2 shows LIVE; keep non-live ready/not-ready flow
+// v0.477: Status lane: show 'You are Ready' whenever player is ready pre-live (do not gate on dialog visibility)
+// v0.476: Hard-cut status text placement to isolated absolute dock widgets and keep runtime updates label/visibility-only
+// v0.475: Fix Portal strict typing: guard status-lane subtree FindUIWidgetWithName calls against undefined root
+// v0.474: Restore static top-left status panel lines (LIVE/GAME OVER/NOT READY + ready line) with label-only runtime updates
+// v0.473: Docs: update top-left status-lane builder comment to match isolated static test-lane behavior
+// v0.472: Hard-cut top-left status lane to isolated static box/text widgets with runtime status writers disabled
+// v0.471: Fix status-lane static child placement by removing runtime text transform overrides
+// v0.470: Forced static status-lane parent chain normalization (UIRoot->status root->status texts) with fixed build-time anchors and positions
+// v0.469: Added explicit status-box proof string and forced centered static status label for ownership verification
+// v0.468: Removed all global status-lane fallback lookups; status labels now resolve from static cache-owned lane refs only
+// v0.467: Removed remaining runtime legacy status touchpoints; status text updates now target static TwlConquestHudStatusLane widgets only
+// v0.466: Moved status-root resolver ownership into hud/status for static status lane and removed clock-module dependency
+// v0.465: Rebuilt top-left status lane as static-only TwlConquestHudStatusLane widgets and removed clock status-lane attachment path
+// v0.464: Forced static parent ownership and fixed anchor/position normalization for top-left status text widgets at build time
+// v0.463: Added status-lane probe offsets: container plus 20 X and status text plus 20 X for ownership validation
+// v0.462: Hard-isolated status lane again with fresh TwlConquestHudStatus names and forced hiding of prior status text variants
+// v0.461: Locked top-left status text resolution to status container subtree and removed global fallback lookups
+// v0.460: Made top-left status lane static-only by removing runtime status text reparent helper path
+// v0.459: Hard-cut status lane names to TwlConquestStatus widgets and purge legacy status name collisions
+// v0.458: Harden join/leave cleanup for all status text widgets to enforce single static top-left status ownership
+// v0.457: Enforce single static top-left status text pair and remove legacy ReadyStatus widget path
+// v0.456: Stabilize startup by retiring legacy clock status text creation and keep top-left status ownership static
+// v0.455: Static top-left status text parenting/centering, retire legacy status text path, and snap core text-shadow geometry
 // v0.454: Force top-left status text ownership/layout, retire legacy ready lane visibility, and realign core bar/chevron/shadow tuning
 // v0.453: Fix top-left status text ownership, recenter ticket chevrons, and normalize HUD shadow ring symmetry
 // v0.452: Fix top-left status lane parenting, reduce startup HUD churn, and snap core ticket bars to pixel grid

@@ -19,6 +19,8 @@ async function deferForcedUndeploy(player: mod.Player, reason: string): Promise<
 async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
+    // Clear any lingering forced redeploy delay so deployed players can immediately interact with HUD/ready workflows.
+    mod.SetRedeployTime(eventPlayer, 0);
     // Seed viewer perspective on deploy so first-life HUD slices (including bleed chevrons)
     // do not wait for a later swap path to establish team context.
     const deployedTeam = safeGetTeamNumberFromPlayer(eventPlayer, 0);
@@ -52,6 +54,8 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     updateHelpTextVisibilityForAllPlayers();
 
     ensureHudForPlayer(eventPlayer);
+    // Keep first post-spawn Ready dialog interaction instant by ensuring cache build at deploy time.
+    ensureReadyDialogUiWarmCacheForPlayer(eventPlayer);
     // Re-apply help/ready visibility after ensure so freshly rebuilt top-center widgets cannot keep default visibility.
     updateHelpTextVisibilityForPid(pid);
     // Keep conquest HUD state in sync for newly deployed viewers even when no new capture/ticket events fire.
