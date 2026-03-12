@@ -44,12 +44,27 @@ function initializeConquestPhase1Scaffold(): void {
     State.conquest.capture.lastUnmappedObjId = undefined;
     State.conquest.capture.unmappedSeenCount = 0;
     State.conquest.capture.visualByObjId = {};
+    State.conquest.capture.engagedObjIdByPid = {};
     State.conquest.debug.hudEnabled = true;
+    // Reset mode override each startup so one fail-safe event cannot hide combat HUD across restarts.
+    State.conquest.debug.hudModeOverride = undefined;
     State.conquest.debug.hudLastUpdatedAtSeconds = -1;
     State.conquest.debug.hudDirty = true;
     State.conquest.debug.hudRenderBucketByPid = {};
     State.conquest.debug.hudRenderBurstByPid = {};
     State.conquest.debug.hudRenderDuplicateBurstByPid = {};
+    State.conquest.debug.teamSwapRefreshTokenByPid = {};
+    State.conquest.debug.teamSwapHudResetPendingByPid = {};
+    State.conquest.debug.perspectiveTeamByPid = {};
+    State.conquest.debug.teamSwapPerspectiveLockUntilByPid = {};
+    State.conquest.debug.engageHiddenUntilDeployByPid = {};
+    State.conquest.debug.bleedPulseQueueLeftByPid = {};
+    State.conquest.debug.bleedPulseQueueRightByPid = {};
+    State.conquest.debug.bleedPulseActiveSideByPid = {};
+    State.conquest.debug.bleedPulseStepByPid = {};
+    State.conquest.debug.bleedPulseLimitByPid = {};
+    State.conquest.debug.bleedPulsePhaseByPid = {};
+    State.conquest.debug.bleedPulseNextAtByPid = {};
     State.conquest.debug.hudStatusVmByPid = {};
     State.conquest.debug.hudHelpReadyVmByPid = {};
     State.conquest.debug.hudClockVmByPid = {};

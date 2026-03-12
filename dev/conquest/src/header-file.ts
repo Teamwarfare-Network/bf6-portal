@@ -1,9 +1,9 @@
 // @ts-nocheck
-// Module: File header, versioning, license, attribution, gamemode description
+// Module: File header, versioning, license, and attribution
 
 //#region -------------------- Versioning --------------------
 
-// version: 0.412 | Date: 03.11.26 | Time: 20:59 UTC
+// version: 0.454 | Date: 03.12.26 | Time: 06:19 UTC
 // version policy header file: src/header-file.ts
 // version policy footer file: src/footer-file.ts
 // version policy strings file: src/strings.json
@@ -64,37 +64,3 @@
 //  - Asset Browser by WillToth: https://bf6props.pages.dev/ -- https://github.com/The-Sir-Community/prop_stats/releases/tag/v1.1.2.0
 
 //#endregion ----------------- Authors / Attribution --------------------
-
-
-
-//#region -------------------- Gamemode Description --------------------
-
-// This script implements:
-//   - Triple-tap "Ready Up" flow (roster, READY toggle, base-gated pre-live readiness)
-//   - Continuous live match clock and player-facing top-center HUD status text
-//   - Admin panel controls focused on match-clock management and mode start/end actions
-//   - Team switching via a single "Swap Teams" button (forces undeploy)
-//   - Map configuration runtime (map detect, spawn specs, team naming, ceiling defaults)
-//   - Join prompt flow and end-of-match victory/map-end dialog
-//
-// Glossary (terms):
-// - "HUD": always-on per-player overlay (cached by pid).
-// - "Dialog": modal UI that enables UI input mode (Team Switch / Victory).
-// - "Ready Up": pre-live state where active players set READY before the mode is started.
-// - "Continuous live": once started, the mode remains live until explicitly ended.
-// - "Map config": per-map base anchors, team names, spawn specs, and ceiling defaults.
-//
-// Glossary (script semantics)
-// - T1 / T2: The two competing teams in this mode; UI may still use Left/Right for layout only.
-// - Authoritative state: The single source of truth for mode-critical values; HUD is a projection of that state.
-// - Player caches: per-player UI widget refs and per-player readiness/deploy state maps.
-//
-// Recommendations on tweaking/adjusting/customizing this experience
-// - General UI layout tip: Most widgets define an offset via `position: [x, y]`.
-// - Change those numbers to nudge that widget relative to its anchor; the perceived direction can vary by anchoring, so verify in-game after edits.
-// - Match-clock tuning lives under ROUND_CLOCK_*/ADMIN_ROUND_LENGTH_* constants.
-
-//#endregion -------------------- Gamemode Description --------------------
-
-
-

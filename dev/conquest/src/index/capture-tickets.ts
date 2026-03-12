@@ -562,8 +562,13 @@ function conquestPhase3RunCombatLoopByOwner(force?: boolean): void {
             hideAllConquestCombatHudV2();
             return;
         }
-        conquestCombatHudV2TickMain(force);
-        conquestCombatHudV2TickAnimation(force);
+        try {
+            conquestCombatHudV2TickMain(force);
+            conquestCombatHudV2TickAnimation(force);
+        } catch {
+            // Fail-close combat-v2 projection on runtime fault so gameplay flow continues.
+            hideAllConquestCombatHudV2();
+        }
         return;
     }
     // Legacy-owner mode keeps v2 hidden.
@@ -1639,13 +1644,18 @@ function conquestPhase3ShouldFillFromTopForEnemy(
 // Border/percent ownership contract:
 // - fully owned => show border, hide percent
 // - not fully owned => no border, percent may show
+// Ownership authority is game-state based (ownerTeam + ownerProgressTeam), not visual-state phase.
 function conquestPhase3IsFlagFullyOwnedForHud(
-    visualState: ConquestFlagVisualRuntimeState,
+    ownerTeam: TeamID | 0,
+    ownerProgressTeam: TeamID | 0,
+    progress01: number,
     hasBorderColor: boolean
 ): boolean {
+    const ownerProgressSettled = ownerProgressTeam === 0 || ownerProgressTeam === ownerTeam;
     return hasBorderColor
-        && visualState.phase === "OWNED_STABLE"
-        && visualState.progress01 >= CONQUEST_FLAG_PROGRESS_DEADBAND_HIGH;
+        && ownerTeam !== 0
+        && ownerProgressSettled
+        && progress01 >= CONQUEST_FLAG_PROGRESS_DEADBAND_HIGH;
 }
 
 // Derives per-slot flag visuals/labels/percent widgets from script-authoritative state.
@@ -1681,20 +1691,25 @@ function deriveConquestHudFlagsViewModel(
             ?? conquestPhase3CreateDefaultFlagVisualState(sampleTick);
         const visual = conquestPhase3GetFlagSlotVisual(visualState, friendlyTeam, enemyTeam);
         const percentVisual = conquestPhase3GetFlagPercentDisplay(visualState, friendlyTeam, enemyTeam);
-        const borderColor = visualState.ownerTeam === friendlyTeam
+        const borderColor = cp.ownerTeam === friendlyTeam
             ? mod.CreateVector(
                 CONQUEST_HUD_TEXT_FRIENDLY_RGB[0],
                 CONQUEST_HUD_TEXT_FRIENDLY_RGB[1],
                 CONQUEST_HUD_TEXT_FRIENDLY_RGB[2]
             )
-            : visualState.ownerTeam === enemyTeam
+            : cp.ownerTeam === enemyTeam
                 ? mod.CreateVector(
                     CONQUEST_HUD_TEXT_ENEMY_RGB[0],
                     CONQUEST_HUD_TEXT_ENEMY_RGB[1],
                 CONQUEST_HUD_TEXT_ENEMY_RGB[2]
             )
                 : undefined;
-        const fullyOwned = conquestPhase3IsFlagFullyOwnedForHud(visualState, !!borderColor);
+        const fullyOwned = conquestPhase3IsFlagFullyOwnedForHud(
+            cp.ownerTeam,
+            cp.ownerProgressTeam,
+            cp.progress01,
+            !!borderColor
+        );
         const borderVisible = fullyOwned;
         const onPointCount = cp.onPointTeam1 + cp.onPointTeam2;
         const forceNeutralIdleEmpty = visualState.phase === "NEUTRAL_IDLE";
@@ -1800,20 +1815,25 @@ function deriveConquestHudActiveFlagPopoutViewModel(
         ?? conquestPhase3CreateDefaultFlagVisualState(sampleTick);
     const visual = conquestPhase3GetFlagSlotVisual(visualState, friendlyTeam, enemyTeam);
     const percentVisual = conquestPhase3GetFlagPercentDisplay(visualState, friendlyTeam, enemyTeam);
-    const borderColor = visualState.ownerTeam === friendlyTeam
+    const borderColor = activeCapturePoint.ownerTeam === friendlyTeam
         ? mod.CreateVector(
             CONQUEST_HUD_TEXT_FRIENDLY_RGB[0],
             CONQUEST_HUD_TEXT_FRIENDLY_RGB[1],
             CONQUEST_HUD_TEXT_FRIENDLY_RGB[2]
         )
-        : visualState.ownerTeam === enemyTeam
+        : activeCapturePoint.ownerTeam === enemyTeam
             ? mod.CreateVector(
                 CONQUEST_HUD_TEXT_ENEMY_RGB[0],
                 CONQUEST_HUD_TEXT_ENEMY_RGB[1],
             CONQUEST_HUD_TEXT_ENEMY_RGB[2]
         )
             : undefined;
-    const fullyOwned = conquestPhase3IsFlagFullyOwnedForHud(visualState, !!borderColor);
+    const fullyOwned = conquestPhase3IsFlagFullyOwnedForHud(
+        activeCapturePoint.ownerTeam,
+        activeCapturePoint.ownerProgressTeam,
+        activeCapturePoint.progress01,
+        !!borderColor
+    );
     const borderVisible = fullyOwned;
     const onPointCount = activeCapturePoint.onPointTeam1 + activeCapturePoint.onPointTeam2;
     const forceNeutralIdleEmpty = visualState.phase === "NEUTRAL_IDLE";
@@ -1905,7 +1925,7 @@ function deriveHudViewModelForPlayer(
             enemyTickets,
             friendlyTicketLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, friendlyTickets),
             enemyTicketLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, enemyTickets),
-            leaderTeam: State.conquest.debug.ticketLeaderTeam,
+            leaderTeam: conquestPhase3GetTicketLeaderTeam(),
             bleedLeftCount: bleedCounts.leftCount,
             bleedRightCount: bleedCounts.rightCount,
         },
@@ -3649,8 +3669,36 @@ function renderConquestFlagSlotsForPid(
 
 // Updates per-player conquest ticket/flag HUD from authoritative state using viewer perspective colors.
 function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
-    const useCombatV2Owner = isConquestCombatRenderOwnerV2();
+    const hudMode = getConquestHudMode();
     conquestPhase3RefreshTopHudDerivedSlicesForAllPlayers();
+    if (hudMode === "core") {
+        try {
+            // Hard-cut mode: new TwlConquestHud pipeline is the only combat HUD owner.
+            twlConquestHudTickFrame(force);
+            twlConquestHudTickAnimation(force);
+            hideAllConquestCombatHudV2();
+            conquestPhase3ForceHideCombatHudForAllPlayersFromCache();
+        } catch {
+            // HUD core is optional for gameplay; keep mode alive and allow core to self-recover on next tick.
+            twlConquestHudHideAllPlayers();
+            hideAllConquestCombatHudV2();
+            conquestPhase3ForceHideCombatHudForAllPlayersFromCache();
+        }
+        if (force) {
+            State.conquest.debug.hudLastUpdatedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
+        }
+        State.conquest.debug.hudDirty = false;
+        return;
+    }
+    if (hudMode === "off") {
+        twlConquestHudHideAllPlayers();
+        hideAllConquestCombatHudV2();
+        conquestPhase3ForceHideCombatHudForAllPlayersFromCache();
+        State.conquest.debug.hudDirty = false;
+        return;
+    }
+
+    const useCombatV2Owner = isConquestCombatRenderOwnerV2();
     conquestPhase3RunCombatLoopByOwner(force);
     if (useCombatV2Owner) {
         if (force) {
@@ -3688,12 +3736,9 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
         const swapResetPending = State.conquest.debug.teamSwapHudResetPendingByPid[pid] === true;
         if (swapResetPending) {
             // Hard swap gate:
-            // suppress engage/popout while pending, but keep top tickets/flags rendering so
-            // the custom HUD does not disappear and fall back to native top HUD lanes.
+            // keep full custom combat HUD hidden while pending, then rebuild/reveal after deploy release.
             State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
             delete State.conquest.capture.engagedObjIdByPid[pid];
-            conquestPhase3ForceHideEngageWidgetsForPid(pid);
-            conquestPhase3ForceHideActivePopoutWidgetsForPid(pid);
         }
 
         const perspective = conquestPhase3GetPerspectiveTeams(p);
@@ -3714,6 +3759,11 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
                 conquestPhase3PublishHudProjectionDebugSnapshotForPid(pid, undefined);
                 continue;
             }
+        }
+        if (swapResetPending) {
+            conquestPhase3ForceHideAllV2Widgets(refs);
+            conquestPhase3PublishHudProjectionDebugSnapshotForPid(pid, undefined);
+            continue;
         }
         if (!perspective.resolved) {
             // Keep custom HUD visible with fallback team orientation while perspective resolves.
@@ -3749,14 +3799,18 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
     }
 }
 
-// Phase 2A live tick owner: bleed, end checks, then debug projection refresh.
-function conquestPhase2AOnLiveTick(): void {
+// Runs sub-second live capture synchronization so dynamic HUD elements do not strobe on second boundaries.
+function conquestPhase2ARefreshLiveCaptureStateSubtick(): void {
     // Keep capture-state authoritative even if event-driven capture callbacks miss a transition frame.
     conquestPhase2ASyncMappedCapturePointsFromEngine();
     // Run suppression outside the regular dirty-render gate so stale engage rows never linger.
-    if (!isConquestCombatRenderOwnerV2()) {
+    if (getConquestHudMode() === "legacy" && !isConquestCombatRenderOwnerV2()) {
         conquestPhase3EnforceSuppressedEngageWidgets();
     }
+}
+
+// Phase 2A second-boundary tick owner: bleed, end checks, then debug projection refresh.
+function conquestPhase2AOnLiveTick(): void {
     conquestPhase2AApplyBleedTick();
     conquestPhase2ACheckEndCondition();
     updateConquestPhase2ADebugHudForAllPlayers();

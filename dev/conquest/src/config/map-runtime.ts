@@ -115,20 +115,38 @@ function applyMapConfig(mapKey: MapKey): void {
 
 // Best-effort map detection by comparing HQ positions to map base anchors (bidirectional check).
 function detectMapKeyFromHqs(): MapKey | undefined {
-    const hq1Pos = mod.GetObjectPosition(mod.GetHQ(1));
-    const hq2Pos = mod.GetObjectPosition(mod.GetHQ(2));
+    let hq1Pos: mod.Vector;
+    let hq2Pos: mod.Vector;
+    try {
+        const hq1 = mod.GetHQ(1);
+        const hq2 = mod.GetHQ(2);
+        hq1Pos = mod.GetObjectPosition(hq1);
+        hq2Pos = mod.GetObjectPosition(hq2);
+    } catch {
+        // Startup hardening: if HQ objects are not queryable yet, skip map detection for this pass.
+        return undefined;
+    }
 
     const keys = Object.keys(MAP_CONFIGS) as MapKey[];
     for (const key of keys) {
         const cfg = MAP_CONFIGS[key];
-        const d11 = mod.DistanceBetween(hq1Pos, cfg.team1Base);
-        const d22 = mod.DistanceBetween(hq2Pos, cfg.team2Base);
+        let d11 = Number.POSITIVE_INFINITY;
+        let d22 = Number.POSITIVE_INFINITY;
+        let d12 = Number.POSITIVE_INFINITY;
+        let d21 = Number.POSITIVE_INFINITY;
+        try {
+            d11 = mod.DistanceBetween(hq1Pos, cfg.team1Base);
+            d22 = mod.DistanceBetween(hq2Pos, cfg.team2Base);
+            d12 = mod.DistanceBetween(hq1Pos, cfg.team2Base);
+            d21 = mod.DistanceBetween(hq2Pos, cfg.team1Base);
+        } catch {
+            // Skip this map config when distance checks cannot be evaluated safely.
+            continue;
+        }
         if (d11 <= MAP_DETECT_DISTANCE_METERS && d22 <= MAP_DETECT_DISTANCE_METERS) {
             return key;
         }
 
-        const d12 = mod.DistanceBetween(hq1Pos, cfg.team2Base);
-        const d21 = mod.DistanceBetween(hq2Pos, cfg.team1Base);
         if (d12 <= MAP_DETECT_DISTANCE_METERS && d21 <= MAP_DETECT_DISTANCE_METERS) {
             return key;
         }

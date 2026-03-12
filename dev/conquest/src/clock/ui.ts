@@ -5,6 +5,58 @@
 
 
 
+// Resolves the authoritative upper-left status container for one player, preferring cached HUD refs over global name lookup.
+function resolveUpperLeftStatusRootForPid(pid: number): mod.UIWidget | undefined {
+    const refs = State.hudCache.hudByPid[pid];
+    return refs?.upperLeftStatusContainer ?? safeFind(`Upper_Left_Status_${pid}`);
+}
+
+// Reparents round-state and players-ready lines into the top-left status stack when available.
+function attachRoundStateLaneToTopLeftStatus(pid: number, roundStateRootName: string): void {
+    const roundStateRoot = safeFind(roundStateRootName);
+    const statusRoot = resolveUpperLeftStatusRootForPid(pid);
+    if (!roundStateRoot || !statusRoot) return;
+    const statusWidth = 200;
+    const statusHeight = 30;
+    try {
+        mod.SetUIWidgetParent(roundStateRoot, statusRoot);
+        mod.SetUIWidgetAnchor(roundStateRoot, mod.UIAnchor.TopLeft);
+        mod.SetUIWidgetPosition(roundStateRoot, mod.CreateVector(3, 1, 0));
+        mod.SetUIWidgetSize(roundStateRoot, mod.CreateVector(statusWidth, statusHeight, 0));
+        mod.SetUIWidgetDepth(roundStateRoot, mod.UIDepth.AboveGameUI);
+        // Legacy status lane remains hidden; top-left status container owns visible state text now.
+        mod.SetUIWidgetVisible(roundStateRoot, false);
+    } catch {
+        return;
+    }
+    const roundStateText = safeFind("RoundStateText_" + pid);
+    const playersReadyText = safeFind("PlayersReadyText_" + pid);
+    if (roundStateText) {
+        try {
+            mod.SetUIWidgetParent(roundStateText, roundStateRoot);
+            mod.SetUIWidgetAnchor(roundStateText, mod.UIAnchor.TopLeft);
+            mod.SetUIWidgetPosition(roundStateText, mod.CreateVector(0, 0, 0));
+            mod.SetUIWidgetSize(roundStateText, mod.CreateVector(statusWidth, 14, 0));
+            mod.SetUIWidgetDepth(roundStateText, mod.UIDepth.AboveGameUI);
+            mod.SetUIWidgetVisible(roundStateText, false);
+        } catch {
+            // Keep lane alive even if text transform write fails.
+        }
+    }
+    if (playersReadyText) {
+        try {
+            mod.SetUIWidgetParent(playersReadyText, roundStateRoot);
+            mod.SetUIWidgetAnchor(playersReadyText, mod.UIAnchor.TopLeft);
+            mod.SetUIWidgetPosition(playersReadyText, mod.CreateVector(0, 14, 0));
+            mod.SetUIWidgetSize(playersReadyText, mod.CreateVector(statusWidth, 16, 0));
+            mod.SetUIWidgetDepth(playersReadyText, mod.UIDepth.AboveGameUI);
+            mod.SetUIWidgetVisible(playersReadyText, false);
+        } catch {
+            // Keep lane alive even if text transform write fails.
+        }
+    }
+}
+
 /**
  * Ensures the clock UI widgets exist for a given player and returns the cached references.
  * Responsibilities:
@@ -23,16 +75,10 @@ const pid = mod.GetObjId(player);
     const digitLayoutWidth = 99.01;
     const digitWidth = digitLayoutWidth * 0.22;
     const colonWidth = digitLayoutWidth * 0.08;
-    // LIVE / GAME OVER status lane directly below the clock digits (inside clock container footprint).
-    const roundStateWidth = CLOCK_WIDTH;
-    const roundStateHeight = 14;
+    // LIVE / GAME OVER + players-ready lane width tuned for the top-left status stack.
+    const roundStateWidth = 200;
+    const roundStateHeight = 32;
     const roundStateOffsetY = 22;
-    const roundStateTextOffsetY = 41;
-    // Pre-live ready count lane is relocated to the left HUD stack under branding/settings.
-    const playersReadyLeftX = 5;
-    const playersReadyLeftY = 131;
-    const playersReadyWidth = 200;
-    const playersReadyHeight = 18;
     const xOffsets = {
         minTens: -digitWidth * CLOCK_DIGIT_OUTER_OFFSET_MULT,
         minOnes: -digitWidth * CLOCK_DIGIT_INNER_OFFSET_MULT,
@@ -58,6 +104,7 @@ const pid = mod.GetObjId(player);
         const probeClock = safeFind(cached.rootName);
         const probeState = safeFind(cached.roundStateRootName);
         if (probeClock && probeState) {
+            attachRoundStateLaneToTopLeftStatus(pid, cached.roundStateRootName);
             setHudHelpDepthForPid(pid);
             return cached;
         }
@@ -100,7 +147,7 @@ const pid = mod.GetObjId(player);
                 position: [0, roundStateOffsetY],
                 size: [roundStateWidth, roundStateHeight],
                 visible: true,
-                bgColor: [1, 1, 1],
+                bgColor: COLOR_NORMAL_RGB,
                 bgAlpha: 0,
                 bgFill: mod.UIBgFill.None,
                 children: [
@@ -110,13 +157,13 @@ const pid = mod.GetObjId(player);
                         anchor: mod.UIAnchor.TopCenter,
                         // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                         position: [0, 0],
-                        size: [roundStateWidth, roundStateHeight],
+                        size: [roundStateWidth, 14],
                         visible: true,
                         padding: 0,
                         bgAlpha: 0,
                         bgFill: mod.UIBgFill.None,
                         textLabel: mod.stringkeys.twl.hud.roundStateNotReady,
-                        textColor: [1, 1, 1],
+                        textColor: COLOR_NORMAL_RGB,
                         textAlpha: 1,
                         textSize: 11,
                         textAnchor: mod.UIAnchor.Center,
@@ -135,7 +182,7 @@ const pid = mod.GetObjId(player);
                         // Placeholder label; runtime will set full "{X} / {Y} PLAYERS READY" format.
                         textLabel: "",
                         // Yellow, matching other important HUD callouts.
-                        textColor: [1, 1, 0],
+                        textColor: COLOR_WARNING_YELLOW_RGB,
                         textAlpha: 1,
                         textSize: 11,
                         textAnchor: mod.UIAnchor.Center,
@@ -179,6 +226,7 @@ const pid = mod.GetObjId(player);
             if (topHudRoot) mod.SetUIWidgetParent(probeClock, topHudRoot);
         }
     }
+    attachRoundStateLaneToTopLeftStatus(pid, roundStateRootName);
 
     State.hudCache.clockWidgetCache[pid] = entry;
     setClockColorCached(entry, COLOR_NORMAL);

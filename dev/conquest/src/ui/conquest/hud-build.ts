@@ -24,7 +24,9 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     if (!player || !mod.IsPlayerValid(player)) return undefined;
 
     const pid = getObjId(player);
-    const combatHudEnabled = CONQUEST_COMBAT_HUD_ENABLED && !isConquestCombatRenderOwnerV2();
+    const combatHudEnabled = CONQUEST_COMBAT_HUD_ENABLED
+        && getConquestHudMode() === "legacy"
+        && !isConquestCombatRenderOwnerV2();
     // Build-order authority:
     // ensure the clock root exists before conquest lanes so parent selection is correct on first build.
     ensureClockUIAndGetCache(player);
@@ -170,6 +172,8 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     const CONQUEST_READY_CONTAINER_HEIGHT = 20.0;
     const CONQUEST_READY_TEXT_OFFSET_Y = 1;
     const CONQUEST_READY_TEXT_HEIGHT = 18;
+    const CONQUEST_READY_IN_STATUS_X = 3.0;
+    const CONQUEST_READY_IN_STATUS_Y = 14.0;
     const CONQUEST_READY_ABS_X = 5.0;
     const CONQUEST_READY_ABS_Y = 131.0 + CONQUEST_HUD_NON_CLOCK_SHIFT_Y;
     // Returns ticket-root-local X for one bleed chevron index.
@@ -718,7 +722,9 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     hardResetConquestHudTreeForPid();
 
     const refs: HudRefs = { pid, roots: [] };
-    refs.conquestCombatRoot = ensureConquestCombatHudRootForPid();
+    if (combatHudEnabled) {
+        refs.conquestCombatRoot = ensureConquestCombatHudRootForPid();
+    }
 
     //#endregion -------------------- HUD Build/Ensure Function Start --------------------
 
@@ -3480,14 +3486,20 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     State.hudCache.hudByPid[pid] = refs;
     updateSettingsSummaryHudForPid(pid);
     const readyContainer = safeFind(`Container_ReadyStatus_${pid}`);
+    const topLeftStatusRoot = refs.upperLeftStatusContainer ?? safeFind(`Upper_Left_Status_${pid}`);
     if (readyContainer) {
         try {
             mod.SetUIWidgetAnchor(readyContainer, mod.UIAnchor.TopLeft);
         } catch {
             // Best-effort anchor normalization only.
         }
-        mod.SetUIWidgetParent(readyContainer, mod.GetUIRoot());
-        mod.SetUIWidgetPosition(readyContainer, mod.CreateVector(CONQUEST_READY_ABS_X, CONQUEST_READY_ABS_Y, 0));
+        if (topLeftStatusRoot) {
+            mod.SetUIWidgetParent(readyContainer, topLeftStatusRoot);
+            mod.SetUIWidgetPosition(readyContainer, mod.CreateVector(CONQUEST_READY_IN_STATUS_X, CONQUEST_READY_IN_STATUS_Y, 0));
+        } else {
+            mod.SetUIWidgetParent(readyContainer, mod.GetUIRoot());
+            mod.SetUIWidgetPosition(readyContainer, mod.CreateVector(CONQUEST_READY_ABS_X, CONQUEST_READY_ABS_Y, 0));
+        }
         mod.SetUIWidgetSize(readyContainer, mod.CreateVector(CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_CONTAINER_HEIGHT, 0));
     }
     const readyText = safeFind(`ReadyStatusText_${pid}`);
@@ -3496,6 +3508,9 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         mod.SetUIWidgetPosition(readyText, mod.CreateVector(0, CONQUEST_READY_TEXT_OFFSET_Y, 0));
         mod.SetUIWidgetSize(readyText, mod.CreateVector(CONQUEST_READY_CONTAINER_WIDTH, CONQUEST_READY_TEXT_HEIGHT, 0));
     }
+    // Force immediate post-build status-lane placement so LIVE/NOT READY/GAME OVER never waits on a later broadcast tick.
+    setMatchStateTextForPid(pid);
+    updatePlayersReadyHudTextForAllPlayers();
     setHudHelpDepthForPid(pid);
 
     updateVictoryDialogForPlayer(player, getRemainingSeconds());

@@ -123,6 +123,7 @@ type ConquestRuntimeScaffold = {
     };
     debug: {
         hudEnabled: boolean;
+        hudModeOverride?: TwlConquestHudMode;
         hudLastUpdatedAtSeconds: number;
         hudDirty: boolean;
         ticketLeaderTeam: TeamID | 0;

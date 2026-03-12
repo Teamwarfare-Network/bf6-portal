@@ -27,6 +27,7 @@ async function onGameModeStartedImpl(): Promise<void> {
     initializeConquestPhase1Scaffold();
     conquestPhase2AResetNotLiveState();
     conquestPhase2BOnNotLiveReset();
+    twlConquestHudBootRuntime();
     resetAllConquestCombatHudV2();
     hardPurgeConquestCombatHudV2ForConnectedPlayers();
     resetConquestCombatHudV2Scheduler();
@@ -53,6 +54,9 @@ async function onGameModeStartedImpl(): Promise<void> {
         mod.stringkeys.twl.messages.init
     );
 
+    // Start vehicle spawner backend before any optional HUD-core warmup so gameplay systems can proceed independently.
+    void startVehicleSpawnerSystem();
+
     // Ensure HUD exists for anyone already in-game at start
     await mod.Wait(0.1);
     {
@@ -63,6 +67,13 @@ async function onGameModeStartedImpl(): Promise<void> {
             if (!p || !mod.IsPlayerValid(p)) continue;
             // Build/rebuild the player's HUD (widgets) and immediately reflect current authoritative state.
             ensureHudForPlayer(p);
+        }
+        try {
+            twlConquestHudTickFrame(true);
+            twlConquestHudTickAnimation(true);
+        } catch {
+            // HUD core must never block mode startup; keep core mode so next tick can recover.
+            twlConquestHudHideAllPlayers();
         }
     }
 
@@ -78,9 +89,6 @@ async function onGameModeStartedImpl(): Promise<void> {
     // Clock init + loop (pregame preview, do not count down yet)
     setMatchClockPreview(getConfiguredMatchLengthSeconds());
 
-    // Vehicle spawners run on their own loop so they don't block the main clock loop.
-    void startVehicleSpawnerSystem();
-
     // Core game-state mutation remains second-boundary authoritative.
     // HUD-only refresh runs at half-second cadence to smooth progress/percentage updates.
     let lastSecondBoundary = -1;
@@ -90,6 +98,7 @@ async function onGameModeStartedImpl(): Promise<void> {
         const nowSecondBoundary = Math.floor(nowElapsed);
 
         if (isMatchLive() && !State.match.victoryDialogActive) {
+            conquestPhase2ARefreshLiveCaptureStateSubtick();
             if (nowSecondBoundary !== lastLiveCoreTickSecond) {
                 lastLiveCoreTickSecond = nowSecondBoundary;
                 conquestPhase2AOnLiveTick();

@@ -12,13 +12,11 @@
  */
 function updateHelpTextVisibilityForPid(pid: number): void {
     const refs = State.hudCache.hudByPid[pid];
-    if (!refs) return;
 
     const visibility = getHudVisibilitySnapshotForPid(pid);
     const showHelp = visibility.showHelp;
-    const showReady = visibility.showReady;
 
-    const helpContainer = refs.helpTextContainer ?? safeFind(`Container_HelpText_${pid}`);
+    const helpContainer = refs?.helpTextContainer ?? safeFind(`Container_HelpText_${pid}`);
     if (helpContainer) {
         safeSetUIWidgetVisible(helpContainer, showHelp);
     }
@@ -28,14 +26,16 @@ function updateHelpTextVisibilityForPid(pid: number): void {
         mod.SetUITextLabel(helpText, mod.Message(mod.stringkeys.twl.hud.helpText));
     }
 
-    const readyContainer = refs.readyStatusContainer ?? safeFind(`Container_ReadyStatus_${pid}`);
+    const readyContainer = refs?.readyStatusContainer ?? safeFind(`Container_ReadyStatus_${pid}`);
     if (readyContainer) {
-        safeSetUIWidgetVisible(readyContainer, showReady);
+        // Legacy ready lane is retired; top-left status lane owns ready messaging now.
+        safeSetUIWidgetVisible(readyContainer, false);
     }
 
     const readyText = safeFind(`ReadyStatusText_${pid}`);
     if (readyText) {
-        mod.SetUITextLabel(readyText, mod.Message(mod.stringkeys.twl.hud.readyText));
+        // Keep legacy ready text hidden so duplicate labels cannot leak outside the status stack.
+        safeSetUIWidgetVisible(readyText, false);
     }
 
     // Round-state and players-ready line visibility are owned by hud/status.ts.

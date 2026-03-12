@@ -21,13 +21,19 @@ const CLOCK_DIGIT_OUTER_OFFSET_MULT = 1.16;
 const LOW_TIME_THRESHOLD_SECONDS = 60; // Low-time color threshold in seconds.
 
 // HUD status colors (vectors are RGB 0..1).
-const COLOR_NORMAL = mod.CreateVector(1, 1, 1);
+const COLOR_NORMAL_RGB: [number, number, number] = [1, 1, 1];
+const COLOR_WARNING_YELLOW_RGB: [number, number, number] = [1, 1, 0];
+const COLOR_NORMAL = mod.CreateVector(COLOR_NORMAL_RGB[0], COLOR_NORMAL_RGB[1], COLOR_NORMAL_RGB[2]);
 const COLOR_LOW_TIME = mod.CreateVector(1, 131 / 255, 97 / 255);
 const COLOR_READY_GREEN = mod.CreateVector(173 / 255, 253 / 255, 134 / 255); // #ADFD86
 
 // Status / emphasis colors (use constants; do not inline CreateVector() in UI code).
 const COLOR_NOT_READY_RED = mod.CreateVector(1, 0, 0);
-const COLOR_WARNING_YELLOW = mod.CreateVector(1, 1, 0);
+const COLOR_WARNING_YELLOW = mod.CreateVector(
+    COLOR_WARNING_YELLOW_RGB[0],
+    COLOR_WARNING_YELLOW_RGB[1],
+    COLOR_WARNING_YELLOW_RGB[2]
+);
 
 // Conquest HUD color/layout constants (ticket bars + flag row).
 // Keep these centralized so ParseUI and runtime updates use one shared palette/geometry contract.

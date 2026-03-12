@@ -135,6 +135,7 @@ const State: GameState = {
         },
         debug: {
             hudEnabled: true,
+            hudModeOverride: undefined,
             hudLastUpdatedAtSeconds: -1,
             hudDirty: true,
             ticketLeaderTeam: 0,

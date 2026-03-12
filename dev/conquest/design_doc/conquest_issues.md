@@ -1,7 +1,7 @@
 # Conquest Issues
 
-Last Updated: 2026-03-10  
-Last Tested Build: `v0.391`
+Last Updated: 2026-03-12  
+Last Tested Build: `v0.441` (compile-verified; in-game visual retest pending)
 
 ## Current Snapshot
 - `CQ_Bug_1`: Fixed
@@ -13,6 +13,8 @@ Last Tested Build: `v0.391`
 - `CQ_Bug_7`: Resolved
 - `CQ_Bug_8`: Resolved
 - `CQ_Bug_9`: Open
+- `CQ_Bug_10`: In Progress (core drop-shadow baseline restored; parity polish pass pending)
+- `CQ_Bug_11`: Resolved
 
 ## CQ_Bug_1
 Title: Ticket Counter Overlay / Doubling During Bleed
@@ -228,6 +230,10 @@ Scope/Intent:
 
 Current Workstream:
 - Simplification pass started to remove competing runtime layout owners and reduce HUD migration churn in live tick paths.
+- Positioning pass (v0.429): added a dedicated hud-core top-stack Y offset so tickets/flags/progress bars render below the match clock lane while pop-out/engage preserve relative ordering.
+- Positioning refinement (v0.430): increased hud-core top-stack offset and normalized ticket counter/slash row Y alignment to improve bar/counter lane cohesion.
+- Parity refinement (v0.432): core ticket leader team now resolves from live ticket state (restores lead border/crown visibility in core mode), engage count chips now render with dark background fill, and core chevrons are static-visible (no pulse-hide index).
+- Positioning refinement (v0.433): moved ticket counter row down toward bar lane, tied crown Y to counter row, and lowered pop-out lane (engage remains chained beneath pop-out).
 - Added cached-root PID ownership guardrails in HUD bootstrap to prevent stale/shared ref collisions from surviving cache reuse.
 - Removed schema-coupled live HUD bootstrap checks from the Conquest tick loop; HUD bootstrap is now cache/critical-ref driven.
 - Added strict PID ownership validation for critical HUD refs before render, forcing per-player rebuild on ownership mismatch.
@@ -277,3 +283,129 @@ Current Workstream:
     - all-new `TwlConquestHud_*` widget naming contract,
     - runtime mode toggle (`off` / `legacy` / `core`),
     - explicit ban on legacy combat function/name reuse in `core` mode.
+- Hard-cut implementation kickoff (2026-03-11):
+  - Added new isolated combat HUD pipeline under `src/ui/conquest/hud-core/*` with all-new names (`TwlConquestHud_*`) and all-new function chain (`twlConquestHud*`).
+  - Added runtime mode gate in `src/config/conquest-constants.ts` (`getConquestHudMode/setConquestHudMode`, default `core`) and routed combat update owner to new pipeline when mode is `core`.
+  - Legacy combat build path in `ensureHudForPlayer()` now only builds when mode is `legacy`.
+  - Immediate validation target: verify centered placement of `TwlConquestHud` ticket/objective lanes before expanding feature parity.
+- Additional runtime-coupling finding (2026-03-11):
+  - HUD-core forced tick could throw during startup/live HUD refresh and abort upstream mode flow, which can prevent vehicle spawner startup and core match-loop continuity.
+- Mitigation applied (2026-03-11):
+  - Added HUD-core fail-safe guards to auto-disable HUD-core mode (`off`) on runtime fault without terminating gameplay loops.
+  - Moved vehicle-spawner backend startup earlier in `onGameModeStartedImpl` so vehicle systems are not blocked by optional HUD warmup.
+- Root-cause isolated (2026-03-11):
+  - New combat HUD paths (`hud-core` and `combat-v2`) referenced `mod.stringkeys.twl.hud.clock.slash`, but slash is defined at `mod.stringkeys.twl.system.slash` in `src/strings.json`.
+  - This key mismatch can fault ticket-lane slash label writes and trigger fail-safe mode-off behavior (no combat HUD visible).
+- Fix applied (2026-03-11):
+  - Replaced slash key usage with `mod.stringkeys.twl.system.slash` in new combat HUD build/render paths.
+  - Reset `State.conquest.debug.hudModeOverride` during startup scaffold so prior fail-safe `off` latches do not persist across restarts.
+- Runtime-visibility hardening (2026-03-11):
+  - In `hud-core` tick, strict ref validation is now advisory (single cold-start recovery attempt, then fail-open render) to prevent a false-negative validator from suppressing all combat HUD visibility.
+- Additional no-HUD regression finding (2026-03-11):
+  - `hud-core` had hard fail-close behavior in startup/live catches that set `hudModeOverride` to `"off"` on any uncaught exception; a single transient fault could leave combat HUD permanently hidden for the session.
+- Mitigation applied (2026-03-11):
+  - Converted HUD-core fail handling to soft-fail (hide/reset only, do not auto-switch mode to `"off"`), so core can recover on subsequent ticks.
+  - Reduced HUD-core palette dependency risk by sourcing vectors from existing `CONQUEST_HUD_*_RGB`/shared HUD constants in `ui-layout`, avoiding extra cross-module vector alias coupling.
+- Additional root-acquisition finding (2026-03-12):
+  - `hud-core` root build path depends on `ensureTopHudRootForPid(...)`; strict post-normalization parent-handle identity checks in that helper could return `undefined` even when UI was otherwise valid, suppressing all core combat HUD creation.
+- Mitigation applied (2026-03-12):
+  - Relaxed `ensureTopHudRootForPid(...)` post-normalization verification to best-effort (anchor/position correction without fatal parent-handle identity rejection).
+  - Added `TopHudRoot_{pid}` name-fallback resolution in `hud-core/build.ts` before aborting root creation.
+- Additional visual-parity finding (2026-03-12):
+  - New `hud-core` surfaces were created as `bgFill: None`, and several visual lanes retained zero background alpha, which produced text-only rendering (ticket numbers/labels visible while bars/slot/panel surfaces looked missing).
+- Mitigation applied (2026-03-12):
+  - Applied explicit `Solid` fill + authored alpha to `hud-core` ticket bars, objective slot/fill surfaces, active-popout slot/fill surfaces, and engage track/fill surfaces.
+- Additional parity + flicker finding (2026-03-12):
+  - `hud-core` ticket lane spacing had drifted from the legacy geometry contract (simplified fixed X positions), and live capture-state sampling was second-boundary driven, producing synchronized engage/count strobing with the clock cadence.
+- Mitigation applied (2026-03-12):
+  - Restored legacy ticket/center-gap spacing formulas in `hud-core` constants for parity with the prior approved HUD look.
+  - Moved live capture-state sync onto the sub-second main loop cadence so dynamic engage/count data updates no longer pulse only on second boundaries.
+- Additional flicker root-cause refinement (2026-03-12):
+  - `hud-core` runtime fail-safe hid all combat widgets globally when any single per-player frame update faulted, which could present as periodic full-lane blinking.
+  - Engine-sync pass zeroed per-objective on-point counts before each sample; transient `GetCapturePoint` misses could briefly drive engage counts to zero and then restore on the next sample.
+- Mitigation applied (2026-03-12):
+  - Converted `hud-core` runtime fault handling to per-player recovery first, with scheduler-only soft reset on outer faults (no global hide pulse).
+  - Added on-point sample grace in capture sync: retain last counts through short engine-miss windows and clear only after sustained staleness.
+- Additional startup-blocker finding (2026-03-12):
+  - `detectMapKeyFromHqs()` executed raw `mod.GetHQ`/`mod.GetObjectPosition`/distance checks at startup with no fail-open guard.
+  - If HQ objects were not queryable yet on startup frame timing, `onGameModeStartedImpl` could abort before logic loops and spawner startup, presenting as a full experience no-load.
+- Mitigation applied (2026-03-12):
+  - Hardened `detectMapKeyFromHqs()` to fail-open (`undefined`) when HQ probe/distance checks are unavailable, so startup continues with default map config instead of hard-aborting boot.
+- Isolation step applied (2026-03-12):
+  - Rolled back the three `v0.423` core HUD runtime experiments (per-player pipeline fault-isolation variant, on-point sample grace, and label fallback tweak) to reduce variables while validating startup no-load behavior.
+- Additional visual-correction pass (2026-03-12):
+  - Core ticket bars were using friendly-vs-enemy split ratio, which rendered start-state bars as half full.
+  - Core ticket lane spacing was keyed to a forced fallback objective count rather than configured objective count.
+- Mitigation applied (2026-03-12):
+  - Restored ticket bar fill ratio to legacy intent (`current team tickets / CONQUEST_STARTING_TICKETS`).
+  - Aligned ticket spacing calculation to configured objective count (no forced fallback slot count).
+- Additional timing/appearance pass (2026-03-12):
+  - Core popout/engage lanes now use atomic first-frame reveal sequencing (root visible last after child state writes) to prevent staged widget appearance.
+  - Core chevron rendering now refreshes label/color/alpha each frame and includes dedicated shadow-layer widgets with explicit lifecycle cleanup.
+- Additional layout/flicker refinement (2026-03-12):
+  - Core ticket/objective spacing inputs were still resolved as module-load constants; when objective mapping/config finalized later, built widget X positions could remain on stale spacing and hide expected top-row slots.
+  - Objective labels in core snapshot defaulted to `?` when derived label messages were transiently unavailable, and transient snapshot-build faults could force visible fallback oscillation.
+- Mitigation applied (2026-03-12):
+  - Replaced static ticket-lane X constants with runtime layout resolution keyed to live mapped/configured objective count and added per-player layout-count rebuild trigger.
+  - Added deterministic objective-letter fallback by objective id/row and last-good snapshot reuse on transient snapshot-build faults.
+- Additional pulsing/label regression finding (2026-03-12):
+  - `hud-core` ensure/build path still executed every tick and reapplied default text values (`?`, `0`) before render ownership updated real values, causing visible pulse/flicker under live cadence.
+  - Fallback objective label path used literal letters via `mod.Message("A")` style calls, which can resolve as unknown and show `?`.
+- Mitigation applied (2026-03-12):
+  - `hud-core` build path now short-circuits when initialized and layout signature is unchanged; render remains value owner.
+  - `hud-core` text ensure writes defaults only on first widget creation, preventing per-tick default-value stomps.
+  - Fallback objective/popout labels now map to explicit localized flag-letter string keys (`STR_HUD_CONQUEST_FLAG_LETTER_*`).
+
+## CQ_Bug_10
+Title: Combat HUD Drop-Shadow Parity Missing (Core Path)
+
+Observed:
+- Core combat HUD text currently lacks legacy-style drop-shadow layering on key combat text surfaces.
+
+Expected:
+- Legacy-equivalent drop-shadow treatment restored for combat HUD text groups.
+
+Status:
+- In progress.
+
+Sequencing Contract:
+1. First lock approved parity for positioning, sizing, and color.
+2. Only after that lock, run a dedicated drop-shadow restoration pass.
+3. Validate shadow offsets/layering after geometry/color lock so they are not invalidated by later layout changes.
+
+Latest Progress (v0.438):
+- Added core HUD text shadow widgets and per-frame shadow label/color updates for:
+  - ticket counters,
+  - objective labels/percent rows,
+  - active popout label/percent rows,
+  - engage counts/status row.
+- Further parity tuning may still be needed after live screenshot validation.
+
+Latest Progress (v0.440):
+- Restored differential bleed-chevron visibility in core path (no static all-7 fallback).
+- Added reusable shadow-ring profile builder in `hud-core` constants and applied it to:
+  - bleed chevrons (legacy-style up-bias profile),
+  - objective percent chips,
+  - popout percent chip.
+- Nudged core engage lane upward slightly and moved objective percent chip row up for tighter visual attachment to top flag squares.
+
+Latest Progress (v0.441):
+- Hardened shadow-ring render/hide paths with null-safe array access so stale in-memory entries cannot throw and suppress lane visibility.
+
+## CQ_Bug_11
+Title: Help Text Reappears After Team Swap During Live Match
+
+Observed:
+- After swapping teams while match is already live, top-center help text can reappear.
+
+Expected:
+- Help text must remain hidden while match is live.
+- Help text should only follow pre-live ready/not-ready visibility rules.
+
+Status:
+- Resolved in `v0.434`.
+
+Resolution Used:
+- Changed top-center help container default creation visibility to hidden.
+- Removed early return in pid visibility refresh when HUD refs are temporarily missing; fallback name lookup now still applies authoritative visibility.
+- Added post-ensure visibility reapply on deploy so newly rebuilt widgets cannot keep default state after swap.

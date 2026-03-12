@@ -3,6 +3,47 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.454: Force top-left status text ownership/layout, retire legacy ready lane visibility, and realign core bar/chevron/shadow tuning
+// v0.453: Fix top-left status text ownership, recenter ticket chevrons, and normalize HUD shadow ring symmetry
+// v0.452: Fix top-left status lane parenting, reduce startup HUD churn, and snap core ticket bars to pixel grid
+// v0.451: HUD core pass: fix swap reveal delay, restore top-left status lane, tune shadow rings, and restore flag border ownership
+// v0.450: Fix bug 4: hide combat HUD until team-switch rebuild completes
+// v0.449: bug4 swap gate: keep combat HUD hidden/destroyed while team-swap reset is pending until deploy rebuild release
+// v0.448: hud top-row borders: restore visible border alpha and gate border color/visibility to authoritative full ownership state
+// v0.447: hud status lane follow-up: enforce reparent after build/refresh and align top-left status panel height with branding
+// v0.446: hud polish: pixel-snap ticket bars, top-left status stack relocation, engage/letter shadow parity, and first-boot core HUD fault isolation
+// v0.445: hud-core: convert objective and popout letter shadows to symmetric 8-way ring halos
+// v0.444: size-cut: removed header game-mode description block and pruned inactive combat-v2 runtime imports to shim
+// v0.443: process: enforce 1MiB bundle size cap in verify and document guardrail in AGENTS
+// v0.442: bundle-size: remove runtime Changelog import from entrypoint
+// v0.441: hud-core: harden shadow-ring array access to tolerate stale entries during hide/render
+// v0.440: hud-core: restore differential bleed chevrons, add reusable shadow-ring profiles for chevrons+percents, and nudge engage/percent lane Y
+// v0.439: hud-core: make popout/engage first-frame reveals atomic and stabilize chevron visibility/shadow cleanup
+// v0.438: hud-core: remove ticket shadows, tune legacy shadow offsets, harden chevrons visibility, and tighten popout/engage spacing
+// v0.437: hud-core: lower popout, tighten engage gap, restore chevrons visibility, add combat text drop-shadows
+// v0.436: hud-core engage lane: pixel-snap root x to stabilize symmetric count-box gap alignment
+// v0.435: hud-core: add percent chip backgrounds and tune ticket/popout/engage vertical alignment
+// v0.434: hud visibility: prevent help text from reappearing after team swap in live match
+// v0.433: hud-core positioning: move ticket counter row down to bar lane and lower popout lane
+// v0.432: hud-core parity: lower stack slightly, compute core leader team for ticket lead indicators, add engage count chip backgrounds, and keep bleed chevrons static-visible
+// v0.431: hud-core tickets: hide center slash separator
+// v0.430: hud-core positioning: lower full combat stack and normalize ticket counter/slash row alignment
+// v0.429: hud-core: lower combat stack below clock via dedicated top-stack offset
+// v0.428: hud-core build-pass pulse fix + localized fallback label keys
+// v0.427: runtime ticket layout + snapshot fallback + objective label stabilization
+// v0.426: fix core ticket bar start-fill ratio and align ticket spacing to configured objective count
+// v0.425: rollback recent core hud runtime experiments to isolate startup no-load while keeping HQ fail-open guard
+// v0.424: harden startup map detection: fail-open HQ probe to prevent full experience boot abort
+// v0.423: stabilize core hud flicker: isolate per-player runtime faults, add capture sample grace, harden flag letter fallback
+// v0.422: Core HUD parity/cadence pass: restored legacy ticket spacing model and moved live capture sync to sub-second updates
+// v0.421: Core HUD surface visibility fix: apply solid-fill + alpha on ticket bars, flag slots, popout, and engage track
+// v0.420: Core HUD root acquisition fix: relax TopHudRoot validation and add fallback binding for hud-core build
+// v0.419: HUD core recovery pass: prevent mode-off latch on transient faults and stabilize shared HUD palette constants
+// v0.417: HUD core phase-3 pass: ticket boxes+borders+crowns, inline flags, popout, engage panel, and bleed chevrons in isolated render path
+// v0.416: Core HUD visibility hardening: make strict ref validation advisory so combat lane still renders after recovery
+// v0.415: Core combat HUD visibility fix: use twl.system.slash key and clear hudModeOverride on startup scaffold
+// v0.414: HUD core runtime failsafe: isolate startup/live loops from HUD exceptions; start spawners before HUD warmup
+// v0.413: Hard-cut HUD core scaffold: TwlConquestHud isolated root chain + early centering probe
 // v0.412: CQ_Bug_9 isolate v2 owner: stop legacy combat build in ensureHudForPlayer
 // v0.411: CQ_Bug_9 v2 containment: startup hard purge + first-ensure duplicate purge + centered root-chain validation
 // v0.410: phase3 hud: isolate v2 combat loop + fail-open optional widgets

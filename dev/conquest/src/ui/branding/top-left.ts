@@ -1,13 +1,35 @@
 // @ts-nocheck
 // Module: ui/branding/top-left -- static top-left branding and settings summary widgets
 
+// Deletes all widgets by one name so top-left branding roots cannot accumulate duplicate instances across rebuild churn.
+function deleteAllBrandingWidgetsByName(name: string, maxPasses: number = 96): void {
+    for (let i = 0; i < maxPasses; i++) {
+        const widget = safeFind(name);
+        if (!widget) return;
+        try {
+            mod.DeleteUIWidget(widget);
+        } catch {
+            return;
+        }
+    }
+}
+
 function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, refs: HudRefs): void {
+    const TOP_LEFT_BASE_X = 5;
+    const TOP_LEFT_BASE_Y = 5 + TOP_HUD_OFFSET_Y + CONQUEST_HUD_NON_CLOCK_SHIFT_Y;
+    const BRANDING_WIDTH = 200;
+
+    // Build-path cleanup: force single-instance naming for branding/status stacks before ParseUI creates fresh roots.
+    deleteAllBrandingWidgetsByName(`Upper_Left_Container_${pid}`);
+    deleteAllBrandingWidgetsByName(`Upper_Left_Status_${pid}`);
+    deleteAllBrandingWidgetsByName(`Upper_Left_Settings_${pid}`);
+
     const upperLeft = modlib.ParseUI({
         name: `Upper_Left_Container_${pid}`,
         type: "Container",
         playerId: player,
-        position: [5, 5 + TOP_HUD_OFFSET_Y + CONQUEST_HUD_NON_CLOCK_SHIFT_Y],
-        size: [200, 30],
+        position: [TOP_LEFT_BASE_X, TOP_LEFT_BASE_Y],
+        size: [BRANDING_WIDTH, 30],
         anchor: mod.UIAnchor.TopLeft,
         visible: true,
         padding: 1,
@@ -51,12 +73,69 @@ function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, re
             },
         ],
     });
-    if (upperLeft) refs.roots.push(upperLeft);
+    if (upperLeft) {
+        refs.roots.push(upperLeft);
+        refs.upperLeftContainer = upperLeft;
+    }
 
-    const SETTINGS_CONTAINER_X = 5;
-    const SETTINGS_CONTAINER_Y = 5 + TOP_HUD_OFFSET_Y + 30 + 6 + CONQUEST_HUD_NON_CLOCK_SHIFT_Y;
+    const statusStack = modlib.ParseUI({
+        name: `Upper_Left_Status_${pid}`,
+        type: "Container",
+        playerId: player,
+        position: [TOP_LEFT_BASE_X + BRANDING_WIDTH + 8, TOP_LEFT_BASE_Y],
+        size: [206, 30],
+        anchor: mod.UIAnchor.TopLeft,
+        visible: true,
+        padding: 1,
+        bgColor: [0.251, 0.0941, 0.0667],
+        bgAlpha: 0.5625,
+        bgFill: mod.UIBgFill.Blur,
+        children: [
+            {
+                name: `Upper_Left_Status_StateText_${pid}`,
+                type: "Text",
+                position: [0, 1],
+                size: [206, 14],
+                anchor: mod.UIAnchor.TopLeft,
+                visible: true,
+                padding: 0,
+                bgAlpha: 0,
+                bgFill: mod.UIBgFill.None,
+                textLabel: mod.stringkeys.twl.hud.roundStateNotReady,
+                textColor: [0.95, 0.95, 0.95],
+                textAlpha: 1,
+                textSize: 11,
+                textAnchor: mod.UIAnchor.Center,
+            },
+            {
+                name: `Upper_Left_Status_ReadyText_${pid}`,
+                type: "Text",
+                position: [0, 15],
+                size: [206, 15],
+                anchor: mod.UIAnchor.TopLeft,
+                visible: false,
+                padding: 0,
+                bgAlpha: 0,
+                bgFill: mod.UIBgFill.None,
+                textLabel: "",
+                textColor: [1, 0.9059, 0.3373],
+                textAlpha: 1,
+                textSize: 11,
+                textAnchor: mod.UIAnchor.Center,
+            },
+        ],
+    });
+    if (statusStack) {
+        refs.roots.push(statusStack);
+        refs.upperLeftStatusContainer = statusStack;
+        refs.upperLeftStatusStateText = safeFind(`Upper_Left_Status_StateText_${pid}`);
+        refs.upperLeftStatusReadyText = safeFind(`Upper_Left_Status_ReadyText_${pid}`);
+    }
+
+    const SETTINGS_CONTAINER_X = TOP_LEFT_BASE_X;
+    const SETTINGS_CONTAINER_Y = TOP_LEFT_BASE_Y + 30 + 6;
     const SETTINGS_LINE_HEIGHT = 12;
-    const SETTINGS_TEXT_WIDTH = 200;
+    const SETTINGS_TEXT_WIDTH = BRANDING_WIDTH;
     const SETTINGS_TEXT_SIZE = 9;
     const SETTINGS_TEXT_COLOR: [number, number, number] = [0.6784, 0.9922, 0.5255];
 

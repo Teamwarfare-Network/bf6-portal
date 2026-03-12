@@ -43,6 +43,7 @@ function cleanupHudForPid(pid: number): void {
     // Conquest HUD widgets are torn down through one authoritative lifecycle owner.
     destroyConquestHudForPid(pid);
     resetConquestCombatHudV2ForPid(pid);
+    twlConquestHudDestroyPlayer(pid);
 
     const rootNames = [
         `TopHudRoot_${pid}`,
@@ -91,6 +92,10 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     if (joinPid !== undefined) {
         delete State.players.disconnectedByPid[joinPid];
         State.players.deployedByPid[joinPid] = false;
+        State.conquest.debug.teamSwapHudResetPendingByPid[joinPid] = false;
+        State.conquest.debug.teamSwapRefreshTokenByPid[joinPid] = 0;
+        State.conquest.debug.engageHiddenUntilDeployByPid[joinPid] = true;
+        delete State.conquest.capture.engagedObjIdByPid[joinPid];
         const joinTeamNum = safeGetTeamNumberFromPlayer(eventPlayer, 0);
         if (joinTeamNum === TeamID.Team1 || joinTeamNum === TeamID.Team2) {
             State.conquest.debug.perspectiveTeamByPid[joinPid] = joinTeamNum;
@@ -106,14 +111,10 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     ensureHudForPlayer(eventPlayer);
     // Force a conquest HUD refresh so late joiners immediately receive current tickets/flag state.
     updateConquestPhase2ADebugHudForAllPlayers(true);
-    {
-        const cache = ensureClockUIAndGetCache(eventPlayer);
-        if (cache && joinPid !== undefined) {
-            const visibility = getHudVisibilitySnapshotForPid(joinPid);
-            setMatchStateText(cache.roundStateText, visibility.status);
-        }
-    updateHelpTextVisibilityForPlayer(eventPlayer);
+    if (joinPid !== undefined) {
+        setMatchStateTextForPid(joinPid);
     }
+    updateHelpTextVisibilityForPlayer(eventPlayer);
     if (joinPid !== undefined) {
         updateTeamNameWidgetsForPid(joinPid);
     }

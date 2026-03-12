@@ -52,8 +52,17 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     updateHelpTextVisibilityForAllPlayers();
 
     ensureHudForPlayer(eventPlayer);
+    // Re-apply help/ready visibility after ensure so freshly rebuilt top-center widgets cannot keep default visibility.
+    updateHelpTextVisibilityForPid(pid);
     // Keep conquest HUD state in sync for newly deployed viewers even when no new capture/ticket events fire.
     updateConquestPhase2ADebugHudForAllPlayers(true);
+    // Drive one immediate core frame on deploy release so swap-pending viewers reveal in a single pass.
+    try {
+        twlConquestHudTickFrame(true);
+        twlConquestHudTickAnimation(true);
+    } catch {
+        // Keep deploy flow robust even if a HUD frame write faults.
+    }
     // First-life chevron stabilization:
     // run one clean-tick bleed projection pass right after deploy so chevrons don't wait
     // for a later unrelated HUD tick or team swap to appear.

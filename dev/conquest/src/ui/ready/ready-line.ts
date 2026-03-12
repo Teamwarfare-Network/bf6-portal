@@ -16,6 +16,19 @@ type ConquestTopCenterAuxLayout = {
     readyTextHeight: number;
 };
 
+// Deletes all widgets by one name so top-center helper containers stay single-instance across rebuild retries.
+function deleteAllTopCenterAuxWidgetsByName(name: string, maxPasses: number = 96): void {
+    for (let i = 0; i < maxPasses; i++) {
+        const widget = safeFind(name);
+        if (!widget) return;
+        try {
+            mod.DeleteUIWidget(widget);
+        } catch {
+            return;
+        }
+    }
+}
+
 function buildConquestTopCenterAuxWidgets(
     player: mod.Player,
     pid: number,
@@ -25,6 +38,13 @@ function buildConquestTopCenterAuxWidgets(
     const TOP_PANEL_Y = 47.73;
     const PANEL_WIDTH = 99.01;
     const PANEL_HEIGHT = 28.11;
+
+    // Build-path cleanup: ensure stale aux roots from failed/partial rebuilds cannot shadow the active widgets.
+    deleteAllTopCenterAuxWidgetsByName(`ConquestTopCenterAuxRoot_${pid}`);
+    deleteAllTopCenterAuxWidgetsByName(`Container_HelpText_${pid}`);
+    deleteAllTopCenterAuxWidgetsByName(`HelpText_${pid}`);
+    deleteAllTopCenterAuxWidgetsByName(`Container_ReadyStatus_${pid}`);
+    deleteAllTopCenterAuxWidgetsByName(`ReadyStatusText_${pid}`);
 
     const mid = modlib.ParseUI({
         name: `ConquestTopCenterAuxRoot_${pid}`,
@@ -45,7 +65,8 @@ function buildConquestTopCenterAuxWidgets(
                 position: [layout.helpContainerX, layout.helpContainerY],
                 size: [layout.helpContainerWidth, layout.helpContainerHeight],
                 anchor: mod.UIAnchor.TopLeft,
-                visible: true,
+                // Start hidden; authoritative visibility is applied by hud/help-visibility.ts.
+                visible: false,
                 padding: 0,
                 bgColor: [1, 0.9882, 0.6118],
                 bgAlpha: 1,
@@ -101,5 +122,8 @@ function buildConquestTopCenterAuxWidgets(
             },
         ],
     });
-    if (mid) refs.roots.push(mid);
+    if (mid) {
+        refs.roots.push(mid);
+        refs.topCenterAuxRoot = mid;
+    }
 }

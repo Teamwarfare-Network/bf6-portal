@@ -23,6 +23,8 @@ const truthDir = path.resolve(
 const strictTruthCompare = /^(1|true|yes|on)$/i.test(
   process.env.VERIFY_GROUND_TRUTH || ""
 );
+const maxBundleBytes = 1048576;
+const bundleScriptPath = path.join(distDir, "bundle.ts");
 
 const builtFiles = [
   { label: "Script (bundle.ts)", built: path.join(distDir, "bundle.ts") },
@@ -43,6 +45,17 @@ const truthPairs = [
 ];
 
 let allPassed = true;
+
+// Verifies emitted bundle size is within Battlefield Portal's script upload limit.
+function verifyBundleSizeLimit(bundlePath, maxBytes) {
+  const bundleBytes = fs.statSync(bundlePath).size;
+  if (bundleBytes > maxBytes) {
+    console.error(`FAIL [Bundle Size]: Emitted file size ${bundleBytes} exceeds maximum of ${maxBytes}`);
+    return false;
+  }
+  console.log(`PASS [Bundle Size]: ${bundleBytes} bytes (max ${maxBytes})`);
+  return true;
+}
 
 for (const { label, built } of builtFiles) {
   if (!fs.existsSync(built)) {
@@ -65,6 +78,17 @@ for (const { label, built } of builtFiles) {
   }
 
   console.log(`PASS [${label}]: Build output exists`);
+}
+
+if (fs.existsSync(bundleScriptPath)) {
+  try {
+    if (!verifyBundleSizeLimit(bundleScriptPath, maxBundleBytes)) {
+      allPassed = false;
+    }
+  } catch (err) {
+    console.error(`FAIL [Bundle Size]: Could not inspect bundle size - ${err.message}`);
+    allPassed = false;
+  }
 }
 
 const stringsPath = path.join(distDir, "bundle.strings.json");

@@ -87,6 +87,18 @@ Prompting examples:
    - Package script: `npm run bumpVersion`
    - Preferred usage: `npm run bumpVersion -- -c "brief changelog entry"`
 3. Do not defer changelog/version updates to later cleanup; update them in the same change set.
+4. Immediately after `npm run bumpVersion`, run compile verification before handoff:
+   - `npm run build`
+   - `cmd /c npx tsc --pretty false --noEmit`
+5. Treat any compile error from that post-bump verification as blocking; fix before finalizing.
+
+## Bundle Size Limit Policy
+
+1. Battlefield Portal script upload has a hard size limit for emitted script files.
+2. Treat `dist/bundle.ts` size as blocking when it exceeds `1,048,576` bytes (1 MiB).
+3. `scripts/verify.js` must enforce this cap and fail verification when exceeded.
+4. Before handoff, always run verification and confirm the bundle size check passes.
+5. If size exceeds limit, prioritize removing redundant runtime paths/imports before feature additions.
 
 ## UI Layout Change Protocol
 

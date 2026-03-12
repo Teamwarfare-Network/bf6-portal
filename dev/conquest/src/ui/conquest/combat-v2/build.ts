@@ -187,7 +187,7 @@ function ensureConquestCombatHudV2TicketsWidgets(
         CONQUEST_COMBAT_HUD_V2_TICKETS_LAYOUT.slashText.width,
         CONQUEST_COMBAT_HUD_V2_TICKETS_LAYOUT.slashText.height,
         CONQUEST_COMBAT_HUD_V2_TICKETS_LAYOUT.slashText.textSize,
-        mod.Message(mod.stringkeys.twl.hud.clock.slash),
+        mod.Message(mod.stringkeys.twl.system.slash),
         [1, 1, 1]
     );
     if (!slashText) return undefined;

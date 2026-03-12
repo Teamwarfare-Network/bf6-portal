@@ -36,7 +36,7 @@ function setMatchStateText(
     mod.SetUITextLabel(widget, mod.Message(stateKey));
 
     // Color: white when LIVE, red when NOT READY
-    mod.SetUITextColor(widget, isLive ? mod.CreateVector(1, 1, 1) : COLOR_NOT_READY_RED);
+    mod.SetUITextColor(widget, isLive ? COLOR_NORMAL : COLOR_NOT_READY_RED);
 }
 
 // Splits remaining clock seconds into minute and second digit parts for HUD glyph widgets.
@@ -134,6 +134,69 @@ function safeSetUIWidgetBgAlpha(widget: mod.UIWidget | undefined, alpha: number)
     }
 }
 
+// Resolves the authoritative top-left status state text widget for one player.
+function resolveTopLeftStatusStateTextForPid(pid: number): mod.UIWidget | undefined {
+    const refs = State.hudCache.hudByPid[pid];
+    return refs?.upperLeftStatusStateText ?? safeFind(`Upper_Left_Status_StateText_${pid}`);
+}
+
+// Resolves the authoritative top-left status ready text widget for one player.
+function resolveTopLeftStatusReadyTextForPid(pid: number): mod.UIWidget | undefined {
+    const refs = State.hudCache.hudByPid[pid];
+    return refs?.upperLeftStatusReadyText ?? safeFind(`Upper_Left_Status_ReadyText_${pid}`);
+}
+
+// Hides legacy clock-owned status widgets so only the top-left status container remains visible.
+function hideLegacyClockStatusLaneForPid(pid: number): void {
+    safeSetUIWidgetVisible(safeFind(`RoundStateRoot_${pid}`), false);
+    safeSetUIWidgetVisible(safeFind(`RoundStateText_${pid}`), false);
+    safeSetUIWidgetVisible(safeFind(`PlayersReadyText_${pid}`), false);
+}
+
+// Enforces one deterministic layout for top-left status texts each refresh so stray legacy parent chains cannot pull them out of place.
+function ensureTopLeftStatusTextLayoutForPid(pid: number): void {
+    const statusRoot = resolveUpperLeftStatusRootForPid(pid);
+    const statusStateText = resolveTopLeftStatusStateTextForPid(pid);
+    const statusReadyText = resolveTopLeftStatusReadyTextForPid(pid);
+    if (!statusRoot) return;
+    const statusWidth = 206;
+    const stateY = 1;
+    const readyY = 15;
+    const stateHeight = 14;
+    const readyHeight = 15;
+    try {
+        mod.SetUIWidgetAnchor(statusRoot, mod.UIAnchor.TopLeft);
+        mod.SetUIWidgetSize(statusRoot, mod.CreateVector(statusWidth, 30, 0));
+        mod.SetUIWidgetDepth(statusRoot, mod.UIDepth.AboveGameUI);
+    } catch {
+        // Keep HUD lane alive even if one transform write fails.
+    }
+    if (statusStateText) {
+        try {
+            mod.SetUIWidgetParent(statusStateText, statusRoot);
+            mod.SetUIWidgetAnchor(statusStateText, mod.UIAnchor.TopLeft);
+            mod.SetUIWidgetPosition(statusStateText, mod.CreateVector(0, stateY, 0));
+            mod.SetUIWidgetSize(statusStateText, mod.CreateVector(statusWidth, stateHeight, 0));
+            mod.SetUITextAnchor(statusStateText, mod.UIAnchor.Center);
+            mod.SetUIWidgetDepth(statusStateText, mod.UIDepth.AboveGameUI);
+        } catch {
+            // Keep HUD lane alive even if one transform write fails.
+        }
+    }
+    if (statusReadyText) {
+        try {
+            mod.SetUIWidgetParent(statusReadyText, statusRoot);
+            mod.SetUIWidgetAnchor(statusReadyText, mod.UIAnchor.TopLeft);
+            mod.SetUIWidgetPosition(statusReadyText, mod.CreateVector(0, readyY, 0));
+            mod.SetUIWidgetSize(statusReadyText, mod.CreateVector(statusWidth, readyHeight, 0));
+            mod.SetUITextAnchor(statusReadyText, mod.UIAnchor.Center);
+            mod.SetUIWidgetDepth(statusReadyText, mod.UIDepth.AboveGameUI);
+        } catch {
+            // Keep HUD lane alive even if one transform write fails.
+        }
+    }
+}
+
 // Safe depth write helper used by HUD render/restack paths.
 function safeSetUIWidgetDepth(widget: mod.UIWidget | undefined, depth: mod.UIDepth): void {
     if (!widget) return;
@@ -216,20 +279,26 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
     } catch {
         return undefined;
     }
+    // Post-normalization verification is best-effort:
+    // some runtimes can return non-identical root handles for equivalent UI parents, so parent handle
+    // identity checks are advisory and should not suppress all combat HUD rendering.
     try {
         const parent = mod.GetUIWidgetParent(root);
-        if (!parent || parent !== uiRoot) return undefined;
-        if (mod.GetUIWidgetAnchor(root) !== mod.UIAnchor.TopCenter) return undefined;
+        if (!parent) return undefined;
+        const anchor = mod.GetUIWidgetAnchor(root);
+        if (anchor !== mod.UIAnchor.TopCenter) {
+            mod.SetUIWidgetAnchor(root, mod.UIAnchor.TopCenter);
+        }
         const pos = mod.GetUIWidgetPosition(root);
-        if (mod.AbsoluteValue(mod.XComponentOf(pos)) > 0.5) return undefined;
-        if (mod.AbsoluteValue(mod.YComponentOf(pos)) > 0.5) return undefined;
+        if (mod.AbsoluteValue(mod.XComponentOf(pos)) > 0.5 || mod.AbsoluteValue(mod.YComponentOf(pos)) > 0.5) {
+            mod.SetUIWidgetPosition(root, mod.CreateVector(0, 0, 0));
+        }
     } catch {
-        return undefined;
+        // Keep root available even if readback checks fail intermittently.
     }
 
     const topHudDepthIds = [
         "MatchTimerRoot_",
-        "RoundStateRoot_",
     ];
     for (const base of topHudDepthIds) {
         const widget = safeFind(base + pid);
@@ -242,12 +311,25 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
 
 // Forces help/ready lanes below gameplay HUD depth so they do not occlude critical combat overlays.
 function setHudHelpDepthForPid(pid: number): void {
+    // Top-left status lane must remain above its own blur container after reparenting.
+    const statusLaneIds = [
+        `Upper_Left_Status_${pid}`,
+        `Upper_Left_Status_StateText_${pid}`,
+        `Upper_Left_Status_ReadyText_${pid}`,
+        `Container_ReadyStatus_${pid}`,
+        `ReadyStatusText_${pid}`,
+        `RoundStateRoot_${pid}`,
+        `RoundStateText_${pid}`,
+        `PlayersReadyText_${pid}`,
+    ];
+    for (const name of statusLaneIds) {
+        const widget = safeFind(name);
+        if (widget) mod.SetUIWidgetDepth(widget, mod.UIDepth.AboveGameUI);
+    }
+    // Legacy top-center help/ready prompt lanes stay below gameplay to avoid occluding combat HUD.
     const helpIds = [
         `Container_HelpText_${pid}`,
         `HelpText_${pid}`,
-        `Container_ReadyStatus_${pid}`,
-        `ReadyStatusText_${pid}`,
-        `PlayersReadyText_${pid}`,
     ];
     for (const name of helpIds) {
         const widget = safeFind(name);
@@ -275,6 +357,20 @@ function getHudVisibilitySnapshotForPid(pid: number): HudVisibilitySnapshot {
     const derivedStatus = State.conquest.debug.hudStatusVmByPid[pid];
     const derivedHelpReady = State.conquest.debug.hudHelpReadyVmByPid[pid];
     if (derivedStatus && derivedHelpReady) {
+        // Top-left status lane must remain authoritative in live/game-over phases.
+        // Normalize any stale help/ready slices so LIVE/GAME OVER never disappears.
+        if (derivedStatus.isLive || derivedStatus.isGameOver) {
+            return {
+                showHelp: false,
+                showReady: false,
+                showRoundStateLine: true,
+                showPlayersReadyLine: false,
+                status: {
+                    isLive: derivedStatus.isLive,
+                    isGameOver: derivedStatus.isGameOver,
+                },
+            };
+        }
         return {
             showHelp: derivedHelpReady.showHelp,
             showReady: derivedHelpReady.showReady,
@@ -311,18 +407,26 @@ function getHudVisibilitySnapshotForPid(pid: number): HudVisibilitySnapshot {
  * - It should be called after any change that affects phase state so HUDs remain consistent.
  */
 
+// Refreshes one player's round-state lane placement + label so post-build HUDs never wait on a later broadcast to reparent.
+function setMatchStateTextForPid(pid: number): void {
+    ensureTopLeftStatusTextLayoutForPid(pid);
+    const statusRoot = resolveUpperLeftStatusRootForPid(pid);
+    const statusStateText = resolveTopLeftStatusStateTextForPid(pid);
+    const visibility = getHudVisibilitySnapshotForPid(pid);
+    safeSetUIWidgetVisible(statusRoot, true);
+    safeSetUIWidgetVisible(statusStateText, true);
+    setMatchStateText(statusStateText, visibility.status);
+    hideLegacyClockStatusLaneForPid(pid);
+}
+
 function setMatchStateTextForAllPlayers(): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
-        const cache = ensureClockUIAndGetCache(p);
-        if (!cache) continue;
         const pid = mod.GetObjId(p);
-        const visibility = getHudVisibilitySnapshotForPid(pid);
-        safeSetUIWidgetVisible(cache.roundStateText, visibility.showRoundStateLine);
-        setMatchStateText(cache.roundStateText, visibility.status);
+        setMatchStateTextForPid(pid);
     }
     // Keep the pre-live ready count line in sync with phase-state HUD refreshes.
     updatePlayersReadyHudTextForAllPlayers();
@@ -364,20 +468,30 @@ function updatePlayersReadyHudTextForAllPlayers(): void {
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
-        const cache = ensureClockUIAndGetCache(p);
-        if (!cache || !cache.playersReadyText) continue;
 
         const pid = mod.GetObjId(p);
+        ensureTopLeftStatusTextLayoutForPid(pid);
+        const statusRoot = resolveUpperLeftStatusRootForPid(pid);
+        const statusReadyText = resolveTopLeftStatusReadyTextForPid(pid);
+        if (!statusReadyText) continue;
         const visibility = getHudVisibilitySnapshotForPid(pid);
         const showReadyLine = shouldShow && visibility.showPlayersReadyLine;
+        const showReadyPrompt = visibility.showReady && !showReadyLine;
+        safeSetUIWidgetVisible(statusRoot, true);
 
         // Toggle visibility first so we can avoid unnecessary label churn when hidden.
-        safeSetUIWidgetVisible(cache.playersReadyText, showReadyLine);
-        if (!showReadyLine) continue;
-
-        const label = mod.Message(mod.stringkeys.twl.hud.playersReadyFormat, readyCount, total);
-        mod.SetUITextLabel(cache.playersReadyText, label);
-        mod.SetUITextColor(cache.playersReadyText, COLOR_WARNING_YELLOW);
+        safeSetUIWidgetVisible(statusReadyText, showReadyLine || showReadyPrompt);
+        hideLegacyClockStatusLaneForPid(pid);
+        if (showReadyLine) {
+            const label = mod.Message(mod.stringkeys.twl.hud.playersReadyFormat, readyCount, total);
+            mod.SetUITextLabel(statusReadyText, label);
+            mod.SetUITextColor(statusReadyText, COLOR_WARNING_YELLOW);
+            continue;
+        }
+        if (showReadyPrompt) {
+            mod.SetUITextLabel(statusReadyText, mod.Message(mod.stringkeys.twl.hud.readyText));
+            mod.SetUITextColor(statusReadyText, COLOR_READY_GREEN);
+        }
     }
 }
 

@@ -9,6 +9,11 @@ type HudRefs = {
     // Authoritative centered root chain handles for this player's Conquest top HUD.
     topHudRoot?: mod.UIWidget;
     conquestCombatRoot?: mod.UIWidget;
+    upperLeftContainer?: mod.UIWidget;
+    upperLeftStatusContainer?: mod.UIWidget;
+    upperLeftStatusStateText?: mod.UIWidget;
+    upperLeftStatusReadyText?: mod.UIWidget;
+    topCenterAuxRoot?: mod.UIWidget;
 
     settingsGameModeText?: mod.UIWidget;
     settingsAircraftCeilingText?: mod.UIWidget;

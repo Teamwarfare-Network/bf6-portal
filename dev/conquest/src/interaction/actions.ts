@@ -10,6 +10,8 @@ const TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS = 0.6;
 function cleanupConquestHudForTeamSwap(pid: number): void {
     setConquestCombatHudV2TeamSwapPending(pid, true);
     destroyConquestCombatHudV2ForPid(pid);
+    // Core HUD must be fully torn down at swap start so stale widgets cannot flash before rebuild completes.
+    twlConquestHudDestroyPlayer(pid);
     delete State.conquest.capture.engagedObjIdByPid[pid];
     State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
     State.conquest.debug.teamSwapHudResetPendingByPid[pid] = true;
