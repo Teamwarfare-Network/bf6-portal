@@ -30,10 +30,10 @@ Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
 - [Phase 3B: Polished UI Pass](#phase-3b)
 - [Phase 3C: HUD Cleanup and Legacy Path Removal](#phase-3c)
 - [Phase 4: Capture Sounds](#phase-4)
-- [Phase 5: Vehicle Systems](#phase-5)
+- [Phase 5: Vehicle Systems (Timers, Queue, Repair)](#phase-5)
 - [Phase 6: Basic Spawn and Boundaries System](#phase-6)
 - [Phase 7: Custom Tab Scoreboard + KPI Tracking](#phase-7)
-- [Phase 8: Post-Match Ticket Screen](#phase-8)
+- [Phase 8: Pre & Post Match Events](#phase-8)
 - [Phase 9: Iteration, Playtesting, and Polish](#phase-9)
 - [Phase 10: Advanced Features](#phase-10)
 - [Phase 11: AI/Bot Simulation and Spawn-Balance Validation](#phase-11)
@@ -266,7 +266,7 @@ These names are planning anchors for implementation/review.
 - `captureSound_FlushQueue()`
 - `captureSound_ShouldThrottle(key: string, cooldownSeconds: number)`
 
-### 5) Vehicle Systems
+### 5) Vehicle Systems (Timers, Queue, Repair)
 
 - `vehicleTimer_OnDestroyed(vehicleObjId: number, slotIndex: number)`
 - `vehicleTimer_GetRemaining(slotIndex: number)`
@@ -1607,6 +1607,7 @@ Deliverables:
 - per-slot respawn timer tracking and HUD rendering
 - vehicle spawn queue behavior and slot arbitration
 - vehicle repair runway/pad behavior
+- knobs for vehicle spawns
 
 Mapped clarifications:
 
@@ -1623,6 +1624,7 @@ Verification:
 - destroy-to-respawn timer accuracy checks
 - queue sequencing and slot-release checks
 - repair runway/pad enter/exit and restore-behavior checks
+- vehicle spawn knob/config behavior checks
 
 Codex To-Do Checklist:
 
@@ -1630,10 +1632,12 @@ Codex To-Do Checklist:
 - [ ] Render timer HUD output from authoritative timer state only.
 - [ ] Implement vehicle spawn queue behavior and queue arbitration for shared vehicle systems.
 - [ ] Add vehicle repair runway/pad support.
+- [ ] Add configurable knobs for vehicle spawns and ensure they are applied from authoritative config/runtime state.
 - [ ] Respect disabled slot hiding behavior and per-map respawn values.
 - [ ] Validate destroy-to-respawn timings against configured constants.
 - [ ] Validate queue fairness and slot-release behavior.
 - [ ] Validate repair runway/pad behavior under normal and edge-case entry/exit scenarios.
+- [ ] Validate vehicle spawn knobs across supported slot/spawn scenarios.
 - [ ] Record timer accuracy evidence across multiple slot types.
 
 Phase Changelog:
@@ -1653,6 +1657,7 @@ Deliverables:
 - aircraft-vs-vehicle boundary enforcement
 - main-base out-of-bounds enforcement
 - kill-player out-of-bounds behavior
+- dedicated team-switch buttons on minimap
 - preserve extension seams for advanced spawn contract (no node-risk logic in this phase)
 
 Mapped clarifications:
@@ -1671,6 +1676,7 @@ Verification:
 - aircraft-vs-vehicle boundary behavior checks
 - main-base out-of-bounds checks
 - kill-player out-of-bounds enforcement checks
+- dedicated minimap team-switch button behavior checks
 - confirm no advanced node/LOS/heatmap logic is active in Phase 6
 
 Codex To-Do Checklist:
@@ -1680,6 +1686,7 @@ Codex To-Do Checklist:
 - [ ] Implement aircraft-vs-vehicle boundary distinction.
 - [ ] Implement main-base out-of-bounds enforcement.
 - [ ] Kill players when out-of-bounds according to boundary rules.
+- [ ] Add dedicated team-switch buttons on the minimap and validate their team-switch flow ownership.
 - [ ] Add clear diagnostics for missing/invalid spawn sets per validator policy.
 - [ ] Keep advanced node-risk/LOS/heatmap logic disabled in this phase.
 - [ ] Run spawn restriction, fallback, and boundary tests across team swap/redeploy scenarios.
@@ -1700,6 +1707,7 @@ Deliverables:
 - soldier KPI tracking
 - custom tab scoreboard rendering and updates
 - post-match aggregation hooks
+- ready-up dialog cleanup follow-up after scoreboard/KPI integration pressure is understood
 
 Mapped clarifications:
 
@@ -1728,6 +1736,7 @@ Codex To-Do Checklist:
 - [ ] Confirm KPI event APIs in `api_checklist.md` as `Confirmed` or `Replaced` before enabling each KPI path.
 - [ ] Implement KPI state mutations and derived-score/KDR math according to CF scoreboard rules.
 - [ ] Implement scoreboard render/update with dirty/signature discipline (no blind refresh loops).
+- [ ] Clean up the ready-up dialog after scoreboard/KPI work clarifies what pre-match and live-state UI responsibilities should remain there.
 - [ ] Validate reconnect/redeploy behavior and stat continuity expectations for V1 policy.
 - [ ] Run event-to-KPI accuracy tests and log gating results for Phase 7 signoff.
 
@@ -1740,11 +1749,14 @@ Phase Changelog:
 - `Entries`: `None yet`
 
 <a id="phase-8"></a>
-### Phase 8: Post-Match Ticket Screen
+### Phase 8: Pre & Post Match Events
 
 Deliverables:
 
 - final result UI + delayed finalize/end flow
+- ready-up dialog cleanup and end-of-round transition cleanup
+- redesign join prompt
+- defined round-start behavior limitations and accepted constraints
 
 Mapped clarifications:
 
@@ -1758,11 +1770,17 @@ Verification:
 
 - `npm run verify`
 - final ticket/result accuracy and single end transition check
+- ready-up dialog cleanup/regression checks across pre-match, live, and post-match transitions
+- redesigned join-prompt behavior/regression checks across initial join, reconnect, and live-state handoff
+- round-start behavior limitation review and documentation pass
 
 Codex To-Do Checklist:
 
 - [ ] Implement post-match result screen fields using frozen end snapshot only.
 - [ ] Enforce single end transition path through end latch (no duplicate finalize paths).
+- [ ] Clean up the ready-up dialog for pre-match/post-match transition correctness and ownership clarity.
+- [ ] Redesign the join prompt and validate its ownership/flow across first join, reconnect, and transition to match-live state.
+- [ ] Determine and document round-start behavior limitations before expanding pre/post-match event flow.
 - [ ] Validate winner/result/ticket/elapsed accuracy against authoritative snapshot.
 - [ ] Validate delayed finalize/end flow under normal and edge-case match endings.
 
@@ -1782,6 +1800,7 @@ Deliverables:
 - open-ended multiplayer playtesting cadence across all implemented core systems
 - prioritized polish/iteration pass for UX, readability, flow consistency, and balance tuning
 - consolidated defect burn-down for blockers/high-impact regressions before future-phase expansion
+- ongoing performance monitoring and regression tracking across implemented systems
 
 Mapped clarifications:
 
@@ -1798,12 +1817,14 @@ Verification:
 - repeated playtest loops across join/leave/redeploy/team-swap/capture/end-flow scenarios
 - regression sweep after each polish batch
 - explicit blocker triage and close/retest cycle
+- performance monitoring pass for runtime stability, HUD cadence, and any newly introduced hotspots
 
 Codex To-Do Checklist:
 
 - [ ] Maintain a live prioritized playtest/polish backlog (blockers first, then major UX issues).
 - [ ] Execute iterative fix/tune passes with short validation loops after each batch.
 - [ ] Re-test previously fixed issues to prevent regressions.
+- [ ] Monitor performance during ongoing playtest/polish passes and record any regressions or new hotspots.
 - [ ] Keep this phase open-ended until explicit human signoff to proceed.
 - [ ] Record accepted tuning/polish decisions in phase changelog entries.
 - [ ] Re-add conquest flag ownership borders only after a single script-authoritative visual-state path is verified for neutralize->neutral->recapture transitions in multiplayer (no mixed owner/progress fallbacks in render decisions).
@@ -1829,6 +1850,7 @@ Deliverables:
 
 - spawn aircraft in air
 - spawn vehicles by user chosen orientation
+- aircraft radar integration/evaluation using [BF6-Air-Radar](https://github.com/Pongstroid/BF6-Air-Radar)
 
 Mapped clarifications:
 
@@ -1838,19 +1860,23 @@ Godot/map prerequisites:
 
 - authored in-air aircraft spawn transforms where required
 - authored orientation-aware vehicle spawn transforms or user-facing orientation inputs
+- any map/runtime requirements needed by the chosen aircraft radar integration approach
 
 Verification:
 
 - `npm run verify`
 - aircraft in-air spawn correctness checks
 - vehicle user-chosen orientation correctness checks
+- aircraft radar behavior and compatibility checks
 
 Codex To-Do Checklist:
 
 - [ ] Implement spawn-aircraft-in-air feature.
 - [ ] Implement vehicle spawn by user-chosen orientation.
+- [ ] Evaluate and integrate aircraft radar behavior using `BF6-Air-Radar` as the primary external reference.
 - [ ] Validate aircraft in-air spawn safety and map-specific correctness.
 - [ ] Validate user-chosen vehicle orientation behaves consistently across supported spawn contexts.
+- [ ] Validate aircraft radar behavior against intended Conquest air-play scope and map constraints.
 
 Phase Changelog:
 
