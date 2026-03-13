@@ -13,14 +13,8 @@ const CONQUEST_SPAWN_CHARGE_PER_DEPLOY = 1;
 const CONQUEST_COMBAT_HUD_ENABLED = true;
 const CONQUEST_HUD_RUNTIME_DEFAULT_MODE: TwlConquestHudMode = "core";
 
-// Combat HUD render-owner contract:
-// - "v2": centered combat-v2 owns combat lanes; legacy combat lane render loop is bypassed.
-// - "legacy": legacy combat lane render loop remains active.
-const CONQUEST_COMBAT_RENDER_OWNER: "v2" | "legacy" = "legacy";
-
 // Authoritative combat HUD runtime mode:
 // - "off": no combat HUD render path writes.
-// - "legacy": existing combat HUD methodology only.
 // - "core": hard-cut TwlConquestHud pipeline only (new names, isolated path).
 function getConquestHudMode(): TwlConquestHudMode {
     let override: unknown = undefined;
@@ -29,7 +23,7 @@ function getConquestHudMode(): TwlConquestHudMode {
     } catch {
         override = undefined;
     }
-    if (override === "off" || override === "legacy" || override === "core") {
+    if (override === "off" || override === "core") {
         return override;
     }
     return CONQUEST_HUD_RUNTIME_DEFAULT_MODE;
@@ -41,10 +35,4 @@ function setConquestHudMode(mode: TwlConquestHudMode): void {
     } catch {
         // State may not be initialized yet during module load.
     }
-}
-
-// Returns true when combat-v2 is the active combat render owner.
-function isConquestCombatRenderOwnerV2(): boolean {
-    if (getConquestHudMode() !== "legacy") return false;
-    return CONQUEST_COMBAT_RENDER_OWNER === "v2";
 }

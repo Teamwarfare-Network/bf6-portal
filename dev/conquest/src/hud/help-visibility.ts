@@ -11,7 +11,7 @@
  * - Visibility rules typically depend on per-player flags (e.g., 'dont show again') and current phase state.
  */
 function updateHelpTextVisibilityForPid(pid: number): void {
-    const refs = State.hudCache.hudByPid[pid];
+    const refs = getTopHudShellRefsForPid(pid);
 
     const visibility = getHudVisibilitySnapshotForPid(pid);
     const showHelp = visibility.showHelp;

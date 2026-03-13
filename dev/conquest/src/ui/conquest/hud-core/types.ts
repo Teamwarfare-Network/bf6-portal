@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Module: ui/conquest/hud-core/types -- hard-cut combat HUD contracts (no legacy combat name reuse)
 
-type TwlConquestHudMode = "off" | "legacy" | "core";
+type TwlConquestHudMode = "off" | "core";
 
 type TwlConquestHudObjectiveSnapshot = {
     visible: boolean;

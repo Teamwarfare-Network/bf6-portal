@@ -38,9 +38,6 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
 
     const wasAlreadyDeployed = !!State.players.deployedByPid[pid];
     conquestPhase2BOnPlayerDeployed(eventPlayer, wasAlreadyDeployed);
-    setConquestCombatHudV2TeamSwapPending(pid, false);
-    markConquestCombatHudV2DirtyForPid(pid);
-    markConquestCombatHudV2AnimationDirtyForPid(pid);
     State.players.deployedByPid[pid] = true;
     State.conquest.debug.teamSwapHudResetPendingByPid[pid] = false;
     State.players.joinPromptTripleTapArmedByPid[pid] = false;
@@ -54,19 +51,15 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     updateHelpTextVisibilityForAllPlayers();
 
     // Avoid heavy per-deploy rebuilds unless this player's HUD cache is actually missing.
-    if (!State.hudCache.hudByPid[pid]) {
-        ensureHudForPlayer(eventPlayer);
+    if (!State.hudCache.topHudShellByPid[pid]) {
+        ensureTopHudShellForPlayer(eventPlayer);
     }
     // Re-apply help/ready visibility after ensure so freshly rebuilt top-center widgets cannot keep default visibility.
     updateHelpTextVisibilityForPid(pid);
     // Keep conquest HUD state in sync for newly deployed viewers even when no new capture/ticket events fire.
-    updateConquestPhase2ADebugHudForAllPlayers(true);
+    updateConquestCombatHudForAllPlayers(true);
     // Warm ready-dialog UI cache in the background so first open after spawn/swap is instant.
     void scheduleReadyDialogUiWarmCacheForPlayer(eventPlayer, 0.15);
-    // First-life chevron stabilization:
-    // run one clean-tick bleed projection pass right after deploy so chevrons don't wait
-    // for a later unrelated HUD tick or team swap to appear.
-    conquestPhase3RefreshTicketBleedWhenHudClean();
     await spawnReadyDialogInteractPoint(eventPlayer);
 }
 
@@ -83,9 +76,9 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
     // Clear active objective engagement ownership on undeploy so stale swap/death samples cannot persist.
     delete State.conquest.capture.engagedObjIdByPid[pid];
-    conquestPhase3ForceHideEngageWidgetsForPid(pid);
+    twlConquestHudHideObjectiveFocusForPid(pid);
     conquestPhase3MarkHudDirty();
-    updateConquestPhase2ADebugHudForAllPlayers(true);
+    updateConquestCombatHudForAllPlayers(true);
     State.players.joinPromptTripleTapArmedByPid[pid] = false;
     if (State.players.readyDialogData[pid]?.dialogVisible) {
         hideReadyDialogUI(eventPlayer);

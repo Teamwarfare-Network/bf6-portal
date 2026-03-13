@@ -181,19 +181,19 @@ function safeSetUIWidgetBgAlpha(widget: mod.UIWidget | undefined, alpha: number)
 
 // Resolves the authoritative top-left status state text widget for one player.
 function resolveTopLeftStatusStateTextForPid(pid: number): mod.UIWidget | undefined {
-    const refs = State.hudCache.hudByPid[pid];
+    const refs = getTopHudShellRefsForPid(pid);
     return refs?.upperLeftStatusStateText;
 }
 
 // Resolves the authoritative static status-lane root for one player from HUD cache first, then current static status name.
 function resolveUpperLeftStatusRootForPid(pid: number): mod.UIWidget | undefined {
-    const refs = State.hudCache.hudByPid[pid];
+    const refs = getTopHudShellRefsForPid(pid);
     return refs?.upperLeftStatusContainer;
 }
 
 // Resolves the authoritative top-left status ready text widget for one player.
 function resolveTopLeftStatusReadyTextForPid(pid: number): mod.UIWidget | undefined {
-    const refs = State.hudCache.hudByPid[pid];
+    const refs = getTopHudShellRefsForPid(pid);
     return refs?.upperLeftStatusReadyText;
 }
 

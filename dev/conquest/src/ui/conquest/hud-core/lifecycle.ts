@@ -96,6 +96,30 @@ function twlConquestHudHidePlayer(pid: number): void {
     safeSetUIWidgetVisible(entry.widgets.root, false);
 }
 
+// Hides only the active-objective overlays while keeping the top ticket/objective row intact.
+function twlConquestHudHideObjectiveFocusForPid(pid: number): void {
+    const entry = twlConquestHudGetEntry(pid);
+    if (!entry) return;
+    twlConquestHudHideShadowRing(entry.widgets.popoutLabelShadowRing ?? []);
+    twlConquestHudHideShadowRing(entry.widgets.popoutPercentShadowRing ?? []);
+    safeSetUIWidgetVisible(entry.widgets.popoutPercent, false);
+    safeSetUIWidgetVisible(entry.widgets.popoutLabel, false);
+    safeSetUIWidgetVisible(entry.widgets.popoutFill, false);
+    safeSetUIWidgetVisible(entry.widgets.popoutBorder, false);
+    safeSetUIWidgetVisible(entry.widgets.popoutSlot, false);
+    safeSetUIWidgetVisible(entry.widgets.popoutRoot, false);
+    twlConquestHudHideShadowRing(entry.widgets.engageFriendlyCountShadowRing ?? []);
+    twlConquestHudHideShadowRing(entry.widgets.engageEnemyCountShadowRing ?? []);
+    twlConquestHudHideShadowRing(entry.widgets.engageStatusShadowRing ?? []);
+    safeSetUIWidgetVisible(entry.widgets.engageStatus, false);
+    safeSetUIWidgetVisible(entry.widgets.engageEnemyCount, false);
+    safeSetUIWidgetVisible(entry.widgets.engageFriendlyCount, false);
+    safeSetUIWidgetVisible(entry.widgets.engageEnemyFill, false);
+    safeSetUIWidgetVisible(entry.widgets.engageFriendlyFill, false);
+    safeSetUIWidgetVisible(entry.widgets.engageTrack, false);
+    safeSetUIWidgetVisible(entry.widgets.engageRoot, false);
+}
+
 function twlConquestHudHideAllPlayers(): void {
     twlConquestHudForEachEntry((pid) => {
         twlConquestHudHidePlayer(pid);

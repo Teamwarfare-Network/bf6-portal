@@ -1,19 +1,57 @@
 # TWL Conquest Design and Implementation Plan
 
-Last updated: 2026-02-18  
-Audience: Future implementers working in `bf6-portal/dev/conquest/src`
+Last updated: 2026-03-12  
+Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
+
+## Current Status
+
+- This is the authoritative master design document for TWL Conquest.
+- Accepted current implementation baseline:
+  - Phase 1: completed
+  - Phase 2A: completed
+  - Phase 2B: implemented with remaining future validation deferred
+  - Phase 3A, 3B, 3C: completed and accepted as the current HUD/UI baseline
+- Current next implementation target:
+  - Phase 4: Capture Sounds
+- Current open Conquest bug status:
+  - `CQ_Bug_3` is the only bug intentionally kept open/deferred
+- Active companion documents:
+  - `design_doc/api_checklist.md`
+  - `design_doc/conquest_issues.md`
+  - `design_doc/phase1_capture_api_proof.md`
+- Archived planning documents are historical reference only. If an archived document conflicts with this file, this file is authoritative.
+
+## Table Of Contents
+
+- [Phase 1: Foundation and Wiring](#phase-1)
+- [Phase 2A: Capture Backbone + Tickets Core](#phase-2a)
+- [Phase 2B: Spawn-Charge Matrix and Diagnostics](#phase-2b)
+- [Phase 3A: Flag UI + Color Contract](#phase-3a)
+- [Phase 3B: Polished UI Pass](#phase-3b)
+- [Phase 3C: HUD Cleanup and Legacy Path Removal](#phase-3c)
+- [Phase 4: Capture Sounds](#phase-4)
+- [Phase 5: Vehicle Systems](#phase-5)
+- [Phase 6: Basic Spawn and Boundaries System](#phase-6)
+- [Phase 7: Custom Tab Scoreboard + KPI Tracking](#phase-7)
+- [Phase 8: Post-Match Ticket Screen](#phase-8)
+- [Phase 9: Iteration, Playtesting, and Polish](#phase-9)
+- [Phase 10: Advanced Features](#phase-10)
+- [Phase 11: AI/Bot Simulation and Spawn-Balance Validation](#phase-11)
+- [Phase 12: Advanced Spawn Contract Integration](#phase-12)
+- [Phase 13: Spawn Design Documentation and Contract Analysis](#phase-13)
 
 ## Purpose
 
-This is the master design document for TWL Conquest.  
-Workflow for this document:
+This is the master design document for TWL Conquest.
 
-1. Clarification round (human answers)
-2. Reconcile answers into concrete feature/architecture notes
-3. Mark open items
-4. Start only the phases whose required clarifications are fully resolved
-5. Repeat with expert challenge rounds until no open blockers remain
-6. Begin implementation Phase by Phase with guidance
+Current workflow for this document:
+
+1. Keep phase scope, architecture rules, and accepted implementation decisions centralized here.
+2. Reconcile new human decisions and validated findings into this document before or during implementation.
+3. Track unresolved gameplay/HUD defects in `design_doc/conquest_issues.md`.
+4. Implement and validate work phase by phase.
+5. Record closeout decisions, deferred risks, and carry-forward validation notes here.
+6. Move superseded planning documents into archive once their still-true guidance is merged here.
 
 ## Notes Before Implementation Phases
 
@@ -40,16 +78,26 @@ These sections define architecture constraints, divergence decisions, and implem
 
 ## Feature Inventory
 
-- Capture backbone + ticket model
-- Temporary debug HUD for Phase 2 validation
-- Flag state/progress UI
+- Capture backbone + ticket/bleed/end-state model
+- Accepted Phase 3 HUD/UI baseline:
+  - top-HUD shell
+  - core combat HUD
+  - ready dialog
+  - victory dialog
+  - clock/status/branding/admin surfaces
 - Capture sound layer
-- Basic spawn logic (Godot-authored points first)
-- Vehicle respawn timers
+- Vehicle systems:
+  - respawn timers
+  - queue behavior
+  - repair runways/pads
+- Basic spawn and boundaries system
 - Post-match ticket/result screen
 - Custom tab scoreboard with soldier-level KPIs:
   - kills, deaths, assists, flag captures, score, KDR
-- Future feature phase (not V1):
+- Advanced features phase:
+  - spawn aircraft in air
+  - spawn vehicles by user chosen orientation
+- Future feature phases (not V1 core):
   - AI/Bot simulation layer for performance measurement and spawn-point balance validation
   - Advanced spawn contract system (node-based safety/LOS/heatmap/cooldown logic), only after all current phases are implemented
 
@@ -62,8 +110,8 @@ Source:
 Status:
 
 - Contract is accepted as future direction.
-- Implementation is explicitly deferred to a final follow-on phase (after Phases 1-10).
-- Phase 6 remains basic/random spawn behavior with low overhead.
+- Implementation is explicitly deferred to a final follow-on phase (after Phases 1-11).
+- Phase 6 remains basic spawn/boundary behavior with low overhead.
 
 Contract summary (future implementation target):
 
@@ -94,7 +142,13 @@ Contract summary (future implementation target):
 
 ## File Placement Plan
 
-Expected placement (extend existing domains only; no `src/conquest/` root):
+Current rule:
+
+- The live `src` layout is already established and is authoritative.
+- This section preserves the original placement intent and domain boundaries without requiring the exact early-planning filenames to exist verbatim today.
+- Continue extending existing domains only; do not create a separate `src/conquest/` root.
+
+Original placement intent / domain anchors:
 
 - `src/config/`
   - `conquest-constants.ts`
@@ -123,18 +177,27 @@ Expected placement (extend existing domains only; no `src/conquest/` root):
 
 ## Baseline Evaluation
 
-Current project structure is already conquest-ready:
+Current project structure is conquest-ready and already beyond initial scaffold status:
 
 - authoritative state model in `src/state`
 - map-driven config pattern in `src/config`
-- per-player HUD lifecycle in `src/hud`
+- per-player shell/HUD lifecycle split across `src/hud`, `src/ui/*`, `src/clock`, and `src/ready-dialog`
 - vehicle lifecycle handlers in `src/vehicles`
 - gameplay event routing points in `src/index`
 
-Primary known implementation gap:
+Current implementation baseline:
 
-- `src/index/area-triggers.ts` capture-point flow is not yet wired for full conquest ownership/ticket behavior.
-- current bundle baseline does not yet represent a full conquest ticket/bleed/capture implementation path.
+- capture/ticket/bleed/end-condition flow is implemented
+- accepted Phase 3 HUD architecture is live:
+  - non-combat shell owner
+  - core combat HUD owner
+- legacy combat runtime paths have been removed
+
+Primary known implementation gap before the next phase:
+
+- no dedicated Conquest sound layer exists yet
+- no dedicated `State.conquest.sound` queue/handle/throttle state exists yet
+- broader multiplayer/disconnect/reconnect hardening still remains a carry-forward validation task
 
 ## Explicit Divergences From Reference Projects
 
@@ -158,7 +221,10 @@ These are intentional architectural choices for TWL Conquest:
 
 ## Function-Level Implementation Sketch
 
-These names are planning anchors for implementation/review and can be adjusted during coding.
+These names are planning anchors for implementation/review.
+
+- They are not a claim that the current source already uses these exact function names.
+- They preserve intended subsystem seams and review vocabulary for future phase work.
 
 ### 1) Capture Backbone + Tickets
 
@@ -200,18 +266,27 @@ These names are planning anchors for implementation/review and can be adjusted d
 - `captureSound_FlushQueue()`
 - `captureSound_ShouldThrottle(key: string, cooldownSeconds: number)`
 
-### 5) Vehicle Timers + Basic Spawn
+### 5) Vehicle Systems
 
 - `vehicleTimer_OnDestroyed(vehicleObjId: number, slotIndex: number)`
 - `vehicleTimer_GetRemaining(slotIndex: number)`
 - `vehicleTimer_UpdateHudForAllPlayers()`
+- `vehicleQueue_RequestSpawn(player: mod.Player, slotIndex: number)`
+- `vehicleQueue_ProcessNext(slotIndex: number)`
+- `vehicleRepair_OnPadEnter(vehicle: mod.Vehicle, repairAreaObjId: number)`
+- `vehicleRepair_OnPadExit(vehicle: mod.Vehicle, repairAreaObjId: number)`
+
+### 6) Basic Spawn and Boundaries System
+
 - `spawnBasic_GetCandidates(teamId: number, context: unknown)`
 - `spawnBasic_Select(teamId: number, context: unknown)`
 - `spawnBasic_Deploy(player: mod.Player, selectedSpawn: unknown)`
 - `spawnBasic_ResolveFallbackChain(teamId: number, objectiveContext: unknown)`
-- `spawnAdvanced_EvaluateNodeRisk(nodeId: number, teamId: number)` // reserved for post-core Phase 11
+- `boundary_IsOutOfBounds(player: mod.Player, vehicle: mod.Vehicle | undefined)`
+- `boundary_ApplyOutOfBoundsKill(player: mod.Player)`
+- `spawnAdvanced_EvaluateNodeRisk(nodeId: number, teamId: number)` // reserved for post-core Phase 12
 
-### 6) Map Configuration and Validation
+### 7) Map Configuration and Validation
 
 - `conquestConfig_LoadForMap(mapKey: string)`
 - `conquestConfig_ValidateMap(mapKey: string)`
@@ -576,6 +651,7 @@ Phase rule:
 - A phase can start only when all mapped clarification IDs are defined, or explicitly marked placeholder-approved by design policy.
 - Each phase below includes a Codex execution checklist; treat checklist completion plus verification as the phase-ready signal.
 
+<a id="phase-1"></a>
 ### Phase 1: Foundation and Wiring
 
 Deliverables:
@@ -629,6 +705,7 @@ Phase Changelog:
   - `2026-03-01 | String-governance request | Added explicit human-approval gate for player-facing string edits | CF-118, Phase 1 | accepted | AGENTS policy + Phase 1 mapped clarifications/verification/checklist updated`
   - `2026-03-01 | Phase 1 kickoff | Added Phase 1 scaffolding + API/evidence artifacts baseline | Phase 1 | in_progress | api_checklist + capture/lifecycle/validator evidence docs`
 
+<a id="phase-2a"></a>
 ### Phase 2A: Capture Backbone + Tickets Core
 
 Deliverables:
@@ -667,7 +744,7 @@ Codex To-Do Checklist:
 - [x] Wire capture routing from engine events to mapped ObjId config entries with explicit unmapped-point diagnostics.
 - [x] Implement ticket/bleed/end-condition flow with `CF-101`/`CF-110` single-latch contract.
 - [x] Add temporary debug HUD for ownership/progress/ticket parity against authoritative state.
-- [ ] Execute race-condition verification (ticket-zero vs clock-zero) and archive evidence for Phase 2 gate.
+- [x] Execute race-condition verification (ticket-zero vs clock-zero) and archive evidence for Phase 2 gate.
 
 Phase Changelog:
 
@@ -679,6 +756,7 @@ Phase Changelog:
   - `2026-03-01 | Verification scope update after solo validation pass | Added explicit Phase 2A verification limits (no multiplayer pass yet; winner/draw not yet explicitly rendered in victory UI) | Phase 2A | accepted | No API/schema change; implementation follow-up tracked in later phases`
   - `2026-03-01 | Phase 2A kickoff implementation | Added capture tick routing, ticket bleed/end-latch flow, engine score mirroring, and temporary numeric debug HUD output | Phase 2A | in_progress | src/index/capture-tickets.ts + area-triggers/game-mode/conquest-flow wiring + HUD/cache updates`
 
+<a id="phase-2b"></a>
 ### Phase 2B: Spawn-Charge Matrix and Diagnostics
 
 Deliverables:
@@ -709,7 +787,7 @@ Codex To-Do Checklist:
 - [x] Implement per-player deploy transaction tracking and duplicate-charge suspicion diagnostics.
 - [x] Enforce `CF-113` exemption behavior (round-start only; no reconnect/team-switch/admin-move refresh).
 - [x] Enforce session-scoped identity policy (`CF-99`, `CF-107`, `CF-108`) and document fairness tradeoff in diagnostics.
-- [ ] Run full redeploy/reconnect/admin-move matrix tests and attach invariant proof output.
+- [x] Run full redeploy/reconnect/admin-move matrix tests and attach invariant proof output.
 
 Phase Changelog:
 
@@ -721,6 +799,7 @@ Phase Changelog:
   - `2026-03-01 | Phase 2B identity fallback hardening | Enforced session-scoped pid reset behavior and added reconnect fairness diagnostics counters to spawn-charge debug snapshots | CF-99, CF-107, CF-108, Phase 2B | accepted | src/state/spawn-charge.ts + src/state/runtime-types.ts + src/state/runtime-state.ts + src/index/conquest-scaffold.ts`
   - `2026-03-01 | Phase 2B kickoff implementation | Added live-phase spawn-charge reason matrix counters, per-player deploy transaction tracking, duplicate-charge suspicion diagnostics, round-start exemption seeding, and reconnect/session cleanup hooks | Phase 2B | in_progress | src/state/spawn-charge.ts + runtime type/state extensions + deploy/join/leave/team-switch/conquest-flow wiring`
 
+<a id="phase-3a"></a>
 ### Phase 3A: Flag UI + Color Contract (Functional)
 
 Deliverables:
@@ -747,12 +826,12 @@ Codex To-Do Checklist:
 - [x] Implement or update flag HUD build/update paths with event-first dirty rendering.
 - [x] Enforce UI perspective contract everywhere (friendly left/blue, enemy right/red).
 - [x] Bind display ordering to stable flag ObjId mapping from config.
-- [ ] Validate HUD behavior across join/leave/redeploy/team-swap transitions.
+- [x] Validate HUD behavior across join/leave/redeploy/team-swap transitions at the accepted current baseline, with broader multiplayer/disconnect validation carried forward under Phase 3 future-validation notes.
 
 Phase Changelog:
 
 - `Log policy`: append-only; newest entry first.
-- `Current status`: `in_progress`
+- `Current status`: `completed`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
@@ -760,6 +839,7 @@ Phase Changelog:
   - `2026-03-01 | Phase 3A HUD tuning + recapture visibility follow-up | Increased conquest ticket/flag HUD size and moved block further down; adjusted friendly/enemy projection logic so contested recaptures visibly update during ownership transitions | Phase 3A, CF-13, CF-14, CF-15 | accepted | src/hud/build.ts + src/index/capture-tickets.ts`
   - `2026-03-01 | Phase 3A kickoff implementation | Added per-flag conquest HUD rows, event-first dirty rendering, per-viewer friendly-left/blue vs enemy-right/red mapping, and stable ObjId row ordering with join/deploy forced refresh hooks | Phase 3A, CF-13, CF-14, CF-15 | in_progress | src/hud/build.ts + src/index/capture-tickets.ts + src/state/hud-cache-types.ts + src/state/runtime-types.ts + src/state/runtime-state.ts + src/index/player-join-leave.ts + src/index/player-deploy.ts`
 
+<a id="phase-3b"></a>
 ### Phase 3B: Polished UI Pass (Shapes, Shading, Animation)
 
 Deliverables:
@@ -832,6 +912,224 @@ Acceptance criteria (Phase 3B functional completion):
 - animation transitions are event-bounded, smooth, and do not introduce flicker/jitter spam
 - polish changes do not regress Phase 3A data correctness (color contract, ordering, update behavior)
 
+<a id="phase-3c"></a>
+### Phase 3C: HUD Cleanup and Legacy Path Removal
+
+Purpose:
+
+- Convert the now-accepted Phase 3 combat HUD baseline into a cleanup/hardening pass that removes redundant combat render/build paths and collapses the system to one combat HUD owner.
+- Preserve the accepted Phase 3 visual result while reducing maintenance cost, startup complexity, and regression risk from mixed ownership.
+
+Status intent:
+
+- Phase 3 baseline remains accepted.
+- Phase 3C is a post-baseline cleanup track, not a redesign pass.
+- Phase 3C should not reopen approved HUD look/positioning decisions except where cleanup exposes a correctness issue.
+
+Objective:
+
+- One combat HUD render path.
+- One combat HUD build/repair owner.
+- No legacy combat widget names or legacy combat render branches active in normal runtime.
+- Non-combat surfaces remain separate and stable:
+  - clock
+  - top-left branding/status
+  - top-center help/ready prompts
+  - ready dialog
+  - admin counter
+  - victory dialog
+
+Current code-state assessment:
+
+- Accepted combat HUD owner is `src/ui/conquest/hud-core/*` under `core` mode.
+- Legacy combat surface still exists in active source:
+  - `src/ui/conquest/hud-build.ts`
+  - `src/ui/conquest/popout-render.ts`
+  - `src/ui/conquest/engage-render.ts`
+  - `src/ui/conquest/lifecycle.ts`
+- Old `combat-v2` implementation files still exist on disk even though the runtime imports only the compatibility shim:
+  - `src/ui/conquest/combat-v2/*`
+- Main mixed-owner routing seam still exists in:
+  - `src/index/capture-tickets.ts`
+  - specifically `updateConquestPhase2ADebugHudForAllPlayers(...)`
+- Main mixed build/ensure seam still exists in:
+  - `src/ui/conquest/hud-build.ts`
+  - specifically `ensureHudForPlayer(...)`
+- `HudRefs` still mixes:
+  - non-combat shell widgets
+  - legacy combat widgets
+  - victory/help/admin references
+
+Cleanup estimate (planning-level, not a commit estimate):
+
+- low-risk dead-code cleanup:
+  - approximately `2.2k` lines in `src/ui/conquest/combat-v2/*`
+  - expected work: remove dead files/calls after confirming no remaining active runtime dependency beyond shim compatibility
+- medium-risk active legacy combat cleanup:
+  - approximately `4.0k` active lines across:
+    - `src/ui/conquest/hud-build.ts`
+    - `src/ui/conquest/popout-render.ts`
+    - `src/ui/conquest/engage-render.ts`
+    - `src/ui/conquest/lifecycle.ts`
+  - expected work: bridge remaining required shell/UI ownership away from legacy combat builder, then delete combat-specific legacy branches
+- highest-risk seam:
+  - `src/index/capture-tickets.ts`
+  - reason:
+    - it still mixes authoritative conquest state updates with combat HUD routing
+    - cleanup must preserve state refresh behavior while removing legacy combat branching
+
+Non-negotiable cleanup target:
+
+- Do not force all UI into one universal render path.
+- The target is one combat HUD render path, not one render path for every modal or non-combat UI surface.
+- Ready dialog, victory dialog, branding/status, and clock may keep independent ownership as long as ownership is explicit and non-overlapping.
+
+Design principles carried into cleanup:
+
+- Keep `hud-core` as the only combat HUD owner.
+- Do not reintroduce legacy combat names or temporary migration names.
+- Build/repair ownership and render ownership remain separate.
+- Static non-combat shell UI must not depend on legacy combat builders for existence.
+- Cleanup must reduce complexity; it must not create a new bridge layer that becomes permanent technical debt.
+
+What must be bridged before old combat code can be removed:
+
+- Extract non-combat shell building out of `ensureHudForPlayer(...)`.
+- Split cache ownership so non-combat shell refs are not coupled to legacy combat refs.
+- Move any still-needed top-center help/ready shell bootstrapping off the legacy combat builder.
+- Preserve current top-left status, clock, victory, and admin behavior without requiring legacy combat graph existence.
+- Preserve derived HUD/status refreshes that currently happen before the legacy/core branch split.
+
+Planned end state:
+
+- combat HUD:
+  - single owner: `src/ui/conquest/hud-core/*`
+  - single runtime mode path: `core`
+- non-combat shell:
+  - explicit shell ensure/build owner separate from combat HUD
+- routing:
+  - no `legacy` combat branch in normal runtime
+  - no dormant `combat-v2` implementation files
+- cache/state:
+  - no mixed legacy combat refs inside the main shell cache type
+
+Implementation slices:
+
+- `3C.1` Runtime graph audit and shell extraction:
+  - identify every caller that still uses `ensureHudForPlayer(...)`
+  - create a dedicated non-combat top-HUD shell ensure/build path
+  - move branding/status/help/admin/victory shell ownership there
+- `3C.2` Cache and type separation:
+  - split `HudRefs`/cache ownership into explicit non-combat shell refs versus combat-core refs
+  - remove dependency on legacy combat refs for non-combat behavior
+- `3C.3` Combat routing collapse:
+  - split state refresh/derived-slice work from combat HUD render dispatch
+  - remove legacy combat branch from `updateConquestPhase2ADebugHudForAllPlayers(...)`
+  - leave `hud-core` as the only combat render path
+- `3C.4` Legacy combat deletion:
+  - remove legacy combat render/build/lifecycle files once no active callers remain
+  - remove stale purge/hide compatibility paths that only existed to coexist with legacy combat widgets
+- `3C.5` Dead-path deletion:
+  - remove dormant `combat-v2` implementation files and shim callsites once confirmed unused
+  - simplify HUD mode/config contract accordingly
+
+Initial target files:
+
+- highest-priority:
+  - `src/index/capture-tickets.ts`
+  - `src/ui/conquest/hud-build.ts`
+  - `src/state/hud-cache-types.ts`
+- likely cleanup/deletion targets:
+  - `src/ui/conquest/popout-render.ts`
+  - `src/ui/conquest/engage-render.ts`
+  - `src/ui/conquest/lifecycle.ts`
+  - `src/ui/conquest/combat-v2/*`
+- likely consumers needing reroute:
+  - `src/index/player-join-leave.ts`
+  - `src/index/player-deploy.ts`
+  - `src/index/game-mode.ts`
+  - `src/interaction/actions.ts`
+  - `src/hud/update-helpers.ts`
+
+Risk assessment:
+
+- highest risk:
+  - deleting `ensureHudForPlayer(...)` behavior too early and breaking non-combat shell/widget creation
+- high risk:
+  - removing mixed routing in `capture-tickets.ts` without preserving required derived-slice/status refresh behavior
+- medium risk:
+  - cache/type split causing missed references during reconnect/deploy/team-swap
+- low risk:
+  - deletion of dormant `combat-v2` implementation files after callsite confirmation
+
+Explicit anti-goals:
+
+- no visual redesign of the accepted combat HUD
+- no new hybrid migration path that becomes permanent
+- no broad modal/UI architecture rewrite beyond what is needed to decouple non-combat shell ownership from legacy combat code
+- no KPI/sound/spawn scope expansion during this cleanup track
+
+Verification:
+
+- `npm run verify`
+- `cmd /c npx tsc --pretty false --noEmit`
+- bundle-size verification
+- lifecycle matrix for cleanup pass:
+  - fresh boot to ready screen
+  - ready dialog open/close
+  - match start
+  - live combat HUD idle
+  - enter objective radius
+  - leave objective radius
+  - capture / neutralize / defend transitions
+  - death -> redeploy
+  - team swap
+  - disconnect -> reconnect
+  - game over / victory dialog
+  - under-5-minute and under-1-minute clock behavior
+  - admin action counter still updating
+  - no startup delay / no UI trickle / no duplicate/stale widgets
+- multiplayer-focused regression pass after cleanup:
+  - two-player ready/live lifecycle
+  - contested objective with both teams
+  - team swap -> same-objective re-entry (`CQ_Bug_3` watch)
+  - reconnect during live match
+
+Acceptance criteria:
+
+- only one combat HUD render/build path remains in normal runtime
+- no legacy combat widget names are required for current gameplay HUD behavior
+- non-combat shell widgets are bootstrapped without the legacy combat builder
+- startup/swap/redeploy responsiveness is not worse than the accepted Phase 3 baseline
+- no regression to approved Phase 3 visual output or lifecycle behavior
+- code ownership is more obvious after cleanup, not less
+
+Codex To-Do Checklist:
+
+- [x] Map every active caller of `ensureHudForPlayer(...)` and classify whether it needs shell or combat ownership.
+- [x] Introduce a dedicated non-combat shell ensure/build path before deleting legacy combat builders.
+- [x] Split mixed HUD cache ownership so non-combat shell refs are independent of legacy combat refs.
+- [x] Collapse `updateConquestPhase2ADebugHudForAllPlayers(...)` into explicit state-refresh plus core-combat render ownership.
+- [x] Remove legacy combat render/build/lifecycle files once no active callers remain.
+- [x] Remove dormant `combat-v2` implementation files/shims after final callsite cleanup.
+- [x] Run the cleanup lifecycle matrix for the accepted current checkpoint and defer broader multiplayer-focused validation to the existing Phase 3 carry-forward validation block.
+
+Phase 3C Closeout Decision (2026-03-12):
+
+- Status: `completed`
+- Acceptance basis:
+  - non-combat shell ownership is extracted from the legacy combat builder
+  - active combat runtime is reduced to shell + `hud-core` ownership only
+  - legacy combat render/build/lifecycle files and dormant `combat-v2` files are removed
+  - the accepted current HUD behavior remains functional after cleanup validation
+  - bundle size headroom is materially restored after dead-path deletion
+- Deferred known issue:
+  - `CQ_Bug_3` remains open and is not resolved by Phase 3C cleanup
+- Deferred validation note:
+  - broader multiplayer-focused regression coverage remains carried forward under the existing Phase 3 future-validation section and does not block Phase 3C closeout
+- Forward rule:
+  - future HUD/UI work should continue from the shell + `hud-core` architecture only and must not reintroduce legacy combat ownership paths
+
 Phase 3 Closeout Decision (2026-03-12):
 
 - Status: `completed`
@@ -840,34 +1138,282 @@ Phase 3 Closeout Decision (2026-03-12):
 - Deferred bug summary: after a team swap, the first attempt to neutralize the same objective contested in the previous life can still fail to show Engage HUD; neutralizing a different objective works normally.
 - Forward fix note: future work should treat team-switch lifecycle as an explicit engage-state cleanup boundary, alongside death/undeploy cleanup, before attempting another targeted fix for `CQ_Bug_3`.
 
+Future Validation Still Required (carry-forward after Phase 3 closeout):
+
+- Phase 3 is accepted as a milestone baseline, but additional multiplayer lifecycle validation is still required before treating the HUD/UI stack as fully hardened.
+- Required future validation coverage:
+  - true multiplayer sessions with 2+ live players, not just singleplayer/sandbox iteration
+  - disconnect/reconnect while pre-live
+  - disconnect/reconnect while live
+  - death -> undeploy -> redeploy -> objective re-entry
+  - team swap -> redeploy -> re-enter the same objective contested in the previous life (`CQ_Bug_3` repro focus)
+  - long-running match validation for repeated ready/live/game-over transitions without duplicate/stale HUD state
+- Known carry-forward note for `CQ_Bug_3`:
+  - current repro suggests stale objective-specific engage state can survive across team-switch/death boundaries
+  - future debug pass should instrument team-switch cleanup and objective-specific engage-state release, not just generic deploy timing
+
+Phase 3 HUD/UI Reference Map (accepted baseline):
+
+- Scope note:
+  - this map documents the active accepted Phase 3 HUD/UI architecture only
+  - shadow-layer widgets follow the same owner/render pass as their source text widgets and are omitted here unless behaviorally important
+- Shared top-HUD ownership:
+  - `TopHudRoot_{pid}`
+  - Parent: global `UIRoot`
+  - Purpose: single authoritative top-center ownership root for Phase 3 clock and combat HUD systems
+  - Logic connection: ensured/normalized by `ensureTopHudRootForPid` in `src/hud/status.ts`; all core top-HUD builders must attach to this root before rendering
+- Top-left branding lane:
+  - `Upper_Left_Container_{pid}`
+  - Parent: global `UIRoot`
+  - Purpose: static branding backplate in the upper-left
+  - Logic connection: built by `buildConquestBrandingTopLeftWidgets` in `src/ui/branding/top-left.ts`; no live game-state mutation beyond visibility/depth ownership
+  - `Upper_Left_Text_{pid}`, `Upper_Left_Text_2_{pid}`
+  - Parent: `Upper_Left_Container_{pid}`
+  - Purpose: branding title/subtitle copy
+  - Logic connection: static branded text; not tied to conquest runtime state
+- Top-left status lane:
+  - `TwlConquestStatusDockRoot_{pid}`
+  - Parent: global `UIRoot`
+  - Purpose: static blur/status backplate to the right of the branding lane
+  - Logic connection: built by `buildConquestStaticStatusLaneWidgets` in `src/ui/branding/top-left.ts`
+  - `TwlConquestStatusDockState_{pid}`
+  - Parent: global `UIRoot` sibling aligned to the status dock by shared static coordinates
+  - Purpose: line 1 state text (`NOT READY`, `YOU ARE READY`, or `{left}v{right} {gameMode}`)
+  - Logic connection: driven by `getHudVisibilitySnapshotForPid` and the round/ready state update path in `src/hud/status.ts`
+  - `TwlConquestStatusDockReady_{pid}`
+  - Parent: global `UIRoot` sibling aligned to the status dock by shared static coordinates
+  - Purpose: line 2 state text (`X / Y PLAYERS READY`, `LIVE`, `GAME OVER`)
+  - Logic connection: driven by the same `src/hud/status.ts` state owner; visibility switches by pre-live/live/game-over state
+- Clock lane:
+  - `MatchTimerRoot_{pid}`
+  - Parent: `TopHudRoot_{pid}`
+  - Purpose: digit/colon container for the match timer
+  - Logic connection: ensured by `ensureClockUIAndGetCache` in `src/clock/ui.ts`; updated by `updateAllPlayersClock` in `src/clock/state.ts` from authoritative round clock state
+  - `MatchTimerSurface_{pid}`
+  - Parent: `TopHudRoot_{pid}`
+  - Purpose: explicit visible backplate behind the clock digits
+  - Logic connection: normalized alongside `MatchTimerRoot_{pid}` so clock geometry stays deterministic
+  - `MatchTimerMinTens_{pid}`, `MatchTimerMinOnes_{pid}`, `MatchTimerColon_{pid}`, `MatchTimerSecTens_{pid}`, `MatchTimerSecOnes_{pid}`
+  - Parent: `MatchTimerRoot_{pid}`
+  - Purpose: rendered `MM:SS` text digits
+  - Logic connection: `updateAllPlayersClock` writes displayed digits, low-time color, and final-minute alert behavior directly from `State.round.clock`
+- Core combat HUD root graph:
+  - `TwlConquestHud_Root_{pid}`
+  - Parent: `TopHudRoot_{pid}`
+  - Purpose: player-specific hard-cut Phase 3 conquest HUD owner
+  - Logic connection: built/repaired by `twlConquestHudEnsurePlayerGraph` in `src/ui/conquest/hud-core/build.ts`; hidden/destroyed/validated only through the core HUD lifecycle modules
+  - `TwlConquestHud_CombatLane_{pid}`
+  - Parent: `TwlConquestHud_Root_{pid}`
+  - Purpose: one shared lane for tickets, objective row, popout, and engage strip
+  - Logic connection: render target for the per-player snapshot produced in `src/ui/conquest/hud-core/render.ts`
+  - `TwlConquestHud_TicketsLane_{pid}`
+  - Parent: `TwlConquestHud_CombatLane_{pid}`
+  - Purpose: ticket counters, bars, crowns, bleed chevrons, and ticket lead borders
+  - Logic connection: live values come from the conquest HUD snapshot in `twlConquestHudBuildSnapshotForPlayer`; friendly/enemy perspective is player-specific
+  - `TwlConquestHud_TicketBlueBox_{pid}`, `TwlConquestHud_TicketRedBox_{pid}`
+  - Parent: `TwlConquestHud_TicketsLane_{pid}`
+  - Purpose: ticket count backplates
+  - Logic connection: count text and lead-border/crown visibility are driven from current ticket totals and lead state
+  - `TwlConquestHud_TicketBlueCount_{pid}`, `TwlConquestHud_TicketRedCount_{pid}`
+  - Parent: respective ticket box widget
+  - Purpose: numeric friendly/enemy ticket totals
+  - Logic connection: rendered from current authoritative ticket state
+  - `TwlConquestHud_TicketBlueTeamName_{pid}`, `TwlConquestHud_TicketRedTeamName_{pid}`
+  - Parent: `TwlConquestHud_Root_{pid}`
+  - Purpose: friendly/enemy team names on the outer flanks of the ticket row
+  - Logic connection: labels come from existing team-name lookup (`WEST/EAST`, `NORTH/SOUTH`, etc.) and resolve per player perspective
+  - `TwlConquestHud_TicketBlueBarTrack_{pid}`, `TwlConquestHud_TicketBlueBarFill_{pid}`, `TwlConquestHud_TicketRedBarTrack_{pid}`, `TwlConquestHud_TicketRedBarFill_{pid}`
+  - Parent: tracks under `TwlConquestHud_TicketsLane_{pid}`, fills under their respective track
+  - Purpose: ticket ratio bars
+  - Logic connection: fill widths update from live ticket totals in the core HUD snapshot/render pass
+  - `TwlConquestHud_TicketLeadBorderLeft_{pid}`, `TwlConquestHud_TicketLeadBorderRight_{pid}`, crown widgets, and bleed chevron widgets
+  - Parent: `TwlConquestHud_TicketsLane_{pid}`
+  - Purpose: show current lead ownership and bleed pressure
+  - Logic connection: recomputed every render from authoritative ticket/bleed state; no persistent visual carryover is allowed outside script state
+- Objective row:
+  - `TwlConquestHud_ObjectivesLane_{pid}`
+  - Parent: `TwlConquestHud_CombatLane_{pid}`
+  - Purpose: horizontal objective-slot row directly below the ticket bars
+  - Logic connection: slot layout is static; slot content is driven from current mapped capture-point state
+  - `TwlConquestHud_ObjectiveSlot_{pid}_{slot}`
+  - Parent: `TwlConquestHud_ObjectivesLane_{pid}`
+  - Purpose: slot backplate for one objective square
+  - Logic connection: slot order is stable by mapped objective order, not by transient event order
+  - `TwlConquestHud_ObjectiveBorder_{pid}_{slot}`, `TwlConquestHud_ObjectiveFill_{pid}_{slot}`, `TwlConquestHud_ObjectiveLabel_{pid}_{slot}`
+  - Parent: `TwlConquestHud_ObjectiveSlot_{pid}_{slot}`
+  - Purpose: border ownership color, vertical fill progress, and objective letter
+  - Logic connection: color/percent/letter come from current capture-point owner, capture-progress team, and objective metadata in the core HUD snapshot
+  - `TwlConquestHud_ObjectivePercent_{pid}_{slot}`
+  - Parent: `TwlConquestHud_ObjectivesLane_{pid}`
+  - Purpose: percent chip below each objective square
+  - Logic connection: shown/hidden from the same objective snapshot; percent updates are player-perspective aware
+- Objective popout:
+  - `TwlConquestHud_PopoutRoot_{pid}`
+  - Parent: `TwlConquestHud_ObjectivesLane_{pid}`
+  - Purpose: expanded active-objective box that emerges when the player is inside an objective radius
+  - Logic connection: active objective selection comes from the live conquest HUD snapshot and engage/objective tracking state
+  - `TwlConquestHud_PopoutSlot_{pid}`, `TwlConquestHud_PopoutBorder_{pid}`, `TwlConquestHud_PopoutFill_{pid}`, `TwlConquestHud_PopoutLabel_{pid}`
+  - Parent: popout root / popout slot
+  - Purpose: active objective letter, border, fill, and surface treatment
+  - Logic connection: mirrors the currently engaged objective state, not a separate gameplay system
+  - `TwlConquestHud_PopoutPercent_{pid}`
+  - Parent: `TwlConquestHud_PopoutRoot_{pid}`
+  - Purpose: active objective percent chip
+  - Logic connection: sourced from the same active objective capture progress; Phase 3 fixed the late-show behavior so `0%` can be shown immediately
+- Engage HUD:
+  - `TwlConquestHud_EngageRoot_{pid}`
+  - Parent: `TwlConquestHud_ObjectivesLane_{pid}`
+  - Purpose: active soldier-differential strip shown while contesting/neutralizing/defending an objective
+  - Logic connection: rendered from the same active objective state machine used by the popout; engages are objective-authoritative, not area-trigger-authoritative
+  - `TwlConquestHud_EngageTrack_{pid}`, `TwlConquestHud_EngageFriendlyFill_{pid}`, `TwlConquestHud_EngageEnemyFill_{pid}`
+  - Parent: engage root / engage track
+  - Purpose: center differential bar with friendly/enemy fill split
+  - Logic connection: widths update from current on-point soldier counts
+  - `TwlConquestHud_EngageFriendlyCount_{pid}`, `TwlConquestHud_EngageEnemyCount_{pid}`, `TwlConquestHud_EngageStatus_{pid}`
+  - Parent: `TwlConquestHud_EngageRoot_{pid}`
+  - Purpose: friendly count, enemy count, and action text (`CAPTURING`, `NEUTRALIZING`, `DEFEND`, etc.)
+  - Logic connection: counts and action text come from live capture-point ownership/progress state plus alive/on-point soldier filtering
+- Ready dialog:
+  - `UI_READY_DIALOG_CONTAINER_BASE_{pid}`
+  - Parent: global `UIRoot`
+  - Purpose: full-screen ready/configuration dialog root
+  - Logic connection: built/cached by `createReadyDialogUI` in `src/ready-dialog/dialog-build.ts`; shown from the interact path and reused from cache after first build
+  - `UI_READY_DIALOG_BORDER_TOP_{pid}`, `UI_READY_DIALOG_BORDER_BOTTOM_{pid}`, `UI_READY_DIALOG_BORDER_LEFT_{pid}`, `UI_READY_DIALOG_BORDER_RIGHT_{pid}`
+  - Parent: `UI_READY_DIALOG_CONTAINER_BASE_{pid}`
+  - Purpose: modal border framing
+  - Logic connection: purely structural; visibility follows dialog visibility
+  - Header/map/mode-config/roster/admin section widgets under the ready dialog root
+  - Parent: `UI_READY_DIALOG_CONTAINER_BASE_{pid}`
+  - Purpose: expose match settings, ready state, rosters, and admin controls before match start
+  - Logic connection: updates/write-backs go through ready dialog render/update helpers and UI event handlers; these mutate authoritative ready/config state rather than storing duplicate UI-local truth
+- Admin audit counter:
+  - `AdminPanelActionCount_{pid}`
+  - Parent: global `UIRoot`
+  - Purpose: top-right action counter for admin/debug visibility
+  - Logic connection: built by `buildConquestAdminActionCounterWidget` in `src/ui/admin/action-counter.ts`; text updates reflect admin action activity, not combat HUD state
+- Victory dialog:
+  - `VictoryDialogRoot_{pid}`
+  - Parent: global `UIRoot`
+  - Purpose: end-of-match modal with branding, screenshot prompt, restart countdown, and total match time
+  - Logic connection: built by `buildVictoryDialogWidgets` in `src/ui/dialog/victory-build.ts`; updated by `updateVictoryDialogForPlayer` from round-end countdown state inside the clock update path
+- Legacy help/ready prompt lane still present:
+  - `Container_HelpText_{pid}`, `HelpText_{pid}`
+  - Parent: global `UIRoot`
+  - Purpose: pre-live prompt/help flow outside the core combat HUD
+  - Logic connection: visibility is still managed from `src/hud/status.ts`, but depth is forced below gameplay so it does not occlude the accepted Phase 3 combat HUD stack
+
 Codex To-Do Checklist:
 
-- [ ] Manual input step (human): provide desired HUD anchor package (clock/help/ready/tickets/flags positions + depth expectations) for Phase 3B implementation.
-- [ ] Complete `3B.1` static visual baseline (shape/backplate + shading constants) and lock initial layout contract.
-- [ ] Complete `3B.2` motion hooks with bounded/event-driven transitions and refresh-rate guardrails.
-- [ ] Complete `3B.3` integration tune for depth/overlap/readability across lifecycle transitions.
-- [ ] Run Phase 3B singleplayer iteration loop (baseline -> motion -> integration) and record pass/fail notes.
-- [ ] Keep string-governance policy enforced; no player-facing string edits without explicit human approval.
+- [x] Manual input step (human): provide desired HUD anchor package (clock/help/ready/tickets/flags positions + depth expectations) for Phase 3B implementation.
+- [x] Complete `3B.1` static visual baseline (shape/backplate + shading constants) and lock initial layout contract.
+- [x] Complete `3B.2` motion hooks with bounded/event-driven transitions and refresh-rate guardrails.
+- [x] Complete `3B.3` integration tune for depth/overlap/readability across lifecycle transitions.
+- [x] Run Phase 3B singleplayer iteration loop (baseline -> motion -> integration) and record pass/fail notes.
+- [x] Keep string-governance policy enforced; no player-facing string edits without explicit human approval.
 - [x] Document and enforce HUD lifecycle guardrails to prevent team-switch sticking/overdraw artifacts.
 
 Phase Changelog:
 
 - `Log policy`: append-only; newest entry first.
-- `Current status`: `in_progress`
+- `Current status`: `completed`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-03-12 | Phase 3C cleanup closeout decision | Accepted the shell plus hud-core-only cleanup state as complete, with legacy combat/combat-v2 files removed and broader multiplayer validation still carried forward under existing Phase 3 notes | Phase 3C, CQ_Bug_3 | accepted | design_doc Phase 3C checklist + closeout decision`
+  - `2026-03-12 | Phase 3C cleanup planning pass | Added a post-baseline HUD cleanup phase focused on collapsing to one combat HUD owner, extracting non-combat shell ownership from legacy combat builders, and deleting redundant legacy/combat-v2 code paths with a dedicated regression matrix | Phase 3C, CQ_Bug_3 | accepted | design_doc Phase 3C section + checklist + risk/test plan`
+  - `2026-03-12 | Phase 3 closeout follow-up documentation pass | Added carry-forward multiplayer/lifecycle validation note and a current accepted HUD/UI reference map covering root ownership, key widget families, and game-state owners | Phase 3A, Phase 3B, CQ_Bug_3 | accepted | design_doc future validation note + HUD/UI reference map`
   - `2026-03-12 | Phase 3 milestone closeout decision | Accepted current HUD architecture/polish baseline as Phase 3 complete, with CQ_Bug_3 explicitly deferred to a future focused bug-fix pass | Phase 3A, Phase 3B, CQ_Bug_3 | accepted | design_doc Phase 3 closeout note + issue tracker repro refinement`
   - `2026-03-02 | HUD persistence issue closure rule | Added explicit Phase 3B HUD lifecycle guardrails covering parent ownership, controlled rebuilds, team-switch authoritative refresh, and anti-overdraw verification checks | Phase 3B | accepted | design_doc/Phase 3B guardrail block + checklist updated`
   - `2026-03-01 | Phase 3B anchor-package application | Applied HUD anchor positions from ui_location_starter reference package: tickets flanking clock line and 7-slot horizontal capture-point clusters; retained existing data wiring and color contract | Phase 3B | in_progress | src/hud/build.ts`
   - `2026-03-01 | Phase 3B manual-input gate request | Added explicit human-provided HUD anchor/position package step before further Phase 3B polish movement and animation work | Phase 3B | accepted | design_doc/Phase 3B prerequisites + checklist updated`
   - `2026-03-01 | Phase 3B scope-definition pass | Expanded Phase 3B with implementation slices, out-of-scope boundaries, singleplayer-first verification limits, and explicit acceptance criteria for polish completion | Phase 3B | accepted | design_doc/Phase 3B section updated`
 
+Pre-Phase 4 Source Audit (2026-03-12):
+
+- Current runtime architecture baseline:
+  - active non-combat shell ownership is now explicit in `src/ui/conquest/top-hud-shell.ts`
+  - active combat HUD ownership is now explicit in `src/ui/conquest/hud-core/*`
+  - clock, ready dialog, admin counter, and victory dialog remain separate owners by design
+  - legacy combat runtime files and dormant `combat-v2` files have been removed from active source
+- Verified current gaps before Phase 4:
+  - there is no current Conquest sound/VO layer in active `src`; no active `mod.PlaySound(...)` or `mod.PlayVO(...)` calls exist in the mode
+  - `GameState` currently has no dedicated `conquest.sound` state for queue entries, throttle keys, runtime handles, or diagnostics
+  - authoritative capture producers currently live in:
+    - `src/index/area-triggers.ts`
+    - `src/index/capture-tickets.ts`
+  - `src/index/capture-tickets.ts` remains the most coupled file in the mode and already owns capture-state sync, derived HUD slices, bleed/end checks, and combat HUD dispatch
+  - active source still runs under widespread `@ts-nocheck`; this does not block Phase 4, but it raises the risk of silent shape drift if new sound state is spread across unrelated modules
+  - the existing `modlib` unresolved-import warning in `src/foundation/modlib.ts` remains a known non-blocking build warning and should not be expanded by Phase 4
+- Phase 4 design implications from current source state:
+  - Phase 4 should add a dedicated capture-sound layer with its own small module boundary rather than growing `capture-tickets.ts` into a second HUD-sized monolith
+  - sound queue/handle/throttle state should live under `State.conquest` as first-class mode state, not inside `hudCache`, and not only inside `debug` if gameplay-correct cleanup depends on it
+  - producer hooks should attach to existing capture authority only; HUD visibility and ready-dialog/UI state must not become sound authority
+  - flush/dispatch cadence must be independent from combat HUD render cadence
+  - mandatory cleanup boundaries for Phase 4 are:
+    - round reset
+    - match end
+    - player leave
+    - undeploy
+    - team swap
+    - reconnect/rejoin
+  - `CQ_Bug_3` is a direct warning that objective-specific stale state can survive swap/death windows; Phase 4 must resolve viewer perspective and recipients at flush time, not at enqueue time, and must not assume `engagedObjIdByPid` alone is sufficient authority for recipient correctness
+
+Archived Document Carry-Forward Truths (validated against current source):
+
+- From `UI_flow_new.md`, `UI_flow_new_v2.md`, and `phase3_hud_polish3_teardown.md`:
+  - widget ownership must remain split between:
+    - build/repair/destroy ownership
+    - render/value-visibility ownership
+  - static, dynamic, and animated widgets are separate classes with different placement rules
+  - static widget placement belongs to build/rebuild only
+  - dynamic/animated placement must have one obvious owner path and must not race multiple functions
+  - caches are handle/performance helpers only; they are never placement truth owners
+  - `safeFind(...)` is acceptable for bootstrap, recovery, and cleanup, but not as normal hot-path combat ownership authority
+  - team-switch lifecycle remains `hide -> clean rebuild -> resume updates`
+  - per-player widget naming and per-player cache/state isolation remain mandatory
+- From `phase2_hud_architecture.md`, `phase3_hud_design.md`, `phase3_hud_polish.md`, and `phase3_hud_polish2.md`:
+  - authoritative gameplay state, derived per-player projection, and widget mutation should remain separate responsibilities
+  - render/UI paths should not mutate gameplay state or invent duplicate gameplay truth to mask lifecycle bugs
+  - single-writer ownership by widget family remains the correct standard
+  - feature work should treat `CQ_Bug_3` as a lifecycle/state-cleanup issue, not as justification to reopen the accepted shell + `hud-core` ownership model
+- From `phase1_verification_notes.md`, `phase1_validator_capability_matrix.md`, and `phase1_lifecycle_authority_proof.md`:
+  - implementation should keep validating API assumptions against local BF6 references and `design_doc/api_checklist.md` before committing to new runtime symbols
+  - mode-truth mutators with gameplay consequences should stay behind explicit owner functions rather than spreading across caller modules
+  - the Phase 1 docs are historical evidence artifacts, not active planning documents, but their proof style remains useful for future high-risk phases
+
+Archive Decision (2026-03-12):
+
+- Active design/planning sources of truth moving forward:
+  - `design_doc/TWL_Conquest_Design.md`
+  - `design_doc/api_checklist.md`
+  - `design_doc/conquest_issues.md`
+- Supporting evidence artifact retained in root:
+  - `design_doc/phase1_capture_api_proof.md`
+- The following documents are deprecated as active guidance and should be kept only as archived historical reference after this merge:
+  - `design_doc/UI_flow_old.md`
+  - `design_doc/UI_flow_new.md`
+  - `design_doc/UI_flow_new_v2.md`
+  - `design_doc/phase3_hud_polish3_teardown.md`
+  - `design_doc/phase3_hud_polish2.md`
+  - `design_doc/phase3_hud_polish.md`
+  - `design_doc/phase3_hud_design.md`
+  - `design_doc/phase2_hud_architecture.md`
+  - `design_doc/phase1_verification_notes.md`
+  - `design_doc/phase1_validator_capability_matrix.md`
+  - `design_doc/phase1_lifecycle_authority_proof.md`
+- Archive path:
+  - `reference_design_documentation/archive/phase3_phase4_transition_2026-03-12/`
+- Archive rule:
+  - archived docs remain historical snapshots only
+  - if an archived doc conflicts with this master design doc, the master design doc is authoritative
+
+<a id="phase-4"></a>
 ### Phase 4: Capture Sounds
 
 Deliverables:
 
 - V1 capture sound event queue and dispatch
+- reference-derived sound implementation model aligned to current Conquest architecture
 
 Mapped clarifications:
 
@@ -877,32 +1423,171 @@ Godot/map prerequisites:
 
 - required sound event keys/assets
 
+Reference implementation sound map:
+
+- `reference_implementations/reference_BillDukes/reference_BillDukes/ConquestV10/modules/SoundsModule.ts`
+  - pattern:
+    - dedicated sound module with one-time runtime SFX/VO handle spawning
+    - explicit notification entry points for capture-status, capture-tick, capture-complete, player-enter, and player-exit
+    - team-targeted and player-targeted dispatch through `PlaySound`/`PlayVO`
+    - objective-index local state for cooldowns and neutralize/tick guards
+  - reusable ideas:
+    - isolate audio ownership in one module
+    - spawn/cached handles once, then reuse
+    - separate event producers from dispatch helpers
+    - target perspective at dispatch time, not asset-definition time
+  - reject for current V1:
+    - broader scope than `CF-17` (contested, neutralize, capture-complete, enter/exit, round VO)
+    - per-objective sound state should plug into our own conquest state instead of a parallel registry
+- `reference_implementations/reference_dfk_7677/CQS_comp/mods/ConquestSmall/ConquestSmall5_2.0.ts`
+  - pattern:
+    - direct sound/VO calls embedded in the monolithic match loop and capture-point handlers
+    - pre-spawned loop/tick sounds plus explicit `PlaySound`/`StopSound` on point enter/exit and capture changes
+    - global/team VO used for time warnings and match end
+  - reusable ideas:
+    - immediate on-point perspective routing is simple and readable
+    - runtime-spawned sound handles are practical for Portal
+  - reject for current V1:
+    - loop/stop management tightly coupled to objective handlers
+    - sound logic is mixed into UI/capture codepaths instead of being isolated
+    - global timer/end-match VO is outside Phase 4 scope
+- `reference_implementations/reference_BattleDad/Final (WIP)/domination template script.ts`
+  - pattern:
+    - sound handles are spawned once and reused
+    - tick audio is emitted from progress-delta comparisons in the on-point update path
+    - capture-complete sound is dispatched directly to the player
+  - reusable ideas:
+    - progress-delta gating is a valid way to suppress idle/no-change spam
+    - friendly-vs-losing distinction is resolved from the viewer's team perspective
+  - reject for current V1:
+    - audio is coupled to the per-player UI update path
+    - capture-complete/audio flash behaviors exceed current V1 requirement
+
+Phase 4 implementation model (current Conquest):
+
+- Ownership model:
+  - keep Phase 4 as a new dedicated capture-sound layer, not mixed into HUD render code
+  - event producers must live off the current conquest authority path only:
+    - `ongoingCapturePointImpl` -> `conquestPhase2AOnCapturePointTick(...)`
+    - `onCapturePointLostImpl` -> `conquestPhase2AOnCapturePointLost(...)`
+    - `onCapturePointCapturedImpl` -> `conquestPhase2AOnCapturePointCaptured(...)`
+  - player enter/exit capture-point events remain available, but Phase 4 V1 should not require persistent loop sounds or stop-sound cleanup
+- V1 scope lock (`CF-17`):
+  - V1 emits capturing sounds only
+  - defer contested, neutralize, capture-complete, enter/exit, time-warning, and end-of-match VO/SFX to V2+
+  - prefer SFX-only for V1 unless asset availability forces a different path
+- Queue model:
+  - producers enqueue lightweight events instead of calling `PlaySound` inline
+  - queue payload should minimally carry:
+    - `eventKey`
+    - `objId`
+    - `sourceTeamId`
+    - `viewerTargetMode` (`friendlyPerspective` or `enemyPerspective`)
+    - `queuedAtSeconds`
+  - throttle key should be objective-aware and perspective-aware, not global-only
+  - practical default shape:
+    - `capture_tick_friendly:{objId}:{teamId}`
+    - `capture_tick_enemy:{objId}:{teamId}`
+- Dispatch model:
+  - flush queue on the existing Phase cadence (`0.5s` design target already defined above)
+  - resolve recipients at flush time using current player/team truth so team swaps or redeploys do not play stale-perspective audio
+  - dispatch per player with `mod.PlaySound(..., player)` rather than broadcasting global sound and hoping perspective lines up
+- KPI interaction boundary:
+  - do not solve KPI attribution in Phase 4
+  - sound events are not authoritative KPI events and must not mutate KPI state directly
+  - however, Phase 4 queue payloads and debug counters should preserve enough context to be useful later if Phase 7 wants to correlate capture audio with capture attribution or scoreboard debugging
+  - minimum useful shared context to retain in sound diagnostics:
+    - `objId`
+    - `sourceTeamId`
+    - event timestamp / flush timestamp
+    - recipient count
+    - suppression reason when throttled/dropped
+  - if a future shared event envelope is introduced for capture/KPI/audio, conquest gameplay state remains the source of truth and sound remains a consumer, not a producer, of that truth
+- State/input model:
+  - authoritative inputs come from current conquest capture state and engine reads already used by Phase 2/3:
+    - `mod.GetCurrentOwnerTeam(...)`
+    - `mod.GetOwnerProgressTeam(...)`
+    - `mod.GetCaptureProgress(...)`
+    - `mod.GetPlayersOnPoint(...)`
+    - `State.conquest.capture.byObjId`
+    - `State.conquest.capture.engagedObjIdByPid`
+  - do not create a second independent conquest-ownership model just for audio
+- Asset/handle model:
+  - spawn required runtime SFX handles once at mode start and cache them
+  - reuse those handles for all later dispatches
+  - if a required handle fails to spawn, degrade to silent no-op and record debug evidence rather than branching into ad-hoc alternative behavior
+- Cadence and spam control:
+  - capture-sound cadence should be deterministic and independent from HUD render cadence
+  - use progress-delta or active-capture gating so unchanged idle points do not emit
+  - obey `CF-18` minimum `1.0s` cooldown per event key
+  - do not soft-shed sound queue cadence; this is already called out as protected in the performance policy
+- Architecture decisions for current Conquest:
+  - sound producers should attach to conquest state transitions, not UI transitions
+  - audio must not depend on whether popout/engage HUD is currently visible
+  - sound queue state should clear cleanly on round reset, match end, and player leave
+  - future team-switch cleanup should explicitly protect against stale queued perspective if a player changes team before flush
+  - if Phase 7 later introduces shared capture-event instrumentation, Phase 4 should be able to plug into it without reworking its dispatch ownership
+- Anti-patterns to avoid:
+  - no direct `PlaySound`/`StopSound` loop management inside HUD/UI render paths
+  - no monolithic all-purpose VO/sound block for unrelated round systems in Phase 4
+  - no per-player permanent loop sound that requires exit-event correctness to stop
+  - no global audio dispatch when the requirement is per-viewer team perspective
+  - no KPI counters derived from audio dispatch success/failure
+
+Implementation slices:
+
+- `4.1` Sound backbone:
+  - create the dedicated capture-sound state/queue/handle layer
+  - initialize/reset cached sound handles and queue state with round lifecycle
+- `4.2` V1 capture-tick producers:
+  - derive candidate capture-tick events from current authoritative objective state only
+  - emit only friendly/enemy capture perspective events required by `CF-17`
+- `4.3` Deterministic dispatch + diagnostics:
+  - flush queue on fixed cadence
+  - apply throttle keys and perspective routing at flush
+  - add counters/trace for queue depth, dispatch count, suppressed events, and recipient counts
+
 Verification:
 
 - `npm run verify`
 - anti-spam validation under rapid objective transitions
+- perspective validation after team swap/redeploy before queue flush
+- long-match validation that sound queue resets cleanly across round transitions
 
 Codex To-Do Checklist:
 
+- [ ] Start Phase 4 on a dedicated capture-sound layer; keep it isolated from HUD render ownership.
+- [ ] Add dedicated `State.conquest.sound` ownership for queue/handle/throttle state; do not hide Phase 4 authority inside `hudCache` or HUD-only debug maps.
 - [ ] Implement capture sound queue with per-event throttle (`CF-18`) and deterministic flush cadence.
 - [ ] Restrict V1 sound scope to required capture events only.
 - [ ] Enforce per-viewer team perspective for emitted sound events.
+- [ ] Spawn/cache runtime SFX handles once and reuse them for all Phase 4 dispatches.
+- [ ] Route sound producers from current capture authority only; do not couple them to HUD visibility.
+- [ ] Keep `capture-tickets.ts` producer hooks narrow and move queue/dispatch logic into dedicated sound modules instead of expanding the existing capture monolith.
+- [ ] Keep sound diagnostics/event envelopes KPI-friendly without turning Phase 4 into KPI implementation.
 - [ ] Run rapid objective-transition spam tests and confirm throttle behavior.
+- [ ] Run team-swap/redeploy perspective tests to ensure no stale queued audio reaches the wrong team.
 - [ ] Record debug counters/trace output demonstrating no audio flood regressions.
 
 Phase Changelog:
 
 - `Log policy`: append-only; newest entry first.
-- `Current status`: `not_started`
+- `Current status`: `in_progress`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
-- `Entries`: `None yet`
+- `Entries`:
+  - `2026-03-12 | Pre-Phase 4 source audit and archival merge | Reviewed current src architecture before sound work, recorded actual Phase 4 gaps/risks (no active sound layer, no conquest.sound state, capture-tickets monolith pressure, CQ_Bug_3 perspective-cleanup warning), merged still-true HUD architecture principles from deprecated docs into the master plan, and marked the old planning/evidence docs for archive-only status | Phase 4, Phase 3A, Phase 3B, Phase 3C, CQ_Bug_3, CF-17, CF-18, CF-19 | accepted | design_doc Phase 4 preflight audit + archival carry-forward section + archive decision`
+  - `2026-03-12 | Phase 4 KPI-boundary note | Added explicit rule that sound events may retain KPI-useful diagnostics/context but must not become KPI authority or mutate KPI state; expanded Phase 4 diagnostics expectations accordingly | Phase 4, Phase 7, CF-17, CF-18, CF-19 | accepted | design_doc Phase 4 KPI interaction boundary + checklist update`
+  - `2026-03-12 | Phase 4 kickoff planning pass | Evaluated sound patterns from BillDukes, DFK ConquestSmall, and BattleDad references; locked a Conquest-specific Phase 4 model around a dedicated capture-sound layer, cached runtime SFX handles, objective-aware throttling, and per-viewer dispatch | Phase 4, CF-17, CF-18, CF-19 | accepted | design_doc Phase 4 implementation model + checklist update`
 
-### Phase 5: Vehicle Respawn Timers (V2+)
+<a id="phase-5"></a>
+### Phase 5: Vehicle Systems (Timers, Queue, Repair)
 
 Deliverables:
 
 - per-slot respawn timer tracking and HUD rendering
+- vehicle spawn queue behavior and slot arbitration
+- vehicle repair runway/pad behavior
 
 Mapped clarifications:
 
@@ -911,18 +1596,25 @@ Mapped clarifications:
 Godot/map prerequisites:
 
 - complete vehicle spawner slot mapping and respawn config per map
+- authored/validated repair pads, repair runways, or equivalent repair volumes where required
 
 Verification:
 
 - `npm run verify`
 - destroy-to-respawn timer accuracy checks
+- queue sequencing and slot-release checks
+- repair runway/pad enter/exit and restore-behavior checks
 
 Codex To-Do Checklist:
 
 - [ ] Implement per-slot vehicle respawn timer state keyed to configured vehicle slot mapping.
 - [ ] Render timer HUD output from authoritative timer state only.
+- [ ] Implement vehicle spawn queue behavior and queue arbitration for shared vehicle systems.
+- [ ] Add vehicle repair runway/pad support.
 - [ ] Respect disabled slot hiding behavior and per-map respawn values.
 - [ ] Validate destroy-to-respawn timings against configured constants.
+- [ ] Validate queue fairness and slot-release behavior.
+- [ ] Validate repair runway/pad behavior under normal and edge-case entry/exit scenarios.
 - [ ] Record timer accuracy evidence across multiple slot types.
 
 Phase Changelog:
@@ -933,11 +1625,15 @@ Phase Changelog:
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`: `None yet`
 
-### Phase 6: Basic Spawn System
+<a id="phase-6"></a>
+### Phase 6: Basic Spawn and Boundaries System
 
 Deliverables:
 
 - random spawn-point selection flow with configured restrictions
+- aircraft-vs-vehicle boundary enforcement
+- main-base out-of-bounds enforcement
+- kill-player out-of-bounds behavior
 - preserve extension seams for advanced spawn contract (no node-risk logic in this phase)
 
 Mapped clarifications:
@@ -947,20 +1643,27 @@ Mapped clarifications:
 Godot/map prerequisites:
 
 - authored spawn-point sets (team, per-flag, fallback as applicable)
+- authored boundary volumes/config for aircraft, vehicles, and main bases
 
 Verification:
 
 - `npm run verify`
 - spawn validity and restriction checks
+- aircraft-vs-vehicle boundary behavior checks
+- main-base out-of-bounds checks
+- kill-player out-of-bounds enforcement checks
 - confirm no advanced node/LOS/heatmap logic is active in Phase 6
 
 Codex To-Do Checklist:
 
 - [ ] Implement random spawn selection using configured team/flag/fallback sets.
 - [ ] Enforce neutral-flag spawn restriction and explicit fallback chain behavior.
+- [ ] Implement aircraft-vs-vehicle boundary distinction.
+- [ ] Implement main-base out-of-bounds enforcement.
+- [ ] Kill players when out-of-bounds according to boundary rules.
 - [ ] Add clear diagnostics for missing/invalid spawn sets per validator policy.
 - [ ] Keep advanced node-risk/LOS/heatmap logic disabled in this phase.
-- [ ] Run spawn restriction and fallback tests across team swap/redeploy scenarios.
+- [ ] Run spawn restriction, fallback, and boundary tests across team swap/redeploy scenarios.
 
 Phase Changelog:
 
@@ -970,6 +1673,7 @@ Phase Changelog:
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`: `None yet`
 
+<a id="phase-7"></a>
 ### Phase 7: Custom Tab Scoreboard + KPI Tracking
 
 Deliverables:
@@ -994,6 +1698,12 @@ Verification:
 - scoreboard stability during reconnect/redeploy
 - scoreboard update-throttle checks (no blind refresh spam when values unchanged)
 
+Cross-phase note from Phase 4:
+
+- Phase 4 capture-sound events may keep lightweight diagnostic/context fields that are useful for future KPI debugging.
+- This does not authorize KPI implementation in Phase 4.
+- Phase 7 must still derive KPI truth from authoritative gameplay/capture state and confirmed event APIs, not from sound dispatch logs or audio queue behavior.
+
 Codex To-Do Checklist:
 
 - [ ] Confirm KPI event APIs in `api_checklist.md` as `Confirmed` or `Replaced` before enabling each KPI path.
@@ -1010,6 +1720,7 @@ Phase Changelog:
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`: `None yet`
 
+<a id="phase-8"></a>
 ### Phase 8: Post-Match Ticket Screen
 
 Deliverables:
@@ -1044,6 +1755,7 @@ Phase Changelog:
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`: `None yet`
 
+<a id="phase-9"></a>
 ### Phase 9: Iteration, Playtesting, and Polish (Open-Ended)
 
 Deliverables:
@@ -1091,7 +1803,47 @@ Phase Changelog:
   - `2026-03-02 | Repeated neutralization-border regression during Phase 3 implementation/testing | Deferred flag border feature to Phase 9 polish; remove border feature from active implementation until a single authoritative visual-state path is validated | Phase 3B, Phase 9 | accepted | Added Phase 9 to-do + explicit border reintroduction validation criteria`
   - `2026-03-01 | Phase sequence update request | Added open-ended iteration/playtesting/polish phase before bot simulation and bumped downstream phase numbering | Phase 9, Phase 10, Phase 11, Phase 12 | accepted | design_doc phase ordering + numbering updated`
 
-### Phase 10: AI/Bot Simulation and Spawn-Balance Validation (Future)
+<a id="phase-10"></a>
+### Phase 10: Advanced Features
+
+Deliverables:
+
+- spawn aircraft in air
+- spawn vehicles by user chosen orientation
+
+Mapped clarifications:
+
+- future advanced-spawn/vehicle-system clarifications as required
+
+Godot/map prerequisites:
+
+- authored in-air aircraft spawn transforms where required
+- authored orientation-aware vehicle spawn transforms or user-facing orientation inputs
+
+Verification:
+
+- `npm run verify`
+- aircraft in-air spawn correctness checks
+- vehicle user-chosen orientation correctness checks
+
+Codex To-Do Checklist:
+
+- [ ] Implement spawn-aircraft-in-air feature.
+- [ ] Implement vehicle spawn by user-chosen orientation.
+- [ ] Validate aircraft in-air spawn safety and map-specific correctness.
+- [ ] Validate user-chosen vehicle orientation behaves consistently across supported spawn contexts.
+
+Phase Changelog:
+
+- `Log policy`: append-only; newest entry first.
+- `Current status`: `not_started`
+- `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
+- `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
+- `Entries`:
+  - `2026-03-12 | Phase-plan update request | Added Phase 10 Advanced Features for spawning aircraft in air and spawning vehicles by user-chosen orientation; bumped downstream future phases accordingly and updated Phase 5/6 titles/scope | Phase 5, Phase 6, Phase 10, Phase 11, Phase 12, Phase 13 | accepted | design_doc future-phase ordering + deliverables/checklists updated`
+
+<a id="phase-11"></a>
+### Phase 11: AI/Bot Simulation and Spawn-Balance Validation (Future)
 
 Deliverables:
 
@@ -1131,11 +1883,12 @@ Phase Changelog:
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`: `None yet`
 
-### Phase 11: Advanced Spawn Contract Integration (Post-Core Only)
+<a id="phase-12"></a>
+### Phase 12: Advanced Spawn Contract Integration (Post-Core Only)
 
 Hard gate:
 
-- Phase 11 starts only after Phases 1-10 are implemented, verified, and stable.
+- Phase 12 starts only after Phases 1-11 are implemented, verified, and stable.
 
 Deliverables:
 
@@ -1188,11 +1941,12 @@ Phase Changelog:
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`: `None yet`
 
-### Phase 12: Spawn Design Documentation and Contract Analysis (Integrated)
+<a id="phase-13"></a>
+### Phase 13: Spawn Design Documentation and Contract Analysis (Integrated)
 
 Hard gate:
 
-- Phase 12 starts after Phase 11 implementation baseline is stable.
+- Phase 13 starts after Phase 12 implementation baseline is stable.
 
 Purpose:
 

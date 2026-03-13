@@ -77,9 +77,7 @@ function cleanupHudForPid(pid: number): void {
         }
     };
 
-    // Conquest HUD widgets are torn down through one authoritative lifecycle owner.
-    destroyConquestHudForPid(pid);
-    resetConquestCombatHudV2ForPid(pid);
+    // Conquest HUD widgets are torn down through the active hard-cut combat owner.
     twlConquestHudDestroyPlayer(pid);
 
     const rootNames = [
@@ -91,6 +89,9 @@ function cleanupHudForPid(pid: number): void {
         `Container_TopMiddle_CoreUI_${pid}`,
         `Container_TopLeft_CoreUI_${pid}`,
         `Container_TopRight_CoreUI_${pid}`,
+        `ConquestTopCenterAuxRoot_${pid}`,
+        `Container_HelpText_${pid}`,
+        `HelpText_${pid}`,
         `Upper_Left_Container_${pid}`,
         `TwlConquestHudStatusLaneRoot_${pid}`,
         `TwlConquestHudStatusLanePrimaryText_${pid}`,
@@ -127,10 +128,10 @@ function cleanupHudForPid(pid: number): void {
         deleteAllByName(name);
     }
     resetTopHudRootInitializationForPid(pid);
-    resetConquestCombatRootInitializationForPid(pid);
 
     delete State.hudCache.clockWidgetCache[pid];
     delete State.hudCache.countdownWidgetCache[pid];
+    delete State.hudCache.topHudShellByPid[pid];
     delete State.conquest.debug.hudGenerationByPid[pid];
     delete State.conquest.debug.teamSwapRefreshTokenByPid[pid];
     delete State.conquest.debug.teamSwapHudResetPendingByPid[pid];
@@ -171,11 +172,11 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
 
     resetUiForPlayerOnJoin(eventPlayer);
 
-    ensureHudForPlayer(eventPlayer);
+    ensureTopHudShellForPlayer(eventPlayer);
     // Warm ready-dialog UI cache in the background so first open is instant but join flow stays responsive.
     void scheduleReadyDialogUiWarmCacheForPlayer(eventPlayer, 0.35);
     // Force a conquest HUD refresh so late joiners immediately receive current tickets/flag state.
-    updateConquestPhase2ADebugHudForAllPlayers(true);
+    updateConquestCombatHudForAllPlayers(true);
     if (joinPid !== undefined) {
         setMatchStateTextForPid(joinPid);
     }

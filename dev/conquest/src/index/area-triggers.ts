@@ -43,7 +43,7 @@ function onPlayerEnterCapturePointImpl(eventPlayer: mod.Player, eventCapturePoin
         conquestPhase2AOnCapturePointTick(eventCapturePoint);
         conquestPhase3MarkHudDirty();
         // Enter/exit should feel atomic: apply top row + popout + engage in one immediate pass.
-        updateConquestPhase2ADebugHudForAllPlayers(true);
+        updateConquestCombatHudForAllPlayers(true);
     } catch {
         return;
     }
@@ -62,7 +62,7 @@ function onPlayerExitCapturePointImpl(eventPlayer: mod.Player, eventCapturePoint
         delete State.conquest.capture.engagedObjIdByPid[pid];
         conquestPhase3MarkHudDirty();
         // Enter/exit should feel atomic: apply top row + popout + engage in one immediate pass.
-        updateConquestPhase2ADebugHudForAllPlayers(true);
+        updateConquestCombatHudForAllPlayers(true);
     } catch {
         return;
     }

@@ -3,6 +3,9 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.513: Phase 3C Stage 3: remove dormant legacy combat runtime files and hard-cut active HUD routing to shell plus core only
+// v0.512: Phase 3C Stage 2: reroute active combat HUD callers to the dedicated combat dispatcher
+// v0.511: Phase 3C Stage 1: extract dedicated top-HUD shell cache and reroute non-combat callers
 // v0.510: Tie the final-minute clock color pulse directly to the displayed second for a consistent red alert.
 // v0.509: Move the clock plate up slightly and slow the final-minute color pulse to a one-second cadence.
 // v0.508: Change the final-minute clock alert to a red-white color pulse and tighten the clock plate width.

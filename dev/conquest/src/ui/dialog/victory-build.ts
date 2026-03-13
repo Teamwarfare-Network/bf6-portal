@@ -1,6 +1,32 @@
 // @ts-nocheck
 // Module: ui/dialog/victory-build -- victory dialog construction for per-player HUD cache.
 
+// Rebinds all victory dialog widget refs from authoritative per-player names after build or recovery.
+function bindVictoryDialogRefsByName(pid: number, refs: HudRefs): void {
+    refs.victoryRoot = safeFind(`VictoryDialogRoot_${pid}`);
+    refs.victoryRestartText = safeFind(`VictoryDialog_Restart_${pid}`);
+
+    refs.victoryTimeHoursTens = safeFind(`VictoryDialog_TimeHT_${pid}`);
+    refs.victoryTimeHoursOnes = safeFind(`VictoryDialog_TimeHO_${pid}`);
+    refs.victoryTimeMinutesTens = safeFind(`VictoryDialog_TimeMT_${pid}`);
+    refs.victoryTimeMinutesOnes = safeFind(`VictoryDialog_TimeMO_${pid}`);
+    refs.victoryTimeSecondsTens = safeFind(`VictoryDialog_TimeST_${pid}`);
+    refs.victoryTimeSecondsOnes = safeFind(`VictoryDialog_TimeSO_${pid}`);
+
+    refs.victoryAdminActionsText = safeFind(`VictoryDialog_AdminActions_${pid}`);
+    refs.victoryRosterRow = safeFind(`VictoryDialog_RosterRow_${pid}`);
+    refs.victoryRosterLeftContainer = safeFind(`VictoryDialog_RosterLeft_${pid}`);
+    refs.victoryRosterRightContainer = safeFind(`VictoryDialog_RosterRight_${pid}`);
+
+    refs.victoryLeftRosterText = [];
+    refs.victoryRightRosterText = [];
+    for (let i = 0; i < TEAM_ROSTER_MAX_ROWS; i++) {
+        refs.victoryLeftRosterText.push(safeFind(`VictoryDialog_LeftRoster_${pid}_${i}`));
+        refs.victoryRightRosterText.push(safeFind(`VictoryDialog_RightRoster_${pid}_${i}`));
+    }
+}
+
+// Builds the cached victory dialog widget tree for one player and binds all dialog refs.
 function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRefs): void {
     const modal = modlib.ParseUI({
         name: `VictoryDialogRoot_${pid}`,
@@ -350,26 +376,5 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRef
     });
 
     if (modal) refs.roots.push(modal);
-
-    refs.victoryRoot = safeFind(`VictoryDialogRoot_${pid}`);
-    refs.victoryRestartText = safeFind(`VictoryDialog_Restart_${pid}`);
-
-    refs.victoryTimeHoursTens = safeFind(`VictoryDialog_TimeHT_${pid}`);
-    refs.victoryTimeHoursOnes = safeFind(`VictoryDialog_TimeHO_${pid}`);
-    refs.victoryTimeMinutesTens = safeFind(`VictoryDialog_TimeMT_${pid}`);
-    refs.victoryTimeMinutesOnes = safeFind(`VictoryDialog_TimeMO_${pid}`);
-    refs.victoryTimeSecondsTens = safeFind(`VictoryDialog_TimeST_${pid}`);
-    refs.victoryTimeSecondsOnes = safeFind(`VictoryDialog_TimeSO_${pid}`);
-
-    refs.victoryAdminActionsText = safeFind(`VictoryDialog_AdminActions_${pid}`);
-    refs.victoryRosterRow = safeFind(`VictoryDialog_RosterRow_${pid}`);
-    refs.victoryRosterLeftContainer = safeFind(`VictoryDialog_RosterLeft_${pid}`);
-    refs.victoryRosterRightContainer = safeFind(`VictoryDialog_RosterRight_${pid}`);
-
-    refs.victoryLeftRosterText = [];
-    refs.victoryRightRosterText = [];
-    for (let i = 0; i < TEAM_ROSTER_MAX_ROWS; i++) {
-        refs.victoryLeftRosterText.push(safeFind(`VictoryDialog_LeftRoster_${pid}_${i}`));
-        refs.victoryRightRosterText.push(safeFind(`VictoryDialog_RightRoster_${pid}_${i}`));
-    }
+    bindVictoryDialogRefsByName(pid, refs);
 }

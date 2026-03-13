@@ -46,7 +46,7 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
     const pid = safeGetPlayerId(player);
     if (pid === undefined || isPidDisconnected(pid)) return;
     // Look up cached UI references for this player (if missing, this update becomes a no-op).
-    const refs = State.hudCache.hudByPid[pid];
+    const refs = getTopHudShellRefsForPid(pid);
     if (!refs) return;
 
     if (refs.victoryRoot) {

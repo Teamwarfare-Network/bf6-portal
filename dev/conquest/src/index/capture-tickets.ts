@@ -585,58 +585,6 @@ function conquestPhase3RefreshTopHudDerivedSlicesForAllPlayers(): void {
     }
 }
 
-// Runs the isolated combat-loop owner path.
-// v2 and legacy combat lanes are intentionally updated through separate owner branches.
-function conquestPhase3RunCombatLoopByOwner(force?: boolean): void {
-    if (isConquestCombatRenderOwnerV2()) {
-        if (!conquestPhase3ShouldRunCombatHud()) {
-            hideAllConquestCombatHudV2();
-            return;
-        }
-        try {
-            conquestCombatHudV2TickMain(force);
-            conquestCombatHudV2TickAnimation(force);
-        } catch {
-            // Fail-close combat-v2 projection on runtime fault so gameplay flow continues.
-            hideAllConquestCombatHudV2();
-        }
-        return;
-    }
-    // Legacy-owner mode keeps v2 hidden.
-    hideAllConquestCombatHudV2();
-}
-
-// Force-hides combat HUD widgets for all cached players without rebuilding trees.
-// This supports staged rebuild work where non-combat UI must remain available.
-function conquestPhase3ForceHideCombatHudForAllPlayersFromCache(): void {
-    const cachedHudByPid = State.hudCache.hudByPid;
-    for (const pidKey in cachedHudByPid) {
-        if (!Object.prototype.hasOwnProperty.call(cachedHudByPid, pidKey)) continue;
-        const refs = cachedHudByPid[Number(pidKey)];
-        if (!refs) continue;
-        conquestPhase3ForceHideAllV2Widgets(refs);
-        safeSetUIWidgetVisible(refs.conquestCombatRoot, false);
-    }
-}
-
-// One-shot legacy suppression gate for core HUD mode.
-// Running full legacy hide on every 0.25s core tick is expensive and can delay UI/input callbacks.
-let conquestPhase3CoreLegacySuppressionArmed = true;
-
-// Applies legacy HUD suppression only when the core one-shot gate is armed.
-// Core mode must not run full legacy hide passes on every forced HUD refresh.
-function conquestPhase3ApplyCoreLegacySuppression(): void {
-    if (!conquestPhase3CoreLegacySuppressionArmed) return;
-    hideAllConquestCombatHudV2();
-    conquestPhase3ForceHideCombatHudForAllPlayersFromCache();
-    conquestPhase3CoreLegacySuppressionArmed = false;
-}
-
-// Re-arms core suppression so the next transition back to core mode performs one cleanup pass.
-function conquestPhase3ArmCoreLegacySuppression(): void {
-    conquestPhase3CoreLegacySuppressionArmed = true;
-}
-
 // Publishes derived top-HUD slices shared by status/help/clock owners.
 function conquestPhase3PublishTopHudDerivedSlicesForPid(
     pid: number,
@@ -2017,10 +1965,6 @@ function renderConquestTicketCountersForPid(refs: HudRefs, tickets: ConquestHudT
     };
     let targetRefs = refs;
     if (!hasTicketCounterCoreRefs(targetRefs)) {
-        const viewer = safeFindPlayer(pid);
-        if (viewer && mod.IsPlayerValid(viewer)) {
-            ensureHudForPlayer(viewer);
-        }
         targetRefs = State.hudCache.hudByPid[pid] ?? targetRefs;
     }
     if (!hasTicketCounterCoreRefs(targetRefs)) {
@@ -2115,19 +2059,8 @@ function conquestPhase3BackfillBleedChevronCoreRefs(refs: HudRefs): boolean {
 // Renders ticket bleed chevrons only.
 function renderConquestTicketBleedForPid(refs: HudRefs, tickets: ConquestHudTicketViewModel): void {
     const bleedExpected = tickets.bleedLeftCount > 0 || tickets.bleedRightCount > 0;
-    let targetRefs = refs;
+    let targetRefs = State.hudCache.hudByPid[refs.pid] ?? refs;
     let chevronsReady = conquestPhase3BackfillBleedChevronCoreRefs(targetRefs);
-    if (!chevronsReady && bleedExpected) {
-        const viewer = safeFindPlayer(refs.pid);
-        if (viewer && mod.IsPlayerValid(viewer)) {
-            // First-life hardening:
-            // if bleed is active but core chevrons are unresolved, force one HUD ensure pass
-            // so chevrons do not wait for a later team-swap rebuild to appear.
-            ensureHudForPlayer(viewer);
-            targetRefs = State.hudCache.hudByPid[refs.pid] ?? targetRefs;
-            chevronsReady = conquestPhase3BackfillBleedChevronCoreRefs(targetRefs);
-        }
-    }
     if (!chevronsReady && bleedExpected) {
         // Teardown contract: render paths must not hard-destroy/rebuild HUD trees.
         // Queue a retry and let authoritative lifecycle owners handle rebuild decisions.
@@ -2140,43 +2073,11 @@ function renderConquestTicketBleedForPid(refs: HudRefs, tickets: ConquestHudTick
     );
 }
 
-// Refreshes bleed chevrons on non-dirty ticks so first-life indicators do not depend on unrelated HUD writes.
+// Forces one immediate core combat HUD frame when deploy flow wants first-life chevrons without waiting for the next cadence.
 function conquestPhase3RefreshTicketBleedWhenHudClean(): void {
     if (!conquestPhase3ShouldRunCombatHud()) return;
-    if (!isMatchLive()) return;
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const viewer = mod.ValueInArray(players, i) as mod.Player;
-        if (!viewer || !mod.IsPlayerValid(viewer)) continue;
-        const pid = safeGetPlayerId(viewer);
-        if (pid === undefined) continue;
-        if (State.conquest.debug.teamSwapHudResetPendingByPid[pid] === true) continue;
-        const refs = State.hudCache.hudByPid[pid];
-        if (!refs) continue;
-        const perspective = conquestPhase3GetPerspectiveTeams(viewer);
-        if (!perspective.resolved) continue;
-        const bleedCounts = conquestPhase3GetBleedChevronCountsForPerspective(
-            perspective.friendlyTeam,
-            perspective.enemyTeam
-        );
-        const bleedExpected = bleedCounts.leftCount > 0 || bleedCounts.rightCount > 0;
-        let targetRefs = refs;
-        let chevronsReady = conquestPhase3BackfillBleedChevronCoreRefs(targetRefs);
-        if (!chevronsReady && bleedExpected) {
-            ensureHudForPlayer(viewer);
-            targetRefs = State.hudCache.hudByPid[pid] ?? targetRefs;
-            chevronsReady = conquestPhase3BackfillBleedChevronCoreRefs(targetRefs);
-        }
-        if (!chevronsReady && bleedExpected) {
-            conquestPhase3MarkHudDirty();
-        }
-        conquestPhase3ApplyTicketBleedIndicatorCounts(
-            targetRefs,
-            bleedCounts.leftCount,
-            bleedCounts.rightCount
-        );
-    }
+    if (getConquestHudMode() !== "core") return;
+    twlConquestHudTickFrame(true);
 }
 
 // Applies winner indicators to ticket counters using script-authoritative leader state.
@@ -3008,7 +2909,7 @@ function conquestPhase2AResetLiveState(): void {
     conquestPhase2AApplyCaptureTimingForMappedPoints();
     conquestPhase3MarkHudDirty();
     conquestPhase2AMirrorTicketsToEngineScore();
-    updateConquestPhase2ADebugHudForAllPlayers();
+    updateConquestCombatHudForAllPlayers();
 }
 
 // Resets conquest state for non-live phases while preserving config-derived mappings.
@@ -3047,7 +2948,7 @@ function conquestPhase2AResetNotLiveState(): void {
     conquestPhase2ABuildMappedCaptureIndexFromConfig();
     conquestPhase2AApplyCaptureTimingForMappedPoints();
     conquestPhase3MarkHudDirty();
-    updateConquestPhase2ADebugHudForAllPlayers();
+    updateConquestCombatHudForAllPlayers();
 }
 
 // Mirrors authoritative script tickets into engine score projection.
@@ -3440,7 +3341,7 @@ function conquestPhase2AOnCapturePointLost(eventCapturePoint: mod.CapturePoint):
     State.conquest.capture.visualByObjId[objId] = visual;
 
     conquestPhase3MarkHudDirty();
-    updateConquestPhase2ADebugHudForAllPlayers(true);
+    updateConquestCombatHudForAllPlayers(true);
 }
 
 /**
@@ -3489,7 +3390,7 @@ function conquestPhase2AOnCapturePointCaptured(eventCapturePoint: mod.CapturePoi
     State.conquest.capture.visualByObjId[objId] = visual;
 
     conquestPhase3MarkHudDirty();
-    updateConquestPhase2ADebugHudForAllPlayers(true);
+    updateConquestCombatHudForAllPlayers(true);
 }
 
 /**
@@ -3730,136 +3631,29 @@ function renderConquestFlagSlotsForPid(
     }
 }
 
-// Updates per-player conquest ticket/flag HUD from authoritative state using viewer perspective colors.
-function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
+// Central combat HUD dispatcher.
+// In core mode, the new TwlConquestHud pipeline is the only active combat render owner.
+// Legacy/off branches remain here temporarily as cleanup-bridge compatibility until deletion phase.
+function updateConquestCombatHudForAllPlayers(force?: boolean): void {
     const hudMode = getConquestHudMode();
     conquestPhase3RefreshTopHudDerivedSlicesForAllPlayers();
-    if (hudMode === "core") {
-        try {
-            // Hard-cut mode: new TwlConquestHud pipeline is the only combat HUD owner.
-            twlConquestHudTickFrame(force);
-            twlConquestHudTickAnimation(force);
-            conquestPhase3ApplyCoreLegacySuppression();
-        } catch {
-            // HUD core is optional for gameplay; reset cadence and let next tick recover without global hide flash.
-            twlConquestHudResetSchedulerState();
-            conquestPhase3ApplyCoreLegacySuppression();
-        }
-        if (force) {
-            State.conquest.debug.hudLastUpdatedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
-        }
-        State.conquest.debug.hudDirty = false;
-        return;
-    }
     if (hudMode === "off") {
-        conquestPhase3ArmCoreLegacySuppression();
         twlConquestHudHideAllPlayers();
-        hideAllConquestCombatHudV2();
-        conquestPhase3ForceHideCombatHudForAllPlayersFromCache();
         State.conquest.debug.hudDirty = false;
         return;
     }
-
-    conquestPhase3ArmCoreLegacySuppression();
-    const useCombatV2Owner = isConquestCombatRenderOwnerV2();
-    conquestPhase3RunCombatLoopByOwner(force);
-    if (useCombatV2Owner) {
-        if (force) {
-            State.conquest.debug.hudLastUpdatedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
-        }
-        State.conquest.debug.hudDirty = false;
-        return;
+    try {
+        // Hard-cut mode: new TwlConquestHud pipeline is the only combat HUD owner.
+        twlConquestHudTickFrame(force);
+        twlConquestHudTickAnimation(force);
+    } catch {
+        // HUD core is optional for gameplay; reset cadence and let next tick recover without global hide flash.
+        twlConquestHudResetSchedulerState();
     }
-    if (!conquestPhase3ShouldRunCombatHud()) {
-        conquestPhase3ForceHideCombatHudForAllPlayersFromCache();
-        State.conquest.debug.hudDirty = false;
-        return;
+    if (force) {
+        State.conquest.debug.hudLastUpdatedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
     }
-    if (!force && !State.conquest.debug.hudDirty) {
-        conquestPhase3RefreshTicketBleedWhenHudClean();
-        return;
-    }
-
-    const now = Math.floor(mod.GetMatchTimeElapsed());
-    State.conquest.debug.hudLastUpdatedAtSeconds = now;
     State.conquest.debug.hudDirty = false;
-
-    const mappedCaptureStates = conquestPhase3GetOrderedMappedCaptureStates();
-    // Persist leader team in runtime state so crown/border visibility remains script authoritative.
-    State.conquest.debug.ticketLeaderTeam = conquestPhase3GetTicketLeaderTeam();
-
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        const pid = safeGetPlayerId(p);
-        if (pid === undefined) continue;
-        if (!force && !conquestPhase3TrackSinglePassRenderForPid(pid)) continue;
-        const swapResetPending = State.conquest.debug.teamSwapHudResetPendingByPid[pid] === true;
-        if (swapResetPending) {
-            // Hard swap gate:
-            // keep full custom combat HUD hidden while pending, then rebuild/reveal after deploy release.
-            State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
-            delete State.conquest.capture.engagedObjIdByPid[pid];
-        }
-
-        const perspective = conquestPhase3GetPerspectiveTeams(p);
-        let refs: HudRefs | undefined = State.hudCache.hudByPid[pid];
-        const needsHudBootstrap = !refs;
-        if (needsHudBootstrap) {
-            // Single-owner lifecycle: ensureHudForPlayer() owns per-PID build/rebuild.
-            refs = ensureHudForPlayer(p);
-        }
-        if (!refs) {
-            conquestPhase3PublishHudProjectionDebugSnapshotForPid(pid, undefined);
-            continue;
-        }
-        if (!conquestPhase3HasCriticalHudRefs(refs)) {
-            destroyConquestHudForPid(refs.pid);
-            refs = ensureHudForPlayer(p);
-            if (!refs || !conquestPhase3HasCriticalHudRefs(refs)) {
-                conquestPhase3PublishHudProjectionDebugSnapshotForPid(pid, undefined);
-                continue;
-            }
-        }
-        if (swapResetPending) {
-            conquestPhase3ForceHideAllV2Widgets(refs);
-            conquestPhase3PublishHudProjectionDebugSnapshotForPid(pid, undefined);
-            continue;
-        }
-        if (!perspective.resolved) {
-            // Keep custom HUD visible with fallback team orientation while perspective resolves.
-            // This avoids full custom HUD drops that expose native top HUD lanes.
-        }
-        const maxFlagSlots = conquestPhase3GetFlagMaxSlotsFromRefs(refs);
-        const hudVm = deriveHudViewModelForPlayer(pid, perspective, mappedCaptureStates, maxFlagSlots);
-        conquestPhase3PublishDerivedHudSlicesForPid(pid, hudVm);
-        conquestPhase3PublishHudProjectionDebugSnapshotForPid(pid, hudVm);
-        if (CONQUEST_PHASE3_UI_OWNERSHIP_PROBE_HIDE_V2) {
-            conquestPhase3ForceHideAllV2Widgets(refs);
-            continue;
-        }
-        renderConquestTicketCountersForPid(refs, hudVm.tickets);
-        renderConquestTicketBarsForPid(refs, hudVm.tickets);
-        renderConquestTicketLeaderForPid(refs, hudVm.tickets);
-        renderConquestTicketBleedForPid(refs, hudVm.tickets);
-        renderConquestFlagSlotsForPid(
-            refs,
-            hudVm.flags
-        );
-        renderConquestActiveFlagPopoutForPid(
-            refs,
-            hudVm.activeFlagPopout
-        );
-        renderConquestEngageForPid(
-            refs,
-            hudVm.engage
-        );
-        // Show roots last so all child updates are already committed before reveal.
-        // This reduces swap-time incremental construction visibility.
-        renderConquestRootsForPid(refs);
-    }
 }
 
 // Runs sub-second live capture synchronization so dynamic HUD elements do not strobe on second boundaries.
@@ -3867,15 +3661,11 @@ function conquestPhase2ARefreshLiveCaptureStateSubtick(): void {
     conquestPhase2AClearInactiveEngagedObjectiveOwners();
     // Keep capture-state authoritative even if event-driven capture callbacks miss a transition frame.
     conquestPhase2ASyncMappedCapturePointsFromEngine();
-    // Run suppression outside the regular dirty-render gate so stale engage rows never linger.
-    if (getConquestHudMode() === "legacy" && !isConquestCombatRenderOwnerV2()) {
-        conquestPhase3EnforceSuppressedEngageWidgets();
-    }
 }
 
-// Phase 2A second-boundary tick owner: bleed, end checks, then debug projection refresh.
+// Phase 2A second-boundary tick owner: bleed, end checks, then combat HUD refresh.
 function conquestPhase2AOnLiveTick(): void {
     conquestPhase2AApplyBleedTick();
     conquestPhase2ACheckEndCondition();
-    updateConquestPhase2ADebugHudForAllPlayers();
+    updateConquestCombatHudForAllPlayers();
 }

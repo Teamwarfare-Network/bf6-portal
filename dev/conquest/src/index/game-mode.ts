@@ -30,17 +30,11 @@ async function onGameModeStartedImpl(): Promise<void> {
     conquestPhase2AResetNotLiveState();
     conquestPhase2BOnNotLiveReset();
     const hudMode = getConquestHudMode();
-    if (hudMode === "core") {
-        // Core mode startup: avoid heavy destructive purge passes that can stall early UI/input responsiveness.
-        twlConquestHudHideAllPlayers();
-        twlConquestHudClearAllEntries();
-        hideAllConquestCombatHudV2();
-        resetConquestCombatHudV2Scheduler();
-    } else {
-        twlConquestHudBootRuntime();
-        resetAllConquestCombatHudV2();
-        hardPurgeConquestCombatHudV2ForConnectedPlayers();
-        resetConquestCombatHudV2Scheduler();
+    // Core/off startup: keep combat HUD ownership inside the TwlConquestHud runtime only.
+    twlConquestHudHideAllPlayers();
+    twlConquestHudClearAllEntries();
+    if (hudMode === "off") {
+        twlConquestHudResetSchedulerState();
     }
 
     // Apply initial engine variables/settings used by the mode (authoritative baseline).
@@ -79,7 +73,7 @@ async function onGameModeStartedImpl(): Promise<void> {
             // Startup baseline: clear inherited redeploy delay so connected players are not held by stale forced timers.
             mod.SetRedeployTime(p, 0);
             // Build/rebuild the player's HUD (widgets) and immediately reflect current authoritative state.
-            ensureHudForPlayer(p);
+            ensureTopHudShellForPlayer(p);
         }
     }
 
@@ -110,7 +104,7 @@ async function onGameModeStartedImpl(): Promise<void> {
                 lastLiveCoreTickSecond = nowSecondBoundary;
                 conquestPhase2AOnLiveTick();
             } else {
-                updateConquestPhase2ADebugHudForAllPlayers();
+                updateConquestCombatHudForAllPlayers();
             }
         } else {
             lastLiveCoreTickSecond = -1;

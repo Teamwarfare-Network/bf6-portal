@@ -9,8 +9,4 @@ function twlConquestHudSetMode(mode: TwlConquestHudMode): void {
     setConquestHudMode(mode);
     if (mode === "core") return;
     twlConquestHudHideAllPlayers();
-    if (mode === "legacy") {
-        // Ensure no core widgets remain when returning to legacy mode.
-        twlConquestHudDestroyAllPlayers();
-    }
 }

@@ -1,24 +1,24 @@
 # Conquest Issues
 
 Last Updated: 2026-03-12  
-Last Tested Build: `v0.495` (compile-verified; user retest pending)
+Last Tested Build: `v0.513` (accepted current checkpoint; user pass confirmed)
 
 ## Current Snapshot
-- `CQ_Bug_1`: Fixed
-- `CQ_Bug_2`: Fixed
+- `CQ_Bug_1`: Resolved
+- `CQ_Bug_2`: Resolved
 - `CQ_Bug_3`: Open (deferred for now)
-- `CQ_Bug_4`: Fixed enough for current phase
-- `CQ_Bug_5`: Fixed
-- `CQ_Bug_6`: Fixed
+- `CQ_Bug_4`: Resolved
+- `CQ_Bug_5`: Resolved
+- `CQ_Bug_6`: Resolved
 - `CQ_Bug_7`: Resolved
 - `CQ_Bug_8`: Resolved
-- `CQ_Bug_9`: Open
-- `CQ_Bug_10`: In Progress (core drop-shadow baseline restored; parity polish pass pending)
+- `CQ_Bug_9`: Resolved
+- `CQ_Bug_10`: Resolved
 - `CQ_Bug_11`: Resolved
-- `CQ_Bug_12`: In Progress (startup/team-swap HUD + ready-dialog latency)
-- `CQ_Bug_13`: In Progress (intermittent mid-round combat HUD disappear)
-- `CQ_Bug_14`: In Progress (engage HUD can retain dead/man-down on-point state)
-- `CQ_Bug_15`: In Progress (final-minute clock can disappear instead of brief flicker)
+- `CQ_Bug_12`: Resolved
+- `CQ_Bug_13`: Resolved
+- `CQ_Bug_14`: Resolved
+- `CQ_Bug_15`: Resolved
 
 ## CQ_Bug_15
 Title: Final-Minute Clock Can Disappear Instead Of Brief Flicker
@@ -30,7 +30,7 @@ Expected:
 - The clock remains visible most of the time in the final minute, with only a short off-blip once per second.
 
 Status:
-- In Progress.
+- Resolved at current accepted checkpoint.
 
 Latest Mitigation (v0.506):
 - Removed `updateAllPlayersClock()` dependence on the per-player derived HUD clock cache and switched the clock renderer to the authoritative round-clock state.
@@ -59,7 +59,7 @@ Expected:
 - Dead/man-down players should be treated the same as leaving the objective for engage-count and active-popout ownership purposes.
 
 Status:
-- In Progress.
+- Resolved at current accepted checkpoint.
 
 Latest Mitigation (v0.495):
 - Added alive-only filtering for `GetPlayersOnPoint()` projection using soldier-state authority.
@@ -76,7 +76,7 @@ Expected:
 - HUD and Ready dialog should become responsive quickly and appear in one cohesive reveal.
 
 Status:
-- In Progress.
+- Resolved at current accepted checkpoint.
 
 Latest Mitigation (v0.488-v0.489):
 - Core runtime critical-ref validation reduced from every frame to periodic sampling to cut UI thread pressure.
@@ -95,7 +95,7 @@ Expected:
 - Core combat HUD remains continuously visible when live and not swap-pending.
 
 Status:
-- In Progress.
+- Resolved at current accepted checkpoint.
 
 Latest Mitigation (v0.491):
 - Core runtime validation remains periodic but now advisory-only (no destructive recover on validation readback drift).
@@ -111,7 +111,7 @@ Expected:
 - Exactly one ticket value per side, always.
 
 Status:
-- Fixed and re-verified multiple times in this session.
+- Resolved and re-verified multiple times in this session.
 - Known regressions were resolved by tightening HUD ownership/render paths.
 
 Resolution Used:
@@ -129,7 +129,7 @@ Expected:
 - At true neutral, fill must be fully hidden.
 
 Status:
-- Fixed and re-verified in this session.
+- Resolved and re-verified in this session.
 
 Resolution Used:
 - Neutral-state clamping on fill geometry to hard-clear near-zero residual pixels.
@@ -230,7 +230,7 @@ Expected:
 - Swap redraw should appear as a cohesive state.
 
 Status:
-- Fixed enough for current phase based on latest user validation.
+- Resolved at current accepted checkpoint.
 
 Resolution Used:
 - Non-destructive swap reset/hide flow.
@@ -246,7 +246,7 @@ Expected:
 - No crash on team swap under any live HUD state.
 
 Status:
-- Fixed.
+- Resolved.
 
 Resolution Used:
 - Simplified swap HUD lifecycle and removed unstable overlapping refresh behavior.
@@ -262,7 +262,7 @@ Expected:
 - Chevrons visible immediately when bleed differential applies.
 
 Status:
-- Fixed in latest user validation.
+- Resolved in latest user validation.
 
 Resolution Used:
 - Enforced render/layer order and swap lifecycle hide/recovery behavior.
@@ -318,7 +318,7 @@ Expected:
 - Top combat HUD uses one deterministic centered root chain across aspect ratios.
 
 Status:
-- Open.
+- Resolved at current accepted checkpoint.
 
 Scope/Intent:
 - Align Conquest HUD lifecycle to Helis pattern:
@@ -376,7 +376,7 @@ Current Workstream:
   - Legacy combat build block in `ensureHudForPlayer()` is now gated by `combatHudEnabled`; when owner is `v2`, legacy combat roots are not built and only non-combat HUD lanes remain.
 - Architecture cutover requirement (2026-03-11):
   - Mixed-owner regressions confirm containment patches are insufficient as a long-term strategy.
-  - Hard-cut replacement plan is now authored in `design_doc/UI_flow_new_v2.md` with:
+  - Hard-cut replacement plan is now preserved in `design_doc/TWL_Conquest_Design.md` (Phase 3 HUD/UI reference + Phase 3C cleanup closeout) with:
     - all-new `twlConquestHud*` function namespace,
     - all-new `TwlConquestHud_*` widget naming contract,
     - runtime mode toggle (`off` / `legacy` / `core`),
@@ -464,7 +464,7 @@ Expected:
 - Legacy-equivalent drop-shadow treatment restored for combat HUD text groups.
 
 Status:
-- In progress.
+- Resolved at current accepted checkpoint.
 
 Sequencing Contract:
 1. First lock approved parity for positioning, sizing, and color.

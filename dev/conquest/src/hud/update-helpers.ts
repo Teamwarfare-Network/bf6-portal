@@ -10,7 +10,7 @@ function updateAdminPanelActionCountForAllPlayers(): void {
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
-        const refs = ensureHudForPlayer(p);
+        const refs = ensureTopHudShellForPlayer(p);
         if (!refs) continue;
         setAdminPanelActionCountText(refs.adminPanelActionCountText, State.admin.actionCount);
     }

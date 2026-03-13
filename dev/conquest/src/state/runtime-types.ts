@@ -267,6 +267,7 @@ interface GameState {
     };
     hudCache: {
         hudByPid: Record<number, HudRefs>;
+        topHudShellByPid: Record<number, HudRefs>;
         clockWidgetCache: Record<number, ClockWidgetCacheEntry>;
         countdownWidgetCache: Record<number, CountdownWidgetCacheEntry>;
     };

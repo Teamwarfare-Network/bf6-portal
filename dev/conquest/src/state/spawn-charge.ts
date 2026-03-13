@@ -242,6 +242,6 @@ function conquestPhase2BOnPlayerDeployed(eventPlayer: mod.Player, wasAlreadyDepl
     conquestPhase2BIncrementReasonCounter(State.conquest.spawnCharge.chargedCountByReason, reason);
     conquestPhase2AMirrorTicketsToEngineScore();
     conquestPhase2ACheckEndCondition();
-    updateConquestPhase2ADebugHudForAllPlayers(true);
+    updateConquestCombatHudForAllPlayers(true);
     conquestPhase2BMaybeEmitDebugSnapshot(reason);
 }
