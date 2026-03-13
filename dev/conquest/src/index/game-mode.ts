@@ -29,6 +29,8 @@ async function onGameModeStartedImpl(): Promise<void> {
     initializeConquestPhase1Scaffold();
     conquestPhase2AResetNotLiveState();
     conquestPhase2BOnNotLiveReset();
+    conquestPhase4OnNotLiveReset();
+    conquestPhase4BOnNotLiveReset();
     const hudMode = getConquestHudMode();
     // Core/off startup: keep combat HUD ownership inside the TwlConquestHud runtime only.
     twlConquestHudHideAllPlayers();
@@ -61,6 +63,7 @@ async function onGameModeStartedImpl(): Promise<void> {
 
     // Start vehicle spawner backend before any optional HUD-core warmup so gameplay systems can proceed independently.
     void startVehicleSpawnerSystem();
+    conquestPhase4PrimeSoundRuntime();
 
     // Ensure HUD exists for anyone already in-game at start
     await mod.Wait(0.1);
@@ -106,6 +109,8 @@ async function onGameModeStartedImpl(): Promise<void> {
             } else {
                 updateConquestCombatHudForAllPlayers();
             }
+            conquestPhase4FlushCaptureSoundQueue();
+            conquestPhase4BFlushCaptureVoiceOverQueue();
         } else {
             lastLiveCoreTickSecond = -1;
         }

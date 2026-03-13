@@ -87,9 +87,7 @@ async function onVehicleSpawnedImpl(eventVehicle: mod.Vehicle): Promise<void> {
             const slot = State.vehicles.slots[slotIndex];
             if (slot && slot.enabled && slot.vehicleId === -1) {
                 slot.expectingSpawn = false;
-                slot.vehicleId = vehicleObjId;
-                slot.respawnRunning = false;
-                slot.spawnRetryScheduled = false;
+                bindVehicleToSpawnerSlot(slot, vehicleObjId);
                 State.vehicles.vehicleToSlot[vehicleObjId] = slotIndex;
             }
         }

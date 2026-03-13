@@ -1238,14 +1238,20 @@ function conquestPhase3EnforceSuppressedEngageWidgets(): void {
     }
 }
 
-// Single-owner engage visibility gate for Conquest capture HUD.
-// Engage can render only when the player is deployed, not in swap-reset pending,
-// and has a capture-point-derived active objective id for this tick.
-function conquestPhase3ShouldRenderEngageForPid(pid: number, activeObjId: number | undefined): boolean {
+// Shared active-objective occupancy gate used by combat HUD and capture-sound dispatch.
+// A player counts as an active objective occupant only when deployed, not swap-pending,
+// and holding a capture-point-derived objective id for this tick.
+function conquestShouldTreatPidAsActiveObjectiveOccupant(pid: number, activeObjId: number | undefined): boolean {
     if (!State.players.deployedByPid[pid]) return false;
     if (State.conquest.debug.teamSwapHudResetPendingByPid[pid] === true) return false;
     if (activeObjId === undefined) return false;
     return true;
+}
+
+// Single-owner engage visibility gate for Conquest capture HUD.
+// Engage can render only when the player passes the shared active-objective occupancy gate.
+function conquestPhase3ShouldRenderEngageForPid(pid: number, activeObjId: number | undefined): boolean {
+    return conquestShouldTreatPidAsActiveObjectiveOccupant(pid, activeObjId);
 }
 
 // Returns the engaged objective only when engage/popout/top-slot active state should render.
@@ -3172,6 +3178,22 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
     state.lastUpdatedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
     const nextVisual = conquestPhase3RefreshFlagVisualState(state);
     const visualChanged = conquestPhase3HasVisualStateChanged(prevVisual, nextVisual);
+    if (state.mapped) {
+        conquestPhase4OnCapturePointStateSample(
+            objId,
+            prevOwnerProgressTeam,
+            prevProgress01,
+            state.ownerProgressTeam,
+            state.progress01
+        );
+        conquestPhase4BOnCapturePointStateSample(
+            objId,
+            state.ownerProgressTeam,
+            state.progress01,
+            state.onPointTeam1,
+            state.onPointTeam2
+        );
+    }
 
     const changed =
         state.mapped !== prevMapped
@@ -3312,6 +3334,7 @@ function conquestPhase2AOnCapturePointLost(eventCapturePoint: mod.CapturePoint):
     conquestPhase2AConfigureCaptureTimingForPoint(eventCapturePoint, objId);
 
     const cp = conquestPhase2AEnsureCaptureState(objId);
+    const previousOwnerTeam = cp.ownerTeam;
     cp.ownerLatchedByEvent = true;
     cp.ownerTeam = 0;
     try {
@@ -3340,6 +3363,7 @@ function conquestPhase2AOnCapturePointLost(eventCapturePoint: mod.CapturePoint):
     visual.sampleTick = sampleTick;
     State.conquest.capture.visualByObjId[objId] = visual;
 
+    conquestPhase4BOnCapturePointLostEdge(objId, previousOwnerTeam, cp.ownerProgressTeam);
     conquestPhase3MarkHudDirty();
     updateConquestCombatHudForAllPlayers(true);
 }
@@ -3389,6 +3413,7 @@ function conquestPhase2AOnCapturePointCaptured(eventCapturePoint: mod.CapturePoi
     visual.sampleTick = sampleTick;
     State.conquest.capture.visualByObjId[objId] = visual;
 
+    conquestPhase4BOnCapturePointCapturedEdge(objId, ownerTeam);
     conquestPhase3MarkHudDirty();
     updateConquestCombatHudForAllPlayers(true);
 }

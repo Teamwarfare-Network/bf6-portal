@@ -21,6 +21,8 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     lifecycleSetLiveBaseline("pregame-start-match");
     conquestPhase2AResetLiveState();
     conquestPhase2BOnMatchLiveStart();
+    conquestPhase4OnMatchLiveStart();
+    conquestPhase4BOnMatchLiveStart();
 
     mod.EnableAllPlayerDeploy(true);
 
@@ -84,6 +86,8 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     lifecycleSetNotReadyBaseline("fresh-setup");
     conquestPhase2AResetNotLiveState();
     conquestPhase2BOnNotLiveReset();
+    conquestPhase4OnNotLiveReset();
+    conquestPhase4BOnNotLiveReset();
 
     setMatchClockPreview(getConfiguredMatchLengthSeconds());
     updateAllPlayersClock();

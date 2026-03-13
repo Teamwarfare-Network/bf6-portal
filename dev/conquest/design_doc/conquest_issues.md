@@ -1,7 +1,7 @@
 # Conquest Issues
 
-Last Updated: 2026-03-12  
-Last Tested Build: `v0.513` (accepted current checkpoint; user pass confirmed)
+Last Updated: 2026-03-13  
+Last Tested Build: `v0.528` (accepted Phase 4 / 4B multiplayer-tested checkpoint with one deferred VO polish bug)
 
 ## Current Snapshot
 - `CQ_Bug_1`: Resolved
@@ -19,6 +19,41 @@ Last Tested Build: `v0.513` (accepted current checkpoint; user pass confirmed)
 - `CQ_Bug_13`: Resolved
 - `CQ_Bug_14`: Resolved
 - `CQ_Bug_15`: Resolved
+- `CQ_Bug_16`: Open (deferred polish)
+
+## CQ_Bug_16
+Title: Enemy Terminal Flag VO Only Reliable While Recipient Remains On Objective
+
+Observed:
+- In multiplayer testing, `ObjectiveContested` now comes through correctly.
+- `ObjectiveCaptured` also appears to come through correctly.
+- The enemy-side terminal VO is only reliably heard if the losing player remains on the objective when the loss completes.
+- If that player leaves the objective even shortly before the loss completes, the enemy terminal VO may not play.
+
+Expected:
+- If later polish keeps the intended recent-objective grace behavior, the losing player should still be eligible to hear the enemy terminal VO for a short window after leaving the flag.
+
+Current Accepted Behavior:
+- For the current accepted checkpoint, flag VO is considered functional if:
+  - `ObjectiveContested` works
+  - `ObjectiveCaptured` works
+  - enemy terminal VO is heard while the recipient remains on the flag
+- Broader terminal grace after leaving the point is deferred as polish work, not a current blocker.
+
+Status:
+- Open.
+- Deferred to later polish.
+
+Latest Findings (v0.527-v0.528):
+- Per-player VO handles fixed contested-delivery behavior that previously only reached one recipient.
+- Swapping the enemy terminal default from `ObjectiveLost` to `ObjectiveCapturedEnemy` improved enemy-side playback behavior, but recent-leave terminal eligibility still does not fully match the intended grace model.
+
+Recommended Later Polish:
+- Revisit terminal-recipient eligibility after leaving the point.
+- Decide whether the intended design should remain:
+  - strict on-point-only terminal VO
+  - or short recent-objective grace for terminal VO
+- If grace remains desired, re-test and tune the recent-objective eligibility model specifically for enemy terminal events.
 
 ## CQ_Bug_15
 Title: Final-Minute Clock Can Disappear Instead Of Brief Flicker

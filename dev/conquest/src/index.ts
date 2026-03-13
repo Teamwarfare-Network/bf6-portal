@@ -38,6 +38,7 @@ import './hud/update-helpers';
 import './vehicles/array-helpers';
 import './vehicles/ownership';
 import './vehicles/registration';
+import './vehicles/timers';
 import './vehicles/spawner-slots';
 import './vehicles/spawner-sequence';
 import './vehicles/spawner-bind';
@@ -73,6 +74,8 @@ import './ready-dialog/countdown-flow';
 import './ready-dialog/auto-start';
 import './ready-dialog/swap-action';
 import './conquest-flow';
+import './index/capture-sound';
+import './index/capture-vo';
 import './utils/multi-click';
 import './utils/main-base';
 

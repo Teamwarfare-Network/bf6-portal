@@ -53,9 +53,14 @@ function addVehicleSpawnerSlot(teamId: TeamID, slotNumber: number, spawnPos: mod
         spawnRequestAtSeconds: -1,
         expectingSpawn: false,
         vehicleId: -1,
+        respawnDelaySeconds: VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS,
+        respawnQueuedAtSeconds: -1,
+        respawnReadyAtSeconds: -1,
+        lastSpawnedAtSeconds: -1,
         respawnRunning: false,
         spawnRetryScheduled: false,
     };
+    initializeVehicleSlotTimerState(slot);
 
     State.vehicles.slots.push(slot);
     return State.vehicles.slots.length - 1;
@@ -78,7 +83,10 @@ function setSpawnerSlotEnabled(slotIndex: number, enabled: boolean): boolean {
     slot.enabled = enabled;
     slot.enableToken += 1;
     slot.expectingSpawn = false;
-    if (!enabled) return false;
+    if (!enabled) {
+        clearVehicleSlotRespawnTimer(slot);
+        return false;
+    }
     return slot.vehicleId === -1;
 }
 

@@ -160,6 +160,8 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
         State.conquest.debug.teamSwapRefreshTokenByPid[joinPid] = 0;
         State.conquest.debug.engageHiddenUntilDeployByPid[joinPid] = true;
         delete State.conquest.capture.engagedObjIdByPid[joinPid];
+        conquestPhase4OnPlayerLeaveOrResetPid(joinPid);
+        conquestPhase4BOnPlayerLeaveOrResetPid(joinPid);
         const joinTeamNum = safeGetTeamNumberFromPlayer(eventPlayer, 0);
         if (joinTeamNum === TeamID.Team1 || joinTeamNum === TeamID.Team2) {
             State.conquest.debug.perspectiveTeamByPid[joinPid] = joinTeamNum;
@@ -226,6 +228,8 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     State.players.disconnectedByPid[pid] = true;
     removeReadyDialogInteractPoint(pid);
     cleanupHudForPid(pid);
+    conquestPhase4OnPlayerLeaveOrResetPid(pid);
+    conquestPhase4BOnPlayerLeaveOrResetPid(pid);
     // Cleanup: delete cached UI widgets so we do not leak UI for disconnected players.
     destroyReadyDialogUI(pid);
     // Remove any persisted per-player state so rejoin starts clean (NOT READY by default).

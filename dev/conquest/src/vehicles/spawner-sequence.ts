@@ -68,12 +68,16 @@ async function scheduleBlockedSpawnRetry(slotIndex: number): Promise<void> {
     if (!slot.enabled) return;
     if (slot.spawnRetryScheduled) return;
     slot.spawnRetryScheduled = true;
+    scheduleVehicleSlotRespawnTimer(slot, VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS);
     const token = slot.enableToken;
 
     await mod.Wait(VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS);
     slot.spawnRetryScheduled = false;
 
-    if (!slot.enabled || slot.enableToken !== token) return;
+    if (!slot.enabled || slot.enableToken !== token) {
+        clearVehicleSlotRespawnTimer(slot);
+        return;
+    }
     if (slot.vehicleId !== -1) return;
 
     const teamNameKey = getTeamNameKey(slot.teamId);
@@ -99,6 +103,7 @@ async function scheduleRespawn(slotIndex: number, lastVehicleId: number): Promis
         if (slot.vehicleId === lastVehicleId) {
             slot.vehicleId = -1;
         }
+        clearVehicleSlotRespawnTimer(slot);
         return;
     }
     // Guard against overlapping respawn timers for the same slot.
@@ -106,10 +111,12 @@ async function scheduleRespawn(slotIndex: number, lastVehicleId: number): Promis
 
     slot.respawnRunning = true;
     const token = slot.enableToken;
+    scheduleVehicleSlotRespawnTimer(slot, VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS);
     await mod.Wait(VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS);
 
     if (!slot.enabled || slot.enableToken !== token) {
         slot.respawnRunning = false;
+        clearVehicleSlotRespawnTimer(slot);
         return;
     }
 

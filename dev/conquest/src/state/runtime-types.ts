@@ -17,6 +17,10 @@ type VehicleSpawnerSlot = {
     spawnRequestAtSeconds: number;
     expectingSpawn: boolean;
     vehicleId: number;
+    respawnDelaySeconds: number;
+    respawnQueuedAtSeconds: number;
+    respawnReadyAtSeconds: number;
+    lastSpawnedAtSeconds: number;
     respawnRunning: boolean;
     spawnRetryScheduled: boolean;
 };
@@ -77,6 +81,109 @@ type ConquestSpawnChargeTxnState = {
 
 type ConquestSpawnChargeReasonCounters = Record<ConquestSpawnChargeReason, number>;
 
+type ConquestSoundEventKey = "capture_tick";
+
+type ConquestQueuedSoundEvent = {
+    eventKey: ConquestSoundEventKey;
+    objId: number;
+    sourceTeamId: TeamID;
+    queuedAtSeconds: number;
+};
+
+type ConquestSoundRuntimeState = {
+    enabled: boolean;
+    captureTickFriendlyHandle?: any;
+    captureTickEnemyHandle?: any;
+    handlesReady: boolean;
+    queue: ConquestQueuedSoundEvent[];
+    lastFlushAtSeconds: number;
+    lastEventAtByThrottleKey: Record<string, number>;
+    debug: {
+        queuedCount: number;
+        coalescedCount: number;
+        dispatchedCount: number;
+        dispatchedFriendlyCount: number;
+        dispatchedEnemyCount: number;
+        suppressedCount: number;
+        suppressedThrottleCount: number;
+        droppedNoHandleCount: number;
+        droppedNoRecipientCount: number;
+        droppedInvalidEventCount: number;
+        spawnFailureCount: number;
+        lastQueueDepth: number;
+        maxQueueDepth: number;
+        lastRecipientCount: number;
+        lastFlushQueuedCount: number;
+        lastFlushDispatchedCount: number;
+        lastFlushSuppressedCount: number;
+        lastFlushDroppedCount: number;
+        lastEventObjId: number;
+        lastEventSourceTeamId: TeamID | 0;
+        lastEventQueuedAtSeconds: number;
+        lastDispatchedAtSeconds: number;
+        playerCleanupCount: number;
+        lastCleanupPid: number;
+    };
+};
+
+type ConquestVoEventKey =
+    | "objective_capturing"
+    | "objective_contested"
+    | "objective_neutralised"
+    | "objective_captured";
+
+type ConquestQueuedVoEvent = {
+    eventKey: ConquestVoEventKey;
+    objId: number;
+    sourceTeamId: TeamID | 0;
+    queuedAtSeconds: number;
+    terminal: boolean;
+};
+
+type ConquestObjectiveVoState = {
+    phase: "IDLE" | "CAPTURING" | "CONTESTED" | "NEUTRALISED" | "CAPTURED";
+    activeTeamId: TeamID | 0;
+    lastAnnouncedOwnerTeam: TeamID | 0;
+    lastChangedAtSeconds: number;
+};
+
+type ConquestVoRuntimeState = {
+    enabled: boolean;
+    runtimeHandleByPid: Record<number, any>;
+    handlesReadyByPid: Record<number, boolean>;
+    queue: ConquestQueuedVoEvent[];
+    lastFlushAtSeconds: number;
+    lastEventAtByThrottleKey: Record<string, number>;
+    objectiveStateByObjId: Record<number, ConquestObjectiveVoState>;
+    recentActiveObjIdByPid: Record<number, number>;
+    recentActiveAtSecondsByPid: Record<number, number>;
+    debug: {
+        queuedCount: number;
+        coalescedCount: number;
+        dispatchedCount: number;
+        suppressedCount: number;
+        droppedNoHandleCount: number;
+        droppedNoRecipientCount: number;
+        droppedInvalidEventCount: number;
+        droppedNoFlagCount: number;
+        spawnFailureCount: number;
+        lastQueueDepth: number;
+        maxQueueDepth: number;
+        lastRecipientCount: number;
+        lastFlushQueuedCount: number;
+        lastFlushDispatchedCount: number;
+        lastFlushSuppressedCount: number;
+        lastFlushDroppedCount: number;
+        lastEventKey: ConquestVoEventKey | "none";
+        lastEventObjId: number;
+        lastEventSourceTeamId: TeamID | 0;
+        lastEventQueuedAtSeconds: number;
+        lastDispatchedAtSeconds: number;
+        playerCleanupCount: number;
+        lastCleanupPid: number;
+    };
+};
+
 type ConquestRuntimeScaffold = {
     lifecyclePhase: ConquestLifecyclePhase;
     tickets: {
@@ -98,6 +205,8 @@ type ConquestRuntimeScaffold = {
         visualByObjId: Record<number, ConquestFlagVisualRuntimeState>;
         engagedObjIdByPid: Record<number, number>;
     };
+    sound: ConquestSoundRuntimeState;
+    vo: ConquestVoRuntimeState;
     spawnCharge: {
         enabled: boolean;
         chargePerDeploy: number;

@@ -76,6 +76,8 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
     // Clear active objective engagement ownership on undeploy so stale swap/death samples cannot persist.
     delete State.conquest.capture.engagedObjIdByPid[pid];
+    conquestPhase4OnPlayerLeaveOrResetPid(pid);
+    conquestPhase4BOnPlayerLeaveOrResetPid(pid);
     twlConquestHudHideObjectiveFocusForPid(pid);
     conquestPhase3MarkHudDirty();
     updateConquestCombatHudForAllPlayers(true);

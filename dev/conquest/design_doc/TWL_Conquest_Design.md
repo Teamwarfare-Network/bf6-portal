@@ -1,6 +1,6 @@
 # TWL Conquest Design and Implementation Plan
 
-Last updated: 2026-03-12  
+Last updated: 2026-03-13  
 Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
 
 ## Current Status
@@ -11,8 +11,9 @@ Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
   - Phase 2A: completed
   - Phase 2B: implemented with remaining future validation deferred
   - Phase 3A, 3B, 3C: completed and accepted as the current HUD/UI baseline
+  - Phase 4, 4B: completed and accepted at the current multiplayer-tested checkpoint
 - Current next implementation target:
-  - Phase 4: Capture Sounds
+  - Phase 5A: Vehicle Spawner timers, game state, and logic
 - Current open Conquest bug status:
   - `CQ_Bug_3` is the only bug intentionally kept open/deferred
 - Active companion documents:
@@ -30,7 +31,15 @@ Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
 - [Phase 3B: Polished UI Pass](#phase-3b)
 - [Phase 3C: HUD Cleanup and Legacy Path Removal](#phase-3c)
 - [Phase 4: Capture Sounds](#phase-4)
+- [Phase 4B: Voice Over Exploration](#phase-4b)
 - [Phase 5: Vehicle Systems (Timers, Queue, Repair)](#phase-5)
+- [Phase 5A: Vehicle Spawner timers, game state, and logic](#phase-5a)
+- [Phase 5B: Vehicle Spawner HUD / deploy-screen displays](#phase-5b)
+- [Phase 5C: Vehicle queue / signup](#phase-5c)
+- [Phase 5D: Spawn directly in vehicle](#phase-5d)
+- [Phase 5E: Vehicle repair in base](#phase-5e)
+- [Phase 5F: Map config / vehicle spawn mapping](#phase-5f)
+- [Phase 5G: Polish / tune](#phase-5g)
 - [Phase 6: Basic Spawn and Boundaries System](#phase-6)
 - [Phase 7: Custom Tab Scoreboard + KPI Tracking](#phase-7)
 - [Phase 8: Pre & Post Match Events](#phase-8)
@@ -191,12 +200,18 @@ Current implementation baseline:
 - accepted Phase 3 HUD architecture is live:
   - non-combat shell owner
   - core combat HUD owner
+- Phase 4 capture SFX layer is implemented and accepted for single-player
+- Phase 4B flag VO exploration is implemented and accepted for single-player with multiplayer validation deferred
+- Phase 5A timer backbone is partially implemented:
+  - authoritative per-slot respawn timer state exists
 - legacy combat runtime paths have been removed
 
 Primary known implementation gap before the next phase:
 
-- no dedicated Conquest sound layer exists yet
-- no dedicated `State.conquest.sound` queue/handle/throttle state exists yet
+- no deploy-screen vehicle HUD/display layer exists yet
+- no vehicle queue/signup flow exists yet
+- no direct spawn-into-vehicle flow exists yet
+- map-wide vehicle spawn datapoint inventory and config coverage are still incomplete
 - broader multiplayer/disconnect/reconnect hardening still remains a carry-forward validation task
 
 ## Explicit Divergences From Reference Projects
@@ -275,6 +290,14 @@ These names are planning anchors for implementation/review.
 - `vehicleQueue_ProcessNext(slotIndex: number)`
 - `vehicleRepair_OnPadEnter(vehicle: mod.Vehicle, repairAreaObjId: number)`
 - `vehicleRepair_OnPadExit(vehicle: mod.Vehicle, repairAreaObjId: number)`
+- internal implementation split:
+  - `5A`: timer/game-state/logic
+  - `5B`: deploy-screen HUD/displays
+  - `5C`: queue/signup
+  - `5D`: direct spawn-into-vehicle
+  - `5E`: base repair
+  - `5F`: map config / spawn mapping
+  - `5G`: polish/tune
 
 ### 6) Basic Spawn and Boundaries System
 
@@ -1501,16 +1524,17 @@ Phase 4 implementation model (current Conquest):
     - `eventKey`
     - `objId`
     - `sourceTeamId`
-    - `viewerTargetMode` (`friendlyPerspective` or `enemyPerspective`)
     - `queuedAtSeconds`
-  - throttle key should be objective-aware and perspective-aware, not global-only
+  - queue dedupe key should be objective-aware and source-team-aware, not global-only
+  - dispatch throttle should be recipient-local per player so one player's recent tick does not suppress a different player's valid tick
   - practical default shape:
-    - `capture_tick_friendly:{objId}:{teamId}`
-    - `capture_tick_enemy:{objId}:{teamId}`
+    - queued event: `capture_tick:{objId}:{teamId}`
+    - dispatch throttle: `capture_tick:{pid}:{objId}:{teamId}`
 - Dispatch model:
   - flush queue on the existing Phase cadence (`0.5s` design target already defined above)
   - resolve recipients at flush time using current player/team truth so team swaps or redeploys do not play stale-perspective audio
   - dispatch per player with `mod.PlaySound(..., player)` rather than broadcasting global sound and hoping perspective lines up
+  - locked rule: capture SFX are recipient-local per player; team perspective only selects the variant for that player and never changes dispatch scope into team-wide or global broadcast
 - KPI interaction boundary:
   - do not solve KPI attribution in Phase 4
   - sound events are not authoritative KPI events and must not mutate KPI state directly
@@ -1543,8 +1567,9 @@ Phase 4 implementation model (current Conquest):
 - Architecture decisions for current Conquest:
   - sound producers should attach to conquest state transitions, not UI transitions
   - audio must not depend on whether popout/engage HUD is currently visible
-  - sound queue state should clear cleanly on round reset, match end, and player leave
-  - future team-switch cleanup should explicitly protect against stale queued perspective if a player changes team before flush
+  - sound queue/throttle state should clear cleanly on round reset, match end, player leave, reconnect reset, team switch, and undeploy
+  - team-switch lifecycle must explicitly clear per-player recipient-local audio throttle state before swap rebuild so pre-swap cadence cannot suppress valid post-swap ticks
+  - undeploy/death/manual-redeploy lifecycle must explicitly clear per-player recipient-local audio throttle state so a fresh re-entry is not muted by the prior life
   - if Phase 7 later introduces shared capture-event instrumentation, Phase 4 should be able to plug into it without reworking its dispatch ownership
 - Anti-patterns to avoid:
   - no direct `PlaySound`/`StopSound` loop management inside HUD/UI render paths
@@ -1572,32 +1597,242 @@ Verification:
 - anti-spam validation under rapid objective transitions
 - perspective validation after team swap/redeploy before queue flush
 - long-match validation that sound queue resets cleanly across round transitions
+- multiplayer contested-objective perspective validation remains deferred and is not a gate for leaving Phase 4
 
 Codex To-Do Checklist:
 
-- [ ] Start Phase 4 on a dedicated capture-sound layer; keep it isolated from HUD render ownership.
-- [ ] Add dedicated `State.conquest.sound` ownership for queue/handle/throttle state; do not hide Phase 4 authority inside `hudCache` or HUD-only debug maps.
-- [ ] Implement capture sound queue with per-event throttle (`CF-18`) and deterministic flush cadence.
-- [ ] Restrict V1 sound scope to required capture events only.
-- [ ] Enforce per-viewer team perspective for emitted sound events.
-- [ ] Spawn/cache runtime SFX handles once and reuse them for all Phase 4 dispatches.
-- [ ] Route sound producers from current capture authority only; do not couple them to HUD visibility.
-- [ ] Keep `capture-tickets.ts` producer hooks narrow and move queue/dispatch logic into dedicated sound modules instead of expanding the existing capture monolith.
-- [ ] Keep sound diagnostics/event envelopes KPI-friendly without turning Phase 4 into KPI implementation.
-- [ ] Run rapid objective-transition spam tests and confirm throttle behavior.
-- [ ] Run team-swap/redeploy perspective tests to ensure no stale queued audio reaches the wrong team.
-- [ ] Record debug counters/trace output demonstrating no audio flood regressions.
+- [x] Start Phase 4 on a dedicated capture-sound layer; keep it isolated from HUD render ownership.
+- [x] Add dedicated `State.conquest.sound` ownership for queue/handle/throttle state; do not hide Phase 4 authority inside `hudCache` or HUD-only debug maps.
+- [x] Implement capture sound queue with per-event throttle (`CF-18`) and deterministic flush cadence.
+- [x] Restrict V1 sound scope to required capture events only.
+- [x] Enforce per-viewer team perspective for emitted sound events.
+- [x] Spawn/cache runtime SFX handles once and reuse them for all Phase 4 dispatches.
+- [x] Route sound producers from current capture authority only; do not couple them to HUD visibility.
+- [x] Keep `capture-tickets.ts` producer hooks narrow and move queue/dispatch logic into dedicated sound modules instead of expanding the existing capture monolith.
+- [x] Keep sound diagnostics/event envelopes KPI-friendly without turning Phase 4 into KPI implementation.
+- [x] Run rapid objective-transition spam tests and confirm throttle behavior.
+- [x] Run team-swap/redeploy perspective tests to ensure no stale queued audio reaches the wrong team in single-player lifecycle testing.
+- [x] Record debug counters/trace output demonstrating no audio flood regressions.
+
+Phase 4 Closeout Decision:
+
+- Phase 4 is accepted at the current checkpoint for single-player Conquest.
+- Phase 4B multiplayer validation is now complete at the current accepted checkpoint.
+- `CQ_Bug_16` remains deferred polish and does not block moving to Phase 5.
 
 Phase Changelog:
 
 - `Log policy`: append-only; newest entry first.
-- `Current status`: `in_progress`
+- `Current status`: `completed`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-03-13 | Phase 4 closeout decision | Accepted Phase 4 for single-player based on current build/test passes, explicitly deferred contested multiplayer sound validation as non-blocking, and advanced the next implementation target to Phase 5 | Phase 4, Phase 4B, Phase 5, CF-17, CF-18, CF-19 | accepted | design_doc Phase 4 verification note + checklist closeout + current status summary`
   - `2026-03-12 | Pre-Phase 4 source audit and archival merge | Reviewed current src architecture before sound work, recorded actual Phase 4 gaps/risks (no active sound layer, no conquest.sound state, capture-tickets monolith pressure, CQ_Bug_3 perspective-cleanup warning), merged still-true HUD architecture principles from deprecated docs into the master plan, and marked the old planning/evidence docs for archive-only status | Phase 4, Phase 3A, Phase 3B, Phase 3C, CQ_Bug_3, CF-17, CF-18, CF-19 | accepted | design_doc Phase 4 preflight audit + archival carry-forward section + archive decision`
   - `2026-03-12 | Phase 4 KPI-boundary note | Added explicit rule that sound events may retain KPI-useful diagnostics/context but must not become KPI authority or mutate KPI state; expanded Phase 4 diagnostics expectations accordingly | Phase 4, Phase 7, CF-17, CF-18, CF-19 | accepted | design_doc Phase 4 KPI interaction boundary + checklist update`
   - `2026-03-12 | Phase 4 kickoff planning pass | Evaluated sound patterns from BillDukes, DFK ConquestSmall, and BattleDad references; locked a Conquest-specific Phase 4 model around a dedicated capture-sound layer, cached runtime SFX handles, objective-aware throttling, and per-viewer dispatch | Phase 4, CF-17, CF-18, CF-19 | accepted | design_doc Phase 4 implementation model + checklist update`
+
+<a id="phase-4b"></a>
+### Phase 4B: Voice Over Exploration (Optional / Experimental)
+
+Objective:
+
+- explore whether objective VO improves Conquest readability/feedback without committing the mode to ship VO yet
+- keep this as an explicit exploration/test track, not an assumed production requirement
+- preserve Phase 4 V1 as `SFX-only` unless explicit later approval changes that decision
+
+Deliverables:
+
+- validated Portal VO controller prototype for Conquest-style objective states
+- documented recommendation on whether objective VO should ship, stay optional, or be rejected
+- explicit anti-spam/debounce model if VO is retained
+
+Mapped clarifications:
+
+- `CF-17`, `CF-18`, `CF-19`
+
+Godot/map prerequisites:
+
+- verified VO module/runtime object path for Conquest
+- confirmed desired flag-letter to VO-flag mapping for the maps we support
+
+Confirmed API facts:
+
+- `mod.PlayVO(...)` is a valid API surface and accepts:
+  - `objectId/object`
+  - `event: VoiceOverEvents2D`
+  - `flag: VoiceOverFlags`
+  - optional player/squad/team recipient targeting
+- `VoiceOverFlags` confirmed by local BF6 core reference:
+  - `Alpha`
+  - `Bravo`
+  - `Charlie`
+  - `Delta`
+  - `Echo`
+  - `Foxtrot`
+  - `Golf`
+- objective-related `VoiceOverEvents2D` confirmed by local BF6 core reference:
+  - `CheckPointEnemy`
+  - `CheckPointEnemyAnother`
+  - `CheckPointFriendly`
+  - `CheckPointFriendlyAnother`
+  - `CheckPointMovingToLastEnemy`
+  - `CheckPointMovingToLastFriendly`
+  - `ObjectiveCaptured`
+  - `ObjectiveCapturedEnemy`
+  - `ObjectiveCapturedEnemyGeneric`
+  - `ObjectiveCapturedGeneric`
+  - `ObjectiveCapturing`
+  - `ObjectiveContested`
+  - `ObjectiveLocated`
+  - `ObjectiveLockdownEnemy`
+  - `ObjectiveLockdownFriendly`
+  - `ObjectiveLost`
+  - `ObjectiveNeutralised`
+  - `ObjectiveTerritoryLost`
+  - `ObjectiveTerritoryLostGeneric`
+  - `ObjectiveTerritoryTaken`
+  - `ObjectiveTerritoryTakenGeneric`
+  - `SectorTakenAttacker`
+  - `SectorTakenDefender`
+- a verified runtime-spawn candidate for VO dispatch exists:
+  - `mod.RuntimeSpawn_Common.SFX_VOModule_OneShot2D`
+- explicit correction:
+  - this doc does not assume an unverified symbol like `mod.VO.Common`
+  - any VO runtime object must be validated from actual SDK surface or project test before use
+
+Best-fit Conquest VO model (inference, not SDK-guaranteed mapping):
+
+- likely Conquest-style per-state mapping:
+  - start capturing target flag -> `ObjectiveCapturing`
+  - point becomes contested -> `ObjectiveContested`
+  - point becomes neutral -> `ObjectiveNeutralised`
+  - your team finishes the capture -> `ObjectiveCaptured` or `ObjectiveCapturedGeneric`
+  - enemy takes your flag -> `ObjectiveLost` or `ObjectiveCapturedEnemy`
+  - large territory/grouped-area logic -> `ObjectiveTerritoryTaken` / `ObjectiveTerritoryLost`
+  - sector-oriented layers -> `SectorTakenAttacker` / `SectorTakenDefender`
+- likely flag-letter mapping:
+  - `A -> Alpha`
+  - `B -> Bravo`
+  - `C -> Charlie`
+  - `D -> Delta`
+  - `E -> Echo`
+  - `F -> Foxtrot`
+  - `G -> Golf`
+
+Recommended state model for VO sync (inference, recommended design):
+
+- use edge-driven state transitions, not continuous progress polling spam
+- keep one last known VO state per objective:
+  - `Idle`
+  - `Capturing`
+  - `Contested`
+  - `Neutralised`
+  - `Captured`
+- keep one last announced owner per objective
+- only emit VO when state or announced owner actually changes
+
+Recommended anti-spam policy (inference, recommended design):
+
+- fire `ObjectiveCapturing` once when a point transitions from idle/stable into active capture
+- do not replay `ObjectiveCapturing` on every capture-progress tick
+- fire `ObjectiveContested` once when the point enters contested
+- do not replay `ObjectiveContested` until the point first leaves contested
+- fire `ObjectiveNeutralised` once when ownership crosses into neutral
+- fire terminal lines such as `ObjectiveCaptured`, `ObjectiveLost`, and `ObjectiveNeutralised` on their actual transition even if short debounce would otherwise suppress them
+- safe debounce target for non-terminal VO on the same flag:
+  - minimum `3` to `5` seconds between repeats on the same objective
+
+Architecture notes:
+
+- if explored, VO must stay on the same ownership discipline as Phase 4 SFX:
+  - producers attach to authoritative capture state transitions only
+  - recipient perspective resolves at dispatch time, not enqueue time
+  - VO must not be tied to HUD visibility or popout state
+- VO exploration should not widen Phase 4 V1 scope by default
+- if VO proves noisy, unclear, or operationally brittle, reject it and keep Phase 4 production scope at `SFX-only`
+
+Verification:
+
+- `npm run verify`
+- validate that the VO module/runtime object actually works in this Conquest project before broader design conclusions are drawn
+- confirm objective-letter mapping reads correctly for supported flags/maps
+- confirm edge-triggered VO does not replay continuously while progress rises
+- confirm contested/neutralised/captured/lost transitions fire once per actual state edge
+- run spam tests under rapid objective transitions and team swaps
+- record single-player acceptance/rejection decision after initial playtesting
+- run explicit multiplayer contested-objective and opposing-perspective verification before treating Phase 4B VO as fully shippable
+- accepted current multiplayer checkpoint:
+  - `ObjectiveContested` is working
+  - `ObjectiveCaptured` is working
+  - enemy terminal VO is currently reliable while the recipient remains on the objective
+  - broader recent-leave enemy terminal grace is deferred as polish and does not block leaving Phase 4B
+
+Compact MP QA Script (one session):
+
+- Runtime constants to validate against current implementation:
+  - live capture-state sample cadence: `0.12s`
+  - VO flush cadence: `0.12s`
+  - non-terminal VO debounce per player per objective: `4.0s`
+  - capture SFX flush cadence: `0.5s`
+  - capture SFX cooldown per player per objective: `1.0s`
+- Preconditions:
+  - use two human players on opposing teams
+  - keep current enemy terminal selector at `ObjectiveCapturedEnemy` unless explicitly running the comparison pass
+  - test on an `A/B/C` map first so VO flag mapping is unambiguous
+- Checklist:
+  - [ ] `1. Solo capture start`: Player A enters an enemy/neutral flag alone; expect one `ObjectiveCapturing` within roughly `0.12s` to `0.24s`, then no repeat while progress keeps rising.
+  - [ ] `2. Solo capture restart`: Player A leaves long enough for the point to return to non-capturing state, then re-enters; expect one new `ObjectiveCapturing` only after the true restart.
+  - [ ] `3. Contested entry`: Player A begins capture, then Player B enters the same point; expect one `ObjectiveContested` when the point first becomes contested.
+  - [ ] `4. Contested persist`: Keep both players on point for at least `5s`; expect no repeated `ObjectiveContested` while the point remains contested.
+  - [ ] `5. Contested re-entry`: One player leaves so the point exits contested, then re-enters; expect one new `ObjectiveContested` on the re-entry edge.
+  - [ ] `6. Neutralization edge`: Neutralize an owned point; expect one `ObjectiveNeutralised` at the actual neutralization edge even if a non-terminal line fired less than `4s` earlier.
+  - [ ] `7. Capture completion perspective`: Complete the capture with both players still valid on the point; expect the capturing-side player to hear `ObjectiveCaptured` and the opposing-side player to hear the configured enemy terminal line (`ObjectiveCapturedEnemy` at the current checkpoint).
+  - [ ] `8. Leave-radius gating`: Have one player leave the radius while the other keeps the point changing; expect the player who left to hear no more non-terminal VO or capture SFX after leaving.
+  - [ ] `8a. Enemy terminal after leave`: If the losing player leaves shortly before the loss completes, note whether the enemy terminal line still plays. Current accepted checkpoint allows this to fail and tracks it as deferred polish (`CQ_Bug_16`).
+  - [ ] `9. Death/redeploy`: Kill one player on the point, redeploy, and return; expect no stale delayed VO from the prior life and one fresh non-terminal line only when the new life truly re-enters state.
+  - [ ] `10. Team swap edge`: Swap one player’s team on/near an active point, redeploy, and re-enter; expect no stale pre-swap VO and correct post-swap perspective when VO resumes.
+  - [ ] `11. Spam guard`: Rapidly oscillate entry/exit/contest state for at least `10s`; expect no rapid-fire non-terminal replay faster than the current `4.0s` debounce unless the objective actually left and re-entered a different VO phase.
+  - [ ] `12. Optional enemy-terminal comparison`: flip the enemy terminal selector from `ObjectiveLost` to `ObjectiveCapturedEnemy`, rerun capture completion perspective, and decide which enemy-side terminal line reads better in multiplayer.
+- Pass criteria:
+  - non-terminal lines only fire on state-entry edges
+  - terminal lines fire exactly once per real transition
+  - recipient-local scope is preserved (no global/team-wide unintended broadcast behavior)
+  - leaving, death, redeploy, and swap clear stale perspective/state cleanly
+
+Codex To-Do Checklist:
+
+- [x] Validate the VO runtime object path in-project before assuming VO is a viable Phase 4 extension.
+- [x] Prototype objective VO using only verified API calls/symbols.
+- [x] Keep VO exploration separate from Phase 4 V1 production SFX implementation.
+- [x] Implement edge-triggered VO state tracking if exploration proceeds beyond proof-of-concept.
+- [x] Map flag letters to `VoiceOverFlags` only through verified supported values `Alpha`..`Golf`.
+- [x] Enforce non-terminal debounce and no-repeat rules so VO cannot spam while capture progress is continuously rising.
+- [x] Validate team-perspective correctness after swap/redeploy before any VO is considered shippable.
+- [x] Run multiplayer contested-objective and opposing-perspective verification.
+- [x] Make an explicit keep/reject decision after initial testing instead of letting VO become accidental scope creep. Current decision: keep flag-capture VO, with enemy terminal recent-leave grace deferred as polish.
+
+Phase 4B Closeout Decision:
+
+- Phase 4B is accepted at the current multiplayer-tested checkpoint.
+- `ObjectiveContested` and `ObjectiveCaptured` are considered working.
+- Enemy terminal VO is accepted in its current on-objective behavior.
+- `CQ_Bug_16` remains deferred polish for later iteration if broader recent-leave terminal grace is still desired.
+
+Phase Changelog:
+
+- `Log policy`: append-only; newest entry first.
+- `Current status`: `completed`
+- `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
+- `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
+- `Entries`:
+  - `2026-03-13 | Phase 4B closeout decision | Marked Phase 4B complete after multiplayer validation, accepted current ObjectiveContested / ObjectiveCaptured behavior, accepted current enemy terminal on-objective behavior, and carried recent-leave enemy terminal grace forward only as deferred polish (`CQ_Bug_16`) | Phase 4B, CQ_Bug_16, CF-17, CF-18, CF-19 | accepted | design_doc Phase 4B closeout decision + current status summary`
+  - `2026-03-13 | Phase 4B multiplayer validation checkpoint | Confirmed in multiplayer that ObjectiveContested and ObjectiveCaptured are working, accepted the current enemy terminal behavior as reliable while the recipient remains on the objective, and deferred broader recent-leave enemy terminal grace as later polish (`CQ_Bug_16`) | Phase 4B, CQ_Bug_16, CF-17, CF-18, CF-19 | accepted_with_deferred_polish | design_doc Phase 4B verification notes + compact MP QA script + checklist update`
+  - `2026-03-13 | Phase 4B Stage 3 | Hardened the objective VO cadence model to match the accepted edge-driven policy: per-flag VO phase now tracks Idle/Capturing/Contested/Neutralised/Captured with last-announced-owner state, non-terminal debounce is re-armed only on real state change, and duplicate terminal edges are suppressed by state/owner latch instead of replaying from raw callbacks | src/state/runtime-types.ts, src/index/capture-vo.ts | npm run build, npm run verify, npx tsc --pretty false --noEmit`
+  - `2026-03-13 | Phase 4B Stage 2 | Added edge-driven ObjectiveContested VO and an explicit enemy-terminal variant selector so opposing-side completion can be evaluated as ObjectiveLost or ObjectiveCapturedEnemy during later multiplayer testing; default remains ObjectiveLost until that comparison pass happens | src/config/conquest-constants.ts, src/state/runtime-types.ts, src/index/capture-vo.ts | npm run build, npm run verify, npx tsc --pretty false --noEmit`
+  - `2026-03-13 | Phase 4B single-player acceptance decision | Recorded human acceptance of the current flag-capture VO set after single-player testing, kept the VO lane active, and made multiplayer contested/opposing-perspective verification the remaining explicit ship gate | Phase 4B, CF-17, CF-18, CF-19 | accepted_pending_mp_validation | design_doc Phase 4B verification notes + checklist update`
+  - `2026-03-13 | Phase 4B Stage 1 | Added a toggleable objective VO exploration lane with a dedicated Conquest VO runtime object, recipient-local dispatch, state-entry ObjectiveCapturing plus terminal ObjectiveNeutralised/ObjectiveCaptured/ObjectiveLost mapping, verified A-G flag-to-NATO mapping, and lifecycle cleanup/reset wiring while keeping the shipped Phase 4 SFX path isolated | src/config/conquest-constants.ts, src/state/runtime-types.ts, src/state/runtime-state.ts, src/index/conquest-scaffold.ts, src/index/capture-vo.ts, src/index/capture-tickets.ts, src/index/game-mode.ts, src/index/player-join-leave.ts, src/index/player-deploy.ts, src/interaction/actions.ts, src/conquest-flow.ts, src/index.ts | npm run build, npm run verify, npx tsc --pretty false --noEmit`
+  - `2026-03-13 | Optional VO exploration planning pass | Added an explicit optional Phase 4B exploration track for objective voice-over, separating confirmed PlayVO/VoiceOverFlags/VoiceOverEvents2D API facts from inferred Conquest-style state mapping and anti-spam guidance; locked that Phase 4 V1 production scope remains SFX-only unless later approved | Phase 4B, Phase 4, CF-17, CF-18, CF-19 | accepted | design_doc optional VO exploration section + TOC update`
 
 <a id="phase-5"></a>
 ### Phase 5: Vehicle Systems (Timers, Queue, Repair)
@@ -1608,6 +1843,12 @@ Deliverables:
 - vehicle spawn queue behavior and slot arbitration
 - vehicle repair runway/pad behavior
 - knobs for vehicle spawns
+- deploy-screen vehicle spawn visualization and authored spawn mapping
+- direct spawn-into-vehicle flow explicitly brought forward into this phase as `Phase 5D`
+- first-pass deploy-screen visual timers for tanks, jets, and attack choppers only (not transports)
+- team reservation queue display with reserving player name shown next to the relevant vehicle
+- proven deploy-screen queue signup interaction for reservations, with a visible checked/unchecked state
+- explicit script-authoritative ownership for vehicle existence, queue membership, reservation state, and timer state
 
 Mapped clarifications:
 
@@ -1617,6 +1858,8 @@ Godot/map prerequisites:
 
 - complete vehicle spawner slot mapping and respawn config per map
 - authored/validated repair pads, repair runways, or equivalent repair volumes where required
+- complete per-map authored static spawn inventory for every transport vehicle, tank, chopper, and jet before tuning knobs are treated as trustworthy
+- authored Godot area triggers for runway/pad repair zones if repair is enabled for the map
 
 Verification:
 
@@ -1625,14 +1868,167 @@ Verification:
 - queue sequencing and slot-release checks
 - repair runway/pad enter/exit and restore-behavior checks
 - vehicle spawn knob/config behavior checks
+- deploy-screen vehicle spawn visualization/readability checks with minimal available screen space
+- first-pass timer validation limited to tanks, jets, and attack choppers (transports explicitly excluded on first pass)
+- direct spawn-into-vehicle flow validation across the supported vehicle classes in this phase
+- static spawn authoring/proof pass on every intended map before enabling tuning workflows
+- deploy-screen reservation signup validation, including check/uncheck behavior and correct player-name display/removal
+- state-authority validation proving the script, not the UI, owns vehicle inventory, queue state, reservation state, and timer state
+
+Implementation notes:
+
+- deploy-screen requirement:
+  - visualize and map vehicle spawns on the deploy screen
+  - decide and document where these widgets live given minimal deploy-screen space
+- reservation queue requirement:
+  - any player on the team can flag themselves into a queue for a vehicle
+  - the reserving player name should display next to that vehicle so the reservation is visible to the team
+  - reservation is per exact vehicle spawn slot, not per category/group
+  - each player may hold only one reservation total
+  - each slot may hold only one reserver total in first pass (`1/1` queue)
+- queue signup interaction requirement:
+  - the actual mechanism for signing up for a vehicle queue must be proven during implementation
+  - current preferred first pass is a square deploy-screen button that behaves like a checkbox
+  - unchecked state:
+    - empty square visual
+    - player is not queued/reserved for that vehicle
+    - no player name shown for that reservation slot
+  - checked state:
+    - visibly changed square / checked-box visual
+    - click behavior toggles back to unchecked
+    - the reserving player's name appears next to the vehicle
+  - if unchecked, the reservation should be removed immediately from authoritative game state and the player name should disappear
+  - only the reserving player may clear their own reservation
+- repair requirement:
+  - runway/chopper-pad repair should use Godot-authored area triggers plus code-side repair handling
+- map-config expansion requirement:
+  - first pass testing rollout is Firestorm only
+  - every transport, tank, chopper, and jet spawn per map must eventually be statically identified, tested, and verified by humans before later tuning knobs are trusted
+- authoritative state requirement:
+  - all vehicle, timer, reservation, and queue behavior must be script authoritative
+  - game state should explicitly know:
+    - what vehicle spawn slots exist
+    - which vehicles currently exist or are pending respawn
+    - what timer each tracked vehicle slot is on
+    - which players are queued/reserved for each vehicle
+  - UI should render from that script state and must not become the source of truth
+- timer/start/reset rules:
+  - timers start on destruction
+  - hard-despawn should also restart the timer if that runtime case exists for the slot
+  - reservations clear on disconnect, match start, match end, and team swap
+  - reservations do not clear on death or undeploy
+- direct-spawn fulfillment rules:
+  - tracked reservation vehicles should not spawn as idle open-pickup vehicles in this system
+  - reservation fulfillment should couple the spawn event and the auto-seat event together
+  - spawn should target the driver/pilot seat only
+  - the intended behavior is that unrelated players cannot block, occupy, or steal the vehicle between spawn and seat assignment
+- repair behavior rules:
+  - repair applies only to friendly vehicles
+  - the vehicle must remain inside the repair area trigger
+  - repair is continuous over time, not instant
+  - repair cadence/speed should be controlled by a tuning constant
+- display preference:
+  - if valid vehicle icons exist, prefer icon + label + timer digits + reserving username text
+- deferred design decisions:
+  - final deploy-screen placement/layout remains intentionally deferred until after `Phase 5A`
+  - the naming ambiguity in `Column 1` (`Fast Mover Group 1/2/3`) remains intentionally deferred for later clarification
+- ready-up dialog tuning requirement:
+  - expand the tuning model so it controls both what spawns and how long those spawns take
+  - preserve the requested column grouping as written below; resolve any naming ambiguity during implementation rather than silently renaming it here
+- ready-up dialog knob matrix:
+  - `Column 1: Jeeps, ATVs, DirtBikes, Transport Helos`
+  - `Transport Spawn Length`
+  - `Fast Mover Group 1 Vehicle to spawn`
+  - `Fast Mover Group 2 Vehicles to spawn`
+  - `Fast Mover Group 3 Vehicles to spawn`
+  - `Column 2: MBTs, IFVs, AAVs`
+  - `Tank Spawn Length`
+  - `Tank 1 Vehicle to spawn`
+  - `Tank 2 Vehicle to spawn`
+  - `Tank 3 Vehicle to spawn`
+  - `Tank 4 Vehicle to spawn`
+  - `Column 3: Attack Choppers, Little Birds`
+  - `Attack Chopper Spawn Length`
+  - `Chopper 1 Vehicle to spawn`
+  - `Chopper 2 Vehicle to spawn`
+  - `Column 4: Jets and Bombers`
+  - `Jet Spawn Length`
+  - `Jet 1 Vehicle to spawn`
+  - `Jet 2 Vehicle to spawn`
+- preset mode requirement after the above works:
+  - `TWL 10v10 Conquest`
+  - `TWL 8v8 Conquest`
+  - `TWL 12v12 Conquest`
+  - `TWL 16v16 Conquest`
+  - when knobs are edited away from a preset baseline, the mode should present as `TWL <size> Custom`
+
+Phase 5 execution breakdown:
+
+<a id="phase-5a"></a>
+- `Phase 5A: Vehicle Spawner timers, game state, and logic`
+  - authoritative vehicle slot state
+  - authoritative respawn timers
+  - authoritative vehicle existence / pending-respawn state
+  - base spawn logic ownership
+<a id="phase-5b"></a>
+- `Phase 5B: Vehicle Spawner HUD / deploy-screen displays`
+  - deploy-screen spawn visualization
+  - low-screenspace placement decisions
+  - first-pass timers for tanks, jets, and attack choppers only
+  - category-driven timer/display behavior while each exact vehicle slot remains individually configurable
+<a id="phase-5c"></a>
+- `Phase 5C: Vehicle queue / signup`
+  - queue behavior and arbitration
+  - checkbox-style reservation/signup interaction
+  - reservation name display
+  - first pass uses a single reservation slot only (`1/1` queue)
+<a id="phase-5d"></a>
+- `Phase 5D: Spawn directly in vehicle`
+  - direct spawn-into-vehicle flow is explicitly in Phase 5 scope, not deferred to a later phase
+  - should build on the same authoritative slot/timer/queue state as 5A-5C
+  - spawn should target the driver/pilot seat only
+  - reservation fulfillment should spawn directly into the vehicle rather than requiring a second manual step
+<a id="phase-5e"></a>
+- `Phase 5E: Vehicle repair in base`
+  - runway/pad repair behavior
+  - prerequisite: implement the required Godot repair-area requirements first
+<a id="phase-5f"></a>
+- `Phase 5F: Map config / vehicle spawn mapping`
+  - expand map configs with the full vehicle spawn datapoint inventory
+  - prerequisite: add all intended vehicle spawn datapoints into the map configs
+  - until then, implementation/testing may proceed against the currently proven vehicle spawns (tanks and choppers) on Firestorm only
+<a id="phase-5g"></a>
+- `Phase 5G: Polish / tune`
+  - ready-up vehicle knobs
+  - preset-vs-custom packaging
+  - later tuning once 5A-5F are proven
 
 Codex To-Do Checklist:
 
-- [ ] Implement per-slot vehicle respawn timer state keyed to configured vehicle slot mapping.
+- [ ] Complete `Phase 5A` authoritative vehicle spawner timer, game-state, and logic ownership.
+- [x] Implement per-slot vehicle respawn timer state keyed to configured vehicle slot mapping.
 - [ ] Render timer HUD output from authoritative timer state only.
+- [ ] Complete `Phase 5B` vehicle spawner HUD/deploy-screen display pass.
 - [ ] Implement vehicle spawn queue behavior and queue arbitration for shared vehicle systems.
 - [ ] Add vehicle repair runway/pad support.
 - [ ] Add configurable knobs for vehicle spawns and ensure they are applied from authoritative config/runtime state.
+- [ ] Visualize/mount vehicle spawns on the deploy screen and lock a workable low-screenspace layout.
+- [ ] Implement first-pass deploy-screen vehicle timers for tanks, jets, and attack choppers only.
+- [ ] Complete `Phase 5C` vehicle queue and signup flow.
+- [ ] Bring direct spawn-into-vehicle flow into Phase 5 and validate it against the same authoritative slot/timer system.
+- [ ] Complete `Phase 5D` direct spawn-into-vehicle flow.
+- [ ] Implement team reservation queueing so any teammate can reserve a vehicle and have their name shown next to that vehicle.
+- [ ] Prove the deploy-screen queue signup interaction, with the square checkbox-style reservation button as the preferred first pass.
+- [ ] Keep vehicle existence, queue membership, reservation state, and timers script authoritative rather than UI-local.
+- [ ] Keep reservation scope per exact vehicle slot, with one reservation maximum per player and one reserver maximum per slot in first pass.
+- [ ] Keep reservations through death/undeploy, but clear them on disconnect, match start/end, and team swap.
+- [ ] Complete `Phase 5E` base repair behavior after the Godot repair prerequisites are in place.
+- [ ] Complete `Phase 5F` map-config and vehicle-spawn mapping after the full spawn datapoint inventory is added.
+- [ ] Expand map config until every intended transport/tank/chopper/jet spawn per map is statically identified, tested, and verified.
+- [ ] Limit first-pass vehicle-spawn mapping/testing rollout to Firestorm.
+- [ ] Complete `Phase 5G` polish/tuning after the core spawn systems are proven.
+- [ ] Expand the ready-up dialog knobs to cover the requested spawn-type and spawn-length matrix before preset-mode packaging.
+- [ ] Add named preset configurations (`TWL 8v8/10v10/12v12/16v16 Conquest`) and switch to `Custom` labeling when knobs diverge from preset values.
 - [ ] Respect disabled slot hiding behavior and per-map respawn values.
 - [ ] Validate destroy-to-respawn timings against configured constants.
 - [ ] Validate queue fairness and slot-release behavior.
@@ -1643,10 +2039,15 @@ Codex To-Do Checklist:
 Phase Changelog:
 
 - `Log policy`: append-only; newest entry first.
-- `Current status`: `not_started`
+- `Current status`: `in_progress`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
-- `Entries`: `None yet`
+- `Entries`:
+  - `2026-03-13 | Phase 5 design lock pass after planning questions | Locked reservation scope as per-exact-slot with one reservation max per player and per slot, locked direct spawn fulfillment into the driver/pilot seat, kept reservations through death/undeploy but not disconnect/match transitions/team swap, restricted first-pass map rollout to Firestorm, and recorded deferred decisions for deploy-screen placement and the ambiguous Column 1 naming | Phase 5, Phase 5A, Phase 5B, Phase 5C, Phase 5D, Phase 5E, Phase 5F, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 implementation notes/checklist/changelog`
+  - `2026-03-13 | Phase 5 execution split clarification | Explicitly split Phase 5 into 5A-5G, locked direct spawn-into-vehicle into Phase 5D, and recorded that 5E depends on Godot repair requirements while 5F depends on complete map-config vehicle spawn datapoints; noted that testing can continue against current tank/chopper spawns before 5F is complete | Phase 5, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 deliverables/implementation notes/checklist/changelog`
+  - `2026-03-13 | Phase 5 queue interaction and state-authority clarification | Added requirement to prove the deploy-screen queue signup interaction, with a square checkbox-style reservation button as the preferred first pass, and locked that vehicle existence, queue membership, reservation state, and timers stay script authoritative rather than UI-local | Phase 5, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 deliverables/verification/implementation notes/checklist`
+  - `2026-03-13 | Phase 5 scope expansion request before implementation | Added deploy-screen vehicle spawn visualization, first-pass vehicle timers for tanks/jets/attack choppers, direct spawn-into-vehicle requirement, queue reservation name display, Godot repair-trigger note, full static spawn authoring requirement, expanded ready-up vehicle/timer knob matrix, and preset-vs-custom vehicle mode packaging expectations; explicitly deferred flag-based vehicle spawners to Phase 9 polish | Phase 5, Phase 9, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 deliverables/prereqs/verification/implementation notes/checklist + Phase 9 deferred note`
+  - `2026-03-13 | Phase 5 Stage 1 timer backbone | Added authoritative per-slot respawn timer state and timer-owner helpers, then wired existing spawn/respawn/bind flows to that timer authority without changing current vehicle spawn behavior | src/state/runtime-types.ts, src/vehicles/timers.ts, src/vehicles/spawner-slots.ts, src/vehicles/spawner-sequence.ts, src/vehicles/spawner-bind.ts, src/index/vehicle-events.ts, src/index.ts | pending build/verify in current implementation pass`
 
 <a id="phase-6"></a>
 ### Phase 6: Basic Spawn and Boundaries System
@@ -1756,6 +2157,7 @@ Deliverables:
 - final result UI + delayed finalize/end flow
 - ready-up dialog cleanup and end-of-round transition cleanup
 - redesign join prompt
+- optional physical ready-up flow using in-world interactables configured from Godot world spawners
 - defined round-start behavior limitations and accepted constraints
 
 Mapped clarifications:
@@ -1765,6 +2167,7 @@ Mapped clarifications:
 Godot/map prerequisites:
 
 - optional camera anchors only if cinematic flow is added
+- authored/placed world interactables or equivalent Godot-spawned ready-up anchors if the physical ready-up path is enabled
 
 Verification:
 
@@ -1772,6 +2175,7 @@ Verification:
 - final ticket/result accuracy and single end transition check
 - ready-up dialog cleanup/regression checks across pre-match, live, and post-match transitions
 - redesigned join-prompt behavior/regression checks across initial join, reconnect, and live-state handoff
+- physical ready-up interactable ownership/availability checks across pre-match, reconnect, and live-state lockout
 - round-start behavior limitation review and documentation pass
 
 Codex To-Do Checklist:
@@ -1780,6 +2184,7 @@ Codex To-Do Checklist:
 - [ ] Enforce single end transition path through end latch (no duplicate finalize paths).
 - [ ] Clean up the ready-up dialog for pre-match/post-match transition correctness and ownership clarity.
 - [ ] Redesign the join prompt and validate its ownership/flow across first join, reconnect, and transition to match-live state.
+- [ ] Implement and validate a physical ready-up interaction path using Godot-configured world spawners/interactables if that path is retained.
 - [ ] Determine and document round-start behavior limitations before expanding pre/post-match event flow.
 - [ ] Validate winner/result/ticket/elapsed accuracy against authoritative snapshot.
 - [ ] Validate delayed finalize/end flow under normal and edge-case match endings.
@@ -1801,6 +2206,7 @@ Deliverables:
 - prioritized polish/iteration pass for UX, readability, flow consistency, and balance tuning
 - consolidated defect burn-down for blockers/high-impact regressions before future-phase expansion
 - ongoing performance monitoring and regression tracking across implemented systems
+- optional ticket-lead messaging polish so players get a clear text callout when one team takes the lead
 
 Mapped clarifications:
 
@@ -1818,6 +2224,7 @@ Verification:
 - regression sweep after each polish batch
 - explicit blocker triage and close/retest cycle
 - performance monitoring pass for runtime stability, HUD cadence, and any newly introduced hotspots
+- ticket-lead messaging readability/timing check so lead-change text does not spam or obscure higher-priority UX signals
 
 Codex To-Do Checklist:
 
@@ -1827,6 +2234,8 @@ Codex To-Do Checklist:
 - [ ] Monitor performance during ongoing playtest/polish passes and record any regressions or new hotspots.
 - [ ] Keep this phase open-ended until explicit human signoff to proceed.
 - [ ] Record accepted tuning/polish decisions in phase changelog entries.
+- [ ] Add and tune ticket-lead text messaging so players are notified when a team takes the lead without creating spam during rapid lead swaps.
+- [ ] Revisit flag-based vehicle spawners only in polish after the core static spawn inventory, timers, queueing, and preset vehicle packages are proven.
 - [ ] Re-add conquest flag ownership borders only after a single script-authoritative visual-state path is verified for neutralize->neutral->recapture transitions in multiplayer (no mixed owner/progress fallbacks in render decisions).
 - [ ] Add a focused border reintroduction test pass.
 - [ ] Validate neutralization edge (owner drained to neutral) never leaves stale enemy border.

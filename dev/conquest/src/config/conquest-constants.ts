@@ -12,6 +12,20 @@ const CONQUEST_SPAWN_CHARGE_PER_DEPLOY = 1;
 // - true: enable combat ticket/flag/popout/engage rendering and strict root-chain enforcement.
 const CONQUEST_COMBAT_HUD_ENABLED = true;
 const CONQUEST_HUD_RUNTIME_DEFAULT_MODE: TwlConquestHudMode = "core";
+const CONQUEST_CAPTURE_SOUND_ENABLED = true;
+const CONQUEST_CAPTURE_SOUND_FLUSH_SECONDS = 0.5;
+const CONQUEST_CAPTURE_SOUND_MIN_COOLDOWN_SECONDS = 1.0;
+const CONQUEST_CAPTURE_SOUND_PROGRESS_DELTA_MIN = 0.001;
+const CONQUEST_CAPTURE_SOUND_AMPLITUDE = 0.5;
+const CONQUEST_CAPTURE_SOUND_FRIENDLY_PREFAB = mod.RuntimeSpawn_Common.SFX_UI_Gamemode_Shared_CaptureObjectives_CapturingTickFriendly_OneShot2D;
+const CONQUEST_CAPTURE_SOUND_ENEMY_PREFAB = mod.RuntimeSpawn_Common.SFX_UI_Gamemode_Shared_CaptureObjectives_CapturingTickEnemy_OneShot2D;
+const CONQUEST_CAPTURE_VO_ENABLED = true;
+const CONQUEST_CAPTURE_VO_CONTESTED_ENABLED = true;
+const CONQUEST_CAPTURE_VO_FLUSH_SECONDS = 0.12;
+const CONQUEST_CAPTURE_VO_MIN_COOLDOWN_SECONDS = 4.0;
+const CONQUEST_CAPTURE_VO_TERMINAL_RECENT_SECONDS = 6.0;
+const CONQUEST_CAPTURE_VO_RUNTIME_PREFAB = mod.RuntimeSpawn_Common.SFX_VOModule_OneShot2D;
+const CONQUEST_CAPTURE_VO_ENEMY_TERMINAL_MODE: "lost" | "captured_enemy" = "captured_enemy";
 
 // Authoritative combat HUD runtime mode:
 // - "off": no combat HUD render path writes.

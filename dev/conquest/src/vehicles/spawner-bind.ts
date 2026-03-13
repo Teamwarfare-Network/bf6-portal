@@ -26,9 +26,7 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
             const activeSlot = State.vehicles.slots[activeIndex];
             if (activeSlot && activeSlot.enabled && activeSlot.expectingSpawn && activeSlot.spawnRequestToken === activeToken) {
                 activeSlot.expectingSpawn = false;
-                activeSlot.vehicleId = vehicleObjId;
-                activeSlot.respawnRunning = false;
-                activeSlot.spawnRetryScheduled = false;
+                bindVehicleToSpawnerSlot(activeSlot, vehicleObjId);
                 State.vehicles.vehicleToSlot[vehicleObjId] = activeIndex;
                 State.vehicles.activeSpawnSlotIndex = undefined;
                 State.vehicles.activeSpawnToken = undefined;
@@ -51,9 +49,7 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
         const d = mod.DistanceBetween(vehiclePos, spawnerPos);
         if (d <= VEHICLE_SPAWNER_BIND_DISTANCE_METERS) {
             slot.expectingSpawn = false;
-            slot.vehicleId = vehicleObjId;
-            slot.respawnRunning = false;
-            slot.spawnRetryScheduled = false;
+            bindVehicleToSpawnerSlot(slot, vehicleObjId);
             State.vehicles.vehicleToSlot[vehicleObjId] = i;
             if (State.vehicles.activeSpawnSlotIndex === i && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
                 State.vehicles.activeSpawnSlotIndex = undefined;

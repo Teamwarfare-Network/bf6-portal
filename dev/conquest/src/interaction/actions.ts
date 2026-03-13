@@ -12,6 +12,8 @@ function cleanupConquestHudForTeamSwap(pid: number): void {
     // Core-mode swap reset stays non-destructive to avoid long blocking delete passes.
     twlConquestHudHidePlayer(pid);
     delete State.conquest.capture.engagedObjIdByPid[pid];
+    conquestPhase4OnPlayerLeaveOrResetPid(pid);
+    conquestPhase4BOnPlayerLeaveOrResetPid(pid);
     State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
     State.conquest.debug.teamSwapHudResetPendingByPid[pid] = true;
     delete State.conquest.debug.hudRenderBucketByPid[pid];

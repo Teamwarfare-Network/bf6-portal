@@ -3,6 +3,21 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.528: Phase 4B VO tune: switch enemy capture terminal default from ObjectiveLost to ObjectiveCapturedEnemy after multiplayer validation
+// v0.527: Phase 4B VO fix: use per-player VO handles and recent-objective terminal recipient grace to fix contested/lost multiplayer delivery
+// v0.526: Phase 4B Stage 3: harden per-flag VO state machine so debounce re-arms only on true state changes and duplicate terminal edges are suppressed
+// v0.525: Phase 4B Stage 2: add contested objective VO and enemy terminal variant toggle for ObjectiveLost vs ObjectiveCapturedEnemy
+// v0.524: Phase 4B Stage 1: add toggleable objective VO exploration path with recipient-local capturing and terminal flag VO
+// v0.523: Phase 5 Stage 1: add authoritative per-slot vehicle respawn timer state and wire existing spawn/respawn flows to that timer owner
+// v0.522: Phase 4 Stage 7: decouple capture-sound dispatch from HUD-named gates using shared active-objective occupancy authority
+// v0.521: Phase 4 Stage 6: clear per-player capture-sound throttle residue on undeploy and redeploy lifecycle
+// v0.520: Phase 4 Stage 5: clear per-player capture-sound throttle residue during team swap lifecycle
+// v0.519: Phase 4 Stage 4: clear per-player capture-sound throttle residue on leave and rejoin lifecycle
+// v0.518: Phase 4 Stage 3: simplify capture-sound queue to one logical event with recipient-local variant and throttle dispatch
+// v0.517: Phase 4 Stage 2: harden capture-sound queue coalescing and add explicit anti-spam diagnostics
+// v0.516: Phase 4 Stage 1 follow-up: gate capture-sound recipients by active engaged objective so ticks only play while on the flag
+// v0.515: Phase 4 Stage 1 follow-up: remove on-point gate and lower capture-sound producer threshold so capture ticks continue beyond first enter
+// v0.514: Phase 4 Stage 1: add conquest capture-sound backbone with queued friendly/enemy tick SFX dispatch
 // v0.513: Phase 3C Stage 3: remove dormant legacy combat runtime files and hard-cut active HUD routing to shell plus core only
 // v0.512: Phase 3C Stage 2: reroute active combat HUD callers to the dedicated combat dispatcher
 // v0.511: Phase 3C Stage 1: extract dedicated top-HUD shell cache and reroute non-combat callers
