@@ -36,6 +36,10 @@ function twlConquestHudHidePlayer(pid: number): void {
     if (!entry) return;
     safeSetUIWidgetVisible(entry.widgets.ticketBlueBox, false);
     safeSetUIWidgetVisible(entry.widgets.ticketRedBox, false);
+    twlConquestHudHideShadowRing(entry.widgets.ticketBlueTeamNameShadowRing ?? []);
+    safeSetUIWidgetVisible(entry.widgets.ticketBlueTeamName, false);
+    twlConquestHudHideShadowRing(entry.widgets.ticketRedTeamNameShadowRing ?? []);
+    safeSetUIWidgetVisible(entry.widgets.ticketRedTeamName, false);
     safeSetUIWidgetVisible(entry.widgets.ticketBlueCount, false);
     safeSetUIWidgetVisible(entry.widgets.ticketRedCount, false);
     safeSetUIWidgetVisible(entry.widgets.ticketSlash, false);
@@ -102,6 +106,16 @@ function twlConquestHudDestroyPlayer(pid: number): void {
     twlConquestHudHidePlayer(pid);
     twlConquestHudDeleteAllByName(twlConquestHudTicketBlueBoxName(pid));
     twlConquestHudDeleteAllByName(twlConquestHudTicketRedBoxName(pid));
+    twlConquestHudDeleteShadowRingByBaseName(
+        twlConquestHudTicketBlueTeamNameName(pid),
+        TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_ENGAGE_COUNT
+    );
+    twlConquestHudDeleteAllByName(twlConquestHudTicketBlueTeamNameName(pid));
+    twlConquestHudDeleteShadowRingByBaseName(
+        twlConquestHudTicketRedTeamNameName(pid),
+        TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_ENGAGE_COUNT
+    );
+    twlConquestHudDeleteAllByName(twlConquestHudTicketRedTeamNameName(pid));
     twlConquestHudDeleteAllByName(`${twlConquestHudTicketBlueCountName(pid)}_Shadow`);
     twlConquestHudDeleteAllByName(`${twlConquestHudTicketRedCountName(pid)}_Shadow`);
     twlConquestHudDeleteAllByName(twlConquestHudTicketBlueCountName(pid));

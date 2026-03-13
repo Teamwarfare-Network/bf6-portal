@@ -55,9 +55,8 @@ function buildConquestTopCenterAuxWidgets(
         anchor: mod.UIAnchor.TopCenter,
         visible: true,
         padding: 0,
-        bgColor: [0.0314, 0.0431, 0.0431],
-        bgAlpha: 0.75,
-        bgFill: mod.UIBgFill.Blur,
+        bgAlpha: 0,
+        bgFill: mod.UIBgFill.None,
         children: [
             {
                 name: `Container_HelpText_${pid}`,

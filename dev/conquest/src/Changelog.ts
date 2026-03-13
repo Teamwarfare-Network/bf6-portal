@@ -3,6 +3,30 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.510: Tie the final-minute clock color pulse directly to the displayed second for a consistent red alert.
+// v0.509: Move the clock plate up slightly and slow the final-minute color pulse to a one-second cadence.
+// v0.508: Change the final-minute clock alert to a red-white color pulse and tighten the clock plate width.
+// v0.507: Replace final-minute clock flicker with a per-second hide window and narrow the clock plate.
+// v0.506: Use authoritative round-clock state for final-minute flash and thin the clock plate further.
+// v0.505: Thin the clock plate and move the visible clock container slightly lower.
+// v0.504: Increase team-name spacing, lighten team-name shadow rings, and harden final-minute clock flicker visibility.
+// v0.503: Keep the clock root visible during final-minute flicker and restore the low-time clock color to team red.
+// v0.502: Remove the top-center aux panel, move the clock surface onto its own widget, and fix team-name spacing and shadows.
+// v0.501: Refine clock plate, clock shadow/flicker, and aligned ticket team-name shadows
+// v0.500: Make clock dark red below 5 minutes and add lightweight final-minute flicker
+// v0.499: Align top-left status dock gap with branding left margin
+// v0.498: Add player-perspective team names to ticket HUD flanks
+// v0.497: Move core engage right counter left by 1 unit
+// v0.496: Make the clock plate an explicit owned widget and shrink its final geometry
+// v0.495: Tighten clock plate, remove top-row exit flicker, and clear engage state for dead players
+// v0.494: Restore root-only branding depth and tighten clock plate geometry
+// v0.493: Show popout percent immediately, speed live subtick loop, and lift top-left branding depth
+// v0.492: Make flag enter-exit HUD cuts atomic and tighten top HUD containers
+// v0.491: Core HUD intermittent mid-round disappear fix: make validation advisory and remove global hide-on-transient core fail-safe
+// v0.490: Ready-dialog first-open regression fix: restore deferred warm-cache prebuild on join/deploy to eliminate trickle while keeping startup responsive
+// v0.489: Startup latency follow-up: align core legacy suppression comments with one-shot contract
+// v0.488: Core HUD startup latency pass: throttle deep validation, make core suppression one-shot only, and make ready-dialog first build reveal atomic
+// v0.487: Rollback risky auto dialog warm-cache and reduce core-mode startup/swap destructive HUD purges to cut input/HUD latency
 // v0.486: Core HUD perf fix: run legacy suppression one-shot instead of every 0.25s tick; remove extra pre-live HUD tick
 // v0.485: Move Ready-dialog warm-cache to join/deploy and keep core HUD refresh active pre-live to remove first-load/team-switch UI latency
 // v0.484: Remove lower-left settings summary widget; clear redeploy-delay carryover to reduce startup/team-swap HUD readiness lag

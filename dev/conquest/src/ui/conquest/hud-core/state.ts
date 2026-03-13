@@ -20,6 +20,8 @@ function twlConquestHudEnsureEntry(pid: number): TwlConquestHudPlayerEntry {
                 ticketBleedRightChevronShadowRings: [],
                 ticketBleedLeftChevrons: [],
                 ticketBleedRightChevrons: [],
+                ticketBlueTeamNameShadowRing: [],
+                ticketRedTeamNameShadowRing: [],
                 objectiveSlotRoots: [],
                 objectiveSlotBorders: [],
                 objectiveSlotFills: [],

@@ -1,6 +1,8 @@
 // @ts-nocheck
 // Module: index/game-mode -- mode start loop and top-level initialization
 
+const CONQUEST_LIVE_STATE_SUBTICK_SECONDS = 0.12;
+
 //#region -------------------- Exported Event Handlers - Game Mode Start --------------------
 
 /**
@@ -27,10 +29,19 @@ async function onGameModeStartedImpl(): Promise<void> {
     initializeConquestPhase1Scaffold();
     conquestPhase2AResetNotLiveState();
     conquestPhase2BOnNotLiveReset();
-    twlConquestHudBootRuntime();
-    resetAllConquestCombatHudV2();
-    hardPurgeConquestCombatHudV2ForConnectedPlayers();
-    resetConquestCombatHudV2Scheduler();
+    const hudMode = getConquestHudMode();
+    if (hudMode === "core") {
+        // Core mode startup: avoid heavy destructive purge passes that can stall early UI/input responsiveness.
+        twlConquestHudHideAllPlayers();
+        twlConquestHudClearAllEntries();
+        hideAllConquestCombatHudV2();
+        resetConquestCombatHudV2Scheduler();
+    } else {
+        twlConquestHudBootRuntime();
+        resetAllConquestCombatHudV2();
+        hardPurgeConquestCombatHudV2ForConnectedPlayers();
+        resetConquestCombatHudV2Scheduler();
+    }
 
     // Apply initial engine variables/settings used by the mode (authoritative baseline).
     mod.SetGameModeTargetScore(GAMEMODE_TARGET_SCORE_SAFETY_CAP);
@@ -70,13 +81,6 @@ async function onGameModeStartedImpl(): Promise<void> {
             // Build/rebuild the player's HUD (widgets) and immediately reflect current authoritative state.
             ensureHudForPlayer(p);
         }
-        try {
-            twlConquestHudTickFrame(true);
-            twlConquestHudTickAnimation(true);
-        } catch {
-            // HUD core must never block mode startup; keep core mode so next tick can recover.
-            twlConquestHudHideAllPlayers();
-        }
     }
 
     // Reset HUD state through the lifecycle mutator owner.
@@ -92,12 +96,13 @@ async function onGameModeStartedImpl(): Promise<void> {
     setMatchClockPreview(getConfiguredMatchLengthSeconds());
 
     // Core game-state mutation remains second-boundary authoritative.
-    // HUD-only refresh runs at half-second cadence to smooth progress/percentage updates.
+    // Live capture-state and HUD projection refresh run at sub-second cadence to keep fill/percent updates responsive.
     let lastSecondBoundary = -1;
     let lastLiveCoreTickSecond = -1;
     while (true) {
         const nowElapsed = mod.GetMatchTimeElapsed();
         const nowSecondBoundary = Math.floor(nowElapsed);
+        let clockUpdatedThisLoop = false;
 
         if (isMatchLive() && !State.match.victoryDialogActive) {
             conquestPhase2ARefreshLiveCaptureStateSubtick();
@@ -111,11 +116,18 @@ async function onGameModeStartedImpl(): Promise<void> {
             lastLiveCoreTickSecond = -1;
         }
 
+        if (shouldClockUseCriticalFlashSubtick()) {
+            updateAllPlayersClock();
+            clockUpdatedThisLoop = true;
+        }
+
         if (nowSecondBoundary !== lastSecondBoundary) {
             lastSecondBoundary = nowSecondBoundary;
 
             // Push the initial clock display so every HUD shows the same starting time.
-            updateAllPlayersClock();
+            if (!clockUpdatedThisLoop) {
+                updateAllPlayersClock();
+            }
             checkTakeoffLimitForAllPlayers();
             if (State.match.victoryDialogActive) {
                 const elapsedSinceVictory = nowSecondBoundary - Math.floor(State.match.victoryStartElapsedSecondsSnapshot);
@@ -128,7 +140,7 @@ async function onGameModeStartedImpl(): Promise<void> {
             }
         }
 
-        await mod.Wait(0.25);
+        await mod.Wait(CONQUEST_LIVE_STATE_SUBTICK_SECONDS);
     }
 }
 

@@ -8,6 +8,17 @@ function conquestPhase2AClamp01(value: number): number {
     return value;
 }
 
+// Returns true when a player should count toward live capture-point engage state.
+// Dead, man-down, undeployed, or invalid soldiers are treated the same as leaving the point.
+function conquestPhase2AShouldCountPlayerAsActiveOnPoint(player: mod.Player | undefined): boolean {
+    if (!player || !mod.IsPlayerValid(player)) return false;
+    if (!isPlayerDeployed(player)) return false;
+    if (!safeGetSoldierStateBool(player, mod.SoldierStateBool.IsAlive, false)) return false;
+    if (safeGetSoldierStateBool(player, mod.SoldierStateBool.IsDead, false)) return false;
+    if (safeGetSoldierStateBool(player, mod.SoldierStateBool.IsManDown, false)) return false;
+    return true;
+}
+
 // Temporary diagnostic gate:
 // - true: force-hide Conquest V2 ticket/flag roots every HUD refresh to prove ownership.
 // - false: normal HUD rendering.
@@ -25,6 +36,26 @@ type ConquestFlagVisualSample = {
     progress01: number;
     sampleTick: number;
 };
+
+// Clears engaged-objective ownership for players who are no longer valid active on-point soldiers.
+// This keeps popout/engage HUD state aligned with death/undeploy even if engine exit callbacks lag.
+function conquestPhase2AClearInactiveEngagedObjectiveOwners(): void {
+    let clearedAny = false;
+    const engagedByPid = State.conquest.capture.engagedObjIdByPid;
+    for (const pidKey in engagedByPid) {
+        const pid = Number(pidKey);
+        if (!pid) continue;
+        const engagedObjId = engagedByPid[pid];
+        if (engagedObjId === undefined) continue;
+        const player = safeFindPlayer(pid);
+        if (conquestPhase2AShouldCountPlayerAsActiveOnPoint(player)) continue;
+        delete engagedByPid[pid];
+        clearedAny = true;
+    }
+    if (clearedAny) {
+        conquestPhase3MarkHudDirty();
+    }
+}
 
 type ConquestShadowTextWidgetSet = {
     right?: mod.UIWidget;
@@ -592,9 +623,10 @@ function conquestPhase3ForceHideCombatHudForAllPlayersFromCache(): void {
 // Running full legacy hide on every 0.25s core tick is expensive and can delay UI/input callbacks.
 let conquestPhase3CoreLegacySuppressionArmed = true;
 
-// Applies legacy HUD suppression when core mode starts or when a force refresh explicitly requests it.
-function conquestPhase3ApplyCoreLegacySuppression(force?: boolean): void {
-    if (!force && !conquestPhase3CoreLegacySuppressionArmed) return;
+// Applies legacy HUD suppression only when the core one-shot gate is armed.
+// Core mode must not run full legacy hide passes on every forced HUD refresh.
+function conquestPhase3ApplyCoreLegacySuppression(): void {
+    if (!conquestPhase3CoreLegacySuppressionArmed) return;
     hideAllConquestCombatHudV2();
     conquestPhase3ForceHideCombatHudForAllPlayersFromCache();
     conquestPhase3CoreLegacySuppressionArmed = false;
@@ -1852,6 +1884,14 @@ function deriveConquestHudActiveFlagPopoutViewModel(
         activeCapturePoint.progress01,
         !!borderColor
     );
+    // Active popout should not materialize its percent late; show 0% immediately until the visual FSM owns a value.
+    const popoutPercentVisible = !fullyOwned;
+    const popoutPercentColor = percentVisual.color ?? mod.CreateVector(
+        CONQUEST_HUD_TEXT_NEUTRAL_RGB[0],
+        CONQUEST_HUD_TEXT_NEUTRAL_RGB[1],
+        CONQUEST_HUD_TEXT_NEUTRAL_RGB[2]
+    );
+    const popoutPercentValue01 = percentVisual.visible ? percentVisual.value01 : 0;
     const borderVisible = fullyOwned;
     const onPointCount = activeCapturePoint.onPointTeam1 + activeCapturePoint.onPointTeam2;
     const forceNeutralIdleEmpty = visualState.phase === "NEUTRAL_IDLE";
@@ -1880,11 +1920,11 @@ function deriveConquestHudActiveFlagPopoutViewModel(
         labelVisible: true,
         labelMessage: mod.Message(labelKey),
         labelColor: visual.labelColor,
-        percentVisible: percentVisual.visible && !fullyOwned,
-        percentColor: percentVisual.color,
+        percentVisible: popoutPercentVisible,
+        percentColor: popoutPercentColor,
     };
-    if (percentVisual.visible && percentVisual.color) {
-        const roundedPercent = Math.max(0, Math.min(100, Math.round(percentVisual.value01 * 100)));
+    if (popoutPercentVisible) {
+        const roundedPercent = Math.max(0, Math.min(100, Math.round(popoutPercentValue01 * 100)));
         const percentValue = fullyOwned ? 100 : Math.min(99, roundedPercent);
         popoutVm.percentMessage = mod.Message(STR_SYSTEM_GENERIC_PERCENT, percentValue);
     }
@@ -2968,7 +3008,7 @@ function conquestPhase2AResetLiveState(): void {
     conquestPhase2AApplyCaptureTimingForMappedPoints();
     conquestPhase3MarkHudDirty();
     conquestPhase2AMirrorTicketsToEngineScore();
-    updateConquestPhase2ADebugHudForAllPlayers(true);
+    updateConquestPhase2ADebugHudForAllPlayers();
 }
 
 // Resets conquest state for non-live phases while preserving config-derived mappings.
@@ -3007,7 +3047,7 @@ function conquestPhase2AResetNotLiveState(): void {
     conquestPhase2ABuildMappedCaptureIndexFromConfig();
     conquestPhase2AApplyCaptureTimingForMappedPoints();
     conquestPhase3MarkHudDirty();
-    updateConquestPhase2ADebugHudForAllPlayers(true);
+    updateConquestPhase2ADebugHudForAllPlayers();
 }
 
 // Mirrors authoritative script tickets into engine score projection.
@@ -3182,6 +3222,7 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
             const pointPlayer = mod.ValueInArray(playersOnPoint, i) as mod.Player;
             if (!pointPlayer || !mod.IsPlayerValid(pointPlayer)) continue;
             const pointPid = safeGetPlayerId(pointPlayer);
+            let countablePlayer = pointPlayer;
             const pointTeam = safeGetTeamNumberFromPlayer(pointPlayer, 0);
             let resolvedPointTeam = pointTeam;
             if (pointPid !== undefined) {
@@ -3189,6 +3230,9 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
                 const liveTeam = livePlayer && mod.IsPlayerValid(livePlayer)
                     ? safeGetTeamNumberFromPlayer(livePlayer, 0)
                     : 0;
+                if (livePlayer && mod.IsPlayerValid(livePlayer)) {
+                    countablePlayer = livePlayer;
+                }
                 // Count on-point players by authoritative live team when available.
                 // This avoids first-post-swap engage suppression caused by transient team mismatch
                 // between on-point sample snapshots and live player team state.
@@ -3196,6 +3240,7 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
                     resolvedPointTeam = liveTeam;
                 }
             }
+            if (!conquestPhase2AShouldCountPlayerAsActiveOnPoint(countablePlayer)) continue;
             if (resolvedPointTeam === TeamID.Team1) onPointTeam1 += 1;
             if (resolvedPointTeam === TeamID.Team2) onPointTeam2 += 1;
         }
@@ -3694,11 +3739,11 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
             // Hard-cut mode: new TwlConquestHud pipeline is the only combat HUD owner.
             twlConquestHudTickFrame(force);
             twlConquestHudTickAnimation(force);
-            conquestPhase3ApplyCoreLegacySuppression(force);
+            conquestPhase3ApplyCoreLegacySuppression();
         } catch {
-            // HUD core is optional for gameplay; keep mode alive and allow core to self-recover on next tick.
-            twlConquestHudHideAllPlayers();
-            conquestPhase3ApplyCoreLegacySuppression(force);
+            // HUD core is optional for gameplay; reset cadence and let next tick recover without global hide flash.
+            twlConquestHudResetSchedulerState();
+            conquestPhase3ApplyCoreLegacySuppression();
         }
         if (force) {
             State.conquest.debug.hudLastUpdatedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
@@ -3819,6 +3864,7 @@ function updateConquestPhase2ADebugHudForAllPlayers(force?: boolean): void {
 
 // Runs sub-second live capture synchronization so dynamic HUD elements do not strobe on second boundaries.
 function conquestPhase2ARefreshLiveCaptureStateSubtick(): void {
+    conquestPhase2AClearInactiveEngagedObjectiveOwners();
     // Keep capture-state authoritative even if event-driven capture callbacks miss a transition frame.
     conquestPhase2ASyncMappedCapturePointsFromEngine();
     // Run suppression outside the regular dirty-render gate so stale engage rows never linger.

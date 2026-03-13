@@ -1,6 +1,9 @@
 // @ts-nocheck
 // Module: ui/conquest/hud-core/pipeline -- top-down runtime pipeline for hard-cut combat HUD
 
+// Deep parent/anchor validation is expensive; sample periodically instead of every frame.
+const TWL_CONQUEST_HUD_RUNTIME_VALIDATION_INTERVAL_UPDATES = 40;
+
 function twlConquestHudBootRuntime(): void {
     twlConquestHudDestroyAllPlayers();
     twlConquestHudResetSchedulerState();
@@ -11,9 +14,9 @@ function twlConquestHudRecoverEntry(pid: number): void {
 }
 
 // Soft-fail HUD core runtime when any uncaught HUD exception occurs so gameplay loops keep running.
-// Keep mode selection unchanged so core can recover on the next tick.
+// Keep existing HUD visible on transient faults; do not globally hide combat lane.
+// A scheduler reset is enough to allow next-tick recovery without visible blackout.
 function twlConquestHudFailSafeOff(): void {
-    twlConquestHudHideAllPlayers();
     twlConquestHudResetSchedulerState();
 }
 
@@ -50,12 +53,8 @@ function twlConquestHudTickFrame(force?: boolean): void {
             if (State.conquest.debug.teamSwapHudResetPendingByPid[pid] === true) {
                 State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
                 delete State.conquest.capture.engagedObjIdByPid[pid];
-                // Build/repair hidden graph while pending so post-deploy reveal can appear in one pass.
-                // Do not repeatedly destroy every tick; that causes avoidable rebuild churn and delayed return.
-                const pendingEntry = twlConquestHudEnsurePlayerGraph(player);
-                if (pendingEntry && pendingEntry.initialized) {
-                    twlConquestHudHidePlayer(pid);
-                }
+                // Keep swap-pending path non-building to avoid churn while team context is in transition.
+                twlConquestHudHidePlayer(pid);
                 continue;
             }
             // Isolate per-player HUD faults so one bad player state cannot hide every HUD for one frame.
@@ -71,16 +70,14 @@ function twlConquestHudTickFrame(force?: boolean): void {
                 }
 
                 let entry = twlConquestHudEnsurePlayerGraph(player);
-                if (!entry) continue;
-                // Validation is advisory for runtime continuity:
-                // if strict checks fail, attempt one recovery on cold entries, then fail-open render so combat HUD never disappears silently.
-                let validationOk = twlConquestHudValidateCriticalRefs(entry);
-                if (!validationOk && entry.mainUpdates <= 0) {
-                    twlConquestHudRecoverEntry(pid);
-                    entry = twlConquestHudEnsurePlayerGraph(player);
-                    validationOk = !!entry && twlConquestHudValidateCriticalRefs(entry);
-                }
                 if (!entry || !entry.initialized) continue;
+                if (
+                    entry.mainUpdates > 0
+                    && (entry.mainUpdates % TWL_CONQUEST_HUD_RUNTIME_VALIDATION_INTERVAL_UPDATES) === 0
+                ) {
+                    // Validation is advisory here: do not destroy/rebuild on transient parent-handle readback drift.
+                    twlConquestHudValidateCriticalRefs(entry);
+                }
 
                 const snapshot = twlConquestHudBuildSnapshotForPlayer(player);
                 twlConquestHudRenderPlayerFrame(pid, player, snapshot);

@@ -75,6 +75,10 @@ type TwlConquestHudWidgetRefs = {
     objectivesLane?: mod.UIWidget;
     ticketBlueBox?: mod.UIWidget;
     ticketRedBox?: mod.UIWidget;
+    ticketBlueTeamNameShadowRing: Array<mod.UIWidget | undefined>;
+    ticketBlueTeamName?: mod.UIWidget;
+    ticketRedTeamNameShadowRing: Array<mod.UIWidget | undefined>;
+    ticketRedTeamName?: mod.UIWidget;
     ticketBlueCount?: mod.UIWidget;
     ticketRedCount?: mod.UIWidget;
     ticketSlash?: mod.UIWidget;

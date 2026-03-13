@@ -4,9 +4,9 @@
 const TOP_LEFT_BASE_X = 5;
 const TOP_LEFT_BASE_Y_OFFSET = 5;
 const TOP_LEFT_BRANDING_WIDTH = 200;
-const TOP_LEFT_STATUS_WIDTH = 144;
+const TOP_LEFT_STATUS_WIDTH = 134;
 const TOP_LEFT_STATUS_HEIGHT = 30;
-const TOP_LEFT_STATUS_GAP_X = 8;
+const TOP_LEFT_STATUS_GAP_X = TOP_LEFT_BASE_X;
 const TOP_LEFT_STATUS_LINE_ONE_Y = 1;
 const TOP_LEFT_STATUS_LINE_TWO_Y = 15;
 
@@ -20,6 +20,18 @@ function deleteAllBrandingWidgetsByName(name: string, maxPasses: number = 96): v
         } catch {
             return;
         }
+    }
+}
+
+// Forces the branding root above the spawn-screen HUD layer without mutating child text widgets directly.
+// The text widgets are authored as children of the box, so root depth is the only layering change needed.
+function applyTopLeftBrandingDepthForPid(pid: number, root: mod.UIWidget | undefined): void {
+    if (!root) return;
+    try {
+        mod.SetUIWidgetDepth(root, mod.UIDepth.AboveGameUI);
+    } catch {
+        // Keep branding build resilient if one depth write fails on a client/runtime variant.
+        return;
     }
 }
 
@@ -83,6 +95,7 @@ function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, re
     if (upperLeft) {
         refs.roots.push(upperLeft);
         refs.upperLeftContainer = upperLeft;
+        applyTopLeftBrandingDepthForPid(pid, upperLeft);
     }
 }
 

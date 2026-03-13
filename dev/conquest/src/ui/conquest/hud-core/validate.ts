@@ -47,6 +47,10 @@ function twlConquestHudValidateCriticalRefs(entry: TwlConquestHudPlayerEntry): b
     const objectivesLane = entry.widgets.objectivesLane;
     const blueBox = entry.widgets.ticketBlueBox;
     const redBox = entry.widgets.ticketRedBox;
+    const blueTeamNameShadow = entry.widgets.ticketBlueTeamNameShadowRing;
+    const blueTeamName = entry.widgets.ticketBlueTeamName;
+    const redTeamNameShadow = entry.widgets.ticketRedTeamNameShadowRing;
+    const redTeamName = entry.widgets.ticketRedTeamName;
     const blueCount = entry.widgets.ticketBlueCount;
     const redCount = entry.widgets.ticketRedCount;
     const slash = entry.widgets.ticketSlash;
@@ -62,6 +66,10 @@ function twlConquestHudValidateCriticalRefs(entry: TwlConquestHudPlayerEntry): b
         || !objectivesLane
         || !blueBox
         || !redBox
+        || !blueTeamNameShadow
+        || !blueTeamName
+        || !redTeamNameShadow
+        || !redTeamName
         || !blueCount
         || !redCount
         || !slash
@@ -91,6 +99,13 @@ function twlConquestHudValidateCriticalRefs(entry: TwlConquestHudPlayerEntry): b
 
     if (!twlConquestHudWidgetHasParent(blueBox, ticketsLane)) return false;
     if (!twlConquestHudWidgetHasParent(redBox, ticketsLane)) return false;
+    const blueTeamShadowFirst = blueTeamNameShadow[0];
+    const redTeamShadowFirst = redTeamNameShadow[0];
+    if (!blueTeamShadowFirst || !redTeamShadowFirst) return false;
+    if (!twlConquestHudWidgetHasParent(blueTeamShadowFirst, root)) return false;
+    if (!twlConquestHudWidgetHasParent(blueTeamName, root)) return false;
+    if (!twlConquestHudWidgetHasParent(redTeamShadowFirst, root)) return false;
+    if (!twlConquestHudWidgetHasParent(redTeamName, root)) return false;
     if (!twlConquestHudWidgetHasParent(blueCount, blueBox)) return false;
     if (!twlConquestHudWidgetHasParent(redCount, redBox)) return false;
     if (!twlConquestHudWidgetHasParent(slash, ticketsLane)) return false;
@@ -101,6 +116,8 @@ function twlConquestHudValidateCriticalRefs(entry: TwlConquestHudPlayerEntry): b
     const ticketLayout = twlConquestHudBuildTicketLayout();
     if (!twlConquestHudWidgetHasPosition(blueBox, ticketLayout.blueCountX, TWL_CONQUEST_HUD_TICKET_BLUE_COUNT_Y)) return false;
     if (!twlConquestHudWidgetHasPosition(redBox, ticketLayout.redCountX, TWL_CONQUEST_HUD_TICKET_RED_COUNT_Y)) return false;
+    if (!twlConquestHudWidgetHasPosition(blueTeamName, twlConquestHudGetTicketBlueTeamLabelRootX(ticketLayout), TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_ROOT_Y)) return false;
+    if (!twlConquestHudWidgetHasPosition(redTeamName, twlConquestHudGetTicketRedTeamLabelRootX(ticketLayout), TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_ROOT_Y)) return false;
     if (!twlConquestHudWidgetHasPosition(blueTrack, ticketLayout.blueBarX, TWL_CONQUEST_HUD_TICKET_BLUE_BAR_Y)) return false;
     if (!twlConquestHudWidgetHasPosition(redTrack, ticketLayout.redBarX, TWL_CONQUEST_HUD_TICKET_RED_BAR_Y)) return false;
 

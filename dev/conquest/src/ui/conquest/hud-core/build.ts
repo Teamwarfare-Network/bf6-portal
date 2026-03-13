@@ -63,7 +63,8 @@ function twlConquestHudEnsureText(
     textSize: number,
     label: mod.Message,
     colorRgb: [number, number, number],
-    colorVector: mod.Vector
+    colorVector: mod.Vector,
+    textAnchor: mod.UIAnchor = mod.UIAnchor.Center
 ): mod.UIWidget | undefined {
     let widget = safeFind(name);
     let created = false;
@@ -83,7 +84,7 @@ function twlConquestHudEnsureText(
             textColor: colorRgb,
             textAlpha: 1,
             textSize,
-            textAnchor: mod.UIAnchor.Center,
+            textAnchor,
         });
         widget = parsed ?? safeFind(name);
         created = true;
@@ -96,6 +97,7 @@ function twlConquestHudEnsureText(
         mod.SetUIWidgetSize(widget, mod.CreateVector(width, height, 0));
         mod.SetUIWidgetDepth(widget, mod.UIDepth.AboveGameUI);
         mod.SetUITextSize(widget, textSize);
+        mod.SetUITextAnchor(widget, textAnchor);
     } catch {
         return undefined;
     }
@@ -120,7 +122,8 @@ function twlConquestHudEnsureShadowRingText(
     height: number,
     textSize: number,
     label: mod.Message,
-    profile: TwlConquestHudShadowLayerProfile[]
+    profile: TwlConquestHudShadowLayerProfile[],
+    textAnchor: mod.UIAnchor = mod.UIAnchor.Center
 ): Array<mod.UIWidget | undefined> | undefined {
     const layers: Array<mod.UIWidget | undefined> = [];
     for (let i = 0; i < profile.length; i++) {
@@ -137,7 +140,8 @@ function twlConquestHudEnsureShadowRingText(
             textSize,
             label,
             [0, 0, 0],
-            TWL_CONQUEST_HUD_COLOR_SHADOW
+            TWL_CONQUEST_HUD_COLOR_SHADOW,
+            textAnchor
         );
         if (!widget) return undefined;
         layers[i] = widget;
@@ -197,7 +201,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
     if (pid === undefined) return undefined;
 
     if (!twlConquestHudHasBootstrapPurgeDone(pid)) {
-        twlConquestHudDestroyPlayer(pid);
+        // Keep first-build non-destructive in core mode; full purge passes are expensive and can delay initial UI responsiveness.
         twlConquestHudMarkBootstrapPurgeDone(pid);
     }
 
@@ -325,6 +329,72 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_COLOR_RED
     );
     if (!ticketRedCount) return undefined;
+
+    const ticketBlueTeamNameShadowRing = twlConquestHudEnsureShadowRingText(
+        player,
+        twlConquestHudTicketBlueTeamNameName(pid),
+        root,
+        mod.UIAnchor.TopCenter,
+        twlConquestHudGetTicketBlueTeamLabelRootX(ticketLayout),
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_ROOT_Y,
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_WIDTH,
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_HEIGHT,
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_TEXT_SIZE,
+        mod.Message(getTeamNameKey(TeamID.Team1)),
+        TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_TEAM_LABEL,
+        mod.UIAnchor.CenterRight
+    );
+    if (!ticketBlueTeamNameShadowRing) return undefined;
+
+    const ticketBlueTeamLabel = twlConquestHudEnsureText(
+        player,
+        twlConquestHudTicketBlueTeamNameName(pid),
+        root,
+        mod.UIAnchor.TopCenter,
+        twlConquestHudGetTicketBlueTeamLabelRootX(ticketLayout),
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_ROOT_Y,
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_WIDTH,
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_HEIGHT,
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_TEXT_SIZE,
+        mod.Message(getTeamNameKey(TeamID.Team1)),
+        CONQUEST_HUD_TEXT_FRIENDLY_RGB,
+        TWL_CONQUEST_HUD_COLOR_BLUE,
+        mod.UIAnchor.CenterRight
+    );
+    if (!ticketBlueTeamLabel) return undefined;
+
+    const ticketRedTeamNameShadowRing = twlConquestHudEnsureShadowRingText(
+        player,
+        twlConquestHudTicketRedTeamNameName(pid),
+        root,
+        mod.UIAnchor.TopCenter,
+        twlConquestHudGetTicketRedTeamLabelRootX(ticketLayout),
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_ROOT_Y,
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_WIDTH,
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_HEIGHT,
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_TEXT_SIZE,
+        mod.Message(getTeamNameKey(TeamID.Team2)),
+        TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_TEAM_LABEL,
+        mod.UIAnchor.CenterLeft
+    );
+    if (!ticketRedTeamNameShadowRing) return undefined;
+
+    const ticketRedTeamLabel = twlConquestHudEnsureText(
+        player,
+        twlConquestHudTicketRedTeamNameName(pid),
+        root,
+        mod.UIAnchor.TopCenter,
+        twlConquestHudGetTicketRedTeamLabelRootX(ticketLayout),
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_ROOT_Y,
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_WIDTH,
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_HEIGHT,
+        TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_TEXT_SIZE,
+        mod.Message(getTeamNameKey(TeamID.Team2)),
+        CONQUEST_HUD_TEXT_ENEMY_RGB,
+        TWL_CONQUEST_HUD_COLOR_RED,
+        mod.UIAnchor.CenterLeft
+    );
+    if (!ticketRedTeamLabel) return undefined;
 
     const ticketSlash = twlConquestHudEnsureText(
         player,
@@ -990,6 +1060,10 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
     entry.widgets.objectivesLane = objectivesLane;
     entry.widgets.ticketBlueBox = ticketBlueBox;
     entry.widgets.ticketRedBox = ticketRedBox;
+    entry.widgets.ticketBlueTeamNameShadowRing = ticketBlueTeamNameShadowRing;
+    entry.widgets.ticketBlueTeamName = ticketBlueTeamLabel;
+    entry.widgets.ticketRedTeamNameShadowRing = ticketRedTeamNameShadowRing;
+    entry.widgets.ticketRedTeamName = ticketRedTeamLabel;
     entry.widgets.ticketBlueCount = ticketBlueCount;
     entry.widgets.ticketRedCount = ticketRedCount;
     entry.widgets.ticketSlash = ticketSlash;

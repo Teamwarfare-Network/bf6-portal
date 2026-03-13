@@ -3,6 +3,8 @@
 
 //#region -------------------- UI - Ready Up Dialog (construction) --------------------
 
+const readyDialogUiWarmCacheTokenByPid: Record<number, number> = {};
+
 // Legacy function name is preserved to avoid call-site churn.
 // Function name intentionally preserved to avoid call-site churn.
 function createReadyDialogUI(eventPlayer: mod.Player) {
@@ -20,6 +22,7 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
     // Layout rule: if a label wraps or overlaps, adjust labelSizeX or text size before touching row math.
 
     const playerId = mod.GetObjId(eventPlayer);
+    if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
     // UI caching (opt #1): if this player already built the dialog once, just show it again.
     // This avoids recreating ~100 widgets on every open and makes dialog open near-instant after first build.
     const existingBase = safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId);
@@ -42,6 +45,7 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
         if (existingMapValue) mod.SetUIWidgetVisible(existingMapValue, true);
         updateReadyDialogModeConfigForPid(playerId);
         ensureAdminPanelWidgets(eventPlayer, playerId);
+        State.players.readyDialogData[playerId].uiBuilt = true;
         return;
     }
 
@@ -65,7 +69,7 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
         mod.CreateVector(CONTAINER_WIDTH, CONTAINER_HEIGHT, 0),
         mod.UIAnchor.Center,
         mod.GetUIRoot(),
-        true,
+        false,
         10,
         mod.CreateVector(0, 0, 0),
         0.995,
@@ -88,7 +92,7 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
         mod.CreateVector(borderLineWidth, CONTAINER_BORDER_THICKNESS, 0),
         mod.UIAnchor.Center,
         CONTAINER_BASE,
-        true,
+        false,
         0,
         READY_DIALOG_BORDER_COLOR,
         1,
@@ -104,7 +108,7 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
         mod.CreateVector(borderLineWidth, CONTAINER_BORDER_THICKNESS, 0),
         mod.UIAnchor.Center,
         CONTAINER_BASE,
-        true,
+        false,
         0,
         READY_DIALOG_BORDER_COLOR,
         1,
@@ -120,7 +124,7 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
         mod.CreateVector(CONTAINER_BORDER_THICKNESS, borderLineHeight, 0),
         mod.UIAnchor.Center,
         CONTAINER_BASE,
-        true,
+        false,
         0,
         READY_DIALOG_BORDER_COLOR,
         1,
@@ -136,7 +140,7 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
         mod.CreateVector(CONTAINER_BORDER_THICKNESS, borderLineHeight, 0),
         mod.UIAnchor.Center,
         CONTAINER_BASE,
-        true,
+        false,
         0,
         READY_DIALOG_BORDER_COLOR,
         1,
@@ -219,27 +223,57 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
         BUTTON_CANCEL_ID,
         BUTTON_CANCEL_LABEL_ID
     );
+
+    // Reveal only after the full dialog tree is built so first-open appears in one pass.
+    mod.SetUIWidgetVisible(CONTAINER_BASE, true);
+    const builtBorderTop = safeFind(BORDER_TOP_ID);
+    if (builtBorderTop) mod.SetUIWidgetVisible(builtBorderTop, true);
+    const builtBorderBottom = safeFind(BORDER_BOTTOM_ID);
+    if (builtBorderBottom) mod.SetUIWidgetVisible(builtBorderBottom, true);
+    const builtBorderLeft = safeFind(BORDER_LEFT_ID);
+    if (builtBorderLeft) mod.SetUIWidgetVisible(builtBorderLeft, true);
+    const builtBorderRight = safeFind(BORDER_RIGHT_ID);
+    if (builtBorderRight) mod.SetUIWidgetVisible(builtBorderRight, true);
+    const builtDebug = safeFind(UI_READY_DIALOG_DEBUG_TIMELIMIT_ID + playerId);
+    if (builtDebug) mod.SetUIWidgetVisible(builtDebug, SHOW_DEBUG_TIMELIMIT);
+    const builtMapLabel = safeFind(UI_READY_DIALOG_MAP_LABEL_ID + playerId);
+    if (builtMapLabel) mod.SetUIWidgetVisible(builtMapLabel, true);
+    const builtMapValue = safeFind(UI_READY_DIALOG_MAP_VALUE_ID + playerId);
+    if (builtMapValue) mod.SetUIWidgetVisible(builtMapValue, true);
+    refreshReadyDialogButtonTextForPid(eventPlayer, playerId, CONTAINER_BASE);
+    updateReadyDialogModeConfigForPid(playerId);
+    ensureAdminPanelWidgets(eventPlayer, playerId);
+    State.players.readyDialogData[playerId].uiBuilt = true;
 }
 
-// Warms and caches the Ready dialog once so first real open is instant and does not rely on per-tick timing.
-function ensureReadyDialogUiWarmCacheForPlayer(eventPlayer: mod.Player): void {
+// Schedules one deferred prebuild/hide pass so first real dialog open uses cached widgets.
+// This keeps deploy/join paths responsive while avoiding first-open "trickle" construction.
+async function scheduleReadyDialogUiWarmCacheForPlayer(
+    eventPlayer: mod.Player,
+    delaySeconds: number = 0.25
+): Promise<void> {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     const playerId = safeGetPlayerId(eventPlayer);
     if (playerId === undefined) return;
-    if (!State.players.readyDialogData[playerId]) {
-        initReadyDialogData(eventPlayer);
-    }
+    if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
     const readyData = State.players.readyDialogData[playerId];
-    if (!readyData || readyData.uiBuilt) return;
-    try {
-        createReadyDialogUI(eventPlayer);
-        // Warm-up build must not count as visible/open state.
-        readyData.dialogVisible = false;
-        hideReadyDialogUI(eventPlayer);
-        readyData.uiBuilt = true;
-    } catch {
-        // Leave uiBuilt=false so a later attempt can recover.
+    if (!readyData || readyData.uiBuilt || readyData.dialogVisible) return;
+
+    const nextToken = (readyDialogUiWarmCacheTokenByPid[playerId] ?? 0) + 1;
+    readyDialogUiWarmCacheTokenByPid[playerId] = nextToken;
+
+    if (delaySeconds > 0) {
+        await mod.Wait(delaySeconds);
     }
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if ((readyDialogUiWarmCacheTokenByPid[playerId] ?? 0) !== nextToken) return;
+    const current = State.players.readyDialogData[playerId];
+    if (!current || current.uiBuilt || current.dialogVisible) return;
+
+    createReadyDialogUI(eventPlayer);
+    current.dialogVisible = false;
+    hideReadyDialogUI(eventPlayer);
+    current.uiBuilt = true;
 }
 
 //#endregion ----------------- Dialog Buttons (Left Side) - Cancel --------------------

@@ -172,8 +172,8 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     resetUiForPlayerOnJoin(eventPlayer);
 
     ensureHudForPlayer(eventPlayer);
-    // Deterministic warm-up so first Ready dialog open does not depend on OngoingPlayer cadence.
-    ensureReadyDialogUiWarmCacheForPlayer(eventPlayer);
+    // Warm ready-dialog UI cache in the background so first open is instant but join flow stays responsive.
+    void scheduleReadyDialogUiWarmCacheForPlayer(eventPlayer, 0.35);
     // Force a conquest HUD refresh so late joiners immediately receive current tickets/flag state.
     updateConquestPhase2ADebugHudForAllPlayers(true);
     if (joinPid !== undefined) {

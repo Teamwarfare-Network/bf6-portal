@@ -25,12 +25,28 @@ function twlConquestHudTicketBlueBoxName(pid: number): string {
     return `TwlConquestHud_TicketBlueBox_${pid}`;
 }
 
+function twlConquestHudTicketBlueTeamNameName(pid: number): string {
+    return `TwlConquestHud_TicketBlueTeamName_${pid}`;
+}
+
+function twlConquestHudTicketBlueTeamNameShadowName(pid: number): string {
+    return `TwlConquestHud_TicketBlueTeamNameShadow_${pid}`;
+}
+
 function twlConquestHudTicketRedCountName(pid: number): string {
     return `TwlConquestHud_TicketRedCount_${pid}`;
 }
 
 function twlConquestHudTicketRedBoxName(pid: number): string {
     return `TwlConquestHud_TicketRedBox_${pid}`;
+}
+
+function twlConquestHudTicketRedTeamNameName(pid: number): string {
+    return `TwlConquestHud_TicketRedTeamName_${pid}`;
+}
+
+function twlConquestHudTicketRedTeamNameShadowName(pid: number): string {
+    return `TwlConquestHud_TicketRedTeamNameShadow_${pid}`;
 }
 
 function twlConquestHudTicketSlashName(pid: number): string {

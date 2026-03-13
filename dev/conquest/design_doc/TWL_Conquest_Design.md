@@ -832,6 +832,14 @@ Acceptance criteria (Phase 3B functional completion):
 - animation transitions are event-bounded, smooth, and do not introduce flicker/jitter spam
 - polish changes do not regress Phase 3A data correctness (color contract, ordering, update behavior)
 
+Phase 3 Closeout Decision (2026-03-12):
+
+- Status: `completed`
+- Acceptance basis: current Phase 3 HUD architecture, player-specific perspective mapping, ticket/flag/popout/engage presentation, top-left status integration, team labels, drop-shadow parity baseline, and low-time clock alert behavior are accepted as the Phase 3 milestone baseline.
+- Deferred known issue: `CQ_Bug_3` remains open and does not block Phase 3 closeout.
+- Deferred bug summary: after a team swap, the first attempt to neutralize the same objective contested in the previous life can still fail to show Engage HUD; neutralizing a different objective works normally.
+- Forward fix note: future work should treat team-switch lifecycle as an explicit engage-state cleanup boundary, alongside death/undeploy cleanup, before attempting another targeted fix for `CQ_Bug_3`.
+
 Codex To-Do Checklist:
 
 - [ ] Manual input step (human): provide desired HUD anchor package (clock/help/ready/tickets/flags positions + depth expectations) for Phase 3B implementation.
@@ -849,6 +857,7 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-03-12 | Phase 3 milestone closeout decision | Accepted current HUD architecture/polish baseline as Phase 3 complete, with CQ_Bug_3 explicitly deferred to a future focused bug-fix pass | Phase 3A, Phase 3B, CQ_Bug_3 | accepted | design_doc Phase 3 closeout note + issue tracker repro refinement`
   - `2026-03-02 | HUD persistence issue closure rule | Added explicit Phase 3B HUD lifecycle guardrails covering parent ownership, controlled rebuilds, team-switch authoritative refresh, and anti-overdraw verification checks | Phase 3B | accepted | design_doc/Phase 3B guardrail block + checklist updated`
   - `2026-03-01 | Phase 3B anchor-package application | Applied HUD anchor positions from ui_location_starter reference package: tickets flanking clock line and 7-slot horizontal capture-point clusters; retained existing data wiring and color contract | Phase 3B | in_progress | src/hud/build.ts`
   - `2026-03-01 | Phase 3B manual-input gate request | Added explicit human-provided HUD anchor/position package step before further Phase 3B polish movement and animation work | Phase 3B | accepted | design_doc/Phase 3B prerequisites + checklist updated`

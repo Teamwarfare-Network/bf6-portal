@@ -276,6 +276,18 @@ function twlConquestHudRenderPlayerFrame(pid: number, player: mod.Player, snapsh
     safeSetUIWidgetVisible(widgets.objectivesLane, true);
     safeSetUIWidgetVisible(widgets.ticketBlueBox, true);
     safeSetUIWidgetVisible(widgets.ticketRedBox, true);
+    twlConquestHudRenderShadowRingText(
+        widgets.ticketBlueTeamNameShadowRing,
+        true,
+        mod.Message(getTeamNameKey(snapshot.friendlyTeam))
+    );
+    safeSetUIWidgetVisible(widgets.ticketBlueTeamName, true);
+    twlConquestHudRenderShadowRingText(
+        widgets.ticketRedTeamNameShadowRing,
+        true,
+        mod.Message(getTeamNameKey(snapshot.enemyTeam))
+    );
+    safeSetUIWidgetVisible(widgets.ticketRedTeamName, true);
     safeSetUIWidgetVisible(widgets.ticketBlueCount, true);
     safeSetUIWidgetVisible(widgets.ticketRedCount, true);
     safeSetUIWidgetVisible(widgets.ticketSlash, false);
@@ -292,6 +304,12 @@ function twlConquestHudRenderPlayerFrame(pid: number, player: mod.Player, snapsh
         widgets.ticketRedCount,
         mod.Message(mod.stringkeys.twl.system.genericCounter, Math.max(0, Math.floor(snapshot.enemyTickets)))
     );
+    const friendlyTeamName = mod.Message(getTeamNameKey(snapshot.friendlyTeam));
+    const enemyTeamName = mod.Message(getTeamNameKey(snapshot.enemyTeam));
+    safeSetUITextLabel(widgets.ticketBlueTeamName, friendlyTeamName);
+    safeSetUITextLabel(widgets.ticketRedTeamName, enemyTeamName);
+    safeSetUITextColor(widgets.ticketBlueTeamName, TWL_CONQUEST_HUD_COLOR_BLUE);
+    safeSetUITextColor(widgets.ticketRedTeamName, TWL_CONQUEST_HUD_COLOR_RED);
     safeSetUITextColor(widgets.ticketBlueCount, TWL_CONQUEST_HUD_COLOR_BLUE);
     safeSetUITextColor(widgets.ticketRedCount, TWL_CONQUEST_HUD_COLOR_RED);
 

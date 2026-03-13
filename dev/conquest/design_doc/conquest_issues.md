@@ -1,7 +1,7 @@
 # Conquest Issues
 
 Last Updated: 2026-03-12  
-Last Tested Build: `v0.441` (compile-verified; in-game visual retest pending)
+Last Tested Build: `v0.495` (compile-verified; user retest pending)
 
 ## Current Snapshot
 - `CQ_Bug_1`: Fixed
@@ -15,6 +15,91 @@ Last Tested Build: `v0.441` (compile-verified; in-game visual retest pending)
 - `CQ_Bug_9`: Open
 - `CQ_Bug_10`: In Progress (core drop-shadow baseline restored; parity polish pass pending)
 - `CQ_Bug_11`: Resolved
+- `CQ_Bug_12`: In Progress (startup/team-swap HUD + ready-dialog latency)
+- `CQ_Bug_13`: In Progress (intermittent mid-round combat HUD disappear)
+- `CQ_Bug_14`: In Progress (engage HUD can retain dead/man-down on-point state)
+- `CQ_Bug_15`: In Progress (final-minute clock can disappear instead of brief flicker)
+
+## CQ_Bug_15
+Title: Final-Minute Clock Can Disappear Instead Of Brief Flicker
+
+Observed:
+- Under `1:00`, the match clock can fully disappear before `00:00` instead of only briefly blinking.
+
+Expected:
+- The clock remains visible most of the time in the final minute, with only a short off-blip once per second.
+
+Status:
+- In Progress.
+
+Latest Mitigation (v0.506):
+- Removed `updateAllPlayersClock()` dependence on the per-player derived HUD clock cache and switched the clock renderer to the authoritative round-clock state.
+- This removes one stale intermediate state layer from the final-minute visibility/color path.
+
+Latest Mitigation (v0.507):
+- Replaced modulo-phase clock flicker with an explicit once-per-second hide window so the final-minute flash cannot remain stuck hidden due to runtime timing drift.
+
+Latest Mitigation (v0.508):
+- Removed final-minute visibility flicker entirely and replaced it with a red/white text color pulse so the clock never hides between `1:00` and `00:00`.
+
+Latest Mitigation (v0.509):
+- Slowed the final-minute color pulse to one full color state per second so it reads in the same cadence as the second-boundary timer updates.
+
+Latest Mitigation (v0.510):
+- Removed elapsed-time-based pulse phasing and tied the final-minute red/white toggle directly to the displayed remaining second so the alert color stays visually consistent.
+
+## CQ_Bug_14
+Title: Engage HUD Stale After Player Death On Objective
+
+Observed:
+- When a player contests a flag and then dies, the custom engage UI can keep stale counts and/or active-objective ownership.
+- Engine capture behavior continues correctly, but the custom engage HUD can lag behind the death state.
+
+Expected:
+- Dead/man-down players should be treated the same as leaving the objective for engage-count and active-popout ownership purposes.
+
+Status:
+- In Progress.
+
+Latest Mitigation (v0.495):
+- Added alive-only filtering for `GetPlayersOnPoint()` projection using soldier-state authority.
+- Added subtick cleanup to clear engaged-objective ownership for dead/invalid/undeployed players even if exit callbacks lag.
+
+## CQ_Bug_12
+Title: Startup/Team-Swap HUD + Ready Dialog Latency
+
+Observed:
+- On first spawn and after team swap, combat HUD and Ready dialog can appear after a long delay.
+- Ready dialog first open can visibly itemize through elements before becoming interactive.
+
+Expected:
+- HUD and Ready dialog should become responsive quickly and appear in one cohesive reveal.
+
+Status:
+- In Progress.
+
+Latest Mitigation (v0.488-v0.489):
+- Core runtime critical-ref validation reduced from every frame to periodic sampling to cut UI thread pressure.
+- Core-mode legacy suppression changed to one-shot gating (not every forced refresh).
+- Ready dialog first-build switched to hidden build then reveal-at-end to reduce itemized visual construction.
+- Deferred join/deploy warm-cache prebuild restored so first real open can use cached dialog widgets instead of constructing live.
+
+## CQ_Bug_13
+Title: Intermittent Mid-Round Combat HUD Disappear
+
+Observed:
+- Combat tickets/flags lane can disappear briefly during live play.
+- Repro reported both shortly after swap/capture activity and while stationary defending a flag.
+
+Expected:
+- Core combat HUD remains continuously visible when live and not swap-pending.
+
+Status:
+- In Progress.
+
+Latest Mitigation (v0.491):
+- Core runtime validation remains periodic but now advisory-only (no destructive recover on validation readback drift).
+- Core fail-safe path no longer hides all combat HUD widgets on transient uncaught errors; it now resets scheduler cadence only.
 
 ## CQ_Bug_1
 Title: Ticket Counter Overlay / Doubling During Bleed
@@ -57,6 +142,10 @@ Current Observed Behavior:
 - First team behavior works.
 - After team swap and spawn, first valid neutralization/capture entry can fail to show Engage HUD (`Neutralizing`/soldier diff bar), even while player is on a real objective.
 - Multiple variants were seen during iteration (false positive at spawn, first-entry miss, delayed appearance), but current blocking variant is first valid objective entry not showing.
+- Repro refinement:
+  - If the player was actively contesting Flag A in the previous life, then swaps teams, the first later attempt to neutralize Flag A is where the bug reproduces.
+  - If that same player instead goes to neutralize Flag B or Flag C first, the bug does not reproduce there.
+  - The failure is tied to the first neutralization of the last actively contested objective from the previous life, not to the immediate post-swap window in general.
 
 Expected:
 - Engage HUD appears only when player is actively on a mapped capture point and participating in capture/neutralization conditions.
@@ -109,6 +198,11 @@ APIs / Signals Currently Used (Latest State):
   - `OnPlayerDeployed` release path
   - swap action path using `mod.SetTeam(...)` + forced undeploy/redeploy flow
 
+Working Hypothesis (Updated):
+- This now looks less like a general post-swap timing failure and more like stale objective-specific engage state surviving across death/team-switch boundaries.
+- The likely missing cleanup is for "last contested objective by this player" when the player changes team without receiving a fully authoritative objective-leave path for that prior-life objective.
+- Future fix attempt should explicitly test/clear engaged-objective state on team switch itself, not only on deploy/undeploy/death and capture-point enter/exit.
+
 Why Deferred:
 - Despite repeated targeted changes, final repro remains: after team swap, first valid neutralization can still fail to show engage panel.
 - Further attempts without instrumentation risk repeating regressions.
@@ -118,9 +212,13 @@ Recommended Next Pass (When Resumed):
   - capture-point enter/exit callbacks
   - `engagedObjIdByPid`
   - `teamSwapHudResetPendingByPid`
+  - player team value before/after swap
   - engage view-model visibility decision
+- Add objective-specific tracing for "last contested objective before death/swap" versus "first objective entered after swap".
 - Freeze one authoritative engage state machine and remove any remaining parallel eligibility checks.
-- Validate with strict scripted test sequence focused only on swap -> first objective entry.
+- Validate with strict scripted test sequence focused on:
+  - contest Flag A -> die or swap -> neutralize Flag A first
+  - contest Flag A -> die or swap -> neutralize Flag B first
 
 ## CQ_Bug_4
 Title: Team Swap HUD Rebuild Visibly Incremental

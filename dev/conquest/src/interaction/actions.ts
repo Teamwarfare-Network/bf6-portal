@@ -10,9 +10,14 @@ const TEAM_SWAP_FORCE_REDEPLOY_SECONDS = 0;
 // Contract: hide -> destroy -> delayed rebuild -> resume updates after deploy release.
 function cleanupConquestHudForTeamSwap(pid: number): void {
     setConquestCombatHudV2TeamSwapPending(pid, true);
-    destroyConquestCombatHudV2ForPid(pid);
-    // Core HUD must be fully torn down at swap start so stale widgets cannot flash before rebuild completes.
-    twlConquestHudDestroyPlayer(pid);
+    const hudMode = getConquestHudMode();
+    if (hudMode === "core") {
+        // Core-mode swap reset should stay non-destructive to avoid long blocking delete passes.
+        twlConquestHudHidePlayer(pid);
+    } else {
+        destroyConquestCombatHudV2ForPid(pid);
+        twlConquestHudDestroyPlayer(pid);
+    }
     delete State.conquest.capture.engagedObjIdByPid[pid];
     State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
     State.conquest.debug.teamSwapHudResetPendingByPid[pid] = true;
@@ -23,12 +28,18 @@ function cleanupConquestHudForTeamSwap(pid: number): void {
     if (refs) {
         // Hide every conquest-owned widget for this player immediately.
         // This includes chevrons that are parented to UI root and not ticket root.
-        conquestPhase3ForceHideAllV2Widgets(refs);
+        if (hudMode === "core") {
+            twlConquestHudHidePlayer(pid);
+        } else {
+            conquestPhase3ForceHideAllV2Widgets(refs);
+        }
     }
     // Always force-hide engage row explicitly for swap transitions.
     conquestPhase3ForceHideEngageWidgetsForPid(pid);
-    // Strict teardown ownership: destroy stale per-PID conquest HUD tree before rebuild.
-    destroyConquestHudForPid(pid);
+    if (hudMode !== "core") {
+        // Strict teardown ownership is retained for legacy mode.
+        destroyConquestHudForPid(pid);
+    }
 }
 
 // Handles a player-initiated team swap.
@@ -68,10 +79,15 @@ async function refreshConquestHudAfterTeamSwap(eventPlayer: mod.Player): Promise
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     if ((State.conquest.debug.teamSwapRefreshTokenByPid[pid] ?? 0) !== nextToken) return;
 
-    // Authoritative swap refresh:
-    // rebuild one deterministic per-PID HUD tree after swap settles.
-    const refs = ensureHudForPlayer(eventPlayer);
-    if (refs) conquestPhase3ForceHideAllV2Widgets(refs);
+    const hudMode = getConquestHudMode();
+    if (hudMode !== "core") {
+        // Legacy mode keeps destructive rebuild ownership.
+        const refs = ensureHudForPlayer(eventPlayer);
+        if (refs) conquestPhase3ForceHideAllV2Widgets(refs);
+    } else {
+        // Core mode keeps existing graph and only enforces hidden state until deploy release.
+        twlConquestHudHidePlayer(pid);
+    }
     // Hard clear engage state before releasing swap-pending gate.
     // This prevents stale Neutralizing/Defending rows from carrying to the new team context.
     State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;

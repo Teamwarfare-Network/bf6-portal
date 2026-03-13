@@ -7,24 +7,34 @@ const TOP_HUD_OFFSET_Y = 10;
 const CONQUEST_HUD_NON_CLOCK_SHIFT_Y = 0;
 const CONQUEST_HUD_TICKETS_FLAGS_SHIFT_Y = CONQUEST_HUD_NON_CLOCK_SHIFT_Y + 20;
 const CLOCK_POSITION_X = 0;
-const CLOCK_POSITION_Y = 47.73;
-const CLOCK_WIDTH = 220;
-const CLOCK_HEIGHT = 28.11;
+const CLOCK_POSITION_Y = 45.25;
+const CLOCK_WIDTH = 74;
+const CLOCK_HEIGHT = 20;
+const CLOCK_PLATE_WIDTH = 54;
+const CLOCK_PLATE_HEIGHT = 16;
+const CLOCK_PLATE_OFFSET_Y = 1;
+const CLOCK_PLATE_ALPHA = 0.8;
 const ROUND_COUNTER_OFFSET_X = -6;
 const ROUND_SLASH_OFFSET_X = -6;
 const TOP_HUD_ROOT_WIDTH = 1920;
 const TOP_HUD_ROOT_HEIGHT = 260;
 const CLOCK_FONT_SIZE = 20;
-const CLOCK_TEXT_OFFSET_Y = -3;
+const CLOCK_TEXT_OFFSET_Y = -1;
+const CLOCK_TEXT_SHADOW_OFFSET_X = 0.85;
+const CLOCK_TEXT_SHADOW_OFFSET_Y = 0.85;
+const CLOCK_TEXT_SHADOW_ALPHA = 0.48;
+const CLOCK_DIGIT_LAYOUT_WIDTH = 68;
 const CLOCK_DIGIT_INNER_OFFSET_MULT = 0.46;
 const CLOCK_DIGIT_OUTER_OFFSET_MULT = 1.16;
-const LOW_TIME_THRESHOLD_SECONDS = 60; // Low-time color threshold in seconds.
+const LOW_TIME_THRESHOLD_SECONDS = 5 * 60; // Clock turns team red below 5 minutes remaining.
+const CRITICAL_TIME_FLASH_THRESHOLD_SECONDS = 60; // Clock color pulse begins below 1 minute remaining.
 
 // HUD status colors (vectors are RGB 0..1).
 const COLOR_NORMAL_RGB: [number, number, number] = [1, 1, 1];
 const COLOR_WARNING_YELLOW_RGB: [number, number, number] = [1, 1, 0];
+const COLOR_TEAM_RED_RGB: [number, number, number] = [1, 131 / 255, 97 / 255];
 const COLOR_NORMAL = mod.CreateVector(COLOR_NORMAL_RGB[0], COLOR_NORMAL_RGB[1], COLOR_NORMAL_RGB[2]);
-const COLOR_LOW_TIME = mod.CreateVector(1, 131 / 255, 97 / 255);
+const COLOR_LOW_TIME = mod.CreateVector(COLOR_TEAM_RED_RGB[0], COLOR_TEAM_RED_RGB[1], COLOR_TEAM_RED_RGB[2]);
 const COLOR_READY_GREEN = mod.CreateVector(173 / 255, 253 / 255, 134 / 255); // #ADFD86
 
 // Status / emphasis colors (use constants; do not inline CreateVector() in UI code).
@@ -38,12 +48,12 @@ const COLOR_WARNING_YELLOW = mod.CreateVector(
 // Conquest HUD color/layout constants (ticket bars + flag row).
 // Keep these centralized so ParseUI and runtime updates use one shared palette/geometry contract.
 const CONQUEST_HUD_TEXT_FRIENDLY_RGB: [number, number, number] = [112 / 255, 235 / 255, 255 / 255];
-const CONQUEST_HUD_TEXT_ENEMY_RGB: [number, number, number] = [1, 131 / 255, 97 / 255];
+const CONQUEST_HUD_TEXT_ENEMY_RGB: [number, number, number] = COLOR_TEAM_RED_RGB;
 const CONQUEST_HUD_TEXT_NEUTRAL_RGB: [number, number, number] = [1, 1, 1];
 const CONQUEST_HUD_TICKET_BAR_FRIENDLY_TRACK_RGB: [number, number, number] = [19 / 255, 47 / 255, 63 / 255];
 const CONQUEST_HUD_TICKET_BAR_ENEMY_TRACK_RGB: [number, number, number] = [64 / 255, 24 / 255, 17 / 255];
 const CONQUEST_HUD_TICKET_BAR_FRIENDLY_FILL_RGB: [number, number, number] = [112 / 255, 235 / 255, 255 / 255];
-const CONQUEST_HUD_TICKET_BAR_ENEMY_FILL_RGB: [number, number, number] = [1, 131 / 255, 97 / 255];
+const CONQUEST_HUD_TICKET_BAR_ENEMY_FILL_RGB: [number, number, number] = COLOR_TEAM_RED_RGB;
 const CONQUEST_HUD_TICKET_BAR_WIDTH = 173.58;
 const CONQUEST_HUD_TICKET_BAR_HEIGHT = 9.60;
 const CONQUEST_HUD_TICKET_LEAD_BORDER_GROW = 2;
