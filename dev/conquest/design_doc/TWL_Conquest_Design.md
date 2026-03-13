@@ -697,7 +697,7 @@ Codex To-Do Checklist:
 Phase Changelog:
 
 - `Log policy`: append-only; newest entry first.
-- `Current status`: `in_progress`
+- `Current status`: `completed`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
@@ -749,7 +749,7 @@ Codex To-Do Checklist:
 Phase Changelog:
 
 - `Log policy`: append-only; newest entry first.
-- `Current status`: `in_progress`
+- `Current status`: `completed`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
@@ -792,7 +792,7 @@ Codex To-Do Checklist:
 Phase Changelog:
 
 - `Log policy`: append-only; newest entry first.
-- `Current status`: `in_progress`
+- `Current status`: `completed`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
@@ -939,7 +939,26 @@ Objective:
   - admin counter
   - victory dialog
 
-Current code-state assessment:
+Current code-state at closeout:
+
+- Accepted combat HUD owner is `src/ui/conquest/hud-core/*` under `core` mode.
+- Legacy combat runtime files have been removed from active source:
+  - `src/ui/conquest/hud-build.ts`
+  - `src/ui/conquest/popout-render.ts`
+  - `src/ui/conquest/engage-render.ts`
+  - `src/ui/conquest/lifecycle.ts`
+- Dormant `combat-v2` implementation files and shim have been removed from active source:
+  - `src/ui/conquest/combat-v2/*`
+- Main combat HUD routing seam is now:
+  - `src/index/capture-tickets.ts`
+  - specifically `updateConquestCombatHudForAllPlayers(...)`
+- Main non-combat shell ensure/build seam is now:
+  - `src/ui/conquest/top-hud-shell.ts`
+  - specifically `ensureTopHudShellForPlayer(...)`
+- Non-combat shell refs are now cached under:
+  - `State.hudCache.topHudShellByPid`
+
+Pre-cleanup code-state assessment (historical planning snapshot):
 
 - Accepted combat HUD owner is `src/ui/conquest/hud-core/*` under `core` mode.
 - Legacy combat surface still exists in active source:
