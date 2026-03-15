@@ -8,6 +8,64 @@ function tryHandleReadyDialogButtonEvent(
     playerId: number,
     widgetName: string
 ): boolean {
+    const tryParseGridKnobKey = (prefix: string): string | undefined => {
+        const suffix = "_" + playerId;
+        if (!widgetName.startsWith(prefix) || !widgetName.endsWith(suffix)) return undefined;
+        return widgetName.substring(prefix.length, widgetName.length - suffix.length);
+    };
+
+    const gridDecKnobKey = tryParseGridKnobKey(UI_READY_DIALOG_MODE_GRID_KNOB_DEC_ID);
+    if (gridDecKnobKey !== undefined) {
+        if (isMatchLive()) return true;
+        if (gridDecKnobKey === READY_DIALOG_CONFIG_GAME_KNOB_KEY) {
+            setReadyDialogGameModeIndex(State.round.modeConfig.gameModeIndex - 1);
+            return true;
+        }
+        if (gridDecKnobKey === READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY) {
+            setReadyDialogAircraftCeiling(State.round.modeConfig.aircraftCeiling - READY_DIALOG_AIRCRAFT_CEILING_STEP, eventPlayer);
+            return true;
+        }
+        if (gridDecKnobKey === READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY) {
+            applyMatchupPreset(Math.max(0, State.round.matchupPresetIndex - 1), eventPlayer);
+            return true;
+        }
+        if (gridDecKnobKey === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) {
+            setAutoStartMinActivePlayers(State.round.autoStartMinActivePlayers - 1, eventPlayer);
+            return true;
+        }
+        setReadyDialogVehicleSelectionIndexByKey(
+            gridDecKnobKey,
+            (State.round.modeConfig.vehicleSelectionIndexByKey?.[gridDecKnobKey] ?? 0) - 1
+        );
+        return true;
+    }
+
+    const gridIncKnobKey = tryParseGridKnobKey(UI_READY_DIALOG_MODE_GRID_KNOB_INC_ID);
+    if (gridIncKnobKey !== undefined) {
+        if (isMatchLive()) return true;
+        if (gridIncKnobKey === READY_DIALOG_CONFIG_GAME_KNOB_KEY) {
+            setReadyDialogGameModeIndex(State.round.modeConfig.gameModeIndex + 1);
+            return true;
+        }
+        if (gridIncKnobKey === READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY) {
+            setReadyDialogAircraftCeiling(State.round.modeConfig.aircraftCeiling + READY_DIALOG_AIRCRAFT_CEILING_STEP, eventPlayer);
+            return true;
+        }
+        if (gridIncKnobKey === READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY) {
+            applyMatchupPreset(Math.min(MATCHUP_PRESETS.length - 1, State.round.matchupPresetIndex + 1), eventPlayer);
+            return true;
+        }
+        if (gridIncKnobKey === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) {
+            setAutoStartMinActivePlayers(State.round.autoStartMinActivePlayers + 1, eventPlayer);
+            return true;
+        }
+        setReadyDialogVehicleSelectionIndexByKey(
+            gridIncKnobKey,
+            (State.round.modeConfig.vehicleSelectionIndexByKey?.[gridIncKnobKey] ?? 0) + 1
+        );
+        return true;
+    }
+
     switch (widgetName) {
         case UI_READY_DIALOG_BUTTON_CANCEL_ID + playerId:
             hideReadyDialogUI(eventPlayer);

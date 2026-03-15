@@ -1,370 +1,393 @@
 // @ts-nocheck
-// Module: ready-dialog/dialog-build-mode-config -- mode/game settings controls inside the ready dialog
+// Module: ready-dialog/dialog-build-mode-config -- 7-column ready-dialog knob grid
+
+type ReadyDialogGridColumnSpec = {
+    key: string;
+    headerLabel: mod.Message;
+    knobKeys: readonly string[];
+    knobLabels: readonly number[];
+    width: number;
+    teamId?: TeamID;
+    supportLabel?: mod.Message;
+    supportVisible?: boolean;
+};
+
+function buildReadyDialogGridText(
+    widgetId: string,
+    posX: number,
+    posY: number,
+    sizeX: number,
+    sizeY: number,
+    anchor: mod.UIAnchor,
+    textAnchor: mod.UIAnchor,
+    label: number | mod.Message,
+    textSize: number,
+    eventPlayer: mod.Player,
+    parent: mod.UIWidget
+): mod.UIWidget | undefined {
+    const widget = modlib.ParseUI({
+        name: widgetId,
+        type: "Text",
+        playerId: eventPlayer,
+        position: [posX, posY],
+        size: [sizeX, sizeY],
+        anchor,
+        visible: true,
+        padding: 0,
+        bgAlpha: 0,
+        bgFill: mod.UIBgFill.None,
+        textLabel: label,
+        textColor: [1, 1, 1],
+        textAlpha: 1,
+        textSize,
+        textAnchor,
+    });
+    if (widget) {
+        mod.SetUIWidgetParent(widget, parent);
+        applyReadyDialogLabelTextColor(widget);
+    }
+    return widget;
+}
+
+function buildReadyDialogGridKnobRow(
+    eventPlayer: mod.Player,
+    containerBase: mod.UIWidget,
+    playerId: number,
+    knobKey: string,
+    labelKey: number,
+    columnX: number,
+    rowY: number,
+    columnWidth: number,
+    buttonSizeX: number,
+    buttonSizeY: number
+): void {
+    const hideLabel = knobKey === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY;
+    const isPlayersConfigKnob = knobKey === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY;
+    const labelId = UI_READY_DIALOG_MODE_GRID_KNOB_LABEL_ID + knobKey + "_" + playerId;
+    const valueId = UI_READY_DIALOG_MODE_GRID_KNOB_VALUE_ID + knobKey + "_" + playerId;
+    const panelId = UI_READY_DIALOG_MODE_GRID_KNOB_PANEL_ID + knobKey + "_" + playerId;
+    const decId = UI_READY_DIALOG_MODE_GRID_KNOB_DEC_ID + knobKey + "_" + playerId;
+    const decLabelId = UI_READY_DIALOG_MODE_GRID_KNOB_DEC_LABEL_ID + knobKey + "_" + playerId;
+    const incId = UI_READY_DIALOG_MODE_GRID_KNOB_INC_ID + knobKey + "_" + playerId;
+    const incLabelId = UI_READY_DIALOG_MODE_GRID_KNOB_INC_LABEL_ID + knobKey + "_" + playerId;
+
+    const labelY = isPlayersConfigKnob ? rowY + 4 : rowY + 4;
+    const labelHeight = 8;
+    const controlY = rowY + 5;
+    const valueY = isPlayersConfigKnob ? controlY : rowY + 9;
+    const valueHeight = isPlayersConfigKnob ? 12 : buttonSizeY;
+    const valueWidth = columnWidth - (buttonSizeX * 2);
+    const panelHeight = buttonSizeY;
+
+    mod.AddUIContainer(
+        panelId,
+        mod.CreateVector(columnX + buttonSizeX, controlY, 0),
+        mod.CreateVector(valueWidth, panelHeight, 0),
+        mod.UIAnchor.TopLeft,
+        containerBase,
+        true,
+        0,
+        COLOR_GRAY_DARK,
+        0.40,
+        mod.UIBgFill.Solid,
+        mod.UIDepth.AboveGameUI,
+        eventPlayer
+    );
+
+    buildReadyDialogGridText(
+        labelId,
+        columnX + buttonSizeX,
+        labelY,
+        valueWidth,
+        labelHeight,
+        mod.UIAnchor.TopLeft,
+        mod.UIAnchor.Center,
+        hideLabel ? mod.Message(mod.stringkeys.twl.system.genericCounter, "") : mod.Message(labelKey),
+        11,
+        eventPlayer,
+        containerBase
+    );
+    if (hideLabel) {
+        const labelWidget = safeFind(labelId);
+        if (labelWidget) mod.SetUIWidgetVisible(labelWidget, false);
+    }
+
+    const decBorder = addOutlinedButton(
+        decId,
+        columnX,
+        controlY,
+        buttonSizeX,
+        buttonSizeY,
+        mod.UIAnchor.TopLeft,
+        containerBase,
+        eventPlayer
+    );
+    addCenteredButtonText(
+        decLabelId,
+        buttonSizeX,
+        buttonSizeY,
+        mod.Message(mod.stringkeys.twl.ui.left),
+        eventPlayer,
+        decBorder ?? containerBase,
+        14
+    );
+
+    buildReadyDialogGridText(
+        valueId,
+        columnX + buttonSizeX,
+        valueY,
+        valueWidth,
+        valueHeight,
+        mod.UIAnchor.TopLeft,
+        mod.UIAnchor.Center,
+        mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+        12,
+        eventPlayer,
+        containerBase
+    );
+
+    const incBorder = addOutlinedButton(
+        incId,
+        columnX + columnWidth - buttonSizeX,
+        controlY,
+        buttonSizeX,
+        buttonSizeY,
+        mod.UIAnchor.TopLeft,
+        containerBase,
+        eventPlayer
+    );
+    addCenteredButtonText(
+        incLabelId,
+        buttonSizeX,
+        buttonSizeY,
+        mod.Message(mod.stringkeys.twl.ui.right),
+        eventPlayer,
+        incBorder ?? containerBase,
+        14
+    );
+}
 
 function buildReadyDialogModeConfigSection(
     eventPlayer: mod.Player,
     containerBase: mod.UIWidget,
     playerId: number,
-    bestOfY: number,
-    bestOfButtonSizeX: number,
-    bestOfButtonSizeY: number,
-    bestOfLabelSizeY: number,
-    leftSectionLeftButtonX: number,
-    leftSectionRightButtonX: number,
-    leftSectionValueX: number,
-    leftSectionLabelX: number,
-    leftSectionLabelWidth: number,
-    leftSectionValueWidth: number,
-    leftSectionRowGap: number,
-    confirmButtonX: number,
-    confirmButtonWidth: number,
-    resetButtonX: number,
-    resetButtonWidth: number
+    _bestOfY?: number,
+    _bestOfButtonSizeX?: number,
+    _bestOfButtonSizeY?: number,
+    _bestOfLabelSizeY?: number,
+    _leftSectionLeftButtonX?: number,
+    _leftSectionRightButtonX?: number,
+    _leftSectionValueX?: number,
+    _leftSectionLabelX?: number,
+    _leftSectionLabelWidth?: number,
+    _leftSectionValueWidth?: number,
+    _leftSectionRowGap?: number,
+    _confirmButtonX?: number,
+    _confirmButtonWidth?: number,
+    _resetButtonX?: number,
+    _resetButtonWidth?: number
 ): void {
-    const gameModeLabelId = UI_READY_DIALOG_MODE_GAME_LABEL_ID + playerId;
-    const gameModeDecId = UI_READY_DIALOG_MODE_GAME_DEC_ID + playerId;
-    const gameModeDecLabelId = UI_READY_DIALOG_MODE_GAME_DEC_LABEL_ID + playerId;
-    const gameModeValueId = UI_READY_DIALOG_MODE_GAME_VALUE_ID + playerId;
-    const gameModeIncId = UI_READY_DIALOG_MODE_GAME_INC_ID + playerId;
-    const gameModeIncLabelId = UI_READY_DIALOG_MODE_GAME_INC_LABEL_ID + playerId;
+    const gridTopY = -6;
+    const headerHeight = 18;
+    const knobBlockHeight = 30;
+    const supportRowHeight = 12;
+    const buttonRowY = 144;
+    const teamColumnWidth = 158;
+    const configColumnWidth = 216;
+    const columnGap = 6;
+    const buttonSizeX = READY_DIALOG_SMALL_BUTTON_WIDTH;
+    const buttonSizeY = READY_DIALOG_SMALL_BUTTON_HEIGHT;
+    const containerWidth = 1300;
 
-    const modeSettingsLabelId = UI_READY_DIALOG_MODE_SETTINGS_LABEL_ID + playerId;
-    const modeSettingsDecId = UI_READY_DIALOG_MODE_SETTINGS_DEC_ID + playerId;
-    const modeSettingsDecLabelId = UI_READY_DIALOG_MODE_SETTINGS_DEC_LABEL_ID + playerId;
-    const modeSettingsValueId = UI_READY_DIALOG_MODE_SETTINGS_VALUE_ID + playerId;
-    const modeSettingsIncId = UI_READY_DIALOG_MODE_SETTINGS_INC_ID + playerId;
-    const modeSettingsIncLabelId = UI_READY_DIALOG_MODE_SETTINGS_INC_LABEL_ID + playerId;
+    const columns: ReadyDialogGridColumnSpec[] = [
+        {
+            key: "team1Fast",
+            headerLabel: mod.Message(mod.stringkeys.twl.readyDialog.columnFastFormat, getTeamNameKey(TeamID.Team1)),
+            knobKeys: READY_DIALOG_TEAM1_FAST_KNOB_KEYS,
+            knobLabels: [
+                mod.stringkeys.twl.readyDialog.transport1Label,
+                mod.stringkeys.twl.readyDialog.transport2Label,
+                mod.stringkeys.twl.readyDialog.transport3Label,
+                mod.stringkeys.twl.readyDialog.transport4Label,
+            ],
+            width: teamColumnWidth,
+            teamId: TeamID.Team1,
+            supportVisible: false,
+        },
+        {
+            key: "team1Ground",
+            headerLabel: mod.Message(mod.stringkeys.twl.readyDialog.columnGroundFormat, getTeamNameKey(TeamID.Team1)),
+            knobKeys: READY_DIALOG_TEAM1_GROUND_KNOB_KEYS,
+            knobLabels: [
+                mod.stringkeys.twl.readyDialog.tank1Label,
+                mod.stringkeys.twl.readyDialog.tank2Label,
+                mod.stringkeys.twl.readyDialog.tank3Label,
+                mod.stringkeys.twl.readyDialog.tank4Label,
+            ],
+            width: teamColumnWidth,
+            teamId: TeamID.Team1,
+            supportVisible: false,
+        },
+        {
+            key: "team1Air",
+            headerLabel: mod.Message(mod.stringkeys.twl.readyDialog.columnAirFormat, getTeamNameKey(TeamID.Team1)),
+            knobKeys: [...READY_DIALOG_TEAM1_JET_KNOB_KEYS, ...READY_DIALOG_TEAM1_HELI_KNOB_KEYS],
+            knobLabels: [
+                mod.stringkeys.twl.readyDialog.jet1Label,
+                mod.stringkeys.twl.readyDialog.jet2Label,
+                mod.stringkeys.twl.readyDialog.heli1Label,
+                mod.stringkeys.twl.readyDialog.heli2Label,
+            ],
+            width: teamColumnWidth,
+            teamId: TeamID.Team1,
+            supportVisible: false,
+        },
+        {
+            key: "config",
+            headerLabel: mod.Message(mod.stringkeys.twl.readyDialog.configurationColumnLabel),
+            knobKeys: [
+                READY_DIALOG_CONFIG_GAME_KNOB_KEY,
+                READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY,
+                READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY,
+                READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY,
+            ],
+            knobLabels: [
+                mod.stringkeys.twl.readyDialog.gameModeLabel,
+                mod.stringkeys.twl.readyDialog.modeSettingsLabel,
+                mod.stringkeys.twl.readyDialog.vehiclesCountLabel,
+                mod.stringkeys.twl.readyDialog.playersLabel,
+            ],
+            width: configColumnWidth,
+            supportLabel: mod.Message(mod.stringkeys.twl.readyDialog.minPlayersToStartFormat, 0),
+            supportVisible: true,
+        },
+        {
+            key: "team2Air",
+            headerLabel: mod.Message(mod.stringkeys.twl.readyDialog.columnAirFormat, getTeamNameKey(TeamID.Team2)),
+            knobKeys: [...READY_DIALOG_TEAM2_JET_KNOB_KEYS, ...READY_DIALOG_TEAM2_HELI_KNOB_KEYS],
+            knobLabels: [
+                mod.stringkeys.twl.readyDialog.jet1Label,
+                mod.stringkeys.twl.readyDialog.jet2Label,
+                mod.stringkeys.twl.readyDialog.heli1Label,
+                mod.stringkeys.twl.readyDialog.heli2Label,
+            ],
+            width: teamColumnWidth,
+            teamId: TeamID.Team2,
+            supportVisible: false,
+        },
+        {
+            key: "team2Ground",
+            headerLabel: mod.Message(mod.stringkeys.twl.readyDialog.columnGroundFormat, getTeamNameKey(TeamID.Team2)),
+            knobKeys: READY_DIALOG_TEAM2_GROUND_KNOB_KEYS,
+            knobLabels: [
+                mod.stringkeys.twl.readyDialog.tank1Label,
+                mod.stringkeys.twl.readyDialog.tank2Label,
+                mod.stringkeys.twl.readyDialog.tank3Label,
+                mod.stringkeys.twl.readyDialog.tank4Label,
+            ],
+            width: teamColumnWidth,
+            teamId: TeamID.Team2,
+            supportVisible: false,
+        },
+        {
+            key: "team2Fast",
+            headerLabel: mod.Message(mod.stringkeys.twl.readyDialog.columnFastFormat, getTeamNameKey(TeamID.Team2)),
+            knobKeys: READY_DIALOG_TEAM2_FAST_KNOB_KEYS,
+            knobLabels: [
+                mod.stringkeys.twl.readyDialog.transport1Label,
+                mod.stringkeys.twl.readyDialog.transport2Label,
+                mod.stringkeys.twl.readyDialog.transport3Label,
+                mod.stringkeys.twl.readyDialog.transport4Label,
+            ],
+            width: teamColumnWidth,
+            teamId: TeamID.Team2,
+            supportVisible: false,
+        },
+    ];
 
-    const vehiclesT1LabelId = UI_READY_DIALOG_MODE_VEHICLES_T1_LABEL_ID + playerId;
-    const vehiclesT1DecId = UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_ID + playerId;
-    const vehiclesT1DecLabelId = UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_LABEL_ID + playerId;
-    const vehiclesT1ValueId = UI_READY_DIALOG_MODE_VEHICLES_T1_VALUE_ID + playerId;
-    const vehiclesT1IncId = UI_READY_DIALOG_MODE_VEHICLES_T1_INC_ID + playerId;
-    const vehiclesT1IncLabelId = UI_READY_DIALOG_MODE_VEHICLES_T1_INC_LABEL_ID + playerId;
+    const laneLeftX = Math.floor((containerWidth - READY_DIALOG_CONTENT_LANE_WIDTH) / 2) + READY_DIALOG_CONTENT_OFFSET_X;
+    const gridWidth = columns.reduce((sum, column) => sum + column.width, 0) + ((columns.length - 1) * columnGap);
+    const gridLeftX = laneLeftX + Math.floor((READY_DIALOG_CONTENT_LANE_WIDTH - gridWidth) / 2);
+    let columnX = gridLeftX;
 
-    const vehiclesT2LabelId = UI_READY_DIALOG_MODE_VEHICLES_T2_LABEL_ID + playerId;
-    const vehiclesT2DecId = UI_READY_DIALOG_MODE_VEHICLES_T2_DEC_ID + playerId;
-    const vehiclesT2DecLabelId = UI_READY_DIALOG_MODE_VEHICLES_T2_DEC_LABEL_ID + playerId;
-    const vehiclesT2ValueId = UI_READY_DIALOG_MODE_VEHICLES_T2_VALUE_ID + playerId;
-    const vehiclesT2IncId = UI_READY_DIALOG_MODE_VEHICLES_T2_INC_ID + playerId;
-    const vehiclesT2IncLabelId = UI_READY_DIALOG_MODE_VEHICLES_T2_INC_LABEL_ID + playerId;
+    for (let i = 0; i < columns.length; i++) {
+        const column = columns[i];
+        const headerId = UI_READY_DIALOG_MODE_GRID_COLUMN_HEADER_ID + column.key + "_" + playerId;
+
+        buildReadyDialogGridText(
+            headerId,
+            columnX,
+            gridTopY,
+            column.width,
+            headerHeight,
+            mod.UIAnchor.TopLeft,
+            mod.UIAnchor.Center,
+            column.headerLabel,
+            14,
+            eventPlayer,
+            containerBase
+        );
+
+        for (let row = 0; row < column.knobKeys.length; row++) {
+            const rowY = gridTopY + headerHeight + 2 + (row * knobBlockHeight);
+            buildReadyDialogGridKnobRow(
+                eventPlayer,
+                containerBase,
+                playerId,
+                column.knobKeys[row],
+                column.knobLabels[row],
+                columnX,
+                rowY,
+                column.width,
+                buttonSizeX,
+                buttonSizeY
+            );
+        }
+
+        const supportId = UI_READY_DIALOG_MODE_GRID_SUPPORT_ID + column.key + "_" + playerId;
+        const supportInsidePlayersPanel = column.key === "config";
+        const supportWidget = buildReadyDialogGridText(
+            supportId,
+            supportInsidePlayersPanel ? columnX + buttonSizeX : columnX,
+            supportInsidePlayersPanel
+                ? gridTopY + headerHeight + 2 + (3 * knobBlockHeight) + 17
+                : gridTopY + headerHeight + 2 + (4 * knobBlockHeight) - 4,
+            supportInsidePlayersPanel ? column.width - (buttonSizeX * 2) : column.width,
+            supportInsidePlayersPanel ? 8 : supportRowHeight,
+            mod.UIAnchor.TopLeft,
+            mod.UIAnchor.Center,
+            column.supportLabel ?? mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
+            10,
+            eventPlayer,
+            containerBase
+        );
+        if (supportWidget && !column.supportVisible) {
+            mod.SetUIWidgetVisible(supportWidget, false);
+        }
+
+        columnX += column.width + columnGap;
+    }
 
     const modeConfirmId = UI_READY_DIALOG_MODE_CONFIRM_ID + playerId;
     const modeConfirmLabelId = UI_READY_DIALOG_MODE_CONFIRM_LABEL_ID + playerId;
-    const modeResetId = UI_READY_DIALOG_MODE_RESET_ID + playerId;
-    const modeResetLabelId = UI_READY_DIALOG_MODE_RESET_LABEL_ID + playerId;
-
-    const gameModeY = bestOfY;
-    const modeSettingsY = gameModeY + leftSectionRowGap;
-    const vehiclesT1Y = modeSettingsY + leftSectionRowGap;
-    const vehiclesT2Y = vehiclesT1Y + leftSectionRowGap;
-    const confirmY = vehiclesT2Y + leftSectionRowGap + 4;
-
-    addRightAlignedLabel(
-        gameModeLabelId,
-        leftSectionLabelX,
-        gameModeY,
-        leftSectionLabelWidth,
-        bestOfLabelSizeY,
-        mod.UIAnchor.TopRight,
-        mod.Message(mod.stringkeys.twl.readyDialog.gameModeLabel),
-        eventPlayer,
-        containerBase,
-        12
-    );
-
-    const gameModeDecBorder = addOutlinedButton(
-        gameModeDecId,
-        leftSectionLeftButtonX,
-        gameModeY,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.UIAnchor.TopRight,
-        containerBase,
-        eventPlayer
-    );
-    const gameModeDecLabel = addCenteredButtonText(
-        gameModeDecLabelId,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.Message(mod.stringkeys.twl.ui.left),
-        eventPlayer,
-        gameModeDecBorder ?? containerBase
-    );
-    if (gameModeDecLabel) mod.SetUITextSize(gameModeDecLabel, 14);
-
-    mod.AddUIText(
-        gameModeValueId,
-        mod.CreateVector(leftSectionValueX, gameModeY, 0),
-        mod.CreateVector(leftSectionValueWidth, bestOfLabelSizeY, 0),
-        mod.UIAnchor.TopRight,
-        mod.Message(State.round.modeConfig.gameMode),
-        eventPlayer
-    );
-    const gameModeValue = mod.FindUIWidgetWithName(gameModeValueId, mod.GetUIRoot());
-    mod.SetUIWidgetBgAlpha(gameModeValue, 0);
-    mod.SetUITextSize(gameModeValue, 12);
-    applyReadyDialogLabelTextColor(gameModeValue);
-    mod.SetUIWidgetParent(gameModeValue, containerBase);
-
-    const gameModeIncBorder = addOutlinedButton(
-        gameModeIncId,
-        leftSectionRightButtonX,
-        gameModeY,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.UIAnchor.TopRight,
-        containerBase,
-        eventPlayer
-    );
-    const gameModeIncLabel = addCenteredButtonText(
-        gameModeIncLabelId,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.Message(mod.stringkeys.twl.ui.right),
-        eventPlayer,
-        gameModeIncBorder ?? containerBase
-    );
-    if (gameModeIncLabel) mod.SetUITextSize(gameModeIncLabel, 14);
-
-    addRightAlignedLabel(
-        modeSettingsLabelId,
-        leftSectionLabelX,
-        modeSettingsY,
-        leftSectionLabelWidth,
-        bestOfLabelSizeY,
-        mod.UIAnchor.TopRight,
-        mod.Message(mod.stringkeys.twl.readyDialog.modeSettingsLabel),
-        eventPlayer,
-        containerBase,
-        12
-    );
-
-    const modeSettingsDecBorder = addOutlinedButton(
-        modeSettingsDecId,
-        leftSectionLeftButtonX,
-        modeSettingsY,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.UIAnchor.TopRight,
-        containerBase,
-        eventPlayer
-    );
-    const modeSettingsDecLabel = addCenteredButtonText(
-        modeSettingsDecLabelId,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.Message(mod.stringkeys.twl.ui.left),
-        eventPlayer,
-        modeSettingsDecBorder ?? containerBase
-    );
-    if (modeSettingsDecLabel) mod.SetUITextSize(modeSettingsDecLabel, 14);
-
-    mod.AddUIText(
-        modeSettingsValueId,
-        mod.CreateVector(leftSectionValueX, modeSettingsY, 0),
-        mod.CreateVector(leftSectionValueWidth, bestOfLabelSizeY, 0),
-        mod.UIAnchor.TopRight,
-        mod.Message(mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat, Math.floor(State.round.modeConfig.aircraftCeiling)),
-        eventPlayer
-    );
-    const modeSettingsValue = mod.FindUIWidgetWithName(modeSettingsValueId, mod.GetUIRoot());
-    mod.SetUIWidgetBgAlpha(modeSettingsValue, 0);
-    mod.SetUITextSize(modeSettingsValue, 12);
-    applyReadyDialogLabelTextColor(modeSettingsValue);
-    mod.SetUIWidgetParent(modeSettingsValue, containerBase);
-
-    const modeSettingsIncBorder = addOutlinedButton(
-        modeSettingsIncId,
-        leftSectionRightButtonX,
-        modeSettingsY,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.UIAnchor.TopRight,
-        containerBase,
-        eventPlayer
-    );
-    const modeSettingsIncLabel = addCenteredButtonText(
-        modeSettingsIncLabelId,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.Message(mod.stringkeys.twl.ui.right),
-        eventPlayer,
-        modeSettingsIncBorder ?? containerBase
-    );
-    if (modeSettingsIncLabel) mod.SetUITextSize(modeSettingsIncLabel, 14);
-
-    addRightAlignedLabel(
-        vehiclesT1LabelId,
-        leftSectionLabelX,
-        vehiclesT1Y,
-        leftSectionLabelWidth,
-        bestOfLabelSizeY,
-        mod.UIAnchor.TopRight,
-        mod.Message(mod.stringkeys.twl.readyDialog.vehiclesLabelFormat, getTeamNameKey(TeamID.Team1)),
-        eventPlayer,
-        containerBase,
-        12
-    );
-
-    const vehiclesT1DecBorder = addOutlinedButton(
-        vehiclesT1DecId,
-        leftSectionLeftButtonX,
-        vehiclesT1Y,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.UIAnchor.TopRight,
-        containerBase,
-        eventPlayer
-    );
-    const vehiclesT1DecLabel = addCenteredButtonText(
-        vehiclesT1DecLabelId,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.Message(mod.stringkeys.twl.ui.left),
-        eventPlayer,
-        vehiclesT1DecBorder ?? containerBase
-    );
-    if (vehiclesT1DecLabel) mod.SetUITextSize(vehiclesT1DecLabel, 14);
-
-    mod.AddUIText(
-        vehiclesT1ValueId,
-        mod.CreateVector(leftSectionValueX, vehiclesT1Y, 0),
-        mod.CreateVector(leftSectionValueWidth, bestOfLabelSizeY, 0),
-        mod.UIAnchor.TopRight,
-        mod.Message(State.round.modeConfig.vehiclesT1),
-        eventPlayer
-    );
-    const vehiclesT1Value = mod.FindUIWidgetWithName(vehiclesT1ValueId, mod.GetUIRoot());
-    mod.SetUIWidgetBgAlpha(vehiclesT1Value, 0);
-    mod.SetUITextSize(vehiclesT1Value, 12);
-    applyReadyDialogLabelTextColor(vehiclesT1Value);
-    mod.SetUIWidgetParent(vehiclesT1Value, containerBase);
-
-    const vehiclesT1IncBorder = addOutlinedButton(
-        vehiclesT1IncId,
-        leftSectionRightButtonX,
-        vehiclesT1Y,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.UIAnchor.TopRight,
-        containerBase,
-        eventPlayer
-    );
-    const vehiclesT1IncLabel = addCenteredButtonText(
-        vehiclesT1IncLabelId,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.Message(mod.stringkeys.twl.ui.right),
-        eventPlayer,
-        vehiclesT1IncBorder ?? containerBase
-    );
-    if (vehiclesT1IncLabel) mod.SetUITextSize(vehiclesT1IncLabel, 14);
-
-    addRightAlignedLabel(
-        vehiclesT2LabelId,
-        leftSectionLabelX,
-        vehiclesT2Y,
-        leftSectionLabelWidth,
-        bestOfLabelSizeY,
-        mod.UIAnchor.TopRight,
-        mod.Message(mod.stringkeys.twl.readyDialog.vehiclesLabelFormat, getTeamNameKey(TeamID.Team2)),
-        eventPlayer,
-        containerBase,
-        12
-    );
-
-    const vehiclesT2DecBorder = addOutlinedButton(
-        vehiclesT2DecId,
-        leftSectionLeftButtonX,
-        vehiclesT2Y,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.UIAnchor.TopRight,
-        containerBase,
-        eventPlayer
-    );
-    const vehiclesT2DecLabel = addCenteredButtonText(
-        vehiclesT2DecLabelId,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.Message(mod.stringkeys.twl.ui.left),
-        eventPlayer,
-        vehiclesT2DecBorder ?? containerBase
-    );
-    if (vehiclesT2DecLabel) mod.SetUITextSize(vehiclesT2DecLabel, 14);
-
-    mod.AddUIText(
-        vehiclesT2ValueId,
-        mod.CreateVector(leftSectionValueX, vehiclesT2Y, 0),
-        mod.CreateVector(leftSectionValueWidth, bestOfLabelSizeY, 0),
-        mod.UIAnchor.TopRight,
-        mod.Message(State.round.modeConfig.vehiclesT2),
-        eventPlayer
-    );
-    const vehiclesT2Value = mod.FindUIWidgetWithName(vehiclesT2ValueId, mod.GetUIRoot());
-    mod.SetUIWidgetBgAlpha(vehiclesT2Value, 0);
-    mod.SetUITextSize(vehiclesT2Value, 12);
-    applyReadyDialogLabelTextColor(vehiclesT2Value);
-    mod.SetUIWidgetParent(vehiclesT2Value, containerBase);
-
-    const vehiclesT2IncBorder = addOutlinedButton(
-        vehiclesT2IncId,
-        leftSectionRightButtonX,
-        vehiclesT2Y,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.UIAnchor.TopRight,
-        containerBase,
-        eventPlayer
-    );
-    const vehiclesT2IncLabel = addCenteredButtonText(
-        vehiclesT2IncLabelId,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        mod.Message(mod.stringkeys.twl.ui.right),
-        eventPlayer,
-        vehiclesT2IncBorder ?? containerBase
-    );
-    if (vehiclesT2IncLabel) mod.SetUITextSize(vehiclesT2IncLabel, 14);
-
+    const confirmButtonX = laneLeftX + Math.floor((READY_DIALOG_CONTENT_LANE_WIDTH - READY_DIALOG_CONFIRM_BUTTON_WIDTH) / 2);
     const confirmBorder = addOutlinedButton(
         modeConfirmId,
         confirmButtonX,
-        confirmY,
-        confirmButtonWidth,
-        bestOfButtonSizeY,
-        mod.UIAnchor.TopRight,
+        buttonRowY,
+        READY_DIALOG_CONFIRM_BUTTON_WIDTH,
+        READY_DIALOG_SMALL_BUTTON_HEIGHT,
+        mod.UIAnchor.TopLeft,
         containerBase,
         eventPlayer
     );
-    const modeConfirmLabel = addCenteredButtonText(
+    addCenteredButtonText(
         modeConfirmLabelId,
-        confirmButtonWidth,
-        bestOfButtonSizeY,
+        READY_DIALOG_CONFIRM_BUTTON_WIDTH,
+        READY_DIALOG_SMALL_BUTTON_HEIGHT,
         mod.Message(mod.stringkeys.twl.readyDialog.confirmSettingsLabel),
         eventPlayer,
-        confirmBorder ?? containerBase
+        confirmBorder ?? containerBase,
+        12
     );
-    if (modeConfirmLabel) mod.SetUITextSize(modeConfirmLabel, 12);
-
-    const resetBorder = addOutlinedButton(
-        modeResetId,
-        resetButtonX,
-        confirmY,
-        resetButtonWidth,
-        bestOfButtonSizeY,
-        mod.UIAnchor.TopRight,
-        containerBase,
-        eventPlayer
-    );
-    const modeResetLabel = addCenteredButtonText(
-        modeResetLabelId,
-        resetButtonWidth,
-        bestOfButtonSizeY,
-        mod.Message(mod.stringkeys.twl.readyDialog.resetSettingsLabel),
-        eventPlayer,
-        resetBorder ?? containerBase
-    );
-    if (modeResetLabel) mod.SetUITextSize(modeResetLabel, 12);
 }

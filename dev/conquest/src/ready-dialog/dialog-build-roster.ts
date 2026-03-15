@@ -6,10 +6,16 @@ function buildReadyDialogRosterSection(
     containerBase: mod.UIWidget,
     playerId: number
 ): void {
-    const readyRosterPanelWidth = 580;
+    const containerWidth = 1300;
+    const readyRosterPanelWidth = 566;
     const readyRosterPanelHeight = 440;
-    const readyRosterPanelGap = 40;
-    const readyRosterPanelMargin = 40;
+    const readyRosterPanelGap = 68;
+    const readyRosterTotalWidth = READY_DIALOG_CONTENT_LANE_WIDTH;
+    const laneLeftX = Math.floor((containerWidth - READY_DIALOG_CONTENT_LANE_WIDTH) / 2) + READY_DIALOG_CONTENT_OFFSET_X;
+    const readyRosterPanelMargin =
+        laneLeftX +
+        Math.floor((readyRosterTotalWidth - ((readyRosterPanelWidth * 2) + readyRosterPanelGap)) / 2) +
+        READY_DIALOG_ROSTER_VISUAL_OFFSET_X;
     const readyRosterPanelY = 175;
 
     // Left and right roster containers (children are parented to these containers).
@@ -64,6 +70,7 @@ function buildReadyDialogRosterSection(
     const t1Label = mod.FindUIWidgetWithName(t1LabelId, mod.GetUIRoot());
     mod.SetUIWidgetBgAlpha(t1Label, 0);
     mod.SetUITextSize(t1Label, 20);
+    mod.SetUITextAnchor(t1Label, mod.UIAnchor.Center);
     mod.SetUIWidgetParent(t1Label, t1Container);
 
     mod.AddUIText(
@@ -77,6 +84,7 @@ function buildReadyDialogRosterSection(
     const t2Label = mod.FindUIWidgetWithName(t2LabelId, mod.GetUIRoot());
     mod.SetUIWidgetBgAlpha(t2Label, 0);
     mod.SetUITextSize(t2Label, 20);
+    mod.SetUITextAnchor(t2Label, mod.UIAnchor.Center);
     mod.SetUIWidgetParent(t2Label, t2Container);
 
     const rowStartY = teamLabelY + teamLabelHeight;

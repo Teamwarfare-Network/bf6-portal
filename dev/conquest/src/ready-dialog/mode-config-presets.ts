@@ -79,6 +79,12 @@ function isReadyDialogModePresetActive(gameModeKey: number): boolean {
     if (State.round.autoStartMinActivePlayers !== getReadyDialogPresetPlayersPerSide(gameModeKey)) return false;
     if (State.round.modeConfig.vehicleIndexT1 !== READY_DIALOG_MODE_PRESET_VEHICLE_INDEX) return false;
     if (State.round.modeConfig.vehicleIndexT2 !== READY_DIALOG_MODE_PRESET_VEHICLE_INDEX) return false;
+    const defaultVehicleSelections = buildReadyDialogVehicleSelectionIndexByKeyFromMapConfig(ACTIVE_MAP_CONFIG);
+    for (const knobKey of READY_DIALOG_ALL_VEHICLE_KNOB_KEYS) {
+        if ((State.round.modeConfig.vehicleSelectionIndexByKey?.[knobKey] ?? 0) !== (defaultVehicleSelections[knobKey] ?? 0)) {
+            return false;
+        }
+    }
     if (Math.floor(State.round.modeConfig.aircraftCeiling) !== Math.floor(State.round.aircraftCeiling.mapDefaultHudCeiling)) return false;
     return true;
 }
@@ -97,6 +103,7 @@ function applyReadyDialogModePresetForGameMode(gameModeKey: number): boolean {
     State.round.modeConfig.vehicleIndexT2 = READY_DIALOG_MODE_PRESET_VEHICLE_INDEX;
     State.round.modeConfig.vehiclesT1 = READY_DIALOG_VEHICLE_OPTIONS[READY_DIALOG_MODE_PRESET_VEHICLE_INDEX];
     State.round.modeConfig.vehiclesT2 = READY_DIALOG_VEHICLE_OPTIONS[READY_DIALOG_MODE_PRESET_VEHICLE_INDEX];
+    State.round.modeConfig.vehicleSelectionIndexByKey = buildReadyDialogVehicleSelectionIndexByKeyFromMapConfig(ACTIVE_MAP_CONFIG);
 
     State.round.modeConfig.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
     State.round.modeConfig.aircraftCeilingOverridePending = false;
@@ -159,6 +166,18 @@ function setReadyDialogVehicleIndexT2(nextIndex: number): void {
     updateReadyDialogModeConfigForAllVisibleViewers();
 }
 
+function setReadyDialogVehicleSelectionIndexByKey(knobKey: string, nextIndex: number): void {
+    const count = getReadyDialogVehicleSelectionCount(knobKey);
+    if (count <= 0) return;
+    ensureCustomGameModeForManualChange();
+    if (!State.round.modeConfig.vehicleSelectionIndexByKey) {
+        State.round.modeConfig.vehicleSelectionIndexByKey = {};
+    }
+    const clamped = ((nextIndex % count) + count) % count;
+    State.round.modeConfig.vehicleSelectionIndexByKey[knobKey] = clamped;
+    updateReadyDialogModeConfigForAllVisibleViewers();
+}
+
 // Commits the mode config snapshot and applies runtime side effects.
 function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
     const cfg = State.round.modeConfig;
@@ -173,20 +192,17 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
     const nextCeilingOverrideEnabled =
         cfg.confirmed.aircraftCeilingOverrideEnabled || cfg.aircraftCeilingOverridePending;
     const applyCustomCeiling = shouldApplyCustomCeilingForConfig(cfg.gameMode, nextCeilingOverrideEnabled);
-    const isMapDefaultVehicle = cfg.vehicleIndexT1 === READY_DIALOG_VEHICLE_MAP_DEFAULT_INDEX;
-    // Keep the selected heli override consistent across teams when confirming.
-    cfg.vehicleIndexT2 = cfg.vehicleIndexT1;
-    cfg.vehiclesT2 = cfg.vehiclesT1;
     cfg.confirmed = {
         gameMode: cfg.gameMode,
         gameSettings: cfg.gameSettings,
         vehiclesT1: cfg.vehiclesT1,
-        vehiclesT2: cfg.vehiclesT1,
+        vehiclesT2: cfg.vehiclesT2,
         aircraftCeiling: cfg.aircraftCeiling,
         aircraftCeilingOverrideEnabled: nextCeilingOverrideEnabled,
         vehicleIndexT1: cfg.vehicleIndexT1,
-        vehicleIndexT2: cfg.vehicleIndexT1,
-        vehicleOverrideEnabled: !isMapDefaultVehicle,
+        vehicleIndexT2: cfg.vehicleIndexT2,
+        vehicleOverrideEnabled: false,
+        vehicleSelectionIndexByKey: { ...(cfg.vehicleSelectionIndexByKey ?? {}) },
     };
     // Apply custom ceiling only after the user confirms settings; enforcement runs while enabled.
     if (!applyCustomCeiling) {

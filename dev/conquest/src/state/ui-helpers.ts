@@ -163,181 +163,75 @@ function applyAdminPanelLabelTextColor(widget?: mod.UIWidget): void {
 
 // Recreates all Ready Dialog button labels for a viewer after UI build/theme refresh.
 function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, baseContainer: mod.UIWidget): void {
-    const swapBorder = safeFind(UI_READY_DIALOG_BUTTON_SWAP_ID + pid + "_BORDER");
-    addCenteredButtonText(
+    const refreshButtonTextIfPresent = (
+        borderId: string,
+        labelId: string,
+        sizeX: number,
+        sizeY: number,
+        label: number | mod.Message,
+        textSize?: number
+    ): void => {
+        const border = safeFind(borderId);
+        if (!border) return;
+        addCenteredButtonText(labelId, sizeX, sizeY, label, player, border ?? baseContainer, textSize);
+    };
+
+    refreshButtonTextIfPresent(
+        UI_READY_DIALOG_BUTTON_SWAP_ID + pid + "_BORDER",
         UI_READY_DIALOG_BUTTON_SWAP_LABEL_ID + pid,
         READY_DIALOG_MAIN_BUTTON_WIDTH,
         READY_DIALOG_MAIN_BUTTON_HEIGHT,
-        mod.stringkeys.twl.readyDialog.buttons.swapTeams,
-        player,
-        swapBorder ?? baseContainer
+        mod.stringkeys.twl.readyDialog.buttons.swapTeams
     );
 
-    const readyBorder = safeFind(UI_READY_DIALOG_BUTTON_READY_ID + pid + "_BORDER");
-    addCenteredButtonText(
+    refreshButtonTextIfPresent(
+        UI_READY_DIALOG_BUTTON_READY_ID + pid + "_BORDER",
         UI_READY_DIALOG_BUTTON_READY_LABEL_ID + pid,
         READY_DIALOG_MAIN_BUTTON_WIDTH,
         READY_DIALOG_MAIN_BUTTON_HEIGHT,
-        mod.stringkeys.twl.readyDialog.buttons.ready,
-        player,
-        readyBorder ?? baseContainer
+        mod.stringkeys.twl.readyDialog.buttons.ready
     );
     updateReadyToggleButtonForViewer(player, pid);
 
-    const cancelBorder = safeFind(UI_READY_DIALOG_BUTTON_CANCEL_ID + pid + "_BORDER");
-    addCenteredButtonText(
+    refreshButtonTextIfPresent(
+        UI_READY_DIALOG_BUTTON_CANCEL_ID + pid + "_BORDER",
         UI_READY_DIALOG_BUTTON_CANCEL_LABEL_ID + pid,
         READY_DIALOG_MAIN_BUTTON_WIDTH,
         READY_DIALOG_MAIN_BUTTON_HEIGHT,
-        mod.stringkeys.twl.teamSwitch.buttons.cancel,
-        player,
-        cancelBorder ?? baseContainer
+        mod.stringkeys.twl.teamSwitch.buttons.cancel
     );
 
-    const matchupDecBorder = safeFind(UI_READY_DIALOG_MATCHUP_DEC_ID + pid + "_BORDER");
-    addCenteredButtonText(
-        UI_READY_DIALOG_MATCHUP_DEC_LABEL_ID + pid,
-        READY_DIALOG_SMALL_BUTTON_WIDTH,
-        READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.stringkeys.twl.ui.minus,
-        player,
-        matchupDecBorder ?? baseContainer,
-        14
-    );
-    const matchupIncBorder = safeFind(UI_READY_DIALOG_MATCHUP_INC_ID + pid + "_BORDER");
-    addCenteredButtonText(
-        UI_READY_DIALOG_MATCHUP_INC_LABEL_ID + pid,
-        READY_DIALOG_SMALL_BUTTON_WIDTH,
-        READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.stringkeys.twl.ui.plus,
-        player,
-        matchupIncBorder ?? baseContainer,
-        14
-    );
+    for (const knobKey of [
+        READY_DIALOG_CONFIG_GAME_KNOB_KEY,
+        READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY,
+        READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY,
+        READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY,
+        ...READY_DIALOG_ALL_VEHICLE_KNOB_KEYS,
+    ]) {
+        refreshButtonTextIfPresent(
+            UI_READY_DIALOG_MODE_GRID_KNOB_DEC_ID + knobKey + "_" + pid + "_BORDER",
+            UI_READY_DIALOG_MODE_GRID_KNOB_DEC_LABEL_ID + knobKey + "_" + pid,
+            READY_DIALOG_SMALL_BUTTON_WIDTH,
+            READY_DIALOG_SMALL_BUTTON_HEIGHT,
+            mod.stringkeys.twl.ui.left,
+            14
+        );
+        refreshButtonTextIfPresent(
+            UI_READY_DIALOG_MODE_GRID_KNOB_INC_ID + knobKey + "_" + pid + "_BORDER",
+            UI_READY_DIALOG_MODE_GRID_KNOB_INC_LABEL_ID + knobKey + "_" + pid,
+            READY_DIALOG_SMALL_BUTTON_WIDTH,
+            READY_DIALOG_SMALL_BUTTON_HEIGHT,
+            mod.stringkeys.twl.ui.right,
+            14
+        );
+    }
 
-    const minPlayersDecBorder = safeFind(UI_READY_DIALOG_MINPLAYERS_DEC_ID + pid + "_BORDER");
-    addCenteredButtonText(
-        UI_READY_DIALOG_MINPLAYERS_DEC_LABEL_ID + pid,
-        READY_DIALOG_SMALL_BUTTON_WIDTH,
-        READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.stringkeys.twl.ui.minus,
-        player,
-        minPlayersDecBorder ?? baseContainer,
-        14
-    );
-    const minPlayersIncBorder = safeFind(UI_READY_DIALOG_MINPLAYERS_INC_ID + pid + "_BORDER");
-    addCenteredButtonText(
-        UI_READY_DIALOG_MINPLAYERS_INC_LABEL_ID + pid,
-        READY_DIALOG_SMALL_BUTTON_WIDTH,
-        READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.stringkeys.twl.ui.plus,
-        player,
-        minPlayersIncBorder ?? baseContainer,
-        14
-    );
-
-    const modeGameDecBorder = safeFind(UI_READY_DIALOG_MODE_GAME_DEC_ID + pid + "_BORDER");
-    addCenteredButtonText(
-        UI_READY_DIALOG_MODE_GAME_DEC_LABEL_ID + pid,
-        READY_DIALOG_SMALL_BUTTON_WIDTH,
-        READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.stringkeys.twl.ui.left,
-        player,
-        modeGameDecBorder ?? baseContainer,
-        14
-    );
-    const modeGameIncBorder = safeFind(UI_READY_DIALOG_MODE_GAME_INC_ID + pid + "_BORDER");
-    addCenteredButtonText(
-        UI_READY_DIALOG_MODE_GAME_INC_LABEL_ID + pid,
-        READY_DIALOG_SMALL_BUTTON_WIDTH,
-        READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.stringkeys.twl.ui.right,
-        player,
-        modeGameIncBorder ?? baseContainer,
-        14
-    );
-
-    const modeSettingsDecBorder = safeFind(UI_READY_DIALOG_MODE_SETTINGS_DEC_ID + pid + "_BORDER");
-    addCenteredButtonText(
-        UI_READY_DIALOG_MODE_SETTINGS_DEC_LABEL_ID + pid,
-        READY_DIALOG_SMALL_BUTTON_WIDTH,
-        READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.stringkeys.twl.ui.left,
-        player,
-        modeSettingsDecBorder ?? baseContainer,
-        14
-    );
-    const modeSettingsIncBorder = safeFind(UI_READY_DIALOG_MODE_SETTINGS_INC_ID + pid + "_BORDER");
-    addCenteredButtonText(
-        UI_READY_DIALOG_MODE_SETTINGS_INC_LABEL_ID + pid,
-        READY_DIALOG_SMALL_BUTTON_WIDTH,
-        READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.stringkeys.twl.ui.right,
-        player,
-        modeSettingsIncBorder ?? baseContainer,
-        14
-    );
-
-    const vehiclesT1DecBorder = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_ID + pid + "_BORDER");
-    addCenteredButtonText(
-        UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_LABEL_ID + pid,
-        READY_DIALOG_SMALL_BUTTON_WIDTH,
-        READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.stringkeys.twl.ui.left,
-        player,
-        vehiclesT1DecBorder ?? baseContainer,
-        14
-    );
-    const vehiclesT1IncBorder = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T1_INC_ID + pid + "_BORDER");
-    addCenteredButtonText(
-        UI_READY_DIALOG_MODE_VEHICLES_T1_INC_LABEL_ID + pid,
-        READY_DIALOG_SMALL_BUTTON_WIDTH,
-        READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.stringkeys.twl.ui.right,
-        player,
-        vehiclesT1IncBorder ?? baseContainer,
-        14
-    );
-
-    const vehiclesT2DecBorder = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T2_DEC_ID + pid + "_BORDER");
-    addCenteredButtonText(
-        UI_READY_DIALOG_MODE_VEHICLES_T2_DEC_LABEL_ID + pid,
-        READY_DIALOG_SMALL_BUTTON_WIDTH,
-        READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.stringkeys.twl.ui.left,
-        player,
-        vehiclesT2DecBorder ?? baseContainer,
-        14
-    );
-    const vehiclesT2IncBorder = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T2_INC_ID + pid + "_BORDER");
-    addCenteredButtonText(
-        UI_READY_DIALOG_MODE_VEHICLES_T2_INC_LABEL_ID + pid,
-        READY_DIALOG_SMALL_BUTTON_WIDTH,
-        READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.stringkeys.twl.ui.right,
-        player,
-        vehiclesT2IncBorder ?? baseContainer,
-        14
-    );
-
-    const confirmBorder = safeFind(UI_READY_DIALOG_MODE_CONFIRM_ID + pid + "_BORDER");
-    addCenteredButtonText(
+    refreshButtonTextIfPresent(
+        UI_READY_DIALOG_MODE_CONFIRM_ID + pid + "_BORDER",
         UI_READY_DIALOG_MODE_CONFIRM_LABEL_ID + pid,
         READY_DIALOG_CONFIRM_BUTTON_WIDTH,
         READY_DIALOG_SMALL_BUTTON_HEIGHT,
         mod.stringkeys.twl.readyDialog.confirmSettingsLabel,
-        player,
-        confirmBorder ?? baseContainer,
-        12
-    );
-    const resetBorder = safeFind(UI_READY_DIALOG_MODE_RESET_ID + pid + "_BORDER");
-    addCenteredButtonText(
-        UI_READY_DIALOG_MODE_RESET_LABEL_ID + pid,
-        READY_DIALOG_RESET_BUTTON_WIDTH,
-        READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.stringkeys.twl.readyDialog.resetSettingsLabel,
-        player,
-        resetBorder ?? baseContainer,
         12
     );
 }

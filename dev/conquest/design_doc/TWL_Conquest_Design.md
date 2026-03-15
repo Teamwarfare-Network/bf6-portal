@@ -2066,6 +2066,54 @@ Phase 5 execution breakdown:
   - runway/pad repair behavior
   - prerequisite: implement the required Godot repair-area requirements first
   - ready-up vehicle knobs
+  - ready-up/front-end knob layout polish contract:
+    - suppress the current left-side header strings for now, but preserve their anchor/position contract so they can be reused later without reauthoring the layout
+    - keep the current right-side two-column knob visual pattern as the baseline styling reference for future expansion
+    - expand that pattern into a standardized `7 column x 7 row` layout based on `design_doc/TWL_Conquest_Knobs.md`
+    - row contract for each column:
+      - `Row 1`: header
+      - `Row 2`: knob 1
+      - `Row 3`: knob 2
+      - `Row 4`: knob 3
+      - `Row 5`: knob 4
+      - `Row 6`: spacing/support row for labels such as `Min Players to Start` or for any knob that needs a second line
+      - `Row 7`: centered bottom button row
+    - first-pass column contract:
+      - `Column 1`: configuration
+      - `Column 2`: Team 2 air
+      - `Column 3`: Team 2 ground
+      - `Column 4`: Team 2 fast movers
+      - `Column 5`: Team 1 air
+      - `Column 6`: Team 1 ground
+      - `Column 7`: Team 1 fast movers
+    - placement clarifications:
+      - `Column 1` stays anchored on the far right exactly as in the current spec; `Columns 2-7` extend left from it sequentially
+      - `Row 6` is one shared support-row height by default and can be consumed for labels such as `Min Players to Start` or to turn one knob into a two-line field when specifically needed
+      - `Row 7` is one global centered action button placed below the full 7-column layout, not one button per column
+    - implementation should standardize reusable placement constants instead of ad hoc per-widget tuning:
+      - column anchors / column gap
+      - row anchors / row gap
+      - support-row spacing
+      - centered bottom-button anchor
+    - spacing and density are expected to need iterative visual tuning once the full knob count is mounted
+    - current visual baseline only shows roughly 6 occupied row bands, so the final 7-row layout will require deliberate spacing compression/tuning rather than simply cloning the current row gaps
+    - all ready-up knob values must become authoritative game-state/config state, and the confirm/apply button must mutate the actual active vehicle spawner selection rather than only changing front-end display state
+    - spawn slots that do not yet have authored positions must be added to map config before the full knob matrix is considered complete
+    - Firestorm first-pass static spawn inventory now implies:
+      - 4 heli spawns per team
+      - 4 tank spawns per team
+      - 2 jet spawns per team
+      - 4 fast-mover spawns per team still needing authored positions
+    - ready-dialog render/cache hardening requirements before considering the front end "done":
+      - build the full ready-dialog tree once, entirely hidden, and only reveal it when the player explicitly opens the dialog
+      - do not reveal the dialog root during warm-cache prebuilds; current behavior briefly creates then hides the dialog, which risks a one-frame flash on some clients
+      - stop recreating button-label widgets on dialog open; the current reopen path still deletes/recreates labels such as knob arrows and confirm text, which is a likely source of incremental pop-in
+      - parent all ready-dialog-owned widgets under one hidden root wherever possible; the current map label/value path is parented outside the dialog container and uses separate visibility handling, which increases the chance of out-of-sync reveal
+      - admin-panel widgets should not be eagerly built as part of ready-dialog open unless the admin panel itself is being shown; current eager admin ensures add avoidable work to the dialog-open path
+      - if the admin panel remains lazily created, its lifecycle should still avoid visibly trickling child widgets into an already-open dialog
+      - warm-cache scheduling should happen early enough that first interaction is normally a pure show-path, not a full build-path; current deploy/join scheduling can still lose the race if the player opens quickly
+      - first-open and reopen should prefer visibility toggles and text/color refresh only; deleting/rebuilding widgets during show should be treated as a regression unless layout version invalidation explicitly requires a rebuild
+      - preserve the original HUD/UI redesign principle here: construct once, hide, then reveal atomically
   - preset-vs-custom packaging
   - reservation-consumption override design:
     - current first pass clears the live reservation once the player successfully spawns into the vehicle, but arms an auto-resubscribe return to that same slot on vehicle destruction if no one else has claimed it
@@ -2088,6 +2136,7 @@ Codex To-Do Checklist:
 - [ ] Add vehicle repair runway/pad support.
 - [ ] Add configurable knobs for vehicle spawns and ensure they are applied from authoritative config/runtime state.
 - [ ] Visualize/mount vehicle spawns on the deploy screen and lock a workable low-screenspace layout.
+- [ ] Harden the ready-dialog render/cache path so first open is an atomic reveal of a prebuilt hidden tree instead of a visible incremental build.
 - [x] Implement the first-pass Firestorm tracked-chopper deploy-screen timers and status panels.
 - [x] Show only the local player's team spawns in the deploy-screen timer display.
 - [x] Keep the timer display deploy-screen-only by default, with an admin override toggle for visibility outside deploy.
@@ -2112,6 +2161,11 @@ Codex To-Do Checklist:
 - [ ] Keep current live-spawn behavior intact until map config and slot ownership are intentionally revised.
 - [ ] Expand the ready-up dialog knobs to cover the requested spawn-type and spawn-length matrix before preset-mode packaging.
 - [ ] Add named preset configurations (`TWL 8v8/10v10/12v12/16v16 Conquest`) and switch to `Custom` labeling when knobs diverge from preset values.
+- [ ] Suppress the current left-side ready-up header strings while preserving their anchor positions for later reuse.
+- [ ] Standardize the ready-up knob layout into reusable row/column constants before mounting the full `7 column x 7 row` matrix from `TWL_Conquest_Knobs.md`.
+- [ ] Expand the current right-side two-column knob visual pattern into the full multi-column ready-up layout with a centered bottom action button.
+- [ ] Move ready-up vehicle knob values into authoritative game/config state and make the confirm/apply button mutate the actual active spawner selection.
+- [ ] Add missing authored map-config spawn placeholders/positions for knob-controlled classes, including 4 fast-mover spawns per team on Firestorm.
 - [ ] Respect disabled slot hiding behavior and per-map respawn values.
 - [ ] Validate destroy-to-respawn timings against configured constants.
 - [ ] Validate queue fairness and slot-release behavior.
@@ -2126,6 +2180,9 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-03-14 | Phase 5G ready-up layout clarification follow-up | Locked that Column 1 stays on the far right, Row 6 is a shared support row unless a field explicitly consumes it for two-line treatment, and Row 7 is one centered bottom action button below the full grid; also recorded that spacing must be compressed from the current visual baseline, that ready-up knob values must become authoritative game/config state, and that missing static spawn positions such as Firestorm fast movers must be added to map config before the knob matrix is complete | Phase 5, Phase 5G, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5G breakdown + Phase 5 checklist + Phase 5 changelog`
+  - `2026-03-14 | Phase 5G ready-dialog render/cache review | Recorded that the current ready-dialog front end still mixes hidden-cache reuse with visible widget recreation, causing first-open flicker/pop-in risk; locked the later polish goal as a fully prebuilt hidden dialog tree with atomic reveal, no open-time button-label rebuild churn, tighter widget parenting under one root, and a non-eager admin-panel path | Phase 5, Phase 5G, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5G breakdown + Phase 5 checklist + Phase 5 changelog`
+  - `2026-03-14 | Phase 5G ready-up knob layout planning pass | Recorded the current accepted front-end direction for the ready-up/admin panel: hide the temporary left-side header strings while preserving their anchors, preserve the current right-side two-column knob pattern as the styling baseline, and expand it later into a standardized 7-column/7-row layout driven by reusable spacing constants and the knob inventory in TWL_Conquest_Knobs.md | Phase 5, Phase 5G, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5G breakdown + Phase 5 checklist + Phase 5 changelog`
   - `2026-03-14 | Phase 5E provisional closeout decision before Phase 5F start | Accepted the current Firestorm-first map-config and vehicle-deploy-anchor checkpoint as passed for now, explicitly deferred console-player review, hardened multiplayer validation, and further polish, and advanced the active implementation target to Phase 5F bounded spawn volumes | Phase 5, Phase 5E, Phase 5F, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5E breakdown + immediate next target + Phase 5 checklist + Phase 5 changelog`
   - `2026-03-14 | Phase 5F bounded-volume contract refinement after BountyHunter reference review | Refined Phase 5F from the older 8-point concept into a map-config-authored 4-corner floor footprint plus height ceiling model, added fixed rotation per bounded region, locked first-pass per-side aircraft/tank boxes, and recorded the BountyHunter insight that composite data-driven spawn regions are a practical fit for large maps while still keeping our implementation fully 3D | Phase 5, Phase 5E, Phase 5F, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 implementation notes + Phase 5F breakdown + Phase 5 checklist + Phase 5 changelog`
   - `2026-03-14 | Phase 5G structure refinement | Folded vehicle repair in base into the later Phase 5G polish/tuning bucket and removed the separate Phase 5H split so current planning treats base repair as deferred polish rather than a standalone implementation phase | Phase 5, Phase 5G, CF-20, CF-21, CF-22 | accepted | design_doc TOC + Phase 5 outline + Phase 5 breakdown + Phase 5 checklist + Phase 5 changelog`

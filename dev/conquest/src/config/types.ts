@@ -13,8 +13,14 @@ type VehicleSpawnVolumeSpec = {
     label: string;
     enabled?: boolean;
     floorCorners: [mod.Vector, mod.Vector, mod.Vector, mod.Vector];
-    height: number;
-    rot: mod.Vector;
+    heliSpawnCeiling: number;
+    jetSpawnFloor: number;
+    jetSpawnCeiling: number;
+    rotHeli: mod.Vector;
+    rotPlaneN: mod.Vector;
+    rotPlaneE: mod.Vector;
+    rotPlaneW: mod.Vector;
+    rotPlaneS: mod.Vector;
 };
 type CapturePointConfig = { objId: number; label: string; order: number };
 
@@ -39,5 +45,9 @@ type MapConfig = {
     capturePoints?: CapturePointConfig[];
     team1HeliSpawns?: VehicleSpawnSpec[];
     team2HeliSpawns?: VehicleSpawnSpec[];
+    team1JetSpawns?: VehicleSpawnSpec[];
+    team2JetSpawns?: VehicleSpawnSpec[];
+    team1FastMoverSpawns?: VehicleSpawnSpec[];
+    team2FastMoverSpawns?: VehicleSpawnSpec[];
     vehicleSpawnYawOffsetDeg: number; // Reserved for future spawn orientation tuning.
 };

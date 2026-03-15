@@ -4,6 +4,7 @@
 //#region -------------------- UI - Ready Up Dialog (construction) --------------------
 
 const readyDialogUiWarmCacheTokenByPid: Record<number, number> = {};
+const READY_DIALOG_LAYOUT_VERSION = 10;
 
 // Legacy function name is preserved to avoid call-site churn.
 // Function name intentionally preserved to avoid call-site churn.
@@ -23,11 +24,19 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
 
     const playerId = mod.GetObjId(eventPlayer);
     if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
+    const readyDialogState = State.players.readyDialogData[playerId];
     // UI caching (opt #1): if this player already built the dialog once, just show it again.
     // This avoids recreating ~100 widgets on every open and makes dialog open near-instant after first build.
     const existingBase = safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId);
-    if (existingBase) {
-        mod.SetUIWidgetVisible(existingBase, true);
+    if (existingBase && readyDialogState && readyDialogState.uiLayoutVersion !== READY_DIALOG_LAYOUT_VERSION) {
+        destroyReadyDialogUI(playerId);
+        readyDialogState.uiBuilt = false;
+        readyDialogState.adminPanelBuilt = false;
+        readyDialogState.uiLayoutVersion = READY_DIALOG_LAYOUT_VERSION;
+    }
+    const rebuiltBase = safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId);
+    if (rebuiltBase) {
+        mod.SetUIWidgetVisible(rebuiltBase, true);
         const existingBorderTop = safeFind(UI_READY_DIALOG_BORDER_TOP_ID + playerId);
         if (existingBorderTop) mod.SetUIWidgetVisible(existingBorderTop, true);
         const existingBorderBottom = safeFind(UI_READY_DIALOG_BORDER_BOTTOM_ID + playerId);
@@ -38,7 +47,7 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
         if (existingBorderRight) mod.SetUIWidgetVisible(existingBorderRight, true);
         const existingDebug = safeFind(UI_READY_DIALOG_DEBUG_TIMELIMIT_ID + playerId);
         if (existingDebug) mod.SetUIWidgetVisible(existingDebug, SHOW_DEBUG_TIMELIMIT);
-        refreshReadyDialogButtonTextForPid(eventPlayer, playerId, existingBase as mod.UIWidget);
+        refreshReadyDialogButtonTextForPid(eventPlayer, playerId, rebuiltBase as mod.UIWidget);
         const existingMapLabel = safeFind(UI_READY_DIALOG_MAP_LABEL_ID + playerId);
         if (existingMapLabel) mod.SetUIWidgetVisible(existingMapLabel, true);
         const existingMapValue = safeFind(UI_READY_DIALOG_MAP_VALUE_ID + playerId);
@@ -46,6 +55,7 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
         updateReadyDialogModeConfigForPid(playerId);
         ensureAdminPanelWidgets(eventPlayer, playerId);
         State.players.readyDialogData[playerId].uiBuilt = true;
+        State.players.readyDialogData[playerId].uiLayoutVersion = READY_DIALOG_LAYOUT_VERSION;
         return;
     }
 
@@ -199,17 +209,6 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
         resetButtonWidth
     );
 
-    buildReadyDialogMatchupAndPlayersSection(
-        eventPlayer,
-        CONTAINER_BASE,
-        playerId,
-        bestOfY,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        bestOfLabelSizeX,
-        bestOfLabelSizeY
-    );
-
     buildReadyDialogRosterSection(eventPlayer, CONTAINER_BASE, playerId);
 
     //#endregion ----------------- Ready Dialog (Roster UI) -  (header + team rosters) --------------------
@@ -244,6 +243,7 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
     updateReadyDialogModeConfigForPid(playerId);
     ensureAdminPanelWidgets(eventPlayer, playerId);
     State.players.readyDialogData[playerId].uiBuilt = true;
+    State.players.readyDialogData[playerId].uiLayoutVersion = READY_DIALOG_LAYOUT_VERSION;
 }
 
 // Schedules one deferred prebuild/hide pass so first real dialog open uses cached widgets.

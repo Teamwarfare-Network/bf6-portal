@@ -19,12 +19,37 @@ function applyReadyDialogRowColors(nameWidget: mod.UIWidget | undefined, readyWi
     if (nameWidget) mod.SetUITextColor(nameWidget, (isReady && isInBase) ? COLOR_READY_GREEN : COLOR_NORMAL);
 }
 
+function applyReadyDialogViewerTeamColors(viewer: mod.Player, viewerPlayerId: number): void {
+    const viewerTeam = safeGetTeamNumberFromPlayer(viewer, TeamID.Team1);
+    const team1IsFriendly = viewerTeam !== TeamID.Team2;
+    const team1Color = team1IsFriendly ? COLOR_BLUE : COLOR_RED;
+    const team2Color = team1IsFriendly ? COLOR_RED : COLOR_BLUE;
+    const team1Bg = team1IsFriendly ? COLOR_BLUE_DARK : COLOR_RED_DARK;
+    const team2Bg = team1IsFriendly ? COLOR_RED_DARK : COLOR_BLUE_DARK;
+
+    const t1Container = safeFind(UI_READY_DIALOG_TEAM1_CONTAINER_ID + viewerPlayerId);
+    const t2Container = safeFind(UI_READY_DIALOG_TEAM2_CONTAINER_ID + viewerPlayerId);
+    const t1Label = safeFind(UI_READY_DIALOG_TEAM1_LABEL_ID + viewerPlayerId);
+    const t2Label = safeFind(UI_READY_DIALOG_TEAM2_LABEL_ID + viewerPlayerId);
+
+    if (t1Container) {
+        mod.SetUIWidgetBgColor(t1Container, team1Bg);
+        mod.SetUIWidgetBgAlpha(t1Container, READY_PANEL_BG_ALPHA);
+    }
+    if (t2Container) {
+        mod.SetUIWidgetBgColor(t2Container, team2Bg);
+        mod.SetUIWidgetBgAlpha(t2Container, READY_PANEL_BG_ALPHA);
+    }
+    if (t1Label) mod.SetUITextColor(t1Label, team1Color);
+    if (t2Label) mod.SetUITextColor(t2Label, team2Color);
+}
+
 // Renders the entire Ready Up dialog state for a single viewer.
 // Centralizing UI updates reduces refresh regressions as the dialog grows in complexity.
 function renderReadyDialogForViewer(eventPlayer: mod.Player, viewerPid: number): void {
     refreshReadyDialogRosterForViewer(eventPlayer, viewerPid);
     updateReadyToggleButtonForViewer(eventPlayer, viewerPid);
-
+    updateReadyDialogModeConfigForPid(viewerPid);
 }
 
 // Renders the dialog for all players who currently have it open.
@@ -45,6 +70,8 @@ function renderReadyDialogForAllVisibleViewers(): void {
 
 // Re-renders team roster rows and per-row ready/base labels for a single viewer.
 function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: number): void {
+    applyReadyDialogViewerTeamColors(viewer, viewerPlayerId);
+
     const roster = getRosterDisplayEntries();
     const t1Players = roster.team1;
     const t2Players = roster.team2;

@@ -3,6 +3,25 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.620: Ready dialog centering follow-up: shift the shared top lane left to match the centered roster plate edges
+// v0.620: Ready dialog centering follow-up: shift the shared top lane left to realign the knob grid and apply button with the already-centered roster plate edges
+// v0.619: Ready dialog centering follow-up: shift the lower roster plates left by the measured visual offset
+// v0.619: Ready dialog centering follow-up: apply a measured left correction to the lower roster plates while keeping the top knob lane centered
+// v0.618: Ready dialog centering: derive grid, roster, and apply button from one lane origin
+// v0.618: Ready dialog centering pass: derive the apply button, grid, and roster panels from the same lane-left origin instead of mixing TopCenter and TopLeft placement
+// v0.617: Ready dialog centering correction: remove the shared inner-lane left bias so the knob grid, apply button, and roster panels resolve to true center
+// v0.616: Ready dialog centering pass: shift the shared content lane left so the knob grid, apply button, and roster panels align to the same visual center
+// v0.615: Ready dialog row spacing pass: restore tighter knob label/value separation, normalize config arrow glyphs, shrink the players panel, narrow apply button, and widen the roster center gap again
+// v0.614: Ready dialog spacing polish: separate knob labels from values, tighten config players stack, narrow apply button, and widen the centered roster gutter
+// v0.613: Ready dialog lane alignment: unify knob grid to roster content width, lower knob values, and pull config players support text into the inner panel lane
+// v0.612: Ready dialog layout reflow: invalidate stale cached layout, tighten config players row, and nudge knob grid upward for centered retest
+// v0.611: Ready dialog polish: recenter top grid and roster panels, lower knob labels into the control lane, color team glyphs, and center lower team labels
+// v0.610: Phase_5G_ready-dialog_team-relative_color_and_alignment_polish
+// v0.609: Phase_5G_centered_ready-dialog_grid_polish
+// v0.608: Phase_5G_ready-dialog_knob_matrix
+// v0.607: Phase 5G follow-up: add Firestorm fast-mover spawn placeholders and lock ready-up grid/state-authority layout notes
+// v0.606: Phase 5F follow-up: fill Firestorm jet static spawn placeholders from authored screenshot captures
+// v0.605: Phase 5F groundwork: add Firestorm jet volume floor/ceiling and cardinal rotation config plus jet spawn placeholders
 // v0.603: Phase 5D UI fix: widen deploy HUD root for dual-button layout and refresh Air/Ground button labels every render
 // v0.602: Phase 5D/5F follow-up: split ready aircraft deploy into Air Deploy and Ground Deploy button flows
 // v0.601: Phase 5F follow-up: refresh Firestorm Team 1 aircraft box corners from updated screenshot captures and flatten floor to max Y

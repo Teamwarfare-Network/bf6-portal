@@ -34,6 +34,14 @@ let TEAM1_AIRCRAFT_SPAWN_VOLUMES = ACTIVE_MAP_CONFIG.team1AircraftSpawnVolumes ?
 let TEAM2_AIRCRAFT_SPAWN_VOLUMES = ACTIVE_MAP_CONFIG.team2AircraftSpawnVolumes ?? [];
 let TEAM1_TANK_SPAWN_VOLUMES = ACTIVE_MAP_CONFIG.team1TankSpawnVolumes ?? [];
 let TEAM2_TANK_SPAWN_VOLUMES = ACTIVE_MAP_CONFIG.team2TankSpawnVolumes ?? [];
+let TEAM1_TANK_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team1TankSpawns;
+let TEAM2_TANK_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team2TankSpawns;
+let TEAM1_HELI_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team1HeliSpawns ?? [];
+let TEAM2_HELI_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team2HeliSpawns ?? [];
+let TEAM1_JET_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team1JetSpawns ?? [];
+let TEAM2_JET_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team2JetSpawns ?? [];
+let TEAM1_FAST_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team1FastMoverSpawns ?? [];
+let TEAM2_FAST_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team2FastMoverSpawns ?? [];
 const MAIN_BASE_BIND_RADIUS_METERS = 150.0;
 
 // Cached per-vehicle spawn inference for later reconciliation on seat entry (best-effort, can go stale).

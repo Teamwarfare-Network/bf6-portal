@@ -27,6 +27,7 @@ function buildReadyDialogHeaderAndMapSection(
     mod.SetUITextSize(readyHeader, 20);
     applyReadyDialogLabelTextColor(readyHeader);
     mod.SetUIWidgetParent(readyHeader, containerBase);
+    mod.SetUIWidgetVisible(readyHeader, false);
 
     mod.AddUIText(
         readyHeader2Id,
@@ -41,6 +42,7 @@ function buildReadyDialogHeaderAndMapSection(
     mod.SetUITextSize(readyHeader2, 16);
     applyReadyDialogLabelTextColor(readyHeader2);
     mod.SetUIWidgetParent(readyHeader2, containerBase);
+    mod.SetUIWidgetVisible(readyHeader2, false);
 
     mod.AddUIText(
         readyHeader3Id,
@@ -55,6 +57,7 @@ function buildReadyDialogHeaderAndMapSection(
     mod.SetUITextSize(readyHeader3, 16);
     applyReadyDialogLabelTextColor(readyHeader3);
     mod.SetUIWidgetParent(readyHeader3, containerBase);
+    mod.SetUIWidgetVisible(readyHeader3, false);
 
     mod.AddUIText(
         readyHeader4Id,
@@ -69,6 +72,7 @@ function buildReadyDialogHeaderAndMapSection(
     mod.SetUITextSize(readyHeader4, 16);
     applyReadyDialogLabelTextColor(readyHeader4);
     mod.SetUIWidgetParent(readyHeader4, containerBase);
+    mod.SetUIWidgetVisible(readyHeader4, false);
 
     mod.AddUIText(
         readyHeader5Id,
@@ -83,6 +87,7 @@ function buildReadyDialogHeaderAndMapSection(
     mod.SetUITextSize(readyHeader5, 16);
     applyReadyDialogLabelTextColor(readyHeader5);
     mod.SetUIWidgetParent(readyHeader5, containerBase);
+    mod.SetUIWidgetVisible(readyHeader5, false);
 
     mod.AddUIText(
         readyHeader6Id,
@@ -97,6 +102,7 @@ function buildReadyDialogHeaderAndMapSection(
     mod.SetUITextSize(readyHeader6, 16);
     applyReadyDialogLabelTextColor(readyHeader6);
     mod.SetUIWidgetParent(readyHeader6, containerBase);
+    mod.SetUIWidgetVisible(readyHeader6, false);
 
     const readyMapLabelId = UI_READY_DIALOG_MAP_LABEL_ID + playerId;
     const readyMapValueId = UI_READY_DIALOG_MAP_VALUE_ID + playerId;

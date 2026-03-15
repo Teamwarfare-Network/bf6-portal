@@ -19,6 +19,7 @@ interface readyDialogData_t {
     dialogVisible: boolean;
     // UI caching: true after the first warm-up build so subsequent opens can be instant.
     uiBuilt: boolean;
+    uiLayoutVersion: number;
     posDebugVisible: boolean;
     posDebugToken: number;
     vehicleTimersVisibleWhileDeployed: boolean;
