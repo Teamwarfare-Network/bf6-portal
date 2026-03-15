@@ -23,6 +23,7 @@ function setAdminPanelChildWidgetsVisible(playerId: number, visible: boolean): v
         UI_TEST_BUTTON_MATCH_START_ID, UI_TEST_MATCH_START_TEXT_ID,
         UI_TEST_BUTTON_MATCH_END_ID, UI_TEST_MATCH_END_TEXT_ID,
         UI_TEST_BUTTON_POS_DEBUG_ID, UI_TEST_POS_DEBUG_TEXT_ID,
+        UI_TEST_BUTTON_DEPLOY_TIMERS_TOGGLE_ID, UI_TEST_DEPLOY_TIMERS_TOGGLE_TEXT_ID,
     ];
 
     for (const baseId of ids) {

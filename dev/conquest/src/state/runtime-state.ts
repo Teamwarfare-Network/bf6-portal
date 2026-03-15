@@ -280,10 +280,14 @@ const State: GameState = {
         deployedByPid: {},
         disconnectedByPid: {},
         uiInputEnabledByPid: {},
+        posDebugTransformSourceByPid: {},
+        posDebugVehicleObjIdByPid: {},
     },
     vehicles: {
         slots: [],
         vehicleToSlot: {},
+        desiredEnabledSlotsTeam1: 0,
+        desiredEnabledSlotsTeam2: 0,
         spawnSequenceToken: 0,
         spawnSequenceInProgress: false,
         activeSpawnSlotIndex: undefined,
@@ -297,5 +301,6 @@ const State: GameState = {
         topHudShellByPid: {},
         clockWidgetCache: {},
         countdownWidgetCache: {},
+        vehicleDeployTimerCache: {},
     },
 };

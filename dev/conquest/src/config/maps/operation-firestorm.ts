@@ -7,11 +7,69 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
                                    //posX      posY      posZ 
         team1Base: mod.CreateVector( 570.692,  110.205, -232.341), team1Name: mod.stringkeys.twl.teams.WEST,
         team2Base: mod.CreateVector(-761.869,  133.091,  223.038), team2Name: mod.stringkeys.twl.teams.EAST,
+        team1VehicleDeploySpawnPointId: 504, // TODO: authored Firestorm Team 1 vehicle-deploy spawn point id
+        team2VehicleDeploySpawnPointId: 503, // TODO: authored Firestorm Team 2 vehicle-deploy spawn point id
         aircraftCeiling: 130,
         hudMaxY: 735,
         hudFloorY: 132,
         useCustomCeiling: true,
         vehicleSpawnYawOffsetDeg: 0,
+        team1AircraftSpawnVolumes: [
+            {
+                label: "Team 1 Aircraft Box 1",
+                enabled: true,
+                floorCorners: [
+                    mod.CreateVector(-449.608, 244.697, 614.305),
+                    mod.CreateVector(-610.555, 244.697, 792.820),
+                    mod.CreateVector(-1165.077, 244.697, 506.148),
+                    mod.CreateVector(-1006.251, 244.697, 364.662),
+                ] as [mod.Vector, mod.Vector, mod.Vector, mod.Vector],
+                height: 100.0,
+                rot: mod.CreateVector(0.0, 105.178, 0.0),
+            },
+        ],
+        team2AircraftSpawnVolumes: [
+            {
+                label: "Team 2 Aircraft Box 1",
+                enabled: true,
+                floorCorners: [
+                    mod.CreateVector(289.297, 222.752, -820.513),
+                    mod.CreateVector(465.372, 222.752, -984.494),
+                    mod.CreateVector(1034.105, 222.752, -196.395),
+                    mod.CreateVector(855.555, 222.752, -139.933),
+                ] as [mod.Vector, mod.Vector, mod.Vector, mod.Vector],
+                height: 100.0,
+                rot: mod.CreateVector(0.0, -49.401, 0.0),
+            },
+        ],
+        team1TankSpawnVolumes: [
+            {
+                label: "Team 1 Tank Box 1",
+                enabled: false, // TODO(Phase 5F): fill floor corners, height, and rotation; then set true.
+                floorCorners: [
+                    mod.CreateVector(0.0, 0.0, 0.0),
+                    mod.CreateVector(0.0, 0.0, 0.0),
+                    mod.CreateVector(0.0, 0.0, 0.0),
+                    mod.CreateVector(0.0, 0.0, 0.0),
+                ] as [mod.Vector, mod.Vector, mod.Vector, mod.Vector],
+                height: 0.0,
+                rot: mod.CreateVector(0.0, 0.0, 0.0),
+            },
+        ],
+        team2TankSpawnVolumes: [
+            {
+                label: "Team 2 Tank Box 1",
+                enabled: false, // TODO(Phase 5F): fill floor corners, height, and rotation; then set true.
+                floorCorners: [
+                    mod.CreateVector(0.0, 0.0, 0.0),
+                    mod.CreateVector(0.0, 0.0, 0.0),
+                    mod.CreateVector(0.0, 0.0, 0.0),
+                    mod.CreateVector(0.0, 0.0, 0.0),
+                ] as [mod.Vector, mod.Vector, mod.Vector, mod.Vector],
+                height: 0.0,
+                rot: mod.CreateVector(0.0, 0.0, 0.0),
+            },
+        ],
         capturePoints: [
             { objId: 600, label: "A", order: 1 },
             { objId: 601, label: "B", order: 2 },

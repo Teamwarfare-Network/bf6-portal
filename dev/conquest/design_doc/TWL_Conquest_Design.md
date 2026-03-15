@@ -37,8 +37,8 @@ Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
 - [Phase 5B: Vehicle Spawner HUD / deploy-screen displays](#phase-5b)
 - [Phase 5C: Vehicle queue / signup](#phase-5c)
 - [Phase 5D: Spawn directly in vehicle](#phase-5d)
-- [Phase 5E: Vehicle repair in base](#phase-5e)
-- [Phase 5F: Map config / vehicle spawn mapping](#phase-5f)
+- [Phase 5E: Map config / vehicle spawn mapping](#phase-5e)
+- [Phase 5F: 3D Bounded Spawn Volumes](#phase-5f)
 - [Phase 5G: Polish / tune](#phase-5g)
 - [Phase 6: Basic Spawn and Boundaries System](#phase-6)
 - [Phase 7: Custom Tab Scoreboard + KPI Tracking](#phase-7)
@@ -204,13 +204,19 @@ Current implementation baseline:
 - Phase 4B flag VO exploration is implemented and accepted for single-player with multiplayer validation deferred
 - Phase 5A timer backbone is partially implemented:
   - authoritative per-slot respawn timer state exists
+- Phase 5B Firestorm chopper deploy HUD first pass is implemented:
+  - local-team deploy/live spawn timers
+  - right-side deploy-screen display
+  - current pilot / `IDLE` owner display on active rows
+- Phase 5D Firestorm chopper direct deploy first pass is implemented:
+  - `READY -> DEPLOY button -> direct seat`
 - legacy combat runtime paths have been removed
 
 Primary known implementation gap before the next phase:
 
-- no deploy-screen vehicle HUD/display layer exists yet
-- no vehicle queue/signup flow exists yet
-- no direct spawn-into-vehicle flow exists yet
+- broader multi-class deploy-screen vehicle HUD beyond the current Firestorm chopper slice is still incomplete
+- the original checkbox/queue `Phase 5C` concept has been superseded for the current chopper slice by a `READY`-only direct deploy button; broader queue/arbitration design remains unresolved for later vehicle classes
+- direct spawn-into-vehicle is working for the current Firestorm tracked chopper slice, but is not yet widened to more vehicle classes
 - map-wide vehicle spawn datapoint inventory and config coverage are still incomplete
 - broader multiplayer/disconnect/reconnect hardening still remains a carry-forward validation task
 
@@ -295,9 +301,9 @@ These names are planning anchors for implementation/review.
   - `5B`: deploy-screen HUD/displays
   - `5C`: queue/signup
   - `5D`: direct spawn-into-vehicle
-  - `5E`: base repair
-  - `5F`: map config / spawn mapping
-  - `5G`: polish/tune
+  - `5E`: map config / spawn mapping
+  - `5F`: 3D bounded spawn volumes
+  - `5G`: polish/tune, including later base repair
 
 ### 6) Basic Spawn and Boundaries System
 
@@ -1840,15 +1846,15 @@ Phase Changelog:
 Deliverables:
 
 - per-slot respawn timer tracking and HUD rendering
-- vehicle spawn queue behavior and slot arbitration
+- current Firestorm tracked-chopper `READY -> DEPLOY button -> direct seat` flow
+- broader vehicle queue behavior and slot arbitration only if that remains needed beyond the current chopper slice
 - vehicle repair runway/pad behavior
 - knobs for vehicle spawns
 - deploy-screen vehicle spawn visualization and authored spawn mapping
 - direct spawn-into-vehicle flow explicitly brought forward into this phase as `Phase 5D`
-- first-pass deploy-screen visual timers for tanks, jets, and attack choppers only (not transports)
-- team reservation queue display with reserving player name shown next to the relevant vehicle
-- proven deploy-screen queue signup interaction for reservations, with a visible checked/unchecked state
-- explicit script-authoritative ownership for vehicle existence, queue membership, reservation state, and timer state
+- first implemented display slice is Firestorm tracked choppers; wider tank/jet support remains follow-up work
+- current pilot-name / `IDLE` owner display on active deploy-screen rows
+- explicit script-authoritative ownership for vehicle existence, pending direct-spawn claim state, active-owner state, and timer state
 
 Mapped clarifications:
 
@@ -1872,56 +1878,62 @@ Verification:
 - first-pass timer validation limited to tanks, jets, and attack choppers (transports explicitly excluded on first pass)
 - direct spawn-into-vehicle flow validation across the supported vehicle classes in this phase
 - static spawn authoring/proof pass on every intended map before enabling tuning workflows
-- deploy-screen reservation signup validation, including check/uncheck behavior and correct player-name display/removal
-- state-authority validation proving the script, not the UI, owns vehicle inventory, queue state, reservation state, and timer state
+- Firestorm tracked-chopper `READY -> DEPLOY` button validation, including first-click-wins arbitration and silent second-click failure
+- active-row owner display validation proving the deploy-screen row shows the current pilot or `IDLE` from live seat state
+- state-authority validation proving the script, not the UI, owns vehicle inventory, direct-spawn claim state, active-owner state, and timer state
 
 Implementation notes:
 
 - deploy-screen requirement:
   - visualize and map vehicle spawns on the deploy screen
   - decide and document where these widgets live given minimal deploy-screen space
-- reservation queue requirement:
-  - any player on the team can flag themselves into a queue for a vehicle
-  - the reserving player name should display next to that vehicle so the reservation is visible to the team
-  - reservation is per exact vehicle spawn slot, not per category/group
-  - each player may hold only one reservation total
-  - each slot may hold only one reserver total in first pass (`1/1` queue)
-- queue signup interaction requirement:
-  - the actual mechanism for signing up for a vehicle queue must be proven during implementation
-  - current preferred first pass is a square deploy-screen button that behaves like a checkbox
-  - unchecked state:
-    - empty square visual
-    - player is not queued/reserved for that vehicle
-    - no player name shown for that reservation slot
-  - checked state:
-    - visibly changed square / checked-box visual
-    - click behavior toggles back to unchecked
-    - the reserving player's name appears next to the vehicle
-  - if unchecked, the reservation should be removed immediately from authoritative game state and the player name should disappear
-  - only the reserving player may clear their own reservation
+- current first-pass Firestorm chopper interaction requirement:
+  - the current tracked-chopper flow uses a `READY`-only `DEPLOY` button, not a checkbox reservation/signup interaction
+  - the button is hidden until that exact slot is actually `READY`
+  - first click wins on a ready slot
+  - a competing second click fails silently
+  - while the vehicle is active on the deploy screen, the left owner panel should show the current pilot name, or `IDLE` if seat `0` is empty
+  - while deployed/live, the team should still see cooldown/`READY` state for tracked slots, but `ACTIVE` rows remain a deploy-screen concern
+- future queue/signup requirement:
+  - if broader vehicle classes still need queueing later, keep it script authoritative and per exact slot
+  - do not assume the current Firestorm chopper `DEPLOY` button model automatically settles the broader `Phase 5C` design for all future vehicle classes
 - repair requirement:
   - runway/chopper-pad repair should use Godot-authored area triggers plus code-side repair handling
 - map-config expansion requirement:
   - first pass testing rollout is Firestorm only
+  - add a dedicated vehicle-deploy spawn point id per team to map config for any mode path that must bypass manual HQ/flag selection
+  - Firestorm first-pass anchors are now:
+    - Team 1 vehicle-deploy spawn point id: `504`
+    - Team 2 vehicle-deploy spawn point id: `503`
+  - standard pattern going forward:
+    - every supported map should carry one authored vehicle-deploy `SpawnPoint` id per team in map config
+    - those ids should point to real authored `SpawnPoint` objects in the map spatial, not arbitrary world object ids
+    - `Phase 5F` bounded vehicle-spawn regions should also live in map config as authored region data, not as ad hoc per-map runtime branches
   - every transport, tank, chopper, and jet spawn per map must eventually be statically identified, tested, and verified by humans before later tuning knobs are trusted
 - authoritative state requirement:
-  - all vehicle, timer, reservation, and queue behavior must be script authoritative
+  - all vehicle, timer, direct-spawn claim, active-owner, and any future queue behavior must be script authoritative
   - game state should explicitly know:
     - what vehicle spawn slots exist
     - which vehicles currently exist or are pending respawn
     - what timer each tracked vehicle slot is on
-    - which players are queued/reserved for each vehicle
+    - which player currently owns an in-flight direct-spawn claim for a tracked slot
+    - which player is currently piloting/driving the active vehicle when that seat is occupied
   - UI should render from that script state and must not become the source of truth
 - timer/start/reset rules:
   - timers start on destruction
   - hard-despawn should also restart the timer if that runtime case exists for the slot
-  - reservations clear on disconnect, match start, match end, and team swap
-  - reservations do not clear on death or undeploy
+  - pending direct-spawn claims should clear on failed or consumed fulfillment and on normal lifecycle cleanup paths
 - direct-spawn fulfillment rules:
-  - tracked reservation vehicles should not spawn as idle open-pickup vehicles in this system
-  - reservation fulfillment should couple the spawn event and the auto-seat event together
+  - tracked Firestorm chopper slots should not spawn as idle open-pickup vehicles in this system
+  - the current first pass uses a `READY`-only `DEPLOY` button instead of a standing reservation/signup state
+  - the vehicle should not actually spawn until the player clicks `DEPLOY`
+  - spawn fulfillment should couple the spawn event and the auto-seat event together
   - spawn should target the driver/pilot seat only
-  - the intended behavior is that unrelated players cannot block, occupy, or steal the vehicle between spawn and seat assignment
+  - first-click arbitration should prevent a competing player from stealing the same ready slot after it has already been claimed
+  - current first-pass implementation is intentionally limited to the Firestorm tracked chopper slice; later vehicle-class expansion remains a separate decision
+- current live-spawn compatibility rule:
+  - untracked vehicle classes should remain as they work now until map config and slot ownership are intentionally revised
+  - the tracked Firestorm chopper slice is now intentionally button-driven and does not follow the older idle-autospawn behavior
 - repair behavior rules:
   - repair applies only to friendly vehicles
   - the vehicle must remain inside the repair area trigger
@@ -1929,8 +1941,19 @@ Implementation notes:
   - repair cadence/speed should be controlled by a tuning constant
 - display preference:
   - if valid vehicle icons exist, prefer icon + label + timer digits + reserving username text
+- deploy-screen timer display rules:
+  - only the local player's team spawns should be shown
+  - the timer display should only be visible while the player is on the deploy screen
+  - first placement target is the right side of the screen, starting near vertical center
+  - the display should dynamically show only the currently active configured vehicle slots for the mode
+  - current first-pass assumption is up to 4 possible chopper slots, but only enabled slots should render
+  - add an admin toggle to allow the timer display outside the deploy screen:
+    - `Timers Visible Deployed ON`
+    - `Timers Visible Deployed OFF`
+  - render one timer per vehicle slot
+  - reuse the existing match-clock widget/timer functionality where practical by generalizing it into a reusable timer instance instead of inventing a separate timer implementation
 - deferred design decisions:
-  - final deploy-screen placement/layout remains intentionally deferred until after `Phase 5A`
+  - exact final deploy-screen placement/layout remains intentionally deferred until after initial `Phase 5B` visual tests
   - the naming ambiguity in `Column 1` (`Fast Mover Group 1/2/3`) remains intentionally deferred for later clarification
 - ready-up dialog tuning requirement:
   - expand the tuning model so it controls both what spawns and how long those spawns take
@@ -1974,59 +1997,119 @@ Phase 5 execution breakdown:
 - `Phase 5B: Vehicle Spawner HUD / deploy-screen displays`
   - deploy-screen spawn visualization
   - low-screenspace placement decisions
-  - first-pass timers for tanks, jets, and attack choppers only
+  - first placement target is right-side, vertical-center anchored
+  - current implemented slice is Firestorm tracked choppers first
+  - local-team timer/status display is live for that slice
+  - active rows on the deploy screen show the current pilot name or `IDLE` in the left owner panel
   - category-driven timer/display behavior while each exact vehicle slot remains individually configurable
+  - later widening to tanks/jets remains follow-up work after the current chopper slice is accepted
+  - first visible pass should show only the local player's team spawns and only while deploy-screen-visible, unless the admin timer-visibility toggle is enabled
 <a id="phase-5c"></a>
 - `Phase 5C: Vehicle queue / signup`
-  - queue behavior and arbitration
-  - checkbox-style reservation/signup interaction
-  - reservation name display
-  - first pass uses a single reservation slot only (`1/1` queue)
+  - deferred redesign for the current tracked-chopper slice
+  - the earlier checkbox/reservation prototype has been superseded there by the `READY`-only `DEPLOY` button flow in `Phase 5D`
+  - if broader vehicle classes still need queueing later, revisit queue behavior and arbitration as a distinct design pass
 <a id="phase-5d"></a>
 - `Phase 5D: Spawn directly in vehicle`
   - direct spawn-into-vehicle flow is explicitly in Phase 5 scope, not deferred to a later phase
-  - should build on the same authoritative slot/timer/queue state as 5A-5C
+  - current Firestorm tracked-chopper first pass is implemented as `READY -> DEPLOY button -> direct seat`
+  - should build on the same authoritative slot/timer/direct-claim state as 5A-5C
   - spawn should target the driver/pilot seat only
-  - reservation fulfillment should spawn directly into the vehicle rather than requiring a second manual step
+  - the player should not need a second manual map-click step once the `DEPLOY` button is used
+  - the tracked slot should not spawn until the player commits the deploy
+  - current bypass-manual-selection path should prefer `SpawnPlayerFromSpawnPoint(...)` from a per-team authored vehicle-deploy spawn point id when the map config provides one
+  - first-pass direct-spawn validation is currently the Firestorm tracked-chopper slice
 <a id="phase-5e"></a>
-- `Phase 5E: Vehicle repair in base`
-  - runway/pad repair behavior
-  - prerequisite: implement the required Godot repair-area requirements first
-<a id="phase-5f"></a>
-- `Phase 5F: Map config / vehicle spawn mapping`
+- `Phase 5E: Map config / vehicle spawn mapping`
   - expand map configs with the full vehicle spawn datapoint inventory
+  - add per-team vehicle-deploy spawn point ids for direct vehicle deployment without manual HQ/flag selection
+  - Firestorm proof values are currently:
+    - Team 1: `504`
+    - Team 2: `503`
+  - current checkpoint decision:
+    - accepted for now as a Firestorm-first proof point
+    - remaining follow-up is deferred:
+      - console-player review
+      - hardened multiplayer validation
+      - additional polish/re-review before broader map rollout
   - prerequisite: add all intended vehicle spawn datapoints into the map configs
   - until then, implementation/testing may proceed against the currently proven vehicle spawns (tanks and choppers) on Firestorm only
+<a id="phase-5f"></a>
+- `Phase 5F: 3D Bounded Spawn Volumes`
+  - define an authored spawn volume from:
+    - `4` floor-corner points in `X/Y/Z`
+    - one height value that defines the ceiling above that floor footprint
+  - support diagonal/non-axis-aligned regions; these boxes should not assume north/south/east/west alignment
+  - first-pass authoring target per map side:
+    - `1` aircraft box
+    - `1` tank box
+  - each authored bounded spawn region should also carry fixed spawn rotation values:
+    - `rotX`
+    - `rotY`
+    - `rotZ`
+  - rotation should apply to spawned vehicles regardless of where inside the bounded region the final random point is chosen
+  - support script-authoritative spawn resolution anywhere inside that 3D area
+  - prove a reusable contract for validating and selecting spawn positions inside the volume
+  - BountyHunter reference insight:
+    - map-authored spawn regions are a good fit for large maps when they stay data-driven
+    - composite authored regions are practical; large spaces like Firestorm do not need to be represented as one giant monolithic region
+    - our version should generalize that idea from fixed-altitude drop-in rectangles to full vehicle-capable 3D bounded volumes
+  - preserve this as a foundation feature for later advanced spawn and vehicle-placement work
+  - prerequisite: map config must be able to carry:
+    - 4 floor corners
+    - height
+    - fixed rotation
+    - multiple bounded regions per team/class where needed
 <a id="phase-5g"></a>
 - `Phase 5G: Polish / tune`
+  - vehicle repair in base is deferred into this later polish/tuning phase, not treated as a standalone implementation phase
+  - runway/pad repair behavior
+  - prerequisite: implement the required Godot repair-area requirements first
   - ready-up vehicle knobs
   - preset-vs-custom packaging
+  - reservation-consumption override design:
+    - current first pass clears the live reservation once the player successfully spawns into the vehicle, but arms an auto-resubscribe return to that same slot on vehicle destruction if no one else has claimed it
+    - later polish should define whether some modes/settings keep live reservations persistent, consume them immediately, or use the current auto-resubscribe return model
   - later tuning once 5A-5F are proven
+
+Immediate next implementation target:
+
+- `Phase 5F`
+- Firestorm-first bounded vehicle-spawn volume contract and proof
+- keep `Phase 5E` follow-up explicit, but move new implementation work to bounded spawn volumes
 
 Codex To-Do Checklist:
 
 - [ ] Complete `Phase 5A` authoritative vehicle spawner timer, game-state, and logic ownership.
 - [x] Implement per-slot vehicle respawn timer state keyed to configured vehicle slot mapping.
-- [ ] Render timer HUD output from authoritative timer state only.
-- [ ] Complete `Phase 5B` vehicle spawner HUD/deploy-screen display pass.
-- [ ] Implement vehicle spawn queue behavior and queue arbitration for shared vehicle systems.
+- [x] Render timer HUD output from authoritative timer state only.
+- [x] Complete the current Firestorm tracked-chopper `Phase 5B` HUD/deploy-screen display slice.
+- [ ] Decide whether a broader `Phase 5C` queue/signup system is still needed after the tracked-chopper `DEPLOY`-button pivot.
 - [ ] Add vehicle repair runway/pad support.
 - [ ] Add configurable knobs for vehicle spawns and ensure they are applied from authoritative config/runtime state.
 - [ ] Visualize/mount vehicle spawns on the deploy screen and lock a workable low-screenspace layout.
-- [ ] Implement first-pass deploy-screen vehicle timers for tanks, jets, and attack choppers only.
-- [ ] Complete `Phase 5C` vehicle queue and signup flow.
-- [ ] Bring direct spawn-into-vehicle flow into Phase 5 and validate it against the same authoritative slot/timer system.
-- [ ] Complete `Phase 5D` direct spawn-into-vehicle flow.
-- [ ] Implement team reservation queueing so any teammate can reserve a vehicle and have their name shown next to that vehicle.
-- [ ] Prove the deploy-screen queue signup interaction, with the square checkbox-style reservation button as the preferred first pass.
-- [ ] Keep vehicle existence, queue membership, reservation state, and timers script authoritative rather than UI-local.
-- [ ] Keep reservation scope per exact vehicle slot, with one reservation maximum per player and one reserver maximum per slot in first pass.
-- [ ] Keep reservations through death/undeploy, but clear them on disconnect, match start/end, and team swap.
-- [ ] Complete `Phase 5E` base repair behavior after the Godot repair prerequisites are in place.
-- [ ] Complete `Phase 5F` map-config and vehicle-spawn mapping after the full spawn datapoint inventory is added.
+- [x] Implement the first-pass Firestorm tracked-chopper deploy-screen timers and status panels.
+- [x] Show only the local player's team spawns in the deploy-screen timer display.
+- [x] Keep the timer display deploy-screen-only by default, with an admin override toggle for visibility outside deploy.
+- [x] Reuse/generalize existing clock widget behavior for per-vehicle timer instances instead of building a separate timer implementation from scratch.
+- [ ] Complete `Phase 5C` only if later vehicle classes still require a queue/signup flow beyond the current chopper model.
+- [x] Bring direct spawn-into-vehicle flow into Phase 5 and validate it against the same authoritative slot/timer system.
+- [x] Complete the current Firestorm tracked-chopper `Phase 5D` direct spawn-into-vehicle flow.
+- [x] Replace the earlier checkbox/reservation prototype in the tracked-chopper slice with a `READY`-only `DEPLOY` button.
+- [x] Keep vehicle existence, direct-spawn claim state, active-owner state, and timers script authoritative rather than UI-local.
+- [x] Show the current pilot name or `IDLE` on active deploy-screen rows.
+- [x] Use first-click-wins arbitration on a ready tracked slot, with competing second clicks failing silently.
+- [x] Accept the current Firestorm-first `Phase 5E` map-config / vehicle-deploy-anchor checkpoint as passed for now.
+- [ ] Return to `Phase 5E` for deferred console-player review, hardened multiplayer testing, and final polish before broader rollout.
+- [ ] Complete `Phase 5F` bounded 3D spawn-volume feature after map-config support for 4 floor corners, height, and fixed rotation exists.
+- [ ] Complete `Phase 5G` polish/tuning, including base repair behavior, after the Godot repair prerequisites and the core spawn systems are proven.
+- [ ] Prove a script-authoritative 4-corner-plus-height volume contract that can resolve a spawn anywhere inside the bounded 3D area.
+- [ ] Support first-pass `Phase 5F` authoring of two bounded vehicle-spawn boxes per side: one aircraft box and one tank box.
+- [ ] Validate spawn-position selection and safety inside the bounded volume under repeated test passes.
 - [ ] Expand map config until every intended transport/tank/chopper/jet spawn per map is statically identified, tested, and verified.
 - [ ] Limit first-pass vehicle-spawn mapping/testing rollout to Firestorm.
-- [ ] Complete `Phase 5G` polish/tuning after the core spawn systems are proven.
+- [ ] Decide in `Phase 5G` whether broader vehicle classes keep the current direct-deploy model or reintroduce a queue/subscription layer.
+- [ ] Keep current live-spawn behavior intact until map config and slot ownership are intentionally revised.
 - [ ] Expand the ready-up dialog knobs to cover the requested spawn-type and spawn-length matrix before preset-mode packaging.
 - [ ] Add named preset configurations (`TWL 8v8/10v10/12v12/16v16 Conquest`) and switch to `Custom` labeling when knobs diverge from preset values.
 - [ ] Respect disabled slot hiding behavior and per-map respawn values.
@@ -2043,8 +2126,19 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
-  - `2026-03-13 | Phase 5 design lock pass after planning questions | Locked reservation scope as per-exact-slot with one reservation max per player and per slot, locked direct spawn fulfillment into the driver/pilot seat, kept reservations through death/undeploy but not disconnect/match transitions/team swap, restricted first-pass map rollout to Firestorm, and recorded deferred decisions for deploy-screen placement and the ambiguous Column 1 naming | Phase 5, Phase 5A, Phase 5B, Phase 5C, Phase 5D, Phase 5E, Phase 5F, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 implementation notes/checklist/changelog`
-  - `2026-03-13 | Phase 5 execution split clarification | Explicitly split Phase 5 into 5A-5G, locked direct spawn-into-vehicle into Phase 5D, and recorded that 5E depends on Godot repair requirements while 5F depends on complete map-config vehicle spawn datapoints; noted that testing can continue against current tank/chopper spawns before 5F is complete | Phase 5, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 deliverables/implementation notes/checklist/changelog`
+  - `2026-03-14 | Phase 5E provisional closeout decision before Phase 5F start | Accepted the current Firestorm-first map-config and vehicle-deploy-anchor checkpoint as passed for now, explicitly deferred console-player review, hardened multiplayer validation, and further polish, and advanced the active implementation target to Phase 5F bounded spawn volumes | Phase 5, Phase 5E, Phase 5F, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5E breakdown + immediate next target + Phase 5 checklist + Phase 5 changelog`
+  - `2026-03-14 | Phase 5F bounded-volume contract refinement after BountyHunter reference review | Refined Phase 5F from the older 8-point concept into a map-config-authored 4-corner floor footprint plus height ceiling model, added fixed rotation per bounded region, locked first-pass per-side aircraft/tank boxes, and recorded the BountyHunter insight that composite data-driven spawn regions are a practical fit for large maps while still keeping our implementation fully 3D | Phase 5, Phase 5E, Phase 5F, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 implementation notes + Phase 5F breakdown + Phase 5 checklist + Phase 5 changelog`
+  - `2026-03-14 | Phase 5G structure refinement | Folded vehicle repair in base into the later Phase 5G polish/tuning bucket and removed the separate Phase 5H split so current planning treats base repair as deferred polish rather than a standalone implementation phase | Phase 5, Phase 5G, CF-20, CF-21, CF-22 | accepted | design_doc TOC + Phase 5 outline + Phase 5 breakdown + Phase 5 checklist + Phase 5 changelog`
+  - `2026-03-14 | Phase 5 doc sync after Firestorm chopper implementation pass | Updated Phase 5 to reflect the current Firestorm tracked-chopper slice: Phase 5B HUD and Phase 5D direct deploy are implemented as a READY-only DEPLOY-button flow, Phase 5C is deferred/redesigned for broader vehicle classes, and Phase 5E is the next implementation target | Phase 5, Phase 5B, Phase 5C, Phase 5D, Phase 5E, Phase 5G, CF-20, CF-21, CF-22 | accepted | design_doc baseline + Phase 5 implementation notes + Phase 5 breakdown + Phase 5 checklist + Phase 5 changelog`
+  - `2026-03-14 | Firestorm vehicle-deploy spawn-point pattern lock | Recorded the authored Firestorm per-team vehicle-deploy spawn point ids (`504` for Team 1, `503` for Team 2) and clarified that future maps should carry the same per-team authored `SpawnPoint` ids in map config for direct vehicle deployment without manual HQ/flag selection | Phase 5, Phase 5D, Phase 5E, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 implementation notes + Phase 5D/5E breakdown + Phase 5 changelog`
+  - `2026-03-13 | Phase 5F/5G ordering change | Swapped Phase 5F and Phase 5G so bounded 3D spawn volumes are implemented before base repair; updated the TOC, Phase 5 outline, checklist, and section ordering for consistency | Phase 5, Phase 5F, Phase 5G, CF-20, CF-21, CF-22 | accepted | design_doc TOC + Phase 5 outline + Phase 5 checklist + Phase 5 section ordering`
+  - `2026-03-13 | Phase 5B initial timer-display placement and visibility rules | Locked the first-pass deploy-screen timer display to the local team only, right-side/vertical-center initial placement, deploy-screen-only visibility with an admin override toggle, dynamic rendering of only active slots, and reuse/generalization of the existing clock widget for spawn timers | Phase 5, Phase 5B, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 implementation notes/checklist/changelog`
+  - `2026-03-13 | Phase 5 reservation persistence follow-up | Replaced the temporary persistent-live-reservation model with a first-pass auto-resubscribe return model: successful spawn fulfillment clears the live reservation, but vehicle destruction re-reserves the same slot for that player if nobody else claimed it first; kept a deferred Phase 5G override item for later reservation-consumption tuning | Phase 5, Phase 5C, Phase 5D, Phase 5G, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 implementation notes/checklist/changelog`
+  - `2026-03-13 | Phase 5 reservation timeout clarification | Locked reservations to wait indefinitely with no timeout; they should clear only through explicit lifecycle or replacement rules | Phase 5, Phase 5C, Phase 5D, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 implementation notes/checklist/changelog`
+  - `2026-03-13 | Phase 5 reservation/deploy clarification after follow-up planning answers | Locked that reserved vehicles should not spawn until the reserving player is at the deploy screen and confirms deploy, limited first-pass direct-spawn testing to jets and attack choppers, made new reservations replace old ones, and preserved current live-spawn behavior until map-config-driven slot revision begins | Phase 5, Phase 5B, Phase 5C, Phase 5D, Phase 5E, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 implementation notes/checklist/changelog`
+  - `2026-03-13 | Phase 5 design lock pass after planning questions | Locked reservation scope as per-exact-slot with one reservation max per player and per slot, locked direct spawn fulfillment into the driver/pilot seat, kept reservations through death/undeploy but not disconnect/match transitions/team swap, restricted first-pass map rollout to Firestorm, and recorded deferred decisions for deploy-screen placement and the ambiguous Column 1 naming | Phase 5, Phase 5A, Phase 5B, Phase 5C, Phase 5D, Phase 5E, Phase 5G, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 implementation notes/checklist/changelog`
+  - `2026-03-13 | Phase 5 execution split clarification | Explicitly split Phase 5 into 5A-5G, locked direct spawn-into-vehicle into Phase 5D, and recorded that later polish/base repair work depends on Godot repair requirements while 5E depends on complete map-config vehicle spawn datapoints; noted that testing can continue against current tank/chopper spawns before 5E is complete | Phase 5, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 deliverables/implementation notes/checklist/changelog`
+  - `2026-03-13 | Phase 5 bounded-volume spawn addition | Inserted a new Phase 5F for script-authoritative bounded 3D spawn volumes defined by 8 points in space, and shifted the existing polish/tune work into the later Phase 5G bucket | Phase 5, Phase 5F, Phase 5G, CF-20, CF-21, CF-22 | accepted | design_doc TOC + Phase 5 outline + Phase 5 checklist + Phase 5 section ordering`
   - `2026-03-13 | Phase 5 queue interaction and state-authority clarification | Added requirement to prove the deploy-screen queue signup interaction, with a square checkbox-style reservation button as the preferred first pass, and locked that vehicle existence, queue membership, reservation state, and timers stay script authoritative rather than UI-local | Phase 5, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 deliverables/verification/implementation notes/checklist`
   - `2026-03-13 | Phase 5 scope expansion request before implementation | Added deploy-screen vehicle spawn visualization, first-pass vehicle timers for tanks/jets/attack choppers, direct spawn-into-vehicle requirement, queue reservation name display, Godot repair-trigger note, full static spawn authoring requirement, expanded ready-up vehicle/timer knob matrix, and preset-vs-custom vehicle mode packaging expectations; explicitly deferred flag-based vehicle spawners to Phase 9 polish | Phase 5, Phase 9, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5 deliverables/prereqs/verification/implementation notes/checklist + Phase 9 deferred note`
   - `2026-03-13 | Phase 5 Stage 1 timer backbone | Added authoritative per-slot respawn timer state and timer-owner helpers, then wired existing spawn/respawn/bind flows to that timer authority without changing current vehicle spawn behavior | src/state/runtime-types.ts, src/vehicles/timers.ts, src/vehicles/spawner-slots.ts, src/vehicles/spawner-sequence.ts, src/vehicles/spawner-bind.ts, src/index/vehicle-events.ts, src/index.ts | pending build/verify in current implementation pass`

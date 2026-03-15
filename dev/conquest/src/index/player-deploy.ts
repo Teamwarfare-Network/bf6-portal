@@ -39,6 +39,8 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     const wasAlreadyDeployed = !!State.players.deployedByPid[pid];
     conquestPhase2BOnPlayerDeployed(eventPlayer, wasAlreadyDeployed);
     State.players.deployedByPid[pid] = true;
+    State.players.posDebugTransformSourceByPid[pid] = "soldier";
+    delete State.players.posDebugVehicleObjIdByPid[pid];
     State.conquest.debug.teamSwapHudResetPendingByPid[pid] = false;
     State.players.joinPromptTripleTapArmedByPid[pid] = false;
     // Rejoin/spawn behavior: players always start NOT READY for the next live-start gate.
@@ -58,8 +60,17 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     updateHelpTextVisibilityForPid(pid);
     // Keep conquest HUD state in sync for newly deployed viewers even when no new capture/ticket events fire.
     updateConquestCombatHudForAllPlayers(true);
+    conquestPhase5BRenderVehicleDeployTimersForPlayer(eventPlayer);
+    if (!State.players.readyDialogData[pid]) initReadyDialogData(eventPlayer);
+    if (State.players.readyDialogData[pid]?.posDebugVisible) {
+        setPositionDebugVisibleForPlayer(eventPlayer, true);
+    }
     // Warm ready-dialog UI cache in the background so first open after spawn/swap is instant.
     void scheduleReadyDialogUiWarmCacheForPlayer(eventPlayer, 0.15);
+    const directSpawnDeployResult = await conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(eventPlayer);
+    if (directSpawnDeployResult.consumedDeploy) {
+        return;
+    }
     await spawnReadyDialogInteractPoint(eventPlayer);
 }
 
@@ -72,6 +83,8 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     if (pid === undefined) return;
     if (isPidDisconnected(pid)) return;
     State.players.deployedByPid[pid] = false;
+    State.players.posDebugTransformSourceByPid[pid] = "soldier";
+    delete State.players.posDebugVehicleObjIdByPid[pid];
     // Keep engage panel suppressed after undeploy until the player physically re-enters a capture radius.
     State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
     // Clear active objective engagement ownership on undeploy so stale swap/death samples cannot persist.
@@ -88,6 +101,10 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     updateHelpTextVisibilityForPid(pid);
 
     removeReadyDialogInteractPoint(pid);
+    conquestPhase5BRenderVehicleDeployTimersForPlayer(eventPlayer);
+    if (State.players.readyDialogData[pid]?.posDebugVisible) {
+        setPositionDebugVisibleForPlayer(eventPlayer, false);
+    }
 
     if (shouldShowJoinPromptForPlayer(eventPlayer)) {
         createJoinPromptForPlayer(eventPlayer);

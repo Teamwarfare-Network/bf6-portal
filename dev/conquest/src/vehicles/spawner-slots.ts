@@ -57,8 +57,16 @@ function addVehicleSpawnerSlot(teamId: TeamID, slotNumber: number, spawnPos: mod
         respawnQueuedAtSeconds: -1,
         respawnReadyAtSeconds: -1,
         lastSpawnedAtSeconds: -1,
+        lastDestroyedAtSeconds: -1,
+        lastMissingAtSeconds: -1,
         respawnRunning: false,
         spawnRetryScheduled: false,
+        spawnCategory: "other",
+        deployFlowTracked: false,
+        availabilityPhase: "DISABLED",
+        pendingSpawnOwnerPid: undefined,
+        pendingSpawnMode: undefined,
+        activeOwnerPid: undefined,
     };
     initializeVehicleSlotTimerState(slot);
 
@@ -84,9 +92,14 @@ function setSpawnerSlotEnabled(slotIndex: number, enabled: boolean): boolean {
     slot.enableToken += 1;
     slot.expectingSpawn = false;
     if (!enabled) {
+        slot.pendingSpawnOwnerPid = undefined;
+        slot.pendingSpawnMode = undefined;
+        slot.activeOwnerPid = undefined;
         clearVehicleSlotRespawnTimer(slot);
+        refreshVehicleSlotAuthoritativeState(slot);
         return false;
     }
+    refreshVehicleSlotAuthoritativeState(slot);
     return slot.vehicleId === -1;
 }
 
@@ -95,6 +108,8 @@ function applySpawnerEnablementForMatchup(presetIndex: number, spawnOnEnable: bo
     if (isMatchLive()) return;
 
     const desired = getDesiredSpawnerCountsForPreset(presetIndex);
+    State.vehicles.desiredEnabledSlotsTeam1 = desired.team1;
+    State.vehicles.desiredEnabledSlotsTeam2 = desired.team2;
     const team1SlotIndices: number[] = [];
     const team2SlotIndices: number[] = [];
     const spawnQueue: number[] = [];
@@ -106,21 +121,29 @@ function applySpawnerEnablementForMatchup(presetIndex: number, spawnOnEnable: bo
     }
 
     // Enablement order is driven by slotNumber, not array order.
-    team1SlotIndices.sort((a, b) => State.vehicles.slots[a].slotNumber - State.vehicles.slots[b].slotNumber);
-    team2SlotIndices.sort((a, b) => State.vehicles.slots[a].slotNumber - State.vehicles.slots[b].slotNumber);
+    team1SlotIndices.sort((a, b) => (State.vehicles.slots[a]?.slotNumber ?? 0) - (State.vehicles.slots[b]?.slotNumber ?? 0));
+    team2SlotIndices.sort((a, b) => (State.vehicles.slots[a]?.slotNumber ?? 0) - (State.vehicles.slots[b]?.slotNumber ?? 0));
 
     for (let i = 0; i < team1SlotIndices.length; i++) {
         const slotIndex = team1SlotIndices[i];
+        const slot = State.vehicles.slots[slotIndex];
+        if (!slot) continue;
         const shouldEnable = i < desired.team1;
         const shouldSpawn = setSpawnerSlotEnabled(slotIndex, shouldEnable);
-        if (spawnOnEnable && shouldSpawn) spawnQueue.push(slotIndex);
+        if (spawnOnEnable && shouldSpawn && !shouldGateVehicleSlotSpawnUntilReservationDeploy(slot)) {
+            spawnQueue.push(slotIndex);
+        }
     }
 
     for (let i = 0; i < team2SlotIndices.length; i++) {
         const slotIndex = team2SlotIndices[i];
+        const slot = State.vehicles.slots[slotIndex];
+        if (!slot) continue;
         const shouldEnable = i < desired.team2;
         const shouldSpawn = setSpawnerSlotEnabled(slotIndex, shouldEnable);
-        if (spawnOnEnable && shouldSpawn) spawnQueue.push(slotIndex);
+        if (spawnOnEnable && shouldSpawn && !shouldGateVehicleSlotSpawnUntilReservationDeploy(slot)) {
+            spawnQueue.push(slotIndex);
+        }
     }
 
     if (spawnOnEnable) {
@@ -128,6 +151,7 @@ function applySpawnerEnablementForMatchup(presetIndex: number, spawnOnEnable: bo
         for (let i = 0; i < State.vehicles.slots.length; i++) {
             const slot = State.vehicles.slots[i];
             if (!slot.enabled) continue;
+            if (shouldGateVehicleSlotSpawnUntilReservationDeploy(slot)) continue;
             if (slot.vehicleId !== -1) continue;
             if (slot.expectingSpawn) continue;
             spawnQueue.push(i);

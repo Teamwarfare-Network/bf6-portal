@@ -132,4 +132,70 @@ type HudRefs = {
     roots: mod.UIWidget[];
 };
 
+type ReusableTimerWidgetCacheEntry = {
+    rootName: string;
+    surfaceName: string;
+    root?: mod.UIWidget;
+    plate?: mod.UIWidget;
+    statusShadow?: mod.UIWidget;
+    statusText?: mod.UIWidget;
+    minTensShadow?: mod.UIWidget;
+    minTens: mod.UIWidget;
+    minOnesShadow?: mod.UIWidget;
+    minOnes: mod.UIWidget;
+    colonShadow?: mod.UIWidget;
+    colon: mod.UIWidget;
+    secTensShadow?: mod.UIWidget;
+    secTens: mod.UIWidget;
+    secOnesShadow?: mod.UIWidget;
+    secOnes: mod.UIWidget;
+    lastDisplayedSeconds?: number;
+    lastVisibleState?: boolean;
+    lastStatusMode?: "timer" | "ready" | "active";
+};
+
+type VehicleDeployTimerRowCacheEntry = {
+    playerPlate?: mod.UIWidget;
+    playerShadow?: mod.UIWidget;
+    playerText?: mod.UIWidget;
+    vehiclePlate?: mod.UIWidget;
+    vehicleShadow?: mod.UIWidget;
+    vehicleText?: mod.UIWidget;
+    spawnButtonBorder?: mod.UIWidget;
+    spawnButtonBlur?: mod.UIWidget;
+    spawnButtonFill?: mod.UIWidget;
+    spawnButton?: mod.UIWidget;
+    spawnButtonTextShadow?: mod.UIWidget;
+    spawnButtonText?: mod.UIWidget;
+    groundButtonBorder?: mod.UIWidget;
+    groundButtonBlur?: mod.UIWidget;
+    groundButtonFill?: mod.UIWidget;
+    groundButton?: mod.UIWidget;
+    groundButtonTextShadow?: mod.UIWidget;
+    groundButtonText?: mod.UIWidget;
+    spawnButtonHovered?: boolean;
+    spawnButtonFocused?: boolean;
+    spawnButtonPressed?: boolean;
+    groundButtonHovered?: boolean;
+    groundButtonFocused?: boolean;
+    groundButtonPressed?: boolean;
+    lastVisibleState?: boolean;
+    lastPlayerNameVisible?: boolean;
+    lastSpawnButtonVisible?: boolean;
+    lastGroundButtonVisible?: boolean;
+    lastShowPlayerName?: boolean;
+    lastShowSpawnButton?: boolean;
+    lastShowGroundButton?: boolean;
+    lastSpawnButtonVisualState?: "base" | "hover" | "pressed";
+    lastGroundButtonVisualState?: "base" | "hover" | "pressed";
+    timer: ReusableTimerWidgetCacheEntry;
+};
+
+type VehicleDeployTimerHudCacheEntry = {
+    rootName: string;
+    root?: mod.UIWidget;
+    rows: VehicleDeployTimerRowCacheEntry[];
+    lastVisibleState?: boolean;
+};
+
 //#endregion ----------------- HUD Types + Caches --------------------

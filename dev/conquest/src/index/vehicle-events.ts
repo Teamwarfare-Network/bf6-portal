@@ -5,6 +5,11 @@
 
 function onPlayerEnterVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Vehicle) {
     if (!mod.IsPlayerValid(eventPlayer)) return;
+    const pid = safeGetPlayerId(eventPlayer);
+    if (pid !== undefined) {
+        State.players.posDebugTransformSourceByPid[pid] = "vehicle";
+        State.players.posDebugVehicleObjIdByPid[pid] = getObjId(eventVehicle);
+    }
 
     const teamNum = getTeamNumber(mod.GetTeam(eventPlayer));
     if (teamNum !== TeamID.Team1 && teamNum !== TeamID.Team2) return;
@@ -12,12 +17,34 @@ function onPlayerEnterVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Veh
     // Continuous conquest flow: keep vehicle registration lightweight.
     setLastDriver(eventVehicle, eventPlayer);
     registerVehicleToTeam(eventVehicle, teamNum);
+
+    const vehicleObjId = getObjId(eventVehicle);
+    const slotIndex = State.vehicles.vehicleToSlot[vehicleObjId];
+    if (slotIndex !== undefined) {
+        const slot = State.vehicles.slots[slotIndex];
+        if (slot && mod.GetPlayerVehicleSeat(eventPlayer) === 0) {
+            slot.activeOwnerPid = safeGetPlayerId(eventPlayer);
+            conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
+        }
+    }
 }
 
-// Reserved exit hook: currently no-op to keep enter/spawn ownership flow authoritative.
+// Exit hook: direct-spawn ownership is established on fulfillment, not on seat exit.
 function onPlayerExitVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Vehicle) {
-    if (!mod.IsPlayerValid(eventPlayer)) return;
-    return;
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    const vehicleObjId = getObjId(eventVehicle);
+    const slotIndex = State.vehicles.vehicleToSlot[vehicleObjId];
+    const pid = safeGetPlayerId(eventPlayer);
+    if (pid !== undefined) {
+        State.players.posDebugTransformSourceByPid[pid] = "soldier";
+        delete State.players.posDebugVehicleObjIdByPid[pid];
+    }
+    if (slotIndex === undefined) return;
+    const slot = State.vehicles.slots[slotIndex];
+    if (!slot || pid === undefined) return;
+    if (slot.activeOwnerPid !== pid) return;
+    slot.activeOwnerPid = undefined;
+    conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
 }
 
 //#endregion -------------------- Exported Event Handlers - Vehicle Entry + Exit --------------------
@@ -127,6 +154,18 @@ async function onVehicleSpawnedImpl(eventVehicle: mod.Vehicle): Promise<void> {
 async function onVehicleDestroyedImpl(eventVehicle: mod.Vehicle) {
     const inT1 = arrayContainsVehicle(mod.GetVariable(regVehiclesTeam1), eventVehicle);
     const inT2 = arrayContainsVehicle(mod.GetVariable(regVehiclesTeam2), eventVehicle);
+    const vehicleObjId = getObjId(eventVehicle);
+    const slotIndex = State.vehicles.vehicleToSlot[vehicleObjId];
+    if (slotIndex !== undefined) {
+        const slot = State.vehicles.slots[slotIndex];
+        if (slot) {
+            slot.activeOwnerPid = undefined;
+            slot.pendingSpawnOwnerPid = undefined;
+            slot.pendingSpawnMode = undefined;
+            markVehicleSlotDestroyed(slot);
+            conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
+        }
+    }
 
     // Registration is the scoring gate; unregistered vehicles are ignored.
     if (!inT1 && !inT2) {

@@ -21,6 +21,7 @@ interface readyDialogData_t {
     uiBuilt: boolean;
     posDebugVisible: boolean;
     posDebugToken: number;
+    vehicleTimersVisibleWhileDeployed: boolean;
 }
 
 // Per-player state lives in State.players:

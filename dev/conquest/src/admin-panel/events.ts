@@ -52,6 +52,16 @@ function tryHandleAdminTesterButtonEvent(
             return true;
         }
 
+        case UI_TEST_BUTTON_DEPLOY_TIMERS_TOGGLE_ID + playerId: {
+            if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
+            const state = State.players.readyDialogData[playerId];
+            state.vehicleTimersVisibleWhileDeployed = !state.vehicleTimersVisibleWhileDeployed;
+            syncVehicleDeployTimerAdminToggleLabelForPid(playerId);
+            conquestPhase5BRenderVehicleDeployTimersForPlayer(eventPlayer);
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.deployTimersVisibleToggle);
+            return true;
+        }
+
         case UI_ADMIN_MATCH_LENGTH_DEC_ID + playerId:
             if (isMatchLive()) return true;
             {

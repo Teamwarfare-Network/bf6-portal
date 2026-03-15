@@ -127,6 +127,7 @@ async function onGameModeStartedImpl(): Promise<void> {
             if (!clockUpdatedThisLoop) {
                 updateAllPlayersClock();
             }
+            conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
             checkTakeoffLimitForAllPlayers();
             if (State.match.victoryDialogActive) {
                 const elapsedSinceVictory = nowSecondBoundary - Math.floor(State.match.victoryStartElapsedSecondsSnapshot);

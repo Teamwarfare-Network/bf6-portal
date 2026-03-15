@@ -21,11 +21,35 @@ type VehicleSpawnerSlot = {
     respawnQueuedAtSeconds: number;
     respawnReadyAtSeconds: number;
     lastSpawnedAtSeconds: number;
+    lastDestroyedAtSeconds: number;
+    lastMissingAtSeconds: number;
     respawnRunning: boolean;
     spawnRetryScheduled: boolean;
+    spawnCategory: VehicleSlotSpawnCategory;
+    deployFlowTracked: boolean;
+    availabilityPhase: VehicleSlotAvailabilityPhase;
+    pendingSpawnOwnerPid?: number;
+    pendingSpawnMode?: VehicleDirectSpawnMode;
+    activeOwnerPid?: number;
 };
 
+type VehicleSlotSpawnCategory =
+    | "attack_chopper"
+    | "transport_chopper"
+    | "other";
+
+type VehicleDirectSpawnMode = "air" | "ground";
+
+type VehicleSlotAvailabilityPhase =
+    | "DISABLED"
+    | "EMPTY_ENABLED"
+    | "SPAWN_REQUESTED"
+    | "ACTIVE"
+    | "RESPAWN_PENDING"
+    | "RESPAWN_READY";
+
 type ConquestLifecyclePhase = "NOT_READY" | "PRE_MATCH" | "LIVE_MATCH" | "POST_MATCH" | "RESET";
+type PositionDebugTransformSource = "soldier" | "vehicle";
 
 type ConquestCapturePointRuntimeState = {
     objId: number;
@@ -362,10 +386,14 @@ interface GameState {
         deployedByPid: Record<number, boolean>;
         disconnectedByPid: Record<number, boolean>;
         uiInputEnabledByPid: Record<number, boolean>;
+        posDebugTransformSourceByPid: Record<number, PositionDebugTransformSource>;
+        posDebugVehicleObjIdByPid: Record<number, number>;
     };
     vehicles: {
         slots: VehicleSpawnerSlot[];
         vehicleToSlot: Record<number, number>;
+        desiredEnabledSlotsTeam1: number;
+        desiredEnabledSlotsTeam2: number;
         spawnSequenceToken: number;
         spawnSequenceInProgress: boolean;
         activeSpawnSlotIndex?: number;
@@ -379,6 +407,7 @@ interface GameState {
         topHudShellByPid: Record<number, HudRefs>;
         clockWidgetCache: Record<number, ClockWidgetCacheEntry>;
         countdownWidgetCache: Record<number, CountdownWidgetCacheEntry>;
+        vehicleDeployTimerCache: Record<number, VehicleDeployTimerHudCacheEntry>;
     };
 }
 

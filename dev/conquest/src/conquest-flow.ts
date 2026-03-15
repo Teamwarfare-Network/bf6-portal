@@ -32,6 +32,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     updateSettingsSummaryHudForAllPlayers();
     updateMatchupLabelForAllPlayers();
     updateMatchupReadoutsForAllPlayers();
+    conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
 
     resetMatchClock(getConfiguredMatchLengthSeconds());
     updateAllPlayersClock();
@@ -46,6 +47,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
 
 // Ends the current round using one authoritative post-match transition and winner snapshot.
 function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number, overrideWinnerTeamNum?: TeamID | 0): void {
+    clearAllVehicleReservations();
     const winner = (overrideWinnerTeamNum === TeamID.Team1 || overrideWinnerTeamNum === TeamID.Team2)
         ? overrideWinnerTeamNum
         : 0;
@@ -73,6 +75,7 @@ function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number,
     updateSettingsSummaryHudForAllPlayers();
     updateMatchupLabelForAllPlayers();
     updateMatchupReadoutsForAllPlayers();
+    conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
 }
 
 // Resets pre-live systems for a fresh setup pass without entering live state.
@@ -101,6 +104,7 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     if (State.vehicles && State.vehicles.slots) {
         applySpawnerEnablementForMatchup(State.round.matchupPresetIndex, true);
     }
+    conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
 }
 
 // Clamps configured match length to admin-safe limits.

@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v0.528)",
+        "title": "teamwarfare . net | TWL Conquest (v0.603)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -160,6 +160,7 @@
         "roundStart": "Start Match",
         "roundEnd": "End Match",
         "positionDebug": "Toggle Position Debug",
+        "deployTimersVisibleToggle": "Toggle Deploy Timers Visible While Deployed",
         "roundLengthDec": "Match Length -",
         "roundLengthInc": "Match Length +"
       },
@@ -175,7 +176,9 @@
           "clockReset": "Reset Clock",
           "roundEnd": "End Match",
           "roundStart": "Start Match",
-          "positionDebug": "Toggle Position Debug"
+          "positionDebug": "Toggle Position Debug",
+          "deployTimersVisibleOn": "Timers Visible Deployed ON",
+          "deployTimersVisibleOff": "Timers Visible Deployed OFF"
         },
         "labels": {
           "clockTime": "Clock Time -/+ 1m"
@@ -192,7 +195,13 @@
       "plus": "+",
       "minus": "-",
       "left": "<",
-      "right": ">"
+      "right": ">",
+      "spawn": "DEPLOY",
+      "airDeploy": "AIR DEPLOY",
+      "groundDeploy": "GROUND DEPLOY",
+      "ready": "READY",
+      "idle": "IDLE",
+      "active": "ACTIVE"
     },
     "victory": {
       "restartInFormat": "Map will restart/rotate in {0}s",
@@ -205,7 +214,13 @@
     },
     "debug": {
       "adminPos": "ADMIN POS X:{0} Y:{1} Z:{2}",
-      "adminFacing": "ADMIN FACING X:{0} Y:{1} Z:{2}"
+      "adminFacing": "ADMIN FACING X:{0} Y:{1} Z:{2}",
+      "posX": "posX",
+      "posY": "posY",
+      "posZ": "posZ",
+      "rotX": "rotX",
+      "rotY": "rotY",
+      "rotZ": "rotZ"
     },
     "messages": {
       "init": "Conquest systems initialized.",

@@ -79,13 +79,13 @@ const TEAM2_MAIN_BASE_TRIGGER_ID = 500; // Do not change without updating spatia
 const TAKEOFF_LIMIT_HUD_OFFSET = 20; // Y offset above HUD floor that triggers takeoff-limit warning (world Y).
 
 // Ready-up auto-start gating:
-// Decoupled from matchup presets; defaults to 1v1 and is user-adjustable in the Ready dialog.
-const DEFAULT_AUTO_START_MIN_ACTIVE_PLAYERS = 2;
+// Decoupled from matchup presets; default starts at the solo 1v0 special-case and is user-adjustable in the Ready dialog.
+const DEFAULT_AUTO_START_MIN_ACTIVE_PLAYERS = 0;
 const AUTO_START_MIN_ACTIVE_PLAYERS_MIN = 0; // 0 maps to the solo "1 vs 0" special-case.
 const AUTO_START_MIN_ACTIVE_PLAYERS_MAX = 8;
-// Matchup preset default selection remains 1v1.
-const DEFAULT_MATCHUP_PRESET_LEFT_PLAYERS = 1;
-const DEFAULT_MATCHUP_PRESET_RIGHT_PLAYERS = 1;
+// Matchup preset default selection now starts at 4v4 vehicle enablement.
+const DEFAULT_MATCHUP_PRESET_LEFT_PLAYERS = 4;
+const DEFAULT_MATCHUP_PRESET_RIGHT_PLAYERS = 4;
 const MATCHUP_CHANGE_COOLDOWN_SECONDS = 1.0;
 
 // HUD/UI palette colors (generally used with 75% opacity).

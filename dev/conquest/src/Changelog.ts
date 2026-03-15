@@ -3,6 +3,76 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.603: Phase 5D UI fix: widen deploy HUD root for dual-button layout and refresh Air/Ground button labels every render
+// v0.602: Phase 5D/5F follow-up: split ready aircraft deploy into Air Deploy and Ground Deploy button flows
+// v0.601: Phase 5F follow-up: refresh Firestorm Team 1 aircraft box corners from updated screenshot captures and flatten floor to max Y
+// v0.600: Phase 5F experiment: ground-spawn heli, seat player, then teleport the occupied heli into the bounded air volume
+// v0.599: Phase 5F isolation: restore exact helis-only Firestorm heli spawn transforms for static loadout testing
+// v0.598: Phase 5F isolation: remap Firestorm heli slots to static ground tank-pad transforms for loadout testing
+// v0.597: Phase 5F isolation: disable bounded-air relocation and restore original static aircraft spawn behavior for direct deploy testing
+// v0.596: Phase 5F follow-up: use authored heli slot spawns as the fixed ground stage before 1-second air-box lift and player seat
+// v0.595: Phase 5F experiment: restore static aircraft spawn, wait 1 second, then lift into the air box before player deploy and seat
+// v0.594: Phase 5F experiment: stage aircraft on random ground heli pads before bounded air lift and direct-seat fulfillment
+// v0.593: Phase 5F follow-up: add Firestorm Team 2 aircraft box from authored screenshot corners and reduce aircraft volume heights to 100
+// v0.591: Phase 5F proof: enable Firestorm Team 1 aircraft volume and randomize aircraft spawn transform inside the authored box
+// v0.589: Admin/debug fix: split vehicle rotation into stable facing-driven rotX/rotY plus object-rotation rotZ and move pos labels further left
+// v0.588: Admin/debug fix: sample on-foot rotation from object rotation and use direct current vehicle handles for seated transform reads
+// v0.587: Admin/debug fix: drive pos/rot sampling from script-owned soldier-vs-vehicle state and retain last-good values across transient read failures
+// v0.585: Admin/debug fix: make pos/rot sampling state-driven and resilient so transient on-foot or vehicle read failures no longer kill the loop
+// v0.584: Admin/debug follow-up: move the pos row labels further left while leaving the rot row unchanged
+// v0.583: Admin/debug fix: use matching position and facing sources on foot and in vehicles so pos and rot update in both states
+// v0.582: Admin/debug follow-up: move the pos row labels back left by the same amount and keep the rot row unchanged
+// v0.581: Admin/debug follow-up: nudge pos row labels right while leaving the rot row unchanged
+// v0.580: Admin/debug fix: restore seated pos updates via vehicle state and keep vehicle rot sampling resilient with fallback
+// v0.579: Admin/debug follow-up: use vehicle transform for pos/rot debug while seated and fall back to soldier state on foot
+// v0.578: Admin/debug follow-up: nudge the position/rotation numeric value columns right to clear negative-sign overlap with labels
+// v0.577: Cleanup: remove dead reservation-era fields/functions after the DEPLOY-button pivot and keep only the live direct-spawn claim helpers
+// v0.576: Admin/debug follow-up: center-left align pos/rot labels so they sit on the same vertical line as the numeric values
+// v0.575: Admin/debug follow-up: compact the coordinate panel, split labels from values for aligned numeric columns, and color pos labels green with rot labels blue
+// v0.574: Admin/debug follow-up: widen coordinate strip to labeled posX/posY/posZ and inferred rotX/rotY/rotZ fields with a two-row black backplate layout
+// v0.573: Admin/debug follow-up: port Helis coordinate readout to Conquest with solid black plate, default it on, and switch startup defaults to 1v0 auto-start with 4v4 matchup
+// v0.572: Phase 5F infrastructure: add bounded vehicle spawn volume schema, runtime accessors, and Firestorm placeholder map-config entries
+// v0.571: Phase 5B UI follow-up: move spawn-timer minute digits right by one more unit
+// v0.570: Phase 5B UI follow-up: nudge spawn-timer minute and second digits right while keeping the colon fixed
+// v0.569: Phase 5B/5D UI follow-up: tune spawn-timer colon and minute-digit offsets, switch DEPLOY border to a thin outline, and use white base border with black selected border
+// v0.568: Phase 5D UI follow-up: align DEPLOY button closer to join-prompt button construction by using a visible native UIButton face with built-in base/focus/pressed states and removing the custom fill stack from the interactive path
+// v0.567: Phase 5D UI follow-up: add stable focus-driven DEPLOY button state so controller navigation can drive the same custom visuals and activation path as mouse hover
+// v0.566: Phase 5D follow-up: verify configured Firestorm deploy anchors by resolving SpawnPoint objects, clearing UI input before forced deploy, and only accepting the spawn-point path if it actually enters deployed state
+// v0.565: Phase 5D infrastructure: add per-team vehicle-deploy spawn point ids to map config and prefer SpawnPlayerFromSpawnPoint for direct vehicle deploys
+// v0.562: Phase 5B active-row polish: keep vehicle plate width fixed and display IDLE in the reused owner panel
+// v0.561: Phase 5B/5D UI fixes: restore visible vehicle plates, recenter spawn timer glyphs leftward, and hide pending-claim deploy HUD to stop pre-deploy button teleport
+// v0.560: Phase 5B timer layout polish: center the colon and equalize MM:SS glyph spacing with explicit 1-unit gaps
+// v0.559: Phase 5B UI hardening: stop per-second deploy button widget churn by caching row layout, button visibility, and button visual state
+// v0.558: Phase 5B/5D UI/state fix: remove Deploy button blur flicker, right-align rows without empty button lanes, and display current pilot or Idle from live seat state
+// v0.557: Phase 5B UI polish: lock Deploy button border to black and keep white text with black drop shadow across all states
+// v0.556: Phase 5B UI polish: rename Spawn button to Deploy and use black text with white drop shadow across all button states
+// v0.555: Phase 5B UI polish: reduce Spawn button state padding to 1 and use bright-over-dark gradient layering for gray, blue, and green button states
+// v0.554: Phase 5B UI polish: convert Spawn button to explicit base/hover/pressed padding model with white border, blur, and gradient states
+// v0.553: Phase 5B UI polish: retheme Spawn button states, tighten row spacing, narrow vehicle/status plates, and widen timer digit spacing
+// v0.552: Phase 5B/5D UI polish: use script-owned Spawn button fill, clear stale hover state, and move active owner name into the old button lane
+// v0.551: Phase 5B UI polish: enlarge Spawn button, tighten row spacing, reduce plate widths, and add explicit white hover state with black border/text
+// v0.550: Phase 5B/5D follow-up: move Spawn button left of vehicle name, keep READY visible, and hide active rows while deployed
+// v0.549: Phase 5B/5D pivot: replace chopper reservation checkboxes with READY-only direct Spawn buttons and team-wide live timer/status rows
+// v0.548: Phase 5C follow-up: replace native checkbox hover visuals with a script-owned white overlay highlight
+// v0.547: Phase 5C/5D follow-up: improve checkbox top-edge alignment after hover-fill and immediate auto-resubscribe changes
+// v0.546: Phase 5C/5D follow-up: use button hover fill for checkbox highlight and show auto-resubscribe immediately on vehicle destruction
+// v0.545: Phase 5C UI follow-up: align checkbox top border flush with the checkbox plate
+// v0.544: Phase 5B/5C/5D follow-up: hover uses checkbox backplate highlight and successful spawn arms slot auto-resubscribe on destruction
+// v0.543: Phase 5B/5C/5D follow-up: add READY/ACTIVE timer states, team-ready visibility, and cache checkbox border state to reduce 1-second pulse
+// v0.542: Phase 5C/5D follow-up: stabilize checkbox hover highlight, persist reservations through spawn, and nudge checkbox top border alignment
+// v0.541: Phase 5C follow-up: make vehicle reservation checkbox button visually transparent to stop native pulse
+// v0.540: Phase 5C follow-up: remove focus-driven checkbox highlight pulse from vehicle reservation UI
+// v0.539: Phase 5C/5D follow-up: suppress startup tracked chopper auto-spawn and make deployed admin timer view read-only
+// v0.538: Phase 5D Stage 1: add reserved chopper direct-spawn fulfillment on deploy and suppress auto-spawn for reservation-managed slots
+// v0.537: Phase 5C Stage 1 follow-up: persist checkbox highlight state across timer refresh to stop periodic border pulsing
+// v0.536: Phase 5C Stage 1 follow-up: persist reservations into round start, reorder deploy rows, and add subscriber-only live timer view with stronger checkbox states
+// v0.535: Phase 5C Stage 1: add authoritative vehicle slot reservation buttons, reservation state, and deploy-screen checkbox visuals
+// v0.534: Phase 5B Stage 1 follow-up: re-right-align the Firestorm helicopter timer rows, shrink the vehicle box again, and rebalance the timer face around centered digits
+// v0.533: Phase 5B Stage 1 follow-up: move the Firestorm helicopter timer rows closer to the right edge, tighten the row gaps, thin the vehicle name box, and shrink the timer face
+// v0.532: Phase 5B Stage 1 follow-up: add placeholder player and vehicle boxes, checkbox scaffold, white text styling, and move the Firestorm helicopter timer stack above the minimap
+// v0.531: Phase 5B Stage 1 follow-up: right-align Firestorm helicopter timer rows, build the stack upward, and pull the timer block above the minimap
+// v0.530: Phase 5B Stage 1: add Firestorm helicopter deploy-screen timer HUD with admin deployed-visibility toggle and reusable timer instances
+// v0.529: Phase 5A: add authoritative Firestorm helicopter slot state, availability phases, and matchup-driven enabled count tracking
 // v0.528: Phase 4B VO tune: switch enemy capture terminal default from ObjectiveLost to ObjectiveCapturedEnemy after multiplayer validation
 // v0.527: Phase 4B VO fix: use per-player VO handles and recent-objective terminal recipient grace to fix contested/lost multiplayer delivery
 // v0.526: Phase 4B Stage 3: harden per-flag VO state machine so debounce re-arms only on true state changes and duplicate terminal edges are suppressed

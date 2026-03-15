@@ -28,6 +28,12 @@ function getActiveCapturePointConfigByObjId(objId: number): CapturePointConfig |
 // Baseline team inference from static main-base anchor coordinates.
 let MAIN_BASE_TEAM1_POS = ACTIVE_MAP_CONFIG.team1Base;
 let MAIN_BASE_TEAM2_POS = ACTIVE_MAP_CONFIG.team2Base;
+let VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM1 = ACTIVE_MAP_CONFIG.team1VehicleDeploySpawnPointId;
+let VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM2 = ACTIVE_MAP_CONFIG.team2VehicleDeploySpawnPointId;
+let TEAM1_AIRCRAFT_SPAWN_VOLUMES = ACTIVE_MAP_CONFIG.team1AircraftSpawnVolumes ?? [];
+let TEAM2_AIRCRAFT_SPAWN_VOLUMES = ACTIVE_MAP_CONFIG.team2AircraftSpawnVolumes ?? [];
+let TEAM1_TANK_SPAWN_VOLUMES = ACTIVE_MAP_CONFIG.team1TankSpawnVolumes ?? [];
+let TEAM2_TANK_SPAWN_VOLUMES = ACTIVE_MAP_CONFIG.team2TankSpawnVolumes ?? [];
 const MAIN_BASE_BIND_RADIUS_METERS = 150.0;
 
 // Cached per-vehicle spawn inference for later reconciliation on seat entry (best-effort, can go stale).

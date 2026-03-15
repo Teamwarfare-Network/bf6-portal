@@ -60,6 +60,7 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
     deleteAllByName(`PlayersReadyText_${pid}`);
     deleteAllByName(`Container_ReadyStatus_${pid}`);
     deleteAllByName(`ReadyStatusText_${pid}`);
+    deleteVehicleDeployTimerHudArtifactsForPid(pid);
 }
 
 // Deletes all known per-player HUD roots and cache entries for disconnect/reconnect safety.
@@ -119,6 +120,7 @@ function cleanupHudForPid(pid: number): void {
         `AdminPanelActionCount_${pid}`,
         `VictoryDialogRoot_${pid}`,
         `MatchTimerRoot_${pid}`,
+        `VehicleDeployTimerHudRoot_${pid}`,
         `RoundStateRoot_${pid}`,
         `RoundStateText_${pid}`,
         `PlayersReadyText_${pid}`,
@@ -127,10 +129,12 @@ function cleanupHudForPid(pid: number): void {
     for (const name of rootNames) {
         deleteAllByName(name);
     }
+    deleteVehicleDeployTimerHudArtifactsForPid(pid);
     resetTopHudRootInitializationForPid(pid);
 
     delete State.hudCache.clockWidgetCache[pid];
     delete State.hudCache.countdownWidgetCache[pid];
+    delete State.hudCache.vehicleDeployTimerCache[pid];
     delete State.hudCache.topHudShellByPid[pid];
     delete State.conquest.debug.hudGenerationByPid[pid];
     delete State.conquest.debug.teamSwapRefreshTokenByPid[pid];
@@ -197,6 +201,7 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     State.round.clock.lastDisplayedSeconds = undefined;
     State.round.clock.lastLowTimeState = undefined;
     updateAllPlayersClock();
+    conquestPhase5BRenderVehicleDeployTimersForPlayer(eventPlayer);
 
     // Join-time prompt is only shown once per player (undeploy prompts can repeat unless suppressed).
     if (!shouldShowJoinPromptForPlayer(eventPlayer)) return;
@@ -230,6 +235,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     cleanupHudForPid(pid);
     conquestPhase4OnPlayerLeaveOrResetPid(pid);
     conquestPhase4BOnPlayerLeaveOrResetPid(pid);
+    clearVehicleReservationForPid(pid);
     // Cleanup: delete cached UI widgets so we do not leak UI for disconnected players.
     destroyReadyDialogUI(pid);
     // Remove any persisted per-player state so rejoin starts clean (NOT READY by default).
@@ -246,6 +252,8 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.joinPromptLastPolicySuppressedAtSecondsByPid[pid];
     delete State.players.joinPromptLastSuppressionReasonByPid[pid];
     delete State.players.uiInputEnabledByPid[pid];
+    delete State.players.posDebugTransformSourceByPid[pid];
+    delete State.players.posDebugVehicleObjIdByPid[pid];
     delete State.players.inMainBaseByPid[pid];
     delete State.players.overTakeoffLimitByPid[pid];
     delete State.players.deployedByPid[pid];
@@ -260,6 +268,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
         updatePlayersReadyHudTextForAllPlayers();
         updateHelpTextVisibilityForAllPlayers();
     }
+    conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
 }
 
 //#endregion -------------------- Exported Event Handlers - Player Join + Leave --------------------

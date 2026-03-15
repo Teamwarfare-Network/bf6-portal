@@ -26,6 +26,7 @@ async function forceSpawnWithRetry(slotIndex: number): Promise<boolean> {
     slot.expectingSpawn = true;
     slot.spawnRequestToken += 1;
     slot.spawnRequestAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
+    refreshVehicleSlotAuthoritativeState(slot);
     State.vehicles.activeSpawnSlotIndex = slotIndex;
     State.vehicles.activeSpawnToken = slot.spawnRequestToken;
     State.vehicles.activeSpawnRequestedAtSeconds = slot.spawnRequestAtSeconds;
@@ -37,6 +38,7 @@ async function forceSpawnWithRetry(slotIndex: number): Promise<boolean> {
     for (let attempt = 0; attempt < 20; attempt++) {
         if (!slot.enabled || slot.enableToken !== token) {
             slot.expectingSpawn = false;
+            refreshVehicleSlotAuthoritativeState(slot);
             if (State.vehicles.activeSpawnSlotIndex === slotIndex && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
                 State.vehicles.activeSpawnSlotIndex = undefined;
                 State.vehicles.activeSpawnToken = undefined;
@@ -54,6 +56,7 @@ async function forceSpawnWithRetry(slotIndex: number): Promise<boolean> {
     }
 
     slot.expectingSpawn = false;
+    refreshVehicleSlotAuthoritativeState(slot);
     if (State.vehicles.activeSpawnSlotIndex === slotIndex && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
         State.vehicles.activeSpawnSlotIndex = undefined;
         State.vehicles.activeSpawnToken = undefined;
@@ -103,7 +106,11 @@ async function scheduleRespawn(slotIndex: number, lastVehicleId: number): Promis
         if (slot.vehicleId === lastVehicleId) {
             slot.vehicleId = -1;
         }
+        slot.activeOwnerPid = undefined;
+        slot.pendingSpawnOwnerPid = undefined;
+        slot.pendingSpawnMode = undefined;
         clearVehicleSlotRespawnTimer(slot);
+        refreshVehicleSlotAuthoritativeState(slot);
         return;
     }
     // Guard against overlapping respawn timers for the same slot.
@@ -122,6 +129,14 @@ async function scheduleRespawn(slotIndex: number, lastVehicleId: number): Promis
 
     delete State.vehicles.vehicleToSlot[lastVehicleId];
     slot.vehicleId = -1;
+    slot.activeOwnerPid = undefined;
+    refreshVehicleSlotAuthoritativeState(slot);
+
+    if (shouldGateVehicleSlotSpawnUntilReservationDeploy(slot)) {
+        slot.respawnRunning = false;
+        refreshVehicleSlotAuthoritativeState(slot);
+        return;
+    }
 
     const success = await forceSpawnWithRetry(slotIndex);
     if (!success) {
@@ -147,6 +162,8 @@ async function pollVehicleSpawnerSlots(): Promise<void> {
             if (!vehicle) {
                 const oldId = slot.vehicleId;
                 slot.vehicleId = -1;
+                slot.activeOwnerPid = undefined;
+                markVehicleSlotMissing(slot);
                 // In continuous-live conquest, missing slot vehicles should always be replaced.
                 scheduleRespawn(i, oldId);
                 continue;

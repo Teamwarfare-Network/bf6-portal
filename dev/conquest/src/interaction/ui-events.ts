@@ -9,6 +9,7 @@ function teamSwitchButtonEvent(
     const playerId = mod.GetObjId(eventPlayer);
     const widgetName = mod.GetUIWidgetName(eventUIWidget);
 
+    if (tryHandleVehicleDeployTimerButtonEvent(eventPlayer, eventUIWidget, eventUIButtonEvent)) return;
     if (tryHandleReadyDialogButtonEvent(eventPlayer, playerId, widgetName)) return;
     if (tryHandleAdminTesterButtonEvent(eventPlayer, playerId, widgetName)) return;
 }

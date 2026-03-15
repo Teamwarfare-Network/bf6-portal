@@ -131,8 +131,9 @@ function initReadyDialogData(eventPlayer: mod.Player) {
         interactPoint: null,
         lastDeployTime: 0,
         uiBuilt: false,
-        posDebugVisible: false,
+        posDebugVisible: true,
         posDebugToken: 0,
+        vehicleTimersVisibleWhileDeployed: false,
     };
 }
 

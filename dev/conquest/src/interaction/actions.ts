@@ -93,6 +93,7 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
     if (pid !== undefined) {
         // Treat swap as immediately undeployed for HUD authority until the engine undeploy callback lands.
         State.players.deployedByPid[pid] = false;
+        clearVehicleReservationForPid(pid);
         // Force one clean conquest HUD reset (destructive) after swap to prevent stale overlays/duplicates.
         cleanupConquestHudForTeamSwap(pid);
         // Pre-seed swap perspective so post-SetTeam transient reads cannot repaint as Team1 fallback.
@@ -107,6 +108,7 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
     // This avoids swap-time duplicate repaint churn.
     conquestPhase3MarkHudDirty();
     void refreshConquestHudAfterTeamSwap(eventPlayer);
+    conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
 
     // Force a rapid return to the deploy screen so the player can immediately redeploy on the new team.
     // Keep this path latency-free to avoid long HUD/ready-dialog blackout after a team swap.
@@ -224,8 +226,24 @@ function destroyReadyDialogUI(playerId: number): void {
     if (posY) mod.DeleteUIWidget(posY);
     const posZ = safeFind(UI_POS_DEBUG_Z_ID + playerId);
     if (posZ) mod.DeleteUIWidget(posZ);
+    const posXValue = safeFind(UI_POS_DEBUG_X_VALUE_ID + playerId);
+    if (posXValue) mod.DeleteUIWidget(posXValue);
+    const posYValue = safeFind(UI_POS_DEBUG_Y_VALUE_ID + playerId);
+    if (posYValue) mod.DeleteUIWidget(posYValue);
+    const posZValue = safeFind(UI_POS_DEBUG_Z_VALUE_ID + playerId);
+    if (posZValue) mod.DeleteUIWidget(posZValue);
+    const rotX = safeFind(UI_POS_DEBUG_ROTX_ID + playerId);
+    if (rotX) mod.DeleteUIWidget(rotX);
     const rotY = safeFind(UI_POS_DEBUG_ROTY_ID + playerId);
     if (rotY) mod.DeleteUIWidget(rotY);
+    const rotZ = safeFind(UI_POS_DEBUG_ROTZ_ID + playerId);
+    if (rotZ) mod.DeleteUIWidget(rotZ);
+    const rotXValue = safeFind(UI_POS_DEBUG_ROTX_VALUE_ID + playerId);
+    if (rotXValue) mod.DeleteUIWidget(rotXValue);
+    const rotYValue = safeFind(UI_POS_DEBUG_ROTY_VALUE_ID + playerId);
+    if (rotYValue) mod.DeleteUIWidget(rotYValue);
+    const rotZValue = safeFind(UI_POS_DEBUG_ROTZ_VALUE_ID + playerId);
+    if (rotZValue) mod.DeleteUIWidget(rotZValue);
 }
 
 //#endregion ----------------- Ready Dialog Interaction Actions --------------------

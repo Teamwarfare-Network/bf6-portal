@@ -11,7 +11,10 @@ async function startVehicleSpawnerSystem(): Promise<void> {
 
     State.vehicles.slots.length = 0;
     State.vehicles.vehicleToSlot = {};
+    State.vehicles.desiredEnabledSlotsTeam1 = 0;
+    State.vehicles.desiredEnabledSlotsTeam2 = 0;
     State.vehicles.spawnSequenceInProgress = false;
+    clearAllVehicleReservations();
 
     const team1Specs = [...TEAM1_VEHICLE_SPAWN_SPECS].sort((a, b) => a.slotNumber - b.slotNumber);
     const team2Specs = [...TEAM2_VEHICLE_SPAWN_SPECS].sort((a, b) => a.slotNumber - b.slotNumber);
@@ -57,7 +60,9 @@ async function startVehicleSpawnerSystem(): Promise<void> {
 
     // Kick initial spawns so each slot has a vehicle bound before the poll loop starts.
     for (let i = 0; i < State.vehicles.slots.length; i++) {
-        if (!State.vehicles.slots[i].enabled) continue;
+        const slot = State.vehicles.slots[i];
+        if (!slot?.enabled) continue;
+        if (shouldGateVehicleSlotSpawnUntilReservationDeploy(slot)) continue;
         const success = await forceSpawnWithRetry(i);
         if (!success) {
             void scheduleBlockedSpawnRetry(i);

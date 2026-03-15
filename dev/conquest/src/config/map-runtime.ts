@@ -54,6 +54,11 @@ function applyVehicleOverrideToSpawns(spawns: VehicleSpawnSpec[], vehicle: mod.V
     }));
 }
 
+function resolveVehicleSpawnVolumes(volumes: VehicleSpawnVolumeSpec[] | undefined): VehicleSpawnVolumeSpec[] {
+    if (!volumes || volumes.length === 0) return [];
+    return volumes.filter((volume) => volume.enabled !== false);
+}
+
 // Recomputes runtime spawn specs from current mode config and active map settings.
 function refreshVehicleSpawnSpecsFromModeConfig(): void {
     const useHelis = isHeliGameMode(State.round.modeConfig.confirmed.gameMode);
@@ -92,6 +97,7 @@ function applyVehicleSpawnSpecsToExistingSlots(): void {
         if (slot.vehicleType === spec.vehicle) continue;
         slot.vehicleType = spec.vehicle;
         configureVehicleSpawner(slot.spawner, slot.vehicleType);
+        refreshVehicleSlotAuthoritativeState(slot);
     }
 }
 
@@ -104,6 +110,12 @@ function applyMapConfig(mapKey: MapKey): void {
     rebuildActiveCapturePointConfigIndex();
     MAIN_BASE_TEAM1_POS = ACTIVE_MAP_CONFIG.team1Base;
     MAIN_BASE_TEAM2_POS = ACTIVE_MAP_CONFIG.team2Base;
+    VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM1 = ACTIVE_MAP_CONFIG.team1VehicleDeploySpawnPointId;
+    VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM2 = ACTIVE_MAP_CONFIG.team2VehicleDeploySpawnPointId;
+    TEAM1_AIRCRAFT_SPAWN_VOLUMES = resolveVehicleSpawnVolumes(ACTIVE_MAP_CONFIG.team1AircraftSpawnVolumes);
+    TEAM2_AIRCRAFT_SPAWN_VOLUMES = resolveVehicleSpawnVolumes(ACTIVE_MAP_CONFIG.team2AircraftSpawnVolumes);
+    TEAM1_TANK_SPAWN_VOLUMES = resolveVehicleSpawnVolumes(ACTIVE_MAP_CONFIG.team1TankSpawnVolumes);
+    TEAM2_TANK_SPAWN_VOLUMES = resolveVehicleSpawnVolumes(ACTIVE_MAP_CONFIG.team2TankSpawnVolumes);
     refreshVehicleSpawnSpecsFromModeConfig();
     VEHICLE_SPAWN_YAW_OFFSET_DEG = ACTIVE_MAP_CONFIG.vehicleSpawnYawOffsetDeg;
     // Apply the map's default aircraft ceiling, unless a custom override is active.
@@ -111,6 +123,33 @@ function applyMapConfig(mapKey: MapKey): void {
 
     updateReadyDialogMapLabelForAllPlayers();
     updateTeamNameWidgetsForAllPlayers();
+}
+
+function getVehicleDeploySpawnPointIdForTeam(teamId: TeamID): number | undefined {
+    const spawnPointId = teamId === TeamID.Team1
+        ? VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM1
+        : teamId === TeamID.Team2
+            ? VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM2
+            : undefined;
+    if (spawnPointId === undefined) return undefined;
+    if (!Number.isFinite(spawnPointId)) return undefined;
+    if (spawnPointId <= 0) return undefined;
+    return Math.floor(spawnPointId);
+}
+
+function getVehicleSpawnVolumesForTeam(teamId: TeamID, volumeClass: VehicleSpawnVolumeClass): VehicleSpawnVolumeSpec[] {
+    if (volumeClass === "aircraft") {
+        return teamId === TeamID.Team1
+            ? TEAM1_AIRCRAFT_SPAWN_VOLUMES
+            : teamId === TeamID.Team2
+                ? TEAM2_AIRCRAFT_SPAWN_VOLUMES
+                : [];
+    }
+    return teamId === TeamID.Team1
+        ? TEAM1_TANK_SPAWN_VOLUMES
+        : teamId === TeamID.Team2
+            ? TEAM2_TANK_SPAWN_VOLUMES
+            : [];
 }
 
 // Best-effort map detection by comparing HQ positions to map base anchors (bidirectional check).
