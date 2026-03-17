@@ -3,6 +3,8 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.692: Phase 5G cutdown: remove dead legacy combat V2 widget writers and delete their unused bleed-pulse/render-burst state
+// v0.691: Phase 5G optimization/cutdown: remove dormant loading overlay state, isolate active combat ownership from legacy V2 hide bridges, and split vehicle HUD content refresh from family reveal
 // v0.689: Combat HUD scheduler prime: trigger one immediate single-player scheduler frame after arming combat reveal so pre-live combat appears once without duplicate owners
 // v0.688: Combat HUD ownership correction: make scheduler the single combat render/reveal owner and arm combat visibility instead of pre-rendering in the reveal path
 // v0.687: Combat HUD reveal owner: hide current combat family before hidden reveal render to prevent stale ticket/bar flash

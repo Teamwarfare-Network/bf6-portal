@@ -75,7 +75,7 @@ async function tryBeginVehicleDirectSpawnDeployFromSpawnPoint(player: mod.Player
 async function beginVehicleDirectSpawnDeployForPlayer(player: mod.Player): Promise<void> {
     if (!player || !mod.IsPlayerValid(player)) return;
     const pid = safeGetPlayerId(player);
-    if (pid !== undefined && isHudLoadingGateActiveForPid(pid)) return;
+    if (pid !== undefined && isHudTransitionBlockingForPid(pid)) return;
     const slot = getPendingVehicleDirectSpawnSlotForPlayer(player);
     if (slot) {
         const prepared = await preparePendingVehicleDirectSpawnVehicleForPlayer(player, slot);

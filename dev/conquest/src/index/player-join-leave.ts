@@ -21,11 +21,6 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
     deleteJoinPromptWidget(joinPromptTitleName(pid));
     deleteJoinPromptWidget(joinPromptPanelName(pid));
     deleteJoinPromptWidget(joinPromptRootName(pid));
-    deleteJoinPromptWidget(UI_HUD_LOADING_TEXT_ID + pid);
-    deleteJoinPromptWidget(UI_HUD_LOADING_TEXT_SHADOW_ID + pid);
-    deleteJoinPromptWidget(UI_HUD_LOADING_PLATE_ID + pid);
-    deleteJoinPromptWidget(UI_HUD_LOADING_ROOT_ID + pid);
-
     hideReadyDialogUI(player);
 
     const deleteAllByName = (name: string, maxPasses: number = 64): void => {
@@ -125,10 +120,6 @@ function cleanupHudForPid(pid: number): void {
         `VictoryDialogRoot_${pid}`,
         `MatchTimerRoot_${pid}`,
         `VehicleDeployTimerHudRoot_${pid}`,
-        UI_HUD_LOADING_TEXT_ID + pid,
-        UI_HUD_LOADING_TEXT_SHADOW_ID + pid,
-        UI_HUD_LOADING_PLATE_ID + pid,
-        UI_HUD_LOADING_ROOT_ID + pid,
         `RoundStateRoot_${pid}`,
         `RoundStateText_${pid}`,
         `PlayersReadyText_${pid}`,
@@ -150,9 +141,6 @@ function cleanupHudForPid(pid: number): void {
     delete State.conquest.debug.perspectiveTeamByPid[pid];
     delete State.conquest.debug.teamSwapPerspectiveLockUntilByPid[pid];
     delete State.conquest.debug.engageHiddenUntilDeployByPid[pid];
-    delete State.conquest.debug.hudRenderBucketByPid[pid];
-    delete State.conquest.debug.hudRenderBurstByPid[pid];
-    delete State.conquest.debug.hudRenderDuplicateBurstByPid[pid];
     delete State.conquest.debug.hudStatusVmByPid[pid];
     delete State.conquest.debug.hudHelpReadyVmByPid[pid];
     delete State.conquest.debug.hudClockVmByPid[pid];
@@ -186,7 +174,6 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     await warmCriticalHudForPlayer(eventPlayer, {
         refreshReadyDialogs: true,
         createJoinPrompt: false,
-        showLoadingOverlay: false,
     });
 
     // Join-time prompt is only shown once per player (undeploy prompts can repeat unless suppressed).

@@ -25,9 +25,7 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
         await deferForcedUndeploy(eventPlayer, "hud_warm_pending");
         return;
     }
-    State.players.readyDialogData[pid].hudLoadToken = (State.players.readyDialogData[pid].hudLoadToken ?? 0) + 1;
-    State.players.readyDialogData[pid].hudLoadGateActive = false;
-    setHudLoadingOverlayVisibleForPid(pid, false);
+    State.players.readyDialogData[pid].hudWarmToken = (State.players.readyDialogData[pid].hudWarmToken ?? 0) + 1;
     // Clear any lingering forced redeploy delay so deployed players can immediately interact with HUD/ready workflows.
     mod.SetRedeployTime(eventPlayer, 0);
     // Seed viewer perspective on deploy so first-life HUD slices (including bleed chevrons)
@@ -106,7 +104,6 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
         void warmCriticalHudForPlayer(eventPlayer, {
             createJoinPrompt: false,
             joinPromptDelaySeconds: 0,
-            showLoadingOverlay: false,
         });
     }
 }

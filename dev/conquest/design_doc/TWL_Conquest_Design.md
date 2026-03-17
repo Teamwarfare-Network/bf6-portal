@@ -2166,21 +2166,91 @@ Phase 5 execution breakdown:
   - reservation-consumption override design:
     - current first pass clears the live reservation once the player successfully spawns into the vehicle, but arms an auto-resubscribe return to that same slot on vehicle destruction if no one else has claimed it
     - later polish should define whether some modes/settings keep live reservations persistent, consume them immediately, or use the current auto-resubscribe return model
+  - active optimization/cutdown pass before Phase 6 handoff:
+    - current state is acceptable as a working checkpoint, but Phase 5 is still carrying too much churn/cruft from repeated UI stabilization passes
+    - do not add new Phase 6-style features until the remaining Phase 5 UI families are simplified back onto the accepted architecture
+    - optimization priority is not "more timing tricks"; it is structural simplification
+    - required architectural contract for every major UI family remains:
+      - `build hidden`
+      - `refresh content while hidden or already-visible`
+      - `reveal once`
+      - no routine refresh path owns visibility
+    - explicit UI family order for the remaining cleanup pass:
+      - top-left UI
+      - vehicle spawner HUD
+      - combat HUD
+      - ready dialog
+      - admin/debug last
+    - specific cleanup/cut plan:
+      - accepted current cut checkpoint:
+        - legacy combat/V2 widget-write ownership is removed; active combat ownership is now the derived-state layer plus `hud-core`
+        - dormant loading-overlay/loading-gate infrastructure is no longer part of the active accepted model
+        - the vehicle HUD has already been partially split away from a single broad reveal helper, but still needs final cleanup
+      - current stable baseline to preserve:
+        - top-left / upper-left shell is accepted as immediate/stable again and should not be moved back behind combat or dialog warm gates
+        - combat HUD visible ownership is `src/ui/conquest/hud-core/*`; `src/index/capture-tickets.ts` is now accepted as derivation/state/dispatch only and should not regain direct widget ownership
+        - debug position UI is accepted as off by default and should remain non-critical / last-owner
+        - no loading overlay should be reintroduced unless a future design pass explicitly replaces the current accepted hidden-build/reveal model
+      - concrete file targets for the next cleanup slice:
+        - `src/interaction/actions.ts`
+          - extract family cleanup helpers
+          - simplify warm/reveal state to the smallest useful set
+          - keep reveal ownership explicit per family
+        - `src/vehicles/deploy-timer-ui.ts`
+          - finish the split between `ensure built`, `apply content`, and `set visible`
+          - remove remaining public-callsite ambiguity around family visibility
+        - `src/ready-dialog/dialog-build.ts`
+        - `src/ready-dialog/roster-render.ts`
+        - `src/ready-dialog/mode-config-readout.ts`
+        - `src/interaction/interact-point.ts`
+          - add dirty/signature refresh so first-open/reopen do not redo unnecessary work
+        - `src/state/hud-cache-types.ts`
+          - separate active cache refs from any legacy/deprecated shapes still being carried
+      - next cleanup slice:
+        - move long per-player hide/delete/reset lists into family cleanup helpers so reset behavior is easier to reason about and safer to change
+        - add ready-dialog dirty-refresh rules so reopen paths stop doing unnecessary roster/config/button work when nothing changed
+        - split active HUD cache types from legacy/deprecated refs so current ownership is readable and old V2 state can be removed cleanly
+        - simplify warm/reveal state in the interaction layer further until only the minimal active ownership flags remain
+        - finish the right-side vehicle HUD split into explicit `ensure built`, `compute/apply content`, and `set visible` phases at every public callsite, not just inside the main helper
+        - leave debug-panel visual parity and first-load-only combat polish until after the helper/cache cleanup is accepted
+      - do-not-regress rules for later polish:
+        - do not let routine refresh paths hide/show roots
+        - do not move top-left shell ownership back under combat-HUD timing
+        - do not put ready dialog ownership back into the interact-point lifecycle as a cold-build requirement
+        - do not reintroduce broad all-player render calls from one player's reveal path where a per-player refresh is available
+        - do not reintroduce loading-text/loading-gate experiments as a substitute for proper hidden-build/reveal ownership
+    - acceptance bar for calling this optimization pass "done":
+      - top-left UI is immediately stable again and no longer participates in unnecessary warm gating
+      - vehicle HUD no longer trickles/reappears from unrelated refreshes
+      - combat HUD has one visible owner and does not visibly stage partial subfamilies before final reveal, aside from the currently tolerated first-load-only quirk if it survives the cleanup
+      - ready dialog first open/reopen follow the same hidden-build/atomic-reveal rule with no placeholder/label flicker
+      - admin/debug is clearly last-owner and not part of the critical visible path by default
+      - minimum regression script before calling the cleanup pass accepted:
+        - first join
+        - first undeploy
+        - team swap
+        - first ready-dialog open
+        - ready-dialog reopen
+        - vehicle HUD first appearance and later refresh
+        - admin toggle / debug toggle
+    - only after this simplification pass should Phase 6 be considered ready to start
   - later tuning once 5A-5F are proven
 
 Immediate next implementation target:
 
 - `Phase 5G`
-- Firestorm-first ready-up spawn-package authority pass
+- finish the Phase 5G optimization/cutdown pass before Phase 6 handoff
 - next design/implementation slice should:
-  - deprecate the legacy `4v4` forced-heli patch
-  - make ready-up knob selections authoritative over what slots can actually spawn
-  - add per-slot `No Spawn`
-  - lock and prove the first default package as `TWL - 10v10 Conquest`
-  - merge the ready-up selections with the real per-team heli/jet/armor/fast-mover slot inventory
-  - use the expanded live package to validate the right-side deploy HUD at maximum intended vehicle count and confirm there is enough room for all spawn buttons and slot states
-  - keep all configured vehicles user-controlled to spawn rather than auto-spawning them at match start
-- keep the remaining `Phase 5E` and `Phase 5F` follow-up explicit, but move the near-term design/implementation focus to the ready-up spawn-package merge
+  - keep the current working checkpoint stable and continue the cutdown instead of adding more feature breadth
+  - treat the legacy combat/V2 removal and dormant loading-model removal as accepted cuts, not open design questions
+  - make the next pass narrower and more structural:
+    - family cleanup helpers
+    - ready-dialog dirty refresh
+    - HUD cache-shape cleanup
+    - final vehicle-HUD public-callsite cleanup
+  - keep the ready-up spawn-package work live, but treat further feature expansion as secondary to architectural cleanup until the current UI stack is smaller and easier to reason about
+  - use the simplified post-cleanup Phase 5G state as the Phase 6 handoff baseline
+- keep the remaining `Phase 5E` and `Phase 5F` follow-up explicit, but do not treat Phase 6 as ready until the current Phase 5G cleanup/cut pass is accepted
 
 Codex To-Do Checklist:
 
@@ -2225,6 +2295,13 @@ Codex To-Do Checklist:
 - [ ] Limit first-pass vehicle-spawn mapping/testing rollout to Firestorm.
 - [ ] Decide in `Phase 5G` whether broader vehicle classes keep the current direct-deploy model or reintroduce a queue/subscription layer.
 - [ ] Keep current live-spawn behavior intact until map config and slot ownership are intentionally revised.
+- [x] Remove or isolate remaining legacy combat/V2 widget ownership so the active combat HUD has one visible owner only.
+- [ ] Split the right-side vehicle HUD into explicit build/content/reveal phases and remove routine visibility control from normal refresh helpers.
+- [x] Delete dormant loading-overlay/loading-gate infrastructure that is no longer part of the accepted hidden-build/reveal model.
+- [ ] Simplify warm/reveal state in the interaction layer so only the minimal active ownership flags remain.
+- [ ] Move long manual HUD hide/delete/reset lists into per-family cleanup helpers.
+- [ ] Add ready-dialog dirty-refresh/signature rules so cold open/reopen stop doing unnecessary work.
+- [ ] Split active HUD cache refs from legacy/deprecated refs and remove dead cache shapes as families are simplified.
 - [ ] Expand the ready-up dialog knobs to cover the requested spawn-type and spawn-length matrix before preset-mode packaging.
 - [ ] Add named preset configurations (`TWL 8v8/10v10/12v12/16v16 Conquest`) and switch to `Custom` labeling when knobs diverge from preset values.
 - [ ] Suppress the current left-side ready-up header strings while preserving their anchor positions for later reuse.
@@ -2246,6 +2323,8 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-03-16 | Phase 5G next-step doc sync after the v0.692 combat/V2 cutdown | Recorded the accepted current cut checkpoint: dead combat/V2 widget writers are removed, the dormant loading-model is no longer part of the active design, and the next slice is now narrower: family cleanup helpers, ready-dialog dirty refresh, HUD cache-shape cleanup, further warm/reveal-state simplification, and final vehicle-HUD public-callsite cleanup before Phase 6 handoff is considered ready | Phase 5, Phase 5G, Phase 6 | accepted | design_doc Phase 5G breakdown + immediate next target + Phase 5 checklist + Phase 5 changelog`
+  - `2026-03-16 | Phase 5G optimization/cutdown plan after UI stabilization checkpoint | Recorded that the current codebase is at an acceptable working checkpoint but still too heavy from repeated HUD/UI bug-fix churn; locked the next Phase 5G slice as an architectural simplification pass before Phase 6 handoff: remove duplicate widget owners, cut dormant loading infrastructure, split vehicle HUD refresh from reveal, simplify warm/reveal state, add ready-dialog dirty-refresh rules, and keep the accepted UI family order/topology explicit | Phase 5, Phase 5G, Phase 6 | accepted | design_doc Phase 5G breakdown + immediate next target + Phase 5 checklist + Phase 5 changelog`
   - `2026-03-15 | Phase 5F accepted and Phase 5G polish focus shift | Marked Phase 5F as accepted for now and moved the active implementation focus fully into Phase 5G polish: make ready-up knobs authoritative over real spawned slot inventory, lead with the TWL - 10v10 Conquest package, validate jets/armor/transports through the same live flow, and use the expanded package to test whether the right-side deploy HUD still fits the maximum intended vehicle count cleanly | Phase 5, Phase 5F, Phase 5G | accepted | design_doc Phase 5G breakdown + immediate next target + Phase 5 checklist + Phase 5 changelog`
   - `2026-03-15 | Phase 5 next-target shift after ready-dialog stabilization | Moved the immediate next implementation target from the older generic Phase 5F bounded-volume pointer to a narrower Firestorm-first Phase 5G ready-up spawn-package authority pass: deprecate the legacy 4v4 forced-heli shortcut, make ready-up knob selections authoritative over actual slot inventory, add per-slot No Spawn, lock TWL - 10v10 Conquest as the first default package, and keep vehicles user-controlled to spawn while leaving the remaining Phase 5E/5F follow-up explicit | Phase 5, Phase 5E, Phase 5F, Phase 5G | accepted | design_doc immediate next target + Phase 5 checklist + Phase 5 changelog`
   - `2026-03-15 | Phase 5G ready-up spawn-package merge note | Recorded the deferred polish goal of replacing the legacy `4v4` forced-heli patch with a fully authoritative ready-up spawn-package pass, adding `No Spawn` to every vehicle knob, locking `TWL - 10v10 Conquest` as the first default package, keeping vehicles user-controlled to spawn, and adding first-pass plane/fast-mover deploy-button rules | Phase 5, Phase 5G | accepted_with_deferred_polish | design_doc Phase 5G breakdown + Phase 5 checklist + Phase 5 changelog`

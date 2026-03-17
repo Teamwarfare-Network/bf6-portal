@@ -14,8 +14,8 @@ function dismissJoinPromptForPlayer(player: mod.Player): void {
     const pid = mod.GetObjId(player);
 
     setUIInputModeForPlayer(player, false);
-    if (isHudLoadingGateActiveForPid(pid)) {
-        enforceHudLoadingDeployBlock(player);
+    if (isHudTransitionBlockingForPid(pid)) {
+        enforceHudWarmTransitionDeployBlock(player);
     } else {
         mod.EnablePlayerDeploy(player, canEnableDeployAfterJoinPrompt());
     }

@@ -1,6 +1,6 @@
 # Conquest Issues
 
-Last Updated: 2026-03-13  
+Last Updated: 2026-03-16  
 Last Tested Build: `v0.528` (accepted Phase 4 / 4B multiplayer-tested checkpoint with one deferred VO polish bug)
 
 ## Current Snapshot
@@ -20,6 +20,33 @@ Last Tested Build: `v0.528` (accepted Phase 4 / 4B multiplayer-tested checkpoint
 - `CQ_Bug_14`: Resolved
 - `CQ_Bug_15`: Resolved
 - `CQ_Bug_16`: Open (deferred polish)
+- `CQ_Bug_17`: Open (deferred polish)
+
+## CQ_Bug_17
+Title: Marauder Ground Spawn Fails To Seat Player Reliably
+
+Observed:
+- Ground spawning into Marauders is still failing.
+- The transport may spawn, but the player does not reliably end up seated through the current ground-spawn path.
+
+Expected:
+- Selecting `GROUND DEPLOY` for a Marauder should consistently spawn the vehicle and place the player into a valid seat in one step.
+
+Current Accepted Behavior:
+- Other ground transports are considered functional enough for the current checkpoint.
+- Marauder ground deploy remains a known deferred bug and should not be treated as solved.
+
+Status:
+- Open.
+- Deferred to later polish.
+
+Recommended Later Polish:
+- Re-evaluate the Marauder-specific spawn-to-seat flow separately from lighter fast movers.
+- Confirm whether the failure is:
+  - seat forcing
+  - spawn transform/clearance
+  - vehicle-ready timing after spawn
+- Validate both Team 1 and Team 2 Marauder variants after the transport polish pass.
 
 ## CQ_Bug_16
 Title: Enemy Terminal Flag VO Only Reliable While Recipient Remains On Objective

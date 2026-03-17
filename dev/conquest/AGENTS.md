@@ -99,6 +99,10 @@ Prompting examples:
 3. `scripts/verify.js` must enforce this cap and fail verification when exceeded.
 4. Before handoff, always run verification and confirm the bundle size check passes.
 5. If size exceeds limit, prioritize removing redundant runtime paths/imports before feature additions.
+6. For every implemented code change, report the current emitted bundle size in the final output.
+7. Also report remaining headroom below the `1,048,576` byte cap.
+8. Also report whether the bundle size went up, went down, or stayed flat versus the previous reported implementation checkpoint.
+9. Use the size data from the post-`bumpVersion` build/verify output as the source of truth; do not estimate or omit it.
 
 ## UI Layout Change Protocol
 
@@ -155,6 +159,10 @@ Prompting examples:
 4. When methodology references influence design, describe the pattern adapted without pasting their code.
 5. Include task list status (completed work and any remaining items).
 6. If string edits were made, include the explicit human approval reference in the output.
+7. For every implementation handoff, include a bundle-size line with:
+   - current `dist/bundle.ts` size
+   - bytes remaining below the upload cap
+   - direction versus the prior reported implementation (`up` / `down` / `flat`)
 
 ## IDE Link Policy
 

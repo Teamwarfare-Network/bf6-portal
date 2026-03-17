@@ -146,12 +146,8 @@ function initReadyDialogData(eventPlayer: mod.Player) {
         posDebugVisible: false,
         posDebugToken: 0,
         vehicleTimersVisibleWhileDeployed: false,
-        hudLoadingVisible: false,
-        hudLoadGateActive: false,
-        hudLoadToken: 0,
-        hudLoadStartedAtSeconds: 0,
+        hudWarmToken: 0,
         hudWarmCompleted: false,
-        hudForceLoadingOnNextWarm: false,
         hudSwapTransitionActive: false,
         combatHudRevealAllowed: false,
     };

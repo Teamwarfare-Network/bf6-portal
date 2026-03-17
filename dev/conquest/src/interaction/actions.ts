@@ -8,17 +8,12 @@ type HudLoadingWarmOptions = {
     refreshReadyDialogs?: boolean;
     createJoinPrompt?: boolean;
     joinPromptDelaySeconds?: number;
-    showLoadingOverlay?: boolean;
 };
 
 const TEAM_SWAP_LOADING_UNDEPLOY_WAIT_SECONDS = 0.05;
 const TEAM_SWAP_LOADING_UNDEPLOY_WAIT_ATTEMPTS = 20;
 const TEAM_SWAP_LOADING_TEAM_SETTLE_SECONDS = 0.05;
 const TEAM_SWAP_LOADING_TEAM_SETTLE_ATTEMPTS = 8;
-
-function isHudLoadingGateActiveForPid(pid: number): boolean {
-    return State.players.readyDialogData[pid]?.hudLoadGateActive === true;
-}
 
 function isHudWarmReadyForPid(pid: number): boolean {
     return State.players.readyDialogData[pid]?.hudWarmCompleted !== false;
@@ -28,130 +23,19 @@ function isHudSwapTransitionActiveForPid(pid: number): boolean {
     return State.players.readyDialogData[pid]?.hudSwapTransitionActive === true;
 }
 
+function isHudTransitionBlockingForPid(pid: number): boolean {
+    return isHudSwapTransitionActiveForPid(pid) || !isHudWarmReadyForPid(pid);
+}
+
 function isCombatHudRevealAllowedForPid(pid: number): boolean {
     return State.players.readyDialogData[pid]?.combatHudRevealAllowed === true;
 }
 
-function ensureHudLoadingTextWidget(
-    name: string,
-    player: mod.Player,
-    parent: mod.UIWidget,
-    textColor: mod.Vector,
-    shadow: boolean
-): mod.UIWidget | undefined {
-    let widget = safeFind(name);
-    if (!widget) {
-        widget = addCenteredButtonText(
-            name,
-            HUD_LOADING_TEXT_WIDTH,
-            HUD_LOADING_TEXT_HEIGHT,
-            mod.Message(mod.stringkeys.twl.ui.loading),
-            player,
-            parent,
-            HUD_LOADING_TEXT_SIZE
-        );
-    }
-    if (!widget) return undefined;
-    safeSetUIWidgetParent(widget, parent);
-    try {
-        mod.SetUIWidgetAnchor(widget, mod.UIAnchor.Center);
-        mod.SetUITextAnchor(widget, mod.UIAnchor.Center);
-    } catch {
-        return widget;
-    }
-    safeSetUIWidgetPosition(
-        widget,
-        mod.CreateVector(
-            shadow ? HUD_LOADING_TEXT_SHADOW_OFFSET_X : 0,
-            shadow ? HUD_LOADING_TEXT_SHADOW_OFFSET_Y : 0,
-            0
-        )
-    );
-    safeSetUIWidgetSize(widget, mod.CreateVector(HUD_LOADING_TEXT_WIDTH, HUD_LOADING_TEXT_HEIGHT, 0));
-    safeSetUIWidgetDepth(widget, mod.UIDepth.AboveGameUI);
-    safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.ui.loading));
-    safeSetUITextColor(widget, textColor);
-    safeSetUITextAlpha(widget, shadow ? 0.48 : 1);
-    return widget;
-}
-
-function ensureHudLoadingOverlayForPlayer(player: mod.Player): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
-    const pid = safeGetPlayerId(player);
-    if (pid === undefined) return;
-
-    const rootId = UI_HUD_LOADING_ROOT_ID + pid;
-    let root = safeFind(rootId);
-    if (!root) {
-        mod.AddUIContainer(
-            rootId,
-            mod.CreateVector(0, 0, 0),
-            mod.CreateVector(HUD_LOADING_ROOT_WIDTH, HUD_LOADING_ROOT_HEIGHT, 0),
-            mod.UIAnchor.Center,
-            mod.GetUIRoot(),
-            false,
-            0,
-            COLOR_DARK_BLACK,
-            0,
-            mod.UIBgFill.None,
-            mod.UIDepth.AboveGameUI,
-            player
-        );
-        root = safeFind(rootId);
-    }
-    if (!root) return;
-    safeSetUIWidgetParent(root, mod.GetUIRoot());
-    safeSetUIWidgetPosition(root, mod.CreateVector(0, 0, 0));
-    safeSetUIWidgetSize(root, mod.CreateVector(HUD_LOADING_ROOT_WIDTH, HUD_LOADING_ROOT_HEIGHT, 0));
-    safeSetUIWidgetDepth(root, mod.UIDepth.AboveGameUI);
-
-    const plateId = UI_HUD_LOADING_PLATE_ID + pid;
-    let plate = safeFind(plateId);
-    if (!plate) {
-        mod.AddUIContainer(
-            plateId,
-            mod.CreateVector(0, 0, 0),
-            mod.CreateVector(HUD_LOADING_PLATE_WIDTH, HUD_LOADING_PLATE_HEIGHT, 0),
-            mod.UIAnchor.Center,
-            root,
-            false,
-            0,
-            COLOR_DARK_BLACK,
-            0.92,
-            mod.UIBgFill.Blur,
-            mod.UIDepth.AboveGameUI,
-            player
-        );
-        plate = safeFind(plateId);
-    }
-    if (!plate) return;
-    safeSetUIWidgetParent(plate, root);
-    safeSetUIWidgetPosition(plate, mod.CreateVector(0, 0, 0));
-    safeSetUIWidgetSize(plate, mod.CreateVector(HUD_LOADING_PLATE_WIDTH, HUD_LOADING_PLATE_HEIGHT, 0));
-    safeSetUIWidgetBgColor(plate, COLOR_DARK_BLACK);
-    safeSetUIWidgetBgAlpha(plate, 0.92);
-    safeSetUIWidgetDepth(plate, mod.UIDepth.AboveGameUI);
-
-    ensureHudLoadingTextWidget(UI_HUD_LOADING_TEXT_SHADOW_ID + pid, player, plate, COLOR_DARK_BLACK, true);
-    ensureHudLoadingTextWidget(UI_HUD_LOADING_TEXT_ID + pid, player, plate, COLOR_WHITE, false);
-    setHudLoadingOverlayVisibleForPid(pid, false);
-}
-
-function setHudLoadingOverlayVisibleForPid(pid: number, visible: boolean): void {
-    safeSetUIWidgetVisible(safeFind(UI_HUD_LOADING_ROOT_ID + pid), visible);
-    safeSetUIWidgetVisible(safeFind(UI_HUD_LOADING_PLATE_ID + pid), visible);
-    safeSetUIWidgetVisible(safeFind(UI_HUD_LOADING_TEXT_SHADOW_ID + pid), visible);
-    safeSetUIWidgetVisible(safeFind(UI_HUD_LOADING_TEXT_ID + pid), visible);
-    if (State.players.readyDialogData[pid]) {
-        State.players.readyDialogData[pid].hudLoadingVisible = visible;
-    }
-}
-
-function enforceHudLoadingDeployBlock(eventPlayer: mod.Player): void {
+function enforceHudWarmTransitionDeployBlock(eventPlayer: mod.Player): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     setUIInputModeForPlayer(eventPlayer, false);
     mod.EnablePlayerDeploy(eventPlayer, false);
-    mod.SetRedeployTime(eventPlayer, HUD_LOADING_REDEPLOY_BLOCK_SECONDS);
+    mod.SetRedeployTime(eventPlayer, HUD_WARM_REDEPLOY_BLOCK_SECONDS);
 }
 
 function canEnablePlayerDeployForPid(pid: number): boolean {
@@ -169,10 +53,7 @@ function syncPlayerDeployAvailability(eventPlayer: mod.Player): void {
     if (pid === undefined) return;
     const canEnableDeploy = canEnablePlayerDeployForPid(pid);
     mod.EnablePlayerDeploy(eventPlayer, canEnableDeploy);
-    mod.SetRedeployTime(
-        eventPlayer,
-        canEnableDeploy ? 0 : (isHudLoadingGateActiveForPid(pid) ? HUD_LOADING_REDEPLOY_BLOCK_SECONDS : 0)
-    );
+    mod.SetRedeployTime(eventPlayer, canEnableDeploy ? 0 : (isHudTransitionBlockingForPid(pid) ? HUD_WARM_REDEPLOY_BLOCK_SECONDS : 0));
 }
 
 function isCriticalTopHudReadyForPid(pid: number): boolean {
@@ -290,13 +171,6 @@ function refreshCombatHudForPlayer(eventPlayer: mod.Player, pid: number): void {
     entry.lastMainUpdateAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
 }
 
-function forceHideLegacyCombatHudWidgetsForPid(pid: number): void {
-    try {
-        const refs = State.hudCache.hudByPid[pid] ?? ({ pid, roots: [] } as HudRefs);
-        conquestPhase3ForceHideAllV2Widgets(refs);
-    } catch {}
-}
-
 function prebuildTopLeftUiFamilyWhileHidden(eventPlayer: mod.Player, pid: number): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     try {
@@ -325,7 +199,6 @@ function prebuildVehicleSpawnerUiFamilyWhileHidden(eventPlayer: mod.Player, _pid
 function prebuildCombatHudFamilyWhileHidden(eventPlayer: mod.Player, pid: number): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     try {
-        forceHideLegacyCombatHudWidgetsForPid(pid);
         const entry = twlConquestHudEnsurePlayerGraph(eventPlayer);
         if (!entry || !entry.initialized) return;
         twlConquestHudHidePlayer(pid);
@@ -381,14 +254,13 @@ function renderVehicleSpawnerUiFamilyForReveal(eventPlayer: mod.Player, pid: num
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     const revealVehicleHud = conquestPhase5BRenderVehicleDeployTimersForPlayer(eventPlayer, false);
     const vehicleCache = State.hudCache.vehicleDeployTimerCache[pid];
-    setVehicleDeployTimerRootOnscreen(vehicleCache, revealVehicleHud);
-    safeSetUIWidgetVisible(vehicleCache?.root, revealVehicleHud);
-    if (vehicleCache) vehicleCache.lastVisibleState = revealVehicleHud;
+    if (vehicleCache) {
+        setVehicleDeployTimerHudFamilyVisible(vehicleCache, revealVehicleHud);
+    }
 }
 
 function armCombatHudFamilyForSchedulerReveal(eventPlayer: mod.Player, pid: number): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    forceHideLegacyCombatHudWidgetsForPid(pid);
     const entry = twlConquestHudEnsurePlayerGraph(eventPlayer);
     if (!entry || !entry.initialized) return;
     twlConquestHudHidePlayer(pid);
@@ -430,7 +302,7 @@ function setPositionDebugWidgetsVisibleForPid(pid: number, visible: boolean): vo
     }
 }
 
-function hideTopHudFamilyForLoadingGate(pid: number): void {
+function hideTopHudFamilyForWarmTransition(pid: number): void {
     const refs = getTopHudShellRefsForPid(pid);
     safeSetUIWidgetVisible(refs?.topCenterAuxRoot, false);
     safeSetUIWidgetVisible(refs?.helpTextContainer, false);
@@ -458,7 +330,7 @@ function hideTopHudFamilyForLoadingGate(pid: number): void {
 function renderCriticalHudForReveal(eventPlayer: mod.Player, pid: number): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     if (isHudSwapTransitionActiveForPid(pid) || !isHudWarmReadyForPid(pid)) {
-        hideCriticalHudForLoadingGate(pid);
+        hideCriticalHudForWarmTransition(pid);
         return;
     }
     renderTopLeftUiFamilyForReveal(eventPlayer, pid);
@@ -468,11 +340,6 @@ function renderCriticalHudForReveal(eventPlayer: mod.Player, pid: number): void 
     renderAdminUiFamilyForReveal(eventPlayer, pid);
 }
 
-function primeHudLoadingOverlayForPlayer(eventPlayer: mod.Player): void {
-    // Loading overlay removed. Keep function as a no-op to avoid wider call-site churn.
-    return;
-}
-
 async function waitForPlayerToBecomeUndeployedForTeamSwap(
     eventPlayer: mod.Player,
     pid: number,
@@ -480,11 +347,10 @@ async function waitForPlayerToBecomeUndeployedForTeamSwap(
 ): Promise<boolean> {
     for (let i = 0; i < TEAM_SWAP_LOADING_UNDEPLOY_WAIT_ATTEMPTS; i++) {
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
-        if ((State.players.readyDialogData[pid]?.hudLoadToken ?? 0) !== token) return false;
+        if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return false;
         if (!State.players.deployedByPid[pid]) return true;
-        enforceHudLoadingDeployBlock(eventPlayer);
-        setHudLoadingOverlayVisibleForPid(pid, true);
-        hideCriticalHudForLoadingGate(pid);
+        enforceHudWarmTransitionDeployBlock(eventPlayer);
+        hideCriticalHudForWarmTransition(pid);
         await mod.Wait(TEAM_SWAP_LOADING_UNDEPLOY_WAIT_SECONDS);
     }
     return !State.players.deployedByPid[pid];
@@ -498,11 +364,10 @@ async function waitForPlayerTeamToSettleForSwap(
 ): Promise<boolean> {
     for (let i = 0; i < TEAM_SWAP_LOADING_TEAM_SETTLE_ATTEMPTS; i++) {
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
-        if ((State.players.readyDialogData[pid]?.hudLoadToken ?? 0) !== token) return false;
+        if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return false;
         if (safeGetTeamNumberFromPlayer(eventPlayer, 0) === newTeamNum) return true;
-        enforceHudLoadingDeployBlock(eventPlayer);
-        setHudLoadingOverlayVisibleForPid(pid, true);
-        hideCriticalHudForLoadingGate(pid);
+        enforceHudWarmTransitionDeployBlock(eventPlayer);
+        hideCriticalHudForWarmTransition(pid);
         await mod.Wait(TEAM_SWAP_LOADING_TEAM_SETTLE_SECONDS);
     }
     return safeGetTeamNumberFromPlayer(eventPlayer, 0) === newTeamNum;
@@ -527,32 +392,30 @@ async function runTeamSwapHudWarmController(
     const settled = await waitForPlayerTeamToSettleForSwap(eventPlayer, pid, token, newTeamNum);
     if (!settled) return;
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    if ((State.players.readyDialogData[pid]?.hudLoadToken ?? 0) !== token) return;
+    if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return;
 
     await warmCriticalHudForPlayer(eventPlayer, {
         createJoinPrompt: false,
         joinPromptDelaySeconds: 0,
-        showLoadingOverlay: true,
     });
 
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     const latestState = State.players.readyDialogData[pid];
     if (!latestState) return;
-    if ((latestState.hudLoadToken ?? 0) !== token + 1 && (latestState.hudLoadToken ?? 0) !== token) {
+    if ((latestState.hudWarmToken ?? 0) !== token + 1 && (latestState.hudWarmToken ?? 0) !== token) {
         // warmCriticalHudForPlayer owns the next token; any other change invalidates this swap controller.
         return;
     }
     syncPlayerDeployAvailability(eventPlayer);
 }
 
-function hideCriticalHudForLoadingGate(pid: number, preserveVehicleRows: boolean = false): void {
+function hideCriticalHudForWarmTransition(pid: number): void {
     if (State.players.readyDialogData[pid]) {
         State.players.readyDialogData[pid].combatHudRevealAllowed = false;
     }
-    forceHideLegacyCombatHudWidgetsForPid(pid);
     twlConquestHudHideRootOnly(pid);
     clearJoinPromptForPlayerId(pid);
-    hideTopHudFamilyForLoadingGate(pid);
+    hideTopHudFamilyForWarmTransition(pid);
     setPositionDebugWidgetsVisibleForPid(pid, false);
 
     const vehicleCache = State.hudCache.vehicleDeployTimerCache[pid];
@@ -570,17 +433,14 @@ function hideCriticalHudForLoadingGate(pid: number, preserveVehicleRows: boolean
     safeSetUIWidgetVisible(safeFind(`HelpText_${pid}`), false);
 }
 
-function releaseHudLoadingGateForPlayer(eventPlayer: mod.Player, token: number): void {
+function releaseHudWarmTransitionForPlayer(eventPlayer: mod.Player, token: number): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     const state = State.players.readyDialogData[pid];
     if (!state) return;
-    if ((state.hudLoadToken ?? 0) !== token) return;
+    if ((state.hudWarmToken ?? 0) !== token) return;
 
-    state.hudLoadGateActive = false;
-    state.hudLoadStartedAtSeconds = 0;
-    state.hudLoadingVisible = false;
     state.hudSwapTransitionActive = false;
 
     renderCriticalHudForReveal(eventPlayer, pid);
@@ -591,7 +451,7 @@ function releaseHudLoadingGateForPlayer(eventPlayer: mod.Player, token: number):
 async function prebuildDeferredUiAfterReveal(eventPlayer: mod.Player, pid: number, token: number): Promise<void> {
     await mod.Wait(0);
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    if ((State.players.readyDialogData[pid]?.hudLoadToken ?? 0) !== token) return;
+    if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return;
     prebuildDeferredUiWhileHidden(eventPlayer, pid);
 }
 
@@ -606,52 +466,47 @@ async function warmCriticalHudForPlayer(
     const state = State.players.readyDialogData[pid];
     if (!state) return;
 
-    const token = (state.hudLoadToken ?? 0) + 1;
-    state.hudLoadToken = token;
-    state.hudForceLoadingOnNextWarm = false;
-    state.hudLoadGateActive = state.hudSwapTransitionActive === true;
+    const token = (state.hudWarmToken ?? 0) + 1;
+    state.hudWarmToken = token;
     state.combatHudRevealAllowed = false;
-    state.hudLoadingVisible = false;
-    state.hudLoadStartedAtSeconds = 0;
-    setHudLoadingOverlayVisibleForPid(pid, false);
     if (state.hudWarmCompleted !== true) {
         state.hudWarmCompleted = false;
-        hideCriticalHudForLoadingGate(pid);
+        hideCriticalHudForWarmTransition(pid);
     }
 
-    await mod.Wait(HUD_LOADING_OVERLAY_PREWARM_DELAY_SECONDS);
+    await mod.Wait(HUD_WARM_PREBUILD_DELAY_SECONDS);
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    if ((State.players.readyDialogData[pid]?.hudLoadToken ?? 0) !== token) return;
+    if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return;
 
     let readyStablePolls = 0;
-    const readyDeadline = mod.GetMatchTimeElapsed() + HUD_LOADING_READY_TIMEOUT_SECONDS;
+    const readyDeadline = mod.GetMatchTimeElapsed() + HUD_WARM_READY_TIMEOUT_SECONDS;
     while (true) {
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-        if ((State.players.readyDialogData[pid]?.hudLoadToken ?? 0) !== token) return;
+        if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return;
 
         prebuildCriticalHudWhileHidden(eventPlayer, pid);
         if (!state.hudWarmCompleted) {
-            hideCriticalHudForLoadingGate(pid, true);
+            hideCriticalHudForWarmTransition(pid);
         }
 
         if (isCriticalHudReadyForPlayer(eventPlayer, pid)) readyStablePolls += 1;
         else readyStablePolls = 0;
 
         const timedOut = mod.GetMatchTimeElapsed() >= readyDeadline;
-        if (readyStablePolls >= HUD_LOADING_READY_STABLE_POLLS || timedOut) {
+        if (readyStablePolls >= HUD_WARM_READY_STABLE_POLLS || timedOut) {
             break;
         }
 
-        await mod.Wait(HUD_LOADING_READY_POLL_SECONDS);
+        await mod.Wait(HUD_WARM_READY_POLL_SECONDS);
     }
 
-    if ((State.players.readyDialogData[pid]?.hudLoadToken ?? 0) !== token) return;
+    if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return;
 
     state.hudWarmCompleted = true;
     if (options?.refreshReadyDialogs) {
         renderReadyDialogForAllVisibleViewers();
     }
-    releaseHudLoadingGateForPlayer(eventPlayer, token);
+    releaseHudWarmTransitionForPlayer(eventPlayer, token);
 
     if (
         options?.createJoinPrompt
@@ -662,7 +517,7 @@ async function warmCriticalHudForPlayer(
         if (delaySeconds > 0) {
             await mod.Wait(delaySeconds);
             if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-            if ((State.players.readyDialogData[pid]?.hudLoadToken ?? 0) !== token) return;
+            if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return;
             if (State.players.deployedByPid[pid]) return;
         }
         createJoinPromptForPlayer(eventPlayer);
@@ -679,9 +534,6 @@ function cleanupConquestHudForTeamSwap(pid: number): void {
     conquestPhase4BOnPlayerLeaveOrResetPid(pid);
     State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
     State.conquest.debug.teamSwapHudResetPendingByPid[pid] = true;
-    delete State.conquest.debug.hudRenderBucketByPid[pid];
-    delete State.conquest.debug.hudRenderBurstByPid[pid];
-    conquestPhase3ResetBleedPulseForPid(pid);
     // Always force-hide objective overlays explicitly for swap transitions.
     twlConquestHudHideObjectiveFocusForPid(pid);
 }
@@ -758,8 +610,7 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
         if (readyData) {
             readyData.hudSwapTransitionActive = true;
             readyData.hudWarmCompleted = false;
-            readyData.hudLoadGateActive = true;
-            readyData.hudLoadToken = (readyData.hudLoadToken ?? 0) + 1;
+            readyData.hudWarmToken = (readyData.hudWarmToken ?? 0) + 1;
         }
         // Treat swap as immediately undeployed for HUD authority until the engine undeploy callback lands.
         State.players.deployedByPid[pid] = false;
@@ -780,9 +631,9 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
         State.conquest.debug.perspectiveTeamByPid[pid] = newTeamNum;
         // Hold perspective to the target team briefly so redraw cannot sample stale pre-swap engine team for one frame.
         State.conquest.debug.teamSwapPerspectiveLockUntilByPid[pid] = mod.GetMatchTimeElapsed() + TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS;
-        hideCriticalHudForLoadingGate(pid);
+        hideCriticalHudForWarmTransition(pid);
     }
-    enforceHudLoadingDeployBlock(eventPlayer);
+    enforceHudWarmTransitionDeployBlock(eventPlayer);
     mod.SetTeam(eventPlayer, mod.GetTeam(newTeamNum));
     // Single redraw strategy:
     // - mark dirty now
@@ -794,7 +645,7 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
         void runTeamSwapHudWarmController(
             eventPlayer,
             pid,
-            State.players.readyDialogData[pid]?.hudLoadToken ?? 0,
+            State.players.readyDialogData[pid]?.hudWarmToken ?? 0,
             newTeamNum,
             wasDeployedBeforeSwap
         );

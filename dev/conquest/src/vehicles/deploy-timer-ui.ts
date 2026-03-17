@@ -1065,6 +1065,16 @@ type VehicleDeployTimerRowVisibilityState = {
     timerVisible: boolean;
 };
 
+function buildHiddenVehicleDeployTimerRowVisibilityState(): VehicleDeployTimerRowVisibilityState {
+    return {
+        rowVisible: false,
+        playerNameVisible: false,
+        spawnButtonVisible: false,
+        groundButtonVisible: false,
+        timerVisible: false,
+    };
+}
+
 function applyVehicleDeployTimerRowVisibilityState(
     row: VehicleDeployTimerRowCacheEntry | undefined,
     visibility: VehicleDeployTimerRowVisibilityState
@@ -1165,6 +1175,54 @@ function renderVehicleDeployTimerRow(
         applyVehicleDeployTimerRowVisibilityState(row, visibilityState);
     }
     return visibilityState;
+}
+
+function hideVehicleDeployTimerHudFamily(
+    cache: VehicleDeployTimerHudCacheEntry | undefined,
+    parkOffscreen: boolean
+): void {
+    if (!cache?.root) return;
+    if (parkOffscreen) {
+        setVehicleDeployTimerRootOnscreen(cache, false);
+    }
+    safeSetUIWidgetVisible(cache.root, false);
+    cache.lastVisibleState = false;
+    for (let i = 0; i < cache.rows.length; i++) {
+        setVehicleDeployTimerRowVisible(cache.rows[i], false);
+    }
+}
+
+function applyVehicleDeployTimerRenderPlanContent(
+    cache: VehicleDeployTimerHudCacheEntry,
+    renderPlan: VehicleDeployTimerRenderPlan,
+    viewerPid: number
+): boolean {
+    if (!renderPlan.shouldShowRows || !renderPlan.warmReady) {
+        cache.lastRenderSignature = renderPlan.signature;
+        hideVehicleDeployTimerHudFamily(cache, false);
+        return false;
+    }
+
+    const hiddenState = buildHiddenVehicleDeployTimerRowVisibilityState();
+    const rowVisibilityStates: VehicleDeployTimerRowVisibilityState[] = [];
+    for (let i = 0; i < VEHICLE_DEPLOY_TIMER_MAX_ROWS; i++) {
+        rowVisibilityStates[i] = renderVehicleDeployTimerRow(cache.rows[i], renderPlan.slots[i], viewerPid, false);
+    }
+    for (let i = 0; i < VEHICLE_DEPLOY_TIMER_MAX_ROWS; i++) {
+        applyVehicleDeployTimerRowVisibilityState(cache.rows[i], rowVisibilityStates[i] ?? hiddenState);
+    }
+    cache.lastRenderSignature = renderPlan.signature;
+    return renderPlan.visible;
+}
+
+function setVehicleDeployTimerHudFamilyVisible(
+    cache: VehicleDeployTimerHudCacheEntry,
+    visible: boolean
+): void {
+    if (!cache.root) return;
+    setVehicleDeployTimerRootOnscreen(cache, visible);
+    safeSetUIWidgetVisible(cache.root, visible);
+    cache.lastVisibleState = visible;
 }
 
 function tryHandleVehicleDeployTimerButtonEvent(
@@ -1314,51 +1372,18 @@ function conquestPhase5BRenderVehicleDeployTimersForPlayer(player: mod.Player, r
     if (!cache || !cache.root) return false;
 
     const renderPlan = buildVehicleDeployTimerRenderPlan(player, pid);
-    if (!renderPlan.shouldShowRows || !renderPlan.warmReady) {
-        cache.lastRenderSignature = renderPlan.signature;
-        if (!revealRoot) {
-            setVehicleDeployTimerRootOnscreen(cache, false);
-        }
-        safeSetUIWidgetVisible(cache.root, false);
-        cache.lastVisibleState = false;
-        for (let i = 0; i < cache.rows.length; i++) {
-            setVehicleDeployTimerRowVisible(cache.rows[i], false);
-        }
-        return false;
-    }
 
     const revealFromHidden = revealRoot && cache.lastVisibleState !== true;
     if (!revealRoot || revealFromHidden) {
-        setVehicleDeployTimerRootOnscreen(cache, false);
-        safeSetUIWidgetVisible(cache.root, false);
-        cache.lastVisibleState = false;
+        setVehicleDeployTimerHudFamilyVisible(cache, false);
     }
 
-    const rowVisibilityStates: VehicleDeployTimerRowVisibilityState[] = [];
-    for (let i = 0; i < VEHICLE_DEPLOY_TIMER_MAX_ROWS; i++) {
-        rowVisibilityStates[i] = renderVehicleDeployTimerRow(cache.rows[i], renderPlan.slots[i], pid, false);
-    }
-    for (let i = 0; i < VEHICLE_DEPLOY_TIMER_MAX_ROWS; i++) {
-        applyVehicleDeployTimerRowVisibilityState(
-            cache.rows[i],
-            rowVisibilityStates[i] ?? {
-                rowVisible: false,
-                playerNameVisible: false,
-                spawnButtonVisible: false,
-                groundButtonVisible: false,
-                timerVisible: false,
-            }
-        );
-    }
-    cache.lastRenderSignature = renderPlan.signature;
+    const visible = applyVehicleDeployTimerRenderPlanContent(cache, renderPlan, pid);
 
     if (revealRoot) {
-        setVehicleDeployTimerRootOnscreen(cache, true);
-        safeSetUIWidgetVisible(cache.root, renderPlan.visible);
-        cache.lastVisibleState = renderPlan.visible;
+        setVehicleDeployTimerHudFamilyVisible(cache, visible);
     } else {
-        safeSetUIWidgetVisible(cache.root, false);
-        cache.lastVisibleState = false;
+        setVehicleDeployTimerHudFamilyVisible(cache, false);
     }
 
     if (
@@ -1369,7 +1394,7 @@ function conquestPhase5BRenderVehicleDeployTimersForPlayer(player: mod.Player, r
     ) {
         setUIInputModeForPlayer(player, true);
     }
-    return renderPlan.visible;
+    return visible;
 }
 
 function refreshVehicleDeployTimersForPlayerPreservingVisibility(player: mod.Player): boolean {

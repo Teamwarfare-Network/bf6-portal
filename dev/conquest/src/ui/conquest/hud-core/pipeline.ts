@@ -71,7 +71,6 @@ function twlConquestHudProcessPlayerFrame(
 
     const snapshot = twlConquestHudBuildSnapshotForPlayer(player);
     if (entry.pendingFirstReveal) {
-        forceHideLegacyCombatHudWidgetsForPid(pid);
         twlConquestHudHidePlayer(pid);
         twlConquestHudRenderPlayerFrame(pid, player, snapshot, false);
         entry.lastSnapshot = snapshot;

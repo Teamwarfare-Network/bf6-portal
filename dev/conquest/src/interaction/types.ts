@@ -23,12 +23,8 @@ interface readyDialogData_t {
     posDebugVisible: boolean;
     posDebugToken: number;
     vehicleTimersVisibleWhileDeployed: boolean;
-    hudLoadingVisible: boolean;
-    hudLoadGateActive: boolean;
-    hudLoadToken: number;
-    hudLoadStartedAtSeconds: number;
+    hudWarmToken: number;
     hudWarmCompleted: boolean;
-    hudForceLoadingOnNextWarm: boolean;
     hudSwapTransitionActive: boolean;
     combatHudRevealAllowed: boolean;
 }
