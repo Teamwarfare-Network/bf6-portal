@@ -10,6 +10,8 @@ const VEHICLE_DIRECT_SPAWN_FULFILLMENT_VERIFY_ATTEMPTS = 10;
 const VEHICLE_DIRECT_SPAWN_FULFILLMENT_UNDEPLOY_DELAY_SECONDS = 0.05;
 const VEHICLE_DIRECT_SPAWN_DEPLOY_VERIFY_INTERVAL_SECONDS = 0.05;
 const VEHICLE_DIRECT_SPAWN_DEPLOY_VERIFY_ATTEMPTS = 8;
+const VEHICLE_DIRECT_SPAWN_BIND_VERIFY_INTERVAL_SECONDS = 0.1;
+const VEHICLE_DIRECT_SPAWN_BIND_VERIFY_ATTEMPTS = 10;
 
 type ConquestVehicleDirectSpawnDeployResult = {
     consumedDeploy: boolean;
@@ -72,6 +74,8 @@ async function tryBeginVehicleDirectSpawnDeployFromSpawnPoint(player: mod.Player
 
 async function beginVehicleDirectSpawnDeployForPlayer(player: mod.Player): Promise<void> {
     if (!player || !mod.IsPlayerValid(player)) return;
+    const pid = safeGetPlayerId(player);
+    if (pid !== undefined && isHudLoadingGateActiveForPid(pid)) return;
     const slot = getPendingVehicleDirectSpawnSlotForPlayer(player);
     if (slot) {
         const prepared = await preparePendingVehicleDirectSpawnVehicleForPlayer(player, slot);
@@ -128,6 +132,28 @@ function isDirectSpawnDriverSeatAvailable(vehicle: mod.Vehicle | undefined): boo
     return !mod.IsVehicleSeatOccupied(vehicle, VEHICLE_DIRECT_SPAWN_FULFILLMENT_SEAT_NUMBER);
 }
 
+function isFastMoverDirectSpawnVehicle(vehicleType: mod.VehicleList): boolean {
+    switch (vehicleType) {
+        case mod.VehicleList.Marauder:
+        case mod.VehicleList.Marauder_Pax:
+        case mod.VehicleList.Quadbike:
+        case mod.VehicleList.GolfCart:
+        case mod.VehicleList.Flyer60:
+            return true;
+        default:
+            return false;
+    }
+}
+
+async function waitForSpawnedVehicleForSlot(slot: VehicleSpawnerSlot | undefined): Promise<mod.Vehicle | undefined> {
+    for (let attempt = 0; attempt < VEHICLE_DIRECT_SPAWN_BIND_VERIFY_ATTEMPTS; attempt++) {
+        const vehicle = tryGetSpawnedVehicleForSlot(slot);
+        if (vehicle) return vehicle;
+        await mod.Wait(VEHICLE_DIRECT_SPAWN_BIND_VERIFY_INTERVAL_SECONDS);
+    }
+    return tryGetSpawnedVehicleForSlot(slot);
+}
+
 async function forceUndeployAfterVehicleDirectSpawnFailure(player: mod.Player): Promise<void> {
     await mod.Wait(VEHICLE_DIRECT_SPAWN_FULFILLMENT_UNDEPLOY_DELAY_SECONDS);
     if (!player || !mod.IsPlayerValid(player)) return;
@@ -147,7 +173,7 @@ async function spawnDirectSpawnVehicleIfReady(slot: VehicleSpawnerSlot): Promise
     if (!success) return undefined;
 
     await mod.Wait(VEHICLE_DIRECT_SPAWN_FULFILLMENT_SPAWN_SETTLE_SECONDS);
-    vehicle = tryGetSpawnedVehicleForSlot(slot);
+    vehicle = await waitForSpawnedVehicleForSlot(slot);
     return vehicle;
 }
 
@@ -174,6 +200,23 @@ async function verifyPlayerForcedIntoDirectSpawnSeat(player: mod.Player, vehicle
         const seatedVehicle = mod.GetVehicleFromPlayer(player);
         const seatIndex = mod.GetPlayerVehicleSeat(player);
         if (seatedVehicle && mod.Equals(seatedVehicle, vehicle) && seatIndex === VEHICLE_DIRECT_SPAWN_FULFILLMENT_SEAT_NUMBER) {
+            return true;
+        }
+        await mod.Wait(VEHICLE_DIRECT_SPAWN_FULFILLMENT_VERIFY_INTERVAL_SECONDS);
+    }
+
+    return false;
+}
+
+async function verifyPlayerForcedIntoAnyDirectSpawnSeat(player: mod.Player, vehicle: mod.Vehicle): Promise<boolean> {
+    const pid = safeGetPlayerId(player);
+    if (pid === undefined) return false;
+
+    for (let attempt = 0; attempt < VEHICLE_DIRECT_SPAWN_FULFILLMENT_VERIFY_ATTEMPTS; attempt++) {
+        if (!player || !mod.IsPlayerValid(player) || !State.players.deployedByPid[pid]) return false;
+        const seatedVehicle = mod.GetVehicleFromPlayer(player);
+        const seatIndex = mod.GetPlayerVehicleSeat(player);
+        if (seatedVehicle && mod.Equals(seatedVehicle, vehicle) && seatIndex >= 0) {
             return true;
         }
         await mod.Wait(VEHICLE_DIRECT_SPAWN_FULFILLMENT_VERIFY_INTERVAL_SECONDS);
@@ -244,7 +287,11 @@ async function conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(player: mod.P
 
     mod.ForcePlayerToSeat(player, vehicle, VEHICLE_DIRECT_SPAWN_FULFILLMENT_SEAT_NUMBER);
 
-    const fulfilled = await verifyPlayerForcedIntoDirectSpawnSeat(player, vehicle);
+    let fulfilled = await verifyPlayerForcedIntoDirectSpawnSeat(player, vehicle);
+    if (!fulfilled && isFastMoverDirectSpawnVehicle(slot.vehicleType)) {
+        mod.ForcePlayerToSeat(player, vehicle, -1);
+        fulfilled = await verifyPlayerForcedIntoAnyDirectSpawnSeat(player, vehicle);
+    }
     if (!fulfilled) {
         clearVehiclePendingSpawnRequestForSlot(slot);
         conquestPhase5BRenderVehicleDeployTimersForAllPlayers();

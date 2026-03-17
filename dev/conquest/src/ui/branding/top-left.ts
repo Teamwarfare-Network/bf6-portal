@@ -50,7 +50,7 @@ function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, re
         position: [TOP_LEFT_BASE_X, topLeftBaseY],
         size: [TOP_LEFT_BRANDING_WIDTH, 30],
         anchor: mod.UIAnchor.TopLeft,
-        visible: true,
+        visible: false,
         padding: 1,
         bgColor: [0.251, 0.0941, 0.0667],
         bgAlpha: 0.5625,
@@ -142,7 +142,7 @@ function buildConquestStaticStatusLaneWidgets(player: mod.Player, pid: number, r
         position: [statusX, statusY],
         size: [TOP_LEFT_STATUS_WIDTH, TOP_LEFT_STATUS_HEIGHT],
         anchor: mod.UIAnchor.TopLeft,
-        visible: true,
+        visible: false,
         padding: 1,
         bgColor: [0.251, 0.0941, 0.0667],
         bgAlpha: 0.5625,
@@ -155,7 +155,7 @@ function buildConquestStaticStatusLaneWidgets(player: mod.Player, pid: number, r
         position: [statusX, statusY + TOP_LEFT_STATUS_LINE_ONE_Y],
         size: [TOP_LEFT_STATUS_WIDTH, 15],
         anchor: mod.UIAnchor.TopLeft,
-        visible: true,
+        visible: false,
         padding: 0,
         bgAlpha: 0,
         bgFill: mod.UIBgFill.None,
@@ -195,7 +195,7 @@ function buildConquestStaticStatusLaneWidgets(player: mod.Player, pid: number, r
         refs.roots.push(statusPrimaryText);
         try {
             mod.SetUIWidgetDepth(statusPrimaryText, mod.UIDepth.AboveGameUI);
-            mod.SetUIWidgetVisible(statusPrimaryText, true);
+            mod.SetUIWidgetVisible(statusPrimaryText, false);
         } catch {
             // Keep HUD build resilient if one static layout write fails.
         }

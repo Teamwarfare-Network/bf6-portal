@@ -3,6 +3,73 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.689: Combat HUD scheduler prime: trigger one immediate single-player scheduler frame after arming combat reveal so pre-live combat appears once without duplicate owners
+// v0.688: Combat HUD ownership correction: make scheduler the single combat render/reveal owner and arm combat visibility instead of pre-rendering in the reveal path
+// v0.687: Combat HUD reveal owner: hide current combat family before hidden reveal render to prevent stale ticket/bar flash
+// v0.686: Combat HUD reveal ordering: keep scheduler reveal-disabled until hidden reveal render completes
+// v0.685: Combat HUD reveal stabilization: park hidden combat renders offscreen and suppress immediate scheduler repaint after reveal
+// v0.684: Combat HUD warm-loop correction: stop rendering combat content during warm polls; only build structure there and render content once at reveal
+// v0.683: Combat HUD cleanup: force-hide any stale legacy V2 ticket/flag widgets during combat warm and reveal
+// v0.682: Combat HUD reveal refinement: render a fresh hidden frame at reveal time before flipping the combat root visible
+// v0.681: Combat HUD atomic reveal: preserve primed hidden frame and reveal root directly instead of visible rerender
+// v0.680: Combat HUD reveal ownership: block scheduler render until explicit combat-family reveal owner enables it
+// v0.679: HUD reveal correction: keep top-left immediate while rendering combat HUD hidden until root reveal
+// v0.678: UI family ownership split: build top-left, vehicle HUD, combat HUD, ready dialog, and admin/debug through separate hidden-build/reveal helpers in the approved order, and turn position debug off by default
+// v0.677: Ready dialog ownership fix: prebuild the dialog hidden as the last step of the HUD warm pass and remove the interact-point and scheduled cache ownership of that build
+// v0.676: Ready dialog optimization: prebuild the dialog hidden when the interact point is spawned and ensure first interact hidden-builds it before UI input is enabled
+// v0.675: Reveal-owner fix: move the vehicle HUD onscreen when the reveal owner shows it, and prewarm the ready dialog earlier so first open avoids the cold build path
+// v0.674: Vehicle HUD optimization: skip broadcast refresh work when the rendered slot signature is unchanged so ordinary state sync no longer replays the same visible row updates
+// v0.673: UI reveal-owner cleanup: hide top-center/admin counter at birth, remove eager ready-dialog admin toggle reveal, and reveal them only from the top-HUD owner
+// v0.672: Vehicle HUD reveal-owner follow-up: preserve current visibility during global refreshes so hidden roots do not reappear during ordinary state updates
+// v0.670: Phase 5G architectural correction: document and implement build-refresh-reveal ownership for top HUD, vehicle HUD, and debug UI
+// v0.669: UI reveal contract fix: route team swap through one hidden-build/reveal owner and block stale vehicle/debug reveal paths during swap
+// v0.668: Swap polish: hide old vehicle/debug HUD immediately on team switch and restore ready-dialog map label alignment
+// v0.667: Position debug first-pass fix: build pos/rot widgets hidden via ParseUI and parent them immediately instead of birthing them visibly through AddUIText
+// v0.666: Vehicle HUD reveal fix: build deploy timer row widgets hidden, keep warm-cache render hidden, and remove swap-time forced vehicle HUD reveal
+// v0.665: Ready dialog fix: replace unsafe roster/text build path, guard roster refresh, and fail-safe dialog open so invisible builds cannot trap the player
+// v0.664: Vehicle/debug reveal polish: render vehicle HUD offscreen until rows are fully updated and keep position debug visible through undeploy/team-switch flows
+// v0.663: Swap/UI reveal fix: use unified reveal owner after team swap and render vehicle HUD rows in two phases before showing them
+// v0.662: Ready dialog roster reveal fix: build roster labels hidden under their containers instead of spawning visible on UIRoot before reparenting
+// v0.661: Reveal-owner correction: refresh top HUD hidden before reveal, keep vehicle HUD root hidden until row render completes, prebuild position debug hidden, and remove ready-dialog post-reveal roster refresh
+// v0.660: UI reveal polish: restore top-left branding after warm reveal, hide vehicle HUD child widgets until gated show, and refresh ready-dialog roster before reveal
+// v0.659: Back out loading overlay/process and keep UI hidden until warm-ready: use warm-ready visibility for top HUD, vehicle HUD, and ready dialog reveal ordering
+// v0.658: HUD loading team-swap controller: make swap loading single-owner, suppress undeploy warm races, and keep deploy blocked until the controller releases it
+// v0.657: HUD loading controller: hold deploy through swap/loading, remove unconditional release, and keep top/combat/vehicle HUD families dark until final reveal
+// v0.656: HUD loading controller: hold team-swap and first-load release until critical top HUD, combat HUD, and vehicle deploy HUD are prebuilt and stable, while reasserting the deploy block throughout the warm window
+// v0.655: Team swap loading flow: start the critical HUD warm immediately for already-undeployed swaps instead of waiting on an undeploy callback that never arrives
+// v0.654: Team swap loading race: invalidate any in-flight HUD warm token when priming the swap loading overlay so stale releases cannot hide Loading or re-enable deploy
+// v0.653: Team swap loading gate: keep redeploy blocked through swap warm and reject any deploy callback that arrives before HUD loading finishes
+// v0.652: Ready dialog: rename transport slots 3 and 4 to Heli / Transport 3 and 4
+// v0.651: Transport slots 3 and 4: allow both fast movers and transport helis, and route spawn anchors by selected vehicle type
+// v0.649: Team swap loading UX: show the loading overlay immediately on swap prime while keeping deploy blocked until the warm gate releases
+// v0.648: Team swap loading polish: hide position debug during the loading gate, suppress the pre-warm visible loading prime, and skip join-prompt creation on swap-driven warm so the swap flow stays a single loading phase
+// v0.647: Team swap loading gate: engage the HUD loading gate immediately when priming the swap overlay so HUD cannot reappear between the pre-swap prime and the actual warm pass
+// v0.646: Ready dialog labels: fix knob-label fallback so valid BF6 string keys no longer resolve to Unknown
+// v0.645: HUD loading gating: disable player deploy while loading is active and only re-enable it after release so join and team swap cannot spawn into a partial HUD state
+// v0.644: HUD loading policy: show loading only on first join warm and explicit team swap warm, but skip it on ordinary cached undeploy paths
+// v0.643: HUD loading polish: restore help text visibility after load and keep top HUD root/clock hidden on first build while the loading gate is active
+// v0.642: HUD loading gate: prebuild top/deploy HUD hidden, keep top root hidden during warm, and reveal critical UI atomically after warm completes
+// v0.641: Phase 5G polish: prebuild critical HUD behind loading overlay and move loading label onto the proven centered-text path
+// v0.640: Phase 5G polish: add per-player HUD loading gate that blocks redeploy and hides combat/deploy UI until critical HUD warm completes
+// v0.639: Ready dialog hardening: fall back on a safe label when a knob string key is missing so SetUITextLabel cannot crash the UI refresh loop
+// v0.638: Transport column update: make rows 3 and 4 transport-heli slots using heli spawn anchors 3 and 4 with Black Hawk-only options
+// v0.637: Fast-mover deploy hardening: wait longer for large transport spawns to bind and fall back to first available seat when Marauders reject seat 0
+// v0.636: Deploy HUD polish: restore the original lower anchor line for the expanded vehicle panel and show ground deploy buttons for fast movers
+// v0.635: Phase 5G: make 10v10 Conquest the default authoritative spawn package, hide legacy config rows, and wire Firestorm fast-mover defaults
+// v0.634: UI optimization pass: share ready/admin primary-click gating, centralize ready-dialog sizing, and collapse deploy HUD action-button helpers
+// v0.633: Admin panel input cleanup: scope primary click dedupe to matched admin widgets only
+// v0.632: Ready dialog cleanup: remove the dead team-wide vehicle override state and keep only per-slot vehicle selection config
+// v0.631: Admin panel input fix: dedupe ButtonDown/ButtonUp so tester actions and position debug toggle only fire once per click
+// v0.630: Ready dialog input fix: ignore the matching mouse release after a consumed press while still supporting single-phase button events
+// v0.629: Ready dialog cleanup: remove dead legacy matchup widgets and collapse stale refresh wrappers onto the live grid updater
+// v0.628: Fix ready dialog schema import so generated Script.ts includes the shared grid helpers
+// v0.627: Ready dialog cleanup: centralize grid schema, remove dead legacy knob input branches, and simplify cached button refresh paths
+// v0.626: Ready dialog click dedupe: accept ButtonDown or ButtonUp once per widget click so knobs cycle once and ready state stays stable
+// v0.625: Ready dialog input stabilization: process ready-dialog/admin actions only on ButtonDown to stop double knob cycles and ready-state flipbacks
+// v0.624: Ready dialog follow-up: restore ready-map visibility on reopen and relax knob click gating so top tuning controls cycle again
+// v0.623: Ready dialog knob input fix: explicitly enable ButtonUp on cached knob buttons and gate ready-dialog actions on ButtonUp
+// v0.622: UI cache follow-up: restore ready-map/admin screen-space placement and prebuild the vehicle deploy HUD hidden before first display
+// v0.621: Ready dialog cache hardening: stop warm-cache reveal, keep admin lazy, and remove reopen label recreation
 // v0.620: Ready dialog centering follow-up: shift the shared top lane left to match the centered roster plate edges
 // v0.620: Ready dialog centering follow-up: shift the shared top lane left to realign the knob grid and apply button with the already-centered roster plate edges
 // v0.619: Ready dialog centering follow-up: shift the lower roster plates left by the measured visual offset

@@ -17,6 +17,7 @@
 function ensureClockUIAndGetCache(player: mod.Player): ClockWidgetCacheEntry | undefined {
     // Clock widgets are stored per-player; derive pid for cache lookup.
 const pid = mod.GetObjId(player);
+    const visible = isHudWarmReadyForPid(pid);
     const rootName = "MatchTimerRoot_" + pid;
     const surfaceName = "MatchTimerSurface_" + pid;
     const legacyPlateName = "MatchTimerPlate_" + pid;
@@ -95,7 +96,7 @@ const pid = mod.GetObjId(player);
         // position: [x, y] offset; direction depends on anchor, so verify visually in-game
         position: [CLOCK_POSITION_X, CLOCK_POSITION_Y],
         size: [CLOCK_WIDTH, CLOCK_HEIGHT],
-        visible: true,
+        visible,
         bgAlpha: 0,
         bgFill: mod.UIBgFill.None,
         children: [
@@ -113,7 +114,7 @@ const pid = mod.GetObjId(player);
         ],
     });
 
-    buildClockSurface(pid, player);
+    buildClockSurface(pid, player, visible);
 
     const entry: ClockWidgetCacheEntry = {
         root: safeFind(rootName) as mod.UIWidget,
@@ -168,7 +169,7 @@ const pid = mod.GetObjId(player);
 }
 
 // Builds the explicit clock surface as its own top-center widget so visible panel geometry is deterministic.
-function buildClockSurface(pid: number, player: mod.Player): void {
+function buildClockSurface(pid: number, player: mod.Player, visible: boolean): void {
     modlib.ParseUI({
         name: "MatchTimerSurface_" + pid,
         type: "Container",
@@ -176,7 +177,7 @@ function buildClockSurface(pid: number, player: mod.Player): void {
         anchor: mod.UIAnchor.TopCenter,
         position: [CLOCK_POSITION_X, CLOCK_POSITION_Y + CLOCK_PLATE_OFFSET_Y],
         size: [CLOCK_PLATE_WIDTH, CLOCK_PLATE_HEIGHT],
-        visible: true,
+        visible,
         bgColor: [54 / 255, 57 / 255, 60 / 255],
         bgAlpha: CLOCK_PLATE_ALPHA,
         bgFill: mod.UIBgFill.Blur,
@@ -301,8 +302,8 @@ function setClockColorCached(cacheEntry: ClockWidgetCacheEntry, color: any): voi
 
 // Toggles only clock-specific widgets so final-minute flash never hides shared root-owned status text.
 function setClockVisibilityCached(cacheEntry: ClockWidgetCacheEntry, visible: boolean): void {
-    // Keep the shared root visible at all times; only the clock plate and digits are allowed to flicker.
-    safeSetUIWidgetVisible(cacheEntry.root, true);
+    // Loading-gate and swap transitions need the entire clock tree dark until the final reveal.
+    safeSetUIWidgetVisible(cacheEntry.root, visible);
     // Reassert the visible phase every pass so transient external hides cannot leave the clock stuck off.
     if (!visible && cacheEntry.lastVisibleState === false) return;
     safeSetUIWidgetVisible(cacheEntry.plate, visible);

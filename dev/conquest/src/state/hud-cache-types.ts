@@ -196,6 +196,7 @@ type VehicleDeployTimerHudCacheEntry = {
     root?: mod.UIWidget;
     rows: VehicleDeployTimerRowCacheEntry[];
     lastVisibleState?: boolean;
+    lastRenderSignature?: string;
 };
 
 //#endregion ----------------- HUD Types + Caches --------------------

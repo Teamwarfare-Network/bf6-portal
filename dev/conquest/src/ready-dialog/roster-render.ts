@@ -110,8 +110,8 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
         if (t2Ready) mod.SetUIWidgetVisible(t2Ready, hasP2);
         if (t2Base) mod.SetUIWidgetVisible(t2Base, hasP2);
 
-        mod.SetUITextLabel(t1Name, hasP1 ? getRosterEntryNameMessage(t1Entry) : emptyMsg);
-        mod.SetUITextLabel(
+        safeSetUITextLabel(t1Name, hasP1 ? getRosterEntryNameMessage(t1Entry) : emptyMsg);
+        safeSetUITextLabel(
             t1Ready,
             hasP1
                 ? (p1
@@ -119,7 +119,7 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
                     : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
                 : emptyMsg
         );
-        mod.SetUITextLabel(
+        safeSetUITextLabel(
             t1Base,
             hasP1
                 ? (p1
@@ -141,8 +141,8 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
             if (t1Base) mod.SetUITextColor(t1Base, COLOR_NORMAL);
         }
 
-        mod.SetUITextLabel(t2Name, hasP2 ? getRosterEntryNameMessage(t2Entry) : emptyMsg);
-        mod.SetUITextLabel(
+        safeSetUITextLabel(t2Name, hasP2 ? getRosterEntryNameMessage(t2Entry) : emptyMsg);
+        safeSetUITextLabel(
             t2Ready,
             hasP2
                 ? (p2
@@ -150,7 +150,7 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
                     : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
                 : emptyMsg
         );
-        mod.SetUITextLabel(
+        safeSetUITextLabel(
             t2Base,
             hasP2
                 ? (p2

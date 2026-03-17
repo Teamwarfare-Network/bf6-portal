@@ -29,6 +29,7 @@ interface ClockWidgetCacheEntry {
     secOnesShadow?: mod.UIWidget;
     secOnes: mod.UIWidget;
     lastVisibleState?: boolean;
+    lastDisplayedSeconds?: number;
 }
 
 // Resets live clock runtime to the provided duration and clears pause/expiry markers.
@@ -152,11 +153,15 @@ function updateAllPlayersClock(): void {
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
         if (!player || !mod.IsPlayerValid(player)) continue;
+        const pid = safeGetPlayerId(player);
+        if (pid === undefined) continue;
         // Ensure each player's clock widgets exist and get cached refs for efficient updates.
         const cacheEntry = ensureClockUIAndGetCache(player);
         if (!cacheEntry) continue;
+        const warmReady = isHudWarmReadyForPid(pid);
 
-        setClockVisibilityCached(cacheEntry, true);
+        setClockVisibilityCached(cacheEntry, warmReady);
+        if (!warmReady) continue;
 
         if (State.round.clock.lastLowTimeState === undefined || clockColorIsLow !== State.round.clock.lastLowTimeState) {
             setClockColorCached(cacheEntry, clockColorIsLow ? COLOR_LOW_TIME : COLOR_NORMAL);

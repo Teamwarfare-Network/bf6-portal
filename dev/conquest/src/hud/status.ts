@@ -247,6 +247,7 @@ function setWidgetVisible(widget: mod.UIWidget | undefined, visible: boolean): v
 function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget | undefined {
     const rootName = `TopHudRoot_${pid}`;
     const uiRoot = mod.GetUIRoot();
+    const visible = true;
     if (topHudRootInitializedByPid[pid] !== true) {
         deleteAllTopHudRootsByName(rootName);
     }
@@ -259,7 +260,7 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
             position: [0, 0],
             size: [TOP_HUD_ROOT_WIDTH, TOP_HUD_ROOT_HEIGHT],
             anchor: mod.UIAnchor.TopCenter,
-            visible: true,
+            visible,
             padding: 0,
             bgAlpha: 0,
             bgFill: mod.UIBgFill.None,
@@ -276,6 +277,7 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
         mod.SetUIWidgetPosition(root, mod.CreateVector(0, 0, 0));
         mod.SetUIWidgetSize(root, mod.CreateVector(TOP_HUD_ROOT_WIDTH, TOP_HUD_ROOT_HEIGHT, 0));
         mod.SetUIWidgetDepth(root, mod.UIDepth.AboveGameUI);
+        mod.SetUIWidgetVisible(root, visible);
     } catch {
         return undefined;
     }

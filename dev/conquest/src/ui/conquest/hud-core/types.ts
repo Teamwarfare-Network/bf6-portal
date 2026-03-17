@@ -133,5 +133,6 @@ type TwlConquestHudPlayerEntry = {
     animationUpdates: number;
     lastMainUpdateAtSeconds: number;
     lastAnimationUpdateAtSeconds: number;
+    pendingFirstReveal: boolean;
     lastSnapshot?: TwlConquestHudSnapshot;
 };

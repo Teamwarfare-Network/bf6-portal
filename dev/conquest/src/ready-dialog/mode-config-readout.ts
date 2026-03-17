@@ -4,9 +4,14 @@
 //#region -------------------- Ready Dialog - Map/Mode Config UI Readout --------------------
 
 function updateReadyDialogMapLabelForPid(pid: number): void {
+    const labelWidget = safeFind(UI_READY_DIALOG_MAP_LABEL_ID + pid);
     const valueId = UI_READY_DIALOG_MAP_VALUE_ID + pid;
     const valueWidget = safeFind(valueId);
+    if (labelWidget) {
+        mod.SetUIWidgetParent(labelWidget, mod.GetUIRoot());
+    }
     if (!valueWidget) return;
+    mod.SetUIWidgetParent(valueWidget, mod.GetUIRoot());
     mod.SetUITextLabel(valueWidget, mod.Message(getMapNameKey(ACTIVE_MAP_KEY)));
 }
 
@@ -30,7 +35,10 @@ function updateReadyDialogGridColumnHeaderForPid(pid: number, columnKey: string,
 function updateReadyDialogGridKnobLabelForPid(pid: number, knobKey: string, labelKey: number): void {
     const widget = safeFind(UI_READY_DIALOG_MODE_GRID_KNOB_LABEL_ID + knobKey + "_" + pid);
     if (!widget) return;
-    mod.SetUITextLabel(widget, mod.Message(labelKey));
+    const resolvedLabelKey = labelKey !== undefined && labelKey !== null
+        ? labelKey
+        : mod.stringkeys.twl.system.unknownPlayer;
+    mod.SetUITextLabel(widget, mod.Message(resolvedLabelKey));
 }
 
 function updateReadyDialogGridKnobValueForPid(pid: number, knobKey: string, label: mod.Message): void {
@@ -43,6 +51,29 @@ function updateReadyDialogGridSupportForPid(pid: number, columnKey: string, labe
     const widget = safeFind(UI_READY_DIALOG_MODE_GRID_SUPPORT_ID + columnKey + "_" + pid);
     if (!widget) return;
     mod.SetUITextLabel(widget, label);
+}
+
+function setReadyDialogGridKnobRowVisibleForPid(pid: number, knobKey: string, visible: boolean): void {
+    const widgetIds = [
+        UI_READY_DIALOG_MODE_GRID_KNOB_PANEL_ID + knobKey + "_" + pid,
+        UI_READY_DIALOG_MODE_GRID_KNOB_LABEL_ID + knobKey + "_" + pid,
+        UI_READY_DIALOG_MODE_GRID_KNOB_VALUE_ID + knobKey + "_" + pid,
+        UI_READY_DIALOG_MODE_GRID_KNOB_DEC_ID + knobKey + "_" + pid + "_BORDER",
+        UI_READY_DIALOG_MODE_GRID_KNOB_DEC_ID + knobKey + "_" + pid,
+        UI_READY_DIALOG_MODE_GRID_KNOB_DEC_LABEL_ID + knobKey + "_" + pid,
+        UI_READY_DIALOG_MODE_GRID_KNOB_INC_ID + knobKey + "_" + pid + "_BORDER",
+        UI_READY_DIALOG_MODE_GRID_KNOB_INC_ID + knobKey + "_" + pid,
+        UI_READY_DIALOG_MODE_GRID_KNOB_INC_LABEL_ID + knobKey + "_" + pid,
+    ];
+    for (const widgetId of widgetIds) {
+        const widget = safeFind(widgetId);
+        if (!widget) continue;
+        mod.SetUIWidgetVisible(widget, visible);
+    }
+    const decButton = safeFind(UI_READY_DIALOG_MODE_GRID_KNOB_DEC_ID + knobKey + "_" + pid);
+    const incButton = safeFind(UI_READY_DIALOG_MODE_GRID_KNOB_INC_ID + knobKey + "_" + pid);
+    if (decButton) mod.SetUIButtonEnabled(decButton, visible);
+    if (incButton) mod.SetUIButtonEnabled(incButton, visible);
 }
 
 function setReadyDialogGridColumnHeaderColorForPid(pid: number, columnKey: string, color: mod.Vector): void {
@@ -94,19 +125,6 @@ function getReadyDialogViewerTeamVisuals(pid: number): {
     };
 }
 
-function getReadyDialogModeSettingsValueMessage(cfg: ReadyDialogModeConfig): mod.Message {
-    const applyCustomCeiling = shouldApplyCustomCeilingForConfig(cfg.gameMode, cfg.aircraftCeilingOverridePending);
-    const ceilingValue = applyCustomCeiling
-        ? Math.floor(cfg.aircraftCeiling)
-        : STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA;
-    return mod.Message(cfg.gameSettings, ceilingValue);
-}
-
-function getReadyDialogMatchupValueMessage(): mod.Message {
-    const preset = MATCHUP_PRESETS[State.round.matchupPresetIndex] ?? MATCHUP_PRESETS[0];
-    return mod.Message(mod.stringkeys.twl.readyDialog.matchupFormat, preset.leftPlayers, preset.rightPlayers);
-}
-
 function getReadyDialogPlayersValueMessage(): mod.Message {
     const counts = getAutoStartMinPlayerCounts();
     return mod.Message(mod.stringkeys.twl.readyDialog.playersFormat, counts.left, counts.right);
@@ -121,107 +139,66 @@ function getReadyDialogMinPlayersSupportMessage(): mod.Message {
 function updateReadyDialogModeConfigForPid(pid: number): void {
     const cfg = State.round.modeConfig;
     const visuals = getReadyDialogViewerTeamVisuals(pid);
+    const columns = getReadyDialogModeGridColumnSpecs();
 
-    updateReadyDialogGridColumnHeaderForPid(pid, "config", mod.Message(mod.stringkeys.twl.readyDialog.configurationColumnLabel));
-    updateReadyDialogGridColumnHeaderForPid(pid, "team2Air", mod.Message(mod.stringkeys.twl.readyDialog.columnAirFormat, getTeamNameKey(TeamID.Team2)));
-    updateReadyDialogGridColumnHeaderForPid(pid, "team2Ground", mod.Message(mod.stringkeys.twl.readyDialog.columnGroundFormat, getTeamNameKey(TeamID.Team2)));
-    updateReadyDialogGridColumnHeaderForPid(pid, "team2Fast", mod.Message(mod.stringkeys.twl.readyDialog.columnFastFormat, getTeamNameKey(TeamID.Team2)));
-    updateReadyDialogGridColumnHeaderForPid(pid, "team1Air", mod.Message(mod.stringkeys.twl.readyDialog.columnAirFormat, getTeamNameKey(TeamID.Team1)));
-    updateReadyDialogGridColumnHeaderForPid(pid, "team1Ground", mod.Message(mod.stringkeys.twl.readyDialog.columnGroundFormat, getTeamNameKey(TeamID.Team1)));
-    updateReadyDialogGridColumnHeaderForPid(pid, "team1Fast", mod.Message(mod.stringkeys.twl.readyDialog.columnFastFormat, getTeamNameKey(TeamID.Team1)));
+    for (const column of columns) {
+        updateReadyDialogGridColumnHeaderForPid(pid, column.key, getReadyDialogModeGridColumnHeaderMessage(column));
 
-    updateReadyDialogGridKnobLabelForPid(pid, READY_DIALOG_CONFIG_GAME_KNOB_KEY, mod.stringkeys.twl.readyDialog.gameModeLabel);
-    updateReadyDialogGridKnobLabelForPid(pid, READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY, mod.stringkeys.twl.readyDialog.modeSettingsLabel);
-    updateReadyDialogGridKnobLabelForPid(pid, READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY, mod.stringkeys.twl.readyDialog.vehiclesCountLabel);
-    const playersLabelWidget = safeFind(UI_READY_DIALOG_MODE_GRID_KNOB_LABEL_ID + READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY + "_" + pid);
-    if (playersLabelWidget) {
-        mod.SetUITextLabel(playersLabelWidget, mod.Message(mod.stringkeys.twl.system.genericCounter, ""));
-        mod.SetUIWidgetVisible(playersLabelWidget, false);
-    }
+        const isConfigColumn = column.key === "config";
+        const headerColor = isConfigColumn
+            ? COLOR_WHITE
+            : column.teamId === TeamID.Team1
+                ? visuals.team1Text
+                : visuals.team2Text;
+        setReadyDialogGridColumnHeaderColorForPid(pid, column.key, headerColor);
 
-    updateReadyDialogGridKnobValueForPid(pid, READY_DIALOG_CONFIG_GAME_KNOB_KEY, mod.Message(cfg.gameMode));
-    updateReadyDialogGridKnobValueForPid(pid, READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY, getReadyDialogModeSettingsValueMessage(cfg));
-    updateReadyDialogGridKnobValueForPid(pid, READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY, getReadyDialogMatchupValueMessage());
-    updateReadyDialogGridKnobValueForPid(pid, READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY, getReadyDialogPlayersValueMessage());
-    updateReadyDialogGridSupportForPid(pid, "config", getReadyDialogMinPlayersSupportMessage());
+        for (const knob of column.knobSpecs) {
+            if (isReadyDialogModeGridPlaceholderKnobKey(knob.key)) {
+                setReadyDialogGridKnobRowVisibleForPid(pid, knob.key, false);
+                continue;
+            }
+            setReadyDialogGridKnobRowVisibleForPid(pid, knob.key, true);
+            if (knob.key === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) {
+                const playersLabelWidget = safeFind(UI_READY_DIALOG_MODE_GRID_KNOB_LABEL_ID + knob.key + "_" + pid);
+                if (playersLabelWidget) {
+                    mod.SetUITextLabel(playersLabelWidget, mod.Message(mod.stringkeys.twl.system.genericCounter, ""));
+                    mod.SetUIWidgetVisible(playersLabelWidget, false);
+                }
+            } else {
+                updateReadyDialogGridKnobLabelForPid(pid, knob.key, knob.labelKey);
+            }
 
-    setReadyDialogGridColumnHeaderColorForPid(pid, "config", COLOR_WHITE);
-    setReadyDialogGridColumnHeaderColorForPid(pid, "team1Air", visuals.team1Text);
-    setReadyDialogGridColumnHeaderColorForPid(pid, "team1Ground", visuals.team1Text);
-    setReadyDialogGridColumnHeaderColorForPid(pid, "team1Fast", visuals.team1Text);
-    setReadyDialogGridColumnHeaderColorForPid(pid, "team2Air", visuals.team2Text);
-    setReadyDialogGridColumnHeaderColorForPid(pid, "team2Ground", visuals.team2Text);
-    setReadyDialogGridColumnHeaderColorForPid(pid, "team2Fast", visuals.team2Text);
+            if (isConfigColumn) {
+                setReadyDialogGridKnobPanelThemeForPid(pid, knob.key, COLOR_GRAY_DARK, 0.40);
+                setReadyDialogGridKnobButtonGlyphColorForPid(pid, knob.key, COLOR_WHITE);
 
-    for (const knobKey of [
-        READY_DIALOG_CONFIG_GAME_KNOB_KEY,
-        READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY,
-        READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY,
-        READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY,
-    ]) {
-        setReadyDialogGridKnobPanelThemeForPid(pid, knobKey, COLOR_GRAY_DARK, 0.40);
-        setReadyDialogGridKnobButtonGlyphColorForPid(pid, knobKey, COLOR_WHITE);
-    }
+                if (knob.key === READY_DIALOG_CONFIG_GAME_KNOB_KEY) {
+                    updateReadyDialogGridKnobValueForPid(pid, knob.key, mod.Message(cfg.gameMode));
+                } else if (knob.key === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) {
+                    updateReadyDialogGridKnobValueForPid(pid, knob.key, getReadyDialogPlayersValueMessage());
+                }
+                continue;
+            }
 
-    for (const knobKey of [
-        ...READY_DIALOG_TEAM1_JET_KNOB_KEYS,
-        ...READY_DIALOG_TEAM1_HELI_KNOB_KEYS,
-        ...READY_DIALOG_TEAM1_GROUND_KNOB_KEYS,
-        ...READY_DIALOG_TEAM1_FAST_KNOB_KEYS,
-    ]) {
-        setReadyDialogGridKnobPanelThemeForPid(pid, knobKey, visuals.team1Bg, 0.42);
-        setReadyDialogGridKnobButtonGlyphColorForPid(pid, knobKey, visuals.team1Text);
-    }
-
-    for (const knobKey of [
-        ...READY_DIALOG_TEAM2_JET_KNOB_KEYS,
-        ...READY_DIALOG_TEAM2_HELI_KNOB_KEYS,
-        ...READY_DIALOG_TEAM2_GROUND_KNOB_KEYS,
-        ...READY_DIALOG_TEAM2_FAST_KNOB_KEYS,
-    ]) {
-        setReadyDialogGridKnobPanelThemeForPid(pid, knobKey, visuals.team2Bg, 0.42);
-        setReadyDialogGridKnobButtonGlyphColorForPid(pid, knobKey, visuals.team2Text);
-    }
-
-    const knobLabelPairs: Array<[string, number]> = [
-        [READY_DIALOG_TEAM2_JET_KNOB_KEYS[0], mod.stringkeys.twl.readyDialog.jet1Label],
-        [READY_DIALOG_TEAM2_JET_KNOB_KEYS[1], mod.stringkeys.twl.readyDialog.jet2Label],
-        [READY_DIALOG_TEAM2_HELI_KNOB_KEYS[0], mod.stringkeys.twl.readyDialog.heli1Label],
-        [READY_DIALOG_TEAM2_HELI_KNOB_KEYS[1], mod.stringkeys.twl.readyDialog.heli2Label],
-        [READY_DIALOG_TEAM2_GROUND_KNOB_KEYS[0], mod.stringkeys.twl.readyDialog.tank1Label],
-        [READY_DIALOG_TEAM2_GROUND_KNOB_KEYS[1], mod.stringkeys.twl.readyDialog.tank2Label],
-        [READY_DIALOG_TEAM2_GROUND_KNOB_KEYS[2], mod.stringkeys.twl.readyDialog.tank3Label],
-        [READY_DIALOG_TEAM2_GROUND_KNOB_KEYS[3], mod.stringkeys.twl.readyDialog.tank4Label],
-        [READY_DIALOG_TEAM2_FAST_KNOB_KEYS[0], mod.stringkeys.twl.readyDialog.transport1Label],
-        [READY_DIALOG_TEAM2_FAST_KNOB_KEYS[1], mod.stringkeys.twl.readyDialog.transport2Label],
-        [READY_DIALOG_TEAM2_FAST_KNOB_KEYS[2], mod.stringkeys.twl.readyDialog.transport3Label],
-        [READY_DIALOG_TEAM2_FAST_KNOB_KEYS[3], mod.stringkeys.twl.readyDialog.transport4Label],
-        [READY_DIALOG_TEAM1_JET_KNOB_KEYS[0], mod.stringkeys.twl.readyDialog.jet1Label],
-        [READY_DIALOG_TEAM1_JET_KNOB_KEYS[1], mod.stringkeys.twl.readyDialog.jet2Label],
-        [READY_DIALOG_TEAM1_HELI_KNOB_KEYS[0], mod.stringkeys.twl.readyDialog.heli1Label],
-        [READY_DIALOG_TEAM1_HELI_KNOB_KEYS[1], mod.stringkeys.twl.readyDialog.heli2Label],
-        [READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[0], mod.stringkeys.twl.readyDialog.tank1Label],
-        [READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[1], mod.stringkeys.twl.readyDialog.tank2Label],
-        [READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[2], mod.stringkeys.twl.readyDialog.tank3Label],
-        [READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[3], mod.stringkeys.twl.readyDialog.tank4Label],
-        [READY_DIALOG_TEAM1_FAST_KNOB_KEYS[0], mod.stringkeys.twl.readyDialog.transport1Label],
-        [READY_DIALOG_TEAM1_FAST_KNOB_KEYS[1], mod.stringkeys.twl.readyDialog.transport2Label],
-        [READY_DIALOG_TEAM1_FAST_KNOB_KEYS[2], mod.stringkeys.twl.readyDialog.transport3Label],
-        [READY_DIALOG_TEAM1_FAST_KNOB_KEYS[3], mod.stringkeys.twl.readyDialog.transport4Label],
-    ];
-
-    for (const [knobKey, labelKey] of knobLabelPairs) {
-        updateReadyDialogGridKnobLabelForPid(pid, knobKey, labelKey);
-        updateReadyDialogGridKnobValueForPid(
-            pid,
-            knobKey,
-            mod.Message(
-                getReadyDialogVehicleSelectionLabelKey(
-                    knobKey,
-                    State.round.modeConfig.vehicleSelectionIndexByKey?.[knobKey] ?? 0
+            const panelColor = column.teamId === TeamID.Team1 ? visuals.team1Bg : visuals.team2Bg;
+            const glyphColor = column.teamId === TeamID.Team1 ? visuals.team1Text : visuals.team2Text;
+            setReadyDialogGridKnobPanelThemeForPid(pid, knob.key, panelColor, 0.42);
+            setReadyDialogGridKnobButtonGlyphColorForPid(pid, knob.key, glyphColor);
+            updateReadyDialogGridKnobValueForPid(
+                pid,
+                knob.key,
+                mod.Message(
+                    getReadyDialogVehicleSelectionLabelKey(
+                        knob.key,
+                        State.round.modeConfig.vehicleSelectionIndexByKey?.[knob.key] ?? 0
+                    )
                 )
-            )
-        );
+            );
+        }
+
+        if (column.supportVisible) {
+            updateReadyDialogGridSupportForPid(pid, column.key, getReadyDialogMinPlayersSupportMessage());
+        }
     }
 }
 

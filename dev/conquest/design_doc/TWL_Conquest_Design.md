@@ -2065,7 +2065,47 @@ Phase 5 execution breakdown:
   - vehicle repair in base is deferred into this later polish/tuning phase, not treated as a standalone implementation phase
   - runway/pad repair behavior
   - prerequisite: implement the required Godot repair-area requirements first
+  - active implementation focus after accepting `Phase 5F`:
+    - make the ready-up configuration knobs do what they claim and drive the actual spawnable slot inventory
+    - lead validation with the first full package test as `TWL - 10v10 Conquest`
+    - use that package to prove the real end-to-end behavior of:
+      - helicopters
+      - jets
+      - armor
+      - fast movers
+    - show the expanded slot mix on the right-side deploy HUD and confirm whether the current layout still has enough room at maximum intended vehicle count
+    - treat this as the main robust systems test for the Phase 5 stack rather than as a new foundation feature
+  - position-debug polish/fix follow-up:
+    - current accepted state is "usable for authoring, but not fully correct"
+    - `rotZ` remains unreliable, especially in vehicles
+    - on-foot rotation sampling is better, but still needs a final consistency pass
+    - do not treat the current debug transform panel as final-authoritative until this is resolved
   - ready-up vehicle knobs
+  - ready-up spawn-package merge follow-up:
+    - the current legacy `4v4` vehicle patch should be deprecated once the new ready-up grid is fully authoritative
+    - replace that legacy shortcut with one full configuration pass where ready-up selections directly determine what vehicle slots can exist/spawn
+    - add a `No Spawn` option to every vehicle knob so any individual slot can be disabled cleanly
+    - first named default package should be `TWL - 10v10 Conquest`
+    - default `TWL - 10v10 Conquest` package should resolve to:
+      - helicopters:
+        - slot `1`: attack helicopter (`AH64` / opposing-team equivalent)
+        - slot `2`: transport helicopter (`UH60` / opposing-team equivalent)
+        - slots `3-4`: `No Spawn`
+      - jets:
+        - slot `1`: one jet
+        - slot `2`: `No Spawn`
+      - armor:
+        - one main battle tank (`Abrams` for Team 1, `Leopard` for Team 2)
+        - one anti-air vehicle (`Cheetah` for Team 1, `Gepard` for Team 2)
+      - fast movers:
+        - slots `1-2`: `Quadbike`
+        - slots `3-4`: jeep / `Marauder` transport, not `Flyer60`
+    - all configured vehicles should remain user-controlled to spawn; do not auto-spawn them at match start
+    - special deploy-button follow-up by vehicle class:
+      - planes should use the same held-ready model as helicopters, with `GROUND DEPLOY` and `AIR DEPLOY`
+      - first-pass plane `AIR DEPLOY` should randomize orientation between `N/E/S/W`
+      - later polish can add explicit orientation buttons if needed
+      - fast movers should expose `GROUND DEPLOY` only; no `AIR DEPLOY`
   - ready-up/front-end knob layout polish contract:
     - suppress the current left-side header strings for now, but preserve their anchor/position contract so they can be reused later without reauthoring the layout
     - keep the current right-side two-column knob visual pattern as the baseline styling reference for future expansion
@@ -2114,6 +2154,14 @@ Phase 5 execution breakdown:
       - warm-cache scheduling should happen early enough that first interaction is normally a pure show-path, not a full build-path; current deploy/join scheduling can still lose the race if the player opens quickly
       - first-open and reopen should prefer visibility toggles and text/color refresh only; deleting/rebuilding widgets during show should be treated as a regression unless layout version invalidation explicitly requires a rebuild
       - preserve the original HUD/UI redesign principle here: construct once, hide, then reveal atomically
+    - UI architectural correction required before Phase 5 can be considered closed:
+      - treat `build`, `refresh content`, and `reveal` as separate ownership phases for every major UI family
+      - routine refresh functions must not hide/show their own roots as part of normal updates; visibility churn inside refresh paths is now treated as an architectural bug
+      - per-player warm/reveal paths must not call broad all-player HUD refresh functions when a per-player refresh path is available; that global work reintroduces visible churn into otherwise stable viewers
+      - top HUD / upper-left branding should return to the original stable behavior: once built, it should remain visually stable and only be hidden for explicit lifecycle transitions
+      - the right-side vehicle HUD must stop using a combined refresh+reveal function; row content should refresh while hidden or already-visible, and only one owner should decide whether the root becomes visible
+      - the position debug panel must not reveal placeholder zero values; it should only become visible after a real transform sample is available, and its cache helper must not overwrite sampled values with defaults during routine normalization
+      - team swap should invalidate and rebuild state, but should not introduce extra one-off reveal choreography outside the normal hidden-build/reveal owner for each UI family
   - preset-vs-custom packaging
   - reservation-consumption override design:
     - current first pass clears the live reservation once the player successfully spawns into the vehicle, but arms an auto-resubscribe return to that same slot on vehicle destruction if no one else has claimed it
@@ -2122,9 +2170,17 @@ Phase 5 execution breakdown:
 
 Immediate next implementation target:
 
-- `Phase 5F`
-- Firestorm-first bounded vehicle-spawn volume contract and proof
-- keep `Phase 5E` follow-up explicit, but move new implementation work to bounded spawn volumes
+- `Phase 5G`
+- Firestorm-first ready-up spawn-package authority pass
+- next design/implementation slice should:
+  - deprecate the legacy `4v4` forced-heli patch
+  - make ready-up knob selections authoritative over what slots can actually spawn
+  - add per-slot `No Spawn`
+  - lock and prove the first default package as `TWL - 10v10 Conquest`
+  - merge the ready-up selections with the real per-team heli/jet/armor/fast-mover slot inventory
+  - use the expanded live package to validate the right-side deploy HUD at maximum intended vehicle count and confirm there is enough room for all spawn buttons and slot states
+  - keep all configured vehicles user-controlled to spawn rather than auto-spawning them at match start
+- keep the remaining `Phase 5E` and `Phase 5F` follow-up explicit, but move the near-term design/implementation focus to the ready-up spawn-package merge
 
 Codex To-Do Checklist:
 
@@ -2137,6 +2193,7 @@ Codex To-Do Checklist:
 - [ ] Add configurable knobs for vehicle spawns and ensure they are applied from authoritative config/runtime state.
 - [ ] Visualize/mount vehicle spawns on the deploy screen and lock a workable low-screenspace layout.
 - [ ] Harden the ready-dialog render/cache path so first open is an atomic reveal of a prebuilt hidden tree instead of a visible incremental build.
+- [ ] Remove visibility churn from routine UI refresh paths so top HUD, vehicle HUD, ready dialog, and debug all follow the explicit `build -> refresh hidden/content-only -> reveal once` contract.
 - [x] Implement the first-pass Firestorm tracked-chopper deploy-screen timers and status panels.
 - [x] Show only the local player's team spawns in the deploy-screen timer display.
 - [x] Keep the timer display deploy-screen-only by default, with an admin override toggle for visibility outside deploy.
@@ -2150,8 +2207,17 @@ Codex To-Do Checklist:
 - [x] Use first-click-wins arbitration on a ready tracked slot, with competing second clicks failing silently.
 - [x] Accept the current Firestorm-first `Phase 5E` map-config / vehicle-deploy-anchor checkpoint as passed for now.
 - [ ] Return to `Phase 5E` for deferred console-player review, hardened multiplayer testing, and final polish before broader rollout.
-- [ ] Complete `Phase 5F` bounded 3D spawn-volume feature after map-config support for 4 floor corners, height, and fixed rotation exists.
+- [x] Complete `Phase 5F` bounded 3D spawn-volume feature after map-config support for 4 floor corners, height, and fixed rotation exists.
+- [ ] Keep the remaining `Phase 5F` bounded-volume validation and expansion work explicit, but treat the next near-term implementation slice as the ready-up spawn-package merge.
 - [ ] Complete `Phase 5G` polish/tuning, including base repair behavior, after the Godot repair prerequisites and the core spawn systems are proven.
+- [ ] Return to the position-debug transform panel in `Phase 5G` and resolve the remaining `rotZ`/vehicle rotation reliability issues before calling that authoring tool complete.
+- [ ] Deprecate the legacy `4v4` forced-heli patch and replace it with a fully authoritative ready-up spawn-package pass.
+- [ ] Add `No Spawn` to every vehicle knob and use it to disable individual slots cleanly.
+- [ ] Lock `TWL - 10v10 Conquest` as the first full default spawn package, including heli, jet, armor, and fast-mover defaults.
+- [ ] Keep all configured vehicle slots user-controlled to spawn instead of auto-spawning them at match start.
+- [ ] Add first-pass plane `GROUND DEPLOY` / `AIR DEPLOY` handling and randomize `AIR DEPLOY` plane orientation between `N/E/S/W`.
+- [ ] Keep fast movers on `GROUND DEPLOY` only.
+- [ ] Use the live `TWL - 10v10 Conquest` package to validate the right-side deploy HUD under the maximum intended visible vehicle count and adjust layout if it does not fit cleanly.
 - [ ] Prove a script-authoritative 4-corner-plus-height volume contract that can resolve a spawn anywhere inside the bounded 3D area.
 - [ ] Support first-pass `Phase 5F` authoring of two bounded vehicle-spawn boxes per side: one aircraft box and one tank box.
 - [ ] Validate spawn-position selection and safety inside the bounded volume under repeated test passes.
@@ -2180,6 +2246,10 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-03-15 | Phase 5F accepted and Phase 5G polish focus shift | Marked Phase 5F as accepted for now and moved the active implementation focus fully into Phase 5G polish: make ready-up knobs authoritative over real spawned slot inventory, lead with the TWL - 10v10 Conquest package, validate jets/armor/transports through the same live flow, and use the expanded package to test whether the right-side deploy HUD still fits the maximum intended vehicle count cleanly | Phase 5, Phase 5F, Phase 5G | accepted | design_doc Phase 5G breakdown + immediate next target + Phase 5 checklist + Phase 5 changelog`
+  - `2026-03-15 | Phase 5 next-target shift after ready-dialog stabilization | Moved the immediate next implementation target from the older generic Phase 5F bounded-volume pointer to a narrower Firestorm-first Phase 5G ready-up spawn-package authority pass: deprecate the legacy 4v4 forced-heli shortcut, make ready-up knob selections authoritative over actual slot inventory, add per-slot No Spawn, lock TWL - 10v10 Conquest as the first default package, and keep vehicles user-controlled to spawn while leaving the remaining Phase 5E/5F follow-up explicit | Phase 5, Phase 5E, Phase 5F, Phase 5G | accepted | design_doc immediate next target + Phase 5 checklist + Phase 5 changelog`
+  - `2026-03-15 | Phase 5G ready-up spawn-package merge note | Recorded the deferred polish goal of replacing the legacy `4v4` forced-heli patch with a fully authoritative ready-up spawn-package pass, adding `No Spawn` to every vehicle knob, locking `TWL - 10v10 Conquest` as the first default package, keeping vehicles user-controlled to spawn, and adding first-pass plane/fast-mover deploy-button rules | Phase 5, Phase 5G | accepted_with_deferred_polish | design_doc Phase 5G breakdown + Phase 5 checklist + Phase 5 changelog`
+  - `2026-03-15 | Phase 5G deferred debug-authoring note | Recorded that the current position-debug transform panel is good enough for ongoing authoring but still has unresolved `rotZ` and in-vehicle rotation reliability issues, and explicitly deferred that cleanup to the later Phase 5G polish/tuning pass instead of continuing churn now | Phase 5, Phase 5G | accepted_with_deferred_polish | design_doc Phase 5G breakdown + Phase 5 checklist + Phase 5 changelog`
   - `2026-03-14 | Phase 5G ready-up layout clarification follow-up | Locked that Column 1 stays on the far right, Row 6 is a shared support row unless a field explicitly consumes it for two-line treatment, and Row 7 is one centered bottom action button below the full grid; also recorded that spacing must be compressed from the current visual baseline, that ready-up knob values must become authoritative game/config state, and that missing static spawn positions such as Firestorm fast movers must be added to map config before the knob matrix is complete | Phase 5, Phase 5G, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5G breakdown + Phase 5 checklist + Phase 5 changelog`
   - `2026-03-14 | Phase 5G ready-dialog render/cache review | Recorded that the current ready-dialog front end still mixes hidden-cache reuse with visible widget recreation, causing first-open flicker/pop-in risk; locked the later polish goal as a fully prebuilt hidden dialog tree with atomic reveal, no open-time button-label rebuild churn, tighter widget parenting under one root, and a non-eager admin-panel path | Phase 5, Phase 5G, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5G breakdown + Phase 5 checklist + Phase 5 changelog`
   - `2026-03-14 | Phase 5G ready-up knob layout planning pass | Recorded the current accepted front-end direction for the ready-up/admin panel: hide the temporary left-side header strings while preserving their anchors, preserve the current right-side two-column knob pattern as the styling baseline, and expand it later into a standardized 7-column/7-row layout driven by reusable spacing constants and the knob inventory in TWL_Conquest_Knobs.md | Phase 5, Phase 5G, CF-20, CF-21, CF-22 | accepted | design_doc Phase 5G breakdown + Phase 5 checklist + Phase 5 changelog`

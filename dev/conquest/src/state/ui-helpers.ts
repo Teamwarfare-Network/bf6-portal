@@ -63,6 +63,9 @@ function addOutlinedButton(
     const button = mod.FindUIWidgetWithName(buttonId, mod.GetUIRoot());
     if (button && border) {
         mod.SetUIWidgetParent(button, border);
+        mod.EnableUIButtonEvent(button, mod.UIButtonEvent.ButtonDown, true);
+        mod.EnableUIButtonEvent(button, mod.UIButtonEvent.ButtonUp, true);
+        mod.SetUIButtonEnabled(button, true);
     }
 
     return border ?? undefined;
@@ -114,6 +117,98 @@ function addCenteredButtonText(
     return widget;
 }
 
+function addReadyDialogText(
+    widgetId: string,
+    posX: number,
+    posY: number,
+    sizeX: number,
+    sizeY: number,
+    anchor: mod.UIAnchor,
+    textAnchor: mod.UIAnchor,
+    label: number | mod.Message,
+    player: mod.Player,
+    parent: mod.UIWidget,
+    textSize?: number,
+    visible: boolean = true,
+    textColor: mod.Vector = READY_DIALOG_LABEL_TEXT_COLOR
+): mod.UIWidget | undefined {
+    let widget = safeFind(widgetId);
+    if (!widget) {
+        const config: any = {
+            name: widgetId,
+            type: "Text",
+            playerId: player,
+            position: [0, 0],
+            size: [sizeX, sizeY],
+            anchor,
+            visible: false,
+            padding: 0,
+            bgAlpha: 0,
+            bgFill: mod.UIBgFill.None,
+            textLabel: typeof label === "number" ? mod.Message(label) : label,
+            textColor: [1, 1, 1],
+            textAlpha: 1,
+            textAnchor,
+        };
+        if (typeof textSize === "number") {
+            config.textSize = textSize;
+        }
+        const parsed = modlib.ParseUI(config);
+        widget = parsed ?? safeFind(widgetId);
+    }
+
+    if (!widget) return undefined;
+
+    safeSetUIWidgetParent(widget, parent);
+    try {
+        mod.SetUIWidgetAnchor(widget, anchor);
+    } catch {}
+    safeSetUIWidgetPosition(widget, mod.CreateVector(posX, posY, 0));
+    safeSetUIWidgetSize(widget, mod.CreateVector(sizeX, sizeY, 0));
+    safeSetUITextLabel(widget, typeof label === "number" ? mod.Message(label) : label);
+    try {
+        mod.SetUITextAnchor(widget, textAnchor);
+    } catch {}
+    if (typeof textSize === "number") {
+        try {
+            mod.SetUITextSize(widget, textSize);
+        } catch {}
+    }
+    safeSetUIWidgetBgAlpha(widget, 0);
+    safeSetUITextColor(widget, textColor);
+    safeSetUITextAlpha(widget, 1);
+    safeSetUIWidgetVisible(widget, visible);
+    return widget;
+}
+
+function addReadyDialogCenteredText(
+    labelId: string,
+    sizeX: number,
+    sizeY: number,
+    label: number | mod.Message,
+    player: mod.Player,
+    parent: mod.UIWidget,
+    textSize?: number,
+    visible: boolean = true,
+    textColor: mod.Vector = COLOR_WHITE
+): mod.UIWidget | undefined {
+    return addReadyDialogText(
+        labelId,
+        0,
+        0,
+        sizeX,
+        sizeY,
+        mod.UIAnchor.Center,
+        mod.UIAnchor.Center,
+        label,
+        player,
+        parent,
+        textSize,
+        visible,
+        textColor
+    );
+}
+
 // Creates a right-aligned label and applies Ready Dialog text color defaults.
 function addRightAlignedLabel(
     labelId: string,
@@ -161,9 +256,10 @@ function applyAdminPanelLabelTextColor(widget?: mod.UIWidget): void {
     if (widget) mod.SetUITextColor(widget, ADMIN_PANEL_LABEL_TEXT_COLOR);
 }
 
-// Recreates all Ready Dialog button labels for a viewer after UI build/theme refresh.
+// Refreshes cached Ready Dialog button labels for a viewer after UI build/theme refresh.
 function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, baseContainer: mod.UIWidget): void {
     const refreshButtonTextIfPresent = (
+        buttonId: string,
         borderId: string,
         labelId: string,
         sizeX: number,
@@ -173,10 +269,26 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
     ): void => {
         const border = safeFind(borderId);
         if (!border) return;
+        const button = safeFind(buttonId);
+        if (button) {
+            mod.EnableUIButtonEvent(button, mod.UIButtonEvent.ButtonDown, true);
+            mod.EnableUIButtonEvent(button, mod.UIButtonEvent.ButtonUp, true);
+            mod.SetUIButtonEnabled(button, true);
+        }
+        const existing = safeFind(labelId);
+        if (existing) {
+            mod.SetUITextLabel(existing, typeof label === "number" ? mod.Message(label) : label);
+            mod.SetUIWidgetVisible(existing, true);
+            if (typeof textSize === "number") {
+                mod.SetUITextSize(existing, textSize);
+            }
+            return;
+        }
         addCenteredButtonText(labelId, sizeX, sizeY, label, player, border ?? baseContainer, textSize);
     };
 
     refreshButtonTextIfPresent(
+        UI_READY_DIALOG_BUTTON_SWAP_ID + pid,
         UI_READY_DIALOG_BUTTON_SWAP_ID + pid + "_BORDER",
         UI_READY_DIALOG_BUTTON_SWAP_LABEL_ID + pid,
         READY_DIALOG_MAIN_BUTTON_WIDTH,
@@ -185,6 +297,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
     );
 
     refreshButtonTextIfPresent(
+        UI_READY_DIALOG_BUTTON_READY_ID + pid,
         UI_READY_DIALOG_BUTTON_READY_ID + pid + "_BORDER",
         UI_READY_DIALOG_BUTTON_READY_LABEL_ID + pid,
         READY_DIALOG_MAIN_BUTTON_WIDTH,
@@ -194,6 +307,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
     updateReadyToggleButtonForViewer(player, pid);
 
     refreshButtonTextIfPresent(
+        UI_READY_DIALOG_BUTTON_CANCEL_ID + pid,
         UI_READY_DIALOG_BUTTON_CANCEL_ID + pid + "_BORDER",
         UI_READY_DIALOG_BUTTON_CANCEL_LABEL_ID + pid,
         READY_DIALOG_MAIN_BUTTON_WIDTH,
@@ -201,14 +315,10 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         mod.stringkeys.twl.teamSwitch.buttons.cancel
     );
 
-    for (const knobKey of [
-        READY_DIALOG_CONFIG_GAME_KNOB_KEY,
-        READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY,
-        READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY,
-        READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY,
-        ...READY_DIALOG_ALL_VEHICLE_KNOB_KEYS,
-    ]) {
+    for (const knobKey of getReadyDialogModeGridAllKnobKeys()) {
+        if (isReadyDialogModeGridPlaceholderKnobKey(knobKey)) continue;
         refreshButtonTextIfPresent(
+            UI_READY_DIALOG_MODE_GRID_KNOB_DEC_ID + knobKey + "_" + pid,
             UI_READY_DIALOG_MODE_GRID_KNOB_DEC_ID + knobKey + "_" + pid + "_BORDER",
             UI_READY_DIALOG_MODE_GRID_KNOB_DEC_LABEL_ID + knobKey + "_" + pid,
             READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -217,6 +327,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
             14
         );
         refreshButtonTextIfPresent(
+            UI_READY_DIALOG_MODE_GRID_KNOB_INC_ID + knobKey + "_" + pid,
             UI_READY_DIALOG_MODE_GRID_KNOB_INC_ID + knobKey + "_" + pid + "_BORDER",
             UI_READY_DIALOG_MODE_GRID_KNOB_INC_LABEL_ID + knobKey + "_" + pid,
             READY_DIALOG_SMALL_BUTTON_WIDTH,
@@ -227,6 +338,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
     }
 
     refreshButtonTextIfPresent(
+        UI_READY_DIALOG_MODE_CONFIRM_ID + pid,
         UI_READY_DIALOG_MODE_CONFIRM_ID + pid + "_BORDER",
         UI_READY_DIALOG_MODE_CONFIRM_LABEL_ID + pid,
         READY_DIALOG_CONFIRM_BUTTON_WIDTH,

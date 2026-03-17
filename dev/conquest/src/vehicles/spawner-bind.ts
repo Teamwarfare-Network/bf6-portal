@@ -11,8 +11,6 @@ function isAircraftSpawnVolumeVehicleType(vehicleType: mod.VehicleList): boolean
         case mod.VehicleList.F22:
         case mod.VehicleList.JAS39:
         case mod.VehicleList.SU57:
-        case mod.VehicleList.Cheetah:
-        case mod.VehicleList.Flyer60:
             return true;
         default:
             return false;
@@ -37,6 +35,8 @@ function isTankSpawnVolumeVehicleType(vehicleType: mod.VehicleList): boolean {
         case mod.VehicleList.Leopard:
         case mod.VehicleList.CV90:
         case mod.VehicleList.M2Bradley:
+        case mod.VehicleList.Cheetah:
+        case mod.VehicleList.Gepard:
             return true;
         default:
             return false;

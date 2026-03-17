@@ -29,9 +29,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     setMatchStateTextForAllPlayers();
     updateHelpTextVisibilityForAllPlayers();
     updatePlayersReadyHudTextForAllPlayers();
-    updateSettingsSummaryHudForAllPlayers();
-    updateMatchupLabelForAllPlayers();
-    updateMatchupReadoutsForAllPlayers();
+    updateReadyDialogModeConfigForAllVisibleViewers();
     conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
 
     resetMatchClock(getConfiguredMatchLengthSeconds());
@@ -72,9 +70,7 @@ function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number,
     setMatchStateTextForAllPlayers();
     updateHelpTextVisibilityForAllPlayers();
     updateVictoryDialogForAllPlayers(MATCH_END_DELAY_SECONDS);
-    updateSettingsSummaryHudForAllPlayers();
-    updateMatchupLabelForAllPlayers();
-    updateMatchupReadoutsForAllPlayers();
+    updateReadyDialogModeConfigForAllVisibleViewers();
     conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
 }
 
@@ -97,9 +93,7 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     setMatchStateTextForAllPlayers();
     updateHelpTextVisibilityForAllPlayers();
     updatePlayersReadyHudTextForAllPlayers();
-    updateSettingsSummaryHudForAllPlayers();
-    updateMatchupLabelForAllPlayers();
-    updateMatchupReadoutsForAllPlayers();
+    updateReadyDialogModeConfigForAllVisibleViewers();
 
     if (State.vehicles && State.vehicles.slots) {
         applySpawnerEnablementForMatchup(State.round.matchupPresetIndex, true);

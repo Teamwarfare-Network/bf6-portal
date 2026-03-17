@@ -53,7 +53,7 @@ function buildConquestTopCenterAuxWidgets(
         position: [0, TOP_PANEL_Y],
         size: [PANEL_WIDTH, PANEL_HEIGHT],
         anchor: mod.UIAnchor.TopCenter,
-        visible: true,
+        visible: false,
         padding: 0,
         bgAlpha: 0,
         bgFill: mod.UIBgFill.None,

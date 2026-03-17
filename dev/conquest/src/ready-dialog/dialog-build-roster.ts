@@ -6,7 +6,36 @@ function buildReadyDialogRosterSection(
     containerBase: mod.UIWidget,
     playerId: number
 ): void {
-    const containerWidth = 1300;
+    const buildHiddenRosterText = (
+        id: string,
+        parent: mod.UIWidget,
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        label: mod.Message,
+        textSize: number,
+        textAnchor: mod.UIAnchor,
+        visible: boolean = false
+    ): mod.UIWidget | undefined => {
+        return addReadyDialogText(
+            id,
+            x,
+            y,
+            width,
+            height,
+            mod.UIAnchor.TopLeft,
+            textAnchor,
+            label,
+            eventPlayer,
+            parent,
+            textSize,
+            visible,
+            READY_DIALOG_LABEL_TEXT_COLOR
+        );
+    };
+
+    const containerWidth = READY_DIALOG_CONTAINER_WIDTH;
     const readyRosterPanelWidth = 566;
     const readyRosterPanelHeight = 440;
     const readyRosterPanelGap = 68;
@@ -53,39 +82,46 @@ function buildReadyDialogRosterSection(
 
     const t1Container = mod.FindUIWidgetWithName(t1ContainerId, mod.GetUIRoot());
     const t2Container = mod.FindUIWidgetWithName(t2ContainerId, mod.GetUIRoot());
+    if (!t1Container || !t2Container) return;
 
     const teamLabelY = 0;
     const teamLabelHeight = 24;
     const teamLabelWidth = readyRosterPanelWidth;
     const t1LabelId = UI_READY_DIALOG_TEAM1_LABEL_ID + playerId;
     const t2LabelId = UI_READY_DIALOG_TEAM2_LABEL_ID + playerId;
-    mod.AddUIText(
+    const t1Label = buildHiddenRosterText(
         t1LabelId,
-        mod.CreateVector(0, teamLabelY, 0),
-        mod.CreateVector(teamLabelWidth, teamLabelHeight, 0),
-        mod.UIAnchor.TopCenter,
+        t1Container,
+        0,
+        teamLabelY,
+        teamLabelWidth,
+        teamLabelHeight,
         mod.Message(getTeamNameKey(TeamID.Team1)),
-        eventPlayer
+        20,
+        mod.UIAnchor.Center,
+        true
     );
-    const t1Label = mod.FindUIWidgetWithName(t1LabelId, mod.GetUIRoot());
-    mod.SetUIWidgetBgAlpha(t1Label, 0);
-    mod.SetUITextSize(t1Label, 20);
-    mod.SetUITextAnchor(t1Label, mod.UIAnchor.Center);
-    mod.SetUIWidgetParent(t1Label, t1Container);
+    if (t1Label) {
+        mod.SetUIWidgetBgAlpha(t1Label, 0);
+        mod.SetUITextAnchor(t1Label, mod.UIAnchor.Center);
+    }
 
-    mod.AddUIText(
+    const t2Label = buildHiddenRosterText(
         t2LabelId,
-        mod.CreateVector(0, teamLabelY, 0),
-        mod.CreateVector(teamLabelWidth, teamLabelHeight, 0),
-        mod.UIAnchor.TopCenter,
+        t2Container,
+        0,
+        teamLabelY,
+        teamLabelWidth,
+        teamLabelHeight,
         mod.Message(getTeamNameKey(TeamID.Team2)),
-        eventPlayer
+        20,
+        mod.UIAnchor.Center,
+        true
     );
-    const t2Label = mod.FindUIWidgetWithName(t2LabelId, mod.GetUIRoot());
-    mod.SetUIWidgetBgAlpha(t2Label, 0);
-    mod.SetUITextSize(t2Label, 20);
-    mod.SetUITextAnchor(t2Label, mod.UIAnchor.Center);
-    mod.SetUIWidgetParent(t2Label, t2Container);
+    if (t2Label) {
+        mod.SetUIWidgetBgAlpha(t2Label, 0);
+        mod.SetUITextAnchor(t2Label, mod.UIAnchor.Center);
+    }
 
     const rowStartY = teamLabelY + teamLabelHeight;
     const rowH = 26;
@@ -102,45 +138,87 @@ function buildReadyDialogRosterSection(
         const t1ReadyId = UI_READY_DIALOG_T1_ROW_READY_ID + playerId + "_" + row;
         const t1BaseId = UI_READY_DIALOG_T1_ROW_BASE_ID + playerId + "_" + row;
 
-        mod.AddUIText(t1NameId, mod.CreateVector(colNameX, y, 0), mod.CreateVector(colNameW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
-        const t1Name = mod.FindUIWidgetWithName(t1NameId, mod.GetUIRoot());
-        mod.SetUIWidgetBgAlpha(t1Name, 0);
-        mod.SetUITextSize(t1Name, 14);
-        mod.SetUIWidgetParent(t1Name, t1Container);
+        const t1Name = buildHiddenRosterText(
+            t1NameId,
+            t1Container,
+            colNameX,
+            y,
+            colNameW,
+            rowH,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+            14,
+            mod.UIAnchor.TopLeft
+        );
+        if (t1Name) mod.SetUIWidgetBgAlpha(t1Name, 0);
 
-        mod.AddUIText(t1ReadyId, mod.CreateVector(colReadyX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
-        const t1Ready = mod.FindUIWidgetWithName(t1ReadyId, mod.GetUIRoot());
-        mod.SetUIWidgetBgAlpha(t1Ready, 0);
-        mod.SetUITextSize(t1Ready, 14);
-        mod.SetUIWidgetParent(t1Ready, t1Container);
+        const t1Ready = buildHiddenRosterText(
+            t1ReadyId,
+            t1Container,
+            colReadyX,
+            y,
+            colStatusW,
+            rowH,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+            14,
+            mod.UIAnchor.TopLeft
+        );
+        if (t1Ready) mod.SetUIWidgetBgAlpha(t1Ready, 0);
 
-        mod.AddUIText(t1BaseId, mod.CreateVector(colBaseX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
-        const t1Base = mod.FindUIWidgetWithName(t1BaseId, mod.GetUIRoot());
-        mod.SetUIWidgetBgAlpha(t1Base, 0);
-        mod.SetUITextSize(t1Base, 14);
-        mod.SetUIWidgetParent(t1Base, t1Container);
+        const t1Base = buildHiddenRosterText(
+            t1BaseId,
+            t1Container,
+            colBaseX,
+            y,
+            colStatusW,
+            rowH,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+            14,
+            mod.UIAnchor.TopLeft
+        );
+        if (t1Base) mod.SetUIWidgetBgAlpha(t1Base, 0);
 
         const t2NameId = UI_READY_DIALOG_T2_ROW_NAME_ID + playerId + "_" + row;
         const t2ReadyId = UI_READY_DIALOG_T2_ROW_READY_ID + playerId + "_" + row;
         const t2BaseId = UI_READY_DIALOG_T2_ROW_BASE_ID + playerId + "_" + row;
 
-        mod.AddUIText(t2NameId, mod.CreateVector(colNameX, y, 0), mod.CreateVector(colNameW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
-        const t2Name = mod.FindUIWidgetWithName(t2NameId, mod.GetUIRoot());
-        mod.SetUIWidgetBgAlpha(t2Name, 0);
-        mod.SetUITextSize(t2Name, 14);
-        mod.SetUIWidgetParent(t2Name, t2Container);
+        const t2Name = buildHiddenRosterText(
+            t2NameId,
+            t2Container,
+            colNameX,
+            y,
+            colNameW,
+            rowH,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+            14,
+            mod.UIAnchor.TopLeft
+        );
+        if (t2Name) mod.SetUIWidgetBgAlpha(t2Name, 0);
 
-        mod.AddUIText(t2ReadyId, mod.CreateVector(colReadyX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
-        const t2Ready = mod.FindUIWidgetWithName(t2ReadyId, mod.GetUIRoot());
-        mod.SetUIWidgetBgAlpha(t2Ready, 0);
-        mod.SetUITextSize(t2Ready, 14);
-        mod.SetUIWidgetParent(t2Ready, t2Container);
+        const t2Ready = buildHiddenRosterText(
+            t2ReadyId,
+            t2Container,
+            colReadyX,
+            y,
+            colStatusW,
+            rowH,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+            14,
+            mod.UIAnchor.TopLeft
+        );
+        if (t2Ready) mod.SetUIWidgetBgAlpha(t2Ready, 0);
 
-        mod.AddUIText(t2BaseId, mod.CreateVector(colBaseX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
-        const t2Base = mod.FindUIWidgetWithName(t2BaseId, mod.GetUIRoot());
-        mod.SetUIWidgetBgAlpha(t2Base, 0);
-        mod.SetUITextSize(t2Base, 14);
-        mod.SetUIWidgetParent(t2Base, t2Container);
+        const t2Base = buildHiddenRosterText(
+            t2BaseId,
+            t2Container,
+            colBaseX,
+            y,
+            colStatusW,
+            rowH,
+            mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+            14,
+            mod.UIAnchor.TopLeft
+        );
+        if (t2Base) mod.SetUIWidgetBgAlpha(t2Base, 0);
     }
 
     refreshReadyDialogRosterForViewer(eventPlayer, playerId);

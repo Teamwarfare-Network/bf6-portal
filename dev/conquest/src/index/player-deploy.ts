@@ -19,6 +19,15 @@ async function deferForcedUndeploy(player: mod.Player, reason: string): Promise<
 async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
+    if (!State.players.readyDialogData[pid]) initReadyDialogData(eventPlayer);
+    if (State.players.readyDialogData[pid].hudSwapTransitionActive || !isHudWarmReadyForPid(pid)) {
+        State.players.deployedByPid[pid] = false;
+        await deferForcedUndeploy(eventPlayer, "hud_warm_pending");
+        return;
+    }
+    State.players.readyDialogData[pid].hudLoadToken = (State.players.readyDialogData[pid].hudLoadToken ?? 0) + 1;
+    State.players.readyDialogData[pid].hudLoadGateActive = false;
+    setHudLoadingOverlayVisibleForPid(pid, false);
     // Clear any lingering forced redeploy delay so deployed players can immediately interact with HUD/ready workflows.
     mod.SetRedeployTime(eventPlayer, 0);
     // Seed viewer perspective on deploy so first-life HUD slices (including bleed chevrons)
@@ -56,17 +65,8 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     if (!State.hudCache.topHudShellByPid[pid]) {
         ensureTopHudShellForPlayer(eventPlayer);
     }
-    // Re-apply help/ready visibility after ensure so freshly rebuilt top-center widgets cannot keep default visibility.
-    updateHelpTextVisibilityForPid(pid);
-    // Keep conquest HUD state in sync for newly deployed viewers even when no new capture/ticket events fire.
-    updateConquestCombatHudForAllPlayers(true);
-    conquestPhase5BRenderVehicleDeployTimersForPlayer(eventPlayer);
-    if (!State.players.readyDialogData[pid]) initReadyDialogData(eventPlayer);
-    if (State.players.readyDialogData[pid]?.posDebugVisible) {
-        setPositionDebugVisibleForPlayer(eventPlayer, true);
-    }
-    // Warm ready-dialog UI cache in the background so first open after spawn/swap is instant.
-    void scheduleReadyDialogUiWarmCacheForPlayer(eventPlayer, 0.15);
+    warmCacheVehicleDeployTimerHudForPlayer(eventPlayer);
+    renderCriticalHudForReveal(eventPlayer, pid);
     const directSpawnDeployResult = await conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(eventPlayer);
     if (directSpawnDeployResult.consumedDeploy) {
         return;
@@ -93,21 +93,21 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     conquestPhase4BOnPlayerLeaveOrResetPid(pid);
     twlConquestHudHideObjectiveFocusForPid(pid);
     conquestPhase3MarkHudDirty();
-    updateConquestCombatHudForAllPlayers(true);
     State.players.joinPromptTripleTapArmedByPid[pid] = false;
     if (State.players.readyDialogData[pid]?.dialogVisible) {
         hideReadyDialogUI(eventPlayer);
     }
-    updateHelpTextVisibilityForPid(pid);
 
     removeReadyDialogInteractPoint(pid);
-    conquestPhase5BRenderVehicleDeployTimersForPlayer(eventPlayer);
-    if (State.players.readyDialogData[pid]?.posDebugVisible) {
-        setPositionDebugVisibleForPlayer(eventPlayer, false);
+    if (State.players.readyDialogData[pid]?.hudSwapTransitionActive) {
+        return;
     }
-
-    if (shouldShowJoinPromptForPlayer(eventPlayer)) {
-        createJoinPromptForPlayer(eventPlayer);
+    if (!State.players.readyDialogData[pid]?.hudWarmCompleted) {
+        void warmCriticalHudForPlayer(eventPlayer, {
+            createJoinPrompt: false,
+            joinPromptDelaySeconds: 0,
+            showLoadingOverlay: false,
+        });
     }
 }
 

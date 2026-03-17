@@ -21,6 +21,10 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
     deleteJoinPromptWidget(joinPromptTitleName(pid));
     deleteJoinPromptWidget(joinPromptPanelName(pid));
     deleteJoinPromptWidget(joinPromptRootName(pid));
+    deleteJoinPromptWidget(UI_HUD_LOADING_TEXT_ID + pid);
+    deleteJoinPromptWidget(UI_HUD_LOADING_TEXT_SHADOW_ID + pid);
+    deleteJoinPromptWidget(UI_HUD_LOADING_PLATE_ID + pid);
+    deleteJoinPromptWidget(UI_HUD_LOADING_ROOT_ID + pid);
 
     hideReadyDialogUI(player);
 
@@ -121,6 +125,10 @@ function cleanupHudForPid(pid: number): void {
         `VictoryDialogRoot_${pid}`,
         `MatchTimerRoot_${pid}`,
         `VehicleDeployTimerHudRoot_${pid}`,
+        UI_HUD_LOADING_TEXT_ID + pid,
+        UI_HUD_LOADING_TEXT_SHADOW_ID + pid,
+        UI_HUD_LOADING_PLATE_ID + pid,
+        UI_HUD_LOADING_ROOT_ID + pid,
         `RoundStateRoot_${pid}`,
         `RoundStateText_${pid}`,
         `PlayersReadyText_${pid}`,
@@ -153,8 +161,6 @@ function cleanupHudForPid(pid: number): void {
 // Join entrypoint: initializes per-player state, rebuilds HUD, and re-syncs shared UI projections.
 async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     initReadyDialogData(eventPlayer);
-    // Reset per-player redeploy delay on join so startup HUD/deploy readiness cannot inherit prior forced timers.
-    mod.SetRedeployTime(eventPlayer, 0);
     const joinPid = safeGetPlayerId(eventPlayer);
     const wasDisconnected = joinPid !== undefined && State.players.disconnectedByPid[joinPid] === true;
     if (joinPid !== undefined) {
@@ -177,31 +183,11 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     if (!mod.IsPlayerValid(eventPlayer)) return;
 
     resetUiForPlayerOnJoin(eventPlayer);
-
-    ensureTopHudShellForPlayer(eventPlayer);
-    // Warm ready-dialog UI cache in the background so first open is instant but join flow stays responsive.
-    void scheduleReadyDialogUiWarmCacheForPlayer(eventPlayer, 0.35);
-    // Force a conquest HUD refresh so late joiners immediately receive current tickets/flag state.
-    updateConquestCombatHudForAllPlayers(true);
-    if (joinPid !== undefined) {
-        setMatchStateTextForPid(joinPid);
-    }
-    updateHelpTextVisibilityForPlayer(eventPlayer);
-    if (joinPid !== undefined) {
-        updateTeamNameWidgetsForPid(joinPid);
-    }
-
-    // Second join-time refresh after team assignment settles to avoid stale Ready dialog rosters.
-    await mod.Wait(0.1);
-    if (!mod.IsPlayerValid(eventPlayer)) return;
-    renderReadyDialogForAllVisibleViewers();
-    updatePlayersReadyHudTextForAllPlayers();
-    updateHelpTextVisibilityForAllPlayers();
-    // Ensure match-clock digits refresh for reconnecting players.
-    State.round.clock.lastDisplayedSeconds = undefined;
-    State.round.clock.lastLowTimeState = undefined;
-    updateAllPlayersClock();
-    conquestPhase5BRenderVehicleDeployTimersForPlayer(eventPlayer);
+    await warmCriticalHudForPlayer(eventPlayer, {
+        refreshReadyDialogs: true,
+        createJoinPrompt: false,
+        showLoadingOverlay: false,
+    });
 
     // Join-time prompt is only shown once per player (undeploy prompts can repeat unless suppressed).
     if (!shouldShowJoinPromptForPlayer(eventPlayer)) return;
@@ -212,6 +198,7 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
 
     await mod.Wait(0.2);
     if (!mod.IsPlayerValid(eventPlayer)) return;
+    if (State.players.deployedByPid[joinPromptPid]) return;
     if (!shouldShowJoinPromptForPlayer(eventPlayer)) return;
     createJoinPromptForPlayer(eventPlayer);
 }

@@ -9,6 +9,24 @@ function resolveVehicleSlotSpawnCategory(vehicleType: mod.VehicleList): VehicleS
         case mod.VehicleList.UH60:
         case mod.VehicleList.UH60_Pax:
             return "transport_chopper";
+        case mod.VehicleList.F16:
+        case mod.VehicleList.F22:
+        case mod.VehicleList.JAS39:
+        case mod.VehicleList.SU57:
+            return "jet";
+        case mod.VehicleList.Abrams:
+        case mod.VehicleList.Leopard:
+        case mod.VehicleList.M2Bradley:
+        case mod.VehicleList.CV90:
+        case mod.VehicleList.Cheetah:
+        case mod.VehicleList.Gepard:
+            return "ground_vehicle";
+        case mod.VehicleList.Marauder:
+        case mod.VehicleList.Marauder_Pax:
+        case mod.VehicleList.Quadbike:
+        case mod.VehicleList.GolfCart:
+        case mod.VehicleList.Flyer60:
+            return "fast_mover";
         default:
             return "other";
     }
@@ -16,10 +34,12 @@ function resolveVehicleSlotSpawnCategory(vehicleType: mod.VehicleList): VehicleS
 
 function shouldTrackVehicleSlotForDeployFlow(slot: VehicleSpawnerSlot): boolean {
     if (ACTIVE_MAP_KEY !== "Operation_Firestorm") return false;
-    if (!isHeliGameMode(State.round.modeConfig.confirmed.gameMode)) return false;
     return (
         slot.spawnCategory === "attack_chopper"
         || slot.spawnCategory === "transport_chopper"
+        || slot.spawnCategory === "jet"
+        || slot.spawnCategory === "ground_vehicle"
+        || slot.spawnCategory === "fast_mover"
     );
 }
 

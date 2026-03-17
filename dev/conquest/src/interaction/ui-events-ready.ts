@@ -3,10 +3,160 @@
 
 // Handles ready-dialog actions and admin panel open/close.
 // Returns true when the widget name is recognized (even if the action is gated/no-op).
+const READY_DIALOG_PRIMARY_CLICK_DEBOUNCE_SECONDS = 0.12;
+const READY_DIALOG_PRIMARY_CLICK_RELEASE_GRACE_SECONDS = 2.0;
+const readyDialogLastPrimaryClickByPid: UIButtonPrimaryClickTracker = {};
+
+function tryConsumeReadyDialogPrimaryClickEvent(
+    playerId: number,
+    widgetName: string,
+    eventUIButtonEvent: mod.UIButtonEvent
+): boolean {
+    return tryConsumeUIButtonPrimaryClickEvent(
+        readyDialogLastPrimaryClickByPid,
+        playerId,
+        widgetName,
+        eventUIButtonEvent,
+        READY_DIALOG_PRIMARY_CLICK_DEBOUNCE_SECONDS,
+        READY_DIALOG_PRIMARY_CLICK_RELEASE_GRACE_SECONDS
+    );
+}
+
+function tryHandleReadyDialogPrimaryAction(
+    eventPlayer: mod.Player,
+    playerId: number,
+    widgetName: string,
+    eventUIButtonEvent: mod.UIButtonEvent,
+    widgetBaseId: string,
+    action: () => void
+): boolean | undefined {
+    if (widgetName !== widgetBaseId + playerId) return undefined;
+    if (!tryConsumeReadyDialogPrimaryClickEvent(playerId, widgetName, eventUIButtonEvent)) return true;
+    action();
+    return true;
+}
+
+function handleReadyDialogGridKnobClick(
+    eventPlayer: mod.Player,
+    knobKey: string,
+    delta: number
+): boolean {
+    if (isMatchLive()) return true;
+    if (isReadyDialogModeGridPlaceholderKnobKey(knobKey)) {
+        return true;
+    }
+    if (knobKey === READY_DIALOG_CONFIG_GAME_KNOB_KEY) {
+        setReadyDialogGameModeIndex(State.round.modeConfig.gameModeIndex + delta);
+        return true;
+    }
+    if (knobKey === READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY) {
+        return true;
+    }
+    if (knobKey === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) {
+        setAutoStartMinActivePlayers(State.round.autoStartMinActivePlayers + delta, eventPlayer);
+        return true;
+    }
+    setReadyDialogVehicleSelectionIndexByKey(
+        knobKey,
+        (State.round.modeConfig.vehicleSelectionIndexByKey?.[knobKey] ?? 0) + delta
+    );
+    return true;
+}
+
+function handleReadyDialogReadyButtonClick(eventPlayer: mod.Player, playerId: number): void {
+    const pid = mod.GetObjId(eventPlayer);
+    const currentlyReady = !!State.players.readyByPid[pid];
+    const inBase = isPlayerInMainBaseForReady(pid);
+    const nowSeconds = Math.floor(mod.GetMatchTimeElapsed());
+
+    // Pre-live gating: players can only set READY while in main base.
+    if (!currentlyReady) {
+        if (!isMatchLive() && !inBase) {
+            return;
+        }
+        State.players.readyByPid[pid] = true;
+        updatePlayersReadyHudTextForAllPlayers();
+
+        const lastReadyAt = State.players.readyMessageCooldownByPid[pid] ?? -9999;
+        if (nowSeconds - lastReadyAt >= READY_UP_MESSAGE_COOLDOWN_SECONDS) {
+            State.players.readyMessageCooldownByPid[pid] = nowSeconds;
+            const counts = getReadyCountsForMessage();
+            sendHighlightedWorldLogMessage(
+                mod.Message(STR_PLAYER_READIED_UP, eventPlayer, counts.readyCount, counts.totalCount),
+                true,
+                undefined,
+                STR_PLAYER_READIED_UP
+            );
+        }
+    } else {
+        State.players.readyByPid[pid] = false;
+        updatePlayersReadyHudTextForAllPlayers();
+    }
+
+    updateHelpTextVisibilityForPid(pid);
+    renderReadyDialogForViewer(eventPlayer, playerId);
+    renderReadyDialogForAllVisibleViewers();
+    updatePlayersReadyHudTextForAllPlayers();
+    tryAutoStartMatchIfAllReady(eventPlayer);
+}
+
+function handleReadyDialogAdminToggleClick(eventPlayer: mod.Player, playerId: number): void {
+    if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
+    const now = mod.GetMatchTimeElapsed();
+    if (now - State.players.readyDialogData[playerId].lastAdminPanelToggleAt < ADMIN_PANEL_TOGGLE_COOLDOWN_SECONDS) {
+        return;
+    }
+    State.players.readyDialogData[playerId].lastAdminPanelToggleAt = now;
+
+    State.players.readyDialogData[playerId].adminPanelVisible = !State.players.readyDialogData[playerId].adminPanelVisible;
+    if (!State.players.readyDialogData[playerId].adminPanelVisible) {
+        deleteAdminPanelUI(playerId, false);
+        State.players.readyDialogData[playerId].adminPanelBuilt = false;
+        return;
+    }
+
+    sendHighlightedWorldLogMessage(
+        mod.Message(mod.stringkeys.twl.adminPanel.accessed, eventPlayer),
+        true,
+        undefined,
+        mod.stringkeys.twl.adminPanel.accessed
+    );
+
+    deleteAdminPanelUI(playerId, false);
+    mod.AddUIContainer(
+        UI_ADMIN_PANEL_CONTAINER_ID + playerId,
+        mod.CreateVector(ADMIN_PANEL_OFFSET_X, ADMIN_PANEL_OFFSET_Y, 0),
+        mod.CreateVector(
+            ADMIN_PANEL_CONTENT_WIDTH + (ADMIN_PANEL_PADDING * 2),
+            ADMIN_PANEL_HEIGHT + (ADMIN_PANEL_PADDING * 2),
+            0
+        ),
+        mod.UIAnchor.TopRight,
+        mod.GetUIRoot(),
+        false,
+        10,
+        ADMIN_PANEL_BG_COLOR,
+        ADMIN_PANEL_BG_ALPHA,
+        ADMIN_PANEL_BG_FILL,
+        mod.UIDepth.AboveGameUI,
+        eventPlayer
+    );
+
+    const adminContainer = mod.FindUIWidgetWithName(UI_ADMIN_PANEL_CONTAINER_ID + playerId, mod.GetUIRoot());
+    if (!adminContainer) {
+        return;
+    }
+    buildAdminPanelWidgets(eventPlayer, adminContainer, playerId);
+    State.players.readyDialogData[playerId].adminPanelBuilt = true;
+    mod.SetUIWidgetVisible(adminContainer, true);
+    setAdminPanelChildWidgetsVisible(playerId, true);
+}
+
 function tryHandleReadyDialogButtonEvent(
     eventPlayer: mod.Player,
     playerId: number,
-    widgetName: string
+    widgetName: string,
+    eventUIButtonEvent: mod.UIButtonEvent
 ): boolean {
     const tryParseGridKnobKey = (prefix: string): string | undefined => {
         const suffix = "_" + playerId;
@@ -16,233 +166,73 @@ function tryHandleReadyDialogButtonEvent(
 
     const gridDecKnobKey = tryParseGridKnobKey(UI_READY_DIALOG_MODE_GRID_KNOB_DEC_ID);
     if (gridDecKnobKey !== undefined) {
-        if (isMatchLive()) return true;
-        if (gridDecKnobKey === READY_DIALOG_CONFIG_GAME_KNOB_KEY) {
-            setReadyDialogGameModeIndex(State.round.modeConfig.gameModeIndex - 1);
-            return true;
-        }
-        if (gridDecKnobKey === READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY) {
-            setReadyDialogAircraftCeiling(State.round.modeConfig.aircraftCeiling - READY_DIALOG_AIRCRAFT_CEILING_STEP, eventPlayer);
-            return true;
-        }
-        if (gridDecKnobKey === READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY) {
-            applyMatchupPreset(Math.max(0, State.round.matchupPresetIndex - 1), eventPlayer);
-            return true;
-        }
-        if (gridDecKnobKey === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) {
-            setAutoStartMinActivePlayers(State.round.autoStartMinActivePlayers - 1, eventPlayer);
-            return true;
-        }
-        setReadyDialogVehicleSelectionIndexByKey(
-            gridDecKnobKey,
-            (State.round.modeConfig.vehicleSelectionIndexByKey?.[gridDecKnobKey] ?? 0) - 1
-        );
-        return true;
+        if (!tryConsumeReadyDialogPrimaryClickEvent(playerId, widgetName, eventUIButtonEvent)) return true;
+        return handleReadyDialogGridKnobClick(eventPlayer, gridDecKnobKey, -1);
     }
 
     const gridIncKnobKey = tryParseGridKnobKey(UI_READY_DIALOG_MODE_GRID_KNOB_INC_ID);
     if (gridIncKnobKey !== undefined) {
-        if (isMatchLive()) return true;
-        if (gridIncKnobKey === READY_DIALOG_CONFIG_GAME_KNOB_KEY) {
-            setReadyDialogGameModeIndex(State.round.modeConfig.gameModeIndex + 1);
-            return true;
-        }
-        if (gridIncKnobKey === READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY) {
-            setReadyDialogAircraftCeiling(State.round.modeConfig.aircraftCeiling + READY_DIALOG_AIRCRAFT_CEILING_STEP, eventPlayer);
-            return true;
-        }
-        if (gridIncKnobKey === READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY) {
-            applyMatchupPreset(Math.min(MATCHUP_PRESETS.length - 1, State.round.matchupPresetIndex + 1), eventPlayer);
-            return true;
-        }
-        if (gridIncKnobKey === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) {
-            setAutoStartMinActivePlayers(State.round.autoStartMinActivePlayers + 1, eventPlayer);
-            return true;
-        }
-        setReadyDialogVehicleSelectionIndexByKey(
-            gridIncKnobKey,
-            (State.round.modeConfig.vehicleSelectionIndexByKey?.[gridIncKnobKey] ?? 0) + 1
-        );
-        return true;
+        if (!tryConsumeReadyDialogPrimaryClickEvent(playerId, widgetName, eventUIButtonEvent)) return true;
+        return handleReadyDialogGridKnobClick(eventPlayer, gridIncKnobKey, 1);
     }
 
-    switch (widgetName) {
-        case UI_READY_DIALOG_BUTTON_CANCEL_ID + playerId:
+    const cancelHandled = tryHandleReadyDialogPrimaryAction(
+        eventPlayer,
+        playerId,
+        widgetName,
+        eventUIButtonEvent,
+        UI_READY_DIALOG_BUTTON_CANCEL_ID,
+        () => {
             hideReadyDialogUI(eventPlayer);
-            return true;
-
-        case UI_READY_DIALOG_BUTTON_READY_ID + playerId: {
-            const pid = mod.GetObjId(eventPlayer);
-            const currentlyReady = !!State.players.readyByPid[pid];
-            const inBase = isPlayerInMainBaseForReady(pid);
-            const nowSeconds = Math.floor(mod.GetMatchTimeElapsed());
-
-            // Pre-live gating: players can only set READY while in main base.
-            if (!currentlyReady) {
-                if (!isMatchLive() && !inBase) {
-                    return true;
-                }
-                State.players.readyByPid[pid] = true;
-                updatePlayersReadyHudTextForAllPlayers();
-
-                const lastReadyAt = State.players.readyMessageCooldownByPid[pid] ?? -9999;
-                if (nowSeconds - lastReadyAt >= READY_UP_MESSAGE_COOLDOWN_SECONDS) {
-                    State.players.readyMessageCooldownByPid[pid] = nowSeconds;
-                    const counts = getReadyCountsForMessage();
-                    sendHighlightedWorldLogMessage(
-                        mod.Message(STR_PLAYER_READIED_UP, eventPlayer, counts.readyCount, counts.totalCount),
-                        true,
-                        undefined,
-                        STR_PLAYER_READIED_UP
-                    );
-                }
-            } else {
-                State.players.readyByPid[pid] = false;
-                updatePlayersReadyHudTextForAllPlayers();
-            }
-
-            updateHelpTextVisibilityForPid(pid);
-            renderReadyDialogForViewer(eventPlayer, playerId);
-            renderReadyDialogForAllVisibleViewers();
-            updatePlayersReadyHudTextForAllPlayers();
-            tryAutoStartMatchIfAllReady(eventPlayer);
-            return true;
         }
+    );
+    if (cancelHandled !== undefined) return cancelHandled;
 
-        case UI_READY_DIALOG_BUTTON_SWAP_ID + playerId:
+    const readyHandled = tryHandleReadyDialogPrimaryAction(
+        eventPlayer,
+        playerId,
+        widgetName,
+        eventUIButtonEvent,
+        UI_READY_DIALOG_BUTTON_READY_ID,
+        () => handleReadyDialogReadyButtonClick(eventPlayer, playerId)
+    );
+    if (readyHandled !== undefined) return readyHandled;
+
+    const swapHandled = tryHandleReadyDialogPrimaryAction(
+        eventPlayer,
+        playerId,
+        widgetName,
+        eventUIButtonEvent,
+        UI_READY_DIALOG_BUTTON_SWAP_ID,
+        () => {
             swapPlayerTeam(eventPlayer);
-            return true;
+        }
+    );
+    if (swapHandled !== undefined) return swapHandled;
 
-        case UI_READY_DIALOG_MATCHUP_DEC_ID + playerId:
-            if (isMatchLive()) return true;
-            applyMatchupPreset(Math.max(0, State.round.matchupPresetIndex - 1), eventPlayer);
-            return true;
-
-        case UI_READY_DIALOG_MATCHUP_INC_ID + playerId:
-            if (isMatchLive()) return true;
-            applyMatchupPreset(Math.min(MATCHUP_PRESETS.length - 1, State.round.matchupPresetIndex + 1), eventPlayer);
-            return true;
-
-        case UI_READY_DIALOG_MINPLAYERS_DEC_ID + playerId:
-            if (isMatchLive()) return true;
-            setAutoStartMinActivePlayers(State.round.autoStartMinActivePlayers - 1, eventPlayer);
-            return true;
-
-        case UI_READY_DIALOG_MINPLAYERS_INC_ID + playerId:
-            if (isMatchLive()) return true;
-            setAutoStartMinActivePlayers(State.round.autoStartMinActivePlayers + 1, eventPlayer);
-            return true;
-
-        case UI_READY_DIALOG_MODE_GAME_DEC_ID + playerId:
-            if (isMatchLive()) return true;
-            setReadyDialogGameModeIndex(State.round.modeConfig.gameModeIndex - 1);
-            return true;
-
-        case UI_READY_DIALOG_MODE_GAME_INC_ID + playerId:
-            if (isMatchLive()) return true;
-            setReadyDialogGameModeIndex(State.round.modeConfig.gameModeIndex + 1);
-            return true;
-
-        case UI_READY_DIALOG_MODE_SETTINGS_DEC_ID + playerId:
-            if (isMatchLive()) return true;
-            setReadyDialogAircraftCeiling(
-                State.round.modeConfig.aircraftCeiling - READY_DIALOG_AIRCRAFT_CEILING_STEP,
-                eventPlayer
-            );
-            return true;
-
-        case UI_READY_DIALOG_MODE_SETTINGS_INC_ID + playerId:
-            if (isMatchLive()) return true;
-            setReadyDialogAircraftCeiling(
-                State.round.modeConfig.aircraftCeiling + READY_DIALOG_AIRCRAFT_CEILING_STEP,
-                eventPlayer
-            );
-            return true;
-
-        case UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_ID + playerId:
-            if (isMatchLive()) return true;
-            setReadyDialogVehicleIndexT1(State.round.modeConfig.vehicleIndexT1 - 1);
-            return true;
-
-        case UI_READY_DIALOG_MODE_VEHICLES_T1_INC_ID + playerId:
-            if (isMatchLive()) return true;
-            setReadyDialogVehicleIndexT1(State.round.modeConfig.vehicleIndexT1 + 1);
-            return true;
-
-        case UI_READY_DIALOG_MODE_VEHICLES_T2_DEC_ID + playerId:
-            if (isMatchLive()) return true;
-            setReadyDialogVehicleIndexT2(State.round.modeConfig.vehicleIndexT2 - 1);
-            return true;
-
-        case UI_READY_DIALOG_MODE_VEHICLES_T2_INC_ID + playerId:
-            if (isMatchLive()) return true;
-            setReadyDialogVehicleIndexT2(State.round.modeConfig.vehicleIndexT2 + 1);
-            return true;
-
-        case UI_READY_DIALOG_MODE_CONFIRM_ID + playerId:
+    const confirmHandled = tryHandleReadyDialogPrimaryAction(
+        eventPlayer,
+        playerId,
+        widgetName,
+        eventUIButtonEvent,
+        UI_READY_DIALOG_MODE_CONFIRM_ID,
+        () => {
             if (isMatchLive()) return true;
             confirmReadyDialogModeConfig(eventPlayer);
             updateReadyDialogModeConfigForAllVisibleViewers();
-            return true;
-
-        case UI_READY_DIALOG_MODE_RESET_ID + playerId:
-            if (isMatchLive()) return true;
-            triggerFreshMatchSetup(eventPlayer);
-            return true;
-
-        case UI_ADMIN_PANEL_BUTTON_ID + playerId: {
-            if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
-            const now = mod.GetMatchTimeElapsed();
-            if (now - State.players.readyDialogData[playerId].lastAdminPanelToggleAt < ADMIN_PANEL_TOGGLE_COOLDOWN_SECONDS) {
-                return true;
-            }
-            State.players.readyDialogData[playerId].lastAdminPanelToggleAt = now;
-
-            State.players.readyDialogData[playerId].adminPanelVisible = !State.players.readyDialogData[playerId].adminPanelVisible;
-            if (!State.players.readyDialogData[playerId].adminPanelVisible) {
-                deleteAdminPanelUI(playerId, false);
-                State.players.readyDialogData[playerId].adminPanelBuilt = false;
-                return true;
-            }
-
-            sendHighlightedWorldLogMessage(
-                mod.Message(mod.stringkeys.twl.adminPanel.accessed, eventPlayer),
-                true,
-                undefined,
-                mod.stringkeys.twl.adminPanel.accessed
-            );
-
-            deleteAdminPanelUI(playerId, false);
-            mod.AddUIContainer(
-                UI_ADMIN_PANEL_CONTAINER_ID + playerId,
-                mod.CreateVector(ADMIN_PANEL_OFFSET_X, ADMIN_PANEL_OFFSET_Y, 0),
-                mod.CreateVector(
-                    ADMIN_PANEL_CONTENT_WIDTH + (ADMIN_PANEL_PADDING * 2),
-                    ADMIN_PANEL_HEIGHT + (ADMIN_PANEL_PADDING * 2),
-                    0
-                ),
-                mod.UIAnchor.TopRight,
-                mod.GetUIRoot(),
-                false,
-                10,
-                ADMIN_PANEL_BG_COLOR,
-                ADMIN_PANEL_BG_ALPHA,
-                ADMIN_PANEL_BG_FILL,
-                mod.UIDepth.AboveGameUI,
-                eventPlayer
-            );
-
-            const adminContainer = mod.FindUIWidgetWithName(UI_ADMIN_PANEL_CONTAINER_ID + playerId, mod.GetUIRoot());
-            if (!adminContainer) {
-                return true;
-            }
-            buildAdminPanelWidgets(eventPlayer, adminContainer, playerId);
-            State.players.readyDialogData[playerId].adminPanelBuilt = true;
-            mod.SetUIWidgetVisible(adminContainer, true);
-            setAdminPanelChildWidgetsVisible(playerId, true);
-            return true;
         }
-    }
+    );
+    if (confirmHandled !== undefined) return confirmHandled;
+
+    const adminHandled = tryHandleReadyDialogPrimaryAction(
+        eventPlayer,
+        playerId,
+        widgetName,
+        eventUIButtonEvent,
+        UI_ADMIN_PANEL_BUTTON_ID,
+        () => handleReadyDialogAdminToggleClick(eventPlayer, playerId)
+    );
+    if (adminHandled !== undefined) return adminHandled;
 
     return false;
 }

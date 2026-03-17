@@ -31,30 +31,9 @@ function updateTeamNameWidgetsForAllPlayers(): void {
     }
 }
 
-// Refreshes the per-player matchup label (for example, "1 vs 1") while match is not live.
-function updateMatchupLabelForPid(pid: number): void {
-    const labelId = UI_READY_DIALOG_MATCHUP_LABEL_ID + pid;
-    const labelWidget = safeFind(labelId);
-    if (!labelWidget) return;
-    const showLabel = !isMatchLive();
-    mod.SetUIWidgetVisible(labelWidget, showLabel);
-    if (!showLabel) return;
-    const preset = MATCHUP_PRESETS[State.round.matchupPresetIndex];
-    mod.SetUITextLabel(
-        labelWidget,
-        mod.Message(mod.stringkeys.twl.readyDialog.matchupFormat, preset.leftPlayers, preset.rightPlayers)
-    );
-}
-
-// Refreshes the matchup label (e.g., "1 vs 1") for every active player HUD.
+// Refreshes ready-dialog matchup/config readouts for all visible viewers.
 function updateMatchupLabelForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        updateMatchupLabelForPid(mod.GetObjId(p));
-    }
+    updateReadyDialogModeConfigForAllVisibleViewers();
 }
 
 // Resolves the per-side + total player requirements from the auto-start setting.
@@ -67,47 +46,9 @@ function getAutoStartMinPlayerCounts(): { left: number; right: number; total: nu
     return { left: perSide, right: perSide, total: perSide * 2 };
 }
 
-// Updates per-player Ready Dialog readouts (matchup target value + players-per-side) for a single pid.
-function updateMatchupReadoutsForPid(pid: number): void {
-    const minPlayersWidget = safeFind(UI_READY_DIALOG_MATCHUP_MINPLAYERS_ID + pid);
-    const minPlayersTotalWidget = safeFind(UI_READY_DIALOG_MATCHUP_MINPLAYERS_TOTAL_ID + pid);
-    const counts = getAutoStartMinPlayerCounts();
-    const showLiveReadouts = !isMatchLive();
-    if (minPlayersWidget) {
-        mod.SetUIWidgetVisible(minPlayersWidget, showLiveReadouts);
-    }
-    if (minPlayersTotalWidget) {
-        mod.SetUIWidgetVisible(minPlayersTotalWidget, showLiveReadouts);
-    }
-    if (!showLiveReadouts) return;
-    if (minPlayersWidget) {
-        mod.SetUITextLabel(
-            minPlayersWidget,
-            mod.Message(mod.stringkeys.twl.readyDialog.playersFormat, counts.left, counts.right)
-        );
-    }
-    if (minPlayersTotalWidget) {
-        mod.SetUITextLabel(
-            minPlayersTotalWidget,
-            mod.Message(mod.stringkeys.twl.readyDialog.minPlayersToStartFormat, counts.total)
-        );
-    }
-}
-
-// Refreshes the matchup readouts for all players with a Ready dialog HUD.
+// Refreshes ready-dialog player/min-player readouts for all visible viewers.
 function updateMatchupReadoutsForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        updateMatchupReadoutsForPid(mod.GetObjId(p));
-    }
-}
-
-// Compatibility no-op: the top-left settings summary widget was removed, but flow callers still invoke this refresh hook.
-function updateSettingsSummaryHudForAllPlayers(): void {
-    return;
+    updateReadyDialogModeConfigForAllVisibleViewers();
 }
 
 // Sets minimum active players-per-side with clamping, UI refresh, and optional announce/start check.
@@ -116,7 +57,7 @@ function setAutoStartMinActivePlayers(value: number, eventPlayer?: mod.Player): 
     if (clamped === State.round.autoStartMinActivePlayers) return;
     ensureCustomGameModeForManualChange();
     State.round.autoStartMinActivePlayers = clamped;
-    updateMatchupReadoutsForAllPlayers();
+    updateReadyDialogModeConfigForAllVisibleViewers();
     // Keep top-left status dock ready counts in immediate sync with min-player configuration changes.
     setMatchStateTextForAllPlayers();
     if (eventPlayer) {
@@ -151,7 +92,7 @@ function applyMatchupPresetInternal(
     State.round.lastMatchupChangeAtSeconds = now;
 
     updateMatchupLabelForAllPlayers();
-    updateMatchupReadoutsForAllPlayers();
+    updateReadyDialogModeConfigForAllVisibleViewers();
     setMatchStateTextForAllPlayers();
 
     if (announce && eventPlayer) {

@@ -54,11 +54,17 @@ function deleteAdminPanelUI(playerId: number, deleteToggle: boolean): void {
     }
 }
 
-// Ensures admin panel toggle/container widgets exist and matches current visibility state.
-function ensureAdminPanelWidgets(eventPlayer: mod.Player, playerId: number): void {
+// Ensures the static admin-panel toggle exists under the ready dialog.
+// The panel contents remain lazy-built from the button event path.
+function ensureAdminPanelWidgets(
+    eventPlayer: mod.Player,
+    playerId: number,
+    parent?: mod.UIWidget,
+    visible: boolean = true
+): void {
     const adminToggleButtonId = UI_ADMIN_PANEL_BUTTON_ID + playerId;
     const adminToggleLabelId = UI_ADMIN_PANEL_BUTTON_LABEL_ID + playerId;
-    const adminContainerId = UI_ADMIN_PANEL_CONTAINER_ID + playerId;
+    const adminToggleParent = mod.GetUIRoot();
 
     // Create toggle button if missing.
     let toggleBtn = safeFind(adminToggleButtonId);
@@ -70,70 +76,56 @@ function ensureAdminPanelWidgets(eventPlayer: mod.Player, playerId: number): voi
             ADMIN_PANEL_TOGGLE_WIDTH,
             ADMIN_PANEL_TOGGLE_HEIGHT,
             mod.UIAnchor.TopRight,
-            mod.GetUIRoot(),
+            adminToggleParent,
             eventPlayer
         );
         toggleBtn = mod.FindUIWidgetWithName(adminToggleButtonId, mod.GetUIRoot());
     }
 
-    // Recreate label to guarantee correct anchor/parenting with outlined border.
-    const existingToggleLabel = safeFind(adminToggleLabelId);
-    if (existingToggleLabel) mod.DeleteUIWidget(existingToggleLabel);
     const adminToggleBorder = safeFind(adminToggleButtonId + "_BORDER");
-    const toggleLabel = addCenteredButtonText(
-        adminToggleLabelId,
-        ADMIN_PANEL_TOGGLE_WIDTH,
-        ADMIN_PANEL_TOGGLE_HEIGHT,
-        mod.Message(mod.stringkeys.twl.adminPanel.buttons.panel),
-        eventPlayer,
-        adminToggleBorder ?? mod.GetUIRoot()
-    );
+    if (toggleBtn) {
+        mod.SetUIWidgetParent(toggleBtn, adminToggleParent);
+        mod.SetUIWidgetAnchor(toggleBtn, mod.UIAnchor.TopRight);
+        mod.SetUIWidgetPosition(toggleBtn, mod.CreateVector(ADMIN_PANEL_TOGGLE_OFFSET_X, ADMIN_PANEL_TOGGLE_OFFSET_Y, 0));
+        mod.SetUIWidgetSize(toggleBtn, mod.CreateVector(ADMIN_PANEL_TOGGLE_WIDTH, ADMIN_PANEL_TOGGLE_HEIGHT, 0));
+        mod.SetUIWidgetDepth(toggleBtn, mod.UIDepth.AboveGameUI);
+    }
+    if (adminToggleBorder) {
+        mod.SetUIWidgetParent(adminToggleBorder, adminToggleParent);
+        mod.SetUIWidgetAnchor(adminToggleBorder, mod.UIAnchor.TopRight);
+        mod.SetUIWidgetPosition(adminToggleBorder, mod.CreateVector(ADMIN_PANEL_TOGGLE_OFFSET_X, ADMIN_PANEL_TOGGLE_OFFSET_Y, 0));
+        mod.SetUIWidgetSize(adminToggleBorder, mod.CreateVector(ADMIN_PANEL_TOGGLE_WIDTH, ADMIN_PANEL_TOGGLE_HEIGHT, 0));
+        mod.SetUIWidgetDepth(adminToggleBorder, mod.UIDepth.AboveGameUI);
+    }
+    let toggleLabel = safeFind(adminToggleLabelId);
+    if (!toggleLabel) {
+        toggleLabel = addCenteredButtonText(
+            adminToggleLabelId,
+            ADMIN_PANEL_TOGGLE_WIDTH,
+            ADMIN_PANEL_TOGGLE_HEIGHT,
+            mod.Message(mod.stringkeys.twl.adminPanel.buttons.panel),
+            eventPlayer,
+            adminToggleBorder ?? adminToggleParent
+        );
+    } else {
+        mod.SetUITextLabel(toggleLabel, mod.Message(mod.stringkeys.twl.adminPanel.buttons.panel));
+        if (adminToggleBorder) {
+            mod.SetUIWidgetParent(toggleLabel, adminToggleBorder);
+        }
+    }
     if (toggleLabel) {
         mod.SetUITextSize(toggleLabel, 12);
         mod.SetUITextColor(toggleLabel, ADMIN_PANEL_BUTTON_TEXT_COLOR);
         mod.SetUIWidgetDepth(toggleLabel, mod.UIDepth.AboveGameUI);
     }
 
-    // Create admin container if missing.
-    let adminContainer = safeFind(adminContainerId);
-    if (!adminContainer) {
-        mod.AddUIContainer(
-            adminContainerId,
-            mod.CreateVector(ADMIN_PANEL_OFFSET_X, ADMIN_PANEL_OFFSET_Y, 0),
-            mod.CreateVector(
-                ADMIN_PANEL_CONTENT_WIDTH + (ADMIN_PANEL_PADDING * 2),
-                ADMIN_PANEL_HEIGHT + (ADMIN_PANEL_PADDING * 2),
-                0
-            ),
-            mod.UIAnchor.TopRight,
-            mod.GetUIRoot(),
-            false,
-            10,
-            ADMIN_PANEL_BG_COLOR,
-            ADMIN_PANEL_BG_ALPHA,
-            ADMIN_PANEL_BG_FILL,
-            mod.UIDepth.AboveGameUI,
-            eventPlayer
-        );
-        adminContainer = mod.FindUIWidgetWithName(adminContainerId, mod.GetUIRoot());
-    }
-
-    // Admin toggle button should exist only while the Ready Dialog is open.
-    // When caching is enabled, we hide/show rather than recreate.
-    if (toggleBtn) mod.SetUIWidgetVisible(toggleBtn, true);
-    if (toggleLabel) mod.SetUIWidgetVisible(toggleLabel, true);
+    if (toggleBtn) mod.SetUIWidgetVisible(toggleBtn, visible);
+    if (toggleLabel) mod.SetUIWidgetVisible(toggleLabel, visible);
     const toggleBorder = safeFind(adminToggleButtonId + "_BORDER");
-    if (toggleBorder) mod.SetUIWidgetVisible(toggleBorder, true);
+    if (toggleBorder) mod.SetUIWidgetVisible(toggleBorder, visible);
 
-    // Default closed on first build; preserve state on reopen.
     if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
     if (!State.players.readyDialogData[playerId].adminPanelBuilt) {
         State.players.readyDialogData[playerId].adminPanelVisible = false;
-        if (adminContainer) mod.SetUIWidgetVisible(adminContainer, false);
-        setAdminPanelChildWidgetsVisible(playerId, false);
-    } else {
-        const visible = State.players.readyDialogData[playerId].adminPanelVisible;
-        if (adminContainer) mod.SetUIWidgetVisible(adminContainer, visible);
-        setAdminPanelChildWidgetsVisible(playerId, visible);
     }
 }

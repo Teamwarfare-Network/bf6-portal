@@ -14,7 +14,11 @@ function dismissJoinPromptForPlayer(player: mod.Player): void {
     const pid = mod.GetObjId(player);
 
     setUIInputModeForPlayer(player, false);
-    mod.EnablePlayerDeploy(player, canEnableDeployAfterJoinPrompt());
+    if (isHudLoadingGateActiveForPid(pid)) {
+        enforceHudLoadingDeployBlock(player);
+    } else {
+        mod.EnablePlayerDeploy(player, canEnableDeployAfterJoinPrompt());
+    }
     deleteJoinPromptWidget(joinPromptButtonTextName(pid));
     deleteJoinPromptWidget(joinPromptButtonName(pid));
     deleteJoinPromptWidget(joinPromptButtonBorderName(pid));

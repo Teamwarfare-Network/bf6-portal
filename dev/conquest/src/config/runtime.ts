@@ -42,6 +42,8 @@ let TEAM1_JET_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team1JetSpawns ?? [];
 let TEAM2_JET_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team2JetSpawns ?? [];
 let TEAM1_FAST_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team1FastMoverSpawns ?? [];
 let TEAM2_FAST_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team2FastMoverSpawns ?? [];
+let TEAM1_VEHICLE_SLOT_INVENTORY_SPECS: VehicleSpawnSpec[] = [];
+let TEAM2_VEHICLE_SLOT_INVENTORY_SPECS: VehicleSpawnSpec[] = [];
 const MAIN_BASE_BIND_RADIUS_METERS = 150.0;
 
 // Cached per-vehicle spawn inference for later reconciliation on seat entry (best-effort, can go stale).

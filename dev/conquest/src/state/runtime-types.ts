@@ -36,6 +36,9 @@ type VehicleSpawnerSlot = {
 type VehicleSlotSpawnCategory =
     | "attack_chopper"
     | "transport_chopper"
+    | "jet"
+    | "ground_vehicle"
+    | "fast_mover"
     | "other";
 
 type VehicleDirectSpawnMode = "air" | "ground";

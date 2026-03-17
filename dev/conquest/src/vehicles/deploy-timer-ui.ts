@@ -24,6 +24,36 @@ function getVehicleDeployTimerLabelKey(vehicleType: mod.VehicleList): number {
         case mod.VehicleList.UH60:
         case mod.VehicleList.UH60_Pax:
             return mod.stringkeys.twl.readyDialog.vehicleOptionBlackHawk;
+        case mod.VehicleList.F16:
+            return mod.stringkeys.twl.readyDialog.vehicleShortF16;
+        case mod.VehicleList.F22:
+            return mod.stringkeys.twl.readyDialog.vehicleShortF22;
+        case mod.VehicleList.JAS39:
+            return mod.stringkeys.twl.readyDialog.vehicleShortJas39;
+        case mod.VehicleList.SU57:
+            return mod.stringkeys.twl.readyDialog.vehicleShortSu57;
+        case mod.VehicleList.Abrams:
+            return mod.stringkeys.twl.readyDialog.vehicleShortAbrams;
+        case mod.VehicleList.Leopard:
+            return mod.stringkeys.twl.readyDialog.vehicleShortLeopard;
+        case mod.VehicleList.M2Bradley:
+            return mod.stringkeys.twl.readyDialog.vehicleShortBradley;
+        case mod.VehicleList.CV90:
+            return mod.stringkeys.twl.readyDialog.vehicleShortCv90;
+        case mod.VehicleList.Cheetah:
+            return mod.stringkeys.twl.readyDialog.vehicleShortCheetah;
+        case mod.VehicleList.Gepard:
+            return mod.stringkeys.twl.readyDialog.vehicleShortGepard;
+        case mod.VehicleList.Marauder:
+            return mod.stringkeys.twl.readyDialog.vehicleShortMarauder;
+        case mod.VehicleList.Marauder_Pax:
+            return mod.stringkeys.twl.readyDialog.vehicleShortMarauderPax;
+        case mod.VehicleList.Quadbike:
+            return mod.stringkeys.twl.readyDialog.vehicleShortQuadbike;
+        case mod.VehicleList.GolfCart:
+            return mod.stringkeys.twl.readyDialog.vehicleShortGolfCart;
+        case mod.VehicleList.Flyer60:
+            return mod.stringkeys.twl.readyDialog.vehicleShortFlyer60;
         default:
             return mod.stringkeys.twl.system.unknownPlayer;
     }
@@ -74,6 +104,38 @@ function shouldShowVehicleDeployTimersForPid(pid: number): boolean {
     return getVehicleDeployTrackedSlotsForPlayer(player).length > 0;
 }
 
+type VehicleDeployTimerRenderPlan = {
+    slots: VehicleSpawnerSlot[];
+    warmReady: boolean;
+    shouldShowRows: boolean;
+    visible: boolean;
+    signature: string;
+};
+
+function buildVehicleDeployTimerRenderPlan(player: mod.Player, pid: number): VehicleDeployTimerRenderPlan {
+    const slots = getVehicleDeployRenderSlotsForPlayer(player);
+    const hasPendingDirectSpawnClaim = !State.players.deployedByPid[pid] && !!findVehicleSlotByPendingSpawnOwnerPid(pid);
+    const warmReady = isHudWarmReadyForPid(pid) && !isHudSwapTransitionActiveForPid(pid);
+    const shouldShowRows = shouldShowVehicleDeployTimersForPid(pid)
+        && slots.length > 0
+        && !hasPendingDirectSpawnClaim;
+    const visible = shouldShowRows && warmReady;
+
+    let signature = `${warmReady ? 1 : 0}|${shouldShowRows ? 1 : 0}|${visible ? 1 : 0}|${State.players.deployedByPid[pid] ? 1 : 0}|${hasPendingDirectSpawnClaim ? 1 : 0}`;
+    for (let i = 0; i < slots.length; i++) {
+        const slot = slots[i];
+        signature += `#${i}:${slot.slotNumber},${slot.vehicleType},${slot.vehicleId},${slot.activeOwnerPid ?? -1},${slot.pendingSpawnOwnerPid ?? -1},${slot.pendingSpawnMode ?? "none"},${getVehicleSlotRespawnRemainingSeconds(slot)},${isVehicleDeploySlotReadyForSpawnButton(slot) ? 1 : 0}`;
+    }
+
+    return {
+        slots,
+        warmReady,
+        shouldShowRows,
+        visible,
+        signature,
+    };
+}
+
 function isVehicleDeploySlotReadyForSpawnButton(slot: VehicleSpawnerSlot | undefined): boolean {
     if (!slot) return false;
     return slot.enabled
@@ -84,6 +146,26 @@ function isVehicleDeploySlotReadyForSpawnButton(slot: VehicleSpawnerSlot | undef
         && !slot.respawnRunning
         && !slot.spawnRetryScheduled
         && getVehicleSlotRespawnRemainingSeconds(slot) <= 0;
+}
+
+function doesVehicleTypeSupportAirDeploy(vehicleType: mod.VehicleList): boolean {
+    switch (vehicleType) {
+        case mod.VehicleList.AH64:
+        case mod.VehicleList.Eurocopter:
+        case mod.VehicleList.UH60:
+        case mod.VehicleList.UH60_Pax:
+        case mod.VehicleList.F16:
+        case mod.VehicleList.F22:
+        case mod.VehicleList.JAS39:
+        case mod.VehicleList.SU57:
+            return true;
+        default:
+            return false;
+    }
+}
+
+function doesVehicleTypeSupportGroundDeploy(vehicleType: mod.VehicleList): boolean {
+    return true;
 }
 
 function deleteVehicleDeployTimerHudArtifactsForPid(pid: number): void {
@@ -123,6 +205,21 @@ function getVehicleDeployTimerRowBaseY(index: number): number {
     return VEHICLE_DEPLOY_TIMER_ROOT_HEIGHT
         - VEHICLE_DEPLOY_TIMER_ROW_HEIGHT
         - ((VEHICLE_DEPLOY_TIMER_ROW_HEIGHT + VEHICLE_DEPLOY_TIMER_ROW_GAP_Y) * index);
+}
+
+function setVehicleDeployTimerRootOnscreen(
+    cache: VehicleDeployTimerHudCacheEntry | undefined,
+    onscreen: boolean
+): void {
+    if (!cache?.root) return;
+    safeSetUIWidgetPosition(
+        cache.root,
+        mod.CreateVector(
+            onscreen ? VEHICLE_DEPLOY_TIMER_ROOT_OFFSET_X : (VEHICLE_DEPLOY_TIMER_ROOT_OFFSET_X + 2000),
+            VEHICLE_DEPLOY_TIMER_ROOT_OFFSET_Y,
+            0
+        )
+    );
 }
 
 function isVehicleDeployTimerRowCacheUsable(row: VehicleDeployTimerRowCacheEntry | undefined): boolean {
@@ -188,7 +285,7 @@ function ensureVehicleDeployInfoPlate(
             position: [x, y],
             size: [width, height],
             anchor: mod.UIAnchor.TopLeft,
-            visible: true,
+            visible: false,
             padding: 0,
             bgAlpha: alpha,
             bgColor: [
@@ -210,6 +307,7 @@ function ensureVehicleDeployInfoPlate(
         mod.SetUIWidgetBgAlpha(widget, alpha);
         mod.SetUIWidgetBgFill(widget, fill);
         mod.SetUIWidgetDepth(widget, mod.UIDepth.AboveGameUI);
+        mod.SetUIWidgetVisible(widget, false);
     } catch {
         return undefined;
     }
@@ -237,7 +335,7 @@ function ensureVehicleDeployCenteredText(
             ],
             size: [width, height],
             anchor: mod.UIAnchor.Center,
-            visible: true,
+            visible: false,
             padding: 0,
             bgAlpha: 0,
             bgFill: mod.UIBgFill.None,
@@ -265,6 +363,7 @@ function ensureVehicleDeployCenteredText(
         mod.SetUITextAnchor(widget, mod.UIAnchor.Center);
         mod.SetUITextSize(widget, textSize);
         mod.SetUIWidgetDepth(widget, mod.UIDepth.AboveGameUI);
+        mod.SetUIWidgetVisible(widget, false);
     } catch {
         return undefined;
     }
@@ -402,6 +501,7 @@ function ensureVehicleDeployActionButtonWidgets(
             mod.SetUIButtonAlphaFocused(button, 1);
             mod.SetUIButtonAlphaPressed(button, 1);
             mod.SetUIButtonAlphaDisabled(button, 1);
+            mod.SetUIWidgetVisible(button, false);
         } catch {
             button = undefined;
         }
@@ -417,22 +517,30 @@ function ensureVehicleDeployActionButtonWidgets(
     safeSetUITextLabel(text, mod.Message(labelKey));
     safeSetUITextColor(text, COLOR_WHITE);
     safeSetUITextColor(textShadow, COLOR_DARK_BLACK);
+    safeSetUIWidgetVisible(border, false);
+    safeSetUIWidgetVisible(blur, false);
+    safeSetUIWidgetVisible(fill, false);
+    safeSetUIWidgetVisible(button, false);
+    safeSetUIWidgetVisible(textShadow, false);
+    safeSetUIWidgetVisible(text, false);
 
     return { border, blur, fill, button, textShadow, text };
 }
 
-function getVehicleDeployAirButtonWidgets(row: VehicleDeployTimerRowCacheEntry | undefined): VehicleDeployActionButtonWidgets {
-    return {
-        border: row?.spawnButtonBorder,
-        blur: row?.spawnButtonBlur,
-        fill: row?.spawnButtonFill,
-        button: row?.spawnButton,
-        textShadow: row?.spawnButtonTextShadow,
-        text: row?.spawnButtonText,
-    };
-}
-
-function getVehicleDeployGroundButtonWidgets(row: VehicleDeployTimerRowCacheEntry | undefined): VehicleDeployActionButtonWidgets {
+function getVehicleDeployActionButtonWidgets(
+    row: VehicleDeployTimerRowCacheEntry | undefined,
+    mode: VehicleDirectSpawnMode
+): VehicleDeployActionButtonWidgets {
+    if (mode === "air") {
+        return {
+            border: row?.spawnButtonBorder,
+            blur: row?.spawnButtonBlur,
+            fill: row?.spawnButtonFill,
+            button: row?.spawnButton,
+            textShadow: row?.spawnButtonTextShadow,
+            text: row?.spawnButtonText,
+        };
+    }
     return {
         border: row?.groundButtonBorder,
         blur: row?.groundButtonBlur,
@@ -459,32 +567,25 @@ function applyVehicleDeployActionButtonVisualState(
     return visualState;
 }
 
-function applyVehicleDeploySpawnButtonVisualState(
+function applyVehicleDeployActionButtonVisualStateForMode(
     row: VehicleDeployTimerRowCacheEntry | undefined,
+    mode: VehicleDirectSpawnMode,
     active: boolean,
     pressed: boolean
 ): void {
     if (!row) return;
-    row.lastSpawnButtonVisualState = applyVehicleDeployActionButtonVisualState(
-        getVehicleDeployAirButtonWidgets(row),
+    const priorState = mode === "air" ? row.lastSpawnButtonVisualState : row.lastGroundButtonVisualState;
+    const nextState = applyVehicleDeployActionButtonVisualState(
+        getVehicleDeployActionButtonWidgets(row, mode),
         active,
         pressed,
-        row.lastSpawnButtonVisualState
+        priorState
     );
-}
-
-function applyVehicleDeployGroundButtonVisualState(
-    row: VehicleDeployTimerRowCacheEntry | undefined,
-    active: boolean,
-    pressed: boolean
-): void {
-    if (!row) return;
-    row.lastGroundButtonVisualState = applyVehicleDeployActionButtonVisualState(
-        getVehicleDeployGroundButtonWidgets(row),
-        active,
-        pressed,
-        row.lastGroundButtonVisualState
-    );
+    if (mode === "air") {
+        row.lastSpawnButtonVisualState = nextState;
+        return;
+    }
+    row.lastGroundButtonVisualState = nextState;
 }
 
 function layoutVehicleDeployRowForState(
@@ -613,55 +714,52 @@ function setVehicleDeployTimerNameVisible(row: VehicleDeployTimerRowCacheEntry |
     row.lastPlayerNameVisible = visible;
 }
 
-function setVehicleDeploySpawnButtonVisible(row: VehicleDeployTimerRowCacheEntry | undefined, visible: boolean): void {
+function setVehicleDeployActionButtonVisible(
+    row: VehicleDeployTimerRowCacheEntry | undefined,
+    mode: VehicleDirectSpawnMode,
+    visible: boolean
+): void {
     if (!row) return;
-    if (row.lastSpawnButtonVisible === visible) return;
-    if (row.spawnButton) {
-        mod.SetUIButtonEnabled(row.spawnButton, visible);
+    if (mode === "air" && row.lastSpawnButtonVisible === visible) return;
+    if (mode === "ground" && row.lastGroundButtonVisible === visible) return;
+    const widgets = getVehicleDeployActionButtonWidgets(row, mode);
+    if (widgets.button) {
+        mod.SetUIButtonEnabled(widgets.button, visible);
     }
-    safeSetUIWidgetVisible(row.spawnButtonBorder, visible);
-    safeSetUIWidgetVisible(row.spawnButtonBlur, false);
-    safeSetUIWidgetVisible(row.spawnButtonFill, false);
-    safeSetUIWidgetVisible(row.spawnButton, visible);
-    safeSetUIWidgetVisible(row.spawnButtonTextShadow, visible);
-    safeSetUIWidgetVisible(row.spawnButtonText, visible);
-    row.lastSpawnButtonVisible = visible;
-}
-
-function setVehicleDeployGroundButtonVisible(row: VehicleDeployTimerRowCacheEntry | undefined, visible: boolean): void {
-    if (!row) return;
-    if (row.lastGroundButtonVisible === visible) return;
-    if (row.groundButton) {
-        mod.SetUIButtonEnabled(row.groundButton, visible);
+    safeSetUIWidgetVisible(widgets.border, visible);
+    safeSetUIWidgetVisible(widgets.blur, false);
+    safeSetUIWidgetVisible(widgets.fill, false);
+    safeSetUIWidgetVisible(widgets.button, visible);
+    safeSetUIWidgetVisible(widgets.textShadow, visible);
+    safeSetUIWidgetVisible(widgets.text, visible);
+    if (mode === "air") {
+        row.lastSpawnButtonVisible = visible;
+        return;
     }
-    safeSetUIWidgetVisible(row.groundButtonBorder, visible);
-    safeSetUIWidgetVisible(row.groundButtonBlur, false);
-    safeSetUIWidgetVisible(row.groundButtonFill, false);
-    safeSetUIWidgetVisible(row.groundButton, visible);
-    safeSetUIWidgetVisible(row.groundButtonTextShadow, visible);
-    safeSetUIWidgetVisible(row.groundButtonText, visible);
     row.lastGroundButtonVisible = visible;
 }
 
-function clearVehicleDeploySpawnButtonState(row: VehicleDeployTimerRowCacheEntry | undefined): void {
+function clearVehicleDeployActionButtonState(
+    row: VehicleDeployTimerRowCacheEntry | undefined,
+    mode: VehicleDirectSpawnMode
+): void {
     if (!row) return;
-    if (!row.spawnButtonHovered && !row.spawnButtonFocused && !row.spawnButtonPressed) return;
-    row.spawnButtonHovered = false;
-    row.spawnButtonFocused = false;
-    row.spawnButtonPressed = false;
-    applyVehicleDeploySpawnButtonVisualState(row, false, false);
-}
-
-function clearVehicleDeployGroundButtonState(row: VehicleDeployTimerRowCacheEntry | undefined): void {
-    if (!row) return;
+    if (mode === "air") {
+        if (!row.spawnButtonHovered && !row.spawnButtonFocused && !row.spawnButtonPressed) return;
+        row.spawnButtonHovered = false;
+        row.spawnButtonFocused = false;
+        row.spawnButtonPressed = false;
+        applyVehicleDeployActionButtonVisualStateForMode(row, mode, false, false);
+        return;
+    }
     if (!row.groundButtonHovered && !row.groundButtonFocused && !row.groundButtonPressed) return;
     row.groundButtonHovered = false;
     row.groundButtonFocused = false;
     row.groundButtonPressed = false;
-    applyVehicleDeployGroundButtonVisualState(row, false, false);
+    applyVehicleDeployActionButtonVisualStateForMode(row, mode, false, false);
 }
 
-function clearVehicleDeploySpawnButtonStateForAllRows(
+function clearVehicleDeployActionButtonStateForAllRows(
     cache: VehicleDeployTimerHudCacheEntry | undefined,
     exceptIndex?: number,
     exceptMode?: VehicleDirectSpawnMode
@@ -670,16 +768,16 @@ function clearVehicleDeploySpawnButtonStateForAllRows(
     for (let i = 0; i < cache.rows.length; i++) {
         if (exceptIndex !== undefined && i === exceptIndex) {
             if (exceptMode === "air") {
-                clearVehicleDeployGroundButtonState(cache.rows[i]);
+                clearVehicleDeployActionButtonState(cache.rows[i], "ground");
                 continue;
             }
             if (exceptMode === "ground") {
-                clearVehicleDeploySpawnButtonState(cache.rows[i]);
+                clearVehicleDeployActionButtonState(cache.rows[i], "air");
                 continue;
             }
         }
-        clearVehicleDeploySpawnButtonState(cache.rows[i]);
-        clearVehicleDeployGroundButtonState(cache.rows[i]);
+        clearVehicleDeployActionButtonState(cache.rows[i], "air");
+        clearVehicleDeployActionButtonState(cache.rows[i], "ground");
     }
 }
 
@@ -701,7 +799,7 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
         position: [VEHICLE_DEPLOY_TIMER_ROOT_OFFSET_X, VEHICLE_DEPLOY_TIMER_ROOT_OFFSET_Y],
         size: [VEHICLE_DEPLOY_TIMER_ROOT_WIDTH, VEHICLE_DEPLOY_TIMER_ROOT_HEIGHT],
         anchor: mod.UIAnchor.CenterRight,
-        visible: true,
+        visible: false,
         padding: 0,
         bgAlpha: 0,
         bgFill: mod.UIBgFill.None,
@@ -711,6 +809,7 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
         root: safeFind(`VehicleDeployTimerHudRoot_${pid}`),
         rows: [],
         lastVisibleState: priorCache?.lastVisibleState,
+        lastRenderSignature: priorCache?.lastRenderSignature,
     };
     State.hudCache.vehicleDeployTimerCache[pid] = cache;
 
@@ -889,19 +988,39 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
             lastGroundButtonVisualState: undefined,
             timer,
         };
-        applyVehicleDeploySpawnButtonVisualState(
+        applyVehicleDeployActionButtonVisualStateForMode(
             cache.rows[i],
+            "air",
             (cache.rows[i].spawnButtonHovered === true) || (cache.rows[i].spawnButtonFocused === true),
             cache.rows[i].spawnButtonPressed === true
         );
-        applyVehicleDeployGroundButtonVisualState(
+        applyVehicleDeployActionButtonVisualStateForMode(
             cache.rows[i],
+            "ground",
             (cache.rows[i].groundButtonHovered === true) || (cache.rows[i].groundButtonFocused === true),
             cache.rows[i].groundButtonPressed === true
         );
+        setVehicleDeployTimerRowVisible(cache.rows[i], false);
     }
 
+    safeSetUIWidgetVisible(cache.root, false);
+    cache.lastVisibleState = false;
     return cache;
+}
+
+function warmCacheVehicleDeployTimerHudForPlayer(player: mod.Player): void {
+    if (!player || !mod.IsPlayerValid(player)) return;
+    const pid = safeGetPlayerId(player);
+    if (pid === undefined) return;
+    if (!shouldShowVehicleDeployTimersForPid(pid)) return;
+    const cache = ensureVehicleDeployTimerHudForPlayer(player);
+    if (!cache || !cache.root) return;
+    safeSetUIWidgetVisible(cache.root, false);
+    setVehicleDeployTimerRootOnscreen(cache, false);
+    cache.lastVisibleState = false;
+    for (let i = 0; i < cache.rows.length; i++) {
+        setVehicleDeployTimerRowVisible(cache.rows[i], false);
+    }
 }
 
 function setVehicleDeployTimerRowVisible(row: VehicleDeployTimerRowCacheEntry | undefined, visible: boolean): void {
@@ -938,23 +1057,63 @@ function setVehicleDeployTimerRowVisible(row: VehicleDeployTimerRowCacheEntry | 
     row.lastVisibleState = visible;
 }
 
+type VehicleDeployTimerRowVisibilityState = {
+    rowVisible: boolean;
+    playerNameVisible: boolean;
+    spawnButtonVisible: boolean;
+    groundButtonVisible: boolean;
+    timerVisible: boolean;
+};
+
+function applyVehicleDeployTimerRowVisibilityState(
+    row: VehicleDeployTimerRowCacheEntry | undefined,
+    visibility: VehicleDeployTimerRowVisibilityState
+): void {
+    if (!row) return;
+    setVehicleDeployTimerRowVisible(row, visibility.rowVisible);
+    if (!visibility.rowVisible) return;
+    setVehicleDeployTimerNameVisible(row, visibility.playerNameVisible);
+    setVehicleDeployActionButtonVisible(row, "air", visibility.spawnButtonVisible);
+    setVehicleDeployActionButtonVisible(row, "ground", visibility.groundButtonVisible);
+    setReusableTimerVisible(row.timer, visibility.timerVisible);
+}
+
 function renderVehicleDeployTimerRow(
     row: VehicleDeployTimerRowCacheEntry | undefined,
     slot: VehicleSpawnerSlot | undefined,
-    viewerPid: number
-): void {
-    if (!row) return;
-    if (!slot) {
-        setVehicleDeployTimerRowVisible(row, false);
-        return;
+    viewerPid: number,
+    applyVisibility: boolean = true
+): VehicleDeployTimerRowVisibilityState {
+    if (!row) {
+        return {
+            rowVisible: false,
+            playerNameVisible: false,
+            spawnButtonVisible: false,
+            groundButtonVisible: false,
+            timerVisible: false,
+        };
     }
-    setVehicleDeployTimerRowVisible(row, true);
+    if (!slot) {
+        const hiddenState: VehicleDeployTimerRowVisibilityState = {
+            rowVisible: false,
+            playerNameVisible: false,
+            spawnButtonVisible: false,
+            groundButtonVisible: false,
+            timerVisible: false,
+        };
+        if (applyVisibility) {
+            applyVehicleDeployTimerRowVisibilityState(row, hiddenState);
+        }
+        return hiddenState;
+    }
 
     const deployed = !!State.players.deployedByPid[viewerPid];
     const activeOwnerMessage = getVehicleDeployActiveOwnerNameMessage(slot);
     const showPlayerName = slot.vehicleId !== -1;
-    const showSpawnButton = !deployed && isVehicleDeploySlotReadyForSpawnButton(slot);
-    const showGroundButton = showSpawnButton;
+    const slotReadyForButtons = !deployed && isVehicleDeploySlotReadyForSpawnButton(slot);
+    const showSpawnButton = slotReadyForButtons && doesVehicleTypeSupportAirDeploy(slot.vehicleType);
+    const showGroundButton = slotReadyForButtons && doesVehicleTypeSupportGroundDeploy(slot.vehicleType);
+    let showTimer = true;
     layoutVehicleDeployRowForState(row, showPlayerName, showSpawnButton, showGroundButton);
 
     safeSetUITextLabel(row.vehicleShadow, mod.Message(getVehicleDeployTimerLabelKey(slot.vehicleType)));
@@ -974,48 +1133,38 @@ function renderVehicleDeployTimerRow(
         safeSetUITextLabel(row.playerText, activeOwnerMessage);
         safeSetUITextColor(row.playerText, COLOR_WHITE);
     }
-    setVehicleDeployTimerNameVisible(row, showPlayerName);
 
     if (!showSpawnButton) {
-        clearVehicleDeploySpawnButtonState(row);
+        clearVehicleDeployActionButtonState(row, "air");
     }
     if (!showGroundButton) {
-        clearVehicleDeployGroundButtonState(row);
+        clearVehicleDeployActionButtonState(row, "ground");
     }
 
     if (slot.vehicleId !== -1) {
         setReusableTimerStatus(row.timer, "active", mod.Message(mod.stringkeys.twl.ui.active), COLOR_LOW_TIME);
-        setReusableTimerVisible(row.timer, true);
-        setVehicleDeploySpawnButtonVisible(row, false);
-        setVehicleDeployGroundButtonVisible(row, false);
-    } else if (showSpawnButton) {
+    } else if (showSpawnButton || showGroundButton) {
         setReusableTimerStatus(row.timer, "ready", mod.Message(mod.stringkeys.twl.ui.ready), COLOR_READY_GREEN);
-        setReusableTimerVisible(row.timer, true);
-        setVehicleDeploySpawnButtonVisible(row, true);
-        setVehicleDeployGroundButtonVisible(row, true);
     } else if (getVehicleSlotRespawnRemainingSeconds(slot) <= 0) {
         setReusableTimerStatus(row.timer, "ready", mod.Message(mod.stringkeys.twl.ui.ready), COLOR_READY_GREEN);
-        setReusableTimerVisible(row.timer, true);
-        setVehicleDeploySpawnButtonVisible(row, false);
-        setVehicleDeployGroundButtonVisible(row, false);
     } else {
         setReusableTimerColor(row.timer, COLOR_WHITE);
         setReusableTimerSeconds(row.timer, getVehicleSlotRespawnRemainingSeconds(slot));
-        setReusableTimerVisible(row.timer, true);
-        setVehicleDeploySpawnButtonVisible(row, false);
-        setVehicleDeployGroundButtonVisible(row, false);
     }
 
-    applyVehicleDeploySpawnButtonVisualState(
-        row,
-        !!row.spawnButtonHovered || !!row.spawnButtonFocused,
-        !!row.spawnButtonPressed
-    );
-    applyVehicleDeployGroundButtonVisualState(
-        row,
-        !!row.groundButtonHovered || !!row.groundButtonFocused,
-        !!row.groundButtonPressed
-    );
+    applyVehicleDeployActionButtonVisualStateForMode(row, "air", !!row.spawnButtonHovered || !!row.spawnButtonFocused, !!row.spawnButtonPressed);
+    applyVehicleDeployActionButtonVisualStateForMode(row, "ground", !!row.groundButtonHovered || !!row.groundButtonFocused, !!row.groundButtonPressed);
+    const visibilityState: VehicleDeployTimerRowVisibilityState = {
+        rowVisible: true,
+        playerNameVisible: showPlayerName,
+        spawnButtonVisible: showSpawnButton,
+        groundButtonVisible: showGroundButton,
+        timerVisible: showTimer,
+    };
+    if (applyVisibility) {
+        applyVehicleDeployTimerRowVisibilityState(row, visibilityState);
+    }
+    return visibilityState;
 }
 
 function tryHandleVehicleDeployTimerButtonEvent(
@@ -1044,18 +1193,15 @@ function tryHandleVehicleDeployTimerButtonEvent(
 
     const rowIndex = Number(rowIndexToken);
     if (!Number.isInteger(rowIndex) || rowIndex < 0 || rowIndex >= VEHICLE_DEPLOY_TIMER_MAX_ROWS) return true;
+    if (!isHudWarmReadyForPid(pid)) return true;
 
     const cache = State.hudCache.vehicleDeployTimerCache[pid];
     const row = cache?.rows[rowIndex];
     const setVisual = (active: boolean, pressed: boolean): void => {
-        if (mode === "ground") {
-            applyVehicleDeployGroundButtonVisualState(row, active, pressed);
-        } else {
-            applyVehicleDeploySpawnButtonVisualState(row, active, pressed);
-        }
+        applyVehicleDeployActionButtonVisualStateForMode(row, mode, active, pressed);
     };
     if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.FocusIn)) {
-        clearVehicleDeploySpawnButtonStateForAllRows(cache, rowIndex, mode);
+        clearVehicleDeployActionButtonStateForAllRows(cache, rowIndex, mode);
         if (row) {
             if (mode === "ground") {
                 row.groundButtonHovered = false;
@@ -1085,7 +1231,7 @@ function tryHandleVehicleDeployTimerButtonEvent(
         return true;
     }
     if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.HoverIn)) {
-        clearVehicleDeploySpawnButtonStateForAllRows(cache, rowIndex, mode);
+        clearVehicleDeployActionButtonStateForAllRows(cache, rowIndex, mode);
         if (row) {
             if (mode === "ground") {
                 row.groundButtonHovered = true;
@@ -1115,7 +1261,7 @@ function tryHandleVehicleDeployTimerButtonEvent(
         return true;
     }
     if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.ButtonDown)) {
-        clearVehicleDeploySpawnButtonStateForAllRows(cache, rowIndex, mode);
+        clearVehicleDeployActionButtonStateForAllRows(cache, rowIndex, mode);
         if (row) {
             if (mode === "ground") {
                 row.groundButtonHovered = row.groundButtonHovered === true;
@@ -1159,26 +1305,60 @@ function tryHandleVehicleDeployTimerButtonEvent(
     return true;
 }
 
-function conquestPhase5BRenderVehicleDeployTimersForPlayer(player: mod.Player): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
+function conquestPhase5BRenderVehicleDeployTimersForPlayer(player: mod.Player, revealRoot: boolean = true): boolean {
+    if (!player || !mod.IsPlayerValid(player)) return false;
     const pid = safeGetPlayerId(player);
-    if (pid === undefined) return;
+    if (pid === undefined) return false;
 
     const cache = ensureVehicleDeployTimerHudForPlayer(player);
-    if (!cache || !cache.root) return;
+    if (!cache || !cache.root) return false;
 
-    const slots = getVehicleDeployRenderSlotsForPlayer(player);
-    const hasPendingDirectSpawnClaim = !State.players.deployedByPid[pid] && !!findVehicleSlotByPendingSpawnOwnerPid(pid);
-    const visible = shouldShowVehicleDeployTimersForPid(pid) && slots.length > 0 && !hasPendingDirectSpawnClaim;
-    if (cache.lastVisibleState !== visible) {
-        safeSetUIWidgetVisible(cache.root, visible);
-        cache.lastVisibleState = visible;
-    }
-    if (!visible) {
+    const renderPlan = buildVehicleDeployTimerRenderPlan(player, pid);
+    if (!renderPlan.shouldShowRows || !renderPlan.warmReady) {
+        cache.lastRenderSignature = renderPlan.signature;
+        if (!revealRoot) {
+            setVehicleDeployTimerRootOnscreen(cache, false);
+        }
+        safeSetUIWidgetVisible(cache.root, false);
+        cache.lastVisibleState = false;
         for (let i = 0; i < cache.rows.length; i++) {
             setVehicleDeployTimerRowVisible(cache.rows[i], false);
         }
-        return;
+        return false;
+    }
+
+    const revealFromHidden = revealRoot && cache.lastVisibleState !== true;
+    if (!revealRoot || revealFromHidden) {
+        setVehicleDeployTimerRootOnscreen(cache, false);
+        safeSetUIWidgetVisible(cache.root, false);
+        cache.lastVisibleState = false;
+    }
+
+    const rowVisibilityStates: VehicleDeployTimerRowVisibilityState[] = [];
+    for (let i = 0; i < VEHICLE_DEPLOY_TIMER_MAX_ROWS; i++) {
+        rowVisibilityStates[i] = renderVehicleDeployTimerRow(cache.rows[i], renderPlan.slots[i], pid, false);
+    }
+    for (let i = 0; i < VEHICLE_DEPLOY_TIMER_MAX_ROWS; i++) {
+        applyVehicleDeployTimerRowVisibilityState(
+            cache.rows[i],
+            rowVisibilityStates[i] ?? {
+                rowVisible: false,
+                playerNameVisible: false,
+                spawnButtonVisible: false,
+                groundButtonVisible: false,
+                timerVisible: false,
+            }
+        );
+    }
+    cache.lastRenderSignature = renderPlan.signature;
+
+    if (revealRoot) {
+        setVehicleDeployTimerRootOnscreen(cache, true);
+        safeSetUIWidgetVisible(cache.root, renderPlan.visible);
+        cache.lastVisibleState = renderPlan.visible;
+    } else {
+        safeSetUIWidgetVisible(cache.root, false);
+        cache.lastVisibleState = false;
     }
 
     if (
@@ -1189,10 +1369,22 @@ function conquestPhase5BRenderVehicleDeployTimersForPlayer(player: mod.Player): 
     ) {
         setUIInputModeForPlayer(player, true);
     }
+    return renderPlan.visible;
+}
 
-    for (let i = 0; i < VEHICLE_DEPLOY_TIMER_MAX_ROWS; i++) {
-        renderVehicleDeployTimerRow(cache.rows[i], slots[i], pid);
+function refreshVehicleDeployTimersForPlayerPreservingVisibility(player: mod.Player): boolean {
+    if (!player || !mod.IsPlayerValid(player)) return false;
+    const pid = safeGetPlayerId(player);
+    if (pid === undefined) return false;
+    const cache = ensureVehicleDeployTimerHudForPlayer(player);
+    if (!cache || !cache.root) return false;
+    const renderPlan = buildVehicleDeployTimerRenderPlan(player, pid);
+    const revealRoot = State.hudCache.vehicleDeployTimerCache[pid]?.lastVisibleState === true;
+    const nextVisibleState = revealRoot && renderPlan.visible;
+    if (cache.lastRenderSignature === renderPlan.signature && cache.lastVisibleState === nextVisibleState) {
+        return nextVisibleState;
     }
+    return conquestPhase5BRenderVehicleDeployTimersForPlayer(player, revealRoot);
 }
 
 function conquestPhase5BRenderVehicleDeployTimersForAllPlayers(): void {
@@ -1201,6 +1393,6 @@ function conquestPhase5BRenderVehicleDeployTimersForAllPlayers(): void {
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
         if (!player || !mod.IsPlayerValid(player)) continue;
-        conquestPhase5BRenderVehicleDeployTimersForPlayer(player);
+        refreshVehicleDeployTimersForPlayerPreservingVisibility(player);
     }
 }

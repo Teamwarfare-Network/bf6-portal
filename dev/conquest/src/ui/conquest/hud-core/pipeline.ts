@@ -20,6 +20,86 @@ function twlConquestHudFailSafeOff(): void {
     twlConquestHudResetSchedulerState();
 }
 
+function twlConquestHudProcessPlayerFrame(
+    player: mod.Player,
+    now: number
+): boolean {
+    if (!player || !mod.IsPlayerValid(player)) return false;
+    const pid = safeGetPlayerId(player);
+    if (pid === undefined) return false;
+
+    // Bug 4 guard:
+    // while swap-reset is pending, keep this player's core combat HUD fully hidden.
+    // Deploy callback is the only owner that clears the pending gate/reveal.
+    if (State.conquest.debug.teamSwapHudResetPendingByPid[pid] === true) {
+        State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
+        delete State.conquest.capture.engagedObjIdByPid[pid];
+        // Keep swap-pending path non-building to avoid churn while team context is in transition.
+        twlConquestHudHidePlayer(pid);
+        return true;
+    }
+
+    const warmReady = isHudWarmReadyForPid(pid);
+    const combatRevealAllowed = isCombatHudRevealAllowedForPid(pid);
+    if (!warmReady || !combatRevealAllowed) {
+        State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
+    }
+
+    const expectedLayoutFlagCount = twlConquestHudGetLayoutFlagCount();
+    const existingEntry = twlConquestHudGetEntry(pid);
+    if (
+        existingEntry
+        && existingEntry.initialized
+        && existingEntry.layoutFlagCount !== expectedLayoutFlagCount
+    ) {
+        twlConquestHudRecoverEntry(pid);
+    }
+
+    const entry = twlConquestHudEnsurePlayerGraph(player);
+    if (!entry || !entry.initialized) return true;
+    if (!warmReady || !combatRevealAllowed) {
+        twlConquestHudHideRootOnly(pid);
+        return true;
+    }
+    if (
+        entry.mainUpdates > 0
+        && (entry.mainUpdates % TWL_CONQUEST_HUD_RUNTIME_VALIDATION_INTERVAL_UPDATES) === 0
+    ) {
+        // Validation is advisory here: do not destroy/rebuild on transient parent-handle readback drift.
+        twlConquestHudValidateCriticalRefs(entry);
+    }
+
+    const snapshot = twlConquestHudBuildSnapshotForPlayer(player);
+    if (entry.pendingFirstReveal) {
+        forceHideLegacyCombatHudWidgetsForPid(pid);
+        twlConquestHudHidePlayer(pid);
+        twlConquestHudRenderPlayerFrame(pid, player, snapshot, false);
+        entry.lastSnapshot = snapshot;
+        entry.mainUpdates = entry.mainUpdates + 1;
+        entry.lastMainUpdateAtSeconds = Math.floor(now);
+        twlConquestHudRevealRootOnly(pid);
+        return true;
+    }
+
+    twlConquestHudRenderPlayerFrame(pid, player, snapshot);
+    entry.lastSnapshot = snapshot;
+    entry.mainUpdates = entry.mainUpdates + 1;
+    entry.lastMainUpdateAtSeconds = Math.floor(now);
+    return true;
+}
+
+function twlConquestHudPrimePlayerFrame(player: mod.Player): void {
+    try {
+        if (!player || !mod.IsPlayerValid(player)) return;
+        const now = mod.GetMatchTimeElapsed();
+        const didProcess = twlConquestHudProcessPlayerFrame(player, now);
+        if (!didProcess) return;
+        twlConquestHudScheduleState.lastMainTickAt = now;
+    } catch {
+        twlConquestHudFailSafeOff();
+    }
+}
+
 function twlConquestHudTickFrame(force?: boolean): void {
     try {
         if (!CONQUEST_COMBAT_HUD_ENABLED) {
@@ -47,43 +127,9 @@ function twlConquestHudTickFrame(force?: boolean): void {
             const pid = safeGetPlayerId(player);
             if (pid === undefined) continue;
             seenByPid[pid] = true;
-            // Bug 4 guard:
-            // while swap-reset is pending, keep this player's core combat HUD fully hidden.
-            // Deploy callback is the only owner that clears the pending gate/reveal.
-            if (State.conquest.debug.teamSwapHudResetPendingByPid[pid] === true) {
-                State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
-                delete State.conquest.capture.engagedObjIdByPid[pid];
-                // Keep swap-pending path non-building to avoid churn while team context is in transition.
-                twlConquestHudHidePlayer(pid);
-                continue;
-            }
             // Isolate per-player HUD faults so one bad player state cannot hide every HUD for one frame.
             try {
-                const expectedLayoutFlagCount = twlConquestHudGetLayoutFlagCount();
-                const existingEntry = twlConquestHudGetEntry(pid);
-                if (
-                    existingEntry
-                    && existingEntry.initialized
-                    && existingEntry.layoutFlagCount !== expectedLayoutFlagCount
-                ) {
-                    twlConquestHudRecoverEntry(pid);
-                }
-
-                let entry = twlConquestHudEnsurePlayerGraph(player);
-                if (!entry || !entry.initialized) continue;
-                if (
-                    entry.mainUpdates > 0
-                    && (entry.mainUpdates % TWL_CONQUEST_HUD_RUNTIME_VALIDATION_INTERVAL_UPDATES) === 0
-                ) {
-                    // Validation is advisory here: do not destroy/rebuild on transient parent-handle readback drift.
-                    twlConquestHudValidateCriticalRefs(entry);
-                }
-
-                const snapshot = twlConquestHudBuildSnapshotForPlayer(player);
-                twlConquestHudRenderPlayerFrame(pid, player, snapshot);
-                entry.lastSnapshot = snapshot;
-                entry.mainUpdates = entry.mainUpdates + 1;
-                entry.lastMainUpdateAtSeconds = Math.floor(now);
+                twlConquestHudProcessPlayerFrame(player, now);
             } catch {
                 twlConquestHudRecoverEntry(pid);
                 continue;

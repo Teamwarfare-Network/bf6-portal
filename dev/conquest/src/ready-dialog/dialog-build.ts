@@ -4,11 +4,11 @@
 //#region -------------------- UI - Ready Up Dialog (construction) --------------------
 
 const readyDialogUiWarmCacheTokenByPid: Record<number, number> = {};
-const READY_DIALOG_LAYOUT_VERSION = 10;
+const READY_DIALOG_LAYOUT_VERSION = 12;
 
 // Legacy function name is preserved to avoid call-site churn.
 // Function name intentionally preserved to avoid call-site churn.
-function createReadyDialogUI(eventPlayer: mod.Player) {
+function createReadyDialogUI(eventPlayer: mod.Player, reveal: boolean = true) {
     // Steps:
     // 1) Ensure per-player dialog root exists
     // 2) Build left team panel widgets
@@ -36,24 +36,32 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
     }
     const rebuiltBase = safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId);
     if (rebuiltBase) {
-        mod.SetUIWidgetVisible(rebuiltBase, true);
+        if (reveal) {
+            ensureAdminPanelWidgets(eventPlayer, playerId, rebuiltBase as mod.UIWidget, false);
+            refreshReadyDialogButtonTextForPid(eventPlayer, playerId, rebuiltBase as mod.UIWidget);
+            updateReadyDialogMapLabelForPid(playerId);
+            updateReadyDialogModeConfigForPid(playerId);
+            refreshReadyDialogRosterForViewer(eventPlayer, playerId);
+            updateReadyToggleButtonForViewer(eventPlayer, playerId);
+        } else {
+            ensureAdminPanelWidgets(eventPlayer, playerId, rebuiltBase as mod.UIWidget, false);
+        }
+        mod.SetUIWidgetVisible(rebuiltBase, reveal);
         const existingBorderTop = safeFind(UI_READY_DIALOG_BORDER_TOP_ID + playerId);
-        if (existingBorderTop) mod.SetUIWidgetVisible(existingBorderTop, true);
+        if (existingBorderTop) mod.SetUIWidgetVisible(existingBorderTop, reveal);
         const existingBorderBottom = safeFind(UI_READY_DIALOG_BORDER_BOTTOM_ID + playerId);
-        if (existingBorderBottom) mod.SetUIWidgetVisible(existingBorderBottom, true);
+        if (existingBorderBottom) mod.SetUIWidgetVisible(existingBorderBottom, reveal);
         const existingBorderLeft = safeFind(UI_READY_DIALOG_BORDER_LEFT_ID + playerId);
-        if (existingBorderLeft) mod.SetUIWidgetVisible(existingBorderLeft, true);
+        if (existingBorderLeft) mod.SetUIWidgetVisible(existingBorderLeft, reveal);
         const existingBorderRight = safeFind(UI_READY_DIALOG_BORDER_RIGHT_ID + playerId);
-        if (existingBorderRight) mod.SetUIWidgetVisible(existingBorderRight, true);
+        if (existingBorderRight) mod.SetUIWidgetVisible(existingBorderRight, reveal);
         const existingDebug = safeFind(UI_READY_DIALOG_DEBUG_TIMELIMIT_ID + playerId);
-        if (existingDebug) mod.SetUIWidgetVisible(existingDebug, SHOW_DEBUG_TIMELIMIT);
-        refreshReadyDialogButtonTextForPid(eventPlayer, playerId, rebuiltBase as mod.UIWidget);
+        if (existingDebug) mod.SetUIWidgetVisible(existingDebug, reveal && SHOW_DEBUG_TIMELIMIT);
         const existingMapLabel = safeFind(UI_READY_DIALOG_MAP_LABEL_ID + playerId);
-        if (existingMapLabel) mod.SetUIWidgetVisible(existingMapLabel, true);
+        if (existingMapLabel) mod.SetUIWidgetVisible(existingMapLabel, reveal);
         const existingMapValue = safeFind(UI_READY_DIALOG_MAP_VALUE_ID + playerId);
-        if (existingMapValue) mod.SetUIWidgetVisible(existingMapValue, true);
-        updateReadyDialogModeConfigForPid(playerId);
-        ensureAdminPanelWidgets(eventPlayer, playerId);
+        if (existingMapValue) mod.SetUIWidgetVisible(existingMapValue, reveal);
+        ensureAdminPanelWidgets(eventPlayer, playerId, rebuiltBase as mod.UIWidget, reveal);
         State.players.readyDialogData[playerId].uiBuilt = true;
         State.players.readyDialogData[playerId].uiLayoutVersion = READY_DIALOG_LAYOUT_VERSION;
         return;
@@ -67,7 +75,7 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
     const CONTAINER_BORDER_PADDING = 1;
     const CONTAINER_BORDER_THICKNESS = 2;
     const CONTAINER_BORDER_OVERLAP = 2;
-    const CONTAINER_WIDTH = 1300;
+    const CONTAINER_WIDTH = READY_DIALOG_CONTAINER_WIDTH;
     const CONTAINER_HEIGHT = 700;
 
     const BUTTON_CANCEL_ID = UI_READY_DIALOG_BUTTON_CANCEL_ID + playerId;
@@ -167,46 +175,10 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
 
     buildReadyDialogHeaderAndMapSection(eventPlayer, CONTAINER_BASE, playerId);
 
-    const bestOfY = -3;
-    const bestOfButtonSizeX = READY_DIALOG_SMALL_BUTTON_WIDTH;
-    const bestOfButtonSizeY = READY_DIALOG_SMALL_BUTTON_HEIGHT;
-    const bestOfLabelSizeX = 170;
-    const bestOfLabelSizeY = 24;
-    const leftSectionGapX = READY_DIALOG_SMALL_BUTTON_WIDTH + 12;
-    const leftSectionButtonSpread = 18;
-    const leftSectionShiftX = 128 + leftSectionGapX + leftSectionButtonSpread;
-    const leftSectionLeftButtonX = 125 + leftSectionShiftX + leftSectionButtonSpread;
-    const leftSectionRightButtonX = -3 + leftSectionShiftX - leftSectionButtonSpread;
-    const leftSectionValueX = -58 + leftSectionShiftX;
-    const leftSectionLabelGap = 4;
-    const leftSectionLabelX = leftSectionLeftButtonX + bestOfButtonSizeX + leftSectionLabelGap;
-    const leftSectionLabelWidth = 110;
-    const leftSectionValueWidth = 200;
-    const leftSectionRowGap = bestOfButtonSizeY + 6;
-    const rightSectionRightButtonX = -3;
-    const confirmButtonWidth = READY_DIALOG_CONFIRM_BUTTON_WIDTH;
-    const resetButtonWidth = READY_DIALOG_RESET_BUTTON_WIDTH;
-    const resetButtonX = rightSectionRightButtonX + READY_DIALOG_RESET_BUTTON_OFFSET_X;
-    const confirmButtonX = resetButtonX + resetButtonWidth + READY_DIALOG_CONFIRM_BUTTON_GAP;
     buildReadyDialogModeConfigSection(
         eventPlayer,
         CONTAINER_BASE,
-        playerId,
-        bestOfY,
-        bestOfButtonSizeX,
-        bestOfButtonSizeY,
-        bestOfLabelSizeY,
-        leftSectionLeftButtonX,
-        leftSectionRightButtonX,
-        leftSectionValueX,
-        leftSectionLabelX,
-        leftSectionLabelWidth,
-        leftSectionValueWidth,
-        leftSectionRowGap,
-        confirmButtonX,
-        confirmButtonWidth,
-        resetButtonX,
-        resetButtonWidth
+        playerId
     );
 
     buildReadyDialogRosterSection(eventPlayer, CONTAINER_BASE, playerId);
@@ -223,25 +195,33 @@ function createReadyDialogUI(eventPlayer: mod.Player) {
         BUTTON_CANCEL_LABEL_ID
     );
 
-    // Reveal only after the full dialog tree is built so first-open appears in one pass.
-    mod.SetUIWidgetVisible(CONTAINER_BASE, true);
+    if (reveal) {
+        ensureAdminPanelWidgets(eventPlayer, playerId, CONTAINER_BASE, false);
+        refreshReadyDialogButtonTextForPid(eventPlayer, playerId, CONTAINER_BASE);
+        updateReadyDialogMapLabelForPid(playerId);
+        updateReadyDialogModeConfigForPid(playerId);
+        refreshReadyDialogRosterForViewer(eventPlayer, playerId);
+        updateReadyToggleButtonForViewer(eventPlayer, playerId);
+    } else {
+        ensureAdminPanelWidgets(eventPlayer, playerId, CONTAINER_BASE, false);
+    }
+    // Reveal only after the full dialog tree is built and labels refreshed.
+    mod.SetUIWidgetVisible(CONTAINER_BASE, reveal);
     const builtBorderTop = safeFind(BORDER_TOP_ID);
-    if (builtBorderTop) mod.SetUIWidgetVisible(builtBorderTop, true);
+    if (builtBorderTop) mod.SetUIWidgetVisible(builtBorderTop, reveal);
     const builtBorderBottom = safeFind(BORDER_BOTTOM_ID);
-    if (builtBorderBottom) mod.SetUIWidgetVisible(builtBorderBottom, true);
+    if (builtBorderBottom) mod.SetUIWidgetVisible(builtBorderBottom, reveal);
     const builtBorderLeft = safeFind(BORDER_LEFT_ID);
-    if (builtBorderLeft) mod.SetUIWidgetVisible(builtBorderLeft, true);
+    if (builtBorderLeft) mod.SetUIWidgetVisible(builtBorderLeft, reveal);
     const builtBorderRight = safeFind(BORDER_RIGHT_ID);
-    if (builtBorderRight) mod.SetUIWidgetVisible(builtBorderRight, true);
+    if (builtBorderRight) mod.SetUIWidgetVisible(builtBorderRight, reveal);
     const builtDebug = safeFind(UI_READY_DIALOG_DEBUG_TIMELIMIT_ID + playerId);
-    if (builtDebug) mod.SetUIWidgetVisible(builtDebug, SHOW_DEBUG_TIMELIMIT);
+    if (builtDebug) mod.SetUIWidgetVisible(builtDebug, reveal && SHOW_DEBUG_TIMELIMIT);
     const builtMapLabel = safeFind(UI_READY_DIALOG_MAP_LABEL_ID + playerId);
-    if (builtMapLabel) mod.SetUIWidgetVisible(builtMapLabel, true);
+    if (builtMapLabel) mod.SetUIWidgetVisible(builtMapLabel, reveal);
     const builtMapValue = safeFind(UI_READY_DIALOG_MAP_VALUE_ID + playerId);
-    if (builtMapValue) mod.SetUIWidgetVisible(builtMapValue, true);
-    refreshReadyDialogButtonTextForPid(eventPlayer, playerId, CONTAINER_BASE);
-    updateReadyDialogModeConfigForPid(playerId);
-    ensureAdminPanelWidgets(eventPlayer, playerId);
+    if (builtMapValue) mod.SetUIWidgetVisible(builtMapValue, reveal);
+    ensureAdminPanelWidgets(eventPlayer, playerId, CONTAINER_BASE, reveal);
     State.players.readyDialogData[playerId].uiBuilt = true;
     State.players.readyDialogData[playerId].uiLayoutVersion = READY_DIALOG_LAYOUT_VERSION;
 }
@@ -270,9 +250,8 @@ async function scheduleReadyDialogUiWarmCacheForPlayer(
     const current = State.players.readyDialogData[playerId];
     if (!current || current.uiBuilt || current.dialogVisible) return;
 
-    createReadyDialogUI(eventPlayer);
+    createReadyDialogUI(eventPlayer, false);
     current.dialogVisible = false;
-    hideReadyDialogUI(eventPlayer);
     current.uiBuilt = true;
 }
 

@@ -62,8 +62,8 @@ function bindTopHudShellRefsByName(pid: number, refs: HudRefs): void {
     bindVictoryDialogRefsByName(pid, refs);
 }
 
-// Reports whether the dedicated top-HUD shell has the minimum refs required for non-combat updates.
-function hasCriticalTopHudShellRefs(refs: HudRefs | undefined): boolean {
+// Reports whether the dedicated top-HUD shell has the minimum refs required for the always-visible top-left/top-center family.
+function hasTopLeftHudShellRefs(refs: HudRefs | undefined): boolean {
     if (!refs) return false;
     return !!(
         refs.topHudRoot
@@ -73,6 +73,14 @@ function hasCriticalTopHudShellRefs(refs: HudRefs | undefined): boolean {
         && refs.upperLeftStatusReadyText
         && refs.topCenterAuxRoot
         && refs.helpTextContainer
+    );
+}
+
+// Full shell completeness includes non-critical admin/victory helpers that should not block core top-left readiness.
+function hasCriticalTopHudShellRefs(refs: HudRefs | undefined): boolean {
+    if (!refs) return false;
+    return !!(
+        hasTopLeftHudShellRefs(refs)
         && refs.adminPanelActionCountText
         && refs.victoryRoot
     );
@@ -89,12 +97,11 @@ function ensureTopHudShellForPlayer(player: mod.Player): HudRefs | undefined {
     if (!player || !mod.IsPlayerValid(player)) return undefined;
 
     const pid = getObjId(player);
-    ensureClockUIAndGetCache(player);
 
     const cached = State.hudCache.topHudShellByPid[pid];
     if (cached) {
         bindTopHudShellRefsByName(pid, cached);
-        if (hasCriticalTopHudShellRefs(cached)) {
+        if (hasTopLeftHudShellRefs(cached)) {
             State.hudCache.topHudShellByPid[pid] = cached;
             setHudHelpDepthForPid(pid);
             return cached;
@@ -106,6 +113,7 @@ function ensureTopHudShellForPlayer(player: mod.Player): HudRefs | undefined {
 
     const refs: HudRefs = { pid, roots: [] };
     refs.topHudRoot = ensureTopHudRootForPid(pid, player);
+    ensureClockUIAndGetCache(player);
 
     buildConquestBrandingTopLeftWidgets(player, pid, refs);
     buildConquestStaticStatusLaneWidgets(player, pid, refs);

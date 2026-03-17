@@ -50,17 +50,28 @@ function teamSwitchInteractPointActivated(eventPlayer: mod.Player, eventInteract
         const interactPointId = mod.GetObjId(State.players.readyDialogData[playerId].interactPoint);
         const eventInteractPointId = mod.GetObjId(eventInteractPoint);
         if (interactPointId === eventInteractPointId) {
-            setUIInputModeForPlayer(eventPlayer, true);
-            createReadyDialogUI(eventPlayer);
-            // Track visibility so roster refreshes can target all viewers with the dialog open.
-            State.players.readyDialogData[playerId].dialogVisible = true;
-            if (consumeJoinPromptTripleTapForPid(playerId)) {
-                markJoinPromptReadyDialogOpened(playerId);
+            try {
+                if (!State.players.readyDialogData[playerId].uiBuilt) {
+                    createReadyDialogUI(eventPlayer, false);
+                }
+                setUIInputModeForPlayer(eventPlayer, true);
+                // Track visibility so roster refreshes can target all viewers with the dialog open.
+                State.players.readyDialogData[playerId].dialogVisible = true;
+                if (consumeJoinPromptTripleTapForPid(playerId)) {
+                    markJoinPromptReadyDialogOpened(playerId);
+                }
+                updateHelpTextVisibilityForPid(playerId);
+                createReadyDialogUI(eventPlayer);
+                const dialogRoot = safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId);
+                if (!dialogRoot) {
+                    throw new Error(`Ready dialog root missing for pid ${playerId}`);
+                }
+            } catch {
+                State.players.readyDialogData[playerId].dialogVisible = false;
+                setUIInputModeForPlayer(eventPlayer, false);
+                hideReadyDialogUI(eventPlayer);
+                updateHelpTextVisibilityForPid(playerId);
             }
-            updateHelpTextVisibilityForPid(playerId);
-            renderReadyDialogForViewer(eventPlayer, playerId);
-            // Immediate self-refresh to avoid relying solely on global refresh bookkeeping.
-
         }
     }
 }
@@ -132,9 +143,17 @@ function initReadyDialogData(eventPlayer: mod.Player) {
         lastDeployTime: 0,
         uiBuilt: false,
         uiLayoutVersion: 0,
-        posDebugVisible: true,
+        posDebugVisible: false,
         posDebugToken: 0,
         vehicleTimersVisibleWhileDeployed: false,
+        hudLoadingVisible: false,
+        hudLoadGateActive: false,
+        hudLoadToken: 0,
+        hudLoadStartedAtSeconds: 0,
+        hudWarmCompleted: false,
+        hudForceLoadingOnNextWarm: false,
+        hudSwapTransitionActive: false,
+        combatHudRevealAllowed: false,
     };
 }
 

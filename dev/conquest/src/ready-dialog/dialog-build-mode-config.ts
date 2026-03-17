@@ -1,17 +1,6 @@
 // @ts-nocheck
 // Module: ready-dialog/dialog-build-mode-config -- 7-column ready-dialog knob grid
 
-type ReadyDialogGridColumnSpec = {
-    key: string;
-    headerLabel: mod.Message;
-    knobKeys: readonly string[];
-    knobLabels: readonly number[];
-    width: number;
-    teamId?: TeamID;
-    supportLabel?: mod.Message;
-    supportVisible?: boolean;
-};
-
 function buildReadyDialogGridText(
     widgetId: string,
     posX: number,
@@ -25,28 +14,21 @@ function buildReadyDialogGridText(
     eventPlayer: mod.Player,
     parent: mod.UIWidget
 ): mod.UIWidget | undefined {
-    const widget = modlib.ParseUI({
-        name: widgetId,
-        type: "Text",
-        playerId: eventPlayer,
-        position: [posX, posY],
-        size: [sizeX, sizeY],
+    return addReadyDialogText(
+        widgetId,
+        posX,
+        posY,
+        sizeX,
+        sizeY,
         anchor,
-        visible: true,
-        padding: 0,
-        bgAlpha: 0,
-        bgFill: mod.UIBgFill.None,
-        textLabel: label,
-        textColor: [1, 1, 1],
-        textAlpha: 1,
-        textSize,
         textAnchor,
-    });
-    if (widget) {
-        mod.SetUIWidgetParent(widget, parent);
-        applyReadyDialogLabelTextColor(widget);
-    }
-    return widget;
+        label,
+        eventPlayer,
+        parent,
+        textSize,
+        true,
+        READY_DIALOG_LABEL_TEXT_COLOR
+    );
 }
 
 function buildReadyDialogGridKnobRow(
@@ -62,7 +44,7 @@ function buildReadyDialogGridKnobRow(
     buttonSizeY: number
 ): void {
     const hideLabel = knobKey === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY;
-    const isPlayersConfigKnob = knobKey === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY;
+    const isPlayersConfigKnob = hideLabel;
     const labelId = UI_READY_DIALOG_MODE_GRID_KNOB_LABEL_ID + knobKey + "_" + playerId;
     const valueId = UI_READY_DIALOG_MODE_GRID_KNOB_VALUE_ID + knobKey + "_" + playerId;
     const panelId = UI_READY_DIALOG_MODE_GRID_KNOB_PANEL_ID + knobKey + "_" + playerId;
@@ -71,7 +53,7 @@ function buildReadyDialogGridKnobRow(
     const incId = UI_READY_DIALOG_MODE_GRID_KNOB_INC_ID + knobKey + "_" + playerId;
     const incLabelId = UI_READY_DIALOG_MODE_GRID_KNOB_INC_LABEL_ID + knobKey + "_" + playerId;
 
-    const labelY = isPlayersConfigKnob ? rowY + 4 : rowY + 4;
+    const labelY = rowY + 4;
     const labelHeight = 8;
     const controlY = rowY + 5;
     const valueY = isPlayersConfigKnob ? controlY : rowY + 9;
@@ -122,7 +104,7 @@ function buildReadyDialogGridKnobRow(
         containerBase,
         eventPlayer
     );
-    addCenteredButtonText(
+    addReadyDialogCenteredText(
         decLabelId,
         buttonSizeX,
         buttonSizeY,
@@ -156,7 +138,7 @@ function buildReadyDialogGridKnobRow(
         containerBase,
         eventPlayer
     );
-    addCenteredButtonText(
+    addReadyDialogCenteredText(
         incLabelId,
         buttonSizeX,
         buttonSizeY,
@@ -165,145 +147,44 @@ function buildReadyDialogGridKnobRow(
         incBorder ?? containerBase,
         14
     );
+
+    if (isReadyDialogModeGridPlaceholderKnobKey(knobKey)) {
+        const toHide = [
+            safeFind(panelId),
+            safeFind(labelId),
+            safeFind(valueId),
+            safeFind(decId),
+            safeFind(decId + "_BORDER"),
+            safeFind(decLabelId),
+            safeFind(incId),
+            safeFind(incId + "_BORDER"),
+            safeFind(incLabelId),
+        ];
+        for (const widget of toHide) {
+            if (widget) mod.SetUIWidgetVisible(widget, false);
+        }
+        const decButton = safeFind(decId);
+        const incButton = safeFind(incId);
+        if (decButton) mod.SetUIButtonEnabled(decButton, false);
+        if (incButton) mod.SetUIButtonEnabled(incButton, false);
+    }
 }
 
 function buildReadyDialogModeConfigSection(
     eventPlayer: mod.Player,
     containerBase: mod.UIWidget,
-    playerId: number,
-    _bestOfY?: number,
-    _bestOfButtonSizeX?: number,
-    _bestOfButtonSizeY?: number,
-    _bestOfLabelSizeY?: number,
-    _leftSectionLeftButtonX?: number,
-    _leftSectionRightButtonX?: number,
-    _leftSectionValueX?: number,
-    _leftSectionLabelX?: number,
-    _leftSectionLabelWidth?: number,
-    _leftSectionValueWidth?: number,
-    _leftSectionRowGap?: number,
-    _confirmButtonX?: number,
-    _confirmButtonWidth?: number,
-    _resetButtonX?: number,
-    _resetButtonWidth?: number
+    playerId: number
 ): void {
     const gridTopY = -6;
     const headerHeight = 18;
     const knobBlockHeight = 30;
     const supportRowHeight = 12;
     const buttonRowY = 144;
-    const teamColumnWidth = 158;
-    const configColumnWidth = 216;
     const columnGap = 6;
     const buttonSizeX = READY_DIALOG_SMALL_BUTTON_WIDTH;
     const buttonSizeY = READY_DIALOG_SMALL_BUTTON_HEIGHT;
-    const containerWidth = 1300;
-
-    const columns: ReadyDialogGridColumnSpec[] = [
-        {
-            key: "team1Fast",
-            headerLabel: mod.Message(mod.stringkeys.twl.readyDialog.columnFastFormat, getTeamNameKey(TeamID.Team1)),
-            knobKeys: READY_DIALOG_TEAM1_FAST_KNOB_KEYS,
-            knobLabels: [
-                mod.stringkeys.twl.readyDialog.transport1Label,
-                mod.stringkeys.twl.readyDialog.transport2Label,
-                mod.stringkeys.twl.readyDialog.transport3Label,
-                mod.stringkeys.twl.readyDialog.transport4Label,
-            ],
-            width: teamColumnWidth,
-            teamId: TeamID.Team1,
-            supportVisible: false,
-        },
-        {
-            key: "team1Ground",
-            headerLabel: mod.Message(mod.stringkeys.twl.readyDialog.columnGroundFormat, getTeamNameKey(TeamID.Team1)),
-            knobKeys: READY_DIALOG_TEAM1_GROUND_KNOB_KEYS,
-            knobLabels: [
-                mod.stringkeys.twl.readyDialog.tank1Label,
-                mod.stringkeys.twl.readyDialog.tank2Label,
-                mod.stringkeys.twl.readyDialog.tank3Label,
-                mod.stringkeys.twl.readyDialog.tank4Label,
-            ],
-            width: teamColumnWidth,
-            teamId: TeamID.Team1,
-            supportVisible: false,
-        },
-        {
-            key: "team1Air",
-            headerLabel: mod.Message(mod.stringkeys.twl.readyDialog.columnAirFormat, getTeamNameKey(TeamID.Team1)),
-            knobKeys: [...READY_DIALOG_TEAM1_JET_KNOB_KEYS, ...READY_DIALOG_TEAM1_HELI_KNOB_KEYS],
-            knobLabels: [
-                mod.stringkeys.twl.readyDialog.jet1Label,
-                mod.stringkeys.twl.readyDialog.jet2Label,
-                mod.stringkeys.twl.readyDialog.heli1Label,
-                mod.stringkeys.twl.readyDialog.heli2Label,
-            ],
-            width: teamColumnWidth,
-            teamId: TeamID.Team1,
-            supportVisible: false,
-        },
-        {
-            key: "config",
-            headerLabel: mod.Message(mod.stringkeys.twl.readyDialog.configurationColumnLabel),
-            knobKeys: [
-                READY_DIALOG_CONFIG_GAME_KNOB_KEY,
-                READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY,
-                READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY,
-                READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY,
-            ],
-            knobLabels: [
-                mod.stringkeys.twl.readyDialog.gameModeLabel,
-                mod.stringkeys.twl.readyDialog.modeSettingsLabel,
-                mod.stringkeys.twl.readyDialog.vehiclesCountLabel,
-                mod.stringkeys.twl.readyDialog.playersLabel,
-            ],
-            width: configColumnWidth,
-            supportLabel: mod.Message(mod.stringkeys.twl.readyDialog.minPlayersToStartFormat, 0),
-            supportVisible: true,
-        },
-        {
-            key: "team2Air",
-            headerLabel: mod.Message(mod.stringkeys.twl.readyDialog.columnAirFormat, getTeamNameKey(TeamID.Team2)),
-            knobKeys: [...READY_DIALOG_TEAM2_JET_KNOB_KEYS, ...READY_DIALOG_TEAM2_HELI_KNOB_KEYS],
-            knobLabels: [
-                mod.stringkeys.twl.readyDialog.jet1Label,
-                mod.stringkeys.twl.readyDialog.jet2Label,
-                mod.stringkeys.twl.readyDialog.heli1Label,
-                mod.stringkeys.twl.readyDialog.heli2Label,
-            ],
-            width: teamColumnWidth,
-            teamId: TeamID.Team2,
-            supportVisible: false,
-        },
-        {
-            key: "team2Ground",
-            headerLabel: mod.Message(mod.stringkeys.twl.readyDialog.columnGroundFormat, getTeamNameKey(TeamID.Team2)),
-            knobKeys: READY_DIALOG_TEAM2_GROUND_KNOB_KEYS,
-            knobLabels: [
-                mod.stringkeys.twl.readyDialog.tank1Label,
-                mod.stringkeys.twl.readyDialog.tank2Label,
-                mod.stringkeys.twl.readyDialog.tank3Label,
-                mod.stringkeys.twl.readyDialog.tank4Label,
-            ],
-            width: teamColumnWidth,
-            teamId: TeamID.Team2,
-            supportVisible: false,
-        },
-        {
-            key: "team2Fast",
-            headerLabel: mod.Message(mod.stringkeys.twl.readyDialog.columnFastFormat, getTeamNameKey(TeamID.Team2)),
-            knobKeys: READY_DIALOG_TEAM2_FAST_KNOB_KEYS,
-            knobLabels: [
-                mod.stringkeys.twl.readyDialog.transport1Label,
-                mod.stringkeys.twl.readyDialog.transport2Label,
-                mod.stringkeys.twl.readyDialog.transport3Label,
-                mod.stringkeys.twl.readyDialog.transport4Label,
-            ],
-            width: teamColumnWidth,
-            teamId: TeamID.Team2,
-            supportVisible: false,
-        },
-    ];
+    const containerWidth = READY_DIALOG_CONTAINER_WIDTH;
+    const columns = getReadyDialogModeGridColumnSpecs();
 
     const laneLeftX = Math.floor((containerWidth - READY_DIALOG_CONTENT_LANE_WIDTH) / 2) + READY_DIALOG_CONTENT_OFFSET_X;
     const gridWidth = columns.reduce((sum, column) => sum + column.width, 0) + ((columns.length - 1) * columnGap);
@@ -322,20 +203,20 @@ function buildReadyDialogModeConfigSection(
             headerHeight,
             mod.UIAnchor.TopLeft,
             mod.UIAnchor.Center,
-            column.headerLabel,
+            getReadyDialogModeGridColumnHeaderMessage(column),
             14,
             eventPlayer,
             containerBase
         );
 
-        for (let row = 0; row < column.knobKeys.length; row++) {
+        for (let row = 0; row < column.knobSpecs.length; row++) {
             const rowY = gridTopY + headerHeight + 2 + (row * knobBlockHeight);
             buildReadyDialogGridKnobRow(
                 eventPlayer,
                 containerBase,
                 playerId,
-                column.knobKeys[row],
-                column.knobLabels[row],
+                column.knobSpecs[row].key,
+                column.knobSpecs[row].labelKey,
                 columnX,
                 rowY,
                 column.width,
@@ -356,7 +237,7 @@ function buildReadyDialogModeConfigSection(
             supportInsidePlayersPanel ? 8 : supportRowHeight,
             mod.UIAnchor.TopLeft,
             mod.UIAnchor.Center,
-            column.supportLabel ?? mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
+            getReadyDialogModeGridSupportPlaceholder(column),
             10,
             eventPlayer,
             containerBase
@@ -381,7 +262,7 @@ function buildReadyDialogModeConfigSection(
         containerBase,
         eventPlayer
     );
-    addCenteredButtonText(
+    addReadyDialogCenteredText(
         modeConfirmLabelId,
         READY_DIALOG_CONFIRM_BUTTON_WIDTH,
         READY_DIALOG_SMALL_BUTTON_HEIGHT,

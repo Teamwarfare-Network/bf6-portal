@@ -263,17 +263,17 @@ function twlConquestHudGetColorForTeam(
     return TWL_CONQUEST_HUD_COLOR_WHITE;
 }
 
-function twlConquestHudRenderPlayerFrame(pid: number, player: mod.Player, snapshot: TwlConquestHudSnapshot): void {
+function twlConquestHudRenderPlayerFrame(
+    pid: number,
+    player: mod.Player,
+    snapshot: TwlConquestHudSnapshot,
+    revealRoot: boolean = true
+): void {
     const entry = twlConquestHudGetEntry(pid);
     if (!entry || !entry.initialized) return;
     const widgets = entry.widgets;
     const perspective = { friendlyTeam: snapshot.friendlyTeam, enemyTeam: snapshot.enemyTeam };
     const previousSnapshot = entry.lastSnapshot;
-
-    safeSetUIWidgetVisible(widgets.root, true);
-    safeSetUIWidgetVisible(widgets.combatLane, true);
-    safeSetUIWidgetVisible(widgets.ticketsLane, true);
-    safeSetUIWidgetVisible(widgets.objectivesLane, true);
     safeSetUIWidgetVisible(widgets.ticketBlueBox, true);
     safeSetUIWidgetVisible(widgets.ticketRedBox, true);
     twlConquestHudRenderShadowRingText(
@@ -650,5 +650,17 @@ function twlConquestHudRenderPlayerFrame(pid: number, player: mod.Player, snapsh
         safeSetUITextColor(widgets.engageStatus, TWL_CONQUEST_HUD_COLOR_WHITE);
         // Reveal root last for one-pass engage lane appearance.
         safeSetUIWidgetVisible(widgets.engageRoot, true);
+    }
+
+    if (revealRoot) {
+        safeSetUIWidgetVisible(widgets.root, true);
+        safeSetUIWidgetVisible(widgets.combatLane, true);
+        safeSetUIWidgetVisible(widgets.ticketsLane, true);
+        safeSetUIWidgetVisible(widgets.objectivesLane, true);
+    } else {
+        safeSetUIWidgetVisible(widgets.objectivesLane, false);
+        safeSetUIWidgetVisible(widgets.ticketsLane, false);
+        safeSetUIWidgetVisible(widgets.combatLane, false);
+        safeSetUIWidgetVisible(widgets.root, false);
     }
 }

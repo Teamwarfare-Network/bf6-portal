@@ -31,9 +31,21 @@ function twlConquestHudDeleteShadowRingByBaseName(
     }
 }
 
+function twlConquestHudSetRootParked(pid: number, parked: boolean): void {
+    const entry = twlConquestHudGetEntry(pid);
+    const root = entry?.widgets.root;
+    if (!root) return;
+    safeSetUIWidgetPosition(
+        root,
+        mod.CreateVector(0, parked ? TWL_CONQUEST_HUD_ROOT_HIDDEN_Y : 0, 0)
+    );
+}
+
 function twlConquestHudHidePlayer(pid: number): void {
     const entry = twlConquestHudGetEntry(pid);
     if (!entry) return;
+    entry.pendingFirstReveal = true;
+    twlConquestHudSetRootParked(pid, true);
     safeSetUIWidgetVisible(entry.widgets.ticketBlueBox, false);
     safeSetUIWidgetVisible(entry.widgets.ticketRedBox, false);
     twlConquestHudHideShadowRing(entry.widgets.ticketBlueTeamNameShadowRing ?? []);
@@ -94,6 +106,28 @@ function twlConquestHudHidePlayer(pid: number): void {
     safeSetUIWidgetVisible(entry.widgets.ticketsLane, false);
     safeSetUIWidgetVisible(entry.widgets.combatLane, false);
     safeSetUIWidgetVisible(entry.widgets.root, false);
+}
+
+function twlConquestHudHideRootOnly(pid: number): void {
+    const entry = twlConquestHudGetEntry(pid);
+    if (!entry) return;
+    entry.pendingFirstReveal = true;
+    twlConquestHudSetRootParked(pid, true);
+    safeSetUIWidgetVisible(entry.widgets.objectivesLane, false);
+    safeSetUIWidgetVisible(entry.widgets.ticketsLane, false);
+    safeSetUIWidgetVisible(entry.widgets.combatLane, false);
+    safeSetUIWidgetVisible(entry.widgets.root, false);
+}
+
+function twlConquestHudRevealRootOnly(pid: number): void {
+    const entry = twlConquestHudGetEntry(pid);
+    if (!entry) return;
+    entry.pendingFirstReveal = false;
+    twlConquestHudSetRootParked(pid, false);
+    safeSetUIWidgetVisible(entry.widgets.root, true);
+    safeSetUIWidgetVisible(entry.widgets.combatLane, true);
+    safeSetUIWidgetVisible(entry.widgets.ticketsLane, true);
+    safeSetUIWidgetVisible(entry.widgets.objectivesLane, true);
 }
 
 // Hides only the active-objective overlays while keeping the top ticket/objective row intact.

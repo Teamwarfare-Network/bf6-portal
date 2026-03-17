@@ -16,8 +16,8 @@ async function startVehicleSpawnerSystem(): Promise<void> {
     State.vehicles.spawnSequenceInProgress = false;
     clearAllVehicleReservations();
 
-    const team1Specs = [...TEAM1_VEHICLE_SPAWN_SPECS].sort((a, b) => a.slotNumber - b.slotNumber);
-    const team2Specs = [...TEAM2_VEHICLE_SPAWN_SPECS].sort((a, b) => a.slotNumber - b.slotNumber);
+    const team1Specs = [...TEAM1_VEHICLE_SLOT_INVENTORY_SPECS].sort((a, b) => a.slotNumber - b.slotNumber);
+    const team2Specs = [...TEAM2_VEHICLE_SLOT_INVENTORY_SPECS].sort((a, b) => a.slotNumber - b.slotNumber);
 
     for (const spec of team1Specs) {
         addVehicleSpawnerSlot(TeamID.Team1, spec.slotNumber, spec.pos, spec.rot, spec.vehicle);

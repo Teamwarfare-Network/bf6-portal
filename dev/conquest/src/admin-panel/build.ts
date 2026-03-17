@@ -346,35 +346,59 @@ function ensurePositionDebugWidgets(player: mod.Player): {
         container = mod.FindUIWidgetWithName(containerId, mod.GetUIRoot());
     }
     if (container) {
-        mod.SetUIWidgetVisible(container, true);
+        mod.SetUIWidgetVisible(container, false);
     }
 
+    const emptyValueMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, "");
+
     const makeText = (id: string, posX: number, posY: number, width: number, color: mod.Vector, anchor: mod.UIAnchor, label: mod.Message) => {
-        mod.AddUIText(
-            id,
-            mod.CreateVector(posX, posY, 0),
-            mod.CreateVector(width, 14, 0),
-            mod.UIAnchor.TopLeft,
-            label,
-            player
-        );
-        const w = mod.FindUIWidgetWithName(id, mod.GetUIRoot());
-        mod.SetUIWidgetBgAlpha(w, 0);
-        mod.SetUITextSize(w, 10);
-        mod.SetUITextColor(w, color);
-        mod.SetUITextAnchor(w, anchor);
-        if (container) mod.SetUIWidgetParent(w, container);
+        let w = safeFind(id);
+        if (!w) {
+            const parsed = modlib.ParseUI({
+                name: id,
+                type: "Text",
+                playerId: player,
+                position: [posX, posY],
+                size: [width, 14],
+                anchor: mod.UIAnchor.TopLeft,
+                visible: false,
+                padding: 0,
+                bgAlpha: 0,
+                bgFill: mod.UIBgFill.None,
+                textLabel: label,
+                textColor: [1, 1, 1],
+                textAlpha: 1,
+                textSize: 10,
+                textAnchor: anchor,
+            });
+            w = parsed ?? safeFind(id);
+        }
+        safeSetUIWidgetBgAlpha(w, 0);
+        try {
+            if (w) mod.SetUITextSize(w, 10);
+        } catch {}
+        safeSetUITextColor(w, color);
+        try {
+            if (w) mod.SetUITextAnchor(w, anchor);
+        } catch {}
+        safeSetUITextLabel(w, label);
+        if (container) safeSetUIWidgetParent(w, container);
+        safeSetUIWidgetPosition(w, mod.CreateVector(posX, posY, 0));
+        safeSetUIWidgetSize(w, mod.CreateVector(width, 14, 0));
+        if (w) mod.SetUIWidgetVisible(w, false);
         return w;
     };
 
-    const normalizeText = (widget: mod.UIWidget | undefined, posX: number, posY: number, width: number, color: mod.Vector, anchor: mod.UIAnchor, label: mod.Message) => {
+    const normalizeText = (widget: mod.UIWidget | undefined, posX: number, posY: number, width: number, color: mod.Vector, anchor: mod.UIAnchor, label?: mod.Message) => {
         if (!widget) return;
         mod.SetUIWidgetPosition(widget, mod.CreateVector(posX, posY, 0));
         mod.SetUIWidgetSize(widget, mod.CreateVector(width, 14, 0));
         mod.SetUITextSize(widget, 10);
         mod.SetUITextColor(widget, color);
         mod.SetUITextAnchor(widget, anchor);
-        mod.SetUITextLabel(widget, label);
+        if (label) {
+            mod.SetUITextLabel(widget, label);
+        }
     };
 
     const LABEL_WIDTH = 28;
@@ -394,11 +418,11 @@ function ensurePositionDebugWidgets(player: mod.Player): {
     let posZLabel = safeFind(posZLabelId);
     if (!posZLabel) posZLabel = makeText(posZLabelId, COL_3_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.posZ));
     let posXValue = safeFind(posXValueId);
-    if (!posXValue) posXValue = makeText(posXValueId, COL_1_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, mod.Message(mod.stringkeys.twl.system.genericCounter, 0));
+    if (!posXValue) posXValue = makeText(posXValueId, COL_1_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, emptyValueMessage);
     let posYValue = safeFind(posYValueId);
-    if (!posYValue) posYValue = makeText(posYValueId, COL_2_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, mod.Message(mod.stringkeys.twl.system.genericCounter, 0));
+    if (!posYValue) posYValue = makeText(posYValueId, COL_2_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, emptyValueMessage);
     let posZValue = safeFind(posZValueId);
-    if (!posZValue) posZValue = makeText(posZValueId, COL_3_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, mod.Message(mod.stringkeys.twl.system.genericCounter, 0));
+    if (!posZValue) posZValue = makeText(posZValueId, COL_3_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, emptyValueMessage);
 
     let rotXLabel = safeFind(rotXLabelId);
     if (!rotXLabel) rotXLabel = makeText(rotXLabelId, COL_1_X, ROW_2_Y, LABEL_WIDTH, COLOR_BLUE, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.rotX));
@@ -407,30 +431,35 @@ function ensurePositionDebugWidgets(player: mod.Player): {
     let rotZLabel = safeFind(rotZLabelId);
     if (!rotZLabel) rotZLabel = makeText(rotZLabelId, COL_3_X, ROW_2_Y, LABEL_WIDTH, COLOR_BLUE, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.rotZ));
     let rotXValue = safeFind(rotXValueId);
-    if (!rotXValue) rotXValue = makeText(rotXValueId, COL_1_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, mod.Message(mod.stringkeys.twl.system.genericCounter, 0));
+    if (!rotXValue) rotXValue = makeText(rotXValueId, COL_1_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, emptyValueMessage);
     let rotYValue = safeFind(rotYValueId);
-    if (!rotYValue) rotYValue = makeText(rotYValueId, COL_2_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, mod.Message(mod.stringkeys.twl.system.genericCounter, 0));
+    if (!rotYValue) rotYValue = makeText(rotYValueId, COL_2_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, emptyValueMessage);
     let rotZValue = safeFind(rotZValueId);
-    if (!rotZValue) rotZValue = makeText(rotZValueId, COL_3_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, mod.Message(mod.stringkeys.twl.system.genericCounter, 0));
+    if (!rotZValue) rotZValue = makeText(rotZValueId, COL_3_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, emptyValueMessage);
 
     normalizeText(posXLabel, COL_1_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.posX));
     normalizeText(posYLabel, COL_2_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.posY));
     normalizeText(posZLabel, COL_3_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.posZ));
-    normalizeText(posXValue, COL_1_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, mod.Message(mod.stringkeys.twl.system.genericCounter, 0));
-    normalizeText(posYValue, COL_2_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, mod.Message(mod.stringkeys.twl.system.genericCounter, 0));
-    normalizeText(posZValue, COL_3_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, mod.Message(mod.stringkeys.twl.system.genericCounter, 0));
+    normalizeText(posXValue, COL_1_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight);
+    normalizeText(posYValue, COL_2_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight);
+    normalizeText(posZValue, COL_3_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight);
     normalizeText(rotXLabel, COL_1_X, ROW_2_Y, LABEL_WIDTH, COLOR_BLUE, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.rotX));
     normalizeText(rotYLabel, COL_2_X, ROW_2_Y, LABEL_WIDTH, COLOR_BLUE, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.rotY));
     normalizeText(rotZLabel, COL_3_X, ROW_2_Y, LABEL_WIDTH, COLOR_BLUE, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.rotZ));
-    normalizeText(rotXValue, COL_1_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, mod.Message(mod.stringkeys.twl.system.genericCounter, 0));
-    normalizeText(rotYValue, COL_2_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, mod.Message(mod.stringkeys.twl.system.genericCounter, 0));
-    normalizeText(rotZValue, COL_3_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, mod.Message(mod.stringkeys.twl.system.genericCounter, 0));
+    normalizeText(rotXValue, COL_1_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight);
+    normalizeText(rotYValue, COL_2_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight);
+    normalizeText(rotZValue, COL_3_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight);
 
     if (!posXLabel || !posYLabel || !posZLabel || !posXValue || !posYValue || !posZValue || !rotXLabel || !rotYLabel || !rotZLabel || !rotXValue || !rotYValue || !rotZValue) return undefined;
     return { posXLabel, posYLabel, posZLabel, posXValue, posYValue, posZValue, rotXLabel, rotYLabel, rotZLabel, rotXValue, rotYValue, rotZValue };
 }
 
-async function positionDebugLoop(player: mod.Player, expectedToken: number): Promise<void> {
+function trySamplePositionDebugSnapshot(player: mod.Player, pid: number): {
+    pos: mod.Vector;
+    rotX: number;
+    rotY: number;
+    rotZ: number;
+} | undefined {
     const sampleSoldierVector = (stateKey: any): mod.Vector | undefined => {
         try {
             return mod.GetSoldierState(player, stateKey) as unknown as mod.Vector;
@@ -438,11 +467,86 @@ async function positionDebugLoop(player: mod.Player, expectedToken: number): Pro
             return undefined;
         }
     };
+
+    const transformSource = State.players.posDebugTransformSourceByPid[pid] ?? "soldier";
+    if (transformSource === "vehicle") {
+        try {
+            const seatIndex = mod.GetPlayerVehicleSeat(player);
+            const vehicle = mod.GetVehicleFromPlayer(player);
+            if (vehicle && seatIndex >= 0) {
+                const pos = mod.GetVehicleState(vehicle, mod.VehicleStateVector.VehiclePosition);
+                const facing = mod.GetVehicleState(vehicle, mod.VehicleStateVector.FacingDirection);
+                const facingX = mod.XComponentOf(facing);
+                const facingY = mod.YComponentOf(facing);
+                const facingZ = mod.ZComponentOf(facing);
+                const planarMagnitude = Math.sqrt((facingX * facingX) + (facingZ * facingZ));
+                const pitchRad = Math.atan2(facingY, Math.max(0.0001, planarMagnitude));
+                const yawRad = Math.atan2(facingX, facingZ);
+                let rotZ = 0;
+                try {
+                    const rot = mod.GetObjectRotation(vehicle);
+                    rotZ = mod.ZComponentOf(rot);
+                } catch {}
+                if (pos) {
+                    return {
+                        pos,
+                        rotX: (pitchRad * 180) / Math.PI,
+                        rotY: (yawRad * 180) / Math.PI,
+                        rotZ,
+                    };
+                }
+            }
+        } catch {
+            // Fall through to soldier sampling.
+        }
+    }
+
+    try {
+        const pos = mod.GetObjectPosition(player as any);
+        const rot = mod.GetObjectRotation(player as any);
+        return {
+            pos,
+            rotX: mod.XComponentOf(rot),
+            rotY: mod.YComponentOf(rot),
+            rotZ: mod.ZComponentOf(rot),
+        };
+    } catch {
+        const pos = sampleSoldierVector(mod.SoldierStateVector.GetPosition);
+        const facing = sampleSoldierVector(mod.SoldierStateVector.GetFacingDirection);
+        if (!pos || !facing) return undefined;
+        const facingX = mod.XComponentOf(facing);
+        const facingY = mod.YComponentOf(facing);
+        const facingZ = mod.ZComponentOf(facing);
+        const planarMagnitude = Math.sqrt((facingX * facingX) + (facingZ * facingZ));
+        const pitchRad = Math.atan2(facingY, Math.max(0.0001, planarMagnitude));
+        const yawRad = Math.atan2(facingX, facingZ);
+        return {
+            pos,
+            rotX: (pitchRad * 180) / Math.PI,
+            rotY: (yawRad * 180) / Math.PI,
+            rotZ: 0,
+        };
+    }
+}
+
+function applyPositionDebugSnapshot(
+    widgets: {
+        posXValue: mod.UIWidget; posYValue: mod.UIWidget; posZValue: mod.UIWidget;
+        rotXValue: mod.UIWidget; rotYValue: mod.UIWidget; rotZValue: mod.UIWidget;
+    },
+    snapshot: { pos: mod.Vector; rotX: number; rotY: number; rotZ: number }
+): void {
+    const roundTo3 = (value: number) => Math.round(value * 1000) / 1000;
+    mod.SetUITextLabel(widgets.posXValue, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.XComponentOf(snapshot.pos))));
+    mod.SetUITextLabel(widgets.posYValue, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.YComponentOf(snapshot.pos))));
+    mod.SetUITextLabel(widgets.posZValue, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.ZComponentOf(snapshot.pos))));
+    mod.SetUITextLabel(widgets.rotXValue, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(snapshot.rotX)));
+    mod.SetUITextLabel(widgets.rotYValue, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(snapshot.rotY)));
+    mod.SetUITextLabel(widgets.rotZValue, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(snapshot.rotZ)));
+}
+
+async function positionDebugLoop(player: mod.Player, expectedToken: number): Promise<void> {
     const pid = mod.GetObjId(player);
-    let lastPos: mod.Vector | undefined;
-    let lastRotX = 0;
-    let lastRotY = 0;
-    let lastRotZ = 0;
     while (true) {
         const state = State.players.readyDialogData[pid];
         if (!state || !state.posDebugVisible || state.posDebugToken !== expectedToken) return;
@@ -454,91 +558,27 @@ async function positionDebugLoop(player: mod.Player, expectedToken: number): Pro
             await mod.Wait(0.5);
             continue;
         }
-
-        const roundTo3 = (value: number) => Math.round(value * 1000) / 1000;
-        let pos: mod.Vector | undefined;
-        let rotX = lastRotX;
-        let rotY = lastRotY;
-        let rotZ = lastRotZ;
-        let sampled = false;
-
-        const transformSource = State.players.posDebugTransformSourceByPid[pid] ?? "soldier";
-        if (transformSource === "vehicle") {
-            try {
-                const seatIndex = mod.GetPlayerVehicleSeat(player);
-                const vehicle = mod.GetVehicleFromPlayer(player);
-                if (vehicle && seatIndex >= 0) {
-                    pos = mod.GetVehicleState(vehicle, mod.VehicleStateVector.VehiclePosition);
-                    const facing = mod.GetVehicleState(vehicle, mod.VehicleStateVector.FacingDirection);
-                    const facingX = mod.XComponentOf(facing);
-                    const facingY = mod.YComponentOf(facing);
-                    const facingZ = mod.ZComponentOf(facing);
-                    const planarMagnitude = Math.sqrt((facingX * facingX) + (facingZ * facingZ));
-                    const pitchRad = Math.atan2(facingY, Math.max(0.0001, planarMagnitude));
-                    const yawRad = Math.atan2(facingX, facingZ);
-                    rotX = (pitchRad * 180) / Math.PI;
-                    rotY = (yawRad * 180) / Math.PI;
-                    try {
-                        const rot = mod.GetObjectRotation(vehicle);
-                        rotZ = mod.ZComponentOf(rot);
-                    } catch {
-                        rotZ = lastRotZ;
-                    }
-                    sampled = true;
-                }
-            } catch {
-                // Fall through to on-foot sampling.
-            }
+        const snapshot = trySamplePositionDebugSnapshot(player, pid);
+        if (!snapshot) {
+            await mod.Wait(0.5);
+            continue;
         }
 
-        if (!sampled) {
-            try {
-                pos = mod.GetObjectPosition(player as any);
-                const rot = mod.GetObjectRotation(player as any);
-                rotX = mod.XComponentOf(rot);
-                rotY = mod.YComponentOf(rot);
-                rotZ = mod.ZComponentOf(rot);
-                sampled = true;
-            } catch {
-                pos = sampleSoldierVector(mod.SoldierStateVector.GetPosition);
-                const facing = sampleSoldierVector(mod.SoldierStateVector.GetFacingDirection);
-                if (pos && facing) {
-                    const facingX = mod.XComponentOf(facing);
-                    const facingY = mod.YComponentOf(facing);
-                    const facingZ = mod.ZComponentOf(facing);
-                    const planarMagnitude = Math.sqrt((facingX * facingX) + (facingZ * facingZ));
-                    const pitchRad = Math.atan2(facingY, Math.max(0.0001, planarMagnitude));
-                    const yawRad = Math.atan2(facingX, facingZ);
-                    rotX = (pitchRad * 180) / Math.PI;
-                    rotY = (yawRad * 180) / Math.PI;
-                    rotZ = 0;
-                    sampled = true;
-                }
-            }
-        }
-
-        if (!sampled || !pos) {
-            if (!lastPos) {
-                await mod.Wait(0.5);
-                continue;
-            }
-            pos = lastPos;
-            rotX = lastRotX;
-            rotY = lastRotY;
-            rotZ = lastRotZ;
-        } else {
-            lastPos = pos;
-            lastRotX = rotX;
-            lastRotY = rotY;
-            lastRotZ = rotZ;
-        }
-
-        mod.SetUITextLabel(widgets.posXValue, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.XComponentOf(pos))));
-        mod.SetUITextLabel(widgets.posYValue, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.YComponentOf(pos))));
-        mod.SetUITextLabel(widgets.posZValue, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.ZComponentOf(pos))));
-        mod.SetUITextLabel(widgets.rotXValue, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(rotX)));
-        mod.SetUITextLabel(widgets.rotYValue, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(rotY)));
-        mod.SetUITextLabel(widgets.rotZValue, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(rotZ)));
+        applyPositionDebugSnapshot(widgets, snapshot);
+        const container = safeFind(UI_POS_DEBUG_CONTAINER_ID + pid);
+        if (container) mod.SetUIWidgetVisible(container, true);
+        mod.SetUIWidgetVisible(widgets.posXLabel, true);
+        mod.SetUIWidgetVisible(widgets.posYLabel, true);
+        mod.SetUIWidgetVisible(widgets.posZLabel, true);
+        mod.SetUIWidgetVisible(widgets.posXValue, true);
+        mod.SetUIWidgetVisible(widgets.posYValue, true);
+        mod.SetUIWidgetVisible(widgets.posZValue, true);
+        mod.SetUIWidgetVisible(widgets.rotXLabel, true);
+        mod.SetUIWidgetVisible(widgets.rotYLabel, true);
+        mod.SetUIWidgetVisible(widgets.rotZLabel, true);
+        mod.SetUIWidgetVisible(widgets.rotXValue, true);
+        mod.SetUIWidgetVisible(widgets.rotYValue, true);
+        mod.SetUIWidgetVisible(widgets.rotZValue, true);
 
         await mod.Wait(0.5);
     }
@@ -553,26 +593,41 @@ function setPositionDebugVisibleForPlayer(player: mod.Player, visible: boolean):
     const widgets = ensurePositionDebugWidgets(player);
     if (!widgets) return;
 
-    const container = safeFind(UI_POS_DEBUG_CONTAINER_ID + pid);
-    if (container) mod.SetUIWidgetVisible(container, visible);
-
-    mod.SetUIWidgetVisible(widgets.posXLabel, visible);
-    mod.SetUIWidgetVisible(widgets.posYLabel, visible);
-    mod.SetUIWidgetVisible(widgets.posZLabel, visible);
-    mod.SetUIWidgetVisible(widgets.posXValue, visible);
-    mod.SetUIWidgetVisible(widgets.posYValue, visible);
-    mod.SetUIWidgetVisible(widgets.posZValue, visible);
-    mod.SetUIWidgetVisible(widgets.rotXLabel, visible);
-    mod.SetUIWidgetVisible(widgets.rotYLabel, visible);
-    mod.SetUIWidgetVisible(widgets.rotZLabel, visible);
-    mod.SetUIWidgetVisible(widgets.rotXValue, visible);
-    mod.SetUIWidgetVisible(widgets.rotYValue, visible);
-    mod.SetUIWidgetVisible(widgets.rotZValue, visible);
+    if (visible && (state.hudSwapTransitionActive === true || !isHudWarmReadyForPid(pid))) {
+        visible = false;
+    }
 
     state.posDebugToken = (state.posDebugToken + 1) % 1000000000;
-    if (visible) {
-        void positionDebugLoop(player, state.posDebugToken);
+    const container = safeFind(UI_POS_DEBUG_CONTAINER_ID + pid);
+    const applyVisible = (nextVisible: boolean): void => {
+        if (container) mod.SetUIWidgetVisible(container, nextVisible);
+        mod.SetUIWidgetVisible(widgets.posXLabel, nextVisible);
+        mod.SetUIWidgetVisible(widgets.posYLabel, nextVisible);
+        mod.SetUIWidgetVisible(widgets.posZLabel, nextVisible);
+        mod.SetUIWidgetVisible(widgets.posXValue, nextVisible);
+        mod.SetUIWidgetVisible(widgets.posYValue, nextVisible);
+        mod.SetUIWidgetVisible(widgets.posZValue, nextVisible);
+        mod.SetUIWidgetVisible(widgets.rotXLabel, nextVisible);
+        mod.SetUIWidgetVisible(widgets.rotYLabel, nextVisible);
+        mod.SetUIWidgetVisible(widgets.rotZLabel, nextVisible);
+        mod.SetUIWidgetVisible(widgets.rotXValue, nextVisible);
+        mod.SetUIWidgetVisible(widgets.rotYValue, nextVisible);
+        mod.SetUIWidgetVisible(widgets.rotZValue, nextVisible);
+    };
+
+    if (!visible) {
+        applyVisible(false);
+        return;
     }
+
+    const snapshot = trySamplePositionDebugSnapshot(player, pid);
+    if (snapshot) {
+        applyPositionDebugSnapshot(widgets, snapshot);
+        applyVisible(true);
+    } else {
+        applyVisible(false);
+    }
+    void positionDebugLoop(player, state.posDebugToken);
 }
 
 //#endregion ----------------- Admin Panel UI builder helpers --------------------

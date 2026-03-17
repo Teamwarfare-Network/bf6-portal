@@ -8,15 +8,6 @@ function getMapNameKey(mapKey: MapKey): number {
     return MAP_NAME_STRINGKEYS[mapKey] ?? mod.stringkeys.twl.system.unknownPlayer;
 }
 
-// Determines whether the current mode selection should use helicopter spawn specs.
-function isHeliGameMode(gameModeKey: number): boolean {
-    return (
-        gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisLadder
-        || gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisPractice
-        || gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisCustom
-    );
-}
-
 // Builds a fallback helicopter spawn list from tank spawn positions when no map-specific heli list exists.
 function buildHeliSpawnsFromTankSpawns(spawns: VehicleSpawnSpec[], team: TeamID): VehicleSpawnSpec[] {
     const attackVehicle = team === TeamID.Team1 ? mod.VehicleList.AH64 : mod.VehicleList.Eurocopter;
@@ -39,21 +30,6 @@ function resolveHeliSpawnsForTeam(cfg: MapConfig, team: TeamID): VehicleSpawnSpe
     return buildHeliSpawnsFromTankSpawns(cfg.team2TankSpawns, TeamID.Team2);
 }
 
-// Resolves a ready-dialog vehicle override index to a valid VehicleList entry.
-function getReadyDialogVehicleListByIndex(index: number): mod.VehicleList {
-    return READY_DIALOG_VEHICLE_LIST[index] ?? READY_DIALOG_VEHICLE_LIST[0];
-}
-
-// Applies one vehicle override to every spawn spec in the provided list.
-function applyVehicleOverrideToSpawns(spawns: VehicleSpawnSpec[], vehicle: mod.VehicleList): VehicleSpawnSpec[] {
-    return spawns.map((spawn) => ({
-        slotNumber: spawn.slotNumber,
-        pos: spawn.pos,
-        rot: spawn.rot,
-        vehicle,
-    }));
-}
-
 function cloneVehicleSpawnSpecs(spawns: VehicleSpawnSpec[] | undefined): VehicleSpawnSpec[] {
     if (!spawns || spawns.length === 0) return [];
     return spawns.map((spawn) => ({
@@ -64,12 +40,27 @@ function cloneVehicleSpawnSpecs(spawns: VehicleSpawnSpec[] | undefined): Vehicle
     }));
 }
 
+const VEHICLE_PACKAGE_SLOT_BASE_JET = 1;
+const VEHICLE_PACKAGE_SLOT_BASE_HELI = 3;
+const VEHICLE_PACKAGE_SLOT_BASE_GROUND = 5;
+const VEHICLE_PACKAGE_SLOT_BASE_FAST = 9;
+
 function getReadyDialogVehicleOptionsForKnobKey(knobKey: string): ReadyDialogVehicleOption[] {
+    if (knobKey === READY_DIALOG_TEAM1_FAST_KNOB_KEYS[2] || knobKey === READY_DIALOG_TEAM1_FAST_KNOB_KEYS[3]) {
+        return READY_DIALOG_TEAM1_TRANSPORT_SLOT_VEHICLE_OPTIONS;
+    }
+    if (knobKey === READY_DIALOG_TEAM2_FAST_KNOB_KEYS[2] || knobKey === READY_DIALOG_TEAM2_FAST_KNOB_KEYS[3]) {
+        return READY_DIALOG_TEAM2_TRANSPORT_SLOT_VEHICLE_OPTIONS;
+    }
     if (knobKey.indexOf("Jet") >= 0) return READY_DIALOG_JET_VEHICLE_OPTIONS;
     if (knobKey.indexOf("Heli") >= 0) return READY_DIALOG_HELI_VEHICLE_OPTIONS;
     if (knobKey.indexOf("Ground") >= 0) return READY_DIALOG_GROUND_VEHICLE_OPTIONS;
     if (knobKey.indexOf("Fast") >= 0) return READY_DIALOG_FAST_VEHICLE_OPTIONS;
     return [];
+}
+
+function isTransportHeliVehicleType(vehicle: mod.VehicleList | undefined): boolean {
+    return vehicle === mod.VehicleList.UH60 || vehicle === mod.VehicleList.UH60_Pax;
 }
 
 function getReadyDialogVehicleSelectionLabelKey(knobKey: string, selectionIndex: number): number {
@@ -100,68 +91,149 @@ function getReadyDialogSelectedVehicleForKnobKey(knobKey: string, selectionByKey
     return options[clamped]?.vehicle;
 }
 
-function buildReadyDialogVehicleSelectionIndexByKeyFromMapConfig(cfg: MapConfig): Record<string, number> {
-    const next: Record<string, number> = {};
-    const team1Helis = resolveHeliSpawnsForTeam(cfg, TeamID.Team1);
-    const team2Helis = resolveHeliSpawnsForTeam(cfg, TeamID.Team2);
-    const team1Jets = cfg.team1JetSpawns ?? [];
-    const team2Jets = cfg.team2JetSpawns ?? [];
-    const team1Ground = cfg.team1TankSpawns ?? [];
-    const team2Ground = cfg.team2TankSpawns ?? [];
-    const team1Fast = cfg.team1FastMoverSpawns ?? [];
-    const team2Fast = cfg.team2FastMoverSpawns ?? [];
+function remapVehicleSpawnSpecsForRuntime(
+    baseSpawns: VehicleSpawnSpec[] | undefined,
+    runtimeStartSlotNumber: number,
+    maxCount: number
+): VehicleSpawnSpec[] {
+    const next = cloneVehicleSpawnSpecs(baseSpawns).slice(0, maxCount);
+    for (let i = 0; i < next.length; i++) {
+        next[i].slotNumber = runtimeStartSlotNumber + i;
+    }
+    return next;
+}
 
-    next[READY_DIALOG_TEAM1_JET_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_JET_KNOB_KEYS[0], team1Jets[0]?.vehicle);
-    next[READY_DIALOG_TEAM1_JET_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_JET_KNOB_KEYS[1], team1Jets[1]?.vehicle);
-    next[READY_DIALOG_TEAM2_JET_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_JET_KNOB_KEYS[0], team2Jets[0]?.vehicle);
-    next[READY_DIALOG_TEAM2_JET_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_JET_KNOB_KEYS[1], team2Jets[1]?.vehicle);
+function buildRuntimeVehicleSlotInventoryForTeam(cfg: MapConfig, team: TeamID): VehicleSpawnSpec[] {
+    const heliSpawns = resolveHeliSpawnsForTeam(cfg, team);
+    const fastMoverSpawns = team === TeamID.Team1 ? (cfg.team1FastMoverSpawns ?? []) : (cfg.team2FastMoverSpawns ?? []);
+    const jets = remapVehicleSpawnSpecsForRuntime(
+        team === TeamID.Team1 ? (cfg.team1JetSpawns ?? []) : (cfg.team2JetSpawns ?? []),
+        VEHICLE_PACKAGE_SLOT_BASE_JET,
+        2
+    );
+    const helis = remapVehicleSpawnSpecsForRuntime(
+        heliSpawns.slice(0, 2),
+        VEHICLE_PACKAGE_SLOT_BASE_HELI,
+        2
+    );
+    const ground = remapVehicleSpawnSpecsForRuntime(
+        team === TeamID.Team1 ? cfg.team1TankSpawns : cfg.team2TankSpawns,
+        VEHICLE_PACKAGE_SLOT_BASE_GROUND,
+        4
+    );
+    const fast = remapVehicleSpawnSpecsForRuntime(
+        fastMoverSpawns.slice(0, 2),
+        VEHICLE_PACKAGE_SLOT_BASE_FAST,
+        2
+    );
+    const transportHelis = remapVehicleSpawnSpecsForRuntime(
+        heliSpawns.slice(2, 4),
+        VEHICLE_PACKAGE_SLOT_BASE_FAST + 2,
+        2
+    );
+    return [...jets, ...helis, ...ground, ...fast, ...transportHelis];
+}
 
-    next[READY_DIALOG_TEAM1_HELI_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_HELI_KNOB_KEYS[0], team1Helis[0]?.vehicle);
-    next[READY_DIALOG_TEAM1_HELI_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_HELI_KNOB_KEYS[1], team1Helis[1]?.vehicle);
-    next[READY_DIALOG_TEAM2_HELI_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_HELI_KNOB_KEYS[0], team2Helis[0]?.vehicle);
-    next[READY_DIALOG_TEAM2_HELI_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_HELI_KNOB_KEYS[1], team2Helis[1]?.vehicle);
+function buildSelectedVehicleSpawnSpecsFromKnobs(
+    baseSpawns: VehicleSpawnSpec[] | undefined,
+    knobKeys: readonly string[],
+    selectionByKey: Record<string, number>,
+    runtimeStartSlotNumber: number
+): VehicleSpawnSpec[] {
+    const remapped = remapVehicleSpawnSpecsForRuntime(baseSpawns, runtimeStartSlotNumber, knobKeys.length);
+    const next: VehicleSpawnSpec[] = [];
+    for (let i = 0; i < remapped.length && i < knobKeys.length; i++) {
+        const selectedVehicle = getReadyDialogSelectedVehicleForKnobKey(knobKeys[i], selectionByKey);
+        if (selectedVehicle === undefined) continue;
+        next.push({
+            slotNumber: remapped[i].slotNumber,
+            pos: remapped[i].pos,
+            rot: remapped[i].rot,
+            vehicle: selectedVehicle,
+        });
+    }
+    return next;
+}
 
-    for (let i = 0; i < READY_DIALOG_TEAM1_GROUND_KNOB_KEYS.length; i++) {
-        next[READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[i]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[i], team1Ground[i]?.vehicle);
-        next[READY_DIALOG_TEAM2_GROUND_KNOB_KEYS[i]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_GROUND_KNOB_KEYS[i], team2Ground[i]?.vehicle);
-        next[READY_DIALOG_TEAM1_FAST_KNOB_KEYS[i]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_FAST_KNOB_KEYS[i], team1Fast[i]?.vehicle);
-        next[READY_DIALOG_TEAM2_FAST_KNOB_KEYS[i]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_FAST_KNOB_KEYS[i], team2Fast[i]?.vehicle);
+function buildSelectedTransportSpawnSpecsForTeam(
+    cfg: MapConfig,
+    team: TeamID,
+    selectionByKey: Record<string, number>
+): VehicleSpawnSpec[] {
+    const fastMoverSpawns = team === TeamID.Team1 ? (cfg.team1FastMoverSpawns ?? []) : (cfg.team2FastMoverSpawns ?? []);
+    const heliSpawns = resolveHeliSpawnsForTeam(cfg, team);
+    const transportKnobKeys = team === TeamID.Team1
+        ? READY_DIALOG_TEAM1_FAST_KNOB_KEYS
+        : READY_DIALOG_TEAM2_FAST_KNOB_KEYS;
+    const next: VehicleSpawnSpec[] = [];
+
+    for (let i = 0; i < transportKnobKeys.length; i++) {
+        const knobKey = transportKnobKeys[i];
+        const selectedVehicle = getReadyDialogSelectedVehicleForKnobKey(knobKey, selectionByKey);
+        if (selectedVehicle === undefined) continue;
+
+        const runtimeSlotNumber = VEHICLE_PACKAGE_SLOT_BASE_FAST + i;
+        const useHeliAnchor = i >= 2 && isTransportHeliVehicleType(selectedVehicle);
+        const baseSpawn = useHeliAnchor
+            ? heliSpawns[i]
+            : fastMoverSpawns[i];
+        if (!baseSpawn) continue;
+
+        next.push({
+            slotNumber: runtimeSlotNumber,
+            pos: baseSpawn.pos,
+            rot: baseSpawn.rot,
+            vehicle: selectedVehicle,
+        });
     }
 
+    return next;
+}
+
+function buildReadyDialogVehicleSelectionIndexByGameMode(_cfg: MapConfig, gameModeKey: number): Record<string, number> {
+    const next: Record<string, number> = {};
+    for (const knobKey of READY_DIALOG_ALL_VEHICLE_KNOB_KEYS) {
+        next[knobKey] = getReadyDialogVehicleOptionIndexForVehicle(knobKey, undefined);
+    }
+
+    if (gameModeKey !== mod.stringkeys.twl.readyDialog.gameModeHelisPractice) {
+        return next;
+    }
+
+    next[READY_DIALOG_TEAM1_JET_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_JET_KNOB_KEYS[0], mod.VehicleList.F16);
+    next[READY_DIALOG_TEAM1_JET_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_JET_KNOB_KEYS[1], undefined);
+    next[READY_DIALOG_TEAM2_JET_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_JET_KNOB_KEYS[0], mod.VehicleList.JAS39);
+    next[READY_DIALOG_TEAM2_JET_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_JET_KNOB_KEYS[1], undefined);
+
+    next[READY_DIALOG_TEAM1_HELI_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_HELI_KNOB_KEYS[0], mod.VehicleList.AH64);
+    next[READY_DIALOG_TEAM1_HELI_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_HELI_KNOB_KEYS[1], mod.VehicleList.UH60);
+    next[READY_DIALOG_TEAM2_HELI_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_HELI_KNOB_KEYS[0], mod.VehicleList.Eurocopter);
+    next[READY_DIALOG_TEAM2_HELI_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_HELI_KNOB_KEYS[1], mod.VehicleList.UH60_Pax);
+
+    next[READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[0], mod.VehicleList.Abrams);
+    next[READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[1], mod.VehicleList.Cheetah);
+    next[READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[2]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[2], undefined);
+    next[READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[3]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[3], undefined);
+    next[READY_DIALOG_TEAM2_GROUND_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_GROUND_KNOB_KEYS[0], mod.VehicleList.Leopard);
+    next[READY_DIALOG_TEAM2_GROUND_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_GROUND_KNOB_KEYS[1], mod.VehicleList.Gepard);
+    next[READY_DIALOG_TEAM2_GROUND_KNOB_KEYS[2]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_GROUND_KNOB_KEYS[2], undefined);
+    next[READY_DIALOG_TEAM2_GROUND_KNOB_KEYS[3]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_GROUND_KNOB_KEYS[3], undefined);
+
+    next[READY_DIALOG_TEAM1_FAST_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_FAST_KNOB_KEYS[0], mod.VehicleList.Quadbike);
+    next[READY_DIALOG_TEAM1_FAST_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_FAST_KNOB_KEYS[1], mod.VehicleList.Quadbike);
+    next[READY_DIALOG_TEAM1_FAST_KNOB_KEYS[2]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_FAST_KNOB_KEYS[2], undefined);
+    next[READY_DIALOG_TEAM1_FAST_KNOB_KEYS[3]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_FAST_KNOB_KEYS[3], undefined);
+    next[READY_DIALOG_TEAM2_FAST_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_FAST_KNOB_KEYS[0], mod.VehicleList.Quadbike);
+    next[READY_DIALOG_TEAM2_FAST_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_FAST_KNOB_KEYS[1], mod.VehicleList.Quadbike);
+    next[READY_DIALOG_TEAM2_FAST_KNOB_KEYS[2]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_FAST_KNOB_KEYS[2], undefined);
+    next[READY_DIALOG_TEAM2_FAST_KNOB_KEYS[3]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_FAST_KNOB_KEYS[3], undefined);
     return next;
 }
 
 function syncReadyDialogVehicleSelectionsFromActiveMapConfig(): void {
-    const defaults = buildReadyDialogVehicleSelectionIndexByKeyFromMapConfig(ACTIVE_MAP_CONFIG);
+    const defaults = buildReadyDialogVehicleSelectionIndexByGameMode(ACTIVE_MAP_CONFIG, READY_DIALOG_GAME_MODE_OPTIONS[READY_DIALOG_GAME_MODE_DEFAULT_INDEX]);
     State.round.modeConfig.vehicleSelectionIndexByKey = { ...defaults };
     State.round.modeConfig.confirmed.vehicleSelectionIndexByKey = { ...defaults };
-}
-
-function applyVehicleSelectionOverridesToSpawnSpecs(
-    baseSpawns: VehicleSpawnSpec[] | undefined,
-    knobKeys: readonly string[],
-    selectionByKey: Record<string, number>
-): VehicleSpawnSpec[] {
-    const next = cloneVehicleSpawnSpecs(baseSpawns);
-    for (let i = 0; i < next.length && i < knobKeys.length; i++) {
-        const selectedVehicle = getReadyDialogSelectedVehicleForKnobKey(knobKeys[i], selectionByKey);
-        if (selectedVehicle !== undefined) next[i].vehicle = selectedVehicle;
-    }
-    return next;
-}
-
-function applyHeliSelectionOverridesToSpawnSpecs(
-    baseSpawns: VehicleSpawnSpec[] | undefined,
-    knobKeys: readonly [string, string],
-    selectionByKey: Record<string, number>
-): VehicleSpawnSpec[] {
-    const next = cloneVehicleSpawnSpecs(baseSpawns);
-    for (let i = 0; i < next.length; i++) {
-        const knobKey = (i === 0 || i === 2) ? knobKeys[0] : knobKeys[1];
-        const selectedVehicle = getReadyDialogSelectedVehicleForKnobKey(knobKey, selectionByKey);
-        if (selectedVehicle !== undefined) next[i].vehicle = selectedVehicle;
-    }
-    return next;
 }
 
 function refreshSelectedVehicleSpawnPoolsFromModeConfig(useConfirmed: boolean): void {
@@ -169,14 +241,52 @@ function refreshSelectedVehicleSpawnPoolsFromModeConfig(useConfirmed: boolean): 
         ? (State.round.modeConfig.confirmed.vehicleSelectionIndexByKey ?? {})
         : (State.round.modeConfig.vehicleSelectionIndexByKey ?? {});
 
-    TEAM1_TANK_SELECTED_SPAWN_SPECS = applyVehicleSelectionOverridesToSpawnSpecs(ACTIVE_MAP_CONFIG.team1TankSpawns, READY_DIALOG_TEAM1_GROUND_KNOB_KEYS, selectionByKey);
-    TEAM2_TANK_SELECTED_SPAWN_SPECS = applyVehicleSelectionOverridesToSpawnSpecs(ACTIVE_MAP_CONFIG.team2TankSpawns, READY_DIALOG_TEAM2_GROUND_KNOB_KEYS, selectionByKey);
-    TEAM1_HELI_SELECTED_SPAWN_SPECS = applyHeliSelectionOverridesToSpawnSpecs(resolveHeliSpawnsForTeam(ACTIVE_MAP_CONFIG, TeamID.Team1), READY_DIALOG_TEAM1_HELI_KNOB_KEYS, selectionByKey);
-    TEAM2_HELI_SELECTED_SPAWN_SPECS = applyHeliSelectionOverridesToSpawnSpecs(resolveHeliSpawnsForTeam(ACTIVE_MAP_CONFIG, TeamID.Team2), READY_DIALOG_TEAM2_HELI_KNOB_KEYS, selectionByKey);
-    TEAM1_JET_SELECTED_SPAWN_SPECS = applyVehicleSelectionOverridesToSpawnSpecs(ACTIVE_MAP_CONFIG.team1JetSpawns, READY_DIALOG_TEAM1_JET_KNOB_KEYS, selectionByKey);
-    TEAM2_JET_SELECTED_SPAWN_SPECS = applyVehicleSelectionOverridesToSpawnSpecs(ACTIVE_MAP_CONFIG.team2JetSpawns, READY_DIALOG_TEAM2_JET_KNOB_KEYS, selectionByKey);
-    TEAM1_FAST_SELECTED_SPAWN_SPECS = applyVehicleSelectionOverridesToSpawnSpecs(ACTIVE_MAP_CONFIG.team1FastMoverSpawns, READY_DIALOG_TEAM1_FAST_KNOB_KEYS, selectionByKey);
-    TEAM2_FAST_SELECTED_SPAWN_SPECS = applyVehicleSelectionOverridesToSpawnSpecs(ACTIVE_MAP_CONFIG.team2FastMoverSpawns, READY_DIALOG_TEAM2_FAST_KNOB_KEYS, selectionByKey);
+    TEAM1_JET_SELECTED_SPAWN_SPECS = buildSelectedVehicleSpawnSpecsFromKnobs(
+        ACTIVE_MAP_CONFIG.team1JetSpawns,
+        READY_DIALOG_TEAM1_JET_KNOB_KEYS,
+        selectionByKey,
+        VEHICLE_PACKAGE_SLOT_BASE_JET
+    );
+    TEAM2_JET_SELECTED_SPAWN_SPECS = buildSelectedVehicleSpawnSpecsFromKnobs(
+        ACTIVE_MAP_CONFIG.team2JetSpawns,
+        READY_DIALOG_TEAM2_JET_KNOB_KEYS,
+        selectionByKey,
+        VEHICLE_PACKAGE_SLOT_BASE_JET
+    );
+    TEAM1_HELI_SELECTED_SPAWN_SPECS = buildSelectedVehicleSpawnSpecsFromKnobs(
+        resolveHeliSpawnsForTeam(ACTIVE_MAP_CONFIG, TeamID.Team1),
+        READY_DIALOG_TEAM1_HELI_KNOB_KEYS,
+        selectionByKey,
+        VEHICLE_PACKAGE_SLOT_BASE_HELI
+    );
+    TEAM2_HELI_SELECTED_SPAWN_SPECS = buildSelectedVehicleSpawnSpecsFromKnobs(
+        resolveHeliSpawnsForTeam(ACTIVE_MAP_CONFIG, TeamID.Team2),
+        READY_DIALOG_TEAM2_HELI_KNOB_KEYS,
+        selectionByKey,
+        VEHICLE_PACKAGE_SLOT_BASE_HELI
+    );
+    TEAM1_TANK_SELECTED_SPAWN_SPECS = buildSelectedVehicleSpawnSpecsFromKnobs(
+        ACTIVE_MAP_CONFIG.team1TankSpawns,
+        READY_DIALOG_TEAM1_GROUND_KNOB_KEYS,
+        selectionByKey,
+        VEHICLE_PACKAGE_SLOT_BASE_GROUND
+    );
+    TEAM2_TANK_SELECTED_SPAWN_SPECS = buildSelectedVehicleSpawnSpecsFromKnobs(
+        ACTIVE_MAP_CONFIG.team2TankSpawns,
+        READY_DIALOG_TEAM2_GROUND_KNOB_KEYS,
+        selectionByKey,
+        VEHICLE_PACKAGE_SLOT_BASE_GROUND
+    );
+    TEAM1_FAST_SELECTED_SPAWN_SPECS = buildSelectedTransportSpawnSpecsForTeam(
+        ACTIVE_MAP_CONFIG,
+        TeamID.Team1,
+        selectionByKey
+    );
+    TEAM2_FAST_SELECTED_SPAWN_SPECS = buildSelectedTransportSpawnSpecsForTeam(
+        ACTIVE_MAP_CONFIG,
+        TeamID.Team2,
+        selectionByKey
+    );
 }
 
 function resolveVehicleSpawnVolumes(volumes: VehicleSpawnVolumeSpec[] | undefined): VehicleSpawnVolumeSpec[] {
@@ -187,23 +297,18 @@ function resolveVehicleSpawnVolumes(volumes: VehicleSpawnVolumeSpec[] | undefine
 // Recomputes runtime spawn specs from current mode config and active map settings.
 function refreshVehicleSpawnSpecsFromModeConfig(): void {
     refreshSelectedVehicleSpawnPoolsFromModeConfig(true);
-    const useHelis = isHeliGameMode(State.round.modeConfig.confirmed.gameMode);
-    if (useHelis) {
-        const baseT1 = TEAM1_HELI_SELECTED_SPAWN_SPECS.length > 0 ? TEAM1_HELI_SELECTED_SPAWN_SPECS : resolveHeliSpawnsForTeam(ACTIVE_MAP_CONFIG, TeamID.Team1);
-        const baseT2 = TEAM2_HELI_SELECTED_SPAWN_SPECS.length > 0 ? TEAM2_HELI_SELECTED_SPAWN_SPECS : resolveHeliSpawnsForTeam(ACTIVE_MAP_CONFIG, TeamID.Team2);
-        if (State.round.modeConfig.confirmed.vehicleOverrideEnabled) {
-            // Global override: use one selected helicopter for all helicopter spawn slots.
-            const overrideVehicle = getReadyDialogVehicleListByIndex(State.round.modeConfig.confirmed.vehicleIndexT1);
-            TEAM1_VEHICLE_SPAWN_SPECS = applyVehicleOverrideToSpawns(baseT1, overrideVehicle);
-            TEAM2_VEHICLE_SPAWN_SPECS = applyVehicleOverrideToSpawns(baseT2, overrideVehicle);
-            return;
-        }
-        TEAM1_VEHICLE_SPAWN_SPECS = baseT1;
-        TEAM2_VEHICLE_SPAWN_SPECS = baseT2;
-        return;
-    }
-    TEAM1_VEHICLE_SPAWN_SPECS = TEAM1_TANK_SELECTED_SPAWN_SPECS;
-    TEAM2_VEHICLE_SPAWN_SPECS = TEAM2_TANK_SELECTED_SPAWN_SPECS;
+    TEAM1_VEHICLE_SPAWN_SPECS = [
+        ...TEAM1_JET_SELECTED_SPAWN_SPECS,
+        ...TEAM1_HELI_SELECTED_SPAWN_SPECS,
+        ...TEAM1_TANK_SELECTED_SPAWN_SPECS,
+        ...TEAM1_FAST_SELECTED_SPAWN_SPECS,
+    ];
+    TEAM2_VEHICLE_SPAWN_SPECS = [
+        ...TEAM2_JET_SELECTED_SPAWN_SPECS,
+        ...TEAM2_HELI_SELECTED_SPAWN_SPECS,
+        ...TEAM2_TANK_SELECTED_SPAWN_SPECS,
+        ...TEAM2_FAST_SELECTED_SPAWN_SPECS,
+    ];
 }
 
 // Applies updated runtime spawn specs to already-registered spawner slots.
@@ -220,9 +325,22 @@ function applyVehicleSpawnSpecsToExistingSlots(): void {
     for (const slot of State.vehicles.slots) {
         const spec = slot.teamId === TeamID.Team1 ? team1BySlot[slot.slotNumber] : team2BySlot[slot.slotNumber];
         if (!spec) continue;
-        if (slot.vehicleType === spec.vehicle) continue;
-        slot.vehicleType = spec.vehicle;
-        configureVehicleSpawner(slot.spawner, slot.vehicleType);
+        if (slot.vehicleType !== spec.vehicle) {
+            const priorVehicleId = slot.vehicleId;
+            if (!isMatchLive() && priorVehicleId !== -1) {
+                const priorVehicle = findVehicleById(priorVehicleId);
+                if (priorVehicle) {
+                    mod.UnspawnObject(priorVehicle);
+                }
+                delete State.vehicles.vehicleToSlot[priorVehicleId];
+                slot.vehicleId = -1;
+                slot.activeOwnerPid = undefined;
+            }
+            slot.vehicleType = spec.vehicle;
+            configureVehicleSpawner(slot.spawner, slot.vehicleType);
+        }
+        slot.spawnPos = spec.pos;
+        slot.spawnRot = spec.rot;
         refreshVehicleSlotAuthoritativeState(slot);
     }
 }
@@ -242,6 +360,8 @@ function applyMapConfig(mapKey: MapKey): void {
     TEAM2_AIRCRAFT_SPAWN_VOLUMES = resolveVehicleSpawnVolumes(ACTIVE_MAP_CONFIG.team2AircraftSpawnVolumes);
     TEAM1_TANK_SPAWN_VOLUMES = resolveVehicleSpawnVolumes(ACTIVE_MAP_CONFIG.team1TankSpawnVolumes);
     TEAM2_TANK_SPAWN_VOLUMES = resolveVehicleSpawnVolumes(ACTIVE_MAP_CONFIG.team2TankSpawnVolumes);
+    TEAM1_VEHICLE_SLOT_INVENTORY_SPECS = buildRuntimeVehicleSlotInventoryForTeam(ACTIVE_MAP_CONFIG, TeamID.Team1);
+    TEAM2_VEHICLE_SLOT_INVENTORY_SPECS = buildRuntimeVehicleSlotInventoryForTeam(ACTIVE_MAP_CONFIG, TeamID.Team2);
     syncReadyDialogVehicleSelectionsFromActiveMapConfig();
     refreshSelectedVehicleSpawnPoolsFromModeConfig(true);
     refreshVehicleSpawnSpecsFromModeConfig();

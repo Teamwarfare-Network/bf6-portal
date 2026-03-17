@@ -41,6 +41,7 @@ function twlConquestHudEnsureEntry(pid: number): TwlConquestHudPlayerEntry {
             animationUpdates: 0,
             lastMainUpdateAtSeconds: -1,
             lastAnimationUpdateAtSeconds: -1,
+            pendingFirstReveal: true,
         };
         twlConquestHudEntriesByPid[pid] = entry;
     }
