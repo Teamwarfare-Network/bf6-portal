@@ -1,6 +1,23 @@
 // @ts-nocheck
 // Module: vehicles/spawner-bootstrap -- one-time spawner startup and initial spawn kick
 
+// Reveals the vehicle-spawner HUD family once slot inventory exists for already-warmed undeployed players.
+// This preserves the Phase 5G ownership rule: routine refresh stays content-only, but startup lifecycle can still own first reveal.
+function revealVehicleSpawnerUiAfterStartup(): void {
+    const players = mod.AllPlayers();
+    const count = mod.CountOf(players);
+    for (let i = 0; i < count; i++) {
+        const player = mod.ValueInArray(players, i) as mod.Player;
+        if (!player || !mod.IsPlayerValid(player)) continue;
+        const pid = safeGetPlayerId(player);
+        if (pid === undefined) continue;
+        if (State.players.deployedByPid[pid]) continue;
+        if (State.players.readyDialogData[pid]?.dialogVisible) continue;
+        if (!isHudWarmReadyForPid(pid) || isHudSwapTransitionActiveForPid(pid)) continue;
+        renderVehicleSpawnerUiFamilyForReveal(player, pid);
+    }
+}
+
 async function startVehicleSpawnerSystem(): Promise<void> {
     // WARNING: This should run once per match; duplicate runs can create extra spawners/slots.
     // Ensure map config is applied before any spawners are created or forced to spawn.
@@ -25,6 +42,10 @@ async function startVehicleSpawnerSystem(): Promise<void> {
     for (const spec of team2Specs) {
         addVehicleSpawnerSlot(TeamID.Team2, spec.slotNumber, spec.pos, spec.rot, spec.vehicle);
     }
+
+    // Startup must sync the already-confirmed package into the newly-created slot inventory
+    // before first enable/reveal so the pre-live vehicle HUD matches the ready-dialog defaults.
+    applyVehicleSpawnSpecsToExistingSlots();
 
     // One-time cleanup: remove any default vehicles sitting on or near spawn pads before first forced spawns.
     // This prevents a default Abrams from persisting if it spawned before our spawners were configured.
@@ -57,6 +78,7 @@ async function startVehicleSpawnerSystem(): Promise<void> {
     await mod.Wait(0.1);
     // Apply enablement before spawning so only the desired slots can spawn.
     applySpawnerEnablementForMatchup(State.round.matchupPresetIndex, false);
+    revealVehicleSpawnerUiAfterStartup();
 
     // Kick initial spawns so each slot has a vehicle bound before the poll loop starts.
     for (let i = 0; i < State.vehicles.slots.length; i++) {

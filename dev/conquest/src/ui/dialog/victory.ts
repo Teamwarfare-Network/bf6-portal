@@ -12,7 +12,7 @@ function getElapsedHmsParts(totalSeconds: number): { hours: number; minutes: num
 }
 
 // Resizes victory dialog and roster containers to match current visible roster row count.
-function updateVictoryDialogRosterSizing(refs: HudRefs, rosterRows: number): void {
+function updateVictoryDialogRosterSizing(refs: TopHudShellRefs, rosterRows: number): void {
     const clampedRows = Math.max(1, Math.min(TEAM_ROSTER_MAX_ROWS, Math.floor(rosterRows)));
     const rosterHeight = VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP + (clampedRows * VICTORY_DIALOG_ROSTER_ROW_HEIGHT) + VICTORY_DIALOG_ROSTER_ROW_PADDING_BOTTOM;
     const dialogHeight = VICTORY_DIALOG_ROSTER_ROW_Y + rosterHeight + VICTORY_DIALOG_BOTTOM_PADDING;

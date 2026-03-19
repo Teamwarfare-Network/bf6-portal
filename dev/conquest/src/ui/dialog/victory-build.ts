@@ -2,7 +2,7 @@
 // Module: ui/dialog/victory-build -- victory dialog construction for per-player HUD cache.
 
 // Rebinds all victory dialog widget refs from authoritative per-player names after build or recovery.
-function bindVictoryDialogRefsByName(pid: number, refs: HudRefs): void {
+function bindVictoryDialogRefsByName(pid: number, refs: TopHudShellRefs): void {
     refs.victoryRoot = safeFind(`VictoryDialogRoot_${pid}`);
     refs.victoryRestartText = safeFind(`VictoryDialog_Restart_${pid}`);
 
@@ -27,7 +27,7 @@ function bindVictoryDialogRefsByName(pid: number, refs: HudRefs): void {
 }
 
 // Builds the cached victory dialog widget tree for one player and binds all dialog refs.
-function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: HudRefs): void {
+function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHudShellRefs): void {
     const modal = modlib.ParseUI({
         name: `VictoryDialogRoot_${pid}`,
         type: "Container",

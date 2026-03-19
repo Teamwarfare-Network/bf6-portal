@@ -36,7 +36,7 @@ function applyTopLeftBrandingDepthForPid(pid: number, root: mod.UIWidget | undef
 }
 
 // Builds only the static branding panel in the top-left lane.
-function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, refs: HudRefs): void {
+function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, refs: TopHudShellRefs): void {
     const topLeftBaseY = TOP_LEFT_BASE_Y_OFFSET + TOP_HUD_OFFSET_Y + CONQUEST_HUD_NON_CLOCK_SHIFT_Y;
 
     // Build-path cleanup for branding only (plus legacy settings root removal).
@@ -100,7 +100,7 @@ function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, re
 }
 
 // Builds one static top-left status lane using fixed absolute placement for box + state/ready text lines.
-function buildConquestStaticStatusLaneWidgets(player: mod.Player, pid: number, refs: HudRefs): void {
+function buildConquestStaticStatusLaneWidgets(player: mod.Player, pid: number, refs: TopHudShellRefs): void {
     const topLeftBaseY = TOP_LEFT_BASE_Y_OFFSET + TOP_HUD_OFFSET_Y + CONQUEST_HUD_NON_CLOCK_SHIFT_Y;
     const statusRootName = `TwlConquestStatusDockRoot_${pid}`;
     const statusPrimaryTextName = `TwlConquestStatusDockState_${pid}`;

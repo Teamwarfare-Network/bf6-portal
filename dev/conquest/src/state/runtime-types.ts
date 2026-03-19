@@ -396,8 +396,7 @@ interface GameState {
         startupCleanupDone: boolean;
     };
     hudCache: {
-        hudByPid: Record<number, HudRefs>;
-        topHudShellByPid: Record<number, HudRefs>;
+        topHudShellByPid: Record<number, TopHudShellRefs>;
         clockWidgetCache: Record<number, ClockWidgetCacheEntry>;
         countdownWidgetCache: Record<number, CountdownWidgetCacheEntry>;
         vehicleDeployTimerCache: Record<number, VehicleDeployTimerHudCacheEntry>;

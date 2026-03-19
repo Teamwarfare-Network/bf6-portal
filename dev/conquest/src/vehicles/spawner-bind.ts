@@ -5,6 +5,7 @@ function isAircraftSpawnVolumeVehicleType(vehicleType: mod.VehicleList): boolean
     switch (vehicleType) {
         case mod.VehicleList.AH64:
         case mod.VehicleList.Eurocopter:
+        case VEHICLE_AH6M:
         case mod.VehicleList.UH60:
         case mod.VehicleList.UH60_Pax:
         case mod.VehicleList.F16:

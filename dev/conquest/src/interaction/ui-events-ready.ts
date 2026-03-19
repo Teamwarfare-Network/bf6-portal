@@ -100,58 +100,6 @@ function handleReadyDialogReadyButtonClick(eventPlayer: mod.Player, playerId: nu
     tryAutoStartMatchIfAllReady(eventPlayer);
 }
 
-function handleReadyDialogAdminToggleClick(eventPlayer: mod.Player, playerId: number): void {
-    if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
-    const now = mod.GetMatchTimeElapsed();
-    if (now - State.players.readyDialogData[playerId].lastAdminPanelToggleAt < ADMIN_PANEL_TOGGLE_COOLDOWN_SECONDS) {
-        return;
-    }
-    State.players.readyDialogData[playerId].lastAdminPanelToggleAt = now;
-
-    State.players.readyDialogData[playerId].adminPanelVisible = !State.players.readyDialogData[playerId].adminPanelVisible;
-    if (!State.players.readyDialogData[playerId].adminPanelVisible) {
-        deleteAdminPanelUI(playerId, false);
-        State.players.readyDialogData[playerId].adminPanelBuilt = false;
-        return;
-    }
-
-    sendHighlightedWorldLogMessage(
-        mod.Message(mod.stringkeys.twl.adminPanel.accessed, eventPlayer),
-        true,
-        undefined,
-        mod.stringkeys.twl.adminPanel.accessed
-    );
-
-    deleteAdminPanelUI(playerId, false);
-    mod.AddUIContainer(
-        UI_ADMIN_PANEL_CONTAINER_ID + playerId,
-        mod.CreateVector(ADMIN_PANEL_OFFSET_X, ADMIN_PANEL_OFFSET_Y, 0),
-        mod.CreateVector(
-            ADMIN_PANEL_CONTENT_WIDTH + (ADMIN_PANEL_PADDING * 2),
-            ADMIN_PANEL_HEIGHT + (ADMIN_PANEL_PADDING * 2),
-            0
-        ),
-        mod.UIAnchor.TopRight,
-        mod.GetUIRoot(),
-        false,
-        10,
-        ADMIN_PANEL_BG_COLOR,
-        ADMIN_PANEL_BG_ALPHA,
-        ADMIN_PANEL_BG_FILL,
-        mod.UIDepth.AboveGameUI,
-        eventPlayer
-    );
-
-    const adminContainer = mod.FindUIWidgetWithName(UI_ADMIN_PANEL_CONTAINER_ID + playerId, mod.GetUIRoot());
-    if (!adminContainer) {
-        return;
-    }
-    buildAdminPanelWidgets(eventPlayer, adminContainer, playerId);
-    State.players.readyDialogData[playerId].adminPanelBuilt = true;
-    mod.SetUIWidgetVisible(adminContainer, true);
-    setAdminPanelChildWidgetsVisible(playerId, true);
-}
-
 function tryHandleReadyDialogButtonEvent(
     eventPlayer: mod.Player,
     playerId: number,
@@ -230,7 +178,7 @@ function tryHandleReadyDialogButtonEvent(
         widgetName,
         eventUIButtonEvent,
         UI_ADMIN_PANEL_BUTTON_ID,
-        () => handleReadyDialogAdminToggleClick(eventPlayer, playerId)
+        () => toggleReadyDialogAdminPanel(eventPlayer, playerId)
     );
     if (adminHandled !== undefined) return adminHandled;
 

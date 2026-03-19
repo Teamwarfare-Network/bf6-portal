@@ -17,7 +17,6 @@
 // - vehIds/vehOwners: best-effort 'last driver' mapping used for messages only.
 //
 // UI caches (per-player, rebuilt as needed):
-// - State.hudCache.hudByPid[pid]: cached HUD widget references.
 // - State.hudCache.topHudShellByPid[pid]: cached non-combat top-HUD shell references.
 // - dialog/widget caches: cached references to modal UI elements (ready dialog, victory, clock digits).
 //
@@ -280,7 +279,6 @@ const State: GameState = {
         startupCleanupDone: false,
     },
     hudCache: {
-        hudByPid: {},
         topHudShellByPid: {},
         clockWidgetCache: {},
         countdownWidgetCache: {},

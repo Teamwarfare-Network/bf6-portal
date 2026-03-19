@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v0.692)",
+        "title": "teamwarfare . net | TWL Conquest (v0.714)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -159,6 +159,7 @@
       "vehicleShortGolfCart": "Golf Cart",
       "vehicleShortFlyer60": "Flyer 60",
       "vehicleShortApache": "Apache",
+      "vehicleShortLittleBird": "AH-6M",
       "vehicleShortEuro": "Euro Tiger",
       "vehicleShortBlackHawk": "Black Hawk",
       "vehicleShortBlackHawkPax": "Black Hawk PAX",

@@ -27,6 +27,10 @@ interface readyDialogData_t {
     hudWarmCompleted: boolean;
     hudSwapTransitionActive: boolean;
     combatHudRevealAllowed: boolean;
+    lastButtonSignature: string;
+    lastRosterSignature: string;
+    lastModeConfigSignature: string;
+    lastMapSignature: string;
 }
 
 // Per-player state lives in State.players:

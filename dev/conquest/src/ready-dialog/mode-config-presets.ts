@@ -123,6 +123,8 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
     refreshVehicleSpawnSpecsFromModeConfig();
     applyVehicleSpawnSpecsToExistingSlots();
     applySpawnerEnablementForMatchup(State.round.matchupPresetIndex, true);
+    invalidateVehicleDeployTimerHudRenderSignaturesForAllPlayers();
+    updateVehicleDeployTimerHudForAllPlayers();
 }
 
 //#endregion ----------------- Ready Dialog - Mode Presets + Confirm --------------------

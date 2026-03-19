@@ -44,13 +44,13 @@ function deleteAllTopHudShellWidgetsByName(name: string, maxPasses: number = 128
     }
 }
 
-// Returns the active top-HUD shell refs for one player, preferring the new shell cache with legacy fallback.
-function getTopHudShellRefsForPid(pid: number): HudRefs | undefined {
-    return State.hudCache.topHudShellByPid[pid] ?? State.hudCache.hudByPid[pid];
+// Returns the active top-HUD shell refs for one player from the dedicated shell cache only.
+function getTopHudShellRefsForPid(pid: number): TopHudShellRefs | undefined {
+    return State.hudCache.topHudShellByPid[pid];
 }
 
 // Rebinds the shell-owned widget refs from authoritative widget names so cached handles stay current after cleanup/rejoin.
-function bindTopHudShellRefsByName(pid: number, refs: HudRefs): void {
+function bindTopHudShellRefsByName(pid: number, refs: TopHudShellRefs): void {
     refs.topHudRoot = safeFind(`TopHudRoot_${pid}`);
     refs.upperLeftContainer = safeFind(`Upper_Left_Container_${pid}`);
     refs.upperLeftStatusContainer = safeFind(`TwlConquestStatusDockRoot_${pid}`);
@@ -63,7 +63,7 @@ function bindTopHudShellRefsByName(pid: number, refs: HudRefs): void {
 }
 
 // Reports whether the dedicated top-HUD shell has the minimum refs required for the always-visible top-left/top-center family.
-function hasTopLeftHudShellRefs(refs: HudRefs | undefined): boolean {
+function hasTopLeftHudShellRefs(refs: TopHudShellRefs | undefined): boolean {
     if (!refs) return false;
     return !!(
         refs.topHudRoot
@@ -77,7 +77,7 @@ function hasTopLeftHudShellRefs(refs: HudRefs | undefined): boolean {
 }
 
 // Full shell completeness includes non-critical admin/victory helpers that should not block core top-left readiness.
-function hasCriticalTopHudShellRefs(refs: HudRefs | undefined): boolean {
+function hasCriticalTopHudShellRefs(refs: TopHudShellRefs | undefined): boolean {
     if (!refs) return false;
     return !!(
         hasTopLeftHudShellRefs(refs)
@@ -93,7 +93,7 @@ function purgeTopHudShellArtifactsForPid(pid: number): void {
 }
 
 // Ensures the non-combat top-HUD shell exists for one player on the active hard-cut shell path.
-function ensureTopHudShellForPlayer(player: mod.Player): HudRefs | undefined {
+function ensureTopHudShellForPlayer(player: mod.Player): TopHudShellRefs | undefined {
     if (!player || !mod.IsPlayerValid(player)) return undefined;
 
     const pid = getObjId(player);
@@ -111,7 +111,7 @@ function ensureTopHudShellForPlayer(player: mod.Player): HudRefs | undefined {
 
     purgeTopHudShellArtifactsForPid(pid);
 
-    const refs: HudRefs = { pid, roots: [] };
+    const refs: TopHudShellRefs = { pid, roots: [] };
     refs.topHudRoot = ensureTopHudRootForPid(pid, player);
     ensureClockUIAndGetCache(player);
 

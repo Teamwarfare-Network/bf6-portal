@@ -81,7 +81,7 @@ async function beginVehicleDirectSpawnDeployForPlayer(player: mod.Player): Promi
         const prepared = await preparePendingVehicleDirectSpawnVehicleForPlayer(player, slot);
         if (!prepared) {
             clearVehiclePendingSpawnRequestForSlot(slot);
-            conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
+            updateVehicleDeployTimerHudForAllPlayers();
             return;
         }
     }
@@ -269,7 +269,7 @@ async function conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(player: mod.P
         vehicle = await spawnDirectSpawnVehicleIfReady(slot);
         if (!vehicle) {
             clearVehiclePendingSpawnRequestForSlot(slot);
-            conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
+            updateVehicleDeployTimerHudForAllPlayers();
             void forceUndeployAfterVehicleDirectSpawnFailure(player);
             return { consumedDeploy: true, fulfilled: false };
         }
@@ -280,7 +280,7 @@ async function conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(player: mod.P
 
     if (!isDirectSpawnDriverSeatAvailable(vehicle)) {
         clearVehiclePendingSpawnRequestForSlot(slot);
-        conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
+        updateVehicleDeployTimerHudForAllPlayers();
         void forceUndeployAfterVehicleDirectSpawnFailure(player);
         return { consumedDeploy: true, fulfilled: false };
     }
@@ -294,7 +294,7 @@ async function conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(player: mod.P
     }
     if (!fulfilled) {
         clearVehiclePendingSpawnRequestForSlot(slot);
-        conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
+        updateVehicleDeployTimerHudForAllPlayers();
         void forceUndeployAfterVehicleDirectSpawnFailure(player);
         return { consumedDeploy: true, fulfilled: false };
     }
@@ -308,6 +308,6 @@ async function conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(player: mod.P
     if (pid !== undefined) {
         slot.activeOwnerPid = pid;
     }
-    conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
+    updateVehicleDeployTimerHudForAllPlayers();
     return { consumedDeploy: true, fulfilled: true };
 }

@@ -44,6 +44,34 @@ function applyReadyDialogViewerTeamColors(viewer: mod.Player, viewerPlayerId: nu
     if (t2Label) mod.SetUITextColor(t2Label, team2Color);
 }
 
+// Builds one stable signature for the current roster presentation for a viewer.
+// This lets reopen and global refresh paths skip unchanged roster writes entirely.
+function buildReadyDialogRosterSignature(viewer: mod.Player, viewerPlayerId: number): string {
+    const viewerTeam = safeGetTeamNumberFromPlayer(viewer, TeamID.Team1);
+    const roster = getRosterDisplayEntries();
+    let signature = `viewerTeam:${viewerTeam}`;
+
+    const appendTeam = (prefix: string, entries: RosterDisplayEntry[]): void => {
+        signature += `|${prefix}:`;
+        for (let i = 0; i < entries.length; i++) {
+            const entry = entries[i];
+            if (entry?.player) {
+                const pid = mod.GetObjId(entry.player);
+                signature += `${pid},${State.players.readyByPid[pid] ? 1 : 0},${isPlayerInMainBaseForReady(pid) ? 1 : 0};`;
+            } else if (entry?.nameKey !== undefined) {
+                signature += `key:${entry.nameKey};`;
+            } else {
+                signature += `empty;`;
+            }
+        }
+    };
+
+    appendTeam("t1", roster.team1);
+    appendTeam("t2", roster.team2);
+    signature += `|rows:${roster.maxRows}|viewer:${viewerPlayerId}`;
+    return signature;
+}
+
 // Renders the entire Ready Up dialog state for a single viewer.
 // Centralizing UI updates reduces refresh regressions as the dialog grows in complexity.
 function renderReadyDialogForViewer(eventPlayer: mod.Player, viewerPid: number): void {
@@ -70,6 +98,11 @@ function renderReadyDialogForAllVisibleViewers(): void {
 
 // Re-renders team roster rows and per-row ready/base labels for a single viewer.
 function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: number): void {
+    const state = State.players.readyDialogData[viewerPlayerId];
+    if (!state) return;
+    const signature = buildReadyDialogRosterSignature(viewer, viewerPlayerId);
+    if (state.lastRosterSignature === signature) return;
+
     applyReadyDialogViewerTeamColors(viewer, viewerPlayerId);
 
     const roster = getRosterDisplayEntries();
@@ -171,6 +204,8 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
             if (t2Base) mod.SetUITextColor(t2Base, COLOR_NORMAL);
         }
     }
+
+    state.lastRosterSignature = signature;
 }
 
 // Updates the Ready toggle button label for the given viewer based on that viewer's current ready state.

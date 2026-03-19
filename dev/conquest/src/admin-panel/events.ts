@@ -134,7 +134,7 @@ function tryHandleAdminTesterButtonEvent(
             const state = State.players.readyDialogData[playerId];
             state.vehicleTimersVisibleWhileDeployed = !state.vehicleTimersVisibleWhileDeployed;
             syncVehicleDeployTimerAdminToggleLabelForPid(playerId);
-            conquestPhase5BRenderVehicleDeployTimersForPlayer(eventPlayer);
+            updateVehicleDeployTimerHudForPlayer(eventPlayer);
             handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.deployTimersVisibleToggle);
         }
     );

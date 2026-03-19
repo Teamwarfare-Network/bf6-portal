@@ -256,8 +256,19 @@ function applyAdminPanelLabelTextColor(widget?: mod.UIWidget): void {
     if (widget) mod.SetUITextColor(widget, ADMIN_PANEL_LABEL_TEXT_COLOR);
 }
 
+// Builds one stable signature for the cached ready-dialog button labels for a viewer.
+// Static labels do not need repeated writes; only the ready-toggle state changes dynamically.
+function buildReadyDialogButtonSignature(pid: number): string {
+    return `${pid}|ready:${State.players.readyByPid[pid] ? 1 : 0}`;
+}
+
 // Refreshes cached Ready Dialog button labels for a viewer after UI build/theme refresh.
 function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, baseContainer: mod.UIWidget): void {
+    const state = State.players.readyDialogData[pid];
+    if (!state) return;
+    const signature = buildReadyDialogButtonSignature(pid);
+    if (state.lastButtonSignature === signature) return;
+
     const refreshButtonTextIfPresent = (
         buttonId: string,
         borderId: string,
@@ -346,6 +357,8 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         mod.stringkeys.twl.readyDialog.confirmSettingsLabel,
         12
     );
+
+    state.lastButtonSignature = signature;
 }
 
 // Safely resolve a Player by pid (mod.GetObjId(player)). Returns undefined if not found.

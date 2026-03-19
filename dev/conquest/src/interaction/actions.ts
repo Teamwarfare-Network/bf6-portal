@@ -4,32 +4,16 @@
 //#region -------------------- Ready Dialog Interaction Actions --------------------
 
 const TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS = 0.6;
-type HudLoadingWarmOptions = {
+type HudWarmOptions = {
     refreshReadyDialogs?: boolean;
     createJoinPrompt?: boolean;
     joinPromptDelaySeconds?: number;
 };
 
-const TEAM_SWAP_LOADING_UNDEPLOY_WAIT_SECONDS = 0.05;
-const TEAM_SWAP_LOADING_UNDEPLOY_WAIT_ATTEMPTS = 20;
-const TEAM_SWAP_LOADING_TEAM_SETTLE_SECONDS = 0.05;
-const TEAM_SWAP_LOADING_TEAM_SETTLE_ATTEMPTS = 8;
-
-function isHudWarmReadyForPid(pid: number): boolean {
-    return State.players.readyDialogData[pid]?.hudWarmCompleted !== false;
-}
-
-function isHudSwapTransitionActiveForPid(pid: number): boolean {
-    return State.players.readyDialogData[pid]?.hudSwapTransitionActive === true;
-}
-
-function isHudTransitionBlockingForPid(pid: number): boolean {
-    return isHudSwapTransitionActiveForPid(pid) || !isHudWarmReadyForPid(pid);
-}
-
-function isCombatHudRevealAllowedForPid(pid: number): boolean {
-    return State.players.readyDialogData[pid]?.combatHudRevealAllowed === true;
-}
+const TEAM_SWAP_HUD_UNDEPLOY_WAIT_SECONDS = 0.05;
+const TEAM_SWAP_HUD_UNDEPLOY_WAIT_ATTEMPTS = 20;
+const TEAM_SWAP_HUD_TEAM_SETTLE_SECONDS = 0.05;
+const TEAM_SWAP_HUD_TEAM_SETTLE_ATTEMPTS = 8;
 
 function enforceHudWarmTransitionDeployBlock(eventPlayer: mod.Player): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
@@ -191,8 +175,7 @@ function prebuildTopLeftUiFamilyWhileHidden(eventPlayer: mod.Player, pid: number
 function prebuildVehicleSpawnerUiFamilyWhileHidden(eventPlayer: mod.Player, _pid: number): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     try {
-        warmCacheVehicleDeployTimerHudForPlayer(eventPlayer);
-        conquestPhase5BRenderVehicleDeployTimersForPlayer(eventPlayer, false);
+        prebuildVehicleDeployTimerHudHiddenForPlayer(eventPlayer);
     } catch {}
 }
 
@@ -208,15 +191,9 @@ function prebuildCombatHudFamilyWhileHidden(eventPlayer: mod.Player, pid: number
 function prebuildReadyDialogUiFamilyWhileHidden(eventPlayer: mod.Player, pid: number): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     try {
-        const readyData = State.players.readyDialogData[pid];
-        if (readyData && !readyData.uiBuilt && !readyData.dialogVisible) {
-            createReadyDialogUI(eventPlayer, false);
-        }
+        const readyData = getReadyDialogStateForPid(pid);
+        if (readyData && !readyData.dialogVisible) ensureReadyDialogUiBuiltHidden(eventPlayer);
     } catch {}
-}
-
-function prebuildAdminUiFamilyWhileHidden(_eventPlayer: mod.Player, _pid: number): void {
-    // Admin panel contents remain lazy-built; the top-right admin counter is constructed with the top-left shell.
 }
 
 function prebuildCriticalHudWhileHidden(eventPlayer: mod.Player, pid: number): void {
@@ -227,7 +204,6 @@ function prebuildCriticalHudWhileHidden(eventPlayer: mod.Player, pid: number): v
 
 function prebuildDeferredUiWhileHidden(eventPlayer: mod.Player, pid: number): void {
     prebuildReadyDialogUiFamilyWhileHidden(eventPlayer, pid);
-    prebuildAdminUiFamilyWhileHidden(eventPlayer, pid);
 }
 
 function renderTopLeftUiFamilyImmediate(eventPlayer: mod.Player, pid: number): void {
@@ -250,13 +226,9 @@ function renderTopLeftUiFamilyForReveal(eventPlayer: mod.Player, pid: number): v
     safeSetUIWidgetVisible(refs?.topCenterAuxRoot, true);
 }
 
-function renderVehicleSpawnerUiFamilyForReveal(eventPlayer: mod.Player, pid: number): void {
+function renderVehicleSpawnerUiFamilyForReveal(eventPlayer: mod.Player, _pid: number): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    const revealVehicleHud = conquestPhase5BRenderVehicleDeployTimersForPlayer(eventPlayer, false);
-    const vehicleCache = State.hudCache.vehicleDeployTimerCache[pid];
-    if (vehicleCache) {
-        setVehicleDeployTimerHudFamilyVisible(vehicleCache, revealVehicleHud);
-    }
+    revealVehicleDeployTimerHudForPlayer(eventPlayer);
 }
 
 function armCombatHudFamilyForSchedulerReveal(eventPlayer: mod.Player, pid: number): void {
@@ -265,9 +237,7 @@ function armCombatHudFamilyForSchedulerReveal(eventPlayer: mod.Player, pid: numb
     if (!entry || !entry.initialized) return;
     twlConquestHudHidePlayer(pid);
     entry.pendingFirstReveal = true;
-    if (State.players.readyDialogData[pid]) {
-        State.players.readyDialogData[pid].combatHudRevealAllowed = true;
-    }
+    setCombatHudRevealAllowedForPid(pid, true);
 }
 
 function renderAdminUiFamilyForReveal(eventPlayer: mod.Player, pid: number): void {
@@ -282,7 +252,14 @@ function renderAdminUiFamilyForReveal(eventPlayer: mod.Player, pid: number): voi
 }
 
 function setPositionDebugWidgetsVisibleForPid(pid: number, visible: boolean): void {
-    const widgetIds = [
+    for (const widgetId of getPositionDebugWidgetIds(pid)) {
+        safeSetUIWidgetVisible(safeFind(widgetId), visible);
+    }
+}
+
+// Returns the position-debug widget family for a single player.
+function getPositionDebugWidgetIds(pid: number): string[] {
+    return [
         UI_POS_DEBUG_CONTAINER_ID + pid,
         UI_POS_DEBUG_X_ID + pid,
         UI_POS_DEBUG_Y_ID + pid,
@@ -297,9 +274,42 @@ function setPositionDebugWidgetsVisibleForPid(pid: number, visible: boolean): vo
         UI_POS_DEBUG_ROTY_VALUE_ID + pid,
         UI_POS_DEBUG_ROTZ_VALUE_ID + pid,
     ];
-    for (const widgetId of widgetIds) {
-        safeSetUIWidgetVisible(safeFind(widgetId), visible);
+}
+
+// Hard-deletes the position-debug family for a player.
+function deletePositionDebugWidgetsForPid(pid: number): void {
+    for (const widgetId of getPositionDebugWidgetIds(pid)) {
+        const widget = safeFind(widgetId);
+        if (widget) mod.DeleteUIWidget(widget);
     }
+}
+
+// Applies visibility to the reusable clock widget family without re-rendering its contents.
+function setClockWidgetCacheVisible(
+    clockCache: ReusableTimerWidgetCacheEntry | undefined,
+    visible: boolean
+): void {
+    if (!clockCache) return;
+    safeSetUIWidgetVisible(clockCache.root, visible);
+    safeSetUIWidgetVisible(clockCache.plate, visible);
+    safeSetUIWidgetVisible(clockCache.minTensShadow, visible);
+    safeSetUIWidgetVisible(clockCache.minTens, visible);
+    safeSetUIWidgetVisible(clockCache.minOnesShadow, visible);
+    safeSetUIWidgetVisible(clockCache.minOnes, visible);
+    safeSetUIWidgetVisible(clockCache.colonShadow, visible);
+    safeSetUIWidgetVisible(clockCache.colon, visible);
+    safeSetUIWidgetVisible(clockCache.secTensShadow, visible);
+    safeSetUIWidgetVisible(clockCache.secTens, visible);
+    safeSetUIWidgetVisible(clockCache.secOnesShadow, visible);
+    safeSetUIWidgetVisible(clockCache.secOnes, visible);
+    clockCache.lastVisibleState = visible;
+}
+
+// Hides the full vehicle-spawner HUD family without deleting its cached row tree.
+function hideVehicleSpawnerUiFamilyForPid(pid: number): void {
+    const vehicleCache = State.hudCache.vehicleDeployTimerCache[pid];
+    if (!vehicleCache) return;
+    hideVehicleDeployTimerHudFamily(vehicleCache, false);
 }
 
 function hideTopHudFamilyForWarmTransition(pid: number): void {
@@ -309,22 +319,7 @@ function hideTopHudFamilyForWarmTransition(pid: number): void {
     safeSetUIWidgetVisible(refs?.adminPanelActionCountText, false);
     safeSetUIWidgetVisible(refs?.victoryRoot, false);
 
-    const clockCache = State.hudCache.clockWidgetCache[pid];
-    if (clockCache) {
-        safeSetUIWidgetVisible(clockCache.root, false);
-        safeSetUIWidgetVisible(clockCache.plate, false);
-        safeSetUIWidgetVisible(clockCache.minTensShadow, false);
-        safeSetUIWidgetVisible(clockCache.minTens, false);
-        safeSetUIWidgetVisible(clockCache.minOnesShadow, false);
-        safeSetUIWidgetVisible(clockCache.minOnes, false);
-        safeSetUIWidgetVisible(clockCache.colonShadow, false);
-        safeSetUIWidgetVisible(clockCache.colon, false);
-        safeSetUIWidgetVisible(clockCache.secTensShadow, false);
-        safeSetUIWidgetVisible(clockCache.secTens, false);
-        safeSetUIWidgetVisible(clockCache.secOnesShadow, false);
-        safeSetUIWidgetVisible(clockCache.secOnes, false);
-        clockCache.lastVisibleState = false;
-    }
+    setClockWidgetCacheVisible(State.hudCache.clockWidgetCache[pid], false);
 }
 
 function renderCriticalHudForReveal(eventPlayer: mod.Player, pid: number): void {
@@ -345,13 +340,13 @@ async function waitForPlayerToBecomeUndeployedForTeamSwap(
     pid: number,
     token: number
 ): Promise<boolean> {
-    for (let i = 0; i < TEAM_SWAP_LOADING_UNDEPLOY_WAIT_ATTEMPTS; i++) {
+    for (let i = 0; i < TEAM_SWAP_HUD_UNDEPLOY_WAIT_ATTEMPTS; i++) {
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
-        if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return false;
+        if (!isHudWarmTokenCurrent(pid, token)) return false;
         if (!State.players.deployedByPid[pid]) return true;
         enforceHudWarmTransitionDeployBlock(eventPlayer);
         hideCriticalHudForWarmTransition(pid);
-        await mod.Wait(TEAM_SWAP_LOADING_UNDEPLOY_WAIT_SECONDS);
+        await mod.Wait(TEAM_SWAP_HUD_UNDEPLOY_WAIT_SECONDS);
     }
     return !State.players.deployedByPid[pid];
 }
@@ -362,13 +357,13 @@ async function waitForPlayerTeamToSettleForSwap(
     token: number,
     newTeamNum: TeamID
 ): Promise<boolean> {
-    for (let i = 0; i < TEAM_SWAP_LOADING_TEAM_SETTLE_ATTEMPTS; i++) {
+    for (let i = 0; i < TEAM_SWAP_HUD_TEAM_SETTLE_ATTEMPTS; i++) {
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
-        if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return false;
+        if (!isHudWarmTokenCurrent(pid, token)) return false;
         if (safeGetTeamNumberFromPlayer(eventPlayer, 0) === newTeamNum) return true;
         enforceHudWarmTransitionDeployBlock(eventPlayer);
         hideCriticalHudForWarmTransition(pid);
-        await mod.Wait(TEAM_SWAP_LOADING_TEAM_SETTLE_SECONDS);
+        await mod.Wait(TEAM_SWAP_HUD_TEAM_SETTLE_SECONDS);
     }
     return safeGetTeamNumberFromPlayer(eventPlayer, 0) === newTeamNum;
 }
@@ -392,7 +387,7 @@ async function runTeamSwapHudWarmController(
     const settled = await waitForPlayerTeamToSettleForSwap(eventPlayer, pid, token, newTeamNum);
     if (!settled) return;
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return;
+    if (!isHudWarmTokenCurrent(pid, token)) return;
 
     await warmCriticalHudForPlayer(eventPlayer, {
         createJoinPrompt: false,
@@ -402,7 +397,8 @@ async function runTeamSwapHudWarmController(
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     const latestState = State.players.readyDialogData[pid];
     if (!latestState) return;
-    if ((latestState.hudWarmToken ?? 0) !== token + 1 && (latestState.hudWarmToken ?? 0) !== token) {
+    const latestToken = getHudWarmTokenForPid(pid);
+    if (latestToken !== token + 1 && latestToken !== token) {
         // warmCriticalHudForPlayer owns the next token; any other change invalidates this swap controller.
         return;
     }
@@ -410,24 +406,12 @@ async function runTeamSwapHudWarmController(
 }
 
 function hideCriticalHudForWarmTransition(pid: number): void {
-    if (State.players.readyDialogData[pid]) {
-        State.players.readyDialogData[pid].combatHudRevealAllowed = false;
-    }
+    setCombatHudRevealAllowedForPid(pid, false);
     twlConquestHudHideRootOnly(pid);
     clearJoinPromptForPlayerId(pid);
     hideTopHudFamilyForWarmTransition(pid);
     setPositionDebugWidgetsVisibleForPid(pid, false);
-
-    const vehicleCache = State.hudCache.vehicleDeployTimerCache[pid];
-    if (vehicleCache?.root) {
-        safeSetUIWidgetVisible(vehicleCache.root, false);
-        vehicleCache.lastVisibleState = false;
-    }
-    if (vehicleCache?.rows) {
-        for (let i = 0; i < vehicleCache.rows.length; i++) {
-            setVehicleDeployTimerRowVisible(vehicleCache.rows[i], false);
-        }
-    }
+    hideVehicleSpawnerUiFamilyForPid(pid);
 
     safeSetUIWidgetVisible(safeFind(`Container_HelpText_${pid}`), false);
     safeSetUIWidgetVisible(safeFind(`HelpText_${pid}`), false);
@@ -439,9 +423,9 @@ function releaseHudWarmTransitionForPlayer(eventPlayer: mod.Player, token: numbe
     if (pid === undefined) return;
     const state = State.players.readyDialogData[pid];
     if (!state) return;
-    if ((state.hudWarmToken ?? 0) !== token) return;
+    if (!isHudWarmTokenCurrent(pid, token)) return;
 
-    state.hudSwapTransitionActive = false;
+    setHudSwapTransitionActiveForPid(pid, false);
 
     renderCriticalHudForReveal(eventPlayer, pid);
     syncPlayerDeployAvailability(eventPlayer);
@@ -451,13 +435,13 @@ function releaseHudWarmTransitionForPlayer(eventPlayer: mod.Player, token: numbe
 async function prebuildDeferredUiAfterReveal(eventPlayer: mod.Player, pid: number, token: number): Promise<void> {
     await mod.Wait(0);
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return;
+    if (!isHudWarmTokenCurrent(pid, token)) return;
     prebuildDeferredUiWhileHidden(eventPlayer, pid);
 }
 
 async function warmCriticalHudForPlayer(
     eventPlayer: mod.Player,
-    options?: HudLoadingWarmOptions
+    options?: HudWarmOptions
 ): Promise<void> {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     const pid = safeGetPlayerId(eventPlayer);
@@ -466,23 +450,23 @@ async function warmCriticalHudForPlayer(
     const state = State.players.readyDialogData[pid];
     if (!state) return;
 
-    const token = (state.hudWarmToken ?? 0) + 1;
-    state.hudWarmToken = token;
-    state.combatHudRevealAllowed = false;
+    const token = invalidateHudWarmTokenForPid(pid);
+    if (token === undefined) return;
+    setCombatHudRevealAllowedForPid(pid, false);
     if (state.hudWarmCompleted !== true) {
-        state.hudWarmCompleted = false;
+        setHudWarmCompletedForPid(pid, false);
         hideCriticalHudForWarmTransition(pid);
     }
 
     await mod.Wait(HUD_WARM_PREBUILD_DELAY_SECONDS);
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return;
+    if (!isHudWarmTokenCurrent(pid, token)) return;
 
     let readyStablePolls = 0;
     const readyDeadline = mod.GetMatchTimeElapsed() + HUD_WARM_READY_TIMEOUT_SECONDS;
     while (true) {
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-        if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return;
+        if (!isHudWarmTokenCurrent(pid, token)) return;
 
         prebuildCriticalHudWhileHidden(eventPlayer, pid);
         if (!state.hudWarmCompleted) {
@@ -500,9 +484,9 @@ async function warmCriticalHudForPlayer(
         await mod.Wait(HUD_WARM_READY_POLL_SECONDS);
     }
 
-    if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return;
+    if (!isHudWarmTokenCurrent(pid, token)) return;
 
-    state.hudWarmCompleted = true;
+    setHudWarmCompletedForPid(pid, true);
     if (options?.refreshReadyDialogs) {
         renderReadyDialogForAllVisibleViewers();
     }
@@ -517,7 +501,7 @@ async function warmCriticalHudForPlayer(
         if (delaySeconds > 0) {
             await mod.Wait(delaySeconds);
             if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-            if ((State.players.readyDialogData[pid]?.hudWarmToken ?? 0) !== token) return;
+            if (!isHudWarmTokenCurrent(pid, token)) return;
             if (State.players.deployedByPid[pid]) return;
         }
         createJoinPromptForPlayer(eventPlayer);
@@ -608,22 +592,14 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
     if (pid !== undefined) {
         const readyData = State.players.readyDialogData[pid];
         if (readyData) {
-            readyData.hudSwapTransitionActive = true;
-            readyData.hudWarmCompleted = false;
-            readyData.hudWarmToken = (readyData.hudWarmToken ?? 0) + 1;
+            setHudSwapTransitionActiveForPid(pid, true);
+            setHudWarmCompletedForPid(pid, false);
+            invalidateHudWarmTokenForPid(pid);
         }
         // Treat swap as immediately undeployed for HUD authority until the engine undeploy callback lands.
         State.players.deployedByPid[pid] = false;
         clearVehicleReservationForPid(pid);
-        const vehicleCache = State.hudCache.vehicleDeployTimerCache[pid];
-        if (vehicleCache?.root) {
-            setVehicleDeployTimerRootOnscreen(vehicleCache, false);
-            safeSetUIWidgetVisible(vehicleCache.root, false);
-            vehicleCache.lastVisibleState = false;
-            for (let i = 0; i < vehicleCache.rows.length; i++) {
-                setVehicleDeployTimerRowVisible(vehicleCache.rows[i], false);
-            }
-        }
+        hideVehicleSpawnerUiFamilyForPid(pid);
         setPositionDebugWidgetsVisibleForPid(pid, false);
         // Force one clean conquest HUD reset (destructive) after swap to prevent stale overlays/duplicates.
         cleanupConquestHudForTeamSwap(pid);
@@ -645,7 +621,7 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
         void runTeamSwapHudWarmController(
             eventPlayer,
             pid,
-            State.players.readyDialogData[pid]?.hudWarmToken ?? 0,
+            getHudWarmTokenForPid(pid),
             newTeamNum,
             wasDeployedBeforeSwap
         );
@@ -660,135 +636,6 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
         mod.GetTeam(eventPlayer),
         mod.stringkeys.twl.notifications.teamSwitch
     );
-}
-
-// Hides the Ready Dialog (cached widgets) and clears per-player dialog/admin visibility state.
-function hideReadyDialogUI(eventPlayer: mod.Player | number) {
-    // Deletes/hides the Ready Dialog UI for the given player id and restores normal input.
-    // Note: When called with a player id (number) rather than a mod.Player, UI input mode cannot be toggled here.
-
-    let playerId: any = eventPlayer;
-
-    if (mod.IsType(eventPlayer, mod.Types.Player)) {
-        setUIInputModeForPlayer(eventPlayer as mod.Player, false);
-        playerId = mod.GetObjId(eventPlayer as mod.Player);
-    }
-
-    const baseWidget = safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId);
-    if (baseWidget) mod.SetUIWidgetVisible(baseWidget, false);
-    const borderTop = safeFind(UI_READY_DIALOG_BORDER_TOP_ID + playerId);
-    if (borderTop) mod.SetUIWidgetVisible(borderTop, false);
-    const borderBottom = safeFind(UI_READY_DIALOG_BORDER_BOTTOM_ID + playerId);
-    if (borderBottom) mod.SetUIWidgetVisible(borderBottom, false);
-    const borderLeft = safeFind(UI_READY_DIALOG_BORDER_LEFT_ID + playerId);
-    if (borderLeft) mod.SetUIWidgetVisible(borderLeft, false);
-    const borderRight = safeFind(UI_READY_DIALOG_BORDER_RIGHT_ID + playerId);
-    if (borderRight) mod.SetUIWidgetVisible(borderRight, false);
-    const debugWidget = safeFind(UI_READY_DIALOG_DEBUG_TIMELIMIT_ID + playerId);
-    if (debugWidget) {
-        mod.SetUIWidgetVisible(debugWidget, false);
-    }
-    const mapLabel = safeFind(UI_READY_DIALOG_MAP_LABEL_ID + playerId);
-    if (mapLabel) mod.SetUIWidgetVisible(mapLabel, false);
-    const mapValue = safeFind(UI_READY_DIALOG_MAP_VALUE_ID + playerId);
-    if (mapValue) mod.SetUIWidgetVisible(mapValue, false);
-
-    // Admin panel contents stay lazy-built and are deleted on close; the toggle stays cached with the dialog.
-    deleteAdminPanelUI(playerId, false);
-    setAdminPanelChildWidgetsVisible(playerId, false);
-    const adminToggle = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId);
-    if (adminToggle) mod.SetUIWidgetVisible(adminToggle, false);
-    const adminToggleLabel = safeFind(UI_ADMIN_PANEL_BUTTON_LABEL_ID + playerId);
-    if (adminToggleLabel) mod.SetUIWidgetVisible(adminToggleLabel, false);
-    const adminToggleBorder = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId + "_BORDER");
-    if (adminToggleBorder) mod.SetUIWidgetVisible(adminToggleBorder, false);
-
-    if (State.players.readyDialogData[playerId]) {
-        State.players.readyDialogData[playerId].adminPanelVisible = false;
-        State.players.readyDialogData[playerId].adminPanelBuilt = false;
-        // Force-hide any stray admin panel children (some engines do not cascade container visibility).
-        setAdminPanelChildWidgetsVisible(playerId, false);
-        // Delete any previously-built admin container so the panel will rebuild cleanly on demand.
-        const existingAdminContainer = safeFind(UI_ADMIN_PANEL_CONTAINER_ID + playerId);
-        if (existingAdminContainer) mod.DeleteUIWidget(existingAdminContainer);
-        State.players.readyDialogData[playerId].adminPanelBuilt = false;
-        // Dialog is no longer visible; stop participating in global roster refreshes.
-        State.players.readyDialogData[playerId].dialogVisible = false;
-    }
-
-    updateHelpTextVisibilityForPid(playerId);
-}
-
-// Closes Ready Dialog UI for every viewer that currently has the dialog open.
-function closeReadyDialogForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        const pid = mod.GetObjId(p);
-        if (State.players.readyDialogData[pid]?.dialogVisible) {
-            hideReadyDialogUI(p);
-        }
-    }
-}
-
-// Hard delete used only for cleanup (e.g., player leaves game).
-// Normal dialog close should hide widgets to enable UI caching and faster reopen.
-function destroyReadyDialogUI(playerId: number): void {
-    const baseWidget = safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId);
-    if (baseWidget) mod.DeleteUIWidget(baseWidget);
-    const borderTop = safeFind(UI_READY_DIALOG_BORDER_TOP_ID + playerId);
-    if (borderTop) mod.DeleteUIWidget(borderTop);
-    const borderBottom = safeFind(UI_READY_DIALOG_BORDER_BOTTOM_ID + playerId);
-    if (borderBottom) mod.DeleteUIWidget(borderBottom);
-    const borderLeft = safeFind(UI_READY_DIALOG_BORDER_LEFT_ID + playerId);
-    if (borderLeft) mod.DeleteUIWidget(borderLeft);
-    const borderRight = safeFind(UI_READY_DIALOG_BORDER_RIGHT_ID + playerId);
-    if (borderRight) mod.DeleteUIWidget(borderRight);
-    const debugWidget = safeFind(UI_READY_DIALOG_DEBUG_TIMELIMIT_ID + playerId);
-    if (debugWidget) mod.DeleteUIWidget(debugWidget);
-    const mapLabel = safeFind(UI_READY_DIALOG_MAP_LABEL_ID + playerId);
-    if (mapLabel) mod.DeleteUIWidget(mapLabel);
-    const mapValue = safeFind(UI_READY_DIALOG_MAP_VALUE_ID + playerId);
-    if (mapValue) mod.DeleteUIWidget(mapValue);
-
-    // Admin Panel widgets (toggle button + label + container).
-    const adminToggle = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId);
-    if (adminToggle) mod.DeleteUIWidget(adminToggle);
-    const adminToggleLabel = safeFind(UI_ADMIN_PANEL_BUTTON_LABEL_ID + playerId);
-    if (adminToggleLabel) mod.DeleteUIWidget(adminToggleLabel);
-    const adminToggleBorder = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId + "_BORDER");
-    if (adminToggleBorder) mod.DeleteUIWidget(adminToggleBorder);
-    const adminContainer = safeFind(UI_ADMIN_PANEL_CONTAINER_ID + playerId);
-    if (adminContainer) mod.DeleteUIWidget(adminContainer);
-
-    const posContainer = safeFind(UI_POS_DEBUG_CONTAINER_ID + playerId);
-    if (posContainer) mod.DeleteUIWidget(posContainer);
-    const posX = safeFind(UI_POS_DEBUG_X_ID + playerId);
-    if (posX) mod.DeleteUIWidget(posX);
-    const posY = safeFind(UI_POS_DEBUG_Y_ID + playerId);
-    if (posY) mod.DeleteUIWidget(posY);
-    const posZ = safeFind(UI_POS_DEBUG_Z_ID + playerId);
-    if (posZ) mod.DeleteUIWidget(posZ);
-    const posXValue = safeFind(UI_POS_DEBUG_X_VALUE_ID + playerId);
-    if (posXValue) mod.DeleteUIWidget(posXValue);
-    const posYValue = safeFind(UI_POS_DEBUG_Y_VALUE_ID + playerId);
-    if (posYValue) mod.DeleteUIWidget(posYValue);
-    const posZValue = safeFind(UI_POS_DEBUG_Z_VALUE_ID + playerId);
-    if (posZValue) mod.DeleteUIWidget(posZValue);
-    const rotX = safeFind(UI_POS_DEBUG_ROTX_ID + playerId);
-    if (rotX) mod.DeleteUIWidget(rotX);
-    const rotY = safeFind(UI_POS_DEBUG_ROTY_ID + playerId);
-    if (rotY) mod.DeleteUIWidget(rotY);
-    const rotZ = safeFind(UI_POS_DEBUG_ROTZ_ID + playerId);
-    if (rotZ) mod.DeleteUIWidget(rotZ);
-    const rotXValue = safeFind(UI_POS_DEBUG_ROTX_VALUE_ID + playerId);
-    if (rotXValue) mod.DeleteUIWidget(rotXValue);
-    const rotYValue = safeFind(UI_POS_DEBUG_ROTY_VALUE_ID + playerId);
-    if (rotYValue) mod.DeleteUIWidget(rotYValue);
-    const rotZValue = safeFind(UI_POS_DEBUG_ROTZ_VALUE_ID + playerId);
-    if (rotZValue) mod.DeleteUIWidget(rotZValue);
 }
 
 //#endregion ----------------- Ready Dialog Interaction Actions --------------------

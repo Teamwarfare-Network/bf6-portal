@@ -24,7 +24,7 @@ function onPlayerEnterVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Veh
         const slot = State.vehicles.slots[slotIndex];
         if (slot && mod.GetPlayerVehicleSeat(eventPlayer) === 0) {
             slot.activeOwnerPid = safeGetPlayerId(eventPlayer);
-            conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
+            updateVehicleDeployTimerHudForAllPlayers();
         }
     }
 }
@@ -44,7 +44,7 @@ function onPlayerExitVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Vehi
     if (!slot || pid === undefined) return;
     if (slot.activeOwnerPid !== pid) return;
     slot.activeOwnerPid = undefined;
-    conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
+    updateVehicleDeployTimerHudForAllPlayers();
 }
 
 //#endregion -------------------- Exported Event Handlers - Vehicle Entry + Exit --------------------
@@ -163,7 +163,7 @@ async function onVehicleDestroyedImpl(eventVehicle: mod.Vehicle) {
             slot.pendingSpawnOwnerPid = undefined;
             slot.pendingSpawnMode = undefined;
             markVehicleSlotDestroyed(slot);
-            conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
+            updateVehicleDeployTimerHudForAllPlayers();
         }
     }
 

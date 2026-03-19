@@ -25,7 +25,7 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
         await deferForcedUndeploy(eventPlayer, "hud_warm_pending");
         return;
     }
-    State.players.readyDialogData[pid].hudWarmToken = (State.players.readyDialogData[pid].hudWarmToken ?? 0) + 1;
+    invalidateHudWarmTokenForPid(pid);
     // Clear any lingering forced redeploy delay so deployed players can immediately interact with HUD/ready workflows.
     mod.SetRedeployTime(eventPlayer, 0);
     // Seed viewer perspective on deploy so first-life HUD slices (including bleed chevrons)
@@ -63,7 +63,7 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     if (!State.hudCache.topHudShellByPid[pid]) {
         ensureTopHudShellForPlayer(eventPlayer);
     }
-    warmCacheVehicleDeployTimerHudForPlayer(eventPlayer);
+    prepareVehicleDeployTimerHudForHiddenPrebuild(eventPlayer);
     renderCriticalHudForReveal(eventPlayer, pid);
     const directSpawnDeployResult = await conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(eventPlayer);
     if (directSpawnDeployResult.consumedDeploy) {

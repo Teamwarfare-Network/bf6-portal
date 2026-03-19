@@ -206,9 +206,9 @@ function buildReadyDialogVehicleSelectionIndexByGameMode(_cfg: MapConfig, gameMo
     next[READY_DIALOG_TEAM2_JET_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_JET_KNOB_KEYS[1], undefined);
 
     next[READY_DIALOG_TEAM1_HELI_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_HELI_KNOB_KEYS[0], mod.VehicleList.AH64);
-    next[READY_DIALOG_TEAM1_HELI_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_HELI_KNOB_KEYS[1], mod.VehicleList.UH60);
+    next[READY_DIALOG_TEAM1_HELI_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_HELI_KNOB_KEYS[1], VEHICLE_AH6M);
     next[READY_DIALOG_TEAM2_HELI_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_HELI_KNOB_KEYS[0], mod.VehicleList.Eurocopter);
-    next[READY_DIALOG_TEAM2_HELI_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_HELI_KNOB_KEYS[1], mod.VehicleList.UH60_Pax);
+    next[READY_DIALOG_TEAM2_HELI_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_HELI_KNOB_KEYS[1], VEHICLE_AH6M);
 
     next[READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[0], mod.VehicleList.Abrams);
     next[READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_GROUND_KNOB_KEYS[1], mod.VehicleList.Cheetah);
@@ -221,11 +221,11 @@ function buildReadyDialogVehicleSelectionIndexByGameMode(_cfg: MapConfig, gameMo
 
     next[READY_DIALOG_TEAM1_FAST_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_FAST_KNOB_KEYS[0], mod.VehicleList.Quadbike);
     next[READY_DIALOG_TEAM1_FAST_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_FAST_KNOB_KEYS[1], mod.VehicleList.Quadbike);
-    next[READY_DIALOG_TEAM1_FAST_KNOB_KEYS[2]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_FAST_KNOB_KEYS[2], undefined);
+    next[READY_DIALOG_TEAM1_FAST_KNOB_KEYS[2]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_FAST_KNOB_KEYS[2], mod.VehicleList.UH60);
     next[READY_DIALOG_TEAM1_FAST_KNOB_KEYS[3]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM1_FAST_KNOB_KEYS[3], undefined);
     next[READY_DIALOG_TEAM2_FAST_KNOB_KEYS[0]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_FAST_KNOB_KEYS[0], mod.VehicleList.Quadbike);
     next[READY_DIALOG_TEAM2_FAST_KNOB_KEYS[1]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_FAST_KNOB_KEYS[1], mod.VehicleList.Quadbike);
-    next[READY_DIALOG_TEAM2_FAST_KNOB_KEYS[2]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_FAST_KNOB_KEYS[2], undefined);
+    next[READY_DIALOG_TEAM2_FAST_KNOB_KEYS[2]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_FAST_KNOB_KEYS[2], mod.VehicleList.UH60_Pax);
     next[READY_DIALOG_TEAM2_FAST_KNOB_KEYS[3]] = getReadyDialogVehicleOptionIndexForVehicle(READY_DIALOG_TEAM2_FAST_KNOB_KEYS[3], undefined);
     return next;
 }

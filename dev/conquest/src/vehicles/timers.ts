@@ -5,6 +5,7 @@ function resolveVehicleSlotSpawnCategory(vehicleType: mod.VehicleList): VehicleS
     switch (vehicleType) {
         case mod.VehicleList.AH64:
         case mod.VehicleList.Eurocopter:
+        case VEHICLE_AH6M:
             return "attack_chopper";
         case mod.VehicleList.UH60:
         case mod.VehicleList.UH60_Pax:

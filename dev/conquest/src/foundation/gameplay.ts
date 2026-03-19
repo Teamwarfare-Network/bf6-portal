@@ -155,6 +155,8 @@ const READY_DIALOG_GAME_MODE_OPTIONS: number[] = [
 ];
 const READY_DIALOG_GAME_MODE_DEFAULT_INDEX = 0;
 const READY_DIALOG_GAME_MODE_CUSTOM_INDEX = 1;
+// AH6M is used here from the current runtime despite being absent from the local core reference snapshot.
+const VEHICLE_AH6M = (mod.VehicleList as any).AH6M as mod.VehicleList;
 const READY_DIALOG_AIRCRAFT_CEILING_DEFAULT = 550;
 const READY_DIALOG_AIRCRAFT_CEILING_MIN = -200;
 const READY_DIALOG_AIRCRAFT_CEILING_MAX = 5000;
@@ -196,6 +198,7 @@ const READY_DIALOG_HELI_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortNoSpawn, vehicle: undefined },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortApache, vehicle: mod.VehicleList.AH64 },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortEuro, vehicle: mod.VehicleList.Eurocopter },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortLittleBird, vehicle: VEHICLE_AH6M },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawk, vehicle: mod.VehicleList.UH60 },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawkPax, vehicle: mod.VehicleList.UH60_Pax },
 ];

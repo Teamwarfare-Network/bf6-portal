@@ -386,47 +386,6 @@ function conquestPhase3GetTicketBarRatio(currentTickets: number): number {
     return Math.max(0, Math.min(1, currentTickets / base));
 }
 
-// Applies mirrored ticket-bar fill:
-// - Left bar empties from center toward the outside by shrinking its right edge.
-// - Right bar empties from center toward the outside by shrinking its left edge.
-function conquestPhase3ApplyTicketBarFill(refs: HudRefs, friendlyTickets: number, enemyTickets: number): void {
-    const friendlyRatio = conquestPhase3GetTicketBarRatio(friendlyTickets);
-    const enemyRatio = conquestPhase3GetTicketBarRatio(enemyTickets);
-    const friendlyWidth = friendlyTickets <= 0
-        ? 0
-        : Math.max(1, Math.floor(CONQUEST_HUD_TICKET_BAR_WIDTH * friendlyRatio));
-    const enemyWidth = enemyTickets <= 0
-        ? 0
-        : Math.max(1, Math.floor(CONQUEST_HUD_TICKET_BAR_WIDTH * enemyRatio));
-
-    safeSetUIWidgetVisible(refs.conquestTicketsDebugLeftBarTrack, true);
-    safeSetUIWidgetVisible(refs.conquestTicketsDebugRightBarTrack, true);
-    // Reapply bright team fill colors every update so temporary style overrides cannot darken the active bars.
-    safeSetUIWidgetBgColor(refs.conquestTicketsDebugLeftBarFill, COLOR_BLUE);
-    safeSetUIWidgetBgColor(refs.conquestTicketsDebugRightBarFill, COLOR_RED);
-
-    safeSetUIWidgetVisible(refs.conquestTicketsDebugLeftBarFill, friendlyWidth > 0);
-    safeSetUIWidgetVisible(refs.conquestTicketsDebugRightBarFill, enemyWidth > 0);
-
-    if (friendlyWidth > 0) {
-        safeSetUIWidgetPosition(refs.conquestTicketsDebugLeftBarFill, mod.CreateVector(0, 0, 0));
-        safeSetUIWidgetSize(
-            refs.conquestTicketsDebugLeftBarFill,
-            mod.CreateVector(friendlyWidth, CONQUEST_HUD_TICKET_BAR_HEIGHT, 0)
-        );
-    }
-    if (enemyWidth > 0) {
-        safeSetUIWidgetPosition(
-            refs.conquestTicketsDebugRightBarFill,
-            mod.CreateVector(CONQUEST_HUD_TICKET_BAR_WIDTH - enemyWidth, 0, 0)
-        );
-        safeSetUIWidgetSize(
-            refs.conquestTicketsDebugRightBarFill,
-            mod.CreateVector(enemyWidth, CONQUEST_HUD_TICKET_BAR_HEIGHT, 0)
-        );
-    }
-}
-
 // Returns the authoritative global ticket leader from script state.
 function conquestPhase3GetTicketLeaderTeam(): TeamID | 0 {
     if (State.conquest.tickets.team1 > State.conquest.tickets.team2) return TeamID.Team1;

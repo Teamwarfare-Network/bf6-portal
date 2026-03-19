@@ -21,6 +21,8 @@ function getVehicleDeployTimerLabelKey(vehicleType: mod.VehicleList): number {
             return mod.stringkeys.twl.readyDialog.vehicleOptionFalchion;
         case mod.VehicleList.Eurocopter:
             return mod.stringkeys.twl.readyDialog.vehicleOptionPanthera;
+        case VEHICLE_AH6M:
+            return mod.stringkeys.twl.readyDialog.vehicleShortLittleBird;
         case mod.VehicleList.UH60:
         case mod.VehicleList.UH60_Pax:
             return mod.stringkeys.twl.readyDialog.vehicleOptionBlackHawk;
@@ -152,6 +154,7 @@ function doesVehicleTypeSupportAirDeploy(vehicleType: mod.VehicleList): boolean 
     switch (vehicleType) {
         case mod.VehicleList.AH64:
         case mod.VehicleList.Eurocopter:
+        case VEHICLE_AH6M:
         case mod.VehicleList.UH60:
         case mod.VehicleList.UH60_Pax:
         case mod.VehicleList.F16:
@@ -1008,7 +1011,8 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
     return cache;
 }
 
-function warmCacheVehicleDeployTimerHudForPlayer(player: mod.Player): void {
+// Ensures the cached vehicle HUD tree exists and is fully hidden/offscreen before hidden prebuild work.
+function prepareVehicleDeployTimerHudForHiddenPrebuild(player: mod.Player): VehicleDeployTimerHudCacheEntry | undefined {
     if (!player || !mod.IsPlayerValid(player)) return;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return;
@@ -1021,6 +1025,7 @@ function warmCacheVehicleDeployTimerHudForPlayer(player: mod.Player): void {
     for (let i = 0; i < cache.rows.length; i++) {
         setVehicleDeployTimerRowVisible(cache.rows[i], false);
     }
+    return cache;
 }
 
 function setVehicleDeployTimerRowVisible(row: VehicleDeployTimerRowCacheEntry | undefined, visible: boolean): void {
@@ -1225,6 +1230,18 @@ function setVehicleDeployTimerHudFamilyVisible(
     cache.lastVisibleState = visible;
 }
 
+// Restores UI input mode when the vehicle HUD is the active undeployed interaction surface.
+function syncVehicleDeployHudViewerInputMode(player: mod.Player, pid: number): void {
+    if (
+        !State.players.deployedByPid[pid]
+        && !State.players.readyDialogData[pid]?.dialogVisible
+        && !safeFind(joinPromptRootName(pid))
+        && !State.players.uiInputEnabledByPid[pid]
+    ) {
+        setUIInputModeForPlayer(player, true);
+    }
+}
+
 function tryHandleVehicleDeployTimerButtonEvent(
     eventPlayer: mod.Player,
     eventUIWidget: mod.UIWidget,
@@ -1354,16 +1371,34 @@ function tryHandleVehicleDeployTimerButtonEvent(
 
     const claimed = tryClaimVehicleDirectSpawnForPlayer(eventPlayer, slot, mode);
     if (!claimed) {
-        conquestPhase5BRenderVehicleDeployTimersForPlayer(eventPlayer);
+        updateVehicleDeployTimerHudForPlayer(eventPlayer);
         return true;
     }
 
-    conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
+    updateVehicleDeployTimerHudForAllPlayers();
     void beginVehicleDirectSpawnDeployForPlayer(eventPlayer);
     return true;
 }
 
-function conquestPhase5BRenderVehicleDeployTimersForPlayer(player: mod.Player, revealRoot: boolean = true): boolean {
+// Owner-only hidden prebuild path for the vehicle HUD family.
+// This applies current row content while the root stays hidden/offscreen so later reveal is a visibility flip.
+function prebuildVehicleDeployTimerHudHiddenForPlayer(player: mod.Player): boolean {
+    if (!player || !mod.IsPlayerValid(player)) return false;
+    const pid = safeGetPlayerId(player);
+    if (pid === undefined) return false;
+
+    const cache = prepareVehicleDeployTimerHudForHiddenPrebuild(player);
+    if (!cache || !cache.root) return false;
+
+    const renderPlan = buildVehicleDeployTimerRenderPlan(player, pid);
+    const visible = applyVehicleDeployTimerRenderPlanContent(cache, renderPlan, pid);
+    setVehicleDeployTimerHudFamilyVisible(cache, false);
+    return visible;
+}
+
+// Owner-only reveal path for the vehicle HUD family.
+// Contract: content must already be safe to reveal; this path owns the final visible state.
+function revealVehicleDeployTimerHudForPlayer(player: mod.Player): boolean {
     if (!player || !mod.IsPlayerValid(player)) return false;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return false;
@@ -1371,29 +1406,14 @@ function conquestPhase5BRenderVehicleDeployTimersForPlayer(player: mod.Player, r
     const cache = ensureVehicleDeployTimerHudForPlayer(player);
     if (!cache || !cache.root) return false;
 
+    if (cache.lastVisibleState !== true) {
+        setVehicleDeployTimerHudFamilyVisible(cache, false);
+    }
+
     const renderPlan = buildVehicleDeployTimerRenderPlan(player, pid);
-
-    const revealFromHidden = revealRoot && cache.lastVisibleState !== true;
-    if (!revealRoot || revealFromHidden) {
-        setVehicleDeployTimerHudFamilyVisible(cache, false);
-    }
-
     const visible = applyVehicleDeployTimerRenderPlanContent(cache, renderPlan, pid);
-
-    if (revealRoot) {
-        setVehicleDeployTimerHudFamilyVisible(cache, visible);
-    } else {
-        setVehicleDeployTimerHudFamilyVisible(cache, false);
-    }
-
-    if (
-        !State.players.deployedByPid[pid]
-        && !State.players.readyDialogData[pid]?.dialogVisible
-        && !safeFind(joinPromptRootName(pid))
-        && !State.players.uiInputEnabledByPid[pid]
-    ) {
-        setUIInputModeForPlayer(player, true);
-    }
+    setVehicleDeployTimerHudFamilyVisible(cache, visible);
+    syncVehicleDeployHudViewerInputMode(player, pid);
     return visible;
 }
 
@@ -1404,20 +1424,44 @@ function refreshVehicleDeployTimersForPlayerPreservingVisibility(player: mod.Pla
     const cache = ensureVehicleDeployTimerHudForPlayer(player);
     if (!cache || !cache.root) return false;
     const renderPlan = buildVehicleDeployTimerRenderPlan(player, pid);
-    const revealRoot = State.hudCache.vehicleDeployTimerCache[pid]?.lastVisibleState === true;
-    const nextVisibleState = revealRoot && renderPlan.visible;
+    const currentlyVisible = State.hudCache.vehicleDeployTimerCache[pid]?.lastVisibleState === true;
+    const nextVisibleState = currentlyVisible && renderPlan.visible;
     if (cache.lastRenderSignature === renderPlan.signature && cache.lastVisibleState === nextVisibleState) {
+        syncVehicleDeployHudViewerInputMode(player, pid);
         return nextVisibleState;
     }
-    return conquestPhase5BRenderVehicleDeployTimersForPlayer(player, revealRoot);
+    applyVehicleDeployTimerRenderPlanContent(cache, renderPlan, pid);
+    setVehicleDeployTimerHudFamilyVisible(cache, nextVisibleState);
+    syncVehicleDeployHudViewerInputMode(player, pid);
+    return nextVisibleState;
 }
 
-function conquestPhase5BRenderVehicleDeployTimersForAllPlayers(): void {
+// Public non-owner refresh path for one viewer.
+// This preserves current family visibility and avoids using the reveal-capable owner path directly.
+function updateVehicleDeployTimerHudForPlayer(player: mod.Player): boolean {
+    return refreshVehicleDeployTimersForPlayerPreservingVisibility(player);
+}
+
+// Public non-owner refresh path for all viewers.
+// Use this for gameplay state changes that should not alter family visibility ownership.
+function updateVehicleDeployTimerHudForAllPlayers(): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
         if (!player || !mod.IsPlayerValid(player)) continue;
         refreshVehicleDeployTimersForPlayerPreservingVisibility(player);
+    }
+}
+
+// Marks cached vehicle-HUD render signatures dirty so the next content refresh cannot early-out on stale diff state.
+function invalidateVehicleDeployTimerHudRenderSignaturesForAllPlayers(): void {
+    const caches = State.hudCache.vehicleDeployTimerCache;
+    for (const pidKey of Object.keys(caches)) {
+        const pid = Number(pidKey);
+        if (!Number.isInteger(pid)) continue;
+        const cache = caches[pid];
+        if (!cache) continue;
+        cache.lastRenderSignature = undefined;
     }
 }

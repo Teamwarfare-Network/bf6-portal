@@ -32,7 +32,7 @@ function deleteAllTopCenterAuxWidgetsByName(name: string, maxPasses: number = 96
 function buildConquestTopCenterAuxWidgets(
     player: mod.Player,
     pid: number,
-    refs: HudRefs,
+    refs: TopHudShellRefs,
     layout: ConquestTopCenterAuxLayout
 ): void {
     const TOP_PANEL_Y = 47.73;

@@ -1,6 +1,6 @@
 # TWL Conquest Design and Implementation Plan
 
-Last updated: 2026-03-13  
+Last updated: 2026-03-18  
 Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
 
 ## Current Status
@@ -12,10 +12,12 @@ Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
   - Phase 2B: implemented with remaining future validation deferred
   - Phase 3A, 3B, 3C: completed and accepted as the current HUD/UI baseline
   - Phase 4, 4B: completed and accepted at the current multiplayer-tested checkpoint
+  - Phase 5A-5G: implemented at the current accepted checkpoint, with remaining explicit Phase 5 closeout items tracked in the Phase 5 checklist
 - Current next implementation target:
-  - Phase 5A: Vehicle Spawner timers, game state, and logic
+  - Phase 6 design lock pass: pre/post-match flow, end-result snapshot rules, join-prompt redesign, and setup/reset staging semantics
 - Current open Conquest bug status:
-  - `CQ_Bug_3` is the only bug intentionally kept open/deferred
+  - See `design_doc/conquest_issues.md` for the active issue list
+  - `CQ_Bug_3` remains intentionally deferred, and later deferred polish bugs are tracked there explicitly
 - Active companion documents:
   - `design_doc/api_checklist.md`
   - `design_doc/conquest_issues.md`
@@ -40,9 +42,9 @@ Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
 - [Phase 5E: Map config / vehicle spawn mapping](#phase-5e)
 - [Phase 5F: 3D Bounded Spawn Volumes](#phase-5f)
 - [Phase 5G: Polish / tune](#phase-5g)
-- [Phase 6: Basic Spawn and Boundaries System](#phase-6)
-- [Phase 7: Custom Tab Scoreboard + KPI Tracking](#phase-7)
-- [Phase 8: Pre & Post Match Events](#phase-8)
+- [Phase 6: Pre & Post Match Events](#phase-6)
+- [Phase 7: Basic Spawn and Boundaries System](#phase-7)
+- [Phase 8: Custom Tab Scoreboard + KPI Tracking](#phase-8)
 - [Phase 9: Iteration, Playtesting, and Polish](#phase-9)
 - [Phase 10: Advanced Features](#phase-10)
 - [Phase 11: AI/Bot Simulation and Spawn-Balance Validation](#phase-11)
@@ -120,7 +122,7 @@ Status:
 
 - Contract is accepted as future direction.
 - Implementation is explicitly deferred to a final follow-on phase (after Phases 1-11).
-- Phase 6 remains basic spawn/boundary behavior with low overhead.
+- Phase 7 remains basic spawn/boundary behavior with low overhead.
 
 Contract summary (future implementation target):
 
@@ -509,7 +511,7 @@ Player-impact telemetry additions:
   - aircraft boundaries
   - sectors/objectives
 - `CF-29` Map readiness validation owner/process: human validation using provided Godot spatial data references.
-- `CF-63` Spawn-schema readiness gate: `teamSpawnSets`, `flagSpawnSets`, and `fallbackSpawns` are optional before Phase 6 and mandatory at Phase 6 entry.
+- `CF-63` Spawn-schema readiness gate: `teamSpawnSets`, `flagSpawnSets`, and `fallbackSpawns` are optional before Phase 7 and mandatory at Phase 7 entry.
 - `CF-73` Runtime map validation guardrails:
   - configured ObjIds must resolve at runtime
   - expected object types must match usage (capture point/trigger/spawner)
@@ -592,7 +594,7 @@ Player-impact telemetry additions:
   - signoff: human owner plus one expert reviewer
 - `CF-114` API checklist artifact decision: keep `api_checklist.md` as required project signoff evidence, not as a replacement for API catalog docs.
 - `CF-94` API confirmation policy for KPI/capture attribution: unknown attribution APIs are placeholder-approved only until phase entry gates.
-  - Required gate: before Phase 7 implementation/signoff, `api_checklist.md` must explicitly mark kill/death/assist/permanent-death/capture event paths as `Confirmed` or `Replaced`.
+  - Required gate: before Phase 8 implementation/signoff, `api_checklist.md` must explicitly mark kill/death/assist/permanent-death/capture event paths as `Confirmed` or `Replaced`.
   - If an API path is not confirmed, related KPI behavior must be downgraded/disabled explicitly (no invented calls).
 - `CF-54` UI update discipline:
   - conquest HUD/scoreboard updates are dirty/signature-driven
@@ -671,7 +673,7 @@ Player-impact telemetry additions:
   - V1 policy: vehicle-seat occupants are eligible for capture credit if within capture radius at cap tick
   - player must still satisfy `CF-77` alive + capturing-team conditions
 - `CF-47` Scoreboard/post-match formatting precision: `0.1` (tenths) precision for KDR and team-average displays.
-- `PD-05` KPI scope gating decision: KPI scope finalization does not gate Phases 1-3A/3B; lock mandatory V1 KPI subset near Phase 7 entry when API confidence is higher.
+- `PD-05` KPI scope gating decision: KPI scope finalization does not gate Phases 1-3A/3B; lock mandatory V1 KPI subset near Phase 8 entry when API confidence is higher.
 
 ## Implementation Phases
 
@@ -902,7 +904,7 @@ HUD lifecycle guardrails (sticking/overdraw prevention):
 
 Out of scope in Phase 3B:
 
-- scoreboard/KPI feature work (Phase 7)
+- scoreboard/KPI feature work (Phase 8)
 - capture/ticket gameplay-rule changes
 - sound, spawn, or vehicle system behavior changes
 - new player-facing copy without explicit human string approval
@@ -1544,7 +1546,7 @@ Phase 4 implementation model (current Conquest):
 - KPI interaction boundary:
   - do not solve KPI attribution in Phase 4
   - sound events are not authoritative KPI events and must not mutate KPI state directly
-  - however, Phase 4 queue payloads and debug counters should preserve enough context to be useful later if Phase 7 wants to correlate capture audio with capture attribution or scoreboard debugging
+  - however, Phase 4 queue payloads and debug counters should preserve enough context to be useful later if Phase 8 wants to correlate capture audio with capture attribution or scoreboard debugging
   - minimum useful shared context to retain in sound diagnostics:
     - `objId`
     - `sourceTeamId`
@@ -1576,7 +1578,7 @@ Phase 4 implementation model (current Conquest):
   - sound queue/throttle state should clear cleanly on round reset, match end, player leave, reconnect reset, team switch, and undeploy
   - team-switch lifecycle must explicitly clear per-player recipient-local audio throttle state before swap rebuild so pre-swap cadence cannot suppress valid post-swap ticks
   - undeploy/death/manual-redeploy lifecycle must explicitly clear per-player recipient-local audio throttle state so a fresh re-entry is not muted by the prior life
-  - if Phase 7 later introduces shared capture-event instrumentation, Phase 4 should be able to plug into it without reworking its dispatch ownership
+  - if Phase 8 later introduces shared capture-event instrumentation, Phase 4 should be able to plug into it without reworking its dispatch ownership
 - Anti-patterns to avoid:
   - no direct `PlaySound`/`StopSound` loop management inside HUD/UI render paths
   - no monolithic all-purpose VO/sound block for unrelated round systems in Phase 4
@@ -1635,7 +1637,7 @@ Phase Changelog:
 - `Entries`:
   - `2026-03-13 | Phase 4 closeout decision | Accepted Phase 4 for single-player based on current build/test passes, explicitly deferred contested multiplayer sound validation as non-blocking, and advanced the next implementation target to Phase 5 | Phase 4, Phase 4B, Phase 5, CF-17, CF-18, CF-19 | accepted | design_doc Phase 4 verification note + checklist closeout + current status summary`
   - `2026-03-12 | Pre-Phase 4 source audit and archival merge | Reviewed current src architecture before sound work, recorded actual Phase 4 gaps/risks (no active sound layer, no conquest.sound state, capture-tickets monolith pressure, CQ_Bug_3 perspective-cleanup warning), merged still-true HUD architecture principles from deprecated docs into the master plan, and marked the old planning/evidence docs for archive-only status | Phase 4, Phase 3A, Phase 3B, Phase 3C, CQ_Bug_3, CF-17, CF-18, CF-19 | accepted | design_doc Phase 4 preflight audit + archival carry-forward section + archive decision`
-  - `2026-03-12 | Phase 4 KPI-boundary note | Added explicit rule that sound events may retain KPI-useful diagnostics/context but must not become KPI authority or mutate KPI state; expanded Phase 4 diagnostics expectations accordingly | Phase 4, Phase 7, CF-17, CF-18, CF-19 | accepted | design_doc Phase 4 KPI interaction boundary + checklist update`
+  - `2026-03-12 | Phase 4 KPI-boundary note | Added explicit rule that sound events may retain KPI-useful diagnostics/context but must not become KPI authority or mutate KPI state; expanded Phase 4 diagnostics expectations accordingly | Phase 4, Phase 8, CF-17, CF-18, CF-19 | accepted | design_doc Phase 4 KPI interaction boundary + checklist update`
   - `2026-03-12 | Phase 4 kickoff planning pass | Evaluated sound patterns from BillDukes, DFK ConquestSmall, and BattleDad references; locked a Conquest-specific Phase 4 model around a dedicated capture-sound layer, cached runtime SFX handles, objective-aware throttling, and per-viewer dispatch | Phase 4, CF-17, CF-18, CF-19 | accepted | design_doc Phase 4 implementation model + checklist update`
 
 <a id="phase-4b"></a>
@@ -2167,8 +2169,8 @@ Phase 5 execution breakdown:
     - current first pass clears the live reservation once the player successfully spawns into the vehicle, but arms an auto-resubscribe return to that same slot on vehicle destruction if no one else has claimed it
     - later polish should define whether some modes/settings keep live reservations persistent, consume them immediately, or use the current auto-resubscribe return model
   - active optimization/cutdown pass before Phase 6 handoff:
-    - current state is acceptable as a working checkpoint, but Phase 5 is still carrying too much churn/cruft from repeated UI stabilization passes
-    - do not add new Phase 6-style features until the remaining Phase 5 UI families are simplified back onto the accepted architecture
+    - current cleanup/cutdown pass is now accepted as the stable 5G architectural baseline
+    - do not add new Phase 6-style features until the remaining explicit Phase 5 closeout items below are either implemented or intentionally deferred
     - optimization priority is not "more timing tricks"; it is structural simplification
     - required architectural contract for every major UI family remains:
       - `build hidden`
@@ -2181,38 +2183,24 @@ Phase 5 execution breakdown:
       - combat HUD
       - ready dialog
       - admin/debug last
-    - specific cleanup/cut plan:
-      - accepted current cut checkpoint:
-        - legacy combat/V2 widget-write ownership is removed; active combat ownership is now the derived-state layer plus `hud-core`
-        - dormant loading-overlay/loading-gate infrastructure is no longer part of the active accepted model
-        - the vehicle HUD has already been partially split away from a single broad reveal helper, but still needs final cleanup
+    - accepted cleanup/cut results:
+      - legacy combat/V2 widget-write ownership is removed; active combat ownership is now the derived-state layer plus `hud-core`
+      - dormant loading-overlay/loading-gate infrastructure is no longer part of the active accepted model
+      - top-left / upper-left shell is stable again and no longer rides combat/dialog warm timing
+      - the right-side vehicle HUD now follows an explicit hidden-build/content/reveal split at its active public callsites
+      - ready-dialog hidden prebuild, show, close, destroy, dirty-refresh, and admin-toggle lifecycle ownership have been pulled back under dialog/admin families instead of being spread across ad hoc interaction paths
+      - long manual HUD hide/delete/reset lists have been moved behind family-owned cleanup helpers
+      - active HUD cache shapes are narrower and no longer carry the dead legacy conquest HUD ref bag
+      - warm/reveal state access is centralized and smaller than the earlier post-bugfix churn state
       - current stable baseline to preserve:
         - top-left / upper-left shell is accepted as immediate/stable again and should not be moved back behind combat or dialog warm gates
         - combat HUD visible ownership is `src/ui/conquest/hud-core/*`; `src/index/capture-tickets.ts` is now accepted as derivation/state/dispatch only and should not regain direct widget ownership
         - debug position UI is accepted as off by default and should remain non-critical / last-owner
         - no loading overlay should be reintroduced unless a future design pass explicitly replaces the current accepted hidden-build/reveal model
-      - concrete file targets for the next cleanup slice:
-        - `src/interaction/actions.ts`
-          - extract family cleanup helpers
-          - simplify warm/reveal state to the smallest useful set
-          - keep reveal ownership explicit per family
-        - `src/vehicles/deploy-timer-ui.ts`
-          - finish the split between `ensure built`, `apply content`, and `set visible`
-          - remove remaining public-callsite ambiguity around family visibility
-        - `src/ready-dialog/dialog-build.ts`
-        - `src/ready-dialog/roster-render.ts`
-        - `src/ready-dialog/mode-config-readout.ts`
-        - `src/interaction/interact-point.ts`
-          - add dirty/signature refresh so first-open/reopen do not redo unnecessary work
-        - `src/state/hud-cache-types.ts`
-          - separate active cache refs from any legacy/deprecated shapes still being carried
-      - next cleanup slice:
-        - move long per-player hide/delete/reset lists into family cleanup helpers so reset behavior is easier to reason about and safer to change
-        - add ready-dialog dirty-refresh rules so reopen paths stop doing unnecessary roster/config/button work when nothing changed
-        - split active HUD cache types from legacy/deprecated refs so current ownership is readable and old V2 state can be removed cleanly
-        - simplify warm/reveal state in the interaction layer further until only the minimal active ownership flags remain
-        - finish the right-side vehicle HUD split into explicit `ensure built`, `compute/apply content`, and `set visible` phases at every public callsite, not just inside the main helper
-        - leave debug-panel visual parity and first-load-only combat polish until after the helper/cache cleanup is accepted
+      - cleanup pass closeout assessment:
+        - the originally planned 5G cutdown slice is accepted as done enough to stop treating it as the active next implementation target
+        - the first-load-only combat quirk is tolerated as the current accepted compromise and is not by itself a reason to reopen the broad cleanup pass
+        - any further UI work in Phase 5G should now be feature- or authoring-driven, not more generalized structural churn
       - do-not-regress rules for later polish:
         - do not let routine refresh paths hide/show roots
         - do not move top-left shell ownership back under combat-HUD timing
@@ -2233,42 +2221,83 @@ Phase 5 execution breakdown:
         - ready-dialog reopen
         - vehicle HUD first appearance and later refresh
         - admin toggle / debug toggle
+    - remaining explicit Phase 5G items after cleanup closeout:
+      - implement the deferred ready-dialog `draft vs applied` clarity pass:
+        - red/green knob state driven by a sustainable comparison model
+        - `[unsaved changes - apply to save]` indicator
+        - `Apply Configuration` enabled/disabled state
+        - `Reset to Default` reintroduction and off-center twin-button layout
+      - finish the position-debug authoring tool only if it is still intended to be part of Phase 5 closeout:
+        - resolve `rotZ` reliability
+        - resolve in-vehicle transform reliability
+      - decide whether reservation-consumption override tuning is still desired beyond the currently accepted auto-resubscribe return model
+      - implement base repair/runway-pad behavior if it remains a required Phase 5 deliverable rather than a deferred later system
+    - deferred tail-end `Phase 5G` ready-dialog saved/applied clarity pass:
+      - do not start this slice until the current cleanup/cutdown pass above is accepted as stable
+      - add a sustainable `draft config` vs `active applied config` comparison model and use that as the single source of truth for saved/unsaved UI state
+      - apply that saved/unsaved state to all ready-dialog knobs, including vehicle knobs and center config knobs
+      - knob/value color rules:
+        - value text is `green` when the currently displayed draft value matches the active applied config
+        - value text is `red` when the currently displayed draft value differs from the active applied config and therefore has unsaved changes
+        - headers remain `white`
+        - `No Spawn` is treated like any other applied value and should be `green` when it matches the active config
+      - expected lifecycle:
+        - when the dialog first opens against the active config, all values should be `green`
+        - when a knob is changed away from the active config, that value should immediately become `red`
+        - after a successful `APPLY CONFIGURATION`, affected values should return to `green`
+      - add a conditional unsaved-state label to the right of `Apply Configuration`:
+        - text: `[unsaved changes - apply to save]`
+        - visible only while any unsaved differences exist
+      - `Apply Configuration` button behavior:
+        - visually grayed out / disabled when there are no unsaved changes
+        - visually active only when at least one unsaved difference exists
+      - reintroduce `Reset to Default` as a sibling action button:
+        - place it to the left of `Apply Configuration`
+        - place `Apply Configuration` to the right of center
+        - keep a deliberate gutter between them so the pair straddles center similarly to the team plates rather than collapsing into one centered button cluster
+      - do not hardcode per-knob conditions; the comparison model should drive:
+        - knob color state
+        - unsaved label visibility
+        - apply-button enabled/disabled state
+        - reset-button necessity/behavior
     - only after this simplification pass should Phase 6 be considered ready to start
   - later tuning once 5A-5F are proven
 
 Immediate next implementation target:
 
 - `Phase 5G`
-- finish the Phase 5G optimization/cutdown pass before Phase 6 handoff
+- treat the structural 5G cleanup/cutdown pass as accepted
 - next design/implementation slice should:
-  - keep the current working checkpoint stable and continue the cutdown instead of adding more feature breadth
-  - treat the legacy combat/V2 removal and dormant loading-model removal as accepted cuts, not open design questions
-  - make the next pass narrower and more structural:
-    - family cleanup helpers
-    - ready-dialog dirty refresh
-    - HUD cache-shape cleanup
-    - final vehicle-HUD public-callsite cleanup
-  - keep the ready-up spawn-package work live, but treat further feature expansion as secondary to architectural cleanup until the current UI stack is smaller and easier to reason about
-  - use the simplified post-cleanup Phase 5G state as the Phase 6 handoff baseline
-- keep the remaining `Phase 5E` and `Phase 5F` follow-up explicit, but do not treat Phase 6 as ready until the current Phase 5G cleanup/cut pass is accepted
+  - keep the current working checkpoint stable and avoid reopening the accepted cleanup pass casually
+  - treat the next 5G work as explicit leftover deliverables rather than more generalized architecture churn:
+    - ready-dialog saved/applied clarity pass
+    - any still-required base repair support
+    - any still-required position-debug authoring completion
+    - any still-required reservation-consumption tuning decision
+  - keep the remaining `Phase 5E` and `Phase 5F` follow-up explicit:
+    - Firestorm-first map-config / deploy-anchor validation hardening
+    - bounded-volume validation and expansion
+  - keep the broader `Phase 5C` queue/signup decision explicit instead of letting it remain accidental limbo
+  - only use the simplified current 5G state as the Phase 6 handoff baseline after those remaining explicit Phase 5 items are intentionally closed or deferred
 
 Codex To-Do Checklist:
 
-- [ ] Complete `Phase 5A` authoritative vehicle spawner timer, game-state, and logic ownership.
+Remaining unchecked boxes below are intentional open Phase 5 items only; stale intermediate cleanup boxes should not remain here.
+
+- [x] Complete `Phase 5A` authoritative vehicle spawner timer, game-state, and logic ownership.
 - [x] Implement per-slot vehicle respawn timer state keyed to configured vehicle slot mapping.
 - [x] Render timer HUD output from authoritative timer state only.
 - [x] Complete the current Firestorm tracked-chopper `Phase 5B` HUD/deploy-screen display slice.
 - [ ] Decide whether a broader `Phase 5C` queue/signup system is still needed after the tracked-chopper `DEPLOY`-button pivot.
 - [ ] Add vehicle repair runway/pad support.
-- [ ] Add configurable knobs for vehicle spawns and ensure they are applied from authoritative config/runtime state.
-- [ ] Visualize/mount vehicle spawns on the deploy screen and lock a workable low-screenspace layout.
-- [ ] Harden the ready-dialog render/cache path so first open is an atomic reveal of a prebuilt hidden tree instead of a visible incremental build.
-- [ ] Remove visibility churn from routine UI refresh paths so top HUD, vehicle HUD, ready dialog, and debug all follow the explicit `build -> refresh hidden/content-only -> reveal once` contract.
+- [x] Add configurable knobs for vehicle spawns and ensure they are applied from authoritative config/runtime state.
+- [x] Visualize/mount vehicle spawns on the deploy screen and lock a workable low-screenspace layout.
+- [x] Harden the ready-dialog render/cache path so first open is an atomic reveal of a prebuilt hidden tree instead of a visible incremental build.
+- [x] Remove visibility churn from routine UI refresh paths so top HUD, vehicle HUD, ready dialog, and debug all follow the explicit `build -> refresh hidden/content-only -> reveal once` contract.
 - [x] Implement the first-pass Firestorm tracked-chopper deploy-screen timers and status panels.
 - [x] Show only the local player's team spawns in the deploy-screen timer display.
 - [x] Keep the timer display deploy-screen-only by default, with an admin override toggle for visibility outside deploy.
 - [x] Reuse/generalize existing clock widget behavior for per-vehicle timer instances instead of building a separate timer implementation from scratch.
-- [ ] Complete `Phase 5C` only if later vehicle classes still require a queue/signup flow beyond the current chopper model.
 - [x] Bring direct spawn-into-vehicle flow into Phase 5 and validate it against the same authoritative slot/timer system.
 - [x] Complete the current Firestorm tracked-chopper `Phase 5D` direct spawn-into-vehicle flow.
 - [x] Replace the earlier checkbox/reservation prototype in the tracked-chopper slice with a `READY`-only `DEPLOY` button.
@@ -2278,36 +2307,33 @@ Codex To-Do Checklist:
 - [x] Accept the current Firestorm-first `Phase 5E` map-config / vehicle-deploy-anchor checkpoint as passed for now.
 - [ ] Return to `Phase 5E` for deferred console-player review, hardened multiplayer testing, and final polish before broader rollout.
 - [x] Complete `Phase 5F` bounded 3D spawn-volume feature after map-config support for 4 floor corners, height, and fixed rotation exists.
-- [ ] Keep the remaining `Phase 5F` bounded-volume validation and expansion work explicit, but treat the next near-term implementation slice as the ready-up spawn-package merge.
-- [ ] Complete `Phase 5G` polish/tuning, including base repair behavior, after the Godot repair prerequisites and the core spawn systems are proven.
 - [ ] Return to the position-debug transform panel in `Phase 5G` and resolve the remaining `rotZ`/vehicle rotation reliability issues before calling that authoring tool complete.
-- [ ] Deprecate the legacy `4v4` forced-heli patch and replace it with a fully authoritative ready-up spawn-package pass.
-- [ ] Add `No Spawn` to every vehicle knob and use it to disable individual slots cleanly.
-- [ ] Lock `TWL - 10v10 Conquest` as the first full default spawn package, including heli, jet, armor, and fast-mover defaults.
-- [ ] Keep all configured vehicle slots user-controlled to spawn instead of auto-spawning them at match start.
-- [ ] Add first-pass plane `GROUND DEPLOY` / `AIR DEPLOY` handling and randomize `AIR DEPLOY` plane orientation between `N/E/S/W`.
-- [ ] Keep fast movers on `GROUND DEPLOY` only.
+- [x] Deprecate the legacy `4v4` forced-heli patch and replace it with a fully authoritative ready-up spawn-package pass.
+- [x] Add `No Spawn` to every vehicle knob and use it to disable individual slots cleanly.
+- [x] Lock `TWL - 10v10 Conquest` as the first full default spawn package, including heli, jet, armor, and fast-mover defaults.
+- [x] Keep all configured vehicle slots user-controlled to spawn instead of auto-spawning them at match start.
+- [x] Add first-pass plane `GROUND DEPLOY` / `AIR DEPLOY` handling and randomize `AIR DEPLOY` plane orientation between `N/E/S/W`.
+- [x] Keep fast movers on `GROUND DEPLOY` only.
 - [ ] Use the live `TWL - 10v10 Conquest` package to validate the right-side deploy HUD under the maximum intended visible vehicle count and adjust layout if it does not fit cleanly.
-- [ ] Prove a script-authoritative 4-corner-plus-height volume contract that can resolve a spawn anywhere inside the bounded 3D area.
+- [x] Prove a script-authoritative 4-corner-plus-height volume contract that can resolve a spawn anywhere inside the bounded 3D area.
 - [ ] Support first-pass `Phase 5F` authoring of two bounded vehicle-spawn boxes per side: one aircraft box and one tank box.
 - [ ] Validate spawn-position selection and safety inside the bounded volume under repeated test passes.
 - [ ] Expand map config until every intended transport/tank/chopper/jet spawn per map is statically identified, tested, and verified.
-- [ ] Limit first-pass vehicle-spawn mapping/testing rollout to Firestorm.
-- [ ] Decide in `Phase 5G` whether broader vehicle classes keep the current direct-deploy model or reintroduce a queue/subscription layer.
-- [ ] Keep current live-spawn behavior intact until map config and slot ownership are intentionally revised.
 - [x] Remove or isolate remaining legacy combat/V2 widget ownership so the active combat HUD has one visible owner only.
-- [ ] Split the right-side vehicle HUD into explicit build/content/reveal phases and remove routine visibility control from normal refresh helpers.
+- [x] Split the right-side vehicle HUD into explicit build/content/reveal phases and remove routine visibility control from normal refresh helpers.
 - [x] Delete dormant loading-overlay/loading-gate infrastructure that is no longer part of the accepted hidden-build/reveal model.
-- [ ] Simplify warm/reveal state in the interaction layer so only the minimal active ownership flags remain.
-- [ ] Move long manual HUD hide/delete/reset lists into per-family cleanup helpers.
-- [ ] Add ready-dialog dirty-refresh/signature rules so cold open/reopen stop doing unnecessary work.
-- [ ] Split active HUD cache refs from legacy/deprecated refs and remove dead cache shapes as families are simplified.
+- [x] Simplify warm/reveal state in the interaction layer so only the minimal active ownership flags remain.
+- [x] Move long manual HUD hide/delete/reset lists into per-family cleanup helpers.
+- [x] Add ready-dialog dirty-refresh/signature rules so cold open/reopen stop doing unnecessary work.
+- [x] Split active HUD cache refs from legacy/deprecated refs and remove dead cache shapes as families are simplified.
+- [ ] Add a sustainable ready-dialog `draft vs applied` saved-state model that drives red/green knob values, unsaved-change messaging, and `Apply Configuration` enabled/disabled behavior.
+- [ ] Reintroduce `Reset to Default` in the ready dialog and lay out `Reset to Default` and `Apply Configuration` as off-center sibling buttons with a center gutter.
 - [ ] Expand the ready-up dialog knobs to cover the requested spawn-type and spawn-length matrix before preset-mode packaging.
 - [ ] Add named preset configurations (`TWL 8v8/10v10/12v12/16v16 Conquest`) and switch to `Custom` labeling when knobs diverge from preset values.
 - [ ] Suppress the current left-side ready-up header strings while preserving their anchor positions for later reuse.
 - [ ] Standardize the ready-up knob layout into reusable row/column constants before mounting the full `7 column x 7 row` matrix from `TWL_Conquest_Knobs.md`.
 - [ ] Expand the current right-side two-column knob visual pattern into the full multi-column ready-up layout with a centered bottom action button.
-- [ ] Move ready-up vehicle knob values into authoritative game/config state and make the confirm/apply button mutate the actual active spawner selection.
+- [x] Move ready-up vehicle knob values into authoritative game/config state and make the confirm/apply button mutate the actual active spawner selection.
 - [ ] Add missing authored map-config spawn placeholders/positions for knob-controlled classes, including 4 fast-mover spawns per team on Firestorm.
 - [ ] Respect disabled slot hiding behavior and per-map respawn values.
 - [ ] Validate destroy-to-respawn timings against configured constants.
@@ -2323,6 +2349,8 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-03-18 | Phase 5 checklist cleanup follow-up | Removed stale duplicate Phase 5 checklist boxes, marked already-landed spawn-package items as complete (`No Spawn`, legacy 4v4 patch removal, plane ground/air deploy, fast-mover ground-only behavior, bounded-volume contract proof), and rewrote the remaining unchecked boxes so they reflect only real open Phase 5 work | Phase 5, Phase 5F, Phase 5G | accepted | design_doc Phase 5 checklist + changelog`
+  - `2026-03-18 | Phase 5 closeout doc sync after the accepted 5G cleanup baseline | Marked the broad Phase 5G structural cleanup/cutdown pass as accepted, updated the checklist to reflect the completed UI ownership/cut work, and collapsed the remaining Phase 5 work into the explicit leftover items: 5C queue decision, 5E validation hardening, 5F bounded-volume validation/expansion, and the remaining feature-level 5G items such as saved/applied clarity, base repair, and debug authoring follow-up | Phase 5, Phase 5G, Phase 6 | accepted | design_doc Phase 5G breakdown + immediate next target + Phase 5 checklist + Phase 5 changelog`
   - `2026-03-16 | Phase 5G next-step doc sync after the v0.692 combat/V2 cutdown | Recorded the accepted current cut checkpoint: dead combat/V2 widget writers are removed, the dormant loading-model is no longer part of the active design, and the next slice is now narrower: family cleanup helpers, ready-dialog dirty refresh, HUD cache-shape cleanup, further warm/reveal-state simplification, and final vehicle-HUD public-callsite cleanup before Phase 6 handoff is considered ready | Phase 5, Phase 5G, Phase 6 | accepted | design_doc Phase 5G breakdown + immediate next target + Phase 5 checklist + Phase 5 changelog`
   - `2026-03-16 | Phase 5G optimization/cutdown plan after UI stabilization checkpoint | Recorded that the current codebase is at an acceptable working checkpoint but still too heavy from repeated HUD/UI bug-fix churn; locked the next Phase 5G slice as an architectural simplification pass before Phase 6 handoff: remove duplicate widget owners, cut dormant loading infrastructure, split vehicle HUD refresh from reveal, simplify warm/reveal state, add ready-dialog dirty-refresh rules, and keep the accepted UI family order/topology explicit | Phase 5, Phase 5G, Phase 6 | accepted | design_doc Phase 5G breakdown + immediate next target + Phase 5 checklist + Phase 5 changelog`
   - `2026-03-15 | Phase 5F accepted and Phase 5G polish focus shift | Marked Phase 5F as accepted for now and moved the active implementation focus fully into Phase 5G polish: make ready-up knobs authoritative over real spawned slot inventory, lead with the TWL - 10v10 Conquest package, validate jets/armor/transports through the same live flow, and use the expanded package to test whether the right-side deploy HUD still fits the maximum intended vehicle count cleanly | Phase 5, Phase 5F, Phase 5G | accepted | design_doc Phase 5G breakdown + immediate next target + Phase 5 checklist + Phase 5 changelog`
@@ -2350,7 +2378,109 @@ Phase Changelog:
   - `2026-03-13 | Phase 5 Stage 1 timer backbone | Added authoritative per-slot respawn timer state and timer-owner helpers, then wired existing spawn/respawn/bind flows to that timer authority without changing current vehicle spawn behavior | src/state/runtime-types.ts, src/vehicles/timers.ts, src/vehicles/spawner-slots.ts, src/vehicles/spawner-sequence.ts, src/vehicles/spawner-bind.ts, src/index/vehicle-events.ts, src/index.ts | pending build/verify in current implementation pass`
 
 <a id="phase-6"></a>
-### Phase 6: Basic Spawn and Boundaries System
+### Phase 6: Pre & Post Match Events
+
+Deliverables:
+
+- final result UI + delayed finalize/end flow
+- ready-up dialog cleanup and end-of-round transition cleanup
+- redesign join prompt
+- optional physical ready-up flow using in-world interactables configured from Godot world spawners
+- defined round-start behavior limitations and accepted constraints
+- reset/setup staging flow reintroduced from helis mode so pre-live vehicle config changes can force a clean vehicle spawn state before round start
+
+Mapped clarifications:
+
+- `CF-16` and scoreboard formatting dependency `CF-41`
+
+Godot/map prerequisites:
+
+- optional camera anchors only if cinematic flow is added
+- authored/placed world interactables or equivalent Godot-spawned ready-up anchors if the physical ready-up path is enabled
+
+Verification:
+
+- `npm run verify`
+- final ticket/result accuracy and single end transition check
+- ready-up dialog cleanup/regression checks across pre-match, live, and post-match transitions
+- redesigned join-prompt behavior/regression checks across initial join, reconnect, and live-state handoff
+- physical ready-up interactable ownership/availability checks across pre-match, reconnect, and live-state lockout
+- round-start behavior limitation review and documentation pass
+- reset/setup staging check confirming grounded stale vehicles do not block newly configured round-start vehicle spawns when the match is made live
+
+Open design questions / locks still needed before implementation:
+
+- end-of-round state machine:
+  - define the exact lifecycle phases after live play ends
+  - define what locks immediately on end latch versus what may still update during delayed finalize/result display
+  - define reconnect/join behavior during each post-match phase
+- frozen result snapshot schema:
+  - lock the exact snapshot fields captured at the first successful end latch
+  - resolve how `CF-16` mandatory post-match fields interact with later scoreboard/KPI work in Phase 8
+  - decide whether Phase 6 shows a reduced result surface or carries limited backend aggregation forward before the full scoreboard phase
+- result UI composition:
+  - lock the exact visible fields, ownership, and timing of the result UI
+  - define whether it is an overlay, a replacement screen, or a staged transition off the current victory dialog shell
+- join-prompt redesign:
+  - define first-join, reconnect, live-round, and post-match behavior
+  - define dismissal persistence and whether the prompt remains informational only or becomes action-bearing
+- physical ready-up path:
+  - decide whether it stays in Phase 6, is deferred, or is cut entirely
+  - if kept, define whether it replaces or complements the current ready dialog and how it behaves during reconnect/live lockout
+- round-start behavior limitations:
+  - define exactly what can change pre-live, what requires setup/reset, and what is forbidden once the match is live
+  - define how config changes interact with already-deployed players, already-spawned vehicles, and pending claims/reservations
+- reset/setup staging semantics:
+  - lock whether setup/reset is manual, automatic, admin-only, or pre-live only
+  - define exactly what gets cleared or rebuilt:
+    - stale grounded vehicles
+    - active spawned vehicles
+    - pending deploy claims
+    - reservations
+    - timers
+    - player deploy state
+- pre-match/live/post-match transition matrix:
+  - define explicit visibility/input ownership for:
+    - ready dialog
+    - countdown UI
+    - join prompt
+    - result UI
+    - admin/debug surfaces
+  - prevent Phase 6 from reintroducing the ownership ambiguity already cleaned out of Phase 5G
+
+Recommended supporting design docs before Phase 6 implementation:
+
+- `phase6_end_flow_and_result_snapshot.md`
+- `phase6_round_start_and_setup.md`
+- `phase6_join_prompt_redesign.md`
+- `phase6_ready_up_transition_matrix.md`
+- `phase6_physical_ready_up_decision.md`
+
+Codex To-Do Checklist:
+
+- [ ] Implement post-match result screen fields using frozen end snapshot only.
+- [ ] Enforce single end transition path through end latch (no duplicate finalize paths).
+- [ ] Clean up the ready-up dialog for pre-match/post-match transition correctness and ownership clarity.
+- [ ] Redesign the join prompt and validate its ownership/flow across first join, reconnect, and transition to match-live state.
+- [ ] Implement and validate a physical ready-up interaction path using Godot-configured world spawners/interactables if that path is retained.
+- [ ] Determine and document round-start behavior limitations before expanding pre/post-match event flow.
+- [ ] Reintroduce the helis-mode reset/setup button for pre-match staging so changed vehicle configurations can clear stale grounded vehicles before live round start.
+- [ ] Validate winner/result/ticket/elapsed accuracy against authoritative snapshot.
+- [ ] Validate delayed finalize/end flow under normal and edge-case match endings.
+
+Phase Changelog:
+
+- `Log policy`: append-only; newest entry first.
+- `Current status`: `not_started`
+- `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
+- `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
+- `Entries`:
+  - `2026-03-18 | Phase 6 design-lock capture pass | Added the concrete open design questions that still need written decisions before implementation starts: end-flow state machine, frozen result snapshot schema, result UI composition, join-prompt redesign, physical ready-up keep/defer decision, round-start limitation rules, reset/setup semantics, and the pre-match/live/post-match transition matrix | Phase 6 | accepted | Phase 6 verification/open-questions block + top-level current-status sync`
+  - `2026-03-18 | Phase ordering update request | Moved Pre & Post Match Events up to Phase 6 ahead of the spawn/boundaries and scoreboard phases so the large planned flow changes are treated as the next post-Phase-5 system bucket | Phase 6, Phase 7, Phase 8 | accepted | TOC + phase section ordering + downstream phase references updated`
+  - `2026-03-18 | Pre-live vehicle-config follow-up request | Reintroduced helis-mode reset/setup button as a Phase 6 pre/post-match staging requirement so stale grounded vehicles can be cleared before live round start after config changes | Phase 6 | accepted | deliverables, verification, and checklist updated`
+
+<a id="phase-7"></a>
+### Phase 7: Basic Spawn and Boundaries System
 
 Deliverables:
 
@@ -2378,7 +2508,7 @@ Verification:
 - main-base out-of-bounds checks
 - kill-player out-of-bounds enforcement checks
 - dedicated minimap team-switch button behavior checks
-- confirm no advanced node/LOS/heatmap logic is active in Phase 6
+- confirm no advanced node/LOS/heatmap logic is active in Phase 7
 
 Codex To-Do Checklist:
 
@@ -2400,8 +2530,8 @@ Phase Changelog:
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`: `None yet`
 
-<a id="phase-7"></a>
-### Phase 7: Custom Tab Scoreboard + KPI Tracking
+<a id="phase-8"></a>
+### Phase 8: Custom Tab Scoreboard + KPI Tracking
 
 Deliverables:
 
@@ -2430,7 +2560,7 @@ Cross-phase note from Phase 4:
 
 - Phase 4 capture-sound events may keep lightweight diagnostic/context fields that are useful for future KPI debugging.
 - This does not authorize KPI implementation in Phase 4.
-- Phase 7 must still derive KPI truth from authoritative gameplay/capture state and confirmed event APIs, not from sound dispatch logs or audio queue behavior.
+- Phase 8 must still derive KPI truth from authoritative gameplay/capture state and confirmed event APIs, not from sound dispatch logs or audio queue behavior.
 
 Codex To-Do Checklist:
 
@@ -2439,55 +2569,7 @@ Codex To-Do Checklist:
 - [ ] Implement scoreboard render/update with dirty/signature discipline (no blind refresh loops).
 - [ ] Clean up the ready-up dialog after scoreboard/KPI work clarifies what pre-match and live-state UI responsibilities should remain there.
 - [ ] Validate reconnect/redeploy behavior and stat continuity expectations for V1 policy.
-- [ ] Run event-to-KPI accuracy tests and log gating results for Phase 7 signoff.
-
-Phase Changelog:
-
-- `Log policy`: append-only; newest entry first.
-- `Current status`: `not_started`
-- `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
-- `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
-- `Entries`: `None yet`
-
-<a id="phase-8"></a>
-### Phase 8: Pre & Post Match Events
-
-Deliverables:
-
-- final result UI + delayed finalize/end flow
-- ready-up dialog cleanup and end-of-round transition cleanup
-- redesign join prompt
-- optional physical ready-up flow using in-world interactables configured from Godot world spawners
-- defined round-start behavior limitations and accepted constraints
-
-Mapped clarifications:
-
-- `CF-16` and scoreboard formatting dependency `CF-41`
-
-Godot/map prerequisites:
-
-- optional camera anchors only if cinematic flow is added
-- authored/placed world interactables or equivalent Godot-spawned ready-up anchors if the physical ready-up path is enabled
-
-Verification:
-
-- `npm run verify`
-- final ticket/result accuracy and single end transition check
-- ready-up dialog cleanup/regression checks across pre-match, live, and post-match transitions
-- redesigned join-prompt behavior/regression checks across initial join, reconnect, and live-state handoff
-- physical ready-up interactable ownership/availability checks across pre-match, reconnect, and live-state lockout
-- round-start behavior limitation review and documentation pass
-
-Codex To-Do Checklist:
-
-- [ ] Implement post-match result screen fields using frozen end snapshot only.
-- [ ] Enforce single end transition path through end latch (no duplicate finalize paths).
-- [ ] Clean up the ready-up dialog for pre-match/post-match transition correctness and ownership clarity.
-- [ ] Redesign the join prompt and validate its ownership/flow across first join, reconnect, and transition to match-live state.
-- [ ] Implement and validate a physical ready-up interaction path using Godot-configured world spawners/interactables if that path is retained.
-- [ ] Determine and document round-start behavior limitations before expanding pre/post-match event flow.
-- [ ] Validate winner/result/ticket/elapsed accuracy against authoritative snapshot.
-- [ ] Validate delayed finalize/end flow under normal and edge-case match endings.
+- [ ] Run event-to-KPI accuracy tests and log gating results for Phase 8 signoff.
 
 Phase Changelog:
 

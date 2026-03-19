@@ -3,6 +3,25 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.713: Phase 5G cleanup: extract shared HUD warm and ready-dialog signature state accessors into a dedicated interaction module so actions.ts stays focused on orchestration
+// v0.712: Phase 5G cleanup: move ready-dialog admin toggle and panel-build lifecycle into the admin-panel domain so ui-events-ready only routes input
+// v0.711: Phase 5G cleanup: move ready-dialog close, destroy, chrome visibility, and admin-reset ownership into a dedicated lifecycle module so actions.ts only keeps warm/reveal logic
+// v0.710: Phase 5G cleanup: move ready-dialog hidden-build and show ownership behind builder-owned helpers so prebuild and open no longer duplicate uiBuilt/dialogVisible decisions across interaction code
+// v0.709: Phase 5G cleanup: unify ready-dialog cached reopen and first-build paths behind shared section-refresh and final-visibility helpers so the dialog keeps one reveal contract
+// v0.708: Phase 5G cleanup: replace repeated raw HUD warm-token guards with centralized helpers and remove the no-op deferred admin prebuild hook from the ready-dialog warm path
+// v0.707: Phase 5G cleanup: remove the dead legacy conquest HUD ref bag and delete its last unused ticket-bar helper so active HUD cache shapes stay focused on live ownership
+// v0.705: Phase 5G fix: sync the confirmed default vehicle package into startup spawner slots before first enable/reveal so pre-live HUD inventory matches the ready-dialog defaults without requiring Apply Configuration
+// v0.704: Phase 5G tuning: make TWL 10v10 default heli slot 2 the AH6M for both teams, move Black Hawks to transport slot 3 defaults, and remove the dead ready-dialog warm-cache helper
+// v0.703: Phase 5G cleanup: centralize HUD warm/swap/signature state writes and relabel the leftover mixed HUD ref bag as legacy-only during the active cache-shape cutdown
+// v0.702: Phase 5G cleanup: split vehicle HUD ownership into explicit hidden-prepare, hidden-prebuild, reveal-owner, and content-only update paths, and remove stale loading naming from the HUD warm controller
+// v0.701: Phase 5G cleanup: split the active top-HUD shell cache type from the broad legacy HUD ref bag and remove the dead hudByPid cache fallback
+// v0.700: Phase 5G polish: reveal the right-side vehicle HUD after spawner startup for already-warmed undeployed players so the list appears before first deploy
+// v0.699: Phase 5G polish: invalidate the right-side vehicle HUD render cache after applying ready-dialog configuration so AH6M-only heli changes refresh immediately pre-live
+// v0.698: Phase 5G polish: refresh the right-side vehicle HUD immediately after applying ready-dialog configuration so pre-live slot changes appear without waiting for respawn
+// v0.697: Phase 5G polish: classify AH6M as a tracked attack helicopter so it appears on the right-side vehicle HUD with ground and air deploy actions
+// v0.696: Phase 5G cleanup: add AH6M to heli knob options and split non-owner vehicle HUD refresh callsites onto explicit visibility-preserving update helpers
+// v0.695: Phase 5G cleanup: add ready-dialog dirty-refresh signatures for roster, mode-config, map, and button sections so reopen and visible refreshes skip unchanged UI writes
+// v0.694: Phase 5G cleanup: extract HUD family cleanup helpers in actions.ts and replace repeated ready-dialog, vehicle-HUD, clock, and debug hide/delete lists with family-owned helpers
 // v0.692: Phase 5G cutdown: remove dead legacy combat V2 widget writers and delete their unused bleed-pulse/render-burst state
 // v0.691: Phase 5G optimization/cutdown: remove dormant loading overlay state, isolate active combat ownership from legacy V2 hide bridges, and split vehicle HUD content refresh from family reveal
 // v0.689: Combat HUD scheduler prime: trigger one immediate single-player scheduler frame after arming combat reveal so pre-live combat appears once without duplicate owners

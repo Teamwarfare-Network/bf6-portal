@@ -242,7 +242,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
         updatePlayersReadyHudTextForAllPlayers();
         updateHelpTextVisibilityForAllPlayers();
     }
-    conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
+    updateVehicleDeployTimerHudForAllPlayers();
 }
 
 //#endregion -------------------- Exported Event Handlers - Player Join + Leave --------------------

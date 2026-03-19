@@ -3,7 +3,18 @@
 
 //#region -------------------- Ready Dialog - Map/Mode Config UI Readout --------------------
 
+// Builds a stable signature for the ready-dialog map readout.
+// Map text rarely changes, so this prevents redundant label writes on reopen.
+function buildReadyDialogMapSignature(pid: number): string {
+    return `${pid}|${ACTIVE_MAP_KEY}`;
+}
+
 function updateReadyDialogMapLabelForPid(pid: number): void {
+    const state = State.players.readyDialogData[pid];
+    if (!state) return;
+    const signature = buildReadyDialogMapSignature(pid);
+    if (state.lastMapSignature === signature) return;
+
     const labelWidget = safeFind(UI_READY_DIALOG_MAP_LABEL_ID + pid);
     const valueId = UI_READY_DIALOG_MAP_VALUE_ID + pid;
     const valueWidget = safeFind(valueId);
@@ -13,6 +24,7 @@ function updateReadyDialogMapLabelForPid(pid: number): void {
     if (!valueWidget) return;
     mod.SetUIWidgetParent(valueWidget, mod.GetUIRoot());
     mod.SetUITextLabel(valueWidget, mod.Message(getMapNameKey(ACTIVE_MAP_KEY)));
+    state.lastMapSignature = signature;
 }
 
 // Refreshes the map label/value pair for all connected players.
@@ -135,8 +147,29 @@ function getReadyDialogMinPlayersSupportMessage(): mod.Message {
     return mod.Message(mod.stringkeys.twl.readyDialog.minPlayersToStartFormat, counts.total);
 }
 
+// Builds one stable signature for the mode-config column/knob readout for a viewer.
+// Viewer perspective matters because team colors flip by viewer team.
+function buildReadyDialogModeConfigSignature(pid: number): string {
+    const cfg = State.round.modeConfig;
+    const counts = getAutoStartMinPlayerCounts();
+    const viewer = safeFindPlayer(pid);
+    const viewerTeam = safeGetTeamNumberFromPlayer(viewer, TeamID.Team1);
+    let signature = `${pid}|team:${viewerTeam}|mode:${cfg.gameMode}|players:${counts.left},${counts.right},${counts.total}`;
+
+    for (const knobKey of READY_DIALOG_ALL_VEHICLE_KNOB_KEYS) {
+        signature += `|${knobKey}:${cfg.vehicleSelectionIndexByKey?.[knobKey] ?? 0}`;
+    }
+
+    return signature;
+}
+
 // Updates Ready Dialog mode-setting labels/values for a specific viewer pid.
 function updateReadyDialogModeConfigForPid(pid: number): void {
+    const state = State.players.readyDialogData[pid];
+    if (!state) return;
+    const signature = buildReadyDialogModeConfigSignature(pid);
+    if (state.lastModeConfigSignature === signature) return;
+
     const cfg = State.round.modeConfig;
     const visuals = getReadyDialogViewerTeamVisuals(pid);
     const columns = getReadyDialogModeGridColumnSpecs();
@@ -200,6 +233,8 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
             updateReadyDialogGridSupportForPid(pid, column.key, getReadyDialogMinPlayersSupportMessage());
         }
     }
+
+    state.lastModeConfigSignature = signature;
 }
 
 // Updates mode-config readouts for players with an actively visible Ready Dialog.

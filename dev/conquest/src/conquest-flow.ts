@@ -30,7 +30,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     updateHelpTextVisibilityForAllPlayers();
     updatePlayersReadyHudTextForAllPlayers();
     updateReadyDialogModeConfigForAllVisibleViewers();
-    conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
+    updateVehicleDeployTimerHudForAllPlayers();
 
     resetMatchClock(getConfiguredMatchLengthSeconds());
     updateAllPlayersClock();
@@ -71,7 +71,7 @@ function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number,
     updateHelpTextVisibilityForAllPlayers();
     updateVictoryDialogForAllPlayers(MATCH_END_DELAY_SECONDS);
     updateReadyDialogModeConfigForAllVisibleViewers();
-    conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
+    updateVehicleDeployTimerHudForAllPlayers();
 }
 
 // Resets pre-live systems for a fresh setup pass without entering live state.
@@ -98,7 +98,7 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     if (State.vehicles && State.vehicles.slots) {
         applySpawnerEnablementForMatchup(State.round.matchupPresetIndex, true);
     }
-    conquestPhase5BRenderVehicleDeployTimersForAllPlayers();
+    updateVehicleDeployTimerHudForAllPlayers();
 }
 
 // Clamps configured match length to admin-safe limits.

@@ -129,3 +129,57 @@ function ensureAdminPanelWidgets(
         State.players.readyDialogData[playerId].adminPanelVisible = false;
     }
 }
+
+// Toggles the lazy admin panel body from the ready-dialog admin button without leaking that lifecycle into input routing.
+function toggleReadyDialogAdminPanel(eventPlayer: mod.Player, playerId: number): void {
+    if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
+    const state = State.players.readyDialogData[playerId];
+    const now = mod.GetMatchTimeElapsed();
+    if (now - state.lastAdminPanelToggleAt < ADMIN_PANEL_TOGGLE_COOLDOWN_SECONDS) {
+        return;
+    }
+    state.lastAdminPanelToggleAt = now;
+
+    state.adminPanelVisible = !state.adminPanelVisible;
+    if (!state.adminPanelVisible) {
+        deleteAdminPanelUI(playerId, false);
+        state.adminPanelBuilt = false;
+        return;
+    }
+
+    sendHighlightedWorldLogMessage(
+        mod.Message(mod.stringkeys.twl.adminPanel.accessed, eventPlayer),
+        true,
+        undefined,
+        mod.stringkeys.twl.adminPanel.accessed
+    );
+
+    deleteAdminPanelUI(playerId, false);
+    mod.AddUIContainer(
+        UI_ADMIN_PANEL_CONTAINER_ID + playerId,
+        mod.CreateVector(ADMIN_PANEL_OFFSET_X, ADMIN_PANEL_OFFSET_Y, 0),
+        mod.CreateVector(
+            ADMIN_PANEL_CONTENT_WIDTH + (ADMIN_PANEL_PADDING * 2),
+            ADMIN_PANEL_HEIGHT + (ADMIN_PANEL_PADDING * 2),
+            0
+        ),
+        mod.UIAnchor.TopRight,
+        mod.GetUIRoot(),
+        false,
+        10,
+        ADMIN_PANEL_BG_COLOR,
+        ADMIN_PANEL_BG_ALPHA,
+        ADMIN_PANEL_BG_FILL,
+        mod.UIDepth.AboveGameUI,
+        eventPlayer
+    );
+
+    const adminContainer = mod.FindUIWidgetWithName(UI_ADMIN_PANEL_CONTAINER_ID + playerId, mod.GetUIRoot());
+    if (!adminContainer) {
+        return;
+    }
+    buildAdminPanelWidgets(eventPlayer, adminContainer, playerId);
+    state.adminPanelBuilt = true;
+    mod.SetUIWidgetVisible(adminContainer, true);
+    setAdminPanelChildWidgetsVisible(playerId, true);
+}

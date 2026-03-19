@@ -51,18 +51,12 @@ function teamSwitchInteractPointActivated(eventPlayer: mod.Player, eventInteract
         const eventInteractPointId = mod.GetObjId(eventInteractPoint);
         if (interactPointId === eventInteractPointId) {
             try {
-                if (!State.players.readyDialogData[playerId].uiBuilt) {
-                    createReadyDialogUI(eventPlayer, false);
-                }
                 setUIInputModeForPlayer(eventPlayer, true);
-                // Track visibility so roster refreshes can target all viewers with the dialog open.
-                State.players.readyDialogData[playerId].dialogVisible = true;
                 if (consumeJoinPromptTripleTapForPid(playerId)) {
                     markJoinPromptReadyDialogOpened(playerId);
                 }
                 updateHelpTextVisibilityForPid(playerId);
-                createReadyDialogUI(eventPlayer);
-                const dialogRoot = safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId);
+                const dialogRoot = showReadyDialogUI(eventPlayer);
                 if (!dialogRoot) {
                     throw new Error(`Ready dialog root missing for pid ${playerId}`);
                 }
@@ -150,6 +144,10 @@ function initReadyDialogData(eventPlayer: mod.Player) {
         hudWarmCompleted: false,
         hudSwapTransitionActive: false,
         combatHudRevealAllowed: false,
+        lastButtonSignature: "",
+        lastRosterSignature: "",
+        lastModeConfigSignature: "",
+        lastMapSignature: "",
     };
 }
 
