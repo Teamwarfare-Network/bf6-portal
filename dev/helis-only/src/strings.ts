@@ -12,6 +12,7 @@ function getMapNameKey(mapKey: MapKey): number {
 function isHeliGameMode(gameModeKey: number): boolean {
     return (
         gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisLadder
+        || gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisTwl1v1
         || gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisPractice
         || gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisCustom
     );
@@ -19,13 +20,18 @@ function isHeliGameMode(gameModeKey: number): boolean {
 
 // Builds a basic heli spawn list from tank spawn positions when no map-specific heli list exists yet.
 function buildHeliSpawnsFromTankSpawns(spawns: VehicleSpawnSpec[], team: TeamID): VehicleSpawnSpec[] {
-    const attackVehicle = team === TeamID.Team1 ? mod.VehicleList.AH64 : mod.VehicleList.Eurocopter;
     const transportVehicle = team === TeamID.Team1 ? mod.VehicleList.UH60 : mod.VehicleList.UH60_Pax;
     return spawns.map((spawn) => ({
         slotNumber: spawn.slotNumber,
         pos: spawn.pos,
         rot: spawn.rot,
-        vehicle: spawn.slotNumber === 3 ? transportVehicle : attackVehicle,
+        vehicle: spawn.slotNumber === 1
+            ? mod.VehicleList.AH64
+            : spawn.slotNumber === 2
+                ? mod.VehicleList.Eurocopter
+                : spawn.slotNumber === 3
+                    ? mod.VehicleList.AH6M
+                    : transportVehicle,
     }));
 }
 

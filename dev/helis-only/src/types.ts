@@ -269,15 +269,18 @@ const READY_DIALOG_GAME_MODE_OPTIONS: number[] = [
     mod.stringkeys.twl.readyDialog.gameModeHelisTwl1v1,
     mod.stringkeys.twl.readyDialog.gameModeHelisCustom,
 ];
+const VEHICLE_AH6M = (mod.VehicleList as any).AH6M as mod.VehicleList;
 const READY_DIALOG_VEHICLE_OPTIONS: number[] = [
     mod.stringkeys.twl.readyDialog.vehicleOptionFalchion,
     mod.stringkeys.twl.readyDialog.vehicleOptionPanthera,
+    mod.stringkeys.twl.readyDialog.vehicleOptionLittleBird,
     mod.stringkeys.twl.readyDialog.vehicleOptionBlackHawk,
     mod.stringkeys.twl.readyDialog.vehicleOptionMapDefault,
 ];
 const READY_DIALOG_VEHICLE_LIST: mod.VehicleList[] = [
     mod.VehicleList.AH64,
     mod.VehicleList.Eurocopter,
+    VEHICLE_AH6M,
     mod.VehicleList.UH60,
     mod.VehicleList.AH64,
 ];
