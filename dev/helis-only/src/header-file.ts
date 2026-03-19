@@ -3,7 +3,7 @@
 
 //#region -------------------- Versioning --------------------
 
-// version: 0.625 | Date: 02.15.26 | Time: 00:52 UTC
+// version: 0.629 | Date: 03.18.26 | Time: 16:37 UTC
 // version policy header file: src/header-file.ts
 // version policy footer file: src/footer-file.ts
 // version policy strings file: src/strings.json
@@ -69,6 +69,7 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.629: Added Little Bird, bumped player health, fixed 1v1 bug, load times should also be better
 // v0.623: We're using TS Template project now, thanks to @Dox and @MikeDeluca
 // v0.621: Adjusted Aircraft Ceilings for Ladder based on feedback
 // v0.620: Helis Alpha Candidate 1.0 release for 2v2 Ladder opening

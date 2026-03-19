@@ -2304,6 +2304,7 @@ function isAircraftVehicle(vehicle: mod.Vehicle): boolean {
     if (mod.CompareVehicleName(vehicle, mod.VehicleList.SU57)) return true;
     // Helis + transports
     if (mod.CompareVehicleName(vehicle, mod.VehicleList.AH64)) return true;
+    if (mod.CompareVehicleName(vehicle, mod.VehicleList.AH6M)) return true;
     if (mod.CompareVehicleName(vehicle, mod.VehicleList.Eurocopter)) return true;
     if (mod.CompareVehicleName(vehicle, mod.VehicleList.UH60)) return true;
     if (mod.CompareVehicleName(vehicle, mod.VehicleList.UH60_Pax)) return true;
