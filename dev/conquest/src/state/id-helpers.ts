@@ -28,6 +28,28 @@ function safeGetPlayerId(player: mod.Player | null | undefined): number | undefi
     }
 }
 
+// Guarded vehicle lookup for players during seat/undeploy transition windows.
+function safeGetVehicleFromPlayer(player: mod.Player | null | undefined): mod.Vehicle | undefined {
+    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    if (!isPlayerDeployed(player)) return undefined;
+    try {
+        return mod.GetVehicleFromPlayer(player);
+    } catch {
+        return undefined;
+    }
+}
+
+// Guarded player seat lookup for transition windows where the engine briefly rejects the query.
+function safeGetPlayerVehicleSeat(player: mod.Player | null | undefined, fallback: number = -1): number {
+    if (!player || !mod.IsPlayerValid(player)) return fallback;
+    if (!isPlayerDeployed(player)) return fallback;
+    try {
+        return mod.GetPlayerVehicleSeat(player);
+    } catch {
+        return fallback;
+    }
+}
+
 // Returns true when the runtime has marked this player id as disconnected.
 function isPidDisconnected(pid: number): boolean {
     return State.players.disconnectedByPid[pid] === true;
@@ -98,16 +120,27 @@ function getTeamNameKey(teamNum: TeamID | 0): number {
     return mod.stringkeys.twl.system.unknownPlayer;
 }
 
+// Player-name message helper for UI text paths.
+// CQ_Bug_18 ended up being a ready-dialog reveal-path problem, not the Player-backed message itself,
+// so player-facing UI should use the actual player name again.
+function getUiSafePlayerPidMessage(pid: number | undefined): mod.Message {
+    if (pid === undefined) return mod.Message(mod.stringkeys.twl.system.unknownPlayer);
+    const player = safeFindPlayer(pid);
+    if (!player) return mod.Message(mod.stringkeys.twl.system.unknownPlayer);
+    return mod.Message(player);
+}
+
+function getUiSafePlayerMessage(player: mod.Player | null | undefined): mod.Message {
+    if (!player || !mod.IsPlayerValid(player)) return mod.Message(mod.stringkeys.twl.system.unknownPlayer);
+    return mod.Message(player);
+}
+
 // Best-effort UI widget lookup by name from UIRoot, then global fallback.
 function safeFind(name: string): mod.UIWidget | undefined {
     try {
         return mod.FindUIWidgetWithName(name, mod.GetUIRoot()) as mod.UIWidget;
     } catch {
-        try {
-            return mod.FindUIWidgetWithName(name) as mod.UIWidget;
-        } catch {
-            return undefined;
-        }
+        return undefined;
     }
 }
 

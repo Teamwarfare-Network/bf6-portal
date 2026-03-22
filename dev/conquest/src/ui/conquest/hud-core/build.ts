@@ -13,7 +13,7 @@ function twlConquestHudEnsureContainer(
 ): mod.UIWidget | undefined {
     let widget = safeFind(name);
     if (!widget) {
-        const parsed = modlib.ParseUI({
+        const parsed = safeParseUI({
             name,
             type: "Container",
             playerId: player,
@@ -69,7 +69,7 @@ function twlConquestHudEnsureText(
     let widget = safeFind(name);
     let created = false;
     if (!widget) {
-        const parsed = modlib.ParseUI({
+        const parsed = safeParseUI({
             name,
             type: "Text",
             playerId: player,
@@ -165,7 +165,7 @@ function twlConquestHudEnsureImage(
 ): mod.UIWidget | undefined {
     let widget = safeFind(name);
     if (!widget) {
-        const parsed = modlib.ParseUI({
+        const parsed = safeParseUI({
             name,
             type: "Image",
             playerId: player,
@@ -1111,3 +1111,4 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
     entry.buildGeneration = entry.buildGeneration + 1;
     return entry;
 }
+

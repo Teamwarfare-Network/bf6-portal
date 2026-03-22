@@ -12,7 +12,7 @@ function getVehicleDeployTimerAdminToggleLabelKey(pid: number): number {
 function syncVehicleDeployTimerAdminToggleLabelForPid(pid: number): void {
     const label = safeFind(UI_TEST_DEPLOY_TIMERS_TOGGLE_TEXT_ID + pid);
     if (!label) return;
-    mod.SetUITextLabel(label, mod.Message(getVehicleDeployTimerAdminToggleLabelKey(pid)));
+    safeSetUITextLabel(label, mod.Message(getVehicleDeployTimerAdminToggleLabelKey(pid)));
 }
 
 function getVehicleDeployTimerLabelKey(vehicleType: mod.VehicleList): number {
@@ -281,7 +281,7 @@ function ensureVehicleDeployInfoPlate(
 ): mod.UIWidget | undefined {
     let widget = safeFind(name);
     if (!widget) {
-        const parsed = modlib.ParseUI({
+        const parsed = safeParseUI({
             name,
             type: "Container",
             playerId: player,
@@ -328,7 +328,7 @@ function ensureVehicleDeployCenteredText(
 ): mod.UIWidget | undefined {
     let widget = safeFind(name);
     if (!widget) {
-        const parsed = modlib.ParseUI({
+        const parsed = safeParseUI({
             name,
             type: "Text",
             playerId: player,
@@ -693,17 +693,9 @@ function getVehicleDeployActiveOwnerNameMessage(slot: VehicleSpawnerSlot): mod.M
     if (slot.vehicleId === -1) return undefined;
     const vehicle = findVehicleById(slot.vehicleId);
     if (!vehicle) return mod.Message(getVehicleDeployIdleLabelKey());
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
-        const pid = safeGetPlayerId(player);
-        if (pid === undefined || isPidDisconnected(pid)) continue;
-        const playerVehicle = mod.GetVehicleFromPlayer(player);
-        if (!playerVehicle || !mod.Equals(playerVehicle, vehicle)) continue;
-        if (mod.GetPlayerVehicleSeat(player) !== 0) continue;
-        return mod.Message(mod.stringkeys.twl.readyDialog.playerNameFormat, player);
+    const ownerPid = slot.activeOwnerPid;
+    if (ownerPid !== undefined && !isPidDisconnected(ownerPid)) {
+        return getUiSafePlayerPidMessage(ownerPid);
     }
     return mod.Message(getVehicleDeployIdleLabelKey());
 }
@@ -795,7 +787,7 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
     const uiRoot = mod.GetUIRoot();
 
     deleteVehicleDeployTimerHudArtifactsForPid(pid);
-    modlib.ParseUI({
+    safeParseUI({
         name: `VehicleDeployTimerHudRoot_${pid}`,
         type: "Container",
         playerId: player,
@@ -1465,3 +1457,4 @@ function invalidateVehicleDeployTimerHudRenderSignaturesForAllPlayers(): void {
         cache.lastRenderSignature = undefined;
     }
 }
+

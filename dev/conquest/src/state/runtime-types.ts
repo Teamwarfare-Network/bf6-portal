@@ -31,6 +31,8 @@ type VehicleSpawnerSlot = {
     pendingSpawnOwnerPid?: number;
     pendingSpawnMode?: VehicleDirectSpawnMode;
     activeOwnerPid?: number;
+    suppressNextBindSpawnTransformCorrection?: boolean;
+    freshAirRuntimeSpawner?: mod.VehicleSpawner;
 };
 
 type VehicleSlotSpawnCategory =

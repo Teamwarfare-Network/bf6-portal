@@ -80,8 +80,8 @@ function buildReadyDialogRosterSection(
         eventPlayer
     );
 
-    const t1Container = mod.FindUIWidgetWithName(t1ContainerId, mod.GetUIRoot());
-    const t2Container = mod.FindUIWidgetWithName(t2ContainerId, mod.GetUIRoot());
+    const t1Container = safeFind(t1ContainerId);
+    const t2Container = safeFind(t2ContainerId);
     if (!t1Container || !t2Container) return;
 
     const teamLabelY = 0;

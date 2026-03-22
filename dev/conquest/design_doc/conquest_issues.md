@@ -1,7 +1,7 @@
 # Conquest Issues
 
-Last Updated: 2026-03-16  
-Last Tested Build: `v0.528` (accepted Phase 4 / 4B multiplayer-tested checkpoint with one deferred VO polish bug)
+Last Updated: 2026-03-22  
+Last Tested Build: `v0.763` (fresh in-air aircraft birth-spawn path cleaned up; latest hardening pass routes the remaining ready-dialog/shared HUD label refresh paths through safe text setters while `CQ_Bug_18` / `CQ_Bug_19` stay under investigation)
 
 ## Current Snapshot
 - `CQ_Bug_1`: Resolved
@@ -21,6 +21,138 @@ Last Tested Build: `v0.528` (accepted Phase 4 / 4B multiplayer-tested checkpoint
 - `CQ_Bug_15`: Resolved
 - `CQ_Bug_16`: Open (deferred polish)
 - `CQ_Bug_17`: Open (deferred polish)
+- `CQ_Bug_18`: Open (deferred investigation)
+- `CQ_Bug_19`: Open (deferred investigation)
+
+## CQ_Bug_19
+Title: Late-Match Multiplayer Deploy Buttons Disappear / Script Appears To Degrade
+
+Observed:
+- In multiplayer, at some indeterminate later point in a match, roughly `5-10` minutes in, the `GROUND DEPLOY` and `AIR DEPLOY` buttons stopped appearing.
+- At the same time, the broader script behavior appeared to degrade or partially stop working, not just the button visuals.
+- The only runtime errors noticed during that failure window were the same already-known spam errors currently tracked under `CQ_Bug_18`.
+- This has not yet been isolated to:
+  - admin panel usage
+  - debug position visibility
+  - one specific vehicle class
+  - one specific deploy mode
+
+Expected:
+- The right-side vehicle deploy HUD should continue rendering `GROUND DEPLOY` / `AIR DEPLOY` buttons reliably for the full duration of a multiplayer match.
+- The script should not enter a degraded mid-match state where vehicle deploy affordances disappear after several minutes of runtime.
+
+Current Accepted Behavior:
+- This is a newly tracked deferred bug.
+- It is not yet isolated enough to block the current jet pitch investigation, but it is a serious stability item because it suggests a longer-session lifecycle failure rather than a one-off UI glitch.
+
+Status:
+- Open.
+- Active investigation candidate after the current aircraft cleanup pass.
+
+Current Best Read:
+- This may be a secondary symptom of the same unresolved runtime/log-spam problem tracked in `CQ_Bug_18`, rather than a fully separate deploy-button-only issue.
+- The strongest current suspicion is:
+  - a longer-session lifecycle/cache invalidation problem in the right-side vehicle HUD or a shared ready/admin/HUD refresh path
+  - with the visible loss of `GROUND DEPLOY` / `AIR DEPLOY` buttons being one downstream symptom once the mode enters that bad state
+
+Latest Findings (2026-03-22):
+- The failure is broader than "buttons disappear."
+- Reported variants now include:
+  - buttons do not render at all
+  - buttons render but are not clickable
+  - the script feels partially unresponsive once the bad state starts
+- There is still no clean repro sequence yet.
+- Current suspicion remains that this is a broader runtime degradation, not just a button-widget visibility issue.
+
+Recommended Later Investigation:
+- Reproduce in multiplayer from a fresh round and note:
+  - time elapsed when buttons first disappear
+  - whether the buttons are fully missing or present-but-dead
+  - whether the right-side vehicle rows are still present but missing only the buttons
+  - whether reservations / slot ownership continue updating correctly underneath
+  - whether the ready dialog had been opened earlier in the session
+  - whether admin panel or debug panel had been used earlier in the session
+- Correlate the failure window with `CQ_Bug_18` runtime spam and treat both as likely connected unless evidence later proves otherwise.
+- Add explicit diagnosis targets in the next pass:
+  - whether the right-side deploy HUD root/container still exists
+  - whether the button widgets still exist and remain visible
+  - whether UI input is still enabled for the local player
+  - whether the click handler path is still receiving events once the bad state begins
+
+## CQ_Bug_18
+Title: Ready-Dialog / Admin-Adjacent Runtime Log Spam
+
+Observed:
+- Runtime log spam can begin once the ready dialog has been opened.
+- Earlier testing suggested the issue only appeared after opening the admin panel, but later testing reproduced it without opening the admin panel at all.
+- The latest reports indicate:
+  - ready dialog open is sufficient to enter the bad state
+  - admin panel can still open successfully
+  - debug position visibility is not required to trigger the issue
+- Error classes seen repeatedly during this investigation include:
+  - `GETVEHICLEFROMPLAYER`
+  - `GETPLAYERVEHICLESEAT`
+  - `SETUITEXTLABEL`
+
+Expected:
+- Opening the ready dialog should not put the UI/runtime into a state that begins recurring engine/log errors.
+- Admin panel open, close, and debug tools should remain silent in logs unless a true exceptional condition occurs.
+
+Current Accepted Behavior:
+- This is a known deferred runtime-noise issue and is not currently blocking broader mode testing.
+- Core user-facing behavior remains usable enough for the current checkpoint:
+  - ready dialog works
+  - admin panel opens
+  - debug panel can be opened
+  - aircraft air deploy remains stable in position
+
+Status:
+- Open.
+- Active investigation candidate after the aircraft cleanup pass.
+
+Latest Findings (v0.727-v0.732):
+- The issue is no longer treated as admin-only.
+- Multiple hardening passes already reduced or removed some obvious risky paths:
+  - safe wrappers added around player->vehicle and player->seat reads
+  - position debug sampling stopped falling back into risky player-object sampling while in vehicle
+  - admin-panel toggle/build paths were moved onto safe UI wrappers
+  - the right-side vehicle HUD owner-name path no longer scans all players with player->vehicle / seat engine queries and instead uses tracked `slot.activeOwnerPid`
+- Despite those mitigations, the same class of log spam still appears after the ready dialog has been opened, which means at least one remaining caller is still being reached outside the already-fixed hot paths.
+
+Current Best Read:
+- The remaining issue is likely a ready-dialog-adjacent lifecycle/readback path rather than a pure admin-panel bug.
+- The strongest unresolved candidates are:
+  - a remaining UI label/visibility write against a stale widget handle after ready-dialog lifecycle transitions
+  - a remaining player/vehicle state probe that still executes after ready-dialog/open HUD refreshes
+  - a shared refresh path that is only exercised once the ready-dialog/admin family has been built at least once
+
+Latest Findings (2026-03-22):
+- The error log still begins spamming after opening the ready dialog.
+- This is still reproducible without relying on the admin panel.
+- The deploy-button degradation in `CQ_Bug_19` may be a later downstream symptom of the same unresolved runtime problem once enough log/error churn accumulates.
+- `v0.763` removed the remaining direct `SetUITextLabel(...)` refresh writes from the ready-dialog/shared HUD hot paths and routed them through `safeSetUITextLabel(...)` instead.
+- If spam persists after `v0.763`, the remaining likely source narrows further toward:
+  - player->vehicle / seat readback timing inside the safe wrappers themselves
+  - or another non-label ready-dialog/open lifecycle call that is still stale-widget-sensitive
+
+Recommended Later Investigation:
+- Reproduce from a fresh round with strict sequence logging:
+  - fresh join
+  - open ready dialog only
+  - note exact first frame/tick when log spam begins
+  - then separately open admin panel and debug panel
+- Correlate the live log text against the remaining ready-dialog/admin refresh call sites instead of broader sweep hardening.
+- Treat this as a dedicated runtime-error isolation pass, separate from aircraft pitch-down prototyping.
+- Add one focused pass on the ready-dialog/open path itself:
+  - widget build
+  - widget reveal
+  - ready-dialog refresh
+  - right-side deploy HUD refresh
+  - any player->vehicle / seat probes triggered from that same open path
+- Re-test specifically on `v0.763` and note whether:
+  - `SETUITEXTLABEL` spam is fully gone
+  - only `GETVEHICLEFROMPLAYER` / `GETPLAYERVEHICLESEAT` remain
+  - `CQ_Bug_19` still reproduces after a longer multiplayer session
 
 ## CQ_Bug_17
 Title: Marauder Ground Spawn Fails To Seat Player Reliably

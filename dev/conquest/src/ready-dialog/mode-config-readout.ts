@@ -23,7 +23,7 @@ function updateReadyDialogMapLabelForPid(pid: number): void {
     }
     if (!valueWidget) return;
     mod.SetUIWidgetParent(valueWidget, mod.GetUIRoot());
-    mod.SetUITextLabel(valueWidget, mod.Message(getMapNameKey(ACTIVE_MAP_KEY)));
+    safeSetUITextLabel(valueWidget, mod.Message(getMapNameKey(ACTIVE_MAP_KEY)));
     state.lastMapSignature = signature;
 }
 
@@ -41,7 +41,7 @@ function updateReadyDialogMapLabelForAllPlayers(): void {
 function updateReadyDialogGridColumnHeaderForPid(pid: number, columnKey: string, label: mod.Message): void {
     const widget = safeFind(UI_READY_DIALOG_MODE_GRID_COLUMN_HEADER_ID + columnKey + "_" + pid);
     if (!widget) return;
-    mod.SetUITextLabel(widget, label);
+    safeSetUITextLabel(widget, label);
 }
 
 function updateReadyDialogGridKnobLabelForPid(pid: number, knobKey: string, labelKey: number): void {
@@ -50,19 +50,19 @@ function updateReadyDialogGridKnobLabelForPid(pid: number, knobKey: string, labe
     const resolvedLabelKey = labelKey !== undefined && labelKey !== null
         ? labelKey
         : mod.stringkeys.twl.system.unknownPlayer;
-    mod.SetUITextLabel(widget, mod.Message(resolvedLabelKey));
+    safeSetUITextLabel(widget, mod.Message(resolvedLabelKey));
 }
 
 function updateReadyDialogGridKnobValueForPid(pid: number, knobKey: string, label: mod.Message): void {
     const widget = safeFind(UI_READY_DIALOG_MODE_GRID_KNOB_VALUE_ID + knobKey + "_" + pid);
     if (!widget) return;
-    mod.SetUITextLabel(widget, label);
+    safeSetUITextLabel(widget, label);
 }
 
 function updateReadyDialogGridSupportForPid(pid: number, columnKey: string, label: mod.Message): void {
     const widget = safeFind(UI_READY_DIALOG_MODE_GRID_SUPPORT_ID + columnKey + "_" + pid);
     if (!widget) return;
-    mod.SetUITextLabel(widget, label);
+    safeSetUITextLabel(widget, label);
 }
 
 function setReadyDialogGridKnobRowVisibleForPid(pid: number, knobKey: string, visible: boolean): void {
@@ -194,7 +194,7 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
             if (knob.key === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) {
                 const playersLabelWidget = safeFind(UI_READY_DIALOG_MODE_GRID_KNOB_LABEL_ID + knob.key + "_" + pid);
                 if (playersLabelWidget) {
-                    mod.SetUITextLabel(playersLabelWidget, mod.Message(mod.stringkeys.twl.system.genericCounter, ""));
+                    safeSetUITextLabel(playersLabelWidget, mod.Message(mod.stringkeys.twl.system.genericCounter, ""));
                     mod.SetUIWidgetVisible(playersLabelWidget, false);
                 }
             } else {

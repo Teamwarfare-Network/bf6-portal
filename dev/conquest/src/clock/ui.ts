@@ -88,7 +88,7 @@ const pid = mod.GetObjId(player);
     deleteAllByName("RoundStateText_" + pid);
     deleteAllByName("PlayersReadyText_" + pid);
 
-    modlib.ParseUI({
+    safeParseUI({
         name: rootName,
         type: "Container",
         playerId: player,
@@ -170,7 +170,7 @@ const pid = mod.GetObjId(player);
 
 // Builds the explicit clock surface as its own top-center widget so visible panel geometry is deterministic.
 function buildClockSurface(pid: number, player: mod.Player, visible: boolean): void {
-    modlib.ParseUI({
+    safeParseUI({
         name: "MatchTimerSurface_" + pid,
         type: "Container",
         playerId: player,
@@ -258,7 +258,7 @@ function buildColon(pid: number, x: number, width: number) {
         size: [width, CLOCK_HEIGHT],
         visible: true,
         bgAlpha: 0,
-        textLabel: mod.stringkeys.twl.hud.clock.colon,
+        textLabel: mod.Message(mod.stringkeys.twl.hud.clock.colon),
         textSize: CLOCK_FONT_SIZE,
         textAnchor: mod.UIAnchor.Center,
     };
@@ -273,7 +273,7 @@ function buildColonShadow(pid: number, x: number, width: number) {
         size: [width, CLOCK_HEIGHT],
         visible: true,
         bgAlpha: 0,
-        textLabel: mod.stringkeys.twl.hud.clock.colon,
+        textLabel: mod.Message(mod.stringkeys.twl.hud.clock.colon),
         textColor: [0, 0, 0],
         textAlpha: CLOCK_TEXT_SHADOW_ALPHA,
         textSize: CLOCK_FONT_SIZE,
@@ -283,12 +283,12 @@ function buildColonShadow(pid: number, x: number, width: number) {
 
 // Writes a single numeric digit into an existing cached clock text widget.
 function setDigitCached(widget: mod.UIWidget, digit: number): void {
-    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.clock.digit, digit));
+    safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.clock.digit, digit));
 }
 
 // Writes the colon glyph into an existing cached clock separator widget.
 function setColonCached(widget: mod.UIWidget): void {
-    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.clock.colon));
+    safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.clock.colon));
 }
 
 // Applies one color value across all cached clock digit/separator widgets.
@@ -321,3 +321,4 @@ function setClockVisibilityCached(cacheEntry: ClockWidgetCacheEntry, visible: bo
 }
 
 //#endregion ----------------- Match Clock - UI Build + Cache Helpers --------------------
+

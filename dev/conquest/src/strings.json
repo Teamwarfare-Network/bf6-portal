@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v0.714)",
+        "title": "teamwarfare . net | TWL Conquest (v0.778)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -222,7 +222,8 @@
           "deployTimersVisibleOff": "Timers Visible Deployed OFF"
         },
         "labels": {
-          "clockTime": "Clock Time -/+ 1m"
+          "clockTime": "Clock Time -/+ 1m",
+          "roundLength": "Match Length"
         }
       }
     },
@@ -257,12 +258,12 @@
     "debug": {
       "adminPos": "ADMIN POS X:{0} Y:{1} Z:{2}",
       "adminFacing": "ADMIN FACING X:{0} Y:{1} Z:{2}",
-      "posX": "posX",
-      "posY": "posY",
-      "posZ": "posZ",
-      "rotX": "rotX",
-      "rotY": "rotY",
-      "rotZ": "rotZ"
+      "posX": "posX:",
+      "posY": "posY:",
+      "posZ": "posZ:",
+      "rotX": "rotX:",
+      "rotY": "rotY:",
+      "rotZ": "rotZ:"
     },
     "messages": {
       "init": "Conquest systems initialized.",

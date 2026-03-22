@@ -46,7 +46,7 @@ function buildConquestTopCenterAuxWidgets(
     deleteAllTopCenterAuxWidgetsByName(`Container_ReadyStatus_${pid}`);
     deleteAllTopCenterAuxWidgetsByName(`ReadyStatusText_${pid}`);
 
-    const mid = modlib.ParseUI({
+    const mid = safeParseUI({
         name: `ConquestTopCenterAuxRoot_${pid}`,
         type: "Container",
         playerId: player,
@@ -82,7 +82,7 @@ function buildConquestTopCenterAuxWidgets(
                         bgColor: [0.2, 0.2, 0.2],
                         bgAlpha: 1,
                         bgFill: mod.UIBgFill.None,
-                        textLabel: mod.stringkeys.twl.hud.helpText,
+                        textLabel: mod.Message(mod.stringkeys.twl.hud.helpText),
                         textColor: [0.251, 0.0941, 0.0667],
                         textAlpha: 1,
                         textSize: 12,
@@ -97,3 +97,4 @@ function buildConquestTopCenterAuxWidgets(
         refs.topCenterAuxRoot = mid;
     }
 }
+

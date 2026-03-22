@@ -28,7 +28,7 @@ function bindVictoryDialogRefsByName(pid: number, refs: TopHudShellRefs): void {
 
 // Builds the cached victory dialog widget tree for one player and binds all dialog refs.
 function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHudShellRefs): void {
-    const modal = modlib.ParseUI({
+    const modal = safeParseUI({
         name: `VictoryDialogRoot_${pid}`,
         type: "Container",
         playerId: player,
@@ -51,7 +51,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 padding: 0,
                 bgAlpha: 0,
                 bgFill: mod.UIBgFill.None,
-                textLabel: mod.stringkeys.twl.hud.branding.title,
+                textLabel: mod.Message(mod.stringkeys.twl.hud.branding.title),
                 textColor: [1, 1, 1],
                 textAlpha: 1,
                 textSize: 18,
@@ -67,7 +67,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 padding: 0,
                 bgAlpha: 0,
                 bgFill: mod.UIBgFill.None,
-                textLabel: mod.stringkeys.twl.hud.branding.subtitle,
+                textLabel: mod.Message(mod.stringkeys.twl.hud.branding.subtitle),
                 textColor: [1, 1, 1],
                 textAlpha: 1,
                 textSize: 18,
@@ -83,7 +83,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 padding: 0,
                 bgAlpha: 0,
                 bgFill: mod.UIBgFill.None,
-                textLabel: mod.stringkeys.twl.victory.screenshotPrompt,
+                textLabel: mod.Message(mod.stringkeys.twl.victory.screenshotPrompt),
                 textColor: [1, 1, 0],
                 textAlpha: 1,
                 textSize: 12,
@@ -126,7 +126,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                         padding: 0,
                         bgAlpha: 0,
                         bgFill: mod.UIBgFill.None,
-                        textLabel: mod.stringkeys.twl.victory.totalMatchTimeLabel,
+                        textLabel: mod.Message(mod.stringkeys.twl.victory.totalMatchTimeLabel),
                         textColor: [1, 1, 1],
                         textAlpha: 1,
                         textSize: 12,
@@ -378,3 +378,4 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
     if (modal) refs.roots.push(modal);
     bindVictoryDialogRefsByName(pid, refs);
 }
+

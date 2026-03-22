@@ -66,6 +66,49 @@ function getTriangleArea2D(a: mod.Vector, b: mod.Vector, c: mod.Vector): number 
     return Math.abs((abX * acZ) - (abZ * acX)) * 0.5;
 }
 
+function getSpawnVolumeFootprintArea(volume: VehicleSpawnVolumeSpec): number {
+    const [a, b, c, d] = volume.floorCorners;
+    return getTriangleArea2D(a, b, c) + getTriangleArea2D(a, c, d);
+}
+
+function getSpawnVolumeSelectionWeight(volume: VehicleSpawnVolumeSpec, vehicleType: mod.VehicleList): number {
+    const footprintArea = getSpawnVolumeFootprintArea(volume);
+    if (!Number.isFinite(footprintArea) || footprintArea <= 0) return 0;
+    if (isTankSpawnVolumeVehicleType(vehicleType)) return footprintArea;
+    if (isJetSpawnVolumeVehicleType(vehicleType)) {
+        const jetBand = Math.max(0, volume.jetSpawnCeiling - Math.max(0, volume.jetSpawnFloor));
+        return footprintArea * Math.max(1, jetBand);
+    }
+    return footprintArea * Math.max(1, Math.max(0, volume.heliSpawnCeiling));
+}
+
+function chooseSpawnVolumeForVehicleType(
+    volumes: VehicleSpawnVolumeSpec[],
+    vehicleType: mod.VehicleList
+): VehicleSpawnVolumeSpec | undefined {
+    if (!volumes || volumes.length <= 0) return undefined;
+    let totalWeight = 0;
+    const weights: number[] = [];
+    for (let i = 0; i < volumes.length; i++) {
+        const weight = getSpawnVolumeSelectionWeight(volumes[i], vehicleType);
+        weights[i] = weight;
+        totalWeight += weight;
+    }
+    if (totalWeight <= 0) {
+        const fallbackIndex = Math.floor(Math.random() * volumes.length);
+        return volumes[fallbackIndex];
+    }
+
+    let threshold = Math.random() * totalWeight;
+    for (let i = 0; i < volumes.length; i++) {
+        threshold -= weights[i];
+        if (threshold <= 0) {
+            return volumes[i];
+        }
+    }
+    return volumes[volumes.length - 1];
+}
+
 function sampleRandomPointInTriangle(a: mod.Vector, b: mod.Vector, c: mod.Vector): mod.Vector {
     const r1 = Math.random();
     const r2 = Math.random();
@@ -100,23 +143,53 @@ function sampleRandomPointInSpawnVolume(volume: VehicleSpawnVolumeSpec, vehicleT
     return createVectorAdd(floorPoint, mod.CreateVector(0, randomHeight, 0));
 }
 
-function sampleRandomJetSpawnRotation(volume: VehicleSpawnVolumeSpec): mod.Vector {
-    const rotations = [volume.rotPlaneN, volume.rotPlaneE, volume.rotPlaneW, volume.rotPlaneS];
-    const index = Math.floor(Math.random() * rotations.length);
-    return rotations[index] ?? volume.rotPlaneN;
-}
-
 function tryResolveBoundedSpawnTransformForSlot(slot: VehicleSpawnerSlot): { pos: mod.Vector; rot: mod.Vector } | undefined {
     const volumeClass = getSpawnVolumeClassForSlot(slot);
     if (!volumeClass) return undefined;
     const mappedClass: VehicleSpawnVolumeClass = volumeClass === "tank" ? "tank" : "aircraft";
     const volumes = getVehicleSpawnVolumesForTeam(slot.teamId, mappedClass);
     if (!volumes || volumes.length === 0) return undefined;
-    const volume = volumes[0];
+    const volume = chooseSpawnVolumeForVehicleType(volumes, slot.vehicleType);
     if (!volume) return undefined;
     return {
         pos: sampleRandomPointInSpawnVolume(volume, slot.vehicleType),
-        rot: isJetSpawnVolumeVehicleType(slot.vehicleType) ? sampleRandomJetSpawnRotation(volume) : volume.rotHeli,
+        rot: isJetSpawnVolumeVehicleType(slot.vehicleType) ? volume.rotPlane : volume.rotHeli,
+    };
+}
+
+function normalizeAircraftBirthRotationAxisToRadians(value: number): number {
+    return Math.abs(value) > (Math.PI * 2)
+        ? mod.DegreesToRadians(value)
+        : value;
+}
+
+function normalizeAircraftBirthPitchXToRadians(slot: VehicleSpawnerSlot, value: number): number {
+    if (!isJetSpawnVolumeVehicleType(slot.vehicleType)) {
+        return normalizeAircraftBirthRotationAxisToRadians(value);
+    }
+    // Legacy bounded-air jet pitch was authored with the opposite sign assumption.
+    // Current birth-spawn testing showed positive X is the usable nose-down direction.
+    if (Math.abs(value) > (Math.PI * 2)) {
+        return mod.DegreesToRadians(Math.abs(value));
+    }
+    return value;
+}
+
+function createAircraftBirthSpawnRotationForSlot(slot: VehicleSpawnerSlot, rot: mod.Vector): mod.Vector {
+    return mod.CreateVector(
+        normalizeAircraftBirthPitchXToRadians(slot, mod.XComponentOf(rot)),
+        normalizeAircraftBirthRotationAxisToRadians(mod.YComponentOf(rot)),
+        normalizeAircraftBirthRotationAxisToRadians(mod.ZComponentOf(rot))
+    );
+}
+
+function tryResolveFreshAircraftBirthSpawnForSlot(slot: VehicleSpawnerSlot): { pos: mod.Vector; rot: mod.Vector } | undefined {
+    if (!isAircraftSpawnVolumeVehicleType(slot.vehicleType)) return undefined;
+    const boundedTransform = tryResolveBoundedSpawnTransformForSlot(slot);
+    if (!boundedTransform) return undefined;
+    return {
+        pos: boundedTransform.pos,
+        rot: createAircraftBirthSpawnRotationForSlot(slot, boundedTransform.rot),
     };
 }
 
@@ -131,6 +204,14 @@ async function teleportVehicleToTransform(eventVehicle: mod.Vehicle, pos: mod.Ve
 async function applySpawnYawToVehicle(eventVehicle: mod.Vehicle, slot: VehicleSpawnerSlot): Promise<void> {
     // Enforce the desired spawn transform on the vehicle after it exists (map-specific spawner yaw can drift).
     await teleportVehicleToTransform(eventVehicle, slot.spawnPos, slot.spawnRot);
+}
+
+async function maybeApplySpawnTransformCorrectionToVehicle(eventVehicle: mod.Vehicle, slot: VehicleSpawnerSlot): Promise<void> {
+    if (slot.suppressNextBindSpawnTransformCorrection) {
+        slot.suppressNextBindSpawnTransformCorrection = false;
+        return;
+    }
+    await applySpawnYawToVehicle(eventVehicle, slot);
 }
 
 // Binding uses object position (not vehicle state) because it is stable at spawn time.
@@ -153,7 +234,7 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
                 State.vehicles.activeSpawnSlotIndex = undefined;
                 State.vehicles.activeSpawnToken = undefined;
                 State.vehicles.activeSpawnRequestedAtSeconds = undefined;
-                void applySpawnYawToVehicle(eventVehicle, activeSlot);
+                void maybeApplySpawnTransformCorrectionToVehicle(eventVehicle, activeSlot);
                 return activeSlot.teamId;
             }
         } else {
@@ -178,7 +259,7 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
                 State.vehicles.activeSpawnToken = undefined;
                 State.vehicles.activeSpawnRequestedAtSeconds = undefined;
             }
-            void applySpawnYawToVehicle(eventVehicle, slot);
+            void maybeApplySpawnTransformCorrectionToVehicle(eventVehicle, slot);
             return slot.teamId;
         }
     }

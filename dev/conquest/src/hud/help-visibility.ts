@@ -25,7 +25,7 @@ function updateHelpTextVisibilityForPid(pid: number): void {
     const helpText = safeFind(`HelpText_${pid}`);
     if (helpText) {
         safeSetUIWidgetVisible(helpText, showHelp);
-        mod.SetUITextLabel(helpText, mod.Message(mod.stringkeys.twl.hud.helpText));
+        safeSetUITextLabel(helpText, mod.Message(mod.stringkeys.twl.hud.helpText));
     }
 
     // Round-state and players-ready line visibility are owned by hud/status.ts.

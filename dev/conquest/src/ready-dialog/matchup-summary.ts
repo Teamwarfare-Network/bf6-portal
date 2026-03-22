@@ -9,13 +9,13 @@ function updateTeamNameWidgetsForPid(pid: number): void {
 
     const hudT1 = safeFind(`TeamLeft_Name_${pid}`);
     const hudT2 = safeFind(`TeamRight_Name_${pid}`);
-    if (hudT1) mod.SetUITextLabel(hudT1, mod.Message(t1NameKey));
-    if (hudT2) mod.SetUITextLabel(hudT2, mod.Message(t2NameKey));
+    safeSetUITextLabel(hudT1, mod.Message(t1NameKey));
+    safeSetUITextLabel(hudT2, mod.Message(t2NameKey));
 
     const readyT1 = safeFind(UI_READY_DIALOG_TEAM1_LABEL_ID + pid);
     const readyT2 = safeFind(UI_READY_DIALOG_TEAM2_LABEL_ID + pid);
-    if (readyT1) mod.SetUITextLabel(readyT1, mod.Message(t1NameKey));
-    if (readyT2) mod.SetUITextLabel(readyT2, mod.Message(t2NameKey));
+    safeSetUITextLabel(readyT1, mod.Message(t1NameKey));
+    safeSetUITextLabel(readyT2, mod.Message(t2NameKey));
 
     updateReadyDialogModeConfigForPid(pid);
 }

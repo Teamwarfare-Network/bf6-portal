@@ -96,7 +96,7 @@ function buildReusableTimerColon(name: string, x: number, width: number, cfg: Re
         size: [width, cfg.height],
         visible: true,
         bgAlpha: 0,
-        textLabel: mod.stringkeys.twl.hud.clock.colon,
+        textLabel: mod.Message(mod.stringkeys.twl.hud.clock.colon),
         textSize: cfg.fontSize,
         textAnchor: mod.UIAnchor.Center,
     };
@@ -114,7 +114,7 @@ function buildReusableTimerColonShadow(name: string, x: number, width: number, c
         size: [width, cfg.height],
         visible: true,
         bgAlpha: 0,
-        textLabel: mod.stringkeys.twl.hud.clock.colon,
+        textLabel: mod.Message(mod.stringkeys.twl.hud.clock.colon),
         textColor: [0, 0, 0],
         textAlpha: cfg.textShadowAlpha,
         textSize: cfg.fontSize,
@@ -235,7 +235,7 @@ function ensureReusableTimerInstance(
 
     purgeReusableTimerInstance(baseName, pid);
 
-    modlib.ParseUI({
+    safeParseUI({
         name: rootName,
         type: "Container",
         playerId: player,
@@ -261,7 +261,7 @@ function ensureReusableTimerInstance(
         ],
     });
 
-    modlib.ParseUI({
+    safeParseUI({
         name: surfaceName,
         type: "Container",
         playerId: player,
@@ -400,3 +400,4 @@ function setReusableTimerVisible(cache: ReusableTimerWidgetCacheEntry, visible: 
     safeSetUIWidgetVisible(cache.secOnes, showDigits);
     cache.lastVisibleState = visible;
 }
+

@@ -22,7 +22,7 @@ function onPlayerEnterVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Veh
     const slotIndex = State.vehicles.vehicleToSlot[vehicleObjId];
     if (slotIndex !== undefined) {
         const slot = State.vehicles.slots[slotIndex];
-        if (slot && mod.GetPlayerVehicleSeat(eventPlayer) === 0) {
+        if (slot && safeGetPlayerVehicleSeat(eventPlayer) === 0) {
             slot.activeOwnerPid = safeGetPlayerId(eventPlayer);
             updateVehicleDeployTimerHudForAllPlayers();
         }

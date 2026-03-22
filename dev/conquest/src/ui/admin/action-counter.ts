@@ -2,7 +2,7 @@
 // Module: ui/admin/action-counter -- top-right admin action counter HUD widget
 
 function buildConquestAdminActionCounterWidget(player: mod.Player, pid: number, refs: TopHudShellRefs): void {
-    const auditCounter = modlib.ParseUI({
+    const auditCounter = safeParseUI({
         name: `AdminPanelActionCount_${pid}`,
         type: "Text",
         playerId: player,
@@ -22,3 +22,4 @@ function buildConquestAdminActionCounterWidget(player: mod.Player, pid: number, 
     if (auditCounter) refs.roots.push(auditCounter);
     refs.adminPanelActionCountText = safeFind(`AdminPanelActionCount_${pid}`);
 }
+

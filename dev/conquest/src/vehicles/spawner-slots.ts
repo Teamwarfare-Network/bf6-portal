@@ -67,6 +67,8 @@ function addVehicleSpawnerSlot(teamId: TeamID, slotNumber: number, spawnPos: mod
         pendingSpawnOwnerPid: undefined,
         pendingSpawnMode: undefined,
         activeOwnerPid: undefined,
+        suppressNextBindSpawnTransformCorrection: false,
+        freshAirRuntimeSpawner: undefined,
     };
     initializeVehicleSlotTimerState(slot);
 
@@ -92,6 +94,12 @@ function setSpawnerSlotEnabled(slotIndex: number, enabled: boolean): boolean {
     slot.enableToken += 1;
     slot.expectingSpawn = false;
     if (!enabled) {
+        if (slot.freshAirRuntimeSpawner) {
+            try {
+                mod.UnspawnObject(slot.freshAirRuntimeSpawner);
+            } catch {}
+            slot.freshAirRuntimeSpawner = undefined;
+        }
         if (!isMatchLive() && slot.vehicleId !== -1) {
             const priorVehicleId = slot.vehicleId;
             const priorVehicle = findVehicleById(priorVehicleId);
@@ -104,6 +112,7 @@ function setSpawnerSlotEnabled(slotIndex: number, enabled: boolean): boolean {
         slot.pendingSpawnOwnerPid = undefined;
         slot.pendingSpawnMode = undefined;
         slot.activeOwnerPid = undefined;
+        slot.suppressNextBindSpawnTransformCorrection = false;
         clearVehicleSlotRespawnTimer(slot);
         refreshVehicleSlotAuthoritativeState(slot);
         return false;

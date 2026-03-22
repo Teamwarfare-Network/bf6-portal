@@ -17,10 +17,7 @@ type VehicleSpawnVolumeSpec = {
     jetSpawnFloor: number;
     jetSpawnCeiling: number;
     rotHeli: mod.Vector;
-    rotPlaneN: mod.Vector;
-    rotPlaneE: mod.Vector;
-    rotPlaneW: mod.Vector;
-    rotPlaneS: mod.Vector;
+    rotPlane: mod.Vector;
 };
 type CapturePointConfig = { objId: number; label: string; order: number };
 
@@ -38,10 +35,10 @@ type MapConfig = {
     useCustomCeiling: boolean; // When true, Ladder mode applies custom ceiling on this map.
     team1TankSpawns: VehicleSpawnSpec[];
     team2TankSpawns: VehicleSpawnSpec[];
-    team1AircraftSpawnVolumes?: VehicleSpawnVolumeSpec[];
-    team2AircraftSpawnVolumes?: VehicleSpawnVolumeSpec[];
-    team1TankSpawnVolumes?: VehicleSpawnVolumeSpec[];
-    team2TankSpawnVolumes?: VehicleSpawnVolumeSpec[];
+    team1AircraftSpawnVolumes?: VehicleSpawnVolumeSpec[]; // Add more authored boxes as additional array entries; runtime selects one weighted by usable spawn space.
+    team2AircraftSpawnVolumes?: VehicleSpawnVolumeSpec[]; // Add more authored boxes as additional array entries; runtime selects one weighted by usable spawn space.
+    team1TankSpawnVolumes?: VehicleSpawnVolumeSpec[]; // Add more authored boxes as additional array entries; runtime selects one weighted by usable spawn space.
+    team2TankSpawnVolumes?: VehicleSpawnVolumeSpec[]; // Add more authored boxes as additional array entries; runtime selects one weighted by usable spawn space.
     capturePoints?: CapturePointConfig[];
     team1HeliSpawns?: VehicleSpawnSpec[];
     team2HeliSpawns?: VehicleSpawnSpec[];

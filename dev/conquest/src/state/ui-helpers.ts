@@ -71,6 +71,40 @@ function addOutlinedButton(
     return border ?? undefined;
 }
 
+// Normalizes all Text-node labels before they reach modlib.ParseUI so build-time
+// widget creation cannot leak raw keys or nullish labels into engine SetUITextLabel.
+function normalizeParseUITextConfigNode(node: any): any {
+    if (!node) return node;
+    if (Array.isArray(node)) {
+        for (let i = 0; i < node.length; i++) {
+            node[i] = normalizeParseUITextConfigNode(node[i]);
+        }
+        return node;
+    }
+    if (typeof node !== "object") return node;
+
+    if (node.type === "Text") {
+        const label = node.textLabel;
+        if (label === undefined || label === null) {
+            node.textLabel = mod.Message(mod.stringkeys.twl.system.genericCounter, "");
+        } else if (typeof label === "number") {
+            node.textLabel = mod.Message(label);
+        }
+    }
+
+    if (Array.isArray(node.children)) {
+        node.children = normalizeParseUITextConfigNode(node.children);
+    }
+
+    return node;
+}
+
+// One build-boundary wrapper for all ParseUI usage so text widget config is
+// normalized consistently before modlib hands it to engine UI calls.
+function safeParseUI(config: any): any {
+    return modlib.ParseUI(normalizeParseUITextConfigNode(config));
+}
+
 // Rebuilds centered button text under a known parent, deleting any stale duplicate first.
 function addCenteredButtonText(
     labelId: string,
@@ -95,7 +129,7 @@ function addCenteredButtonText(
         padding: 0,
         bgAlpha: 0,
         bgFill: mod.UIBgFill.None,
-        textLabel: label,
+        textLabel: typeof label === "number" ? mod.Message(label) : label,
         textColor: READY_DIALOG_BUTTON_TEXT_COLOR_RGB,
         textAlpha: 1,
         textAnchor: mod.UIAnchor.Center,
@@ -104,7 +138,7 @@ function addCenteredButtonText(
         config.textSize = textSize;
     }
 
-    modlib.ParseUI(config);
+    safeParseUI(config);
 
     const widget = safeFind(labelId);
     if (widget) {
@@ -153,7 +187,7 @@ function addReadyDialogText(
         if (typeof textSize === "number") {
             config.textSize = textSize;
         }
-        const parsed = modlib.ParseUI(config);
+        const parsed = safeParseUI(config);
         widget = parsed ?? safeFind(widgetId);
     }
 
@@ -222,7 +256,7 @@ function addRightAlignedLabel(
     parent: mod.UIWidget,
     textSize: number
 ): mod.UIWidget | undefined {
-    const widget = modlib.ParseUI({
+    const widget = safeParseUI({
         name: labelId,
         type: "Text",
         playerId: player,
@@ -288,7 +322,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         }
         const existing = safeFind(labelId);
         if (existing) {
-            mod.SetUITextLabel(existing, typeof label === "number" ? mod.Message(label) : label);
+            safeSetUITextLabel(existing, typeof label === "number" ? mod.Message(label) : label);
             mod.SetUIWidgetVisible(existing, true);
             if (typeof textSize === "number") {
                 mod.SetUITextSize(existing, textSize);
@@ -362,3 +396,4 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
 }
 
 // Safely resolve a Player by pid (mod.GetObjId(player)). Returns undefined if not found.
+

@@ -43,7 +43,7 @@ function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, re
     deleteAllBrandingWidgetsByName(`Upper_Left_Container_${pid}`);
     deleteAllBrandingWidgetsByName(`Upper_Left_Settings_${pid}`);
 
-    const upperLeft = modlib.ParseUI({
+    const upperLeft = safeParseUI({
         name: `Upper_Left_Container_${pid}`,
         type: "Container",
         playerId: player,
@@ -67,7 +67,7 @@ function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, re
                 bgColor: [0.8353, 0.9216, 0.9765],
                 bgAlpha: 0,
                 bgFill: mod.UIBgFill.Blur,
-                textLabel: mod.stringkeys.twl.hud.branding.title,
+                textLabel: mod.Message(mod.stringkeys.twl.hud.branding.title),
                 textColor: [0.6784, 0.9922, 0.5255],
                 textAlpha: 1,
                 textSize: 9,
@@ -84,7 +84,7 @@ function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, re
                 bgColor: [0.2, 0.2, 0.2],
                 bgAlpha: 0,
                 bgFill: mod.UIBgFill.None,
-                textLabel: mod.stringkeys.twl.hud.branding.subtitle,
+                textLabel: mod.Message(mod.stringkeys.twl.hud.branding.subtitle),
                 textColor: [0.6784, 0.9922, 0.5255],
                 textAlpha: 1,
                 textSize: 9,
@@ -135,7 +135,7 @@ function buildConquestStaticStatusLaneWidgets(player: mod.Player, pid: number, r
 
     const statusX = TOP_LEFT_BASE_X + TOP_LEFT_BRANDING_WIDTH + TOP_LEFT_STATUS_GAP_X;
     const statusY = topLeftBaseY;
-    const statusLane = modlib.ParseUI({
+    const statusLane = safeParseUI({
         name: statusRootName,
         type: "Container",
         playerId: player,
@@ -148,7 +148,7 @@ function buildConquestStaticStatusLaneWidgets(player: mod.Player, pid: number, r
         bgAlpha: 0.5625,
         bgFill: mod.UIBgFill.Blur,
     });
-    const statusPrimaryText = modlib.ParseUI({
+    const statusPrimaryText = safeParseUI({
         name: statusPrimaryTextName,
         type: "Text",
         playerId: player,
@@ -159,13 +159,13 @@ function buildConquestStaticStatusLaneWidgets(player: mod.Player, pid: number, r
         padding: 0,
         bgAlpha: 0,
         bgFill: mod.UIBgFill.None,
-        textLabel: mod.stringkeys.twl.hud.roundStateNotReady,
+        textLabel: mod.Message(mod.stringkeys.twl.hud.roundStateNotReady),
         textColor: [0.6784, 0.9922, 0.5255],
         textAlpha: 1,
         textSize: 9,
         textAnchor: mod.UIAnchor.Center,
     });
-    const statusSecondaryText = modlib.ParseUI({
+    const statusSecondaryText = safeParseUI({
         name: statusSecondaryTextName,
         type: "Text",
         playerId: player,
@@ -213,3 +213,4 @@ function buildConquestStaticStatusLaneWidgets(player: mod.Player, pid: number, r
     refs.upperLeftStatusStateText = statusPrimaryText;
     refs.upperLeftStatusReadyText = statusSecondaryText;
 }
+

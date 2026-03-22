@@ -324,6 +324,7 @@ These names are planning anchors for implementation/review.
 - `conquestConfig_GetFlagConfigs(mapKey: string)`
 - `conquestConfig_GetBoundaryConfigs(mapKey: string)`
 - `conquestConfig_GetSpawnSets(mapKey: string)`
+- `conquestConfig_GetWorldInteractables(mapKey: string)`
 - `apiAudit_ValidatePhaseSurface(phaseId: number)`
 - `conquestConfig_ValidateRuntimeObjectTypes(mapKey: string)`
 
@@ -510,6 +511,7 @@ Player-impact telemetry additions:
   - soldier/ground vehicle boundaries
   - aircraft boundaries
   - sectors/objectives
+  - world interactables (main base and point)
 - `CF-29` Map readiness validation owner/process: human validation using provided Godot spatial data references.
 - `CF-63` Spawn-schema readiness gate: `teamSpawnSets`, `flagSpawnSets`, and `fallbackSpawns` are optional before Phase 7 and mandatory at Phase 7 entry.
 - `CF-73` Runtime map validation guardrails:
@@ -518,6 +520,17 @@ Player-impact telemetry additions:
   - spawn sets must not contain duplicate ObjIds
   - when phase requires spawn sets, empty required sets emit warnings and force safe fallback behavior
 - `CF-100` Capability-bounded validator rule: map validation must be restricted to checks proven observable in Portal runtime; unsupported type-introspection assumptions are forbidden.
+- `CF-119` World-interactable schema ownership: `MapConfig.worldInteractables[]` is the canonical explicit per-map list for retained world interactables; runtime must not infer interactables by scanning ranges alone.
+- `CF-120` World-interactable ObjId allocation contract:
+  - main-base interactables start at `1000` and are authored as even/odd pairs
+  - even `objId` => ready dialog
+  - odd `objId` => vehicle spawn menu
+  - point interactables use explicit `1050+` objIds and all map to ammo resupply menu
+  - parity/range rules are validator checks; the explicit map-config entry remains the source of truth
+- `CF-121` World-icon visibility settings contract:
+  - map config must carry per-object team visibility, visibility range, alpha/opacity, icon image, and color vector
+  - `SetWorldIconOwner(...)` is the only locally verified runtime world-icon visibility-owner control
+  - runtime setters for visibility range and alpha/opacity are currently unverified in local BF6 refs; until validated, those values are treated as authored-object requirements plus validation/debug metadata
 - `CF-111` Validator capability matrix decision:
   - validator enforcement is warn-first / non-blocking in V1
   - classify each check as `runtime-observable` or `human/config`
@@ -2062,6 +2075,35 @@ Phase 5 execution breakdown:
     - height
     - fixed rotation
     - multiple bounded regions per team/class where needed
+  - aircraft birth-rotation lesson from the fixed-air probe (`2026-03-21`):
+    - do not assume post-spawn correction is the primary solution for aircraft pitch; the best current result came from birth-time spawner rotation
+    - the working temporary probe path is: spawn the aircraft once at the intended air point from a `VehicleSpawner`, with the desired birth rotation already authored, and avoid teleport/reposition correction as the main pitch mechanism
+    - in the current probe, the useful aircraft pitch axis is `rotX`
+    - in the current probe, spawn-time aircraft pitch behaves like radians rather than raw degrees
+    - in the current probe, positive `rotX` produced the usable nose-down direction; negative `rotX` pushed the jet toward the opposite/upward attitude
+    - preserve this lesson when promoting the temporary jet probe into the real aircraft `AIR DEPLOY` flow
+    - do not treat the current admin/debug transform panel as authoritative for choosing aircraft birth-rotation axis/sign conventions; rely on direct visible spawn tests instead
+  - cleanup plan after promoting the aircraft birth-rotation lesson:
+    - remove the temporary aircraft probe surfaces from production once the fresh-spawn air-deploy path is stable enough:
+      - admin tester button + handler + visibility ownership
+      - temporary jet probe HUD block
+      - temporary jet visual probe runtime spawner path and mode-cycling state
+      - temporary debug/probe strings that only exist to label probe modes or probe readback lines
+    - remove stale post-spawn aircraft-pitch experiment code once it is no longer needed for fallback/debug:
+      - transform/rotate/move pitch experiment helpers
+      - temporary readback helpers that only exist to support the probe HUD
+    - keep the new production aircraft air-deploy pieces:
+      - fresh in-air aircraft birth-spawn resolution from bounded volumes
+      - one-shot suppression of the normal slot bind ground-transform correction for that fresh aircraft bind
+      - slot-owned runtime air spawner lifetime tracking for the fresh-air path
+    - normalize the final aircraft authoring contract after cleanup:
+      - decide whether map-config `rotPlane` / `rotHeli` should remain authored as degrees with runtime normalization, or be converted to the final birth-spawn convention directly
+      - remove temporary compatibility bridging once the config contract is locked and existing map data is updated
+    - post-cleanup validation must explicitly re-check:
+      - jet and heli `AIR DEPLOY`
+      - player seating and loadout stability
+      - destroy / respawn / redeploy behavior
+      - both teams and multiple authored aircraft boxes
 <a id="phase-5g"></a>
 - `Phase 5G: Polish / tune`
   - vehicle repair in base is deferred into this later polish/tuning phase, not treated as a standalone implementation phase
@@ -2349,6 +2391,8 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-03-22 | Phase 5F aircraft probe cleanup planning pass after the birth-spawn breakthrough | Recorded the concrete cleanup plan before resuming broader polish: remove the temporary admin/button/HUD probe surfaces, remove stale post-spawn experiment helpers, keep the new fresh-air production spawn path pieces, and lock a final aircraft rotation authoring contract before deleting the current compatibility bridge | Phase 5, Phase 5F, Phase 5G | accepted_for_cleanup_planning | design_doc Phase 5F cleanup note + Phase 5 changelog`
+  - `2026-03-21 | Phase 5F aircraft birth-rotation lesson from the fixed-air jet probe | Recorded the current working aircraft pitch finding so it is not lost during cleanup: the best current result came from birth-time `VehicleSpawner` rotation rather than post-spawn correction; the useful current axis is `rotX`; the current spawn path behaves like radians; and positive `rotX` produced the usable nose-down direction in testing | Phase 5, Phase 5F | accepted_for_design_guidance | design_doc Phase 5F lesson note + Phase 5 changelog`
   - `2026-03-18 | Phase 5 checklist cleanup follow-up | Removed stale duplicate Phase 5 checklist boxes, marked already-landed spawn-package items as complete (`No Spawn`, legacy 4v4 patch removal, plane ground/air deploy, fast-mover ground-only behavior, bounded-volume contract proof), and rewrote the remaining unchecked boxes so they reflect only real open Phase 5 work | Phase 5, Phase 5F, Phase 5G | accepted | design_doc Phase 5 checklist + changelog`
   - `2026-03-18 | Phase 5 closeout doc sync after the accepted 5G cleanup baseline | Marked the broad Phase 5G structural cleanup/cutdown pass as accepted, updated the checklist to reflect the completed UI ownership/cut work, and collapsed the remaining Phase 5 work into the explicit leftover items: 5C queue decision, 5E validation hardening, 5F bounded-volume validation/expansion, and the remaining feature-level 5G items such as saved/applied clarity, base repair, and debug authoring follow-up | Phase 5, Phase 5G, Phase 6 | accepted | design_doc Phase 5G breakdown + immediate next target + Phase 5 checklist + Phase 5 changelog`
   - `2026-03-16 | Phase 5G next-step doc sync after the v0.692 combat/V2 cutdown | Recorded the accepted current cut checkpoint: dead combat/V2 widget writers are removed, the dormant loading-model is no longer part of the active design, and the next slice is now narrower: family cleanup helpers, ready-dialog dirty refresh, HUD cache-shape cleanup, further warm/reveal-state simplification, and final vehicle-HUD public-callsite cleanup before Phase 6 handoff is considered ready | Phase 5, Phase 5G, Phase 6 | accepted | design_doc Phase 5G breakdown + immediate next target + Phase 5 checklist + Phase 5 changelog`
@@ -2385,7 +2429,14 @@ Deliverables:
 - final result UI + delayed finalize/end flow
 - ready-up dialog cleanup and end-of-round transition cleanup
 - redesign join prompt
-- optional physical ready-up flow using in-world interactables configured from Godot world spawners
+- optional physical ready-up flow using shared main-base world interactables configured from placed `WorldIcon` + `InteractPoint` pairs
+- explicit map-config-driven world-interactable registry keyed by object id for retained main-base and point interactables
+- retained world-interactable routing contract:
+  - main-base interactables start at `1000` and are authored as even/odd pairs
+  - even `objId` opens the existing ready-up dialog
+  - odd `objId` opens a vehicle spawn menu that reuses the current vehicle deploy HUD shell with teleport-based button fulfillment
+  - point interactables use explicit `1050+` objIds and route to a new ammo resupply menu for launcher/gadget/ammo changes
+  - team visibility, visibility range, and icon alpha/opacity are configured per object id in map config
 - defined round-start behavior limitations and accepted constraints
 - reset/setup staging flow reintroduced from helis mode so pre-live vehicle config changes can force a clean vehicle spawn state before round start
 
@@ -2396,7 +2447,22 @@ Mapped clarifications:
 Godot/map prerequisites:
 
 - optional camera anchors only if cinematic flow is added
-- authored/placed world interactables or equivalent Godot-spawned ready-up anchors if the physical ready-up path is enabled
+- authored/placed main-base and point `WorldIcon` + `InteractPoint` pairs for every retained world interactable
+- explicit `MapConfig.worldInteractables[]` entry for every retained interactable object id; do not rely on range/parity discovery without a concrete config entry
+- required per-object map-config data:
+  - `objId`
+  - `worldIconId` and `interactPointId` if the authored pair does not simply reuse `objId`
+  - scope (`main_base` or `point`)
+  - action kind
+  - shared position/anchor
+  - icon image
+  - color vector
+  - team visibility/owner
+  - visibility range
+  - icon alpha/opacity
+  - owning team/base or point label
+- main-base authoring rule: start at `1000`, authored as even/odd pairs, with even reserved for ready dialog and odd reserved for vehicle spawn menu
+- point authoring rule: use explicit `1050+` objIds and route all of them to the ammo resupply menu
 
 Verification:
 
@@ -2404,7 +2470,13 @@ Verification:
 - final ticket/result accuracy and single end transition check
 - ready-up dialog cleanup/regression checks across pre-match, live, and post-match transitions
 - redesigned join-prompt behavior/regression checks across initial join, reconnect, and live-state handoff
+- map-config world-interactable registry validation: unique ids, explicit entries, valid scope/action combinations, and even/odd or `1050+` rule compliance
+- world icon image/color/team-visibility checks across all retained interactables
+- visibility range + alpha/opacity validation against authored object settings unless a verified runtime setter is later added
 - physical ready-up interactable ownership/availability checks across pre-match, reconnect, and live-state lockout
+- `OnPlayerInteract` dispatch checks confirming even main-base ids open ready dialog, odd main-base ids route to vehicle spawn menu, and point ids route to ammo resupply
+- vehicle spawn menu checks confirming the reused deploy-HUD shell shows with a dedicated back plate and the button handlers teleport instead of forcing deploy/undeploy
+- ammo resupply menu checks confirming the new menu can mutate launcher/gadget presence and ammo counts according to the locked slot rules
 - round-start behavior limitation review and documentation pass
 - reset/setup staging check confirming grounded stale vehicles do not block newly configured round-start vehicle spawns when the match is made live
 
@@ -2425,8 +2497,16 @@ Open design questions / locks still needed before implementation:
   - define first-join, reconnect, live-round, and post-match behavior
   - define dismissal persistence and whether the prompt remains informational only or becomes action-bearing
 - physical ready-up path:
-  - decide whether it stays in Phase 6, is deferred, or is cut entirely
-  - if kept, define whether it replaces or complements the current ready dialog and how it behaves during reconnect/live lockout
+  - keep it in Phase 6 as a complement to the current ready-dialog access path, not an immediate replacement
+  - route authored main-base ready-dialog interactables through the existing exported `OnPlayerInteract` entrypoint so ready-dialog ownership remains single-source
+- world-interactable object contract:
+  - lock final icon art + color vectors so ready-dialog, vehicle-spawn, and ammo-resupply interactables are readable at a glance
+  - define whether visibility range + alpha/opacity are script-applied later or treated as authored-only values until a verified runtime setter exists
+  - lock the teleport-arrival contract for the reused vehicle spawn menu (`teleport the player` instead of deploy fulfillment)
+  - lock the gadget-slot ownership, persistence, cooldown, and reset rules for the ammo resupply menu
+- map-config schema lock for world interactables:
+  - lock the exact `MapConfig.worldInteractables[]` shape and validator behavior
+  - keep the explicit per-object list authoritative even when range/parity conventions are also enforced
 - round-start behavior limitations:
   - define exactly what can change pre-live, what requires setup/reset, and what is forbidden once the match is live
   - define how config changes interact with already-deployed players, already-spawned vehicles, and pending claims/reservations
@@ -2444,9 +2524,178 @@ Open design questions / locks still needed before implementation:
     - ready dialog
     - countdown UI
     - join prompt
+    - main-base and point world interactables
     - result UI
     - admin/debug surfaces
   - prevent Phase 6 from reintroducing the ownership ambiguity already cleaned out of Phase 5G
+
+World interactable feature contract:
+
+- Objective:
+  - add a reusable map-config-driven world-interactable registry built from placed `WorldIcon` + `InteractPoint` pairs keyed by explicit object id
+- Locked first-pass direction:
+  - `MapConfig.worldInteractables[]` is the authoritative explicit list for retained interactables on a map; runtime must not discover them by scanning ids alone
+  - Phase 6 world interactables are shared authored objects, not per-player runtime-spawned interact points
+  - script owns the world icon image/color/visibility and the interact-point enabled state
+  - interaction dispatch keys off configured object ids from `mod.GetObjId(eventInteractPoint)` inside the existing `OnPlayerInteract` export
+  - main-base routing contract:
+    - start at `1000`
+    - even `objId` => `open_ready_dialog`
+    - odd `objId` => `open_vehicle_spawn_menu`
+  - point routing contract:
+    - use explicit `1050+` objIds
+    - all point interactables => `open_ammo_resupply_menu`
+  - team visibility is a per-object config field and should use `mod.SetWorldIconOwner(...)` when the icon is not globally visible
+  - visibility range and alpha/opacity are also per-object config fields, but runtime setters for those are currently unverified in local BF6 refs; until validated, treat them as authored-object requirements that the validator/debug layer checks against human authoring
+  - keep the current ready-dialog open path as fallback while the physical terminal flow is validated
+- Required per-object config data:
+  - `objId`
+  - `worldIconId`
+  - `interactPointId`
+  - `scope` (`main_base` or `point`)
+  - `action`
+  - position/anchor
+  - icon image
+  - color vector
+  - team visibility/owner
+  - visibility range
+  - icon alpha/opacity
+  - owning team/base or point label
+- Phase-state rules:
+  - pre-match/setup: main-base even/odd pairs may be enabled; point ammo interactables remain disabled or placeholder-only until the ammo menu is designed
+  - live: ready-dialog and vehicle-spawn interactables lock unless explicitly approved for live use; point ammo interactables may enable only when the ammo resupply menu is defined
+  - post-match/result display: disable all world interactables unless ownership explicitly returns to setup/reset
+- Vehicle spawn menu contract:
+  - reuse as much of the current vehicle deploy HUD family as possible:
+    - row cache/build/reveal path in `src/vehicles/deploy-timer-ui.ts`
+    - tracked slot inventory, row order, labels, timers, and current air/ground action buttons
+    - existing hover/focus/pressed visual-state handling and input routing
+  - add a dedicated dark/blur back plate behind the reused root so the panel stays readable when opened in-world over live gameplay
+  - do not fork a second vehicle-slot/timer UI model if the current deploy HUD widgets can be shown directly with different ownership and action callbacks
+  - swap only the button-fulfillment behavior:
+    - current deploy path claims a slot and routes through `beginVehicleDirectSpawnDeployForPlayer(...)`
+    - world-menu path should route through a teleport-based handler instead of undeploy/deploy fulfillment
+  - keep the same vehicle list + button layout unless teleport semantics force a clearly different wording pass later
+- Ammo resupply menu contract:
+  - build this as a wholly new menu; it should not reuse the vehicle deploy HUD shell
+  - initial scope:
+    - replenish rocket ammo
+    - replenish demolition charge / C4 ammo
+    - acquire or replace launcher gadgets such as RPG / Stinger / IGLA labels
+    - modify the player gadget slots and gadget ammo counts under one authoritative menu flow
+  - locally verified runtime mutation surface that may back this menu:
+    - `AddEquipment(...)`
+    - `RemoveEquipment(...)`
+    - `HasEquipment(...)`
+    - `SetInventoryAmmo(...)`
+    - `SetInventoryMagazineAmmo(...)`
+    - `Resupply(...)`
+  - exact mapping of player-facing launcher names (`RPG`, `Stinger`, `IGLA`) onto validated `mod.Gadgets` entries must be locked during implementation
+  - exact slot ownership (`GadgetOne`, `GadgetTwo`, `ClassGadget`, `MiscGadget`) and persistence/reset rules must be locked before implementation
+- Implementation routing notes:
+  - load the active interactable list from map config into lookup tables keyed by `objId` and/or `interactPointId`
+  - configure authored world icons/interact points during `OnGameModeStarted`
+  - use `mod.SetWorldIconOwner(...)` for team-restricted visibility
+  - validate unique ids, explicit config coverage, even/odd main-base pair rules, and `1050+` point rules before enabling the interactables
+  - if visibility range + alpha/opacity cannot be applied in script, emit validator/debug warnings that the authored object settings must match map config
+  - ready-dialog interactables should call the same local dialog-open path already used by the current interact flow so UI ownership stays single-source
+  - vehicle-spawn interactables should route through a menu-open path that reuses the current vehicle deploy HUD and swaps in teleport fulfillment callbacks
+  - ammo-resupply interactables should route through a dedicated new menu owner/path rather than piggybacking on ready-dialog or vehicle-HUD ownership
+- Reference implementation shape (`mod` API surface in this snippet is locally verified; local Conquest handler names are design placeholders unless they already exist):
+
+```ts
+type WorldInteractableAction = 'open_ready_dialog' | 'open_vehicle_spawn_menu' | 'open_ammo_resupply_menu';
+type WorldInteractableScope = 'main_base' | 'point';
+
+type WorldInteractableConfig = {
+    objId: number;
+    worldIconId?: number;
+    interactPointId?: number;
+    scope: WorldInteractableScope;
+    action: WorldInteractableAction;
+    position: mod.Vector;
+    color: mod.Vector;
+    image: mod.WorldIconImages;
+    ownerVisibility: 'all' | 'team1' | 'team2';
+    visibilityRangeMeters: number;
+    iconAlpha: number;
+};
+
+const WORLD_INTERACTABLES: WorldInteractableConfig[] = [
+    {
+        objId: 1000,
+        scope: 'main_base',
+        action: 'open_ready_dialog',
+        position: mod.CreateVector(25, 10, 40),
+        color: mod.CreateVector(0, 1, 0),
+        image: mod.WorldIconImages.Triangle,
+        ownerVisibility: 'team1',
+        visibilityRangeMeters: 40,
+        iconAlpha: 1.0,
+    },
+    {
+        objId: 1001,
+        scope: 'main_base',
+        action: 'open_vehicle_spawn_menu',
+        position: mod.CreateVector(29, 10, 40),
+        color: mod.CreateVector(1, 0.75, 0),
+        image: mod.WorldIconImages.Flag,
+        ownerVisibility: 'team1',
+        visibilityRangeMeters: 40,
+        iconAlpha: 1.0,
+    },
+    {
+        objId: 1051,
+        scope: 'point',
+        action: 'open_ammo_resupply_menu',
+        position: mod.CreateVector(120, 8, -45),
+        color: mod.CreateVector(1, 1, 1),
+        image: mod.WorldIconImages.Cross,
+        ownerVisibility: 'all',
+        visibilityRangeMeters: 25,
+        iconAlpha: 0.8,
+    },
+];
+
+export function OnGameModeStarted(): void {
+    for (const interactable of WORLD_INTERACTABLES) {
+        const worldIcon = mod.GetWorldIcon(interactable.worldIconId ?? interactable.objId);
+        const interactPoint = mod.GetInteractPoint(interactable.interactPointId ?? interactable.objId);
+
+        mod.SetWorldIconPosition(worldIcon, interactable.position);
+        mod.SetWorldIconImage(worldIcon, interactable.image);
+        mod.SetWorldIconColor(worldIcon, interactable.color);
+        mod.EnableWorldIconImage(worldIcon, true);
+
+        // Team visibility is locally verified. Range/alpha remain map-config-owned authoring
+        // data until a runtime setter is validated in the BF6 refs.
+        if (interactable.ownerVisibility !== 'all') {
+            applyWorldIconOwner(worldIcon, interactable.ownerVisibility); // local helper
+        }
+
+        mod.EnableInteractPoint(interactPoint, true);
+    }
+}
+
+export function OnPlayerInteract(eventPlayer: mod.Player, eventInteractPoint: mod.InteractPoint): void {
+    const interactable = WORLD_INTERACTABLES.find(
+        (config) => (config.interactPointId ?? config.objId) === mod.GetObjId(eventInteractPoint)
+    );
+    if (!interactable) return;
+
+    if (interactable.action === 'open_ready_dialog') {
+        openReadyDialogFromWorldTerminal(eventPlayer); // local Conquest hook; reuse existing ready-dialog path
+        return;
+    }
+
+    if (interactable.action === 'open_vehicle_spawn_menu') {
+        openVehicleSpawnMenu(eventPlayer); // reuse current vehicle deploy HUD shell with teleport-based fulfillment
+        return;
+    }
+
+    openAmmoResupplyMenu(eventPlayer); // new menu for launcher/gadget/ammo mutation
+}
+```
 
 Recommended supporting design docs before Phase 6 implementation:
 
@@ -2455,6 +2704,7 @@ Recommended supporting design docs before Phase 6 implementation:
 - `phase6_join_prompt_redesign.md`
 - `phase6_ready_up_transition_matrix.md`
 - `phase6_physical_ready_up_decision.md`
+- `phase6_world_interactables.md`
 
 Codex To-Do Checklist:
 
@@ -2462,7 +2712,13 @@ Codex To-Do Checklist:
 - [ ] Enforce single end transition path through end latch (no duplicate finalize paths).
 - [ ] Clean up the ready-up dialog for pre-match/post-match transition correctness and ownership clarity.
 - [ ] Redesign the join prompt and validate its ownership/flow across first join, reconnect, and transition to match-live state.
-- [ ] Implement and validate a physical ready-up interaction path using Godot-configured world spawners/interactables if that path is retained.
+- [ ] Extend `MapConfig` with an explicit `worldInteractables[]` registry keyed per object id.
+- [ ] Validate unique world-interactable ids plus the main-base even/odd pair rule and the `1050+` point rule before enabling any interactable.
+- [ ] Route even main-base ids into the existing ready-dialog open path without creating a second UI owner.
+- [ ] Reuse the current vehicle deploy HUD shell for odd main-base ids, add a clean back plate, and replace deploy/undeploy fulfillment with teleport-based button handlers.
+- [ ] Design and build the new ammo resupply menu for point interactables, including gadget-slot ownership and launcher/ammo mutation rules.
+- [ ] Apply team visibility from config using `SetWorldIconOwner(...)` and resolve how visibility range + alpha/opacity are enforced when no verified runtime setter exists yet.
+- [ ] Validate interactable state gating across pre-match, reconnect, live lockout, and post-match/result ownership.
 - [ ] Determine and document round-start behavior limitations before expanding pre/post-match event flow.
 - [ ] Reintroduce the helis-mode reset/setup button for pre-match staging so changed vehicle configurations can clear stale grounded vehicles before live round start.
 - [ ] Validate winner/result/ticket/elapsed accuracy against authoritative snapshot.
@@ -2475,6 +2731,9 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-03-22 | Vehicle-spawn menu reuse and ammo-menu scope follow-up | Locked the odd main-base vehicle spawn menu to reuse the current vehicle deploy HUD shell with a dedicated back plate and teleport-based button fulfillment instead of deploy/undeploy flow, and defined the point ammo resupply menu as a wholly new UI responsible for launcher/gadget presence and ammo mutation using the locally verified equipment/ammo API surface | Phase 6 | accepted | Phase 6 deliverables + verification + open questions + world-interactable contract + checklist`
+  - `2026-03-22 | World-interactable map-config and object-id follow-up | Extended the Phase 6 world-interactable design so every interactable is defined explicitly in map config per object id, locked the main-base even/odd objId routing (`1000+` ready dialog / vehicle spawn menu pairs), moved ammo resupply to explicit `1050+` point interactables, and added per-object team visibility/range/alpha requirements with a note that only team visibility currently has a verified runtime setter in local refs | Phase 6, CF-119, CF-120, CF-121 | accepted | map-schema rules + Phase 6 deliverables/prereqs/verification/open questions/contract/checklist`
+  - `2026-03-22 | Phase 6 world-interactable feature design request | Added a concrete Phase 6 main-base world-interactable terminal contract using placed WorldIcon + InteractPoint pairs, locked ready-up as the first retained terminal action, and reserved a second ammo/rockets terminal route as a deferred menu/function hook with shared interaction dispatch/state-gating rules | Phase 6 | accepted | deliverables + prerequisites + verification + open questions + world-interactable contract + supporting docs + checklist`
   - `2026-03-18 | Phase 6 design-lock capture pass | Added the concrete open design questions that still need written decisions before implementation starts: end-flow state machine, frozen result snapshot schema, result UI composition, join-prompt redesign, physical ready-up keep/defer decision, round-start limitation rules, reset/setup semantics, and the pre-match/live/post-match transition matrix | Phase 6 | accepted | Phase 6 verification/open-questions block + top-level current-status sync`
   - `2026-03-18 | Phase ordering update request | Moved Pre & Post Match Events up to Phase 6 ahead of the spawn/boundaries and scoreboard phases so the large planned flow changes are treated as the next post-Phase-5 system bucket | Phase 6, Phase 7, Phase 8 | accepted | TOC + phase section ordering + downstream phase references updated`
   - `2026-03-18 | Pre-live vehicle-config follow-up request | Reintroduced helis-mode reset/setup button as a Phase 6 pre/post-match staging requirement so stale grounded vehicles can be cleared before live round start after config changes | Phase 6 | accepted | deliverables, verification, and checklist updated`
@@ -2487,6 +2746,9 @@ Deliverables:
 - random spawn-point selection flow with configured restrictions
 - aircraft-vs-vehicle boundary enforcement
 - main-base out-of-bounds enforcement
+- enemy main-base buffer enforcement with warning timer + kill on expiry
+- grounded-player ground-combat-zone enforcement with warning timer + kill on expiry
+- map-config migration of boundary area-trigger ids so main base, main-base buffer, and ground combat zone are no longer hardcoded in gameplay constants
 - kill-player out-of-bounds behavior
 - dedicated team-switch buttons on minimap
 - preserve extension seams for advanced spawn contract (no node-risk logic in this phase)
@@ -2499,6 +2761,53 @@ Godot/map prerequisites:
 
 - authored spawn-point sets (team, per-flag, fallback as applicable)
 - authored boundary volumes/config for aircraft, vehicles, and main bases
+- authored area triggers and explicit `MapConfig` ids for:
+  - existing main bases
+  - new main-base buffers
+  - new ground combat zone
+- current first-pass trigger ids to record in map config:
+  - main-base buffer East: `502`
+  - main-base buffer West: `503`
+  - ground combat zone: `666`
+- collision review is mandatory before implementation:
+  - current Firestorm config already uses `503` as `team2VehicleDeploySpawnPointId`
+  - if `503` remains the West main-base buffer trigger id, the overlapping spawn-point id must be resolved explicitly rather than left ambiguous
+
+Boundary / zone contract:
+
+- Main base:
+  - these already exist and are currently used by the area-trigger enter/exit path
+  - current code hardcodes main-base trigger ids (`500` / `501`); Phase 7 should migrate this to map config alongside the new boundary triggers
+- Main-base buffer:
+  - this is new and must be added to map config per map
+  - the first-pass purpose is enemy-base denial after the match becomes live
+  - a player may not enter the enemy team's main-base buffer while the match is live
+  - on enemy-buffer entry during live play:
+    - show a warning prompt telling the player to leave within `5` seconds
+    - if the player remains inside after `5` seconds, kill the player
+  - exact warning-prompt UI is deferred for later design, but the timer/kill rule is locked here
+- Ground combat zone:
+  - this is new and must be added to map config per map
+  - its first-pass area-trigger id is `666`
+  - grounded classification rule:
+    - if a player is not in an aircraft, the player is `grounded`
+    - grounded includes on-foot players and players in non-aircraft vehicles
+    - aircraft means helicopter or plane; this should reuse the same authoritative aircraft-type list already used by the vehicle spawn/bind code so the classification does not drift
+  - grounded players must remain inside the ground combat zone at all times
+  - on leaving or remaining outside the ground combat zone while grounded:
+    - show a warning prompt telling the player to return within `10` seconds
+    - if the player remains outside after `10` seconds, kill the player
+  - exact warning-prompt UI is deferred for later design, but the timer/kill rule is locked here
+- Phase-state hooks:
+  - before the match is live:
+    - players may not leave their own main base
+    - detection continues to use the existing own-main-base exit path that is already tracked today
+    - Phase 7 must hook this rule into the broader pre/post-match flow without breaking the current ready-state reset behavior
+  - once the match is live:
+    - enemy main-base buffer enforcement becomes active
+    - grounded-player ground-combat-zone enforcement remains active
+  - post-match:
+    - the transition matrix with Phase 6 must define whether these boundary kills fully disable, remain informational only, or continue until reset completes
 
 Verification:
 
@@ -2506,6 +2815,18 @@ Verification:
 - spawn validity and restriction checks
 - aircraft-vs-vehicle boundary behavior checks
 - main-base out-of-bounds checks
+- pre-live own-main-base leave checks confirming the existing exit detection still works after trigger ids move into map config
+- live enemy main-base buffer checks:
+  - enter enemy buffer
+  - receive `5` second leave warning
+  - survive if exiting in time
+  - die if staying inside through expiry
+- grounded combat-zone checks:
+  - on-foot player outside zone receives `10` second return warning
+  - ground vehicle occupant outside zone receives the same warning/kill path
+  - helicopter/plane occupants are exempt while still airborne/in-aircraft
+  - grounded player survives if re-entering in time and dies on expiry if still outside
+- collision validation for configured trigger/spawn ids, especially any map using `503` for more than one purpose
 - kill-player out-of-bounds enforcement checks
 - dedicated minimap team-switch button behavior checks
 - confirm no advanced node/LOS/heatmap logic is active in Phase 7
@@ -2516,6 +2837,11 @@ Codex To-Do Checklist:
 - [ ] Enforce neutral-flag spawn restriction and explicit fallback chain behavior.
 - [ ] Implement aircraft-vs-vehicle boundary distinction.
 - [ ] Implement main-base out-of-bounds enforcement.
+- [ ] Move main-base trigger ids out of hardcoded gameplay constants and into `MapConfig`, then add `MapConfig` fields for main-base buffers and the ground combat zone.
+- [ ] Implement enemy main-base buffer enforcement with a `5` second leave warning during live play and kill on expiry.
+- [ ] Implement grounded-player combat-zone enforcement with a `10` second return warning and kill on expiry.
+- [ ] Reuse one authoritative aircraft-classification helper for grounded-vs-aircraft boundary logic so Phase 5F aircraft handling and Phase 7 boundary logic cannot drift apart.
+- [ ] Validate/resolve object-id collisions for new area triggers, especially the current Firestorm `503` overlap.
 - [ ] Kill players when out-of-bounds according to boundary rules.
 - [ ] Add dedicated team-switch buttons on the minimap and validate their team-switch flow ownership.
 - [ ] Add clear diagnostics for missing/invalid spawn sets per validator policy.
@@ -2528,7 +2854,8 @@ Phase Changelog:
 - `Current status`: `not_started`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
-- `Entries`: `None yet`
+- `Entries`:
+  - `2026-03-22 | Phase 7 boundary-zone detail request | Added the concrete Phase 7 zone contract for existing main bases, new main-base buffers, and a new ground combat zone; locked the live enemy-buffer `5s` warning/kill rule, the always-active grounded combat-zone `10s` warning/kill rule, the pre-live own-main-base leave restriction hook, and the requirement to move these trigger ids into map config with explicit collision review for the current Firestorm `503` overlap | Phase 7 | accepted | Phase 7 deliverables + prerequisites + verification + zone contract + checklist + changelog`
 
 <a id="phase-8"></a>
 ### Phase 8: Custom Tab Scoreboard + KPI Tracking

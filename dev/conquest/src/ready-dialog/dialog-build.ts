@@ -15,12 +15,9 @@ function refreshReadyDialogSectionsForReveal(
 ): void {
     ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, false);
     if (!reveal) return;
-
-    refreshReadyDialogButtonTextForPid(eventPlayer, playerId, containerBase);
-    updateReadyDialogMapLabelForPid(playerId);
-    updateReadyDialogModeConfigForPid(playerId);
-    refreshReadyDialogRosterForViewer(eventPlayer, playerId);
-    updateReadyToggleButtonForViewer(eventPlayer, playerId);
+    // CQ_Bug_18: cached ready-dialog reveal should be a pure visibility flip.
+    // The hidden prebuild path already owns section construction and initial labels.
+    // Avoid any additional reveal-time text writes here.
 }
 
 // Applies the final ready-dialog visibility state once the dialog tree and content are fully prepared.
@@ -46,13 +43,37 @@ function finalizeReadyDialogVisibility(
     if (mapLabel) mod.SetUIWidgetVisible(mapLabel, reveal);
     const mapValue = safeFind(UI_READY_DIALOG_MAP_VALUE_ID + playerId);
     if (mapValue) mod.SetUIWidgetVisible(mapValue, reveal);
-    ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, reveal);
+    const toggleButton = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId);
+    const toggleLabel = safeFind(UI_ADMIN_PANEL_BUTTON_LABEL_ID + playerId);
+    const toggleBorder = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId + "_BORDER");
+    if (!toggleButton || !toggleLabel || !toggleBorder) {
+        ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, reveal);
+        return;
+    }
+    safeSetUIWidgetVisible(toggleButton, reveal);
+    safeSetUIWidgetVisible(toggleLabel, reveal);
+    safeSetUIWidgetVisible(toggleBorder, reveal);
 }
 
 // Marks the cached ready-dialog shell as built for the current layout version after a successful build/reveal pass.
 function markReadyDialogLayoutBuilt(playerId: number): void {
     State.players.readyDialogData[playerId].uiBuilt = true;
     State.players.readyDialogData[playerId].uiLayoutVersion = READY_DIALOG_LAYOUT_VERSION;
+}
+
+// Refreshes cached ready-dialog content while the dialog is still hidden.
+// This keeps open/reveal as a pure visibility flip while ensuring roster/button/config content is fresh.
+function refreshReadyDialogSectionsWhileHidden(
+    eventPlayer: mod.Player,
+    playerId: number,
+    containerBase: mod.UIWidget
+): void {
+    ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, false);
+    refreshReadyDialogButtonTextForPid(eventPlayer, playerId, containerBase);
+    updateReadyDialogMapLabelForPid(playerId);
+    updateTeamNameWidgetsForPid(playerId);
+    refreshReadyDialogRosterForViewer(eventPlayer, playerId);
+    updateReadyToggleButtonForViewer(eventPlayer, playerId);
 }
 
 // Ensures the ready-dialog tree exists in a hidden state so later open paths can stay near-pure reveal.
@@ -72,6 +93,7 @@ function showReadyDialogUI(eventPlayer: mod.Player): mod.UIWidget | undefined {
     const playerId = mod.GetObjId(eventPlayer);
     const dialogRoot = ensureReadyDialogUiBuiltHidden(eventPlayer);
     if (!dialogRoot) return undefined;
+    refreshReadyDialogSectionsWhileHidden(eventPlayer, playerId, dialogRoot as mod.UIWidget);
     State.players.readyDialogData[playerId].dialogVisible = true;
     createReadyDialogUI(eventPlayer, true);
     return safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId) as mod.UIWidget | undefined;
@@ -141,7 +163,8 @@ function createReadyDialogUI(eventPlayer: mod.Player, reveal: boolean = true) {
         mod.UIDepth.AboveGameUI,
         eventPlayer
     );
-    const CONTAINER_BASE = mod.FindUIWidgetWithName(CONTAINER_BASE_ID, mod.GetUIRoot());
+    const CONTAINER_BASE = safeFind(CONTAINER_BASE_ID);
+    if (!CONTAINER_BASE) return;
     mod.SetUIWidgetBgAlpha(CONTAINER_BASE, 0.995); // Force darker overlay (some clients render blur lighter)
 
     const borderHalfWidth = (CONTAINER_WIDTH / 2) + CONTAINER_BORDER_PADDING + (CONTAINER_BORDER_THICKNESS / 2);

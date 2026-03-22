@@ -103,7 +103,7 @@ function getRosterDisplayEntries(): RosterDisplay_t {
 // Resolves roster entry label text from live player handle or debug placeholder key.
 function getRosterEntryNameMessage(entry: RosterDisplayEntry | undefined): mod.Message {
     if (!entry) return mod.Message(mod.stringkeys.twl.system.genericCounter, "");
-    if (entry.player) return mod.Message(mod.stringkeys.twl.readyDialog.playerNameFormat, entry.player);
+    if (entry.player) return getUiSafePlayerMessage(entry.player);
     if (entry.nameKey) return mod.Message(entry.nameKey);
     return mod.Message(mod.stringkeys.twl.system.genericCounter, "");
 }

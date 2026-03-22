@@ -120,13 +120,13 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
         const t2ReadyId = UI_READY_DIALOG_T2_ROW_READY_ID + viewerPlayerId + "_" + row;
         const t2BaseId = UI_READY_DIALOG_T2_ROW_BASE_ID + viewerPlayerId + "_" + row;
 
-        const t1Name = mod.FindUIWidgetWithName(t1NameId, mod.GetUIRoot());
-        const t1Ready = mod.FindUIWidgetWithName(t1ReadyId, mod.GetUIRoot());
-        const t1Base = mod.FindUIWidgetWithName(t1BaseId, mod.GetUIRoot());
+        const t1Name = safeFind(t1NameId);
+        const t1Ready = safeFind(t1ReadyId);
+        const t1Base = safeFind(t1BaseId);
 
-        const t2Name = mod.FindUIWidgetWithName(t2NameId, mod.GetUIRoot());
-        const t2Ready = mod.FindUIWidgetWithName(t2ReadyId, mod.GetUIRoot());
-        const t2Base = mod.FindUIWidgetWithName(t2BaseId, mod.GetUIRoot());
+        const t2Name = safeFind(t2NameId);
+        const t2Ready = safeFind(t2ReadyId);
+        const t2Base = safeFind(t2BaseId);
 
         const t1Entry = (row < t1Players.length) ? t1Players[row] : undefined;
         const t2Entry = (row < t2Players.length) ? t2Players[row] : undefined;
@@ -211,7 +211,7 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
 // Updates the Ready toggle button label for the given viewer based on that viewer's current ready state.
 function updateReadyToggleButtonForViewer(viewer: mod.Player, viewerPlayerId: number): void {
     const btnLabelId = UI_READY_DIALOG_BUTTON_READY_LABEL_ID + viewerPlayerId;
-    const labelWidget = mod.FindUIWidgetWithName(btnLabelId, mod.GetUIRoot());
+    const labelWidget = safeFind(btnLabelId);
     if (!labelWidget) return;
 
     const isReady = !!State.players.readyByPid[viewerPlayerId];
@@ -219,7 +219,7 @@ function updateReadyToggleButtonForViewer(viewer: mod.Player, viewerPlayerId: nu
         ? mod.Message(mod.stringkeys.twl.readyDialog.buttons.notReady)
         : mod.Message(mod.stringkeys.twl.readyDialog.buttons.ready);
 
-    mod.SetUITextLabel(labelWidget, labelMsg);
+    safeSetUITextLabel(labelWidget, labelMsg);
 }
 
 //#endregion ----------------- Ready Dialog - Roster Render + Toggle Labels --------------------

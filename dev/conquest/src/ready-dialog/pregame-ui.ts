@@ -26,7 +26,7 @@ function ensureCountdownUIAndGetWidget(player: mod.Player): mod.UIWidget | undef
         }
     }
 
-    modlib.ParseUI({
+    safeParseUI({
         name: rootName,
         type: "Text",
         playerId: player,
@@ -71,7 +71,7 @@ function setPregameCountdownVisualForAllPlayers(
             const message = (labelValue !== undefined)
                 ? mod.Message(labelKey, labelValue)
                 : mod.Message(labelKey);
-            mod.SetUITextLabel(w, message);
+            safeSetUITextLabel(w, message);
             mod.SetUITextColor(w, color);
             mod.SetUITextSize(w, size);
         }
@@ -105,3 +105,4 @@ function hidePregameCountdownForAllPlayers(): void {
 }
 
 //#endregion -------------------- Ready Dialog - Pregame Countdown UI --------------------
+

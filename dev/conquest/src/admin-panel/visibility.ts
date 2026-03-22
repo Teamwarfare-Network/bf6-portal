@@ -28,9 +28,9 @@ function setAdminPanelChildWidgetsVisible(playerId: number, visible: boolean): v
 
     for (const baseId of ids) {
         const w = safeFind(baseId + playerId);
-        if (w) mod.SetUIWidgetVisible(w, visible);
+        safeSetUIWidgetVisible(w, visible);
         const border = safeFind(baseId + playerId + "_BORDER");
-        if (border) mod.SetUIWidgetVisible(border, visible);
+        safeSetUIWidgetVisible(border, visible);
     }
 }
 
@@ -79,7 +79,7 @@ function ensureAdminPanelWidgets(
             adminToggleParent,
             eventPlayer
         );
-        toggleBtn = mod.FindUIWidgetWithName(adminToggleButtonId, mod.GetUIRoot());
+        toggleBtn = safeFind(adminToggleButtonId);
     }
 
     const adminToggleBorder = safeFind(adminToggleButtonId + "_BORDER");
@@ -108,7 +108,7 @@ function ensureAdminPanelWidgets(
             adminToggleBorder ?? adminToggleParent
         );
     } else {
-        mod.SetUITextLabel(toggleLabel, mod.Message(mod.stringkeys.twl.adminPanel.buttons.panel));
+        safeSetUITextLabel(toggleLabel, mod.Message(mod.stringkeys.twl.adminPanel.buttons.panel));
         if (adminToggleBorder) {
             mod.SetUIWidgetParent(toggleLabel, adminToggleBorder);
         }
@@ -119,10 +119,10 @@ function ensureAdminPanelWidgets(
         mod.SetUIWidgetDepth(toggleLabel, mod.UIDepth.AboveGameUI);
     }
 
-    if (toggleBtn) mod.SetUIWidgetVisible(toggleBtn, visible);
-    if (toggleLabel) mod.SetUIWidgetVisible(toggleLabel, visible);
+    safeSetUIWidgetVisible(toggleBtn, visible);
+    safeSetUIWidgetVisible(toggleLabel, visible);
     const toggleBorder = safeFind(adminToggleButtonId + "_BORDER");
-    if (toggleBorder) mod.SetUIWidgetVisible(toggleBorder, visible);
+    safeSetUIWidgetVisible(toggleBorder, visible);
 
     if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
     if (!State.players.readyDialogData[playerId].adminPanelBuilt) {
@@ -174,12 +174,12 @@ function toggleReadyDialogAdminPanel(eventPlayer: mod.Player, playerId: number):
         eventPlayer
     );
 
-    const adminContainer = mod.FindUIWidgetWithName(UI_ADMIN_PANEL_CONTAINER_ID + playerId, mod.GetUIRoot());
+    const adminContainer = safeFind(UI_ADMIN_PANEL_CONTAINER_ID + playerId);
     if (!adminContainer) {
         return;
     }
     buildAdminPanelWidgets(eventPlayer, adminContainer, playerId);
     state.adminPanelBuilt = true;
-    mod.SetUIWidgetVisible(adminContainer, true);
+    safeSetUIWidgetVisible(adminContainer, true);
     setAdminPanelChildWidgetsVisible(playerId, true);
 }

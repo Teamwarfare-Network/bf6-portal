@@ -6,7 +6,7 @@
 // Writes the admin panel action counter label if the widget is currently available.
 function setAdminPanelActionCountText(widget: mod.UIWidget | undefined, value: number): void {
     if (!widget) return;
-    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.adminPanel.actionCountFormat, Math.floor(value)));
+    safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.adminPanel.actionCountFormat, Math.floor(value)));
 }
 
 //#endregion ----------------- HUD Counter Helpers --------------------
@@ -129,11 +129,39 @@ function safeSetUIWidgetVisible(widget: mod.UIWidget | undefined, visible: boole
     }
 }
 
-// Safe text-label write helper used by HUD render paths.
-function safeSetUITextLabel(widget: mod.UIWidget | undefined, label: mod.Message): void {
-    if (!widget) return;
+// Re-resolves cached UI handles by name so reopen/rebuild paths do not keep
+// writing through stale widget references after dialog/HUD lifecycle changes.
+function resolveLiveUIWidget(widget: mod.UIWidget | undefined): mod.UIWidget | undefined {
+    if (!widget) return undefined;
     try {
-        mod.SetUITextLabel(widget, label);
+        const widgetName = mod.GetUIWidgetName(widget);
+        if (!widgetName) return undefined;
+        return safeFind(widgetName);
+    } catch {
+        return undefined;
+    }
+}
+
+// Safe text-label write helper used by HUD render paths.
+// Some callers build labels through helper chains that can transiently return
+// undefined/null during UI lifecycle transitions, so normalize or skip before
+// reaching the engine overload boundary.
+function safeSetUITextLabel(widget: mod.UIWidget | undefined, label: mod.Message | number | undefined | null): void {
+    const liveWidget = resolveLiveUIWidget(widget);
+    if (!liveWidget) return;
+    if (label === undefined || label === null) return;
+    let resolvedLabel: mod.Message;
+    if (typeof label === "number") {
+        try {
+            resolvedLabel = mod.Message(label);
+        } catch {
+            return;
+        }
+    } else {
+        resolvedLabel = label;
+    }
+    try {
+        mod.SetUITextLabel(liveWidget, resolvedLabel);
     } catch {
         return;
     }
@@ -253,7 +281,7 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
     }
     let root = safeFind(rootName);
     if (!root && player) {
-        const parsedRoot = modlib.ParseUI({
+        const parsedRoot = safeParseUI({
             name: rootName,
             type: "Container",
             playerId: player,
@@ -507,3 +535,4 @@ function getReadyCountsForMessage(): { readyCount: number; totalCount: number } 
 }
 
 //#endregion ----------------- HUD Ready Count --------------------
+
