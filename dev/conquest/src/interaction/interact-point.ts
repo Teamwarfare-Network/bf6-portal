@@ -29,6 +29,11 @@ async function spawnReadyDialogInteractPoint(eventPlayer: mod.Player) {
             mod.CreateVector(0, 1.5, 0)
         );
 
+        // Keep dialog open responsive: if the hidden cache was invalidated, rebuild it here
+        // before the interact point becomes usable rather than during the user's open action.
+        warmHiddenReadyDialogCacheForPid(playerId);
+        await mod.Wait(0);
+
         const interactPoint: mod.InteractPoint = mod.SpawnObject(
             mod.RuntimeSpawn_Common.InteractPoint,
             interactPointPosition,

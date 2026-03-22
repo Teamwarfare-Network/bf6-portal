@@ -271,4 +271,6 @@ function buildReadyDialogModeConfigSection(
         confirmBorder ?? containerBase,
         12
     );
+
+    updateReadyDialogModeConfigForPid(playerId);
 }

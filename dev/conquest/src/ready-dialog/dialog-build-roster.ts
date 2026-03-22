@@ -220,6 +220,5 @@ function buildReadyDialogRosterSection(
         );
         if (t2Base) mod.SetUIWidgetBgAlpha(t2Base, 0);
     }
-
     refreshReadyDialogRosterForViewer(eventPlayer, playerId);
 }

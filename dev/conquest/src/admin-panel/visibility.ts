@@ -108,7 +108,6 @@ function ensureAdminPanelWidgets(
             adminToggleBorder ?? adminToggleParent
         );
     } else {
-        safeSetUITextLabel(toggleLabel, mod.Message(mod.stringkeys.twl.adminPanel.buttons.panel));
         if (adminToggleBorder) {
             mod.SetUIWidgetParent(toggleLabel, adminToggleBorder);
         }

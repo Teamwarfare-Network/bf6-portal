@@ -167,6 +167,8 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
         conquestPhase2BOnPlayerJoin(joinPid, wasDisconnected);
     }
 
+    invalidateHiddenReadyDialogCacheForAllPlayers();
+
     await mod.Wait(0.1);
     if (!mod.IsPlayerValid(eventPlayer)) return;
 
@@ -234,6 +236,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     conquestPhase2BOnPlayerLeave(pid);
     // Also drop dialog-visible tracking if present (viewer is gone).
     delete State.players.readyDialogData[pid];
+    invalidateHiddenReadyDialogCacheForAllPlayers();
     clearJoinPromptForPlayerId(pid);
 
     // Refresh UI for remaining players so rosters + HUD ready counts immediately reflect the disconnect.

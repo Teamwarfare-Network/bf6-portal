@@ -369,6 +369,7 @@ function applyMapConfig(mapKey: MapKey): void {
     // Apply the map's default aircraft ceiling, unless a custom override is active.
     syncAircraftCeilingFromMapConfig();
 
+    invalidateHiddenReadyDialogCacheForAllPlayers();
     updateReadyDialogMapLabelForAllPlayers();
     updateTeamNameWidgetsForAllPlayers();
 }

@@ -167,6 +167,7 @@ function addReadyDialogText(
     textColor: mod.Vector = READY_DIALOG_LABEL_TEXT_COLOR
 ): mod.UIWidget | undefined {
     let widget = safeFind(widgetId);
+    const existed = !!widget;
     if (!widget) {
         const config: any = {
             name: widgetId,
@@ -199,7 +200,9 @@ function addReadyDialogText(
     } catch {}
     safeSetUIWidgetPosition(widget, mod.CreateVector(posX, posY, 0));
     safeSetUIWidgetSize(widget, mod.CreateVector(sizeX, sizeY, 0));
-    safeSetUITextLabel(widget, typeof label === "number" ? mod.Message(label) : label);
+    if (existed) {
+        safeSetUITextLabel(widget, typeof label === "number" ? mod.Message(label) : label);
+    }
     try {
         mod.SetUITextAnchor(widget, textAnchor);
     } catch {}

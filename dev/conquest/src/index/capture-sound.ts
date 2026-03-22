@@ -7,6 +7,21 @@ function conquestPhase4HasValidHandle(handle: any): boolean {
     return true;
 }
 
+function conquestPhase4SafeUnspawnSoundHandle(handle: any): void {
+    if (!conquestPhase4HasValidHandle(handle)) return;
+    try {
+        mod.UnspawnObject(handle);
+    } catch {}
+}
+
+function conquestPhase4CleanupSoundRuntimeHandles(): void {
+    conquestPhase4SafeUnspawnSoundHandle(State.conquest.sound.captureTickFriendlyHandle);
+    conquestPhase4SafeUnspawnSoundHandle(State.conquest.sound.captureTickEnemyHandle);
+    State.conquest.sound.captureTickFriendlyHandle = undefined;
+    State.conquest.sound.captureTickEnemyHandle = undefined;
+    State.conquest.sound.handlesReady = false;
+}
+
 function conquestPhase4ResetQueueAndThrottleState(): void {
     State.conquest.sound.queue = [];
     State.conquest.sound.lastFlushAtSeconds = -1;

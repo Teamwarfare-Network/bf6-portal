@@ -69,11 +69,9 @@ function refreshReadyDialogSectionsWhileHidden(
     containerBase: mod.UIWidget
 ): void {
     ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, false);
-    refreshReadyDialogButtonTextForPid(eventPlayer, playerId, containerBase);
-    updateReadyDialogMapLabelForPid(playerId);
-    updateTeamNameWidgetsForPid(playerId);
-    refreshReadyDialogRosterForViewer(eventPlayer, playerId);
-    updateReadyToggleButtonForViewer(eventPlayer, playerId);
+    // CQ_Bug_18: cached ready-dialog open must remain a pure reveal path.
+    // Hidden dialog caches are invalidated when roster/map state changes underneath them,
+    // so next open rebuilds fresh instead of relabeling a stale cached tree here.
 }
 
 // Ensures the ready-dialog tree exists in a hidden state so later open paths can stay near-pure reveal.
@@ -95,8 +93,9 @@ function showReadyDialogUI(eventPlayer: mod.Player): mod.UIWidget | undefined {
     if (!dialogRoot) return undefined;
     refreshReadyDialogSectionsWhileHidden(eventPlayer, playerId, dialogRoot as mod.UIWidget);
     State.players.readyDialogData[playerId].dialogVisible = true;
-    createReadyDialogUI(eventPlayer, true);
-    return safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId) as mod.UIWidget | undefined;
+    finalizeReadyDialogVisibility(eventPlayer, playerId, dialogRoot as mod.UIWidget, true);
+    markReadyDialogLayoutBuilt(playerId);
+    return dialogRoot as mod.UIWidget;
 }
 
 // Legacy function name is preserved to avoid call-site churn.

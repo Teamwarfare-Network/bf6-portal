@@ -3,17 +3,20 @@
 
 async function runSequentialSpawns(slotIndices: number[], token: number): Promise<void> {
     // Consider hardening: Tight maps are vulnerable if a delayed spawn arrives after the token window; fallback binding may mis-bind.
-    for (let i = 0; i < slotIndices.length; i++) {
-        if (State.vehicles.spawnSequenceToken !== token) return;
-        const slotIndex = slotIndices[i];
-        const slot = State.vehicles.slots[slotIndex];
-        if (!slot || !slot.enabled || slot.vehicleId !== -1) continue;
-        await forceSpawnWithRetry(slotIndex);
-        await mod.Wait(0.3);
-    }
-
-    if (State.vehicles.spawnSequenceToken === token) {
-        State.vehicles.spawnSequenceInProgress = false;
+    try {
+        for (let i = 0; i < slotIndices.length; i++) {
+            if (State.vehicles.spawnSequenceToken !== token) return;
+            const slotIndex = slotIndices[i];
+            const slot = State.vehicles.slots[slotIndex];
+            if (!slot || !slot.enabled || slot.vehicleId !== -1) continue;
+            await forceSpawnWithRetry(slotIndex);
+            await mod.Wait(0.3);
+        }
+    } catch {
+    } finally {
+        if (State.vehicles.spawnSequenceToken === token) {
+            State.vehicles.spawnSequenceInProgress = false;
+        }
     }
 }
 
@@ -32,27 +35,39 @@ async function forceSpawnWithRetry(slotIndex: number): Promise<boolean> {
     State.vehicles.activeSpawnRequestedAtSeconds = slot.spawnRequestAtSeconds;
 
     // Re-apply config before forcing spawn to avoid the default vehicle type.
-    configureVehicleSpawner(slot.spawner, slot.vehicleType);
-    await mod.Wait(0);
+    try {
+        configureVehicleSpawner(slot.spawner, slot.vehicleType);
+        await mod.Wait(0);
 
-    for (let attempt = 0; attempt < 20; attempt++) {
-        if (!slot.enabled || slot.enableToken !== token) {
-            slot.expectingSpawn = false;
-            refreshVehicleSlotAuthoritativeState(slot);
-            if (State.vehicles.activeSpawnSlotIndex === slotIndex && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
-                State.vehicles.activeSpawnSlotIndex = undefined;
-                State.vehicles.activeSpawnToken = undefined;
-                State.vehicles.activeSpawnRequestedAtSeconds = undefined;
+        for (let attempt = 0; attempt < 20; attempt++) {
+            if (!slot.enabled || slot.enableToken !== token) {
+                slot.expectingSpawn = false;
+                refreshVehicleSlotAuthoritativeState(slot);
+                if (State.vehicles.activeSpawnSlotIndex === slotIndex && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
+                    State.vehicles.activeSpawnSlotIndex = undefined;
+                    State.vehicles.activeSpawnToken = undefined;
+                    State.vehicles.activeSpawnRequestedAtSeconds = undefined;
+                }
+                return false;
             }
-            return false;
-        }
-        mod.ForceVehicleSpawnerSpawn(slot.spawner);
 
-        if (!slot.expectingSpawn && slot.vehicleId !== -1) {
-            return true;
-        }
+            mod.ForceVehicleSpawnerSpawn(slot.spawner);
 
-        await mod.Wait(0.25);
+            if (!slot.expectingSpawn && slot.vehicleId !== -1) {
+                return true;
+            }
+
+            await mod.Wait(0.25);
+        }
+    } catch {
+        slot.expectingSpawn = false;
+        refreshVehicleSlotAuthoritativeState(slot);
+        if (State.vehicles.activeSpawnSlotIndex === slotIndex && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
+            State.vehicles.activeSpawnSlotIndex = undefined;
+            State.vehicles.activeSpawnToken = undefined;
+            State.vehicles.activeSpawnRequestedAtSeconds = undefined;
+        }
+        return false;
     }
 
     slot.expectingSpawn = false;
@@ -73,27 +88,31 @@ async function scheduleBlockedSpawnRetry(slotIndex: number): Promise<void> {
     slot.spawnRetryScheduled = true;
     scheduleVehicleSlotRespawnTimer(slot, VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS);
     const token = slot.enableToken;
+    try {
+        await mod.Wait(VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS);
+        slot.spawnRetryScheduled = false;
 
-    await mod.Wait(VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS);
-    slot.spawnRetryScheduled = false;
+        if (!slot.enabled || slot.enableToken !== token) {
+            clearVehicleSlotRespawnTimer(slot);
+            return;
+        }
+        if (slot.vehicleId !== -1) return;
 
-    if (!slot.enabled || slot.enableToken !== token) {
+        const teamNameKey = getTeamNameKey(slot.teamId);
+        sendHighlightedWorldLogMessage(
+            mod.Message(STR_VEHICLE_SPAWN_RETRY, teamNameKey, VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS),
+            true,
+            undefined,
+            STR_VEHICLE_SPAWN_RETRY
+        );
+
+        const success = await forceSpawnWithRetry(slotIndex);
+        if (!success) {
+            void scheduleBlockedSpawnRetry(slotIndex);
+        }
+    } catch {
+        slot.spawnRetryScheduled = false;
         clearVehicleSlotRespawnTimer(slot);
-        return;
-    }
-    if (slot.vehicleId !== -1) return;
-
-    const teamNameKey = getTeamNameKey(slot.teamId);
-    sendHighlightedWorldLogMessage(
-        mod.Message(STR_VEHICLE_SPAWN_RETRY, teamNameKey, VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS),
-        true,
-        undefined,
-        STR_VEHICLE_SPAWN_RETRY
-    );
-
-    const success = await forceSpawnWithRetry(slotIndex);
-    if (!success) {
-        void scheduleBlockedSpawnRetry(slotIndex);
     }
 }
 
@@ -119,55 +138,61 @@ async function scheduleRespawn(slotIndex: number, lastVehicleId: number): Promis
     slot.respawnRunning = true;
     const token = slot.enableToken;
     scheduleVehicleSlotRespawnTimer(slot, VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS);
-    await mod.Wait(VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS);
+    try {
+        await mod.Wait(VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS);
 
-    if (!slot.enabled || slot.enableToken !== token) {
-        slot.respawnRunning = false;
-        clearVehicleSlotRespawnTimer(slot);
-        return;
-    }
+        if (!slot.enabled || slot.enableToken !== token) {
+            clearVehicleSlotRespawnTimer(slot);
+            return;
+        }
 
-    delete State.vehicles.vehicleToSlot[lastVehicleId];
-    slot.vehicleId = -1;
-    slot.activeOwnerPid = undefined;
-    refreshVehicleSlotAuthoritativeState(slot);
-
-    if (shouldGateVehicleSlotSpawnUntilReservationDeploy(slot)) {
-        slot.respawnRunning = false;
+        delete State.vehicles.vehicleToSlot[lastVehicleId];
+        slot.vehicleId = -1;
+        slot.activeOwnerPid = undefined;
         refreshVehicleSlotAuthoritativeState(slot);
-        return;
-    }
 
-    const success = await forceSpawnWithRetry(slotIndex);
-    if (!success) {
-        void scheduleBlockedSpawnRetry(slotIndex);
+        if (shouldGateVehicleSlotSpawnUntilReservationDeploy(slot)) {
+            refreshVehicleSlotAuthoritativeState(slot);
+            return;
+        }
+
+        const success = await forceSpawnWithRetry(slotIndex);
+        if (!success) {
+            void scheduleBlockedSpawnRetry(slotIndex);
+        }
+    } catch {
+        clearVehicleSlotRespawnTimer(slot);
+    } finally {
+        slot.respawnRunning = false;
     }
-    slot.respawnRunning = false;
 }
 
 // Periodically verifies tracked vehicles still exist; if missing, triggers respawn.
 async function pollVehicleSpawnerSlots(): Promise<void> {
     while (true) {
         await mod.Wait(VEHICLE_SPAWNER_POLL_INTERVAL_SECONDS);
-        // Pause spawner maintenance during cleanup to avoid late respawns/binds.
-        if (State.round.flow.cleanupActive) {
-            continue;
-        }
-
-        for (let i = 0; i < State.vehicles.slots.length; i++) {
-            const slot = State.vehicles.slots[i];
-            if (slot.vehicleId === -1) continue;
-
-            const vehicle = findVehicleById(slot.vehicleId);
-            if (!vehicle) {
-                const oldId = slot.vehicleId;
-                slot.vehicleId = -1;
-                slot.activeOwnerPid = undefined;
-                markVehicleSlotMissing(slot);
-                // In continuous-live conquest, missing slot vehicles should always be replaced.
-                scheduleRespawn(i, oldId);
+        try {
+            // Pause spawner maintenance during cleanup to avoid late respawns/binds.
+            if (State.round.flow.cleanupActive) {
                 continue;
             }
+
+            for (let i = 0; i < State.vehicles.slots.length; i++) {
+                const slot = State.vehicles.slots[i];
+                if (slot.vehicleId === -1) continue;
+
+                const vehicle = findVehicleById(slot.vehicleId);
+                if (!vehicle) {
+                    const oldId = slot.vehicleId;
+                    slot.vehicleId = -1;
+                    slot.activeOwnerPid = undefined;
+                    markVehicleSlotMissing(slot);
+                    // In continuous-live conquest, missing slot vehicles should always be replaced.
+                    scheduleRespawn(i, oldId);
+                    continue;
+                }
+            }
+        } catch {
         }
     }
 }

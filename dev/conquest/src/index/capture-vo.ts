@@ -7,6 +7,22 @@ function conquestPhase4BHasValidHandle(handle: any): boolean {
     return true;
 }
 
+function conquestPhase4BSafeUnspawnVoiceOverRuntimeHandle(handle: any): void {
+    if (!conquestPhase4BHasValidHandle(handle)) return;
+    try {
+        mod.UnspawnObject(handle);
+    } catch {}
+}
+
+function conquestPhase4BCleanupAllVoiceOverRuntimeHandles(): void {
+    const runtimeHandles = State.conquest.vo.runtimeHandleByPid;
+    for (const pidKey in runtimeHandles) {
+        conquestPhase4BSafeUnspawnVoiceOverRuntimeHandle(runtimeHandles[pidKey]);
+    }
+    State.conquest.vo.runtimeHandleByPid = {};
+    State.conquest.vo.handlesReadyByPid = {};
+}
+
 function conquestPhase4BEnsureObjectiveState(objId: number): ConquestObjectiveVoState {
     let state = State.conquest.vo.objectiveStateByObjId[objId];
     if (state) return state;
@@ -58,8 +74,6 @@ function conquestPhase4BResetQueueAndThrottleState(): void {
     State.conquest.vo.lastFlushAtSeconds = -1;
     State.conquest.vo.lastEventAtByThrottleKey = {};
     State.conquest.vo.objectiveStateByObjId = {};
-    State.conquest.vo.runtimeHandleByPid = {};
-    State.conquest.vo.handlesReadyByPid = {};
     State.conquest.vo.recentActiveObjIdByPid = {};
     State.conquest.vo.recentActiveAtSecondsByPid = {};
     State.conquest.vo.debug.lastQueueDepth = 0;
@@ -88,6 +102,7 @@ function conquestPhase4BOnPlayerLeaveOrResetPid(pid: number): void {
         nextThrottleMap[key] = State.conquest.vo.lastEventAtByThrottleKey[key];
     }
     State.conquest.vo.lastEventAtByThrottleKey = nextThrottleMap;
+    conquestPhase4BSafeUnspawnVoiceOverRuntimeHandle(State.conquest.vo.runtimeHandleByPid[pid]);
     delete State.conquest.vo.runtimeHandleByPid[pid];
     delete State.conquest.vo.handlesReadyByPid[pid];
     delete State.conquest.vo.recentActiveObjIdByPid[pid];

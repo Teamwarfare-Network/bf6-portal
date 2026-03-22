@@ -97,47 +97,51 @@ async function onGameModeStartedImpl(): Promise<void> {
     let lastSecondBoundary = -1;
     let lastLiveCoreTickSecond = -1;
     while (true) {
-        const nowElapsed = mod.GetMatchTimeElapsed();
-        const nowSecondBoundary = Math.floor(nowElapsed);
-        let clockUpdatedThisLoop = false;
+        try {
+            const nowElapsed = mod.GetMatchTimeElapsed();
+            const nowSecondBoundary = Math.floor(nowElapsed);
+            let clockUpdatedThisLoop = false;
 
-        if (isMatchLive() && !State.match.victoryDialogActive) {
-            conquestPhase2ARefreshLiveCaptureStateSubtick();
-            if (nowSecondBoundary !== lastLiveCoreTickSecond) {
-                lastLiveCoreTickSecond = nowSecondBoundary;
-                conquestPhase2AOnLiveTick();
+            if (isMatchLive() && !State.match.victoryDialogActive) {
+                conquestPhase2ARefreshLiveCaptureStateSubtick();
+                if (nowSecondBoundary !== lastLiveCoreTickSecond) {
+                    lastLiveCoreTickSecond = nowSecondBoundary;
+                    conquestPhase2AOnLiveTick();
+                } else {
+                    updateConquestCombatHudForAllPlayers();
+                }
+                conquestPhase4FlushCaptureSoundQueue();
+                conquestPhase4BFlushCaptureVoiceOverQueue();
             } else {
-                updateConquestCombatHudForAllPlayers();
+                lastLiveCoreTickSecond = -1;
             }
-            conquestPhase4FlushCaptureSoundQueue();
-            conquestPhase4BFlushCaptureVoiceOverQueue();
-        } else {
-            lastLiveCoreTickSecond = -1;
-        }
 
-        if (shouldClockUseCriticalFlashSubtick()) {
-            updateAllPlayersClock();
-            clockUpdatedThisLoop = true;
-        }
-
-        if (nowSecondBoundary !== lastSecondBoundary) {
-            lastSecondBoundary = nowSecondBoundary;
-
-            // Push the initial clock display so every HUD shows the same starting time.
-            if (!clockUpdatedThisLoop) {
+            if (shouldClockUseCriticalFlashSubtick()) {
                 updateAllPlayersClock();
+                clockUpdatedThisLoop = true;
             }
-            updateVehicleDeployTimerHudForAllPlayers();
-            checkTakeoffLimitForAllPlayers();
-            if (State.match.victoryDialogActive) {
-                const elapsedSinceVictory = nowSecondBoundary - Math.floor(State.match.victoryStartElapsedSecondsSnapshot);
-                const remaining = MATCH_END_DELAY_SECONDS - elapsedSinceVictory;
-                updateVictoryDialogForAllPlayers(Math.max(0, Math.floor(remaining)));
-                if (remaining <= 0) {
-                    endGameModeForTeamNum(State.match.winnerTeam ?? 0);
-                    return;
+
+            if (nowSecondBoundary !== lastSecondBoundary) {
+                lastSecondBoundary = nowSecondBoundary;
+
+                // Push the initial clock display so every HUD shows the same starting time.
+                if (!clockUpdatedThisLoop) {
+                    updateAllPlayersClock();
+                }
+                updateVehicleDeployTimerHudForAllPlayers();
+                checkTakeoffLimitForAllPlayers();
+                if (State.match.victoryDialogActive) {
+                    const elapsedSinceVictory = nowSecondBoundary - Math.floor(State.match.victoryStartElapsedSecondsSnapshot);
+                    const remaining = MATCH_END_DELAY_SECONDS - elapsedSinceVictory;
+                    updateVictoryDialogForAllPlayers(Math.max(0, Math.floor(remaining)));
+                    if (remaining <= 0) {
+                        endGameModeForTeamNum(State.match.winnerTeam ?? 0);
+                        return;
+                    }
                 }
             }
+        } catch {
+            lastLiveCoreTickSecond = -1;
         }
 
         await mod.Wait(CONQUEST_LIVE_STATE_SUBTICK_SECONDS);

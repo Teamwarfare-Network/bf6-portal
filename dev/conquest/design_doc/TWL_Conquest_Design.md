@@ -14,7 +14,7 @@ Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
   - Phase 4, 4B: completed and accepted at the current multiplayer-tested checkpoint
   - Phase 5A-5G: implemented at the current accepted checkpoint, with remaining explicit Phase 5 closeout items tracked in the Phase 5 checklist
 - Current next implementation target:
-  - Phase 6 design lock pass: pre/post-match flow, end-result snapshot rules, join-prompt redesign, and setup/reset staging semantics
+  - Phase 6 boundary-zone and spawn/bounds pass: main-base/main-base-buffer/ground-combat-zone map-config migration, enemy-buffer enforcement, grounded combat-zone enforcement, and the basic boundary behaviors that later Phase 7 pre/post-match flow now depends on
 - Current open Conquest bug status:
   - See `design_doc/conquest_issues.md` for the active issue list
   - `CQ_Bug_3` remains intentionally deferred, and later deferred polish bugs are tracked there explicitly
@@ -42,8 +42,8 @@ Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
 - [Phase 5E: Map config / vehicle spawn mapping](#phase-5e)
 - [Phase 5F: 3D Bounded Spawn Volumes](#phase-5f)
 - [Phase 5G: Polish / tune](#phase-5g)
-- [Phase 6: Pre & Post Match Events](#phase-6)
-- [Phase 7: Basic Spawn and Boundaries System](#phase-7)
+- [Phase 6: Basic Spawn and Boundaries System](#phase-6)
+- [Phase 7: Pre & Post Match Events](#phase-7)
 - [Phase 8: Custom Tab Scoreboard + KPI Tracking](#phase-8)
 - [Phase 9: Iteration, Playtesting, and Polish](#phase-9)
 - [Phase 10: Advanced Features](#phase-10)
@@ -122,7 +122,7 @@ Status:
 
 - Contract is accepted as future direction.
 - Implementation is explicitly deferred to a final follow-on phase (after Phases 1-11).
-- Phase 7 remains basic spawn/boundary behavior with low overhead.
+- Phase 6 remains basic spawn/boundary behavior with low overhead.
 
 Contract summary (future implementation target):
 
@@ -513,7 +513,7 @@ Player-impact telemetry additions:
   - sectors/objectives
   - world interactables (main base and point)
 - `CF-29` Map readiness validation owner/process: human validation using provided Godot spatial data references.
-- `CF-63` Spawn-schema readiness gate: `teamSpawnSets`, `flagSpawnSets`, and `fallbackSpawns` are optional before Phase 7 and mandatory at Phase 7 entry.
+- `CF-63` Spawn-schema readiness gate: `teamSpawnSets`, `flagSpawnSets`, and `fallbackSpawns` are optional before Phase 6 and mandatory at Phase 6 entry.
 - `CF-73` Runtime map validation guardrails:
   - configured ObjIds must resolve at runtime
   - expected object types must match usage (capture point/trigger/spawner)
@@ -1812,7 +1812,7 @@ Compact MP QA Script (one session):
   - [ ] `8. Leave-radius gating`: Have one player leave the radius while the other keeps the point changing; expect the player who left to hear no more non-terminal VO or capture SFX after leaving.
   - [ ] `8a. Enemy terminal after leave`: If the losing player leaves shortly before the loss completes, note whether the enemy terminal line still plays. Current accepted checkpoint allows this to fail and tracks it as deferred polish (`CQ_Bug_16`).
   - [ ] `9. Death/redeploy`: Kill one player on the point, redeploy, and return; expect no stale delayed VO from the prior life and one fresh non-terminal line only when the new life truly re-enters state.
-  - [ ] `10. Team swap edge`: Swap one player’s team on/near an active point, redeploy, and re-enter; expect no stale pre-swap VO and correct post-swap perspective when VO resumes.
+  - [ ] `10. Team swap edge`: Swap one playerâ€™s team on/near an active point, redeploy, and re-enter; expect no stale pre-swap VO and correct post-swap perspective when VO resumes.
   - [ ] `11. Spam guard`: Rapidly oscillate entry/exit/contest state for at least `10s`; expect no rapid-fire non-terminal replay faster than the current `4.0s` debounce unless the objective actually left and re-entered a different VO phase.
   - [ ] `12. Optional enemy-terminal comparison`: flip the enemy terminal selector from `ObjectiveLost` to `ObjectiveCapturedEnemy`, rerun capture completion perspective, and decide which enemy-side terminal line reads better in multiplayer.
 - Pass criteria:
@@ -2422,7 +2422,127 @@ Phase Changelog:
   - `2026-03-13 | Phase 5 Stage 1 timer backbone | Added authoritative per-slot respawn timer state and timer-owner helpers, then wired existing spawn/respawn/bind flows to that timer authority without changing current vehicle spawn behavior | src/state/runtime-types.ts, src/vehicles/timers.ts, src/vehicles/spawner-slots.ts, src/vehicles/spawner-sequence.ts, src/vehicles/spawner-bind.ts, src/index/vehicle-events.ts, src/index.ts | pending build/verify in current implementation pass`
 
 <a id="phase-6"></a>
-### Phase 6: Pre & Post Match Events
+### Phase 6: Basic Spawn and Boundaries System
+
+Deliverables:
+
+- random spawn-point selection flow with configured restrictions
+- aircraft-vs-vehicle boundary enforcement
+- main-base out-of-bounds enforcement
+- enemy main-base buffer enforcement with warning timer + kill on expiry
+- grounded-player ground-combat-zone enforcement with warning timer + kill on expiry
+- map-config migration of boundary area-trigger ids so main base, main-base buffer, and ground combat zone are no longer hardcoded in gameplay constants
+- kill-player out-of-bounds behavior
+- dedicated team-switch buttons on minimap
+- preserve extension seams for advanced spawn contract (no node-risk logic in this phase)
+
+Mapped clarifications:
+
+- `CF-23`, `CF-24`, `CF-25`, `CF-27`, `CF-63`, `CF-72`, `CF-73`, `CF-80`, `CF-86`
+
+Godot/map prerequisites:
+
+- authored spawn-point sets (team, per-flag, fallback as applicable)
+- authored boundary volumes/config for aircraft, vehicles, and main bases
+- authored area triggers and explicit `MapConfig` ids for:
+  - existing main bases
+  - new main-base buffers
+  - new ground combat zone
+- current first-pass trigger ids to record in map config:
+  - main-base buffer East: `502`
+  - main-base buffer West: `503`
+  - ground combat zone: `666`
+- collision review is mandatory before implementation:
+  - current Firestorm config already uses `503` as `team2VehicleDeploySpawnPointId`
+  - if `503` remains the West main-base buffer trigger id, the overlapping spawn-point id must be resolved explicitly rather than left ambiguous
+
+Boundary / zone contract:
+
+- Main base:
+  - these already exist and are currently used by the area-trigger enter/exit path
+  - current code hardcodes main-base trigger ids (`500` / `501`); Phase 6 should migrate this to map config alongside the new boundary triggers
+- Main-base buffer:
+  - this is new and must be added to map config per map
+  - the first-pass purpose is enemy-base denial after the match becomes live
+  - a player may not enter the enemy team's main-base buffer while the match is live
+  - on enemy-buffer entry during live play:
+    - show a warning prompt telling the player to leave within `5` seconds
+    - if the player remains inside after `5` seconds, kill the player
+  - exact warning-prompt UI is deferred for later design, but the timer/kill rule is locked here
+- Ground combat zone:
+  - this is new and must be added to map config per map
+  - its first-pass area-trigger id is `666`
+  - grounded classification rule:
+    - if a player is not in an aircraft, the player is `grounded`
+    - grounded includes on-foot players and players in non-aircraft vehicles
+    - aircraft means helicopter or plane; this should reuse the same authoritative aircraft-type list already used by the vehicle spawn/bind code so the classification does not drift
+  - grounded players must remain inside the ground combat zone at all times
+  - on leaving or remaining outside the ground combat zone while grounded:
+    - show a warning prompt telling the player to return within `10` seconds
+    - if the player remains outside after `10` seconds, kill the player
+  - exact warning-prompt UI is deferred for later design, but the timer/kill rule is locked here
+- Phase-state hooks:
+  - before the match is live:
+    - players may not leave their own main base
+    - detection continues to use the existing own-main-base exit path that is already tracked today
+    - Phase 6 must hook this rule into the broader pre/post-match flow without breaking the current ready-state reset behavior
+  - once the match is live:
+    - enemy main-base buffer enforcement becomes active
+    - grounded-player ground-combat-zone enforcement remains active
+  - post-match:
+    - the transition matrix with Phase 7 must define whether these boundary kills fully disable, remain informational only, or continue until reset completes
+
+Verification:
+
+- `npm run verify`
+- spawn validity and restriction checks
+- aircraft-vs-vehicle boundary behavior checks
+- main-base out-of-bounds checks
+- pre-live own-main-base leave checks confirming the existing exit detection still works after trigger ids move into map config
+- live enemy main-base buffer checks:
+  - enter enemy buffer
+  - receive `5` second leave warning
+  - survive if exiting in time
+  - die if staying inside through expiry
+- grounded combat-zone checks:
+  - on-foot player outside zone receives `10` second return warning
+  - ground vehicle occupant outside zone receives the same warning/kill path
+  - helicopter/plane occupants are exempt while still airborne/in-aircraft
+  - grounded player survives if re-entering in time and dies on expiry if still outside
+- collision validation for configured trigger/spawn ids, especially any map using `503` for more than one purpose
+- kill-player out-of-bounds enforcement checks
+- dedicated minimap team-switch button behavior checks
+- confirm no advanced node/LOS/heatmap logic is active in Phase 6
+
+Codex To-Do Checklist:
+
+- [ ] Implement random spawn selection using configured team/flag/fallback sets.
+- [ ] Enforce neutral-flag spawn restriction and explicit fallback chain behavior.
+- [ ] Implement aircraft-vs-vehicle boundary distinction.
+- [ ] Implement main-base out-of-bounds enforcement.
+- [ ] Move main-base trigger ids out of hardcoded gameplay constants and into `MapConfig`, then add `MapConfig` fields for main-base buffers and the ground combat zone.
+- [ ] Implement enemy main-base buffer enforcement with a `5` second leave warning during live play and kill on expiry.
+- [ ] Implement grounded-player combat-zone enforcement with a `10` second return warning and kill on expiry.
+- [ ] Reuse one authoritative aircraft-classification helper for grounded-vs-aircraft boundary logic so Phase 5F aircraft handling and Phase 6 boundary logic cannot drift apart.
+- [ ] Validate/resolve object-id collisions for new area triggers, especially the current Firestorm `503` overlap.
+- [ ] Kill players when out-of-bounds according to boundary rules.
+- [ ] Add dedicated team-switch buttons on the minimap and validate their team-switch flow ownership.
+- [ ] Add clear diagnostics for missing/invalid spawn sets per validator policy.
+- [ ] Keep advanced node-risk/LOS/heatmap logic disabled in this phase.
+- [ ] Run spawn restriction, fallback, and boundary tests across team swap/redeploy scenarios.
+
+Phase Changelog:
+
+- `Log policy`: append-only; newest entry first.
+- `Current status`: `not_started`
+- `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
+- `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
+- `Entries`:
+  - `2026-03-22 | Phase ordering swap request | Renumbered Basic Spawn and Boundaries System from Phase 7 to Phase 6 because boundary-zone functionality now gates the later pre/post-match design; historical entries below may still reference the prior numbering | Phase 6, Phase 7 | accepted | TOC + current-status target + Phase 6/7 section order + consistency pass`
+  - `2026-03-22 | Phase 6 boundary-zone detail request | Added the concrete Phase 6 zone contract for existing main bases, new main-base buffers, and a new ground combat zone; locked the live enemy-buffer `5s` warning/kill rule, the always-active grounded combat-zone `10s` warning/kill rule, the pre-live own-main-base leave restriction hook, and the requirement to move these trigger ids into map config with explicit collision review for the current Firestorm `503` overlap | Phase 6 | accepted | Phase 6 deliverables + prerequisites + verification + zone contract + checklist + changelog`
+
+<a id="phase-7"></a>
+### Phase 7: Pre & Post Match Events
 
 Deliverables:
 
@@ -2489,7 +2609,7 @@ Open design questions / locks still needed before implementation:
 - frozen result snapshot schema:
   - lock the exact snapshot fields captured at the first successful end latch
   - resolve how `CF-16` mandatory post-match fields interact with later scoreboard/KPI work in Phase 8
-  - decide whether Phase 6 shows a reduced result surface or carries limited backend aggregation forward before the full scoreboard phase
+  - decide whether Phase 7 shows a reduced result surface or carries limited backend aggregation forward before the full scoreboard phase
 - result UI composition:
   - lock the exact visible fields, ownership, and timing of the result UI
   - define whether it is an overlay, a replacement screen, or a staged transition off the current victory dialog shell
@@ -2497,7 +2617,7 @@ Open design questions / locks still needed before implementation:
   - define first-join, reconnect, live-round, and post-match behavior
   - define dismissal persistence and whether the prompt remains informational only or becomes action-bearing
 - physical ready-up path:
-  - keep it in Phase 6 as a complement to the current ready-dialog access path, not an immediate replacement
+  - keep it in Phase 7 as a complement to the current ready-dialog access path, not an immediate replacement
   - route authored main-base ready-dialog interactables through the existing exported `OnPlayerInteract` entrypoint so ready-dialog ownership remains single-source
 - world-interactable object contract:
   - lock final icon art + color vectors so ready-dialog, vehicle-spawn, and ammo-resupply interactables are readable at a glance
@@ -2527,7 +2647,7 @@ Open design questions / locks still needed before implementation:
     - main-base and point world interactables
     - result UI
     - admin/debug surfaces
-  - prevent Phase 6 from reintroducing the ownership ambiguity already cleaned out of Phase 5G
+  - prevent Phase 7 from reintroducing the ownership ambiguity already cleaned out of Phase 5G
 
 World interactable feature contract:
 
@@ -2535,7 +2655,7 @@ World interactable feature contract:
   - add a reusable map-config-driven world-interactable registry built from placed `WorldIcon` + `InteractPoint` pairs keyed by explicit object id
 - Locked first-pass direction:
   - `MapConfig.worldInteractables[]` is the authoritative explicit list for retained interactables on a map; runtime must not discover them by scanning ids alone
-  - Phase 6 world interactables are shared authored objects, not per-player runtime-spawned interact points
+  - Phase 7 world interactables are shared authored objects, not per-player runtime-spawned interact points
   - script owns the world icon image/color/visibility and the interact-point enabled state
   - interaction dispatch keys off configured object ids from `mod.GetObjId(eventInteractPoint)` inside the existing `OnPlayerInteract` export
   - main-base routing contract:
@@ -2697,14 +2817,14 @@ export function OnPlayerInteract(eventPlayer: mod.Player, eventInteractPoint: mo
 }
 ```
 
-Recommended supporting design docs before Phase 6 implementation:
+Recommended supporting design docs before Phase 7 implementation:
 
-- `phase6_end_flow_and_result_snapshot.md`
-- `phase6_round_start_and_setup.md`
-- `phase6_join_prompt_redesign.md`
-- `phase6_ready_up_transition_matrix.md`
-- `phase6_physical_ready_up_decision.md`
-- `phase6_world_interactables.md`
+- `phase7_end_flow_and_result_snapshot.md`
+- `phase7_round_start_and_setup.md`
+- `phase7_join_prompt_redesign.md`
+- `phase7_ready_up_transition_matrix.md`
+- `phase7_physical_ready_up_decision.md`
+- `phase7_world_interactables.md`
 
 Codex To-Do Checklist:
 
@@ -2731,131 +2851,13 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
-  - `2026-03-22 | Vehicle-spawn menu reuse and ammo-menu scope follow-up | Locked the odd main-base vehicle spawn menu to reuse the current vehicle deploy HUD shell with a dedicated back plate and teleport-based button fulfillment instead of deploy/undeploy flow, and defined the point ammo resupply menu as a wholly new UI responsible for launcher/gadget presence and ammo mutation using the locally verified equipment/ammo API surface | Phase 6 | accepted | Phase 6 deliverables + verification + open questions + world-interactable contract + checklist`
-  - `2026-03-22 | World-interactable map-config and object-id follow-up | Extended the Phase 6 world-interactable design so every interactable is defined explicitly in map config per object id, locked the main-base even/odd objId routing (`1000+` ready dialog / vehicle spawn menu pairs), moved ammo resupply to explicit `1050+` point interactables, and added per-object team visibility/range/alpha requirements with a note that only team visibility currently has a verified runtime setter in local refs | Phase 6, CF-119, CF-120, CF-121 | accepted | map-schema rules + Phase 6 deliverables/prereqs/verification/open questions/contract/checklist`
-  - `2026-03-22 | Phase 6 world-interactable feature design request | Added a concrete Phase 6 main-base world-interactable terminal contract using placed WorldIcon + InteractPoint pairs, locked ready-up as the first retained terminal action, and reserved a second ammo/rockets terminal route as a deferred menu/function hook with shared interaction dispatch/state-gating rules | Phase 6 | accepted | deliverables + prerequisites + verification + open questions + world-interactable contract + supporting docs + checklist`
-  - `2026-03-18 | Phase 6 design-lock capture pass | Added the concrete open design questions that still need written decisions before implementation starts: end-flow state machine, frozen result snapshot schema, result UI composition, join-prompt redesign, physical ready-up keep/defer decision, round-start limitation rules, reset/setup semantics, and the pre-match/live/post-match transition matrix | Phase 6 | accepted | Phase 6 verification/open-questions block + top-level current-status sync`
-  - `2026-03-18 | Phase ordering update request | Moved Pre & Post Match Events up to Phase 6 ahead of the spawn/boundaries and scoreboard phases so the large planned flow changes are treated as the next post-Phase-5 system bucket | Phase 6, Phase 7, Phase 8 | accepted | TOC + phase section ordering + downstream phase references updated`
-  - `2026-03-18 | Pre-live vehicle-config follow-up request | Reintroduced helis-mode reset/setup button as a Phase 6 pre/post-match staging requirement so stale grounded vehicles can be cleared before live round start after config changes | Phase 6 | accepted | deliverables, verification, and checklist updated`
-
-<a id="phase-7"></a>
-### Phase 7: Basic Spawn and Boundaries System
-
-Deliverables:
-
-- random spawn-point selection flow with configured restrictions
-- aircraft-vs-vehicle boundary enforcement
-- main-base out-of-bounds enforcement
-- enemy main-base buffer enforcement with warning timer + kill on expiry
-- grounded-player ground-combat-zone enforcement with warning timer + kill on expiry
-- map-config migration of boundary area-trigger ids so main base, main-base buffer, and ground combat zone are no longer hardcoded in gameplay constants
-- kill-player out-of-bounds behavior
-- dedicated team-switch buttons on minimap
-- preserve extension seams for advanced spawn contract (no node-risk logic in this phase)
-
-Mapped clarifications:
-
-- `CF-23`, `CF-24`, `CF-25`, `CF-27`, `CF-63`, `CF-72`, `CF-73`, `CF-80`, `CF-86`
-
-Godot/map prerequisites:
-
-- authored spawn-point sets (team, per-flag, fallback as applicable)
-- authored boundary volumes/config for aircraft, vehicles, and main bases
-- authored area triggers and explicit `MapConfig` ids for:
-  - existing main bases
-  - new main-base buffers
-  - new ground combat zone
-- current first-pass trigger ids to record in map config:
-  - main-base buffer East: `502`
-  - main-base buffer West: `503`
-  - ground combat zone: `666`
-- collision review is mandatory before implementation:
-  - current Firestorm config already uses `503` as `team2VehicleDeploySpawnPointId`
-  - if `503` remains the West main-base buffer trigger id, the overlapping spawn-point id must be resolved explicitly rather than left ambiguous
-
-Boundary / zone contract:
-
-- Main base:
-  - these already exist and are currently used by the area-trigger enter/exit path
-  - current code hardcodes main-base trigger ids (`500` / `501`); Phase 7 should migrate this to map config alongside the new boundary triggers
-- Main-base buffer:
-  - this is new and must be added to map config per map
-  - the first-pass purpose is enemy-base denial after the match becomes live
-  - a player may not enter the enemy team's main-base buffer while the match is live
-  - on enemy-buffer entry during live play:
-    - show a warning prompt telling the player to leave within `5` seconds
-    - if the player remains inside after `5` seconds, kill the player
-  - exact warning-prompt UI is deferred for later design, but the timer/kill rule is locked here
-- Ground combat zone:
-  - this is new and must be added to map config per map
-  - its first-pass area-trigger id is `666`
-  - grounded classification rule:
-    - if a player is not in an aircraft, the player is `grounded`
-    - grounded includes on-foot players and players in non-aircraft vehicles
-    - aircraft means helicopter or plane; this should reuse the same authoritative aircraft-type list already used by the vehicle spawn/bind code so the classification does not drift
-  - grounded players must remain inside the ground combat zone at all times
-  - on leaving or remaining outside the ground combat zone while grounded:
-    - show a warning prompt telling the player to return within `10` seconds
-    - if the player remains outside after `10` seconds, kill the player
-  - exact warning-prompt UI is deferred for later design, but the timer/kill rule is locked here
-- Phase-state hooks:
-  - before the match is live:
-    - players may not leave their own main base
-    - detection continues to use the existing own-main-base exit path that is already tracked today
-    - Phase 7 must hook this rule into the broader pre/post-match flow without breaking the current ready-state reset behavior
-  - once the match is live:
-    - enemy main-base buffer enforcement becomes active
-    - grounded-player ground-combat-zone enforcement remains active
-  - post-match:
-    - the transition matrix with Phase 6 must define whether these boundary kills fully disable, remain informational only, or continue until reset completes
-
-Verification:
-
-- `npm run verify`
-- spawn validity and restriction checks
-- aircraft-vs-vehicle boundary behavior checks
-- main-base out-of-bounds checks
-- pre-live own-main-base leave checks confirming the existing exit detection still works after trigger ids move into map config
-- live enemy main-base buffer checks:
-  - enter enemy buffer
-  - receive `5` second leave warning
-  - survive if exiting in time
-  - die if staying inside through expiry
-- grounded combat-zone checks:
-  - on-foot player outside zone receives `10` second return warning
-  - ground vehicle occupant outside zone receives the same warning/kill path
-  - helicopter/plane occupants are exempt while still airborne/in-aircraft
-  - grounded player survives if re-entering in time and dies on expiry if still outside
-- collision validation for configured trigger/spawn ids, especially any map using `503` for more than one purpose
-- kill-player out-of-bounds enforcement checks
-- dedicated minimap team-switch button behavior checks
-- confirm no advanced node/LOS/heatmap logic is active in Phase 7
-
-Codex To-Do Checklist:
-
-- [ ] Implement random spawn selection using configured team/flag/fallback sets.
-- [ ] Enforce neutral-flag spawn restriction and explicit fallback chain behavior.
-- [ ] Implement aircraft-vs-vehicle boundary distinction.
-- [ ] Implement main-base out-of-bounds enforcement.
-- [ ] Move main-base trigger ids out of hardcoded gameplay constants and into `MapConfig`, then add `MapConfig` fields for main-base buffers and the ground combat zone.
-- [ ] Implement enemy main-base buffer enforcement with a `5` second leave warning during live play and kill on expiry.
-- [ ] Implement grounded-player combat-zone enforcement with a `10` second return warning and kill on expiry.
-- [ ] Reuse one authoritative aircraft-classification helper for grounded-vs-aircraft boundary logic so Phase 5F aircraft handling and Phase 7 boundary logic cannot drift apart.
-- [ ] Validate/resolve object-id collisions for new area triggers, especially the current Firestorm `503` overlap.
-- [ ] Kill players when out-of-bounds according to boundary rules.
-- [ ] Add dedicated team-switch buttons on the minimap and validate their team-switch flow ownership.
-- [ ] Add clear diagnostics for missing/invalid spawn sets per validator policy.
-- [ ] Keep advanced node-risk/LOS/heatmap logic disabled in this phase.
-- [ ] Run spawn restriction, fallback, and boundary tests across team swap/redeploy scenarios.
-
-Phase Changelog:
-
-- `Log policy`: append-only; newest entry first.
-- `Current status`: `not_started`
-- `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
-- `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
-- `Entries`:
-  - `2026-03-22 | Phase 7 boundary-zone detail request | Added the concrete Phase 7 zone contract for existing main bases, new main-base buffers, and a new ground combat zone; locked the live enemy-buffer `5s` warning/kill rule, the always-active grounded combat-zone `10s` warning/kill rule, the pre-live own-main-base leave restriction hook, and the requirement to move these trigger ids into map config with explicit collision review for the current Firestorm `503` overlap | Phase 7 | accepted | Phase 7 deliverables + prerequisites + verification + zone contract + checklist + changelog`
+  - `2026-03-22 | Phase ordering swap request | Renumbered Pre & Post Match Events from Phase 6 to Phase 7 because functional boundary-zone work was promoted ahead of it; historical entries below may still reference the prior numbering | Phase 6, Phase 7 | accepted | TOC + current-status target + Phase 6/7 section order + consistency pass`
+  - `2026-03-22 | Vehicle-spawn menu reuse and ammo-menu scope follow-up | Locked the odd main-base vehicle spawn menu to reuse the current vehicle deploy HUD shell with a dedicated back plate and teleport-based button fulfillment instead of deploy/undeploy flow, and defined the point ammo resupply menu as a wholly new UI responsible for launcher/gadget presence and ammo mutation using the locally verified equipment/ammo API surface | Phase 7 | accepted | Phase 7 deliverables + verification + open questions + world-interactable contract + checklist`
+  - `2026-03-22 | World-interactable map-config and object-id follow-up | Extended the Phase 7 world-interactable design so every interactable is defined explicitly in map config per object id, locked the main-base even/odd objId routing (`1000+` ready dialog / vehicle spawn menu pairs), moved ammo resupply to explicit `1050+` point interactables, and added per-object team visibility/range/alpha requirements with a note that only team visibility currently has a verified runtime setter in local refs | Phase 7, CF-119, CF-120, CF-121 | accepted | map-schema rules + Phase 7 deliverables/prereqs/verification/open questions/contract/checklist`
+  - `2026-03-22 | Phase 7 world-interactable feature design request | Added a concrete Phase 7 main-base world-interactable terminal contract using placed WorldIcon + InteractPoint pairs, locked ready-up as the first retained terminal action, and reserved a second ammo/rockets terminal route as a deferred menu/function hook with shared interaction dispatch/state-gating rules | Phase 7 | accepted | deliverables + prerequisites + verification + open questions + world-interactable contract + supporting docs + checklist`
+  - `2026-03-18 | Phase 7 design-lock capture pass | Added the concrete open design questions that still need written decisions before implementation starts: end-flow state machine, frozen result snapshot schema, result UI composition, join-prompt redesign, physical ready-up keep/defer decision, round-start limitation rules, reset/setup semantics, and the pre-match/live/post-match transition matrix | Phase 7 | accepted | Phase 7 verification/open-questions block + top-level current-status sync`
+  - `2026-03-18 | Phase ordering update request | Moved Pre & Post Match Events ahead of the spawn/boundaries and scoreboard phases so the large planned flow changes are treated as the next post-Phase-5 system bucket; later reordered behind boundaries as Phase 7 | Phase 6, Phase 7, Phase 8 | accepted | TOC + phase section ordering + downstream phase references updated`
+  - `2026-03-18 | Pre-live vehicle-config follow-up request | Reintroduced helis-mode reset/setup button as a Phase 7 pre/post-match staging requirement so stale grounded vehicles can be cleared before live round start after config changes | Phase 7 | accepted | deliverables, verification, and checklist updated`
 
 <a id="phase-8"></a>
 ### Phase 8: Custom Tab Scoreboard + KPI Tracking

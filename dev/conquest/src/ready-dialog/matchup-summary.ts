@@ -7,17 +7,13 @@ function updateTeamNameWidgetsForPid(pid: number): void {
     const t1NameKey = getTeamNameKey(TeamID.Team1);
     const t2NameKey = getTeamNameKey(TeamID.Team2);
 
-    const hudT1 = safeFind(`TeamLeft_Name_${pid}`);
-    const hudT2 = safeFind(`TeamRight_Name_${pid}`);
-    safeSetUITextLabel(hudT1, mod.Message(t1NameKey));
-    safeSetUITextLabel(hudT2, mod.Message(t2NameKey));
-
+    // Ready-dialog open must stay local to the dialog tree.
+    // Legacy TeamLeft/Right HUD-name probes are not owned by this dialog flow and can
+    // resolve to non-dialog widgets, which reintroduces SETUITEXTLABEL spam on open.
     const readyT1 = safeFind(UI_READY_DIALOG_TEAM1_LABEL_ID + pid);
     const readyT2 = safeFind(UI_READY_DIALOG_TEAM2_LABEL_ID + pid);
     safeSetUITextLabel(readyT1, mod.Message(t1NameKey));
     safeSetUITextLabel(readyT2, mod.Message(t2NameKey));
-
-    updateReadyDialogModeConfigForPid(pid);
 }
 
 // Refreshes team-name labels for every connected player.

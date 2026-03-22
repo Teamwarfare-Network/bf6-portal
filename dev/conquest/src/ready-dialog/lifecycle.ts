@@ -112,4 +112,34 @@ function destroyReadyDialogUI(playerId: number): void {
     }
 }
 
+// Invalidates one hidden ready-dialog cache so the next open rebuilds with fresh roster/map state
+// instead of relabeling a stale cached tree during open.
+function invalidateHiddenReadyDialogCacheForPid(playerId: number): void {
+    const state = State.players.readyDialogData[playerId];
+    if (!state || state.dialogVisible) return;
+    if (!state.uiBuilt) {
+        resetReadyDialogSectionSignaturesForPid(playerId);
+        return;
+    }
+    destroyReadyDialogUI(playerId);
+}
+
+// Invalidates hidden ready-dialog caches for all players when shared state changes while dialogs are closed.
+function invalidateHiddenReadyDialogCacheForAllPlayers(): void {
+    for (const pidStr in State.players.readyDialogData) {
+        const pid = Number(pidStr);
+        invalidateHiddenReadyDialogCacheForPid(pid);
+    }
+}
+
+// Rebuilds one hidden ready-dialog cache ahead of user open so cached reveal stays fast.
+function warmHiddenReadyDialogCacheForPid(playerId: number): void {
+    const state = State.players.readyDialogData[playerId];
+    if (!state || state.dialogVisible) return;
+    if (!State.players.deployedByPid[playerId]) return;
+    const player = safeFindPlayer(playerId);
+    if (!player || !mod.IsPlayerValid(player)) return;
+    ensureReadyDialogUiBuiltHidden(player);
+}
+
 //#endregion ----------------- Ready Dialog Lifecycle --------------------
