@@ -251,7 +251,34 @@ function buildReadyDialogModeConfigSection(
 
     const modeConfirmId = UI_READY_DIALOG_MODE_CONFIRM_ID + playerId;
     const modeConfirmLabelId = UI_READY_DIALOG_MODE_CONFIRM_LABEL_ID + playerId;
-    const confirmButtonX = laneLeftX + Math.floor((READY_DIALOG_CONTENT_LANE_WIDTH - READY_DIALOG_CONFIRM_BUTTON_WIDTH) / 2);
+    const modeResetId = UI_READY_DIALOG_MODE_RESET_ID + playerId;
+    const modeResetLabelId = UI_READY_DIALOG_MODE_RESET_LABEL_ID + playerId;
+    const unsavedLabelId = UI_READY_DIALOG_MODE_UNSAVED_LABEL_ID + playerId;
+    const actionRowWidth = READY_DIALOG_RESET_BUTTON_WIDTH + READY_DIALOG_CONFIRM_BUTTON_GAP + READY_DIALOG_CONFIRM_BUTTON_WIDTH;
+    const actionRowX = laneLeftX + Math.floor((READY_DIALOG_CONTENT_LANE_WIDTH - actionRowWidth) / 2);
+    const resetButtonX = actionRowX;
+    const confirmButtonX = resetButtonX + READY_DIALOG_RESET_BUTTON_WIDTH + READY_DIALOG_CONFIRM_BUTTON_GAP;
+
+    const resetBorder = addOutlinedButton(
+        modeResetId,
+        resetButtonX,
+        buttonRowY,
+        READY_DIALOG_RESET_BUTTON_WIDTH,
+        READY_DIALOG_SMALL_BUTTON_HEIGHT,
+        mod.UIAnchor.TopLeft,
+        containerBase,
+        eventPlayer
+    );
+    addReadyDialogCenteredText(
+        modeResetLabelId,
+        READY_DIALOG_RESET_BUTTON_WIDTH,
+        READY_DIALOG_SMALL_BUTTON_HEIGHT,
+        mod.Message(mod.stringkeys.twl.readyDialog.resetSettingsLabel),
+        eventPlayer,
+        resetBorder ?? containerBase,
+        12
+    );
+
     const confirmBorder = addOutlinedButton(
         modeConfirmId,
         confirmButtonX,
@@ -270,6 +297,22 @@ function buildReadyDialogModeConfigSection(
         eventPlayer,
         confirmBorder ?? containerBase,
         12
+    );
+
+    addReadyDialogText(
+        unsavedLabelId,
+        confirmButtonX + READY_DIALOG_CONFIRM_BUTTON_WIDTH + 20,
+        buttonRowY,
+        430,
+        READY_DIALOG_SMALL_BUTTON_HEIGHT,
+        mod.UIAnchor.TopLeft,
+        mod.UIAnchor.CenterLeft,
+        mod.Message(mod.stringkeys.twl.readyDialog.unsavedChangesLabel),
+        eventPlayer,
+        containerBase,
+        12,
+        false,
+        COLOR_NOT_READY_RED
     );
 
     updateReadyDialogModeConfigForPid(playerId);

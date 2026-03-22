@@ -402,6 +402,8 @@ async function runTeamSwapHudWarmController(
         // warmCriticalHudForPlayer owns the next token; any other change invalidates this swap controller.
         return;
     }
+    invalidateHiddenReadyDialogCacheForPid(pid);
+    ensureReadyDialogUiBuiltHidden(eventPlayer);
     syncPlayerDeployAvailability(eventPlayer);
 }
 

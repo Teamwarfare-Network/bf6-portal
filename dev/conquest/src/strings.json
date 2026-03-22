@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v0.792)",
+        "title": "teamwarfare . net | TWL Conquest (v0.817)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -135,11 +135,14 @@
       "transport4Label": "Heli / Transport 4",
       "vehiclesLabelFormat": "Vehicles {0}:",
       "confirmSettingsLabel": "APPLY CONFIGURATION",
-      "resetSettingsLabel": "RESTART / FRESH SETUP",
-      "gameModeHelisLadder": "Conquest - TWL 2v2 Preset",
-      "gameModeHelisTwl1v1": "Conquest - TWL 1v1 Preset",
-      "gameModeHelisPractice": "TWL - 10v10 Conquest",
-      "gameModeHelisCustom": "TWL - Custom Conquest",
+      "resetSettingsLabel": "RESET TO DEFAULT",
+      "unsavedChangesLabel": "Unsaved changes! Press 'Apply Configuration' to save",
+      "liveConfigLockedLabel": "Round live. Config locked. Restart map in Admin Controls to change.",
+      "gameModeConquest8v8": "TWL Conquest 8v8",
+      "gameModeConquest10v10": "TWL Conquest 10v10",
+      "gameModeConquest12v12": "TWL Conquest 12v12",
+      "gameModeConquest16v16": "TWL Conquest 16v16",
+      "gameModeConquestCustom": "TWL Conquest Custom",
       "aircraftCeilingVanilla": "Vanilla",
       "modeSettingAircraftCeilingFormat": "Aircraft Ceiling: {0}",
       "vehicleOptionFalchion": "M77E Falchion (Apache)",
@@ -186,7 +189,8 @@
       "buttons": {
         "ready": "READY",
         "notReady": "NOT READY",
-        "swapTeams": "CHANGE TEAMS"
+        "swapTeams": "CHANGE TEAMS",
+        "spectateCoach": "SPECTATE / COACH"
       }
     },
     "adminPanel": {

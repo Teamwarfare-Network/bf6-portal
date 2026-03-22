@@ -361,6 +361,7 @@ interface GameState {
         // Property name is retained because existing UI/interaction modules still use it.
         readyDialogData: Record<number, readyDialogData_t>;
         readyByPid: Record<number, boolean>;
+        readyNeedsReconfirmByPid: Record<number, boolean>;
         readyMessageCooldownByPid: Record<number, number>;
         // Join-time prompt: only once per player, regardless of undeploy repeats.
         joinPromptShownByPid: Record<number, boolean>;

@@ -154,6 +154,7 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     if (joinPid !== undefined) {
         delete State.players.disconnectedByPid[joinPid];
         State.players.deployedByPid[joinPid] = false;
+        delete State.players.readyNeedsReconfirmByPid[joinPid];
         State.conquest.debug.teamSwapHudResetPendingByPid[joinPid] = false;
         State.conquest.debug.teamSwapRefreshTokenByPid[joinPid] = 0;
         State.conquest.debug.engageHiddenUntilDeployByPid[joinPid] = true;
@@ -177,6 +178,7 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
         refreshReadyDialogs: true,
         createJoinPrompt: false,
     });
+    ensureReadyDialogUiBuiltHidden(eventPlayer);
 
     // Join-time prompt is only shown once per player (undeploy prompts can repeat unless suppressed).
     if (!shouldShowJoinPromptForPlayer(eventPlayer)) return;
@@ -216,6 +218,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     destroyReadyDialogUI(pid);
     // Remove any persisted per-player state so rejoin starts clean (NOT READY by default).
     delete State.players.readyByPid[pid];
+    delete State.players.readyNeedsReconfirmByPid[pid];
     delete State.players.readyMessageCooldownByPid[pid];
     delete State.players.joinPromptShownByPid[pid];
     delete State.players.joinPromptNeverShowByPidMap[pid];

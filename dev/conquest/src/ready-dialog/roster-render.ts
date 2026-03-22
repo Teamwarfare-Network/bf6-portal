@@ -208,18 +208,48 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
     state.lastRosterSignature = signature;
 }
 
-// Updates the Ready toggle button label for the given viewer based on that viewer's current ready state.
-function updateReadyToggleButtonForViewer(viewer: mod.Player, viewerPlayerId: number): void {
-    const btnLabelId = UI_READY_DIALOG_BUTTON_READY_LABEL_ID + viewerPlayerId;
-    const labelWidget = safeFind(btnLabelId);
+// Applies label + disabled styling for the Ready toggle button based on live-state.
+function syncReadyToggleButtonWidgetsForPid(viewerPlayerId: number): void {
+    const buttonWidget = safeFind(UI_READY_DIALOG_BUTTON_READY_ID + viewerPlayerId);
+    const borderWidget = safeFind(UI_READY_DIALOG_BUTTON_READY_ID + viewerPlayerId + "_BORDER");
+    const labelWidget = safeFind(UI_READY_DIALOG_BUTTON_READY_LABEL_ID + viewerPlayerId);
     if (!labelWidget) return;
 
     const isReady = !!State.players.readyByPid[viewerPlayerId];
+    const needsReconfirm = State.players.readyNeedsReconfirmByPid[viewerPlayerId] === true;
+    const live = isMatchLive();
     const labelMsg = isReady
         ? mod.Message(mod.stringkeys.twl.readyDialog.buttons.notReady)
         : mod.Message(mod.stringkeys.twl.readyDialog.buttons.ready);
 
     safeSetUITextLabel(labelWidget, labelMsg);
+
+    if (buttonWidget) {
+        mod.SetUIButtonEnabled(buttonWidget, !live);
+        mod.SetUIWidgetBgColor(buttonWidget, live ? COLOR_GRAY_DARK : COLOR_BUTTON_BASE);
+        mod.SetUIWidgetBgAlpha(buttonWidget, live ? 0.45 : BUTTON_OPACITY_BASE);
+    }
+    if (borderWidget) {
+        mod.SetUIWidgetBgColor(borderWidget, live ? COLOR_GRAY_DARK : COLOR_BUTTON_BORDER);
+        mod.SetUIWidgetBgAlpha(borderWidget, live ? 0.45 : BUTTON_BORDER_OPACITY);
+    }
+    mod.SetUITextColor(labelWidget, live ? COLOR_GRAY : (!isReady && needsReconfirm ? COLOR_NOT_READY_RED : COLOR_WHITE));
+}
+
+// Updates the Ready toggle button label for the given viewer based on that viewer's current ready state.
+function updateReadyToggleButtonForViewer(viewer: mod.Player, viewerPlayerId: number): void {
+    syncReadyToggleButtonWidgetsForPid(viewerPlayerId);
+}
+
+// Refreshes the Ready toggle button state for every built ready-dialog cache, visible or hidden.
+function updateReadyToggleButtonsForAllBuiltReadyDialogs(): void {
+    for (const pidStr in State.players.readyDialogData) {
+        const pid = Number(pidStr);
+        if (isPidDisconnected(pid)) continue;
+        const state = State.players.readyDialogData[pid];
+        if (!state || !state.uiBuilt) continue;
+        syncReadyToggleButtonWidgetsForPid(pid);
+    }
 }
 
 //#endregion ----------------- Ready Dialog - Roster Render + Toggle Labels --------------------

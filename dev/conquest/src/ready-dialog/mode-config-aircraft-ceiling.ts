@@ -28,6 +28,7 @@ function disableCustomAircraftCeilingAndRestoreDefault(): void {
     State.round.modeConfig.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
     State.round.modeConfig.gameSettings = mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat;
     State.round.modeConfig.confirmed.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
+    State.round.modeConfig.confirmed.autoStartMinActivePlayers = State.round.autoStartMinActivePlayers;
     mod.SetMaxVehicleHeightLimitScale(1.0);
     updateReadyDialogModeConfigForAllVisibleViewers();
 }
@@ -47,9 +48,11 @@ function syncAircraftCeilingFromMapConfig(): void {
 
     State.round.modeConfig.aircraftCeiling = mapDefault;
     State.round.modeConfig.aircraftCeilingOverridePending = false;
+    State.round.modeConfig.autoStartMinActivePlayers = State.round.autoStartMinActivePlayers;
     State.round.modeConfig.gameSettings = mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat;
     State.round.modeConfig.confirmed.aircraftCeiling = mapDefault;
     State.round.modeConfig.confirmed.aircraftCeilingOverrideEnabled = false;
+    State.round.modeConfig.confirmed.autoStartMinActivePlayers = State.round.autoStartMinActivePlayers;
 
     updateReadyDialogModeConfigForAllVisibleViewers();
 }

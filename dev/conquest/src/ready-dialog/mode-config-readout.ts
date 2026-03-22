@@ -59,17 +59,20 @@ function updateReadyDialogGridKnobValueForPid(pid: number, knobKey: string, labe
     safeSetUITextLabel(widget, label);
 }
 
+function setReadyDialogGridKnobValueColorForPid(pid: number, knobKey: string, color: mod.Vector): void {
+    const widget = safeFind(UI_READY_DIALOG_MODE_GRID_KNOB_VALUE_ID + knobKey + "_" + pid);
+    if (!widget) return;
+    mod.SetUITextColor(widget, color);
+}
+
 function updateReadyDialogGridSupportForPid(pid: number, columnKey: string, label: mod.Message): void {
     const widget = safeFind(UI_READY_DIALOG_MODE_GRID_SUPPORT_ID + columnKey + "_" + pid);
     if (!widget) return;
     safeSetUITextLabel(widget, label);
 }
 
-function setReadyDialogGridKnobRowVisibleForPid(pid: number, knobKey: string, visible: boolean): void {
+function setReadyDialogGridKnobButtonsVisibleForPid(pid: number, knobKey: string, visible: boolean): void {
     const widgetIds = [
-        UI_READY_DIALOG_MODE_GRID_KNOB_PANEL_ID + knobKey + "_" + pid,
-        UI_READY_DIALOG_MODE_GRID_KNOB_LABEL_ID + knobKey + "_" + pid,
-        UI_READY_DIALOG_MODE_GRID_KNOB_VALUE_ID + knobKey + "_" + pid,
         UI_READY_DIALOG_MODE_GRID_KNOB_DEC_ID + knobKey + "_" + pid + "_BORDER",
         UI_READY_DIALOG_MODE_GRID_KNOB_DEC_ID + knobKey + "_" + pid,
         UI_READY_DIALOG_MODE_GRID_KNOB_DEC_LABEL_ID + knobKey + "_" + pid,
@@ -86,6 +89,20 @@ function setReadyDialogGridKnobRowVisibleForPid(pid: number, knobKey: string, vi
     const incButton = safeFind(UI_READY_DIALOG_MODE_GRID_KNOB_INC_ID + knobKey + "_" + pid);
     if (decButton) mod.SetUIButtonEnabled(decButton, visible);
     if (incButton) mod.SetUIButtonEnabled(incButton, visible);
+}
+
+function setReadyDialogGridKnobRowVisibleForPid(pid: number, knobKey: string, visible: boolean): void {
+    const widgetIds = [
+        UI_READY_DIALOG_MODE_GRID_KNOB_PANEL_ID + knobKey + "_" + pid,
+        UI_READY_DIALOG_MODE_GRID_KNOB_LABEL_ID + knobKey + "_" + pid,
+        UI_READY_DIALOG_MODE_GRID_KNOB_VALUE_ID + knobKey + "_" + pid,
+    ];
+    for (const widgetId of widgetIds) {
+        const widget = safeFind(widgetId);
+        if (!widget) continue;
+        mod.SetUIWidgetVisible(widget, visible);
+    }
+    setReadyDialogGridKnobButtonsVisibleForPid(pid, knobKey, visible);
 }
 
 function setReadyDialogGridColumnHeaderColorForPid(pid: number, columnKey: string, color: mod.Vector): void {
@@ -113,6 +130,60 @@ function setReadyDialogGridKnobButtonGlyphColorForPid(pid: number, knobKey: stri
     if (incLabel) mod.SetUITextColor(incLabel, color);
 }
 
+function syncReadyDialogModeActionWidgetsForPid(pid: number, diff: ReadyDialogModeConfigDiffState): void {
+    const hasUnsavedChanges = diff.hasUnsavedChanges;
+    const live = isMatchLive();
+    const confirmButton = safeFind(UI_READY_DIALOG_MODE_CONFIRM_ID + pid);
+    const confirmBorder = safeFind(UI_READY_DIALOG_MODE_CONFIRM_ID + pid + "_BORDER");
+    const confirmLabel = safeFind(UI_READY_DIALOG_MODE_CONFIRM_LABEL_ID + pid);
+    const resetButton = safeFind(UI_READY_DIALOG_MODE_RESET_ID + pid);
+    const resetBorder = safeFind(UI_READY_DIALOG_MODE_RESET_ID + pid + "_BORDER");
+    const resetLabel = safeFind(UI_READY_DIALOG_MODE_RESET_LABEL_ID + pid);
+    const unsavedLabel = safeFind(UI_READY_DIALOG_MODE_UNSAVED_LABEL_ID + pid);
+
+    const canApply = !live && hasUnsavedChanges;
+
+    if (confirmButton) {
+        mod.SetUIButtonEnabled(confirmButton, canApply);
+        mod.SetUIWidgetBgColor(confirmButton, canApply ? COLOR_BUTTON_BASE : COLOR_GRAY_DARK);
+        mod.SetUIWidgetBgAlpha(confirmButton, canApply ? BUTTON_OPACITY_BASE : 0.45);
+    }
+    if (confirmBorder) {
+        mod.SetUIWidgetBgColor(confirmBorder, canApply ? COLOR_BUTTON_BORDER : COLOR_GRAY_DARK);
+        mod.SetUIWidgetBgAlpha(confirmBorder, canApply ? BUTTON_BORDER_OPACITY : 0.45);
+    }
+    if (confirmLabel) {
+        mod.SetUITextColor(confirmLabel, canApply ? COLOR_WHITE : COLOR_GRAY);
+    }
+
+    const canReset = !live;
+    if (resetButton) {
+        mod.SetUIButtonEnabled(resetButton, canReset);
+        mod.SetUIWidgetBgColor(resetButton, canReset ? COLOR_BUTTON_BASE : COLOR_GRAY_DARK);
+        mod.SetUIWidgetBgAlpha(resetButton, canReset ? BUTTON_OPACITY_BASE : 0.45);
+    }
+    if (resetBorder) {
+        mod.SetUIWidgetBgColor(resetBorder, canReset ? COLOR_BUTTON_BORDER : COLOR_GRAY_DARK);
+        mod.SetUIWidgetBgAlpha(resetBorder, canReset ? BUTTON_BORDER_OPACITY : 0.45);
+    }
+    if (resetLabel) {
+        mod.SetUITextColor(resetLabel, canReset ? COLOR_WHITE : COLOR_GRAY);
+    }
+
+    if (unsavedLabel) {
+        mod.SetUIWidgetVisible(unsavedLabel, live || hasUnsavedChanges);
+        safeSetUITextLabel(
+            unsavedLabel,
+            mod.Message(
+                live
+                    ? mod.stringkeys.twl.readyDialog.liveConfigLockedLabel
+                    : mod.stringkeys.twl.readyDialog.unsavedChangesLabel
+            )
+        );
+        mod.SetUITextColor(unsavedLabel, COLOR_NOT_READY_RED);
+    }
+}
+
 function getReadyDialogViewerTeamVisuals(pid: number): {
     team1Text: mod.Vector;
     team2Text: mod.Vector;
@@ -138,12 +209,12 @@ function getReadyDialogViewerTeamVisuals(pid: number): {
 }
 
 function getReadyDialogPlayersValueMessage(): mod.Message {
-    const counts = getAutoStartMinPlayerCounts();
+    const counts = getReadyDialogDraftAutoStartMinPlayerCounts();
     return mod.Message(mod.stringkeys.twl.readyDialog.playersFormat, counts.left, counts.right);
 }
 
 function getReadyDialogMinPlayersSupportMessage(): mod.Message {
-    const counts = getAutoStartMinPlayerCounts();
+    const counts = getReadyDialogDraftAutoStartMinPlayerCounts();
     return mod.Message(mod.stringkeys.twl.readyDialog.minPlayersToStartFormat, counts.total);
 }
 
@@ -151,13 +222,15 @@ function getReadyDialogMinPlayersSupportMessage(): mod.Message {
 // Viewer perspective matters because team colors flip by viewer team.
 function buildReadyDialogModeConfigSignature(pid: number): string {
     const cfg = State.round.modeConfig;
-    const counts = getAutoStartMinPlayerCounts();
+    const counts = getReadyDialogDraftAutoStartMinPlayerCounts();
     const viewer = safeFindPlayer(pid);
     const viewerTeam = safeGetTeamNumberFromPlayer(viewer, TeamID.Team1);
-    let signature = `${pid}|team:${viewerTeam}|mode:${cfg.gameMode}|players:${counts.left},${counts.right},${counts.total}`;
+    let signature = `${pid}|team:${viewerTeam}|live:${isMatchLive() ? 1 : 0}|mode:${cfg.gameMode}|players:${counts.left},${counts.right},${counts.total}`;
+    signature += `|confirmedMode:${cfg.confirmed.gameMode}|confirmedPlayers:${getReadyDialogConfirmedAutoStartMinActivePlayers()}`;
 
     for (const knobKey of READY_DIALOG_ALL_VEHICLE_KNOB_KEYS) {
         signature += `|${knobKey}:${cfg.vehicleSelectionIndexByKey?.[knobKey] ?? 0}`;
+        signature += `|confirmed_${knobKey}:${cfg.confirmed.vehicleSelectionIndexByKey?.[knobKey] ?? 0}`;
     }
 
     return signature;
@@ -173,6 +246,8 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
     const cfg = State.round.modeConfig;
     const visuals = getReadyDialogViewerTeamVisuals(pid);
     const columns = getReadyDialogModeGridColumnSpecs();
+    const diff = buildReadyDialogModeConfigDiffState();
+    const live = isMatchLive();
 
     for (const column of columns) {
         updateReadyDialogGridColumnHeaderForPid(pid, column.key, getReadyDialogModeGridColumnHeaderMessage(column));
@@ -191,6 +266,7 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
                 continue;
             }
             setReadyDialogGridKnobRowVisibleForPid(pid, knob.key, true);
+            setReadyDialogGridKnobButtonsVisibleForPid(pid, knob.key, !live);
             if (knob.key === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) {
                 const playersLabelWidget = safeFind(UI_READY_DIALOG_MODE_GRID_KNOB_LABEL_ID + knob.key + "_" + pid);
                 if (playersLabelWidget) {
@@ -207,8 +283,20 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
 
                 if (knob.key === READY_DIALOG_CONFIG_GAME_KNOB_KEY) {
                     updateReadyDialogGridKnobValueForPid(pid, knob.key, mod.Message(cfg.gameMode));
+                    setReadyDialogGridKnobValueColorForPid(
+                        pid,
+                        knob.key,
+                        isReadyDialogModeConfigDirtyForKnobKey(knob.key, diff) ? COLOR_NOT_READY_RED : COLOR_READY_GREEN
+                    );
                 } else if (knob.key === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) {
                     updateReadyDialogGridKnobValueForPid(pid, knob.key, getReadyDialogPlayersValueMessage());
+                    setReadyDialogGridKnobValueColorForPid(
+                        pid,
+                        knob.key,
+                        isReadyDialogModeConfigDirtyForKnobKey(knob.key, diff) ? COLOR_NOT_READY_RED : COLOR_READY_GREEN
+                    );
+                } else {
+                    setReadyDialogGridKnobValueColorForPid(pid, knob.key, COLOR_WHITE);
                 }
                 continue;
             }
@@ -227,12 +315,19 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
                     )
                 )
             );
+            setReadyDialogGridKnobValueColorForPid(
+                pid,
+                knob.key,
+                isReadyDialogModeConfigDirtyForKnobKey(knob.key, diff) ? COLOR_NOT_READY_RED : COLOR_READY_GREEN
+            );
         }
 
         if (column.supportVisible) {
             updateReadyDialogGridSupportForPid(pid, column.key, getReadyDialogMinPlayersSupportMessage());
         }
     }
+
+    syncReadyDialogModeActionWidgetsForPid(pid, diff);
 
     state.lastModeConfigSignature = signature;
 }
@@ -243,6 +338,18 @@ function updateReadyDialogModeConfigForAllVisibleViewers(): void {
         const pid = Number(pidStr);
         const state = State.players.readyDialogData[pid];
         if (!state || !state.dialogVisible) continue;
+        updateReadyDialogModeConfigForPid(pid);
+    }
+}
+
+// Refreshes the cached hidden mode-config section for players whose ready dialog already exists
+// but is not currently visible, so phase changes do not force a full dialog rebuild on next open.
+function updateReadyDialogModeConfigForAllHiddenBuiltCaches(): void {
+    for (const pidStr in State.players.readyDialogData) {
+        const pid = Number(pidStr);
+        if (isPidDisconnected(pid)) continue;
+        const state = State.players.readyDialogData[pid];
+        if (!state || state.dialogVisible || !state.uiBuilt) continue;
         updateReadyDialogModeConfigForPid(pid);
     }
 }

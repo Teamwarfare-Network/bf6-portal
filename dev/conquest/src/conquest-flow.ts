@@ -19,6 +19,8 @@ function startMatch(_triggerPlayer?: mod.Player): void {
 
     State.round.countdown.isRequested = false;
     lifecycleSetLiveBaseline("pregame-start-match");
+    updateReadyDialogModeConfigForAllHiddenBuiltCaches();
+    updateReadyToggleButtonsForAllBuiltReadyDialogs();
     conquestPhase2AResetLiveState();
     conquestPhase2BOnMatchLiveStart();
     conquestPhase4OnMatchLiveStart();
@@ -63,6 +65,8 @@ function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number,
     }
 
     if (!lifecycleTrySetGameOver("pregame-end-match", winner)) return;
+    updateReadyDialogModeConfigForAllHiddenBuiltCaches();
+    updateReadyToggleButtonsForAllBuiltReadyDialogs();
     State.round.clock.expiryFired = true;
 
     mod.EnableAllPlayerDeploy(true);
@@ -83,6 +87,8 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     resetReadyStateForAllPlayers();
 
     lifecycleSetNotReadyBaseline("fresh-setup");
+    updateReadyDialogModeConfigForAllHiddenBuiltCaches();
+    updateReadyToggleButtonsForAllBuiltReadyDialogs();
     conquestPhase2AResetNotLiveState();
     conquestPhase2BOnNotLiveReset();
     conquestPhase4OnNotLiveReset();

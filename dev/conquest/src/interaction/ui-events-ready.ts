@@ -46,19 +46,20 @@ function handleReadyDialogGridKnobClick(
         return true;
     }
     if (knobKey === READY_DIALOG_CONFIG_GAME_KNOB_KEY) {
-        setReadyDialogGameModeIndex(State.round.modeConfig.gameModeIndex + delta);
+        setReadyDialogGameModeIndex(State.round.modeConfig.gameModeIndex + delta, true, eventPlayer);
         return true;
     }
     if (knobKey === READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY) {
         return true;
     }
     if (knobKey === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) {
-        setAutoStartMinActivePlayers(State.round.autoStartMinActivePlayers + delta, eventPlayer);
+        setAutoStartMinActivePlayers(State.round.modeConfig.autoStartMinActivePlayers + delta, eventPlayer);
         return true;
     }
     setReadyDialogVehicleSelectionIndexByKey(
         knobKey,
-        (State.round.modeConfig.vehicleSelectionIndexByKey?.[knobKey] ?? 0) + delta
+        (State.round.modeConfig.vehicleSelectionIndexByKey?.[knobKey] ?? 0) + delta,
+        eventPlayer
     );
     return true;
 }
@@ -75,6 +76,7 @@ function handleReadyDialogReadyButtonClick(eventPlayer: mod.Player, playerId: nu
             return;
         }
         State.players.readyByPid[pid] = true;
+        delete State.players.readyNeedsReconfirmByPid[pid];
         updatePlayersReadyHudTextForAllPlayers();
 
         const lastReadyAt = State.players.readyMessageCooldownByPid[pid] ?? -9999;
@@ -90,6 +92,7 @@ function handleReadyDialogReadyButtonClick(eventPlayer: mod.Player, playerId: nu
         }
     } else {
         State.players.readyByPid[pid] = false;
+        delete State.players.readyNeedsReconfirmByPid[pid];
         updatePlayersReadyHudTextForAllPlayers();
     }
 
@@ -171,6 +174,19 @@ function tryHandleReadyDialogButtonEvent(
         }
     );
     if (confirmHandled !== undefined) return confirmHandled;
+
+    const resetHandled = tryHandleReadyDialogPrimaryAction(
+        eventPlayer,
+        playerId,
+        widgetName,
+        eventUIButtonEvent,
+        UI_READY_DIALOG_MODE_RESET_ID,
+        () => {
+            if (isMatchLive()) return true;
+            resetReadyDialogModeConfigToDefaults();
+        }
+    );
+    if (resetHandled !== undefined) return resetHandled;
 
     const adminHandled = tryHandleReadyDialogPrimaryAction(
         eventPlayer,

@@ -32,14 +32,21 @@ function updateMatchupLabelForAllPlayers(): void {
     updateReadyDialogModeConfigForAllVisibleViewers();
 }
 
-// Resolves the per-side + total player requirements from the auto-start setting.
-// Special case: value 0 represents "1 vs 0" to allow solo starts.
-function getAutoStartMinPlayerCounts(): { left: number; right: number; total: number } {
-    const perSide = Math.floor(State.round.autoStartMinActivePlayers);
+function buildAutoStartMinPlayerCounts(perSide: number): { left: number; right: number; total: number } {
     if (perSide <= 0) {
         return { left: 1, right: 0, total: 1 };
     }
     return { left: perSide, right: perSide, total: perSide * 2 };
+}
+
+// Resolves the per-side + total player requirements from the auto-start setting.
+// Special case: value 0 represents "1 vs 0" to allow solo starts.
+function getAutoStartMinPlayerCounts(): { left: number; right: number; total: number } {
+    return buildAutoStartMinPlayerCounts(Math.floor(State.round.autoStartMinActivePlayers));
+}
+
+function getReadyDialogDraftAutoStartMinPlayerCounts(): { left: number; right: number; total: number } {
+    return buildAutoStartMinPlayerCounts(Math.floor(State.round.modeConfig.autoStartMinActivePlayers));
 }
 
 // Refreshes ready-dialog player/min-player readouts for all visible viewers.
@@ -50,22 +57,11 @@ function updateMatchupReadoutsForAllPlayers(): void {
 // Sets minimum active players-per-side with clamping, UI refresh, and optional announce/start check.
 function setAutoStartMinActivePlayers(value: number, eventPlayer?: mod.Player): void {
     const clamped = Math.max(AUTO_START_MIN_ACTIVE_PLAYERS_MIN, Math.min(AUTO_START_MIN_ACTIVE_PLAYERS_MAX, Math.floor(value)));
-    if (clamped === State.round.autoStartMinActivePlayers) return;
+    if (clamped === State.round.modeConfig.autoStartMinActivePlayers) return;
     ensureCustomGameModeForManualChange();
-    State.round.autoStartMinActivePlayers = clamped;
+    State.round.modeConfig.autoStartMinActivePlayers = clamped;
+    requireReadyReconfirmAfterConfigChange(eventPlayer);
     updateReadyDialogModeConfigForAllVisibleViewers();
-    // Keep top-left status dock ready counts in immediate sync with min-player configuration changes.
-    setMatchStateTextForAllPlayers();
-    if (eventPlayer) {
-        const counts = getAutoStartMinPlayerCounts();
-        sendHighlightedWorldLogMessage(
-            mod.Message(STR_READY_DIALOG_PLAYERS_CHANGED, eventPlayer, counts.left, counts.right),
-            true,
-            undefined,
-            STR_READY_DIALOG_PLAYERS_CHANGED
-        );
-        tryAutoStartMatchIfAllReady(eventPlayer);
-    }
 }
 
 // Applies the selected matchup preset, updates UI/state, and re-enables spawners (not-live only).

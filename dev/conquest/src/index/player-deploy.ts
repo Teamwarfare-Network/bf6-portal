@@ -52,6 +52,7 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     State.players.joinPromptTripleTapArmedByPid[pid] = false;
     // Rejoin/spawn behavior: players always start NOT READY for the next live-start gate.
     State.players.readyByPid[pid] = false;
+    delete State.players.readyNeedsReconfirmByPid[pid];
     // Design assumption: players spawn in their main base; update immediately for roster display.
     State.players.inMainBaseByPid[pid] = true;
     delete State.players.overTakeoffLimitByPid[pid];

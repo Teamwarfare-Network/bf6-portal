@@ -203,6 +203,41 @@ function buildReadyDialogBottomButtonsSection(
     );
     updateReadyToggleButtonForViewer(eventPlayer, playerId);
 
+    const coachButtonId = UI_READY_DIALOG_BUTTON_COACH_ID + playerId;
+    const coachButtonLabelId = UI_READY_DIALOG_BUTTON_COACH_LABEL_ID + playerId;
+    const coachButtonBorder = addOutlinedButton(
+        coachButtonId,
+        READY_DIALOG_COACH_BUTTON_OFFSET_X,
+        0,
+        READY_DIALOG_MAIN_BUTTON_WIDTH,
+        READY_DIALOG_MAIN_BUTTON_HEIGHT,
+        mod.UIAnchor.BottomCenter,
+        containerBase,
+        eventPlayer
+    );
+    const coachButton = safeFind(coachButtonId);
+    const coachBorder = safeFind(coachButtonId + "_BORDER");
+    const coachLabel = addReadyDialogCenteredText(
+        coachButtonLabelId,
+        READY_DIALOG_MAIN_BUTTON_WIDTH,
+        READY_DIALOG_MAIN_BUTTON_HEIGHT,
+        mod.Message(mod.stringkeys.twl.readyDialog.buttons.spectateCoach),
+        eventPlayer,
+        coachButtonBorder ?? containerBase
+    );
+    if (coachButton) {
+        mod.SetUIButtonEnabled(coachButton, false);
+        mod.SetUIWidgetBgColor(coachButton, COLOR_GRAY_DARK);
+        mod.SetUIWidgetBgAlpha(coachButton, 0.45);
+    }
+    if (coachBorder) {
+        mod.SetUIWidgetBgColor(coachBorder, COLOR_GRAY_DARK);
+        mod.SetUIWidgetBgAlpha(coachBorder, 0.45);
+    }
+    if (coachLabel) {
+        mod.SetUITextColor(coachLabel, COLOR_GRAY);
+    }
+
     const debugTimelimitId = UI_READY_DIALOG_DEBUG_TIMELIMIT_ID + playerId;
     if (SHOW_DEBUG_TIMELIMIT) {
         const debugTimeLimitSeconds = Math.floor(mod.GetMatchTimeElapsed() + mod.GetMatchTimeRemaining());

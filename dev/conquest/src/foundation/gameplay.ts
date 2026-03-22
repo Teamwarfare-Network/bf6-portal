@@ -82,7 +82,7 @@ const TAKEOFF_LIMIT_HUD_OFFSET = 20; // Y offset above HUD floor that triggers t
 // Decoupled from matchup presets; default starts at the solo 1v0 special-case and is user-adjustable in the Ready dialog.
 const DEFAULT_AUTO_START_MIN_ACTIVE_PLAYERS = 0;
 const AUTO_START_MIN_ACTIVE_PLAYERS_MIN = 0; // 0 maps to the solo "1 vs 0" special-case.
-const AUTO_START_MIN_ACTIVE_PLAYERS_MAX = 8;
+const AUTO_START_MIN_ACTIVE_PLAYERS_MAX = 16;
 // Matchup preset default selection now starts at 4v4 vehicle enablement.
 const DEFAULT_MATCHUP_PRESET_LEFT_PLAYERS = 4;
 const DEFAULT_MATCHUP_PRESET_RIGHT_PLAYERS = 4;
@@ -111,6 +111,7 @@ type MatchupPreset = {
 
 type ReadyDialogModeConfig = {
     gameModeIndex: number;
+    autoStartMinActivePlayers: number;
     aircraftCeiling: number;
     aircraftCeilingOverridePending: boolean;
     vehicleSelectionIndexByKey: Record<string, number>;
@@ -121,6 +122,7 @@ type ReadyDialogModeConfig = {
         gameSettings: number;
         aircraftCeiling: number;
         aircraftCeilingOverrideEnabled: boolean;
+        autoStartMinActivePlayers: number;
         vehicleSelectionIndexByKey: Record<string, number>;
     };
 };
@@ -150,11 +152,34 @@ const DEFAULT_MATCHUP_PRESET_INDEX = findMatchupPresetIndex(
 );
 
 const READY_DIALOG_GAME_MODE_OPTIONS: number[] = [
-    mod.stringkeys.twl.readyDialog.gameModeHelisPractice,
-    mod.stringkeys.twl.readyDialog.gameModeHelisCustom,
+    mod.stringkeys.twl.readyDialog.gameModeConquest8v8,
+    mod.stringkeys.twl.readyDialog.gameModeConquest10v10,
+    mod.stringkeys.twl.readyDialog.gameModeConquest12v12,
+    mod.stringkeys.twl.readyDialog.gameModeConquest16v16,
 ];
-const READY_DIALOG_GAME_MODE_DEFAULT_INDEX = 0;
-const READY_DIALOG_GAME_MODE_CUSTOM_INDEX = 1;
+const READY_DIALOG_GAME_MODE_DEFAULT_INDEX = 1;
+const READY_DIALOG_GAME_MODE_CUSTOM_KEY = mod.stringkeys.twl.readyDialog.gameModeConquestCustom;
+// Shared vehicle ids for ready-dialog preset authoring and option definitions.
+// Keep the one runtime/type workaround here so map config preset packages can stay obvious.
+const VEHICLE_F16 = mod.VehicleList.F16;
+const VEHICLE_F22 = mod.VehicleList.F22;
+const VEHICLE_JAS39 = mod.VehicleList.JAS39;
+const VEHICLE_SU57 = mod.VehicleList.SU57;
+const VEHICLE_AH64 = mod.VehicleList.AH64;
+const VEHICLE_EUROCOPTER = mod.VehicleList.Eurocopter;
+const VEHICLE_UH60 = mod.VehicleList.UH60;
+const VEHICLE_UH60_PAX = mod.VehicleList.UH60_Pax;
+const VEHICLE_ABRAMS = mod.VehicleList.Abrams;
+const VEHICLE_LEOPARD = mod.VehicleList.Leopard;
+const VEHICLE_M2BRADLEY = mod.VehicleList.M2Bradley;
+const VEHICLE_CV90 = mod.VehicleList.CV90;
+const VEHICLE_CHEETAH = mod.VehicleList.Cheetah;
+const VEHICLE_GEPARD = mod.VehicleList.Gepard;
+const VEHICLE_MARAUDER = mod.VehicleList.Marauder;
+const VEHICLE_MARAUDER_PAX = mod.VehicleList.Marauder_Pax;
+const VEHICLE_QUADBIKE = mod.VehicleList.Quadbike;
+const VEHICLE_GOLFCART = mod.VehicleList.GolfCart;
+const VEHICLE_FLYER60 = mod.VehicleList.Flyer60;
 // AH6M is used here from the current runtime despite being absent from the local core reference snapshot.
 const VEHICLE_AH6M = (mod.VehicleList as any).AH6M as mod.VehicleList;
 const READY_DIALOG_AIRCRAFT_CEILING_DEFAULT = 550;
@@ -188,56 +213,56 @@ const READY_DIALOG_ALL_VEHICLE_KNOB_KEYS = [
 
 const READY_DIALOG_JET_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortNoSpawn, vehicle: undefined },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortF16, vehicle: mod.VehicleList.F16 },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortF22, vehicle: mod.VehicleList.F22 },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortJas39, vehicle: mod.VehicleList.JAS39 },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortSu57, vehicle: mod.VehicleList.SU57 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortF16, vehicle: VEHICLE_F16 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortF22, vehicle: VEHICLE_F22 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortJas39, vehicle: VEHICLE_JAS39 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortSu57, vehicle: VEHICLE_SU57 },
 ];
 
 const READY_DIALOG_HELI_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortNoSpawn, vehicle: undefined },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortApache, vehicle: mod.VehicleList.AH64 },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortEuro, vehicle: mod.VehicleList.Eurocopter },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortApache, vehicle: VEHICLE_AH64 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortEuro, vehicle: VEHICLE_EUROCOPTER },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortLittleBird, vehicle: VEHICLE_AH6M },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawk, vehicle: mod.VehicleList.UH60 },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawkPax, vehicle: mod.VehicleList.UH60_Pax },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawk, vehicle: VEHICLE_UH60 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawkPax, vehicle: VEHICLE_UH60_PAX },
 ];
 
 const READY_DIALOG_GROUND_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortNoSpawn, vehicle: undefined },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortAbrams, vehicle: mod.VehicleList.Abrams },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortLeopard, vehicle: mod.VehicleList.Leopard },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortBradley, vehicle: mod.VehicleList.M2Bradley },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortCv90, vehicle: mod.VehicleList.CV90 },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortCheetah, vehicle: mod.VehicleList.Cheetah },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortGepard, vehicle: mod.VehicleList.Gepard },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortAbrams, vehicle: VEHICLE_ABRAMS },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortLeopard, vehicle: VEHICLE_LEOPARD },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortBradley, vehicle: VEHICLE_M2BRADLEY },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortCv90, vehicle: VEHICLE_CV90 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortCheetah, vehicle: VEHICLE_CHEETAH },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortGepard, vehicle: VEHICLE_GEPARD },
 ];
 
 const READY_DIALOG_FAST_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortNoSpawn, vehicle: undefined },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauder, vehicle: mod.VehicleList.Marauder },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauderPax, vehicle: mod.VehicleList.Marauder_Pax },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortQuadbike, vehicle: mod.VehicleList.Quadbike },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortGolfCart, vehicle: mod.VehicleList.GolfCart },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortFlyer60, vehicle: mod.VehicleList.Flyer60 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauder, vehicle: VEHICLE_MARAUDER },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauderPax, vehicle: VEHICLE_MARAUDER_PAX },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortQuadbike, vehicle: VEHICLE_QUADBIKE },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortGolfCart, vehicle: VEHICLE_GOLFCART },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortFlyer60, vehicle: VEHICLE_FLYER60 },
 ];
 
 const READY_DIALOG_TEAM1_TRANSPORT_SLOT_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortNoSpawn, vehicle: undefined },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauder, vehicle: mod.VehicleList.Marauder },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortQuadbike, vehicle: mod.VehicleList.Quadbike },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortGolfCart, vehicle: mod.VehicleList.GolfCart },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortFlyer60, vehicle: mod.VehicleList.Flyer60 },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawk, vehicle: mod.VehicleList.UH60 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauder, vehicle: VEHICLE_MARAUDER },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortQuadbike, vehicle: VEHICLE_QUADBIKE },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortGolfCart, vehicle: VEHICLE_GOLFCART },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortFlyer60, vehicle: VEHICLE_FLYER60 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawk, vehicle: VEHICLE_UH60 },
 ];
 
 const READY_DIALOG_TEAM2_TRANSPORT_SLOT_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortNoSpawn, vehicle: undefined },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauderPax, vehicle: mod.VehicleList.Marauder_Pax },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortQuadbike, vehicle: mod.VehicleList.Quadbike },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortGolfCart, vehicle: mod.VehicleList.GolfCart },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortFlyer60, vehicle: mod.VehicleList.Flyer60 },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawkPax, vehicle: mod.VehicleList.UH60_Pax },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauderPax, vehicle: VEHICLE_MARAUDER_PAX },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortQuadbike, vehicle: VEHICLE_QUADBIKE },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortGolfCart, vehicle: VEHICLE_GOLFCART },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortFlyer60, vehicle: VEHICLE_FLYER60 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawkPax, vehicle: VEHICLE_UH60_PAX },
 ];
 
 // Pregame countdown tuning (Ready Up -> live phase start).

@@ -1,6 +1,6 @@
 # TWL Conquest Design and Implementation Plan
 
-Last updated: 2026-03-18  
+Last updated: 2026-03-22  
 Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
 
 ## Current Status
@@ -12,7 +12,7 @@ Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
   - Phase 2B: implemented with remaining future validation deferred
   - Phase 3A, 3B, 3C: completed and accepted as the current HUD/UI baseline
   - Phase 4, 4B: completed and accepted at the current multiplayer-tested checkpoint
-  - Phase 5A-5G: implemented at the current accepted checkpoint, with remaining explicit Phase 5 closeout items tracked in the Phase 5 checklist
+  - Phase 5A-5G: completed and accepted as the current Phase 5 vehicle/UI baseline; remaining polish, validation depth, and follow-up bugs are intentionally deferred to later polish/Phase 9 and `design_doc/conquest_issues.md`
 - Current next implementation target:
   - Phase 6 boundary-zone and spawn/bounds pass: main-base/main-base-buffer/ground-combat-zone map-config migration, enemy-buffer enforcement, grounded combat-zone enforcement, and the basic boundary behaviors that later Phase 7 pre/post-match flow now depends on
 - Current open Conquest bug status:
@@ -2106,6 +2106,8 @@ Phase 5 execution breakdown:
       - both teams and multiple authored aircraft boxes
 <a id="phase-5g"></a>
 - `Phase 5G: Polish / tune`
+  - current status: accepted complete for Phase 5 closeout
+  - remaining UX/validation/future-authoring items are intentionally deferred to later polish, later phases, or tracked bugs; they are no longer blockers for calling Phase 5 done
   - vehicle repair in base is deferred into this later polish/tuning phase, not treated as a standalone implementation phase
   - runway/pad repair behavior
   - prerequisite: implement the required Godot repair-area requirements first
@@ -2264,11 +2266,21 @@ Phase 5 execution breakdown:
         - vehicle HUD first appearance and later refresh
         - admin toggle / debug toggle
     - remaining explicit Phase 5G items after cleanup closeout:
-      - implement the deferred ready-dialog `draft vs applied` clarity pass:
+      - the deferred ready-dialog `draft vs applied` clarity pass is now accepted as implemented:
         - red/green knob state driven by a sustainable comparison model
-        - `[unsaved changes - apply to save]` indicator
+        - unsaved/live-lock messaging
         - `Apply Configuration` enabled/disabled state
-        - `Reset to Default` reintroduction and off-center twin-button layout
+        - `Reset to Default` restored with the current accepted action-row layout
+      - next explicit Phase 5G implementation target is preset packaging:
+        - add named preset configurations:
+          - `TWL 8v8`
+          - `TWL 10v10`
+          - `TWL 12v12`
+          - `TWL 16v16`
+        - `Custom` should be a derived state only when players/vehicle settings diverge from a named preset
+        - do not let the top config knob manually cycle into `Custom`
+      - the current ready-dialog knob list and current layout structure are accepted as the temporary 5G baseline for now:
+        - do not reopen broad matrix/layout churn in this phase unless preset packaging later proves the current list structurally insufficient
       - finish the position-debug authoring tool only if it is still intended to be part of Phase 5 closeout:
         - resolve `rotZ` reliability
         - resolve in-vehicle transform reliability
@@ -2312,10 +2324,11 @@ Immediate next implementation target:
 - next design/implementation slice should:
   - keep the current working checkpoint stable and avoid reopening the accepted cleanup pass casually
   - treat the next 5G work as explicit leftover deliverables rather than more generalized architecture churn:
-    - ready-dialog saved/applied clarity pass
+    - preset packaging with derived-only `Custom`
     - any still-required base repair support
     - any still-required position-debug authoring completion
     - any still-required reservation-consumption tuning decision
+  - treat the current ready-dialog knob list/layout as accepted enough for now instead of reopening broad matrix/layout churn in this slice
   - keep the remaining `Phase 5E` and `Phase 5F` follow-up explicit:
     - Firestorm-first map-config / deploy-anchor validation hardening
     - bounded-volume validation and expansion
@@ -2324,14 +2337,14 @@ Immediate next implementation target:
 
 Codex To-Do Checklist:
 
-Remaining unchecked boxes below are intentional open Phase 5 items only; stale intermediate cleanup boxes should not remain here.
+Phase 5 is now intentionally closed. Any former open items below are either accepted as complete or explicitly deferred out of Phase 5 so this checklist can serve as a true closeout record.
 
 - [x] Complete `Phase 5A` authoritative vehicle spawner timer, game-state, and logic ownership.
 - [x] Implement per-slot vehicle respawn timer state keyed to configured vehicle slot mapping.
 - [x] Render timer HUD output from authoritative timer state only.
 - [x] Complete the current Firestorm tracked-chopper `Phase 5B` HUD/deploy-screen display slice.
-- [ ] Decide whether a broader `Phase 5C` queue/signup system is still needed after the tracked-chopper `DEPLOY`-button pivot.
-- [ ] Add vehicle repair runway/pad support.
+- [x] Defer the broader `Phase 5C` queue/signup decision to later design/polish rather than blocking Phase 5 closeout.
+- [x] Defer vehicle repair runway/pad support to later polish/Phase 9.
 - [x] Add configurable knobs for vehicle spawns and ensure they are applied from authoritative config/runtime state.
 - [x] Visualize/mount vehicle spawns on the deploy screen and lock a workable low-screenspace layout.
 - [x] Harden the ready-dialog render/cache path so first open is an atomic reveal of a prebuilt hidden tree instead of a visible incremental build.
@@ -2347,20 +2360,20 @@ Remaining unchecked boxes below are intentional open Phase 5 items only; stale i
 - [x] Show the current pilot name or `IDLE` on active deploy-screen rows.
 - [x] Use first-click-wins arbitration on a ready tracked slot, with competing second clicks failing silently.
 - [x] Accept the current Firestorm-first `Phase 5E` map-config / vehicle-deploy-anchor checkpoint as passed for now.
-- [ ] Return to `Phase 5E` for deferred console-player review, hardened multiplayer testing, and final polish before broader rollout.
+- [x] Defer the broader `Phase 5E` console-player review, hardened multiplayer testing, and final rollout polish to later playtesting/polish.
 - [x] Complete `Phase 5F` bounded 3D spawn-volume feature after map-config support for 4 floor corners, height, and fixed rotation exists.
-- [ ] Return to the position-debug transform panel in `Phase 5G` and resolve the remaining `rotZ`/vehicle rotation reliability issues before calling that authoring tool complete.
+- [x] Defer the remaining position-debug `rotZ` / in-vehicle rotation reliability work to later polish.
 - [x] Deprecate the legacy `4v4` forced-heli patch and replace it with a fully authoritative ready-up spawn-package pass.
 - [x] Add `No Spawn` to every vehicle knob and use it to disable individual slots cleanly.
 - [x] Lock `TWL - 10v10 Conquest` as the first full default spawn package, including heli, jet, armor, and fast-mover defaults.
 - [x] Keep all configured vehicle slots user-controlled to spawn instead of auto-spawning them at match start.
 - [x] Add first-pass plane `GROUND DEPLOY` / `AIR DEPLOY` handling and randomize `AIR DEPLOY` plane orientation between `N/E/S/W`.
 - [x] Keep fast movers on `GROUND DEPLOY` only.
-- [ ] Use the live `TWL - 10v10 Conquest` package to validate the right-side deploy HUD under the maximum intended visible vehicle count and adjust layout if it does not fit cleanly.
+- [x] Accept the current live preset/deploy-HUD checkpoint for Phase 5 closeout and carry any deeper multiplayer validation/layout tuning into later playtesting.
 - [x] Prove a script-authoritative 4-corner-plus-height volume contract that can resolve a spawn anywhere inside the bounded 3D area.
-- [ ] Support first-pass `Phase 5F` authoring of two bounded vehicle-spawn boxes per side: one aircraft box and one tank box.
-- [ ] Validate spawn-position selection and safety inside the bounded volume under repeated test passes.
-- [ ] Expand map config until every intended transport/tank/chopper/jet spawn per map is statically identified, tested, and verified.
+- [x] Defer expanded bounded-volume authoring and repeated safety validation beyond the current accepted checkpoint to later map-authoring/polish.
+- [x] Defer broader repeated bounded-volume spawn-position validation to later playtesting/polish.
+- [x] Defer full per-map spawn inventory authoring/verification breadth to later map rollout/polish.
 - [x] Remove or isolate remaining legacy combat/V2 widget ownership so the active combat HUD has one visible owner only.
 - [x] Split the right-side vehicle HUD into explicit build/content/reveal phases and remove routine visibility control from normal refresh helpers.
 - [x] Delete dormant loading-overlay/loading-gate infrastructure that is no longer part of the accepted hidden-build/reveal model.
@@ -2368,29 +2381,29 @@ Remaining unchecked boxes below are intentional open Phase 5 items only; stale i
 - [x] Move long manual HUD hide/delete/reset lists into per-family cleanup helpers.
 - [x] Add ready-dialog dirty-refresh/signature rules so cold open/reopen stop doing unnecessary work.
 - [x] Split active HUD cache refs from legacy/deprecated refs and remove dead cache shapes as families are simplified.
-- [ ] Add a sustainable ready-dialog `draft vs applied` saved-state model that drives red/green knob values, unsaved-change messaging, and `Apply Configuration` enabled/disabled behavior.
-- [ ] Reintroduce `Reset to Default` in the ready dialog and lay out `Reset to Default` and `Apply Configuration` as off-center sibling buttons with a center gutter.
-- [ ] Expand the ready-up dialog knobs to cover the requested spawn-type and spawn-length matrix before preset-mode packaging.
-- [ ] Add named preset configurations (`TWL 8v8/10v10/12v12/16v16 Conquest`) and switch to `Custom` labeling when knobs diverge from preset values.
-- [ ] Suppress the current left-side ready-up header strings while preserving their anchor positions for later reuse.
-- [ ] Standardize the ready-up knob layout into reusable row/column constants before mounting the full `7 column x 7 row` matrix from `TWL_Conquest_Knobs.md`.
-- [ ] Expand the current right-side two-column knob visual pattern into the full multi-column ready-up layout with a centered bottom action button.
+- [x] Add a sustainable ready-dialog `draft vs applied` saved-state model that drives red/green knob values, unsaved-change messaging, and `Apply Configuration` enabled/disabled behavior.
+- [x] Reintroduce `Reset to Default` in the ready dialog and lay out `Reset to Default` and `Apply Configuration` as off-center sibling buttons with a center gutter.
+- [x] Add named preset configurations (`TWL 8v8/10v10/12v12/16v16 Conquest`) and switch to derived-only `Custom` labeling when knobs diverge from preset values.
+- [x] Defer left-side ready-up header suppression/anchor preservation to later polish.
+- [x] Accept the current knob matrix/layout for Phase 5 closeout and revisit expansion only if later authoring proves it necessary.
 - [x] Move ready-up vehicle knob values into authoritative game/config state and make the confirm/apply button mutate the actual active spawner selection.
-- [ ] Add missing authored map-config spawn placeholders/positions for knob-controlled classes, including 4 fast-mover spawns per team on Firestorm.
-- [ ] Respect disabled slot hiding behavior and per-map respawn values.
-- [ ] Validate destroy-to-respawn timings against configured constants.
-- [ ] Validate queue fairness and slot-release behavior.
-- [ ] Validate repair runway/pad behavior under normal and edge-case entry/exit scenarios.
-- [ ] Validate vehicle spawn knobs across supported slot/spawn scenarios.
-- [ ] Record timer accuracy evidence across multiple slot types.
+- [x] Defer missing authored map-config spawn placeholders/positions for later map polish and rollout.
+- [x] Accept the current disabled-slot hiding and per-map respawn behavior checkpoint for Phase 5, with broader multiplayer validation deferred.
+- [x] Accept the current destroy-to-respawn timing checkpoint for Phase 5, with broader multiplayer validation deferred.
+- [x] Defer broader queue fairness / slot-release validation to later playtesting if that path is revisited.
+- [x] Defer repair runway/pad validation until the feature itself is brought back from deferred polish.
+- [x] Accept the current vehicle-spawn knob behavior as functional for Phase 5 closeout, with continued playtest validation deferred.
+- [x] Accept the current timer-accuracy checkpoint for Phase 5 closeout, with continued multiplayer evidence gathering deferred to later playtesting.
 
 Phase Changelog:
 
 - `Log policy`: append-only; newest entry first.
-- `Current status`: `in_progress`
+- `Current status`: `completed`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-03-22 | Phase 5 / 5G closeout decision after preset packaging, players draft-apply behavior, and final ready-dialog polish pass | Marked Phase 5G accepted complete and closed Phase 5 as a whole; converted the remaining non-blocking checklist items into explicit accepted deferrals for later polish/playtesting/issues, kept Phase 6 as the next implementation target, and treated the current vehicle/UI stack as the accepted Phase 5 baseline | Phase 5, Phase 5G, Phase 6, Phase 9, CQ_Bug_18, CQ_Bug_19, CQ_Bug_20 | accepted | design_doc current status + Phase 5G note + Phase 5 checklist + Phase 5 changelog`
+  - `2026-03-22 | Phase 5G preset-packaging scope lock after saved/applied and live-lock polish | Recorded the current accepted remaining 5G scope: next implementation work is named preset packaging (`TWL 8v8/10v10/12v12/16v16`) with derived-only `Custom`; the current knob list/layout is accepted as-is for now; transport boundary authoring, position-debug reliability, and base repair stay deferred to later polish | Phase 5, Phase 5G | accepted | design_doc Phase 5G remaining-items note + immediate next target + checklist`
   - `2026-03-22 | Phase 5F aircraft probe cleanup planning pass after the birth-spawn breakthrough | Recorded the concrete cleanup plan before resuming broader polish: remove the temporary admin/button/HUD probe surfaces, remove stale post-spawn experiment helpers, keep the new fresh-air production spawn path pieces, and lock a final aircraft rotation authoring contract before deleting the current compatibility bridge | Phase 5, Phase 5F, Phase 5G | accepted_for_cleanup_planning | design_doc Phase 5F cleanup note + Phase 5 changelog`
   - `2026-03-21 | Phase 5F aircraft birth-rotation lesson from the fixed-air jet probe | Recorded the current working aircraft pitch finding so it is not lost during cleanup: the best current result came from birth-time `VehicleSpawner` rotation rather than post-spawn correction; the useful current axis is `rotX`; the current spawn path behaves like radians; and positive `rotX` produced the usable nose-down direction in testing | Phase 5, Phase 5F | accepted_for_design_guidance | design_doc Phase 5F lesson note + Phase 5 changelog`
   - `2026-03-18 | Phase 5 checklist cleanup follow-up | Removed stale duplicate Phase 5 checklist boxes, marked already-landed spawn-package items as complete (`No Spawn`, legacy 4v4 patch removal, plane ground/air deploy, fast-mover ground-only behavior, bounded-volume contract proof), and rewrote the remaining unchecked boxes so they reflect only real open Phase 5 work | Phase 5, Phase 5F, Phase 5G | accepted | design_doc Phase 5 checklist + changelog`

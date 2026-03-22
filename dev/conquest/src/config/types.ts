@@ -20,6 +20,10 @@ type VehicleSpawnVolumeSpec = {
     rotPlane: mod.Vector;
 };
 type CapturePointConfig = { objId: number; label: string; order: number };
+type ReadyDialogPresetPackage = {
+    playersPerSide: number;
+    vehicleSelectionByKey: Record<string, mod.VehicleList | undefined>;
+};
 
 // Per-map runtime configuration: team anchors, labels, and spawn lists used by map-detect/apply logic.
 type MapConfig = {
@@ -46,5 +50,6 @@ type MapConfig = {
     team2JetSpawns?: VehicleSpawnSpec[];
     team1FastMoverSpawns?: VehicleSpawnSpec[];
     team2FastMoverSpawns?: VehicleSpawnSpec[];
+    readyDialogPresetPackages?: Record<number, ReadyDialogPresetPackage>; // Authored by knob key; runtime still maps knob order onto this map's spawn-anchor order.
     vehicleSpawnYawOffsetDeg: number; // Reserved for future spawn orientation tuning.
 };

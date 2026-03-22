@@ -30,6 +30,7 @@ const State: GameState = {
         lastMatchupChangeAtSeconds: -999,
         modeConfig: {
             gameModeIndex: READY_DIALOG_GAME_MODE_DEFAULT_INDEX,
+            autoStartMinActivePlayers: DEFAULT_AUTO_START_MIN_ACTIVE_PLAYERS,
             aircraftCeiling: READY_DIALOG_AIRCRAFT_CEILING_DEFAULT,
             aircraftCeilingOverridePending: false,
             vehicleSelectionIndexByKey: {},
@@ -40,6 +41,7 @@ const State: GameState = {
                 gameSettings: mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat,
                 aircraftCeiling: READY_DIALOG_AIRCRAFT_CEILING_DEFAULT,
                 aircraftCeilingOverrideEnabled: false,
+                autoStartMinActivePlayers: DEFAULT_AUTO_START_MIN_ACTIVE_PLAYERS,
                 vehicleSelectionIndexByKey: {},
             },
         },
@@ -246,6 +248,7 @@ const State: GameState = {
     players: {
         readyDialogData: {},
         readyByPid: {},
+        readyNeedsReconfirmByPid: {},
         readyMessageCooldownByPid: {},
         joinPromptShownByPid: {},
         joinPromptNeverShowByPidMap: {},

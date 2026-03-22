@@ -1,7 +1,7 @@
 # Conquest Issues
 
 Last Updated: 2026-03-22  
-Last Tested Build: `v0.763` (fresh in-air aircraft birth-spawn path cleaned up; latest hardening pass routes the remaining ready-dialog/shared HUD label refresh paths through safe text setters while `CQ_Bug_18` / `CQ_Bug_19` stay under investigation)
+Last Tested Build: `v0.805` (ready-dialog saved/applied polish and live-lock visuals working; no UI spam currently reported; remaining open polish includes ready-dialog open latency and live-roster freshness)
 
 ## Current Snapshot
 - `CQ_Bug_1`: Resolved
@@ -23,6 +23,51 @@ Last Tested Build: `v0.763` (fresh in-air aircraft birth-spawn path cleaned up; 
 - `CQ_Bug_17`: Open (deferred polish)
 - `CQ_Bug_18`: Open (deferred investigation)
 - `CQ_Bug_19`: Open (deferred investigation)
+- `CQ_Bug_20`: Open (deferred polish)
+
+## CQ_Bug_20
+Title: Ready-Dialog Roster Base-State Can Go Stale During Live Round
+
+Observed:
+- Once the round is live, the ready-dialog roster can stop reflecting live `In Main Base` changes.
+- Example:
+  - a player leaves or re-enters main base
+  - the underlying base-state changes
+  - the ready-dialog roster row still shows the old `IN` / `OUT` value while the dialog remains usable otherwise
+
+Expected:
+- The ready-dialog roster should continue reflecting current per-player base-state during live rounds, even if the ready button itself is visually locked.
+
+Current Accepted Behavior:
+- This is deferred for later polish.
+- The current accepted checkpoint keeps the ready-dialog stable and avoids reopening the previous UI spam and cache-regression issues.
+- Live-round roster freshness is therefore tracked as a separate polish bug instead of being folded back into the ready-dialog lifecycle work.
+
+Status:
+- Open.
+- Deferred polish.
+
+Current Best Read:
+- The likely issue is not that `inMainBaseByPid` stops changing.
+- The stronger suspicion is that the live-round roster refresh policy is still partly pre-live-oriented.
+- Current likely source path:
+  - [area-triggers.ts](c:/Users/Soldat/TypeScriptProjects/twlmain/bf6-portal/dev/conquest/src/index/area-triggers.ts)
+  - [roster-render.ts](c:/Users/Soldat/TypeScriptProjects/twlmain/bf6-portal/dev/conquest/src/ready-dialog/roster-render.ts)
+- Base-state updates still occur, but some refresh behavior and design assumptions were originally built around pre-live readiness gating.
+
+Latest Findings (2026-03-22):
+- `onPlayerExitAreaTriggerImpl(...)` still contains explicit pre-live-only behavior for the ready/base path.
+- The ready-dialog roster renderer itself can display live base-state correctly if refreshed.
+- That points more toward a missing live refresh policy or stale visible-viewer update path than a bad data source.
+
+Recommended Later Investigation:
+- Reproduce while live with one dialog viewer open and another player crossing the main-base boundary.
+- Verify separately:
+  - `State.players.inMainBaseByPid[pid]` changes as expected
+  - `renderReadyDialogForAllVisibleViewers()` is or is not being called on the live transition
+  - `buildReadyDialogRosterSignature(...)` changes when the base-state flips live
+- If the signature changes but the row stays stale, patch the visible-viewer refresh path.
+- If the signature does not change live, patch the roster signature or state ownership first.
 
 ## CQ_Bug_19
 Title: Late-Match Multiplayer Deploy Buttons Disappear / Script Appears To Degrade
