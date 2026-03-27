@@ -107,4 +107,35 @@ type VehicleDeployTimerHudCacheEntry = {
     lastRenderSignature?: string;
 };
 
+type BoundaryPromptWidgetCacheEntry = {
+    rootName: string;
+    panelName: string;
+    borderName: string;
+    title1Name: string;
+    title1ShadowName: string;
+    title2Name: string;
+    title2ShadowName: string;
+    subtitleName: string;
+    subtitleShadowName: string;
+    leftIconName: string;
+    leftIconShadowName: string;
+    rightIconName: string;
+    rightIconShadowName: string;
+    root?: mod.UIWidget;
+    border?: mod.UIWidget;
+    title1?: mod.UIWidget;
+    title1Shadow?: mod.UIWidget;
+    title2?: mod.UIWidget;
+    title2Shadow?: mod.UIWidget;
+    subtitle?: mod.UIWidget;
+    subtitleShadow?: mod.UIWidget;
+    leftIcon?: mod.UIWidget;
+    leftIconShadow?: mod.UIWidget;
+    rightIcon?: mod.UIWidget;
+    rightIconShadow?: mod.UIWidget;
+    lastVisibleState?: boolean;
+    lastKind?: BoundaryPromptKind;
+    lastRemainingSeconds?: number;
+};
+
 //#endregion ----------------- HUD Types + Caches --------------------

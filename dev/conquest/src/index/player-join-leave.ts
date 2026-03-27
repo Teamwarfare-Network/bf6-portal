@@ -60,6 +60,7 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
     deleteAllByName(`Container_ReadyStatus_${pid}`);
     deleteAllByName(`ReadyStatusText_${pid}`);
     deleteVehicleDeployTimerHudArtifactsForPid(pid);
+    destroyBoundaryPromptUiForPid(pid);
 }
 
 // Deletes all known per-player HUD roots and cache entries for disconnect/reconnect safety.
@@ -129,6 +130,7 @@ function cleanupHudForPid(pid: number): void {
         deleteAllByName(name);
     }
     deleteVehicleDeployTimerHudArtifactsForPid(pid);
+    destroyBoundaryPromptUiForPid(pid);
     resetTopHudRootInitializationForPid(pid);
 
     delete State.hudCache.clockWidgetCache[pid];
@@ -152,6 +154,7 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     const joinPid = safeGetPlayerId(eventPlayer);
     const wasDisconnected = joinPid !== undefined && State.players.disconnectedByPid[joinPid] === true;
     if (joinPid !== undefined) {
+        resetPlayerBoundaryStateOnUndeployOrReset(joinPid, true);
         delete State.players.disconnectedByPid[joinPid];
         State.players.deployedByPid[joinPid] = false;
         delete State.players.readyNeedsReconfirmByPid[joinPid];
@@ -179,6 +182,7 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
         createJoinPrompt: false,
     });
     ensureReadyDialogUiBuiltHidden(eventPlayer);
+    replayActiveMapValidationWarningsToPlayer(eventPlayer);
 
     // Join-time prompt is only shown once per player (undeploy prompts can repeat unless suppressed).
     if (!shouldShowJoinPromptForPlayer(eventPlayer)) return;
@@ -211,6 +215,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     State.players.disconnectedByPid[pid] = true;
     removeReadyDialogInteractPoint(pid);
     cleanupHudForPid(pid);
+    resetPlayerBoundaryStateOnUndeployOrReset(pid, true);
     conquestPhase4OnPlayerLeaveOrResetPid(pid);
     conquestPhase4BOnPlayerLeaveOrResetPid(pid);
     clearVehicleReservationForPid(pid);
@@ -234,7 +239,6 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.posDebugTransformSourceByPid[pid];
     delete State.players.posDebugVehicleObjIdByPid[pid];
     delete State.players.inMainBaseByPid[pid];
-    delete State.players.overTakeoffLimitByPid[pid];
     delete State.players.deployedByPid[pid];
     conquestPhase2BOnPlayerLeave(pid);
     // Also drop dialog-visible tracking if present (viewer is gone).

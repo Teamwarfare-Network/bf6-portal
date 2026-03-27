@@ -2,45 +2,23 @@
 // Module: vehicles/spawner-bind -- spawn yaw apply + slot binding by active token/distance
 
 function isAircraftSpawnVolumeVehicleType(vehicleType: mod.VehicleList): boolean {
-    switch (vehicleType) {
-        case mod.VehicleList.AH64:
-        case mod.VehicleList.Eurocopter:
-        case VEHICLE_AH6M:
-        case mod.VehicleList.UH60:
-        case mod.VehicleList.UH60_Pax:
-        case mod.VehicleList.F16:
-        case mod.VehicleList.F22:
-        case mod.VehicleList.JAS39:
-        case mod.VehicleList.SU57:
-            return true;
-        default:
-            return false;
-    }
+    return isAircraftVehicleType(vehicleType);
 }
 
 function isJetSpawnVolumeVehicleType(vehicleType: mod.VehicleList): boolean {
-    switch (vehicleType) {
-        case mod.VehicleList.F16:
-        case mod.VehicleList.F22:
-        case mod.VehicleList.JAS39:
-        case mod.VehicleList.SU57:
-            return true;
-        default:
-            return false;
-    }
+    return isJetVehicleType(vehicleType);
 }
 
 function isTankSpawnVolumeVehicleType(vehicleType: mod.VehicleList): boolean {
-    switch (vehicleType) {
-        case mod.VehicleList.Abrams:
-        case mod.VehicleList.Leopard:
-        case mod.VehicleList.CV90:
-        case mod.VehicleList.M2Bradley:
-        case mod.VehicleList.Cheetah:
-        case mod.VehicleList.Gepard:
-            return true;
-        default:
-            return false;
+    return isTankVehicleType(vehicleType);
+}
+
+function doesVehicleMatchConfiguredSlotType(vehicle: mod.Vehicle | undefined, slot: VehicleSpawnerSlot | undefined): boolean {
+    if (!vehicle || !slot) return false;
+    try {
+        return mod.CompareVehicleName(vehicle, slot.vehicleType);
+    } catch {
+        return false;
     }
 }
 
@@ -228,6 +206,9 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
         if (!expired) {
             const activeSlot = State.vehicles.slots[activeIndex];
             if (activeSlot && activeSlot.enabled && activeSlot.expectingSpawn && activeSlot.spawnRequestToken === activeToken) {
+                if (!doesVehicleMatchConfiguredSlotType(eventVehicle, activeSlot)) {
+                    return 0;
+                }
                 activeSlot.expectingSpawn = false;
                 bindVehicleToSpawnerSlot(activeSlot, vehicleObjId);
                 State.vehicles.vehicleToSlot[vehicleObjId] = activeIndex;
@@ -251,6 +232,9 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
         const spawnerPos = mod.GetObjectPosition(slot.spawner);
         const d = mod.DistanceBetween(vehiclePos, spawnerPos);
         if (d <= VEHICLE_SPAWNER_BIND_DISTANCE_METERS) {
+            if (!doesVehicleMatchConfiguredSlotType(eventVehicle, slot)) {
+                continue;
+            }
             slot.expectingSpawn = false;
             bindVehicleToSpawnerSlot(slot, vehicleObjId);
             State.vehicles.vehicleToSlot[vehicleObjId] = i;

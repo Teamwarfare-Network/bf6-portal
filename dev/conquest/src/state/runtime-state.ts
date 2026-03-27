@@ -74,6 +74,15 @@ const State: GameState = {
             enforcementToken: 0,
             vehicleStates: {},
         },
+        boundary: {
+            inEnemyMainBaseCoreByPid: {},
+            inEnemyMainBaseBufferByPid: {},
+            inGroundCombatZoneByPid: {},
+            activeViolationByPid: {},
+            alarmHandle: undefined,
+            alarmReady: false,
+            validationWarnings: [],
+        },
     },
     conquest: {
         lifecyclePhase: "NOT_READY",
@@ -261,7 +270,6 @@ const State: GameState = {
         joinPromptLastPolicySuppressedAtSecondsByPid: {},
         joinPromptLastSuppressionReasonByPid: {},
         inMainBaseByPid: {},
-        overTakeoffLimitByPid: {},
         deployedByPid: {},
         disconnectedByPid: {},
         uiInputEnabledByPid: {},
@@ -286,5 +294,6 @@ const State: GameState = {
         clockWidgetCache: {},
         countdownWidgetCache: {},
         vehicleDeployTimerCache: {},
+        boundaryPromptCache: {},
     },
 };

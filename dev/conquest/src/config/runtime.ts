@@ -28,20 +28,25 @@ function getActiveCapturePointConfigByObjId(objId: number): CapturePointConfig |
 // Baseline team inference from static main-base anchor coordinates.
 let MAIN_BASE_TEAM1_POS = ACTIVE_MAP_CONFIG.team1Base;
 let MAIN_BASE_TEAM2_POS = ACTIVE_MAP_CONFIG.team2Base;
+let MAIN_BASE_TRIGGER_ID_TEAM1 = ACTIVE_MAP_CONFIG.team1MainBaseTriggerId;
+let MAIN_BASE_TRIGGER_ID_TEAM2 = ACTIVE_MAP_CONFIG.team2MainBaseTriggerId;
+let MAIN_BASE_BUFFER_TRIGGER_ID_TEAM1 = ACTIVE_MAP_CONFIG.team1MainBaseBufferTriggerId;
+let MAIN_BASE_BUFFER_TRIGGER_ID_TEAM2 = ACTIVE_MAP_CONFIG.team2MainBaseBufferTriggerId;
+let GROUND_COMBAT_ZONE_TRIGGER_ID = ACTIVE_MAP_CONFIG.groundCombatZoneTriggerId;
 let VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM1 = ACTIVE_MAP_CONFIG.team1VehicleDeploySpawnPointId;
 let VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM2 = ACTIVE_MAP_CONFIG.team2VehicleDeploySpawnPointId;
 let TEAM1_AIRCRAFT_SPAWN_VOLUMES = ACTIVE_MAP_CONFIG.team1AircraftSpawnVolumes ?? [];
 let TEAM2_AIRCRAFT_SPAWN_VOLUMES = ACTIVE_MAP_CONFIG.team2AircraftSpawnVolumes ?? [];
 let TEAM1_TANK_SPAWN_VOLUMES = ACTIVE_MAP_CONFIG.team1TankSpawnVolumes ?? [];
 let TEAM2_TANK_SPAWN_VOLUMES = ACTIVE_MAP_CONFIG.team2TankSpawnVolumes ?? [];
-let TEAM1_TANK_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team1TankSpawns;
-let TEAM2_TANK_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team2TankSpawns;
-let TEAM1_HELI_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team1HeliSpawns ?? [];
-let TEAM2_HELI_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team2HeliSpawns ?? [];
-let TEAM1_JET_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team1JetSpawns ?? [];
-let TEAM2_JET_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team2JetSpawns ?? [];
-let TEAM1_FAST_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team1FastMoverSpawns ?? [];
-let TEAM2_FAST_SELECTED_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team2FastMoverSpawns ?? [];
+let TEAM1_TANK_SELECTED_SPAWN_SPECS: VehicleSpawnSpec[] = [];
+let TEAM2_TANK_SELECTED_SPAWN_SPECS: VehicleSpawnSpec[] = [];
+let TEAM1_HELI_SELECTED_SPAWN_SPECS: VehicleSpawnSpec[] = [];
+let TEAM2_HELI_SELECTED_SPAWN_SPECS: VehicleSpawnSpec[] = [];
+let TEAM1_JET_SELECTED_SPAWN_SPECS: VehicleSpawnSpec[] = [];
+let TEAM2_JET_SELECTED_SPAWN_SPECS: VehicleSpawnSpec[] = [];
+let TEAM1_FAST_SELECTED_SPAWN_SPECS: VehicleSpawnSpec[] = [];
+let TEAM2_FAST_SELECTED_SPAWN_SPECS: VehicleSpawnSpec[] = [];
 let TEAM1_VEHICLE_SLOT_INVENTORY_SPECS: VehicleSpawnSpec[] = [];
 let TEAM2_VEHICLE_SLOT_INVENTORY_SPECS: VehicleSpawnSpec[] = [];
 const MAIN_BASE_BIND_RADIUS_METERS = 150.0;
@@ -50,8 +55,8 @@ const MAIN_BASE_BIND_RADIUS_METERS = 150.0;
 const vehicleSpawnBaseTeamByObjId: Record<number, TeamID> = {};
 
 // Vehicle spawner defaults (per-map spawn specs, selected by mode).
-let TEAM1_VEHICLE_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team1TankSpawns;
-let TEAM2_VEHICLE_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team2TankSpawns;
+let TEAM1_VEHICLE_SPAWN_SPECS: VehicleSpawnSpec[] = [];
+let TEAM2_VEHICLE_SPAWN_SPECS: VehicleSpawnSpec[] = [];
 let VEHICLE_SPAWN_YAW_OFFSET_DEG = ACTIVE_MAP_CONFIG.vehicleSpawnYawOffsetDeg;
 const MAP_DETECT_DISTANCE_METERS = 5.0;
 

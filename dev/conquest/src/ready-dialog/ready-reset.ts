@@ -13,7 +13,6 @@ function resetReadyStateForAllPlayers(): void {
         const pid = mod.GetObjId(p);
         State.players.readyByPid[pid] = false;
         delete State.players.readyNeedsReconfirmByPid[pid];
-        delete State.players.overTakeoffLimitByPid[pid];
         // Keep the HUD "X / Y PLAYERS READY" line in sync on every ready-state change.
         updatePlayersReadyHudTextForAllPlayers();
     }

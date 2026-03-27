@@ -19,6 +19,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
 
     State.round.countdown.isRequested = false;
     lifecycleSetLiveBaseline("pregame-start-match");
+    clearActiveBoundaryViolationsForAllPlayers();
     updateReadyDialogModeConfigForAllHiddenBuiltCaches();
     updateReadyToggleButtonsForAllBuiltReadyDialogs();
     conquestPhase2AResetLiveState();
@@ -33,6 +34,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     updatePlayersReadyHudTextForAllPlayers();
     updateReadyDialogModeConfigForAllVisibleViewers();
     updateVehicleDeployTimerHudForAllPlayers();
+    refreshBoundaryStateForAllPlayers();
 
     resetMatchClock(getConfiguredMatchLengthSeconds());
     updateAllPlayersClock();
@@ -65,6 +67,7 @@ function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number,
     }
 
     if (!lifecycleTrySetGameOver("pregame-end-match", winner)) return;
+    clearActiveBoundaryViolationsForAllPlayers();
     updateReadyDialogModeConfigForAllHiddenBuiltCaches();
     updateReadyToggleButtonsForAllBuiltReadyDialogs();
     State.round.clock.expiryFired = true;
@@ -87,6 +90,7 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     resetReadyStateForAllPlayers();
 
     lifecycleSetNotReadyBaseline("fresh-setup");
+    clearActiveBoundaryViolationsForAllPlayers();
     updateReadyDialogModeConfigForAllHiddenBuiltCaches();
     updateReadyToggleButtonsForAllBuiltReadyDialogs();
     conquestPhase2AResetNotLiveState();
@@ -105,6 +109,7 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
         applySpawnerEnablementForMatchup(State.round.matchupPresetIndex, true);
     }
     updateVehicleDeployTimerHudForAllPlayers();
+    refreshBoundaryStateForAllPlayers();
 }
 
 // Clamps configured match length to admin-safe limits.

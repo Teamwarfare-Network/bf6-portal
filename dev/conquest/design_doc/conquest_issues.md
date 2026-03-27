@@ -1,7 +1,7 @@
 # Conquest Issues
 
-Last Updated: 2026-03-22  
-Last Tested Build: `v0.805` (ready-dialog saved/applied polish and live-lock visuals working; no UI spam currently reported; remaining open polish includes ready-dialog open latency and live-roster freshness)
+Last Updated: 2026-03-23  
+Last Tested Build: `v0.817` (Phase 5 accepted closed; ready-dialog UI spam currently fixed; remaining open polish includes ready-dialog open latency and live-roster freshness)
 
 ## Current Snapshot
 - `CQ_Bug_1`: Resolved
@@ -21,9 +21,55 @@ Last Tested Build: `v0.805` (ready-dialog saved/applied polish and live-lock vis
 - `CQ_Bug_15`: Resolved
 - `CQ_Bug_16`: Open (deferred polish)
 - `CQ_Bug_17`: Open (deferred polish)
-- `CQ_Bug_18`: Open (deferred investigation)
+- `CQ_Bug_18`: Resolved
 - `CQ_Bug_19`: Open (deferred investigation)
 - `CQ_Bug_20`: Open (deferred polish)
+- `CQ_Bug_21`: Open (deferred polish)
+
+## CQ_Bug_21
+Title: Ready-Dialog Open Latency After Interact
+
+Observed:
+- The ready dialog can still take a noticeable amount of time to appear after pressing the interact key.
+- This is most noticeable:
+  - on first spawn in a server
+  - after team switch
+  - on some live-transition/open cases
+- The current accepted checkpoint is functional and no longer spams the runtime log, but the dialog can still feel like it is losing a cache race or paying a cold-open cost.
+
+Expected:
+- Once the ready-dialog interact point is available and the player presses interact, the dialog should appear effectively immediately.
+- The dialog should feel like a pure reveal path, not a delayed build/rebuild path.
+
+Current Accepted Behavior:
+- This is deferred for later polish.
+- The current accepted checkpoint prioritizes:
+  - no ready-dialog `SETUITEXTLABEL` runtime spam
+  - stable dialog functionality
+  - preserved interact-point behavior
+- The remaining open-speed issue is therefore tracked as a standalone polish bug rather than being folded back into the older spam investigation.
+
+Status:
+- Open.
+- Deferred polish.
+
+Current Best Read:
+- The current issue is no longer the old label-spam problem.
+- The stronger suspicion is:
+  - hidden-cache warm timing
+  - cache invalidation/rebuild timing around first join / team switch / some phase transitions
+  - or remaining reveal/input delay after the cache exists
+
+Recommended Later Investigation:
+- Reproduce on the current accepted build and separate these cases:
+  - first join/open
+  - post-team-switch open
+  - later reopen with no intervening invalidation
+- Verify whether the open path is:
+  - cold-building the hidden dialog
+  - rebuilding one cached section
+  - or merely delayed after cache already exists
+- Keep this isolated from `CQ_Bug_18`; do not re-open broad ready-dialog lifecycle churn unless the current no-spam baseline is explicitly proven safe.
 
 ## CQ_Bug_20
 Title: Ready-Dialog Roster Base-State Can Go Stale During Live Round
@@ -95,7 +141,8 @@ Status:
 - Active investigation candidate after the current aircraft cleanup pass.
 
 Current Best Read:
-- This may be a secondary symptom of the same unresolved runtime/log-spam problem tracked in `CQ_Bug_18`, rather than a fully separate deploy-button-only issue.
+- Older investigation linked this to `CQ_Bug_18`, but that spam issue is currently fixed at the accepted checkpoint.
+- Current best read should therefore treat this as an independent longer-session runtime/UI degradation bug unless a future repro proves the coupling again.
 - The strongest current suspicion is:
   - a longer-session lifecycle/cache invalidation problem in the right-side vehicle HUD or a shared ready/admin/HUD refresh path
   - with the visible loss of `GROUND DEPLOY` / `AIR DEPLOY` buttons being one downstream symptom once the mode enters that bad state
@@ -117,7 +164,7 @@ Recommended Later Investigation:
   - whether reservations / slot ownership continue updating correctly underneath
   - whether the ready dialog had been opened earlier in the session
   - whether admin panel or debug panel had been used earlier in the session
-- Correlate the failure window with `CQ_Bug_18` runtime spam and treat both as likely connected unless evidence later proves otherwise.
+- Correlate the failure window with any current runtime noise or stale-widget behavior, but do not assume the old `CQ_Bug_18` spam coupling still holds without fresh evidence.
 - Add explicit diagnosis targets in the next pass:
   - whether the right-side deploy HUD root/container still exists
   - whether the button widgets still exist and remain visible
@@ -144,16 +191,15 @@ Expected:
 - Admin panel open, close, and debug tools should remain silent in logs unless a true exceptional condition occurs.
 
 Current Accepted Behavior:
-- This is a known deferred runtime-noise issue and is not currently blocking broader mode testing.
-- Core user-facing behavior remains usable enough for the current checkpoint:
-  - ready dialog works
-  - admin panel opens
-  - debug panel can be opened
-  - aircraft air deploy remains stable in position
+- Resolved at the current accepted checkpoint.
+- The ready dialog can now be opened without re-entering the old repeated `SETUITEXTLABEL` spam state.
 
 Status:
-- Open.
-- Active investigation candidate after the aircraft cleanup pass.
+- Resolved.
+
+Resolution Summary:
+- The effective fix came from stabilizing the ready-dialog lifecycle around a cached hidden build plus pure reveal/open path, while removing the reopen/reveal-time text churn that had been reintroduced during later polish passes.
+- The issue should still be watched as a regression risk whenever the ready-dialog open/reveal path is modified again.
 
 Latest Findings (v0.727-v0.732):
 - The issue is no longer treated as admin-only.
@@ -171,33 +217,15 @@ Current Best Read:
   - a remaining player/vehicle state probe that still executes after ready-dialog/open HUD refreshes
   - a shared refresh path that is only exercised once the ready-dialog/admin family has been built at least once
 
-Latest Findings (2026-03-22):
-- The error log still begins spamming after opening the ready dialog.
-- This is still reproducible without relying on the admin panel.
-- The deploy-button degradation in `CQ_Bug_19` may be a later downstream symptom of the same unresolved runtime problem once enough log/error churn accumulates.
-- `v0.763` removed the remaining direct `SetUITextLabel(...)` refresh writes from the ready-dialog/shared HUD hot paths and routed them through `safeSetUITextLabel(...)` instead.
-- If spam persists after `v0.763`, the remaining likely source narrows further toward:
-  - player->vehicle / seat readback timing inside the safe wrappers themselves
-  - or another non-label ready-dialog/open lifecycle call that is still stale-widget-sensitive
+Latest Findings (2026-03-23):
+- The current accepted build no longer has a standing repro for the ready-dialog `SETUITEXTLABEL` spam.
+- The remaining ready-dialog UX issue is open-speed / latency, now tracked separately as `CQ_Bug_21`.
+- `CQ_Bug_19` should no longer treat this bug as an assumed active upstream cause unless a future regression brings the spam back.
 
 Recommended Later Investigation:
-- Reproduce from a fresh round with strict sequence logging:
-  - fresh join
-  - open ready dialog only
-  - note exact first frame/tick when log spam begins
-  - then separately open admin panel and debug panel
-- Correlate the live log text against the remaining ready-dialog/admin refresh call sites instead of broader sweep hardening.
-- Treat this as a dedicated runtime-error isolation pass, separate from aircraft pitch-down prototyping.
-- Add one focused pass on the ready-dialog/open path itself:
-  - widget build
-  - widget reveal
-  - ready-dialog refresh
-  - right-side deploy HUD refresh
-  - any player->vehicle / seat probes triggered from that same open path
-- Re-test specifically on `v0.763` and note whether:
-  - `SETUITEXTLABEL` spam is fully gone
-  - only `GETVEHICLEFROMPLAYER` / `GETPLAYERVEHICLESEAT` remain
-  - `CQ_Bug_19` still reproduces after a longer multiplayer session
+- Regression watch only:
+  - if future ready-dialog work reintroduces runtime spam, reopen this bug with the new checkpoint/build and exact repro path
+  - otherwise keep follow-up ready-dialog UX work under `CQ_Bug_21` instead
 
 ## CQ_Bug_17
 Title: Marauder Ground Spawn Fails To Seat Player Reliably

@@ -74,7 +74,8 @@ function shouldApplyCustomCeilingForConfig(_gameModeKey: number, _overrideEnable
 function requireReadyReconfirmAfterConfigChange(changedBy?: mod.Player): void {
     if (!changedBy) return;
     if (isMatchLive()) return;
-    const pid = mod.GetObjId(changedBy);
+    const pid = safeGetPlayerId(changedBy);
+    if (pid === undefined) return;
     if (!State.players.readyByPid[pid]) return;
     if (!buildReadyDialogModeConfigDiffState().hasUnsavedChanges) return;
 
@@ -82,8 +83,8 @@ function requireReadyReconfirmAfterConfigChange(changedBy?: mod.Player): void {
     State.players.readyNeedsReconfirmByPid[pid] = true;
 
     updateHelpTextVisibilityForPid(pid);
+    refreshReadyStatusForAllBuiltReadyDialogs();
     renderReadyDialogForAllVisibleViewers();
-    updateReadyToggleButtonsForAllBuiltReadyDialogs();
     updatePlayersReadyHudTextForAllPlayers();
 }
 
@@ -121,7 +122,7 @@ function applyReadyDialogModePresetForGameMode(gameModeKey: number): boolean {
     return true;
 }
 
-function resetReadyDialogModeConfigToDefaults(): void {
+function resetReadyDialogModeConfigToDefaults(changedBy?: mod.Player): void {
     const defaultGameMode = READY_DIALOG_GAME_MODE_OPTIONS[READY_DIALOG_GAME_MODE_DEFAULT_INDEX];
     suppressReadyDialogModeAutoSwitch = true;
     State.round.modeConfig.gameModeIndex = READY_DIALOG_GAME_MODE_DEFAULT_INDEX;
@@ -133,6 +134,7 @@ function resetReadyDialogModeConfigToDefaults(): void {
     State.round.modeConfig.gameSettings = mod.stringkeys.twl.system.genericCounter;
     suppressReadyDialogModeAutoSwitch = false;
 
+    requireReadyReconfirmAfterConfigChange(changedBy);
     updateReadyDialogModeConfigForAllVisibleViewers();
 }
 

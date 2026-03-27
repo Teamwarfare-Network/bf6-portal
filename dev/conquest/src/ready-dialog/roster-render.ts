@@ -252,4 +252,19 @@ function updateReadyToggleButtonsForAllBuiltReadyDialogs(): void {
     }
 }
 
+// Refreshes cached roster rows and ready-toggle state for every built dialog, including hidden caches.
+// This keeps pure-reveal reopen accurate when ready/base state changes while the dialog is closed.
+function refreshReadyStatusForAllBuiltReadyDialogs(): void {
+    for (const pidStr in State.players.readyDialogData) {
+        const pid = Number(pidStr);
+        if (isPidDisconnected(pid)) continue;
+        const state = State.players.readyDialogData[pid];
+        if (!state || !state.uiBuilt) continue;
+        const viewer = safeFindPlayer(pid);
+        if (!viewer || !mod.IsPlayerValid(viewer)) continue;
+        refreshReadyDialogRosterForViewer(viewer, pid);
+        syncReadyToggleButtonWidgetsForPid(pid);
+    }
+}
+
 //#endregion ----------------- Ready Dialog - Roster Render + Toggle Labels --------------------

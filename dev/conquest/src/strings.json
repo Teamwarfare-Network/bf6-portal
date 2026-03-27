@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v0.817)",
+        "title": "teamwarfare . net | TWL Conquest (v0.842)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -74,6 +74,19 @@
       "roundStarted": "Match started.",
       "teamSwitch": "You have switched teams!",
       "playerReadiedUp": "{0} has readied up: {1} / {2} Players Ready"
+    },
+    "boundary": {
+      "warningIcon": "!",
+      "preLiveMainBaseTitle": "MATCH IS NOT LIVE; RETURN TO YOUR MAIN BASE!",
+      "preLiveMainBaseTitle1": "MATCH IS NOT LIVE",
+      "preLiveMainBaseTitle2": "RETURN TO YOUR MAIN BASE!",
+      "enemyMainBaseBufferTitle": "ENEMY MAIN BASE OUT OF BOUNDS; LEAVE NOW!",
+      "enemyMainBaseBufferTitle1": "ENEMY MAIN BASE OUT OF BOUNDS",
+      "enemyMainBaseBufferTitle2": "LEAVE NOW!",
+      "groundCombatZoneTitle": "YOU ARE OUT OF BOUNDS; RETURN NOW!",
+      "groundCombatZoneTitle1": "YOU ARE OUT OF BOUNDS",
+      "groundCombatZoneTitle2": "RETURN NOW!",
+      "countdownSubtitleFormat": "You will die in {0}s..."
     },
     "joinPrompt": {
       "title": "TWL Presents: CONQUEST",

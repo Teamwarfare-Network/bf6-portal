@@ -55,7 +55,7 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     delete State.players.readyNeedsReconfirmByPid[pid];
     // Design assumption: players spawn in their main base; update immediately for roster display.
     State.players.inMainBaseByPid[pid] = true;
-    delete State.players.overTakeoffLimitByPid[pid];
+    resetPlayerBoundaryStateOnDeploy(eventPlayer, pid);
     updatePlayersReadyHudTextForAllPlayers();
     renderReadyDialogForAllVisibleViewers();
     updateHelpTextVisibilityForAllPlayers();
@@ -88,6 +88,7 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
     // Clear active objective engagement ownership on undeploy so stale swap/death samples cannot persist.
     delete State.conquest.capture.engagedObjIdByPid[pid];
+    resetPlayerBoundaryStateOnUndeployOrReset(pid);
     conquestPhase4OnPlayerLeaveOrResetPid(pid);
     conquestPhase4BOnPlayerLeaveOrResetPid(pid);
     twlConquestHudHideObjectiveFocusForPid(pid);

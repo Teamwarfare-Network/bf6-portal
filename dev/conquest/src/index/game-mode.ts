@@ -21,6 +21,7 @@ const CONQUEST_LIVE_STATE_SUBTICK_SECONDS = 0.12;
  * Why async functions: uses small engine waits (mod.Wait/await) to sequence UI rebuilds/timers safely without blocking the main thread.
  */
 async function onGameModeStartedImpl(): Promise<void> {
+    cleanupBoundaryAlarmRuntime();
     const detectedMapKey = detectMapKeyFromHqs();
     if (detectedMapKey) {
         applyMapConfig(detectedMapKey);
@@ -130,6 +131,7 @@ async function onGameModeStartedImpl(): Promise<void> {
                 }
                 updateVehicleDeployTimerHudForAllPlayers();
                 checkTakeoffLimitForAllPlayers();
+                tickBoundaryEnforcement();
                 if (State.match.victoryDialogActive) {
                     const elapsedSinceVictory = nowSecondBoundary - Math.floor(State.match.victoryStartElapsedSecondsSnapshot);
                     const remaining = MATCH_END_DELAY_SECONDS - elapsedSinceVictory;

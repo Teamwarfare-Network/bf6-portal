@@ -7,10 +7,12 @@ function IsPlayerInOwnMainBase(player: mod.Player, areaTrigger: mod.AreaTrigger)
     if (!player || !mod.IsPlayerValid(player)) return false;
     const triggerId = mod.GetObjId(areaTrigger);
     const teamId = mod.GetObjId(mod.GetTeam(player));
+    const team1TriggerId = getMainBaseTriggerIdForTeam(TeamID.Team1) ?? TEAM1_MAIN_BASE_TRIGGER_ID;
+    const team2TriggerId = getMainBaseTriggerIdForTeam(TeamID.Team2) ?? TEAM2_MAIN_BASE_TRIGGER_ID;
 
     return mod.Or(
-        mod.And(mod.Equals(triggerId, TEAM1_MAIN_BASE_TRIGGER_ID), mod.Equals(teamId, mod.GetObjId(mod.GetTeam(TeamID.Team1)))),
-        mod.And(mod.Equals(triggerId, TEAM2_MAIN_BASE_TRIGGER_ID), mod.Equals(teamId, mod.GetObjId(mod.GetTeam(TeamID.Team2))))
+        mod.And(mod.Equals(triggerId, team1TriggerId), mod.Equals(teamId, mod.GetObjId(mod.GetTeam(TeamID.Team1)))),
+        mod.And(mod.Equals(triggerId, team2TriggerId), mod.Equals(teamId, mod.GetObjId(mod.GetTeam(TeamID.Team2))))
     );
 }
 

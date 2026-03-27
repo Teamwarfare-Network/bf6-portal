@@ -72,13 +72,12 @@ const VEHICLE_SPAWNER_POLL_INTERVAL_SECONDS = 1.0;
 const VEHICLE_SPAWNER_BIND_DISTANCE_METERS = 7.0;
 const VEHICLE_SPAWNER_BIND_TIMEOUT_SECONDS = 2.0; // This should not be smaller than VEHICLE_SPAWNER_KEEP_ALIVE_SPAWNER_RADIUS
 
-// Main base trigger tuning.
-// Trigger IDs must match the map's spatial data object IDs.
-const TEAM1_MAIN_BASE_TRIGGER_ID = 501; // Do not change without updating spatial data.
-const TEAM2_MAIN_BASE_TRIGGER_ID = 500; // Do not change without updating spatial data.
-const TAKEOFF_LIMIT_HUD_OFFSET = 20; // Y offset above HUD floor that triggers takeoff-limit warning (world Y).
-
-// Ready-up auto-start gating:
+// Main base trigger fallback ids.
+  // These remain only as compatibility defaults until every map owns its main-base trigger ids in MapConfig.
+  const TEAM1_MAIN_BASE_TRIGGER_ID = 501;
+  const TEAM2_MAIN_BASE_TRIGGER_ID = 500;
+  
+  // Ready-up auto-start gating:
 // Decoupled from matchup presets; default starts at the solo 1v0 special-case and is user-adjustable in the Ready dialog.
 const DEFAULT_AUTO_START_MIN_ACTIVE_PLAYERS = 0;
 const AUTO_START_MIN_ACTIVE_PLAYERS_MIN = 0; // 0 maps to the solo "1 vs 0" special-case.
@@ -135,6 +134,15 @@ type ReadyDialogVehicleOption = {
 type AircraftCeilingVehicleState = {
     enforcing: boolean;
     lastNudgeAt: number;
+};
+
+type BoundaryPromptKind = "prelive_main_base" | "enemy_main_base_buffer" | "ground_combat_zone";
+
+type BoundaryViolationState = {
+    kind: BoundaryPromptKind;
+    startedAtSeconds: number;
+    expiresAtSeconds: number;
+    alarmPlayed: boolean;
 };
 
 // Matchup presets drive slot enablement/readouts; auto-start minimums are independent.

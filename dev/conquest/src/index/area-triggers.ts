@@ -75,9 +75,16 @@ function onPlayerEnterAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger:
 
         if (IsPlayerInOwnMainBase(eventPlayer, eventAreaTrigger)) {
             // track per-player main base state for UI display (authoritative gating comes later).
-            State.players.inMainBaseByPid[mod.GetObjId(eventPlayer)] = true;
+            const pid = safeGetPlayerId(eventPlayer);
+            if (pid !== undefined) {
+                State.players.inMainBaseByPid[pid] = true;
+            }
+            refreshPlayerBoundaryState(eventPlayer);
+            refreshReadyStatusForAllBuiltReadyDialogs();
             renderReadyDialogForAllVisibleViewers();
         }
+
+        onPlayerEnterBoundaryAreaTrigger(eventPlayer, eventAreaTrigger);
     } catch {
         return;
     }
@@ -89,29 +96,22 @@ function onPlayerExitAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: 
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
 
         if (!isPlayerDeployed(eventPlayer)) return;
+        if (!safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsAlive, false)) return;
 
         if (IsPlayerInOwnMainBase(eventPlayer, eventAreaTrigger)) {
-            State.players.inMainBaseByPid[mod.GetObjId(eventPlayer)] = false;
-            // Pre-live gating: if phase is NOT active, leaving main base forces NOT READY.
-            if (!isMatchLive()) {
-                State.players.readyByPid[mod.GetObjId(eventPlayer)] = false;
-                // Keep the HUD "X / Y PLAYERS READY" line in sync when leaving main base forces NOT READY.
-                updatePlayersReadyHudTextForAllPlayers();
-                updateHelpTextVisibilityForPlayer(eventPlayer);
-                if (State.round.countdown.isRequested) {
-                    cancelPregameCountdown();
+            const pid = safeGetPlayerId(eventPlayer);
+            if (pid !== undefined) {
+                State.players.inMainBaseByPid[pid] = false;
+                if (!isMatchLive()) {
+                    notePreliveMainBaseViolation(eventPlayer, pid);
                 }
-                // Player-only warning: they were ready, but left main base before live started.
-                // This is intentionally not broadcast globally; it is actionable guidance for the individual player.
-                sendHighlightedWorldLogMessage(
-                    mod.Message(STR_READYUP_RETURN_TO_BASE_NOT_LIVE),
-                    false,
-                    eventPlayer,
-                    STR_READYUP_RETURN_TO_BASE_NOT_LIVE
-                );
             }
+            refreshPlayerBoundaryState(eventPlayer);
+            refreshReadyStatusForAllBuiltReadyDialogs();
             renderReadyDialogForAllVisibleViewers();
         }
+
+        onPlayerExitBoundaryAreaTrigger(eventPlayer, eventAreaTrigger);
     } catch {
         return;
     }

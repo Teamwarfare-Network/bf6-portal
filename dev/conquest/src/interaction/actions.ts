@@ -600,6 +600,7 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
         }
         // Treat swap as immediately undeployed for HUD authority until the engine undeploy callback lands.
         State.players.deployedByPid[pid] = false;
+        resetPlayerBoundaryStateOnUndeployOrReset(pid);
         clearVehicleReservationForPid(pid);
         hideVehicleSpawnerUiFamilyForPid(pid);
         setPositionDebugWidgetsVisibleForPid(pid, false);

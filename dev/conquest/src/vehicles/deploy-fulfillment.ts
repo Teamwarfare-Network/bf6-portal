@@ -159,6 +159,28 @@ async function waitForSpawnedVehicleForSlot(slot: VehicleSpawnerSlot | undefined
     return tryGetSpawnedVehicleForSlot(slot);
 }
 
+function resetRejectedDirectSpawnVehicleForSlot(slot: VehicleSpawnerSlot, vehicle: mod.Vehicle | undefined): void {
+    const slotIndex = State.vehicles.slots.indexOf(slot);
+    const vehicleObjId = vehicle ? safeGetObjId(vehicle) : undefined;
+    if (vehicleObjId !== undefined) {
+        delete State.vehicles.vehicleToSlot[vehicleObjId];
+        if (slot.vehicleId === vehicleObjId) {
+            slot.vehicleId = -1;
+        }
+    }
+    slot.activeOwnerPid = undefined;
+    slot.expectingSpawn = false;
+    refreshVehicleSlotAuthoritativeState(slot);
+    if (slotIndex >= 0) {
+        clearVehicleDirectSpawnActiveTrackingForSlot(slotIndex, slot.spawnRequestToken);
+    }
+    if (vehicle) {
+        try {
+            mod.UnspawnObject(vehicle);
+        } catch {}
+    }
+}
+
 async function forceUndeployAfterVehicleDirectSpawnFailure(player: mod.Player): Promise<void> {
     await mod.Wait(VEHICLE_DIRECT_SPAWN_FULFILLMENT_UNDEPLOY_DELAY_SECONDS);
     if (!player || !mod.IsPlayerValid(player)) return;
@@ -390,6 +412,19 @@ async function conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(player: mod.P
         updateVehicleDeployTimerHudForAllPlayers();
         void forceUndeployAfterVehicleDirectSpawnFailure(player);
         return { consumedDeploy: true, fulfilled: false };
+    }
+
+    if (!doesVehicleMatchConfiguredSlotType(vehicle, slot)) {
+        resetRejectedDirectSpawnVehicleForSlot(slot, vehicle);
+        vehicle = useFreshAircraftAirDirectSpawn
+            ? await spawnFreshAircraftDirectSpawnVehicleForSlot(slot)
+            : await spawnDirectSpawnVehicleIfReady(slot);
+        if (!vehicle || !doesVehicleMatchConfiguredSlotType(vehicle, slot) || !isDirectSpawnDriverSeatAvailable(vehicle)) {
+            clearVehiclePendingSpawnRequestForSlot(slot);
+            updateVehicleDeployTimerHudForAllPlayers();
+            void forceUndeployAfterVehicleDirectSpawnFailure(player);
+            return { consumedDeploy: true, fulfilled: false };
+        }
     }
 
     mod.ForcePlayerToSeat(player, vehicle, VEHICLE_DIRECT_SPAWN_FULFILLMENT_SEAT_NUMBER);

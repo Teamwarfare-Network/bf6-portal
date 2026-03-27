@@ -97,6 +97,7 @@ function handleReadyDialogReadyButtonClick(eventPlayer: mod.Player, playerId: nu
     }
 
     updateHelpTextVisibilityForPid(pid);
+    refreshReadyStatusForAllBuiltReadyDialogs();
     renderReadyDialogForViewer(eventPlayer, playerId);
     renderReadyDialogForAllVisibleViewers();
     updatePlayersReadyHudTextForAllPlayers();
@@ -183,7 +184,7 @@ function tryHandleReadyDialogButtonEvent(
         UI_READY_DIALOG_MODE_RESET_ID,
         () => {
             if (isMatchLive()) return true;
-            resetReadyDialogModeConfigToDefaults();
+            resetReadyDialogModeConfigToDefaults(eventPlayer);
         }
     );
     if (resetHandled !== undefined) return resetHandled;

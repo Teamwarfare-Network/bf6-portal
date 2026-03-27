@@ -336,6 +336,15 @@ interface GameState {
             enforcementToken: number;
             vehicleStates: Record<number, AircraftCeilingVehicleState>;
         };
+        boundary: {
+            inEnemyMainBaseCoreByPid: Record<number, boolean>;
+            inEnemyMainBaseBufferByPid: Record<number, boolean>;
+            inGroundCombatZoneByPid: Record<number, boolean>;
+            activeViolationByPid: Record<number, BoundaryViolationState>;
+            alarmHandle?: any;
+            alarmReady: boolean;
+            validationWarnings: string[];
+        };
     };
     conquest: ConquestRuntimeScaffold;
     match: {
@@ -378,7 +387,6 @@ interface GameState {
         joinPromptLastPolicySuppressedAtSecondsByPid: Record<number, number>;
         joinPromptLastSuppressionReasonByPid: Record<number, number>;
         inMainBaseByPid: Record<number, boolean>;
-        overTakeoffLimitByPid: Record<number, boolean>;
         deployedByPid: Record<number, boolean>;
         disconnectedByPid: Record<number, boolean>;
         uiInputEnabledByPid: Record<number, boolean>;
@@ -403,6 +411,7 @@ interface GameState {
         clockWidgetCache: Record<number, ClockWidgetCacheEntry>;
         countdownWidgetCache: Record<number, CountdownWidgetCacheEntry>;
         vehicleDeployTimerCache: Record<number, VehicleDeployTimerHudCacheEntry>;
+        boundaryPromptCache: Record<number, BoundaryPromptWidgetCacheEntry>;
     };
 }
 

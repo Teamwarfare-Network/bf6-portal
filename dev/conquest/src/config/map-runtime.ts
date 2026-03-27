@@ -9,19 +9,16 @@ function getMapNameKey(mapKey: MapKey): number {
 }
 
 // Builds a fallback helicopter spawn list from tank spawn positions when no map-specific heli list exists.
-function buildHeliSpawnsFromTankSpawns(spawns: VehicleSpawnSpec[], team: TeamID): VehicleSpawnSpec[] {
-    const attackVehicle = team === TeamID.Team1 ? mod.VehicleList.AH64 : mod.VehicleList.Eurocopter;
-    const transportVehicle = team === TeamID.Team1 ? mod.VehicleList.UH60 : mod.VehicleList.UH60_Pax;
+function buildHeliSpawnsFromTankSpawns(spawns: VehicleSpawnAnchorSpec[], _team: TeamID): VehicleSpawnAnchorSpec[] {
     return spawns.map((spawn) => ({
         slotNumber: spawn.slotNumber,
         pos: spawn.pos,
         rot: spawn.rot,
-        vehicle: spawn.slotNumber === 3 ? transportVehicle : attackVehicle,
     }));
 }
 
 // Returns heli spawn specs for one team, falling back to tank-anchor-derived heli spawns when absent.
-function resolveHeliSpawnsForTeam(cfg: MapConfig, team: TeamID): VehicleSpawnSpec[] {
+function resolveHeliSpawnsForTeam(cfg: MapConfig, team: TeamID): VehicleSpawnAnchorSpec[] {
     if (team === TeamID.Team1) {
         if (cfg.team1HeliSpawns && cfg.team1HeliSpawns.length > 0) return cfg.team1HeliSpawns;
         return buildHeliSpawnsFromTankSpawns(cfg.team1TankSpawns, TeamID.Team1);
@@ -30,13 +27,12 @@ function resolveHeliSpawnsForTeam(cfg: MapConfig, team: TeamID): VehicleSpawnSpe
     return buildHeliSpawnsFromTankSpawns(cfg.team2TankSpawns, TeamID.Team2);
 }
 
-function cloneVehicleSpawnSpecs(spawns: VehicleSpawnSpec[] | undefined): VehicleSpawnSpec[] {
+function cloneVehicleSpawnAnchors(spawns: VehicleSpawnAnchorSpec[] | undefined): VehicleSpawnAnchorSpec[] {
     if (!spawns || spawns.length === 0) return [];
     return spawns.map((spawn) => ({
         slotNumber: spawn.slotNumber,
         pos: spawn.pos,
         rot: spawn.rot,
-        vehicle: spawn.vehicle,
     }));
 }
 
@@ -91,66 +87,120 @@ function getReadyDialogSelectedVehicleForKnobKey(knobKey: string, selectionByKey
     return options[clamped]?.vehicle;
 }
 
-function remapVehicleSpawnSpecsForRuntime(
-    baseSpawns: VehicleSpawnSpec[] | undefined,
+function remapVehicleSpawnAnchorsForRuntime(
+    baseSpawns: VehicleSpawnAnchorSpec[] | undefined,
     runtimeStartSlotNumber: number,
     maxCount: number
-): VehicleSpawnSpec[] {
-    const next = cloneVehicleSpawnSpecs(baseSpawns).slice(0, maxCount);
+): VehicleSpawnAnchorSpec[] {
+    const next = cloneVehicleSpawnAnchors(baseSpawns).slice(0, maxCount);
     for (let i = 0; i < next.length; i++) {
         next[i].slotNumber = runtimeStartSlotNumber + i;
     }
     return next;
 }
 
-function buildRuntimeVehicleSlotInventoryForTeam(cfg: MapConfig, team: TeamID): VehicleSpawnSpec[] {
-    const heliSpawns = resolveHeliSpawnsForTeam(cfg, team);
-    const fastMoverSpawns = team === TeamID.Team1 ? (cfg.team1FastMoverSpawns ?? []) : (cfg.team2FastMoverSpawns ?? []);
-    const jets = remapVehicleSpawnSpecsForRuntime(
-        team === TeamID.Team1 ? (cfg.team1JetSpawns ?? []) : (cfg.team2JetSpawns ?? []),
-        VEHICLE_PACKAGE_SLOT_BASE_JET,
-        2
-    );
-    const helis = remapVehicleSpawnSpecsForRuntime(
-        heliSpawns.slice(0, 2),
-        VEHICLE_PACKAGE_SLOT_BASE_HELI,
-        2
-    );
-    const ground = remapVehicleSpawnSpecsForRuntime(
-        team === TeamID.Team1 ? cfg.team1TankSpawns : cfg.team2TankSpawns,
-        VEHICLE_PACKAGE_SLOT_BASE_GROUND,
-        4
-    );
-    const fast = remapVehicleSpawnSpecsForRuntime(
-        fastMoverSpawns.slice(0, 2),
-        VEHICLE_PACKAGE_SLOT_BASE_FAST,
-        2
-    );
-    const transportHelis = remapVehicleSpawnSpecsForRuntime(
-        heliSpawns.slice(2, 4),
-        VEHICLE_PACKAGE_SLOT_BASE_FAST + 2,
-        2
-    );
-    return [...jets, ...helis, ...ground, ...fast, ...transportHelis];
+function createVehicleSpawnSpec(anchor: VehicleSpawnAnchorSpec, vehicle: mod.VehicleList): VehicleSpawnSpec {
+    return {
+        slotNumber: anchor.slotNumber,
+        pos: anchor.pos,
+        rot: anchor.rot,
+        vehicle,
+    };
 }
 
-function buildSelectedVehicleSpawnSpecsFromKnobs(
-    baseSpawns: VehicleSpawnSpec[] | undefined,
+function getVehicleBootstrapTypeForKnobKey(knobKey: string): mod.VehicleList {
+    const options = getReadyDialogVehicleOptionsForKnobKey(knobKey);
+    for (let i = 0; i < options.length; i++) {
+        if (options[i].vehicle !== undefined) return options[i].vehicle as mod.VehicleList;
+    }
+    return VEHICLE_ABRAMS;
+}
+
+function buildRuntimeVehicleSlotInventorySpecsFromKnobs(
+    baseSpawns: VehicleSpawnAnchorSpec[] | undefined,
     knobKeys: readonly string[],
     selectionByKey: Record<string, number>,
     runtimeStartSlotNumber: number
 ): VehicleSpawnSpec[] {
-    const remapped = remapVehicleSpawnSpecsForRuntime(baseSpawns, runtimeStartSlotNumber, knobKeys.length);
+    const remapped = remapVehicleSpawnAnchorsForRuntime(baseSpawns, runtimeStartSlotNumber, knobKeys.length);
+    const next: VehicleSpawnSpec[] = [];
+    for (let i = 0; i < remapped.length && i < knobKeys.length; i++) {
+        const knobKey = knobKeys[i];
+        const selectedVehicle = getReadyDialogSelectedVehicleForKnobKey(knobKey, selectionByKey) ?? getVehicleBootstrapTypeForKnobKey(knobKey);
+        next.push(createVehicleSpawnSpec(remapped[i], selectedVehicle));
+    }
+    return next;
+}
+
+function buildRuntimeTransportSlotInventoryForTeam(
+    cfg: MapConfig,
+    team: TeamID,
+    selectionByKey: Record<string, number>
+): VehicleSpawnSpec[] {
+    const fastMoverSpawns = team === TeamID.Team1 ? (cfg.team1FastMoverSpawns ?? []) : (cfg.team2FastMoverSpawns ?? []);
+    const heliSpawns = resolveHeliSpawnsForTeam(cfg, team);
+    const transportKnobKeys = team === TeamID.Team1
+        ? READY_DIALOG_TEAM1_FAST_KNOB_KEYS
+        : READY_DIALOG_TEAM2_FAST_KNOB_KEYS;
+    const next: VehicleSpawnSpec[] = [];
+
+    for (let i = 0; i < transportKnobKeys.length; i++) {
+        const knobKey = transportKnobKeys[i];
+        const selectedVehicle = getReadyDialogSelectedVehicleForKnobKey(knobKey, selectionByKey) ?? getVehicleBootstrapTypeForKnobKey(knobKey);
+        const runtimeSlotNumber = VEHICLE_PACKAGE_SLOT_BASE_FAST + i;
+        const useHeliAnchor = i >= 2 && isTransportHeliVehicleType(selectedVehicle);
+        const baseSpawn = useHeliAnchor
+            ? heliSpawns[i]
+            : fastMoverSpawns[i];
+        if (!baseSpawn) continue;
+
+        next.push(createVehicleSpawnSpec({
+            slotNumber: runtimeSlotNumber,
+            pos: baseSpawn.pos,
+            rot: baseSpawn.rot,
+        }, selectedVehicle));
+    }
+
+    return next;
+}
+
+function buildRuntimeVehicleSlotInventoryForTeam(cfg: MapConfig, team: TeamID): VehicleSpawnSpec[] {
+    const defaultGameMode = READY_DIALOG_GAME_MODE_OPTIONS[READY_DIALOG_GAME_MODE_DEFAULT_INDEX];
+    const selectionByKey = buildReadyDialogVehicleSelectionIndexByGameMode(cfg, defaultGameMode);
+    const jets = buildRuntimeVehicleSlotInventorySpecsFromKnobs(
+        team === TeamID.Team1 ? (cfg.team1JetSpawns ?? []) : (cfg.team2JetSpawns ?? []),
+        team === TeamID.Team1 ? READY_DIALOG_TEAM1_JET_KNOB_KEYS : READY_DIALOG_TEAM2_JET_KNOB_KEYS,
+        selectionByKey,
+        VEHICLE_PACKAGE_SLOT_BASE_JET,
+    );
+    const helis = buildRuntimeVehicleSlotInventorySpecsFromKnobs(
+        resolveHeliSpawnsForTeam(cfg, team).slice(0, 2),
+        team === TeamID.Team1 ? READY_DIALOG_TEAM1_HELI_KNOB_KEYS : READY_DIALOG_TEAM2_HELI_KNOB_KEYS,
+        selectionByKey,
+        VEHICLE_PACKAGE_SLOT_BASE_HELI,
+    );
+    const ground = buildRuntimeVehicleSlotInventorySpecsFromKnobs(
+        team === TeamID.Team1 ? cfg.team1TankSpawns : cfg.team2TankSpawns,
+        team === TeamID.Team1 ? READY_DIALOG_TEAM1_GROUND_KNOB_KEYS : READY_DIALOG_TEAM2_GROUND_KNOB_KEYS,
+        selectionByKey,
+        VEHICLE_PACKAGE_SLOT_BASE_GROUND,
+    );
+    const fast = buildRuntimeTransportSlotInventoryForTeam(cfg, team, selectionByKey);
+    return [...jets, ...helis, ...ground, ...fast];
+}
+
+function buildSelectedVehicleSpawnSpecsFromKnobs(
+    baseSpawns: VehicleSpawnAnchorSpec[] | undefined,
+    knobKeys: readonly string[],
+    selectionByKey: Record<string, number>,
+    runtimeStartSlotNumber: number
+): VehicleSpawnSpec[] {
+    const remapped = remapVehicleSpawnAnchorsForRuntime(baseSpawns, runtimeStartSlotNumber, knobKeys.length);
     const next: VehicleSpawnSpec[] = [];
     for (let i = 0; i < remapped.length && i < knobKeys.length; i++) {
         const selectedVehicle = getReadyDialogSelectedVehicleForKnobKey(knobKeys[i], selectionByKey);
         if (selectedVehicle === undefined) continue;
-        next.push({
-            slotNumber: remapped[i].slotNumber,
-            pos: remapped[i].pos,
-            rot: remapped[i].rot,
-            vehicle: selectedVehicle,
-        });
+        next.push(createVehicleSpawnSpec(remapped[i], selectedVehicle));
     }
     return next;
 }
@@ -192,6 +242,112 @@ function buildSelectedTransportSpawnSpecsForTeam(
 
 function getReadyDialogPresetPackage(cfg: MapConfig, gameModeKey: number): ReadyDialogPresetPackage | undefined {
     return cfg.readyDialogPresetPackages?.[gameModeKey];
+}
+
+type MapConfigObjIdValidationEntry = {
+    label: string;
+    objId?: number;
+    required: boolean;
+};
+
+function isValidConfiguredObjId(objId: number | undefined): objId is number {
+    return objId !== undefined && Number.isFinite(objId) && objId > 0;
+}
+
+function addUniqueValidationWarning(target: string[], warning: string): void {
+    for (let i = 0; i < target.length; i++) {
+        if (target[i] === warning) return;
+    }
+    target.push(warning);
+}
+
+function buildMapConfigObjIdValidationEntries(cfg: MapConfig): MapConfigObjIdValidationEntry[] {
+    const entries: MapConfigObjIdValidationEntry[] = [
+        { label: "team1MainBaseTriggerId", objId: cfg.team1MainBaseTriggerId, required: false },
+        { label: "team2MainBaseTriggerId", objId: cfg.team2MainBaseTriggerId, required: false },
+        { label: "team1MainBaseBufferTriggerId", objId: cfg.team1MainBaseBufferTriggerId, required: true },
+        { label: "team2MainBaseBufferTriggerId", objId: cfg.team2MainBaseBufferTriggerId, required: true },
+        { label: "groundCombatZoneTriggerId", objId: cfg.groundCombatZoneTriggerId, required: true },
+        { label: "team1VehicleDeploySpawnPointId", objId: cfg.team1VehicleDeploySpawnPointId, required: true },
+        { label: "team2VehicleDeploySpawnPointId", objId: cfg.team2VehicleDeploySpawnPointId, required: true },
+    ];
+
+    const capturePoints = cfg.capturePoints ?? [];
+    for (let i = 0; i < capturePoints.length; i++) {
+        entries.push({
+            label: `capturePoints[${i}](${capturePoints[i].label})`,
+            objId: capturePoints[i].objId,
+            required: true,
+        });
+    }
+
+    return entries;
+}
+
+function buildMapConfigValidationWarnings(mapKey: MapKey, cfg: MapConfig): string[] {
+    const warnings: string[] = [];
+    const entries = buildMapConfigObjIdValidationEntries(cfg);
+    const labelsByObjId: Record<number, string[]> = {};
+
+    for (let i = 0; i < entries.length; i++) {
+        const entry = entries[i];
+        if (!isValidConfiguredObjId(entry.objId)) {
+            if (entry.required) {
+                addUniqueValidationWarning(
+                    warnings,
+                    `[CONFIG WARNING] ${mapKey}: missing or invalid ${entry.label}; related runtime behavior will be disabled or unreliable.`
+                );
+            }
+            continue;
+        }
+
+        const objId = Math.floor(entry.objId);
+        if (!labelsByObjId[objId]) {
+            labelsByObjId[objId] = [];
+        }
+        labelsByObjId[objId].push(entry.label);
+    }
+
+    for (const objIdKey in labelsByObjId) {
+        const labels = labelsByObjId[Number(objIdKey)];
+        if (!labels || labels.length <= 1) continue;
+        addUniqueValidationWarning(
+            warnings,
+            `[CONFIG WARNING] ${mapKey}: duplicate ObjId ${objIdKey} is assigned to ${labels.join(", ")}.`
+        );
+    }
+
+    return warnings;
+}
+
+function syncActiveMapValidationWarnings(mapKey: MapKey, cfg: MapConfig): void {
+    State.round.boundary.validationWarnings = buildMapConfigValidationWarnings(mapKey, cfg);
+}
+
+function replayActiveMapValidationWarningsToPlayer(player: mod.Player): void {
+    if (!player || !mod.IsPlayerValid(player)) return;
+    const warnings = State.round.boundary.validationWarnings;
+    if (!warnings || warnings.length <= 0) return;
+    for (let i = 0; i < warnings.length; i++) {
+        sendHighlightedWorldLogMessage(
+            mod.Message(mod.stringkeys.twl.system.genericCounter, warnings[i]),
+            false,
+            player,
+            mod.stringkeys.twl.system.genericCounter
+        );
+    }
+}
+
+function replayActiveMapValidationWarningsToAllPlayers(): void {
+    const warnings = State.round.boundary.validationWarnings;
+    if (!warnings || warnings.length <= 0) return;
+    const players = mod.AllPlayers();
+    const count = mod.CountOf(players);
+    for (let i = 0; i < count; i++) {
+        const player = mod.ValueInArray(players, i) as mod.Player;
+        if (!player || !mod.IsPlayerValid(player)) continue;
+        replayActiveMapValidationWarningsToPlayer(player);
+    }
 }
 
 function buildReadyDialogVehicleSelectionIndexFromPresetPackage(
@@ -344,6 +500,11 @@ function applyMapConfig(mapKey: MapKey): void {
     rebuildActiveCapturePointConfigIndex();
     MAIN_BASE_TEAM1_POS = ACTIVE_MAP_CONFIG.team1Base;
     MAIN_BASE_TEAM2_POS = ACTIVE_MAP_CONFIG.team2Base;
+    MAIN_BASE_TRIGGER_ID_TEAM1 = ACTIVE_MAP_CONFIG.team1MainBaseTriggerId;
+    MAIN_BASE_TRIGGER_ID_TEAM2 = ACTIVE_MAP_CONFIG.team2MainBaseTriggerId;
+    MAIN_BASE_BUFFER_TRIGGER_ID_TEAM1 = ACTIVE_MAP_CONFIG.team1MainBaseBufferTriggerId;
+    MAIN_BASE_BUFFER_TRIGGER_ID_TEAM2 = ACTIVE_MAP_CONFIG.team2MainBaseBufferTriggerId;
+    GROUND_COMBAT_ZONE_TRIGGER_ID = ACTIVE_MAP_CONFIG.groundCombatZoneTriggerId;
     VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM1 = ACTIVE_MAP_CONFIG.team1VehicleDeploySpawnPointId;
     VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM2 = ACTIVE_MAP_CONFIG.team2VehicleDeploySpawnPointId;
     TEAM1_AIRCRAFT_SPAWN_VOLUMES = resolveVehicleSpawnVolumes(ACTIVE_MAP_CONFIG.team1AircraftSpawnVolumes);
@@ -352,7 +513,18 @@ function applyMapConfig(mapKey: MapKey): void {
     TEAM2_TANK_SPAWN_VOLUMES = resolveVehicleSpawnVolumes(ACTIVE_MAP_CONFIG.team2TankSpawnVolumes);
     TEAM1_VEHICLE_SLOT_INVENTORY_SPECS = buildRuntimeVehicleSlotInventoryForTeam(ACTIVE_MAP_CONFIG, TeamID.Team1);
     TEAM2_VEHICLE_SLOT_INVENTORY_SPECS = buildRuntimeVehicleSlotInventoryForTeam(ACTIVE_MAP_CONFIG, TeamID.Team2);
-    syncReadyDialogVehicleSelectionsFromActiveMapConfig();
+    syncActiveMapValidationWarnings(ACTIVE_MAP_KEY, ACTIVE_MAP_CONFIG);
+    const defaultGameMode = READY_DIALOG_GAME_MODE_OPTIONS[READY_DIALOG_GAME_MODE_DEFAULT_INDEX];
+    const defaultPlayersPerSide = getReadyDialogPresetPlayersPerSide(defaultGameMode);
+    const defaultVehicleSelections = buildReadyDialogVehicleSelectionIndexByGameMode(ACTIVE_MAP_CONFIG, defaultGameMode);
+    State.round.autoStartMinActivePlayers = defaultPlayersPerSide;
+    State.round.modeConfig.gameModeIndex = READY_DIALOG_GAME_MODE_DEFAULT_INDEX;
+    State.round.modeConfig.gameMode = defaultGameMode;
+    State.round.modeConfig.autoStartMinActivePlayers = defaultPlayersPerSide;
+    State.round.modeConfig.vehicleSelectionIndexByKey = { ...defaultVehicleSelections };
+    State.round.modeConfig.confirmed.gameMode = defaultGameMode;
+    State.round.modeConfig.confirmed.autoStartMinActivePlayers = defaultPlayersPerSide;
+    State.round.modeConfig.confirmed.vehicleSelectionIndexByKey = { ...defaultVehicleSelections };
     refreshSelectedVehicleSpawnPoolsFromModeConfig(true);
     refreshVehicleSpawnSpecsFromModeConfig();
     VEHICLE_SPAWN_YAW_OFFSET_DEG = ACTIVE_MAP_CONFIG.vehicleSpawnYawOffsetDeg;
@@ -362,6 +534,7 @@ function applyMapConfig(mapKey: MapKey): void {
     invalidateHiddenReadyDialogCacheForAllPlayers();
     updateReadyDialogMapLabelForAllPlayers();
     updateTeamNameWidgetsForAllPlayers();
+    replayActiveMapValidationWarningsToAllPlayers();
 }
 
 function getVehicleDeploySpawnPointIdForTeam(teamId: TeamID): number | undefined {
@@ -374,6 +547,37 @@ function getVehicleDeploySpawnPointIdForTeam(teamId: TeamID): number | undefined
     if (!Number.isFinite(spawnPointId)) return undefined;
     if (spawnPointId <= 0) return undefined;
     return Math.floor(spawnPointId);
+}
+
+function getMainBaseTriggerIdForTeam(teamId: TeamID): number | undefined {
+    const triggerId = teamId === TeamID.Team1
+        ? MAIN_BASE_TRIGGER_ID_TEAM1
+        : teamId === TeamID.Team2
+            ? MAIN_BASE_TRIGGER_ID_TEAM2
+            : undefined;
+    if (triggerId === undefined) return undefined;
+    if (!Number.isFinite(triggerId)) return undefined;
+    if (triggerId <= 0) return undefined;
+    return Math.floor(triggerId);
+}
+
+function getMainBaseBufferTriggerIdForTeam(teamId: TeamID): number | undefined {
+    const triggerId = teamId === TeamID.Team1
+        ? MAIN_BASE_BUFFER_TRIGGER_ID_TEAM1
+        : teamId === TeamID.Team2
+            ? MAIN_BASE_BUFFER_TRIGGER_ID_TEAM2
+            : undefined;
+    if (triggerId === undefined) return undefined;
+    if (!Number.isFinite(triggerId)) return undefined;
+    if (triggerId <= 0) return undefined;
+    return Math.floor(triggerId);
+}
+
+function getGroundCombatZoneTriggerId(): number | undefined {
+    if (GROUND_COMBAT_ZONE_TRIGGER_ID === undefined) return undefined;
+    if (!Number.isFinite(GROUND_COMBAT_ZONE_TRIGGER_ID)) return undefined;
+    if (GROUND_COMBAT_ZONE_TRIGGER_ID <= 0) return undefined;
+    return Math.floor(GROUND_COMBAT_ZONE_TRIGGER_ID);
 }
 
 function getVehicleSpawnVolumesForTeam(teamId: TeamID, volumeClass: VehicleSpawnVolumeClass): VehicleSpawnVolumeSpec[] {

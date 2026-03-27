@@ -4,6 +4,14 @@
 // Main base messaging string keys (Strings.json).
 const STR_READYUP_RETURN_TO_BASE_NOT_LIVE = mod.stringkeys.twl.notifications.readyupReturnToBaseNotLive;
 const STR_PLAYER_READIED_UP = mod.stringkeys.twl.notifications.playerReadiedUp;
+const STR_BOUNDARY_WARNING_ICON = mod.stringkeys.twl.boundary.warningIcon;
+const STR_BOUNDARY_PRELIVE_MAIN_BASE_TITLE_1 = mod.stringkeys.twl.boundary.preLiveMainBaseTitle1;
+const STR_BOUNDARY_PRELIVE_MAIN_BASE_TITLE_2 = mod.stringkeys.twl.boundary.preLiveMainBaseTitle2;
+const STR_BOUNDARY_ENEMY_MAIN_BASE_BUFFER_TITLE_1 = mod.stringkeys.twl.boundary.enemyMainBaseBufferTitle1;
+const STR_BOUNDARY_ENEMY_MAIN_BASE_BUFFER_TITLE_2 = mod.stringkeys.twl.boundary.enemyMainBaseBufferTitle2;
+const STR_BOUNDARY_GROUND_COMBAT_ZONE_TITLE_1 = mod.stringkeys.twl.boundary.groundCombatZoneTitle1;
+const STR_BOUNDARY_GROUND_COMBAT_ZONE_TITLE_2 = mod.stringkeys.twl.boundary.groundCombatZoneTitle2;
+const STR_BOUNDARY_COUNTDOWN_SUBTITLE_FORMAT = mod.stringkeys.twl.boundary.countdownSubtitleFormat;
 const STR_JOIN_PROMPT_TITLE = mod.stringkeys.twl.joinPrompt.title;
 const STR_JOIN_PROMPT_DISMISS = mod.stringkeys.twl.joinPrompt.dismiss;
 const STR_JOIN_PROMPT_DISMISS_SHOW_MORE_TIPS = mod.stringkeys.twl.joinPrompt.dismissShowMoreTips;
