@@ -189,45 +189,6 @@ function addTesterRow(
     }
 }
 
-// Legacy keep: retained intentionally for potential tester/admin value-row UI reuse.
-function addTesterRowWithValue(
-    eventPlayer: mod.Player,
-    containerBase: mod.UIWidget,
-    playerId: number,
-    baseX: number,
-    baseY: number,
-    decButtonBaseId: string,
-    incButtonBaseId: string,
-    labelBaseId: string,
-    valueBaseId: string,
-    labelKey: number,
-    initialValue: number,
-    buttonSizeX: number,
-    buttonSizeY: number,
-    labelSizeX: number,
-    valueSizeX: number,
-    decOffsetX: number,
-    labelOffsetX: number,
-    incOffsetX: number
-): void {
-    addTesterRow(eventPlayer, containerBase, playerId, baseX, baseY,
-        decButtonBaseId, incButtonBaseId, labelBaseId, labelKey,
-        buttonSizeX, buttonSizeY, labelSizeX, decOffsetX, labelOffsetX, incOffsetX);
-
-    const valueId = valueBaseId + playerId;
-    const valueX = baseX + incOffsetX - -3 - valueSizeX;
-
-    mod.AddUIText(valueId, mod.CreateVector(valueX, baseY + 11, 0), mod.CreateVector(valueSizeX, buttonSizeY - 22, 0),
-        mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, Math.floor(initialValue)), eventPlayer);
-    const VALUE_TEXT = safeFind(valueId);
-    if (VALUE_TEXT) {
-        mod.SetUITextSize(VALUE_TEXT, 12);
-        mod.SetUIWidgetBgAlpha(VALUE_TEXT, 0);
-        applyAdminPanelLabelTextColor(VALUE_TEXT);
-        mod.SetUIWidgetParent(VALUE_TEXT, containerBase);
-    }
-}
-
 // Adds the tester clock reset action button and its centered label.
 function addTesterResetButton(
     eventPlayer: mod.Player,

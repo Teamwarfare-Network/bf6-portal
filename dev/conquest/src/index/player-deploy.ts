@@ -55,6 +55,7 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     delete State.players.readyNeedsReconfirmByPid[pid];
     // Design assumption: players spawn in their main base; update immediately for roster display.
     State.players.inMainBaseByPid[pid] = true;
+    syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
     resetPlayerBoundaryStateOnDeploy(eventPlayer, pid);
     updatePlayersReadyHudTextForAllPlayers();
     renderReadyDialogForAllVisibleViewers();
@@ -94,6 +95,7 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     twlConquestHudHideObjectiveFocusForPid(pid);
     conquestPhase3MarkHudDirty();
     State.players.joinPromptTripleTapArmedByPid[pid] = false;
+    cleanupWorldInteractableRuntimeIconsForPid(pid);
     if (State.players.readyDialogData[pid]?.dialogVisible) {
         hideReadyDialogUI(eventPlayer);
     }

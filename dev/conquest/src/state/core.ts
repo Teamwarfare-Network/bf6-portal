@@ -18,15 +18,6 @@ function setUIInputModeForPlayer(player: mod.Player, enabled: boolean): void {
     State.players.uiInputEnabledByPid[mod.GetObjId(player)] = enabled;
 }
 
-// Updates highlighted-message debug counters and stores the last emitted key when provided.
-function noteHighlightedMessageSent(messageKey?: number): void {
-    State.debug.highlightedMessageCount = State.debug.highlightedMessageCount + 1;
-    State.debug.lastHighlightedMessageAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
-    if (messageKey !== undefined) {
-        State.debug.lastHighlightedMessageKey = messageKey;
-    }
-}
-
 // Phase helper for readability (avoids scattered enum comparisons).
 function isMatchLive(): boolean {
     return State.round.phase === MatchPhase.Live;
@@ -48,7 +39,6 @@ function hasPlayersOnTeam(team: mod.Team): boolean {
 // World-log wrapper; respects gameplay/debug gates and optional target.
 function sendHighlightedWorldLogMessage(message: mod.Message, isGameplay: boolean, target?: mod.Player | mod.Team, debugKey?: number): void {
     if (!shouldSendMessage(isGameplay, true)) return;
-    noteHighlightedMessageSent(debugKey);
     if (target) {
         // Route to the correct overload; Team cast-as-Player can silently drop messages after team swaps.
         if (mod.IsType(target, mod.Types.Team)) {

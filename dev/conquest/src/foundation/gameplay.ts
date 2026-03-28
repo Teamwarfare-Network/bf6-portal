@@ -21,10 +21,6 @@ const GAMEMODE_TARGET_SCORE_SAFETY_CAP = 9999; // Prevent engine auto-end from l
 const ENABLE_GAMEPLAY_MESSAGES = true; // Gameplay-critical messaging (both channels). This should be on at all times
 const ENABLE_DEBUG_NOTIFICATION_MESSAGES = false; // Green box notifications. Defaults to false.
 const ENABLE_DEBUG_HIGHLIGHTED_MESSAGES = false; // CP visibility debug logs in highlighted world log.
-const SHOW_DEBUG_TIMELIMIT = false; // Show the top-right time limit debug text for map end.
-const DEBUG_TEST_NAMES_TEAM_1 = 0; // Display-only roster rows for Team 1 (Ready dialog + Victory dialog).
-const DEBUG_TEST_NAMES_TEAM_2 = 0; // Display-only roster rows for Team 2 (Ready dialog + Victory dialog).
-const DEBUG_TEST_PLACEHOLDER_NAME_KEY = mod.stringkeys.twl.system.debugPlaceholderName;
 const TEAM_ROSTER_MAX_ROWS = 16;
 
 // Team identifiers (script uses T1/T2 semantics).

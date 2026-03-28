@@ -97,6 +97,8 @@ function applyMatchupPresetInternal(
     }
 
     applySpawnerEnablementForMatchup(clamped, true);
+    invalidateVehicleDeployTimerHudRenderSignaturesForAllPlayers();
+    prebuildAndRevealVehicleDeployTimerHudForAllPlayers();
 
     // If the new minimum is satisfied, auto-start when all active players are ready.
     if (announce && eventPlayer) {

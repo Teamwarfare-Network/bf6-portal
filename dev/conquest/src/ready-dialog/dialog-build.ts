@@ -37,8 +37,6 @@ function finalizeReadyDialogVisibility(
     if (borderLeft) mod.SetUIWidgetVisible(borderLeft, reveal);
     const borderRight = safeFind(UI_READY_DIALOG_BORDER_RIGHT_ID + playerId);
     if (borderRight) mod.SetUIWidgetVisible(borderRight, reveal);
-    const debug = safeFind(UI_READY_DIALOG_DEBUG_TIMELIMIT_ID + playerId);
-    if (debug) mod.SetUIWidgetVisible(debug, reveal && SHOW_DEBUG_TIMELIMIT);
     const mapLabel = safeFind(UI_READY_DIALOG_MAP_LABEL_ID + playerId);
     if (mapLabel) mod.SetUIWidgetVisible(mapLabel, reveal);
     const mapValue = safeFind(UI_READY_DIALOG_MAP_VALUE_ID + playerId);

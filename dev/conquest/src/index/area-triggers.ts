@@ -82,6 +82,7 @@ function onPlayerEnterAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger:
             refreshPlayerBoundaryState(eventPlayer);
             refreshReadyStatusForAllBuiltReadyDialogs();
             renderReadyDialogForAllVisibleViewers();
+            syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
         }
 
         onPlayerEnterBoundaryAreaTrigger(eventPlayer, eventAreaTrigger);
@@ -109,6 +110,7 @@ function onPlayerExitAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: 
             refreshPlayerBoundaryState(eventPlayer);
             refreshReadyStatusForAllBuiltReadyDialogs();
             renderReadyDialogForAllVisibleViewers();
+            syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
         }
 
         onPlayerExitBoundaryAreaTrigger(eventPlayer, eventAreaTrigger);

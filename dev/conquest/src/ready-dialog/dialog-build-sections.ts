@@ -238,29 +238,6 @@ function buildReadyDialogBottomButtonsSection(
         mod.SetUITextColor(coachLabel, COLOR_GRAY);
     }
 
-    const debugTimelimitId = UI_READY_DIALOG_DEBUG_TIMELIMIT_ID + playerId;
-    if (SHOW_DEBUG_TIMELIMIT) {
-        const debugTimeLimitSeconds = Math.floor(mod.GetMatchTimeElapsed() + mod.GetMatchTimeRemaining());
-        addReadyDialogText(
-            debugTimelimitId,
-            -320,
-            -160,
-            80,
-            28,
-            mod.UIAnchor.TopRight,
-            mod.UIAnchor.Center,
-            mod.Message(mod.stringkeys.twl.teamSwitch.debugTimeLimit, debugTimeLimitSeconds),
-            eventPlayer,
-            containerBase,
-            12,
-            true,
-            READY_DIALOG_LABEL_TEXT_COLOR
-        );
-    } else {
-        const existingDebug = safeFind(debugTimelimitId);
-        if (existingDebug) mod.SetUIWidgetVisible(existingDebug, false);
-    }
-
     // UI caching note: the admin toggle is created once with the dialog, while the admin panel contents stay lazy-built.
     ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, false);
 

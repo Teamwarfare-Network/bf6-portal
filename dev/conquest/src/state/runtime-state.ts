@@ -249,11 +249,6 @@ const State: GameState = {
         actionCount: 0,
         debugLoopActive: false,
     },
-    debug: {
-        highlightedMessageCount: 0,
-        lastHighlightedMessageAtSeconds: -1,
-        lastHighlightedMessageKey: -1,
-    },
     players: {
         readyDialogData: {},
         readyByPid: {},
@@ -270,6 +265,7 @@ const State: GameState = {
         joinPromptLastPolicySuppressedAtSecondsByPid: {},
         joinPromptLastSuppressionReasonByPid: {},
         inMainBaseByPid: {},
+        worldInteractableIconByPidByObjId: {},
         deployedByPid: {},
         disconnectedByPid: {},
         uiInputEnabledByPid: {},

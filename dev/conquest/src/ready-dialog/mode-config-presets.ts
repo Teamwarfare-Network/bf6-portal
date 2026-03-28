@@ -211,7 +211,7 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
     applyVehicleSpawnSpecsToExistingSlots();
     applySpawnerEnablementForMatchup(State.round.matchupPresetIndex, true);
     invalidateVehicleDeployTimerHudRenderSignaturesForAllPlayers();
-    updateVehicleDeployTimerHudForAllPlayers();
+    prebuildAndRevealVehicleDeployTimerHudForAllPlayers();
     setMatchStateTextForAllPlayers();
     updatePlayersReadyHudTextForAllPlayers();
 }

@@ -11,7 +11,6 @@ function getReadyDialogChromeWidgetIds(playerId: number): string[] {
         UI_READY_DIALOG_BORDER_BOTTOM_ID + playerId,
         UI_READY_DIALOG_BORDER_LEFT_ID + playerId,
         UI_READY_DIALOG_BORDER_RIGHT_ID + playerId,
-        UI_READY_DIALOG_DEBUG_TIMELIMIT_ID + playerId,
         UI_READY_DIALOG_MAP_LABEL_ID + playerId,
         UI_READY_DIALOG_MAP_VALUE_ID + playerId,
     ];
@@ -66,10 +65,14 @@ function resetReadyDialogAdminFamily(playerId: number): void {
 // Hides the Ready Dialog (cached widgets) and clears per-player dialog/admin visibility state.
 function hideReadyDialogUI(eventPlayer: mod.Player | number) {
     let playerId: any = eventPlayer;
+    let player: mod.Player | undefined;
 
     if (mod.IsType(eventPlayer, mod.Types.Player)) {
-        setUIInputModeForPlayer(eventPlayer as mod.Player, false);
-        playerId = mod.GetObjId(eventPlayer as mod.Player);
+        player = eventPlayer as mod.Player;
+        setUIInputModeForPlayer(player, false);
+        playerId = mod.GetObjId(player);
+    } else if (Number.isInteger(eventPlayer)) {
+        player = safeFindPlayer(eventPlayer as number);
     }
 
     setReadyDialogChromeVisible(playerId, false);
@@ -82,6 +85,15 @@ function hideReadyDialogUI(eventPlayer: mod.Player | number) {
     }
 
     updateHelpTextVisibilityForPid(playerId);
+    if (player && mod.IsPlayerValid(player)) {
+        const shouldRestoreCriticalHud = !isVehicleDeployLiveMenuOpenForPid(playerId);
+        if (shouldRestoreCriticalHud) {
+            prebuildVehicleDeployTimerHudHiddenForPlayer(player);
+            renderCriticalHudForReveal(player, playerId);
+        } else {
+            updateVehicleDeployTimerHudForPlayer(player);
+        }
+    }
 }
 
 // Closes Ready Dialog UI for every viewer that currently has the dialog open.

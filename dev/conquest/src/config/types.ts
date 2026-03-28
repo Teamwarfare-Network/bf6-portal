@@ -24,10 +24,17 @@ type VehicleSpawnVolumeSpec = {
 type CapturePointConfig = { objId: number; label: string; order: number };
 type WorldInteractableScope = "main_base" | "point";
 type WorldInteractableAction = "open_ready_dialog" | "open_vehicle_spawn_menu" | "open_ammo_resupply_menu";
+type WorldInteractableAnchorConfig = {
+    objId: number;
+    pos: mod.Vector;
+    ownerTeamId: TeamID;
+};
 type WorldInteractableConfig = {
     objId: number;
     scope: WorldInteractableScope;
     action: WorldInteractableAction;
+    ownerTeamId?: TeamID | 0;
+    iconAnchorPos?: mod.Vector;
 };
 type ReadyDialogPresetPackage = {
     playersPerSide: number;
@@ -46,6 +53,7 @@ type MapConfig = {
     team1VehicleDeploySpawnPointId?: number;
     team2VehicleDeploySpawnPointId?: number;
     mainBaseInteractableObjIds?: number[]; // Phase 7 main-base interactables; even ids map to ready dialog, odd ids map to vehicle menu.
+    mainBaseInteractableAnchors?: WorldInteractableAnchorConfig[]; // Explicit Phase 7 terminal marker anchors used for per-player runtime icon spawning.
     flagInteractableObjIds?: number[]; // Phase 7 flag/point interactables; all ids map to ammo resupply menu.
     team1Name: number;
     team2Name: number;

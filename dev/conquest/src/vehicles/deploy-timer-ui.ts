@@ -90,10 +90,17 @@ function isVehicleDeployTimerAdminOverrideEnabledForPid(pid: number): boolean {
 function getVehicleDeployTrackedSlotsForPlayer(player: mod.Player): VehicleSpawnerSlot[] {
     const teamId = safeGetTeamNumberFromPlayer(player, 0);
     if (teamId !== TeamID.Team1 && teamId !== TeamID.Team2) return [];
+    const selectedSlotNumbers: Record<number, boolean> = {};
+    const selectedSpecs = teamId === TeamID.Team1
+        ? TEAM1_VEHICLE_SPAWN_SPECS
+        : TEAM2_VEHICLE_SPAWN_SPECS;
+    for (let i = 0; i < selectedSpecs.length; i++) {
+        selectedSlotNumbers[selectedSpecs[i].slotNumber] = true;
+    }
     const slots = State.vehicles.slots.filter((slot) =>
-        slot.enabled
-        && slot.deployFlowTracked
+        slot.deployFlowTracked
         && slot.teamId === teamId
+        && selectedSlotNumbers[slot.slotNumber] === true
     );
     slots.sort((a, b) => a.slotNumber - b.slotNumber);
     return slots.slice(0, VEHICLE_DEPLOY_TIMER_MAX_ROWS);
@@ -316,7 +323,9 @@ function ensureVehicleDeployInfoPlate(
     height: number,
     fill: mod.UIBgFill,
     alpha: number,
-    color: mod.Vector
+    color: mod.Vector,
+    depth: mod.UIDepth = mod.UIDepth.AboveGameUI,
+    anchor: mod.UIAnchor = mod.UIAnchor.TopLeft
 ): mod.UIWidget | undefined {
     let widget = safeFind(name);
     if (!widget) {
@@ -326,7 +335,7 @@ function ensureVehicleDeployInfoPlate(
             playerId: player,
             position: [x, y],
             size: [width, height],
-            anchor: mod.UIAnchor.TopLeft,
+            anchor,
             visible: false,
             padding: 0,
             bgAlpha: alpha,
@@ -342,13 +351,13 @@ function ensureVehicleDeployInfoPlate(
     if (!widget) return undefined;
     try {
         mod.SetUIWidgetParent(widget, parent);
-        mod.SetUIWidgetAnchor(widget, mod.UIAnchor.TopLeft);
+        mod.SetUIWidgetAnchor(widget, anchor);
         mod.SetUIWidgetPosition(widget, mod.CreateVector(x, y, 0));
         mod.SetUIWidgetSize(widget, mod.CreateVector(width, height, 0));
         mod.SetUIWidgetBgColor(widget, color);
         mod.SetUIWidgetBgAlpha(widget, alpha);
         mod.SetUIWidgetBgFill(widget, fill);
-        mod.SetUIWidgetDepth(widget, mod.UIDepth.AboveGameUI);
+        mod.SetUIWidgetDepth(widget, depth);
         mod.SetUIWidgetVisible(widget, false);
     } catch {
         return undefined;
@@ -569,7 +578,7 @@ function ensureVehicleDeployActionButtonWidgets(
     return { border, blur, fill, button, textShadow, text };
 }
 
-// Builds the dedicated right-side modal backplate used only by the live-terminal variant.
+// Builds the dedicated live-terminal backplate as root-local chrome so it tracks the row lane exactly.
 function ensureVehicleDeployLivePanelWidgets(
     player: mod.Player,
     parent: mod.UIWidget,
@@ -579,13 +588,15 @@ function ensureVehicleDeployLivePanelWidgets(
         `VehicleDeployTimerLivePanelBorder_${pid}`,
         player,
         parent,
-        VEHICLE_DEPLOY_TIMER_LIVE_PANEL_X,
-        VEHICLE_DEPLOY_TIMER_LIVE_PANEL_Y,
+        VEHICLE_DEPLOY_TIMER_ROOT_OFFSET_X,
+        VEHICLE_DEPLOY_TIMER_ROOT_OFFSET_Y,
         VEHICLE_DEPLOY_TIMER_LIVE_PANEL_WIDTH,
         VEHICLE_DEPLOY_TIMER_LIVE_PANEL_HEIGHT,
         mod.UIBgFill.OutlineThin,
         1,
-        COLOR_WHITE
+        COLOR_WHITE,
+        mod.UIDepth.BelowGameUI,
+        mod.UIAnchor.CenterRight
     );
 
     const blur = border
@@ -599,7 +610,8 @@ function ensureVehicleDeployLivePanelWidgets(
             Math.max(1, VEHICLE_DEPLOY_TIMER_LIVE_PANEL_HEIGHT - 2),
             mod.UIBgFill.Blur,
             VEHICLE_DEPLOY_TIMER_LIVE_PANEL_BG_ALPHA,
-            COLOR_DARK_BLACK
+            VEHICLE_DEPLOY_TIMER_LIVE_PANEL_BG_COLOR,
+            mod.UIDepth.BelowGameUI
         )
         : undefined;
 
@@ -614,7 +626,8 @@ function ensureVehicleDeployLivePanelWidgets(
             Math.max(1, VEHICLE_DEPLOY_TIMER_LIVE_PANEL_HEIGHT - 2),
             mod.UIBgFill.Solid,
             VEHICLE_DEPLOY_TIMER_LIVE_PANEL_BG_ALPHA,
-            COLOR_DARK_BLACK
+            VEHICLE_DEPLOY_TIMER_LIVE_PANEL_BG_COLOR,
+            mod.UIDepth.BelowGameUI
         )
         : undefined;
 
@@ -624,7 +637,7 @@ function ensureVehicleDeployLivePanelWidgets(
     return { border, blur, fill };
 }
 
-// Builds the close button widgets reused by the live-terminal modal variant.
+// Builds the close button widgets as root-local chrome centered beneath the row lane.
 function ensureVehicleDeployCloseButtonWidgets(
     player: mod.Player,
     parent: mod.UIWidget,
@@ -1140,7 +1153,7 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
         return undefined;
     }
 
-    const livePanelWidgets = ensureVehicleDeployLivePanelWidgets(player, cache.root, pid);
+    const livePanelWidgets = ensureVehicleDeployLivePanelWidgets(player, uiRoot, pid);
     cache.livePanelBorder = livePanelWidgets.border;
     cache.livePanelBlur = livePanelWidgets.blur;
     cache.livePanelFill = livePanelWidgets.fill;
@@ -1234,7 +1247,7 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
             i,
             "ground",
             mod.stringkeys.twl.ui.groundDeploy,
-            VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_X - VEHICLE_DEPLOY_TIMER_ROW_GAP_X - VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_WIDTH,
+            VEHICLE_DEPLOY_TIMER_GROUND_BUTTON_X,
             baseY + VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_OFFSET_Y,
             VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_WIDTH,
             VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_HEIGHT
@@ -1541,7 +1554,7 @@ function applyVehicleDeployTimerRenderPlanContent(
         return false;
     }
 
-    applyVehicleDeployLiveTerminalChromeState(cache, renderPlan.liveTerminalOpen);
+    applyVehicleDeployLiveTerminalChromeState(cache, renderPlan.liveTerminalOpen && renderPlan.visible);
 
     const hiddenState = buildHiddenVehicleDeployTimerRowVisibilityState();
     const rowVisibilityStates: VehicleDeployTimerRowVisibilityState[] = [];
@@ -1560,6 +1573,9 @@ function setVehicleDeployTimerHudFamilyVisible(
     visible: boolean
 ): void {
     if (!cache.root) return;
+    if (!visible) {
+        applyVehicleDeployLiveTerminalChromeState(cache, false);
+    }
     setVehicleDeployTimerRootOnscreen(cache, visible);
     safeSetUIWidgetVisible(cache.root, visible);
     cache.lastVisibleState = visible;
@@ -1813,7 +1829,12 @@ function refreshVehicleDeployTimersForPlayerPreservingVisibility(player: mod.Pla
     if (!cache || !cache.root) return false;
     const renderPlan = buildVehicleDeployTimerRenderPlan(player, pid);
     const currentlyVisible = State.hudCache.vehicleDeployTimerCache[pid]?.lastVisibleState === true;
-    const nextVisibleState = currentlyVisible && renderPlan.visible;
+    const autoOwnsVisibility = (
+        !State.players.deployedByPid[pid]
+        || isVehicleDeployTimerAdminOverrideEnabledForPid(pid)
+        || isVehicleDeployLiveTerminalModeForPid(pid)
+    );
+    const nextVisibleState = renderPlan.visible && (currentlyVisible || autoOwnsVisibility);
     if (cache.lastRenderSignature === renderPlan.signature && cache.lastVisibleState === nextVisibleState) {
         syncVehicleDeployHudViewerInputMode(player, pid);
         return nextVisibleState;
@@ -1842,15 +1863,42 @@ function updateVehicleDeployTimerHudForAllPlayers(): void {
     }
 }
 
-// Marks cached vehicle-HUD render signatures dirty so the next content refresh cannot early-out on stale diff state.
+// Invalidates cached render signatures so the next refresh repaints visible passive viewers without rebuilding the tree.
 function invalidateVehicleDeployTimerHudRenderSignaturesForAllPlayers(): void {
     const caches = State.hudCache.vehicleDeployTimerCache;
-    for (const pidKey of Object.keys(caches)) {
-        const pid = Number(pidKey);
-        if (!Number.isInteger(pid)) continue;
-        const cache = caches[pid];
+    for (const pidKey in caches) {
+        const cache = caches[pidKey];
         if (!cache) continue;
         cache.lastRenderSignature = undefined;
+    }
+}
+
+// Rebuilds vehicle HUD content while hidden, then reveals it only for viewers that currently own that surface.
+function prebuildAndRevealVehicleDeployTimerHudForAllPlayers(): void {
+    const players = mod.AllPlayers();
+    const count = mod.CountOf(players);
+    for (let i = 0; i < count; i++) {
+        const player = mod.ValueInArray(players, i) as mod.Player;
+        if (!player || !mod.IsPlayerValid(player)) continue;
+        const pid = safeGetPlayerId(player);
+        if (pid === undefined) continue;
+
+        prebuildVehicleDeployTimerHudHiddenForPlayer(player);
+
+        if (State.players.readyDialogData[pid]?.dialogVisible) {
+            continue;
+        }
+
+        const shouldReveal = (
+            !State.players.deployedByPid[pid]
+            || isVehicleDeployTimerAdminOverrideEnabledForPid(pid)
+            || isVehicleDeployLiveTerminalModeForPid(pid)
+        );
+        if (!shouldReveal) {
+            continue;
+        }
+
+        revealVehicleDeployTimerHudForPlayer(player);
     }
 }
 

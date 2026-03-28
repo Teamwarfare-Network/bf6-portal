@@ -1,7 +1,7 @@
 # Conquest Issues
 
-Last Updated: 2026-03-23  
-Last Tested Build: `v0.817` (Phase 5 accepted closed; ready-dialog UI spam currently fixed; remaining open polish includes ready-dialog open latency and live-roster freshness)
+Last Updated: 2026-03-28  
+Last Tested Build: `v0.873` (main-base ready/deploy world terminals functional; live deploy menu functional; passive deployed vehicle HUD refresh fixed after config apply)
 
 ## Current Snapshot
 - `CQ_Bug_1`: Resolved
@@ -25,6 +25,92 @@ Last Tested Build: `v0.817` (Phase 5 accepted closed; ready-dialog UI spam curre
 - `CQ_Bug_19`: Open (deferred investigation)
 - `CQ_Bug_20`: Open (deferred polish)
 - `CQ_Bug_21`: Open (deferred polish)
+- `CQ_Bug_22`: Resolved
+- `CQ_Bug_23`: Resolved
+- `CQ_Bug_24`: Resolved
+
+## CQ_Bug_24
+Title: Passive Deployed Vehicle HUD Failed To Refresh After Config Apply
+
+Observed:
+- While the player was already deployed and using the passive right-side vehicle list, applying a ready-dialog config change would not refresh that passive list immediately.
+- The undeployed deploy-screen vehicle list could recover correctly, but the passive deployed list often stayed stale or missing until the player fully redeployed.
+- The live deploy terminal menu also went through several stale-row / dead-row variants while this regression was being chased.
+
+Expected:
+- Applying vehicle config should rebuild the vehicle HUD content behind the scenes while hidden, then re-show the correct owners without requiring a redeploy.
+- Deployed passive viewers, undeployed viewers, and live deploy terminal viewers should all resolve from the same authoritative selected slot set.
+
+Status:
+- Resolved.
+
+Resolution Summary:
+- Stopped treating config apply as a generic public refresh problem.
+- Switched the live/passive vehicle row source to the selected spawn-spec slot set instead of stale live `slot.enabled` state.
+- Restored the accepted hidden-build/reveal ownership contract:
+  - invalidate render signatures
+  - prebuild vehicle HUD content hidden for all viewers
+  - reveal only the viewers that currently own that surface
+- Removed the temporary vehicle-HUD `layoutVersion` workaround after the ownership path was corrected.
+
+Regression Context:
+- This bug regressed repeatedly because several fixes chased stale content or widget cache symptoms instead of the actual reveal owner.
+- The stable solution was architectural, not cosmetic: content must be rebuilt hidden and revealed by the current owner, not force-refreshed as if visibility ownership were unchanged.
+
+## CQ_Bug_23
+Title: Live Deploy Terminal Backplate Drifted Or Shaded Over The Controls
+
+Observed:
+- The live deploy terminal menu backplate repeatedly regressed into the wrong coordinate frame or wrong layer.
+- Reported bad variants included:
+  - plate shifted far left or into a different screen region
+  - plate tinting on top of buttons and labels instead of sitting behind them
+  - close button drifting away from the intended lane
+
+Expected:
+- The live deploy menu should reuse the existing vehicle HUD lane and place a dedicated backplate behind the actionable columns only.
+- The backplate should not introduce a second competing layout owner or shade over the row widgets.
+
+Status:
+- Resolved.
+
+Resolution Summary:
+- Re-centered the live panel around the existing vehicle HUD lane instead of mixing screen-space and container-local ownership.
+- Kept the controls on the existing reused vehicle HUD root and treated the plate as dedicated background chrome.
+- Restored the close button to a deliberate centered-below placement and kept it visually distinct without moving the reused row/button geometry.
+
+Regression Context:
+- The repeated regressions came from mixing coordinate frames and changing widget ownership without first confirming the actual rendering path.
+- The accepted fix was to stop guessing and treat the live panel as one background owner around the already-working reused HUD lane.
+
+## CQ_Bug_22
+Title: Main-Base Ready/Deploy World Icons Failed Per-Player Visibility And Anchor Placement
+
+Observed:
+- Main-base ready/deploy icons went through several broken states during implementation:
+  - visible globally instead of only inside own HQ
+  - missing entirely
+  - appearing near map center / origin instead of at the terminal
+  - visible in the wrong team context
+- The authored interact points were working, but icon ownership and placement were not stable.
+
+Expected:
+- Even `READY` and odd `DEPLOY` icons should appear only for the correct player while deployed inside their own HQ, at the authored terminal locations, and disappear cleanly when the player leaves HQ.
+
+Status:
+- Resolved.
+
+Resolution Summary:
+- Stopped depending on unreliable runtime-derived terminal positions for this path.
+- Moved to explicit authored terminal anchor data for the map and spawned one per-player runtime `WorldIcon` at that authored anchor.
+- Kept authored interact points shared and stable, while gating icon visibility and activation in script by team/HQ state.
+
+Regression Context:
+- Several earlier attempts mixed authored world icons, runtime-spawned world icons, and `AddUIIcon(...)` ownership patterns.
+- The stable checkpoint is:
+  - shared authored `WorldIcon` + `InteractPoint` pair for the terminal contract
+  - explicit authored anchor position for the runtime icon
+  - per-player runtime icon visibility controlled only by the HQ/team gate
 
 ## CQ_Bug_21
 Title: Ready-Dialog Open Latency After Interact

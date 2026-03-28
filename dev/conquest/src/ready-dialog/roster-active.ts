@@ -80,23 +80,18 @@ function getActivePlayers(): ActivePlayers_t {
     return { all, team1, team2 };
 }
 
-// Converts active players plus debug placeholders into roster display entries.
-function buildRosterDisplayEntries(players: mod.Player[], debugCount: number): RosterDisplayEntry[] {
+// Converts active players into roster display entries.
+function buildRosterDisplayEntries(players: mod.Player[]): RosterDisplayEntry[] {
     const entries: RosterDisplayEntry[] = [];
     for (const p of players) entries.push({ player: p });
-
-    const extraCount = Math.max(0, Math.floor(debugCount));
-    for (let i = 0; i < extraCount; i++) {
-        entries.push({ nameKey: DEBUG_TEST_PLACEHOLDER_NAME_KEY });
-    }
     return entries;
 }
 
 // Builds roster display data for both teams and returns the max row count for layout.
 function getRosterDisplayEntries(): RosterDisplay_t {
     const active = getActivePlayers();
-    const team1 = buildRosterDisplayEntries(active.team1, DEBUG_TEST_NAMES_TEAM_1);
-    const team2 = buildRosterDisplayEntries(active.team2, DEBUG_TEST_NAMES_TEAM_2);
+    const team1 = buildRosterDisplayEntries(active.team1);
+    const team2 = buildRosterDisplayEntries(active.team2);
     return { team1, team2, maxRows: Math.max(team1.length, team2.length) };
 }
 

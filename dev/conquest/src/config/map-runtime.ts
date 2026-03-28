@@ -280,15 +280,25 @@ function buildWorldInteractableConfigsFromMapConfig(cfg: MapConfig): WorldIntera
     const configs: WorldInteractableConfig[] = [];
     const mainBaseIds = cfg.mainBaseInteractableObjIds ?? [];
     const flagIds = cfg.flagInteractableObjIds ?? [];
+    const mainBaseAnchorByObjId: Record<number, WorldInteractableAnchorConfig> = {};
+
+    for (let i = 0; i < (cfg.mainBaseInteractableAnchors?.length ?? 0); i++) {
+        const anchor = cfg.mainBaseInteractableAnchors?.[i];
+        if (!anchor || !isValidConfiguredObjId(anchor.objId)) continue;
+        mainBaseAnchorByObjId[Math.floor(anchor.objId)] = anchor;
+    }
 
     for (let i = 0; i < mainBaseIds.length; i++) {
         const objId = Math.floor(mainBaseIds[i]);
         if (!isValidConfiguredObjId(objId)) continue;
         const action = classifyMainBaseInteractableActionFromObjId(objId);
+        const anchor = mainBaseAnchorByObjId[objId];
         configs.push({
             objId,
             scope: "main_base",
             action,
+            ownerTeamId: anchor?.ownerTeamId ?? 0,
+            iconAnchorPos: anchor?.pos,
         });
     }
 
@@ -589,6 +599,7 @@ function applyMapConfig(mapKey: MapKey): void {
     TEAM2_TANK_SPAWN_VOLUMES = resolveVehicleSpawnVolumes(ACTIVE_MAP_CONFIG.team2TankSpawnVolumes);
     TEAM1_VEHICLE_SLOT_INVENTORY_SPECS = buildRuntimeVehicleSlotInventoryForTeam(ACTIVE_MAP_CONFIG, TeamID.Team1);
     TEAM2_VEHICLE_SLOT_INVENTORY_SPECS = buildRuntimeVehicleSlotInventoryForTeam(ACTIVE_MAP_CONFIG, TeamID.Team2);
+    cleanupActiveWorldInteractableRuntimeIconsForAllPlayers();
     syncActiveWorldInteractableConfigs(buildWorldInteractableConfigsFromMapConfig(ACTIVE_MAP_CONFIG));
     configureActiveWorldInteractables();
     syncActiveMapValidationWarnings(ACTIVE_MAP_KEY, ACTIVE_MAP_CONFIG);

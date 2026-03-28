@@ -11,6 +11,7 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
 
     setUIInputModeForPlayer(player, false);
     resetVehicleDeployLiveMenuStateForPid(pid);
+    cleanupWorldInteractableRuntimeIconsForPid(pid);
 
     deleteJoinPromptWidget(joinPromptButtonTextName(pid));
     deleteJoinPromptWidget(joinPromptButtonName(pid));
@@ -215,6 +216,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
 
     State.players.disconnectedByPid[pid] = true;
     resetVehicleDeployLiveMenuStateForPid(pid);
+    cleanupWorldInteractableRuntimeIconsForPid(pid);
     removeReadyDialogInteractPoint(pid);
     cleanupHudForPid(pid);
     resetPlayerBoundaryStateOnUndeployOrReset(pid, true);
@@ -239,6 +241,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.joinPromptLastSuppressionReasonByPid[pid];
     delete State.players.uiInputEnabledByPid[pid];
     delete State.players.liveVehicleDeployMenuVisibleByPid[pid];
+    cleanupWorldInteractableRuntimeIconsForPid(pid);
     delete State.players.posDebugTransformSourceByPid[pid];
     delete State.players.posDebugVehicleObjIdByPid[pid];
     delete State.players.inMainBaseByPid[pid];

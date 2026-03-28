@@ -361,11 +361,6 @@ interface GameState {
         actionCount: number;
         debugLoopActive: boolean;
     };
-    debug: {
-        highlightedMessageCount: number;
-        lastHighlightedMessageAtSeconds: number;
-        lastHighlightedMessageKey: number;
-    };
     players: {
         // Property name is retained because existing UI/interaction modules still use it.
         readyDialogData: Record<number, readyDialogData_t>;
@@ -387,6 +382,7 @@ interface GameState {
         joinPromptLastPolicySuppressedAtSecondsByPid: Record<number, number>;
         joinPromptLastSuppressionReasonByPid: Record<number, number>;
         inMainBaseByPid: Record<number, boolean>;
+        worldInteractableIconByPidByObjId: Record<number, Record<number, mod.WorldIcon>>;
         deployedByPid: Record<number, boolean>;
         disconnectedByPid: Record<number, boolean>;
         uiInputEnabledByPid: Record<number, boolean>;

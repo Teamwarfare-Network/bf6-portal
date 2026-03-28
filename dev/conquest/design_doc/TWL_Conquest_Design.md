@@ -17,6 +17,7 @@ Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
   - Phase 7 pre/post-match events, once the current Phase 6 boundary tuning/validation pass is accepted
   - Phase 7 should start with the core end-flow/result/join-prompt/reset-setup slice; optional world-interactable terminal extensions should not block that start
   - Spawn behavior and restrictions are now intentionally deferred into dedicated Phase 8 after Phase 7
+  - Optional world-interactable note: main-base ready/deploy terminals are now functionally accepted; if world-interactable work resumes before core Phase 7 flow work, the next slice is the point/ammo interactable family
 - Current open Conquest bug status:
   - See `design_doc/conquest_issues.md` for the active issue list
   - `CQ_Bug_3` remains intentionally deferred, and later deferred polish bugs are tracked there explicitly
@@ -528,10 +529,12 @@ Player-impact telemetry additions:
   - odd `objId` => vehicle spawn menu
   - point interactables use explicit `1050-1099` objIds and all map to ammo resupply menu
   - parity/range rules are validator checks; the explicit map-config entry remains the source of truth
-- `CF-121` World-icon visibility settings contract:
-  - map config must carry per-object team visibility, visibility range, alpha/opacity, icon image, and color vector
-  - `SetWorldIconOwner(...)` is the only locally verified runtime world-icon visibility-owner control
-  - runtime setters for visibility range and alpha/opacity are currently unverified in local BF6 refs; until validated, those values are treated as authored-object requirements plus validation/debug metadata
+- `CF-121` Main-base terminal icon ownership contract:
+  - authored main-base `WorldIcon` + `InteractPoint` pairs still define the retained terminal anchor/pairing by explicit objId
+  - the visible main-base terminal icon is a per-player runtime `AddUIIcon(...)` attachment owned by script, not the shared authored `WorldIcon` image/text
+  - runtime main-base terminal icons are shown only while that player is deployed inside their own HQ and on the team that owns the terminal
+  - authored `InteractPoint`s remain shared objects; script gates actual activation by team/HQ state
+  - point/ammo interactables may adopt a different icon-ownership model later if needed
 - `CF-111` Validator capability matrix decision:
   - validator enforcement is warn-first / non-blocking in V1
   - classify each check as `runtime-observable` or `human/config`
@@ -2377,7 +2380,7 @@ Deliverables:
   - even `objId` opens the existing ready-up dialog
   - odd `objId` opens a vehicle spawn menu that reuses the current vehicle deploy HUD shell with teleport-based button fulfillment
   - point interactables use explicit `1050-1099` objIds and route to a new ammo resupply menu for launcher/gadget/ammo changes
-  - team visibility, visibility range, and icon alpha/opacity are configured per object id in map config
+  - main-base icon visibility is owned by per-player runtime HQ gating, while authored Godot `WorldIcon` + `InteractPoint` pairs still provide the shared terminal anchors
 - defined round-start behavior limitations and accepted constraints
 - reset/setup staging flow reintroduced from helis mode so pre-live vehicle config changes can force a clean vehicle spawn state before round start
 
@@ -2501,15 +2504,16 @@ World interactable feature contract:
 - Objective:
   - add a reusable map-config-driven world-interactable classification layer built from placed `WorldIcon` + `InteractPoint` pairs keyed by explicit object id arrays
 - Current shipped checkpoint:
-  - even main-base ids now show authored icon art plus a `READY` world-icon label, enable the authored interact point, and open the existing ready dialog
-  - odd main-base ids now show authored icon art plus a `DEPLOY` world-icon label, enable the authored interact point, and open the in-world live deploy menu that reuses the deploy-screen vehicle HUD family
+  - even main-base ids now hide the shared authored `WorldIcon`, show a per-player runtime `READY` icon only while that player is deployed inside their own HQ, keep the authored interact point enabled, and open the existing ready dialog
+  - odd main-base ids now hide the shared authored `WorldIcon`, show a per-player runtime `DEPLOY` icon only while that player is deployed inside their own HQ, keep the authored interact point enabled, and open the in-world live deploy menu that reuses the deploy-screen vehicle HUD family
   - point/ammo interactables remain authored placeholders only
-  - HQ-scoped visibility for these shared authored terminals is not implemented yet; exact per-player visibility on shared world icons/interact points is constrained by the BF6 owner API surface and needs an explicit fallback decision before implementation
+  - per-player visibility is currently implemented for the icon layer only; authored interact points remain shared and activation is still gated in script by team/HQ state
+  - current accepted regression record for the main-base slice lives in `design_doc/conquest_issues.md` so future HUD/world-terminal regressions can be compared against the resolved fixes before new changes are made
 - Locked first-pass direction:
   - `MapConfig.mainBaseInteractableObjIds[]` and `MapConfig.flagInteractableObjIds[]` are the authoritative explicit lists for retained interactables on a map; runtime must not discover them by scanning ids alone
   - Phase 7 world interactables are shared authored objects, not per-player runtime-spawned interact points
   - first-pass runtime should derive scope/action from the authored array plus the locked range/parity rubric
-  - even main-base ready-dialog terminals use authored Godot world-icon presentation plus an authored interact point with the same numeric id, while script simply enables and routes that authored pair
+  - even and odd main-base terminals keep authored `WorldIcon` + `InteractPoint` pairs with the same numeric id, but the shared authored `WorldIcon` is only an anchor object and script owns the actual visible per-player icon
   - interaction dispatch keys off configured object ids from `mod.GetObjId(eventInteractPoint)` inside the existing `OnPlayerInteract` export
   - main-base routing contract:
     - start at `1000`
@@ -2547,6 +2551,37 @@ World interactable feature contract:
     - place the dedicated `Close` action below the row stack so it dismisses the live menu without affecting player state
     - keep the current row button order, timer surfaces, and button positioning so the in-world version stays visually aligned with the deploy-screen version
     - keep the same practical vehicle outcome as the deploy screen, with only the final deploy/undeploy step removed because the player is already alive
+- Code-budget cleanup backlog:
+  - goal:
+    - recover durable bundle headroom before additional Phase 7 and Phase 8 features land
+  - confirmed non-wins:
+    - `src/Changelog.ts` is large in source, but it is not part of the emitted runtime bundle and should not be treated as a bundle-size recovery target
+  - safe-delete-now targets:
+    - remove permanently-disabled debug/help branches that are hard-gated off in `src/foundation/gameplay.ts`
+    - remove dead highlighted-world-log debug counters that are written but not consumed by gameplay or UI
+    - remove dead helper functions retained only for possible future admin/test reuse when they have no callers
+    - remove dormant ready-dialog debug-timelimit UI scaffolding if that path remains disabled
+    - remove roster debug-placeholder scaffolding if placeholder counts remain fixed at zero
+  - low-risk cleanup order for the next headroom pass:
+    - first: permanently-disabled debug/help branches plus dead debug counters/helpers
+    - second: dormant ready-dialog debug-timelimit and roster-placeholder scaffolding
+    - third: emitted comment stripping / other no-feature build-output reductions
+    - fourth: only if still needed, ship-scope decisions around admin/tester tooling
+  - safe-delete-later if tester tooling is no longer required in shipping bundle:
+    - admin-panel UI build/event/visibility modules
+    - position-debug widget family and its vehicle/soldier transform sampling loop
+  - refactor-for-size targets:
+    - `src/vehicles/deploy-timer-ui.ts` is the largest active UI owner and should be compacted before additional menu growth
+    - prioritize consolidating repeated plate builders, button builders, button visual-state handlers, and row visibility/reset helpers
+    - avoid rebuilding the full vehicle HUD tree for content-only refreshes; prefer render-signature invalidation plus in-place refresh
+  - gameplay features that should stay intact while cleanup happens:
+    - capture sounds remain required V1 scope
+    - accepted objective VO lane remains active
+    - ready dialog, victory dialog, world interactables, and live deploy menu remain production-owned features
+  - build-pipeline recovery target:
+    - emitted runtime comments should be stripped so bundle bytes are reserved for gameplay/UI logic rather than source commentary
+  - future map-config caution:
+    - explicit world-interactable anchor data is acceptable now, but additional maps should use a compact authored schema so Phase 7 icon-anchor data does not bloat linearly per map
 - Ammo resupply menu contract:
   - build this as a wholly new menu; it should not reuse the vehicle deploy HUD shell
   - initial scope:
@@ -2566,6 +2601,15 @@ World interactable feature contract:
     - `Resupply(...)`
   - exact mapping of player-facing launcher names (`RPG`, `Stinger`, `IGLA`) onto validated `mod.Gadgets` entries must be locked during implementation
   - exact slot ownership (`GadgetOne`, `GadgetTwo`, `ClassGadget`, `MiscGadget`) and persistence/reset rules must be locked before implementation
+  - point/ammo implementation prerequisites still needed:
+    - define the actual ammo-crate interaction/menu contract in writing before code work resumes
+    - author custom Godot point-local `AreaTrigger` volumes for those interactables
+    - decide whether those point-local trigger ids need explicit `MapConfig` ownership or can remain purely authored/map-side data
+    - lock when point/ammo icons and interact prompts should be visible relative to those authored trigger volumes
+  - next optional world-interactable slice:
+    - document the ammo-crate menu behavior first
+    - author the point-local Godot trigger volumes second
+    - only then wire the point interactables live
 - Implementation routing notes:
   - load the active interactable ObjId arrays from map config into lookup tables keyed by `objId`
   - derive `scope` / `action` from the source array plus the locked even/odd and `1050-1099` rubric
@@ -2635,10 +2679,10 @@ Codex To-Do Checklist:
 - [ ] Redesign the join prompt and validate its ownership/flow across first join, reconnect, and transition to match-live state.
 - [x] Extend `MapConfig` with explicit `mainBaseInteractableObjIds[]` and `flagInteractableObjIds[]` arrays.
 - [ ] Validate unique world-interactable ids plus the main-base even/odd pair rule and the `1050-1099` point rule before enabling any interactable.
-- [ ] Route even main-base ids into the existing ready-dialog open path without creating a second UI owner.
-- [ ] Reuse the current vehicle deploy HUD shell for odd main-base ids, add a clean back plate, and replace deploy/undeploy fulfillment with teleport-based button handlers.
+- [x] Route even main-base ids into the existing ready-dialog open path without creating a second UI owner.
+- [x] Reuse the current vehicle deploy HUD shell for odd main-base ids, add a clean back plate, and replace deploy/undeploy fulfillment with teleport-based button handlers.
 - [ ] Design and build the new ammo resupply menu for point interactables, including gadget-slot ownership and launcher/ammo mutation rules.
-- [ ] Apply team visibility from config using `SetWorldIconOwner(...)` and resolve how visibility range + alpha/opacity are enforced when no verified runtime setter exists yet.
+- [x] Apply per-player HQ/team visibility for main-base terminal icons through runtime icon ownership and script gating.
 - [ ] Validate interactable state gating across pre-match, reconnect, live lockout, and post-match/result ownership.
 - [ ] Determine and document round-start behavior limitations before expanding pre/post-match event flow.
 - [ ] Reintroduce the helis-mode reset/setup button for pre-match staging so changed vehicle configurations can clear stale grounded vehicles before live round start.
@@ -2652,6 +2696,8 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-03-28 | Main-base terminal acceptance + regression capture sync | Recorded the accepted current Phase 7 world-terminal checkpoint: even `READY` and odd `DEPLOY` main-base terminals are now functional, per-player icon placement/visibility uses explicit authored anchor data plus own-HQ gating, the live deploy menu reuses the deploy HUD shell, passive deployed vehicle-HUD refresh after config apply is back on hidden-prebuild/reveal ownership, and the next optional world-interactable slice is the point/ammo menu plus custom Godot-authored point-local `AreaTrigger` volumes | Phase 7, CF-119, CF-120, CF-121 | accepted | current status + world-interactable contract + ammo prerequisites + cleanup backlog + checklist + issues tracker consistency`
+  - `2026-03-27 | Main-base terminal icon ownership follow-up | Replaced the shared authored main-base world-icon visibility model with per-player runtime `AddUIIcon(...)` ownership anchored to the authored `WorldIcon` + `InteractPoint` pair, restricted icon visibility to players deployed inside their own HQ, and clarified that authored interact points remain shared while script gates activation by team/HQ state | Phase 7, CF-121 | accepted | world-interactable contract + implementation notes + schema constraints + rubric sync`
   - `2026-03-22 | Phase ordering swap request | Renumbered Pre & Post Match Events from Phase 6 to Phase 7 because functional boundary-zone work was promoted ahead of it; historical entries below may still reference the prior numbering | Phase 6, Phase 7 | accepted | TOC + current-status target + Phase 6/7 section order + consistency pass`
   - `2026-03-22 | Vehicle-spawn menu reuse and ammo-menu scope follow-up | Locked the odd main-base vehicle spawn menu to reuse the current vehicle deploy HUD shell with a dedicated back plate and teleport-based button fulfillment instead of deploy/undeploy flow, and defined the point ammo resupply menu as a wholly new UI responsible for launcher/gadget presence and ammo mutation using the locally verified equipment/ammo API surface | Phase 7 | accepted | Phase 7 deliverables + verification + open questions + world-interactable contract + checklist`
   - `2026-03-22 | World-interactable map-config and object-id follow-up | Extended the Phase 7 world-interactable design so every interactable is defined explicitly in map config per object id, locked the main-base even/odd objId routing (`1000+` ready dialog / vehicle spawn menu pairs), moved ammo resupply to explicit `1050+` point interactables, and added per-object team visibility/range/alpha requirements with a note that only team visibility currently has a verified runtime setter in local refs | Phase 7, CF-119, CF-120, CF-121 | accepted | map-schema rules + Phase 7 deliverables/prereqs/verification/open questions/contract/checklist`
