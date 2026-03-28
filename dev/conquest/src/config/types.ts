@@ -22,6 +22,13 @@ type VehicleSpawnVolumeSpec = {
     rotPlane: mod.Vector;
 };
 type CapturePointConfig = { objId: number; label: string; order: number };
+type WorldInteractableScope = "main_base" | "point";
+type WorldInteractableAction = "open_ready_dialog" | "open_vehicle_spawn_menu" | "open_ammo_resupply_menu";
+type WorldInteractableConfig = {
+    objId: number;
+    scope: WorldInteractableScope;
+    action: WorldInteractableAction;
+};
 type ReadyDialogPresetPackage = {
     playersPerSide: number;
     vehicleSelectionByKey: Record<string, mod.VehicleList | undefined>;
@@ -38,6 +45,8 @@ type MapConfig = {
     groundCombatZoneTriggerId?: number;
     team1VehicleDeploySpawnPointId?: number;
     team2VehicleDeploySpawnPointId?: number;
+    mainBaseInteractableObjIds?: number[]; // Phase 7 main-base interactables; even ids map to ready dialog, odd ids map to vehicle menu.
+    flagInteractableObjIds?: number[]; // Phase 7 flag/point interactables; all ids map to ammo resupply menu.
     team1Name: number;
     team2Name: number;
     aircraftCeiling: number;

@@ -101,3 +101,5 @@ const STR_HUD_CONQUEST_CAPTURE_STATUS_NEUTRALIZING = mod.stringkeys.twl.hud.conq
 const STR_HUD_CONQUEST_CAPTURE_STATUS_CONTESTING = mod.stringkeys.twl.hud.conquest.captureStatus.contesting;
 const STR_HUD_CONQUEST_CAPTURE_STATUS_CAPTURING = mod.stringkeys.twl.hud.conquest.captureStatus.capturing;
 const STR_SYSTEM_GENERIC_PERCENT = mod.stringkeys.twl.system.genericPercent;
+const STR_UI_READY = mod.stringkeys.twl.ui.ready;
+const STR_UI_SPAWN = mod.stringkeys.twl.ui.spawn;

@@ -11,11 +11,28 @@ const VEHICLE_DIRECT_SPAWN_DEPLOY_VERIFY_ATTEMPTS = 8;
 const VEHICLE_DIRECT_SPAWN_BIND_VERIFY_INTERVAL_SECONDS = 0.1;
 const VEHICLE_DIRECT_SPAWN_BIND_VERIFY_ATTEMPTS = 10;
 const VEHICLE_DIRECT_SPAWN_FRESH_AIR_FIND_RADIUS_METERS = 40;
+const VEHICLE_DIRECT_SPAWN_STALE_PAD_CLEANUP_RADIUS_METERS = 12;
 
 type ConquestVehicleDirectSpawnDeployResult = {
     consumedDeploy: boolean;
     fulfilled: boolean;
 };
+
+type VehiclePendingSpawnFailureMode = "undeploy" | "leave_alive";
+
+// Applies the shared failure policy for pending spawn seat attempts.
+function handlePendingVehicleSpawnSeatFailure(
+    player: mod.Player,
+    slot: VehicleSpawnerSlot,
+    failureMode: VehiclePendingSpawnFailureMode
+): ConquestVehicleDirectSpawnDeployResult {
+    clearVehiclePendingSpawnRequestForSlot(slot);
+    updateVehicleDeployTimerHudForAllPlayers();
+    if (failureMode === "undeploy") {
+        void forceUndeployAfterVehicleDirectSpawnFailure(player);
+    }
+    return { consumedDeploy: true, fulfilled: false };
+}
 
 function hasPlayerEnteredDeployedState(player: mod.Player): boolean {
     if (!player || !mod.IsPlayerValid(player)) return false;
@@ -189,6 +206,44 @@ async function forceUndeployAfterVehicleDirectSpawnFailure(player: mod.Player): 
     mod.UndeployPlayer(player);
 }
 
+// Returns true when a vehicle has no occupied seats and can be treated as stale spawn-pad clutter.
+function isVehicleUnoccupied(vehicle: mod.Vehicle | undefined): boolean {
+    if (!vehicle) return false;
+    const seatCount = mod.GetVehicleSeatCount(vehicle);
+    for (let seatIndex = 0; seatIndex < seatCount; seatIndex++) {
+        if (mod.IsVehicleSeatOccupied(vehicle, seatIndex)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Removes unbound, unoccupied vehicles lingering on a spawn pad before a fresh forced spawn.
+function cleanupStaleVehiclesNearDirectSpawnSlot(slot: VehicleSpawnerSlot): void {
+    const vehicles = mod.AllVehicles();
+    const count = mod.CountOf(vehicles);
+    for (let i = 0; i < count; i++) {
+        const vehicle = mod.ValueInArray(vehicles, i) as mod.Vehicle;
+        if (!vehicle) continue;
+        const vehicleObjId = getObjId(vehicle);
+        if (State.vehicles.vehicleToSlot[vehicleObjId] !== undefined) continue;
+        if (!isVehicleUnoccupied(vehicle)) continue;
+        let vehiclePos: mod.Vector | undefined = undefined;
+        try {
+            vehiclePos = mod.GetObjectPosition(vehicle);
+        } catch {
+            vehiclePos = undefined;
+        }
+        if (!vehiclePos) continue;
+        if (mod.DistanceBetween(vehiclePos, slot.spawnPos) > VEHICLE_DIRECT_SPAWN_STALE_PAD_CLEANUP_RADIUS_METERS) continue;
+        try {
+            mod.UnspawnObject(vehicle);
+        } catch {
+            // Best-effort cleanup: stale clutter should not block the main spawn path.
+        }
+    }
+}
+
 async function spawnDirectSpawnVehicleIfReady(slot: VehicleSpawnerSlot): Promise<mod.Vehicle | undefined> {
     let vehicle = tryGetSpawnedVehicleForSlot(slot);
     if (vehicle) return vehicle;
@@ -196,6 +251,7 @@ async function spawnDirectSpawnVehicleIfReady(slot: VehicleSpawnerSlot): Promise
 
     const slotIndex = State.vehicles.slots.indexOf(slot);
     if (slotIndex === -1) return undefined;
+    cleanupStaleVehiclesNearDirectSpawnSlot(slot);
     const success = await forceSpawnWithRetry(slotIndex);
     if (!success) return undefined;
 
@@ -371,7 +427,11 @@ async function verifyPlayerForcedIntoAnyDirectSpawnSeat(player: mod.Player, vehi
     return false;
 }
 
-async function conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(player: mod.Player): Promise<ConquestVehicleDirectSpawnDeployResult> {
+// Resolves the pending claimed slot by seating an already-deployed player into the prepared vehicle.
+async function tryFulfillPendingVehicleDirectSpawnSeatForPlayer(
+    player: mod.Player,
+    failureMode: VehiclePendingSpawnFailureMode
+): Promise<ConquestVehicleDirectSpawnDeployResult> {
     const slot = getPendingVehicleDirectSpawnSlotForPlayer(player);
     const pendingMode = getPendingVehicleDirectSpawnModeForPlayer(player);
     if (!slot) {
@@ -397,10 +457,7 @@ async function conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(player: mod.P
             ? await spawnFreshAircraftDirectSpawnVehicleForSlot(slot)
             : await spawnDirectSpawnVehicleIfReady(slot);
         if (!vehicle) {
-            clearVehiclePendingSpawnRequestForSlot(slot);
-            updateVehicleDeployTimerHudForAllPlayers();
-            void forceUndeployAfterVehicleDirectSpawnFailure(player);
-            return { consumedDeploy: true, fulfilled: false };
+            return handlePendingVehicleSpawnSeatFailure(player, slot, failureMode);
         }
     } else if (!isDirectSpawnDriverSeatAvailable(vehicle)) {
         clearVehiclePendingSpawnRequestForSlot(slot);
@@ -408,10 +465,7 @@ async function conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(player: mod.P
     }
 
     if (!isDirectSpawnDriverSeatAvailable(vehicle)) {
-        clearVehiclePendingSpawnRequestForSlot(slot);
-        updateVehicleDeployTimerHudForAllPlayers();
-        void forceUndeployAfterVehicleDirectSpawnFailure(player);
-        return { consumedDeploy: true, fulfilled: false };
+        return handlePendingVehicleSpawnSeatFailure(player, slot, failureMode);
     }
 
     if (!doesVehicleMatchConfiguredSlotType(vehicle, slot)) {
@@ -420,10 +474,7 @@ async function conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(player: mod.P
             ? await spawnFreshAircraftDirectSpawnVehicleForSlot(slot)
             : await spawnDirectSpawnVehicleIfReady(slot);
         if (!vehicle || !doesVehicleMatchConfiguredSlotType(vehicle, slot) || !isDirectSpawnDriverSeatAvailable(vehicle)) {
-            clearVehiclePendingSpawnRequestForSlot(slot);
-            updateVehicleDeployTimerHudForAllPlayers();
-            void forceUndeployAfterVehicleDirectSpawnFailure(player);
-            return { consumedDeploy: true, fulfilled: false };
+            return handlePendingVehicleSpawnSeatFailure(player, slot, failureMode);
         }
     }
 
@@ -435,10 +486,7 @@ async function conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(player: mod.P
         fulfilled = await verifyPlayerForcedIntoAnyDirectSpawnSeat(player, vehicle);
     }
     if (!fulfilled) {
-        clearVehiclePendingSpawnRequestForSlot(slot);
-        updateVehicleDeployTimerHudForAllPlayers();
-        void forceUndeployAfterVehicleDirectSpawnFailure(player);
-        return { consumedDeploy: true, fulfilled: false };
+        return handlePendingVehicleSpawnSeatFailure(player, slot, failureMode);
     }
 
     const pid = safeGetPlayerId(player);
@@ -448,4 +496,19 @@ async function conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(player: mod.P
     }
     updateVehicleDeployTimerHudForAllPlayers();
     return { consumedDeploy: true, fulfilled: true };
+}
+
+// Resolves the pending claimed slot on deploy using the direct-spawn seat path.
+async function conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(player: mod.Player): Promise<ConquestVehicleDirectSpawnDeployResult> {
+    return tryFulfillPendingVehicleDirectSpawnSeatForPlayer(player, "undeploy");
+}
+
+// Resolves a claimed slot from the live world-terminal menu without undeploying the already-alive player.
+async function beginVehicleLiveTerminalSpawnForPlayer(player: mod.Player): Promise<boolean> {
+    if (!player || !mod.IsPlayerValid(player)) return false;
+    const pid = safeGetPlayerId(player);
+    if (pid === undefined) return false;
+    if (!State.players.deployedByPid[pid]) return false;
+    const result = await tryFulfillPendingVehicleDirectSpawnSeatForPlayer(player, "leave_alive");
+    return result.fulfilled;
 }

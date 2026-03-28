@@ -521,7 +521,7 @@ Player-impact telemetry additions:
   - spawn sets must not contain duplicate ObjIds
   - when phase requires spawn sets, empty required sets emit warnings and force safe fallback behavior
 - `CF-100` Capability-bounded validator rule: map validation must be restricted to checks proven observable in Portal runtime; unsupported type-introspection assumptions are forbidden.
-- `CF-119` World-interactable schema ownership: `MapConfig.worldInteractables[]` is the canonical explicit per-map list for retained world interactables; runtime must not infer interactables by scanning ranges alone.
+- `CF-119` World-interactable schema ownership: `MapConfig.mainBaseInteractableObjIds[]` and `MapConfig.flagInteractableObjIds[]` are the canonical explicit per-map lists for retained world interactables; runtime must not infer interactables by scanning ranges alone.
 - `CF-120` World-interactable ObjId allocation contract:
   - main-base interactables start at `1000` and are authored as even/odd pairs
   - even `objId` => ready dialog
@@ -2371,7 +2371,7 @@ Deliverables:
 - ready-up dialog cleanup and end-of-round transition cleanup
 - redesign join prompt
 - optional physical ready-up flow using shared main-base world interactables configured from placed `WorldIcon` + `InteractPoint` pairs
-- explicit map-config-driven world-interactable registry keyed by object id for retained main-base and point interactables
+- explicit map-config-driven world-interactable ObjId arrays for retained main-base and point interactables
 - retained world-interactable routing contract:
   - main-base interactables start at `1000` and are authored as even/odd pairs
   - even `objId` opens the existing ready-up dialog
@@ -2404,19 +2404,14 @@ Godot/map prerequisites:
 
 - optional camera anchors only if cinematic flow is added
 - authored/placed main-base and point `WorldIcon` + `InteractPoint` pairs for every retained world interactable
-- explicit `MapConfig.worldInteractables[]` entry for every retained interactable object id; do not rely on range/parity discovery without a concrete config entry
-- required per-object map-config data:
-  - `objId`
-  - `worldIconId` and `interactPointId` if the authored pair does not simply reuse `objId`
-  - scope (`main_base` or `point`)
-  - action kind
-  - shared position/anchor
+- explicit `MapConfig.mainBaseInteractableObjIds[]` and `MapConfig.flagInteractableObjIds[]` coverage for every retained interactable object id; do not rely on global range scans without a concrete map-config entry
+- first-pass authored object requirements remain in Godot:
+  - `WorldIcon` and `InteractPoint` placement
   - icon image
-  - color vector
-  - team visibility/owner
+  - color
+  - visibility ownership
   - visibility range
   - icon alpha/opacity
-  - owning team/base or point label
 - main-base authoring rule: start at `1000`, authored as even/odd pairs, with even reserved for ready dialog and odd reserved for vehicle spawn menu
 - point authoring rule: use explicit `1050-1099` objIds and route all of them to the ammo resupply menu
 
@@ -2426,7 +2421,7 @@ Verification:
 - final ticket/result accuracy and single end transition check
 - ready-up dialog cleanup/regression checks across pre-match, live, and post-match transitions
 - redesigned join-prompt behavior/regression checks across initial join, reconnect, and live-state handoff
-- map-config world-interactable registry validation: unique ids, explicit entries, valid scope/action combinations, and even/odd or `1050-1099` rule compliance
+- map-config world-interactable array validation: unique ids, explicit entries, and even/odd or `1050-1099` rule compliance
 - world icon image/color/team-visibility checks across all retained interactables
 - visibility range + alpha/opacity validation against authored object settings unless a verified runtime setter is later added
 - physical ready-up interactable ownership/availability checks across pre-match, reconnect, and live-state lockout
@@ -2461,8 +2456,8 @@ Open design questions / locks still needed before implementation:
   - lock the teleport-arrival contract for the reused vehicle spawn menu (`teleport the player` instead of deploy fulfillment)
   - lock the gadget-slot ownership, persistence, cooldown, and reset rules for the ammo resupply menu
 - map-config schema lock for world interactables:
-  - lock the exact `MapConfig.worldInteractables[]` shape and validator behavior
-  - keep the explicit per-object list authoritative even when range/parity conventions are also enforced
+  - lock the exact `MapConfig.mainBaseInteractableObjIds[]` / `MapConfig.flagInteractableObjIds[]` shape and validator behavior
+  - keep the explicit map-config arrays authoritative even when range/parity conventions are also enforced
 - round-start behavior limitations:
   - define exactly what can change pre-live, what requires setup/reset, and what is forbidden once the match is live
   - define how config changes interact with already-deployed players, already-spawned vehicles, and pending claims/reservations
@@ -2504,11 +2499,17 @@ Human-owned design input still needed before full Phase 7 implementation:
 World interactable feature contract:
 
 - Objective:
-  - add a reusable map-config-driven world-interactable registry built from placed `WorldIcon` + `InteractPoint` pairs keyed by explicit object id
+  - add a reusable map-config-driven world-interactable classification layer built from placed `WorldIcon` + `InteractPoint` pairs keyed by explicit object id arrays
+- Current shipped checkpoint:
+  - even main-base ids now show authored icon art plus a `READY` world-icon label, enable the authored interact point, and open the existing ready dialog
+  - odd main-base ids now show authored icon art plus a `DEPLOY` world-icon label, enable the authored interact point, and open the in-world live deploy menu that reuses the deploy-screen vehicle HUD family
+  - point/ammo interactables remain authored placeholders only
+  - HQ-scoped visibility for these shared authored terminals is not implemented yet; exact per-player visibility on shared world icons/interact points is constrained by the BF6 owner API surface and needs an explicit fallback decision before implementation
 - Locked first-pass direction:
-  - `MapConfig.worldInteractables[]` is the authoritative explicit list for retained interactables on a map; runtime must not discover them by scanning ids alone
+  - `MapConfig.mainBaseInteractableObjIds[]` and `MapConfig.flagInteractableObjIds[]` are the authoritative explicit lists for retained interactables on a map; runtime must not discover them by scanning ids alone
   - Phase 7 world interactables are shared authored objects, not per-player runtime-spawned interact points
-  - script owns the world icon image/color/visibility and the interact-point enabled state
+  - first-pass runtime should derive scope/action from the authored array plus the locked range/parity rubric
+  - even main-base ready-dialog terminals use authored Godot world-icon presentation plus an authored interact point with the same numeric id, while script simply enables and routes that authored pair
   - interaction dispatch keys off configured object ids from `mod.GetObjId(eventInteractPoint)` inside the existing `OnPlayerInteract` export
   - main-base routing contract:
     - start at `1000`
@@ -2517,25 +2518,17 @@ World interactable feature contract:
   - point routing contract:
     - use explicit `1050-1099` objIds
     - all point interactables => `open_ammo_resupply_menu`
-  - team visibility is a per-object config field and should use `mod.SetWorldIconOwner(...)` when the icon is not globally visible
-  - visibility range and alpha/opacity are also per-object config fields, but runtime setters for those are currently unverified in local BF6 refs; until validated, treat them as authored-object requirements that the validator/debug layer checks against human authoring
+  - team visibility, icon art, visibility range, and alpha/opacity stay authored on the placed Godot objects in this first pass unless later schema expansion is needed
   - keep the current ready-dialog open path as fallback while the physical terminal flow is validated
-- Required per-object config data:
-  - `objId`
-  - `worldIconId`
-  - `interactPointId`
-  - `scope` (`main_base` or `point`)
-  - `action`
-  - position/anchor
-  - icon image
-  - color vector
-  - team visibility/owner
-  - visibility range
-  - icon alpha/opacity
-  - owning team/base or point label
+- First-pass required map-config data:
+  - `mainBaseInteractableObjIds[]`
+  - `flagInteractableObjIds[]`
+- First-pass authored object requirements:
+  - matching `WorldIcon` + `InteractPoint` objects in Godot
+  - correct image/color/visibility settings on those placed objects
 - Phase-state rules:
   - pre-match/setup: main-base even/odd pairs may be enabled; point ammo interactables remain disabled or placeholder-only until the ammo menu is designed
-  - live: ready-dialog and vehicle-spawn interactables lock unless explicitly approved for live use; point ammo interactables may enable only when the ammo resupply menu is defined
+  - live: main-base ready-dialog and vehicle-spawn interactables are approved for use; point ammo interactables may enable only when the ammo resupply menu is defined
   - post-match/result display: disable all world interactables unless ownership explicitly returns to setup/reset
 - Vehicle spawn menu contract:
   - reuse as much of the current vehicle deploy HUD family as possible:
@@ -2546,8 +2539,14 @@ World interactable feature contract:
   - do not fork a second vehicle-slot/timer UI model if the current deploy HUD widgets can be shown directly with different ownership and action callbacks
   - swap only the button-fulfillment behavior:
     - current deploy path claims a slot and routes through `beginVehicleDirectSpawnDeployForPlayer(...)`
-    - world-menu path should route through a teleport-based handler instead of undeploy/deploy fulfillment
+    - world-menu path should route through an already-alive fulfillment handler that claims/spawns/seats directly without going through undeploy/deploy
   - keep the same vehicle list + button layout unless teleport semantics force a clearly different wording pass later
+  - current shipped checkpoint for this menu:
+    - reuse the current deploy HUD root and row positions for an in-world alive-player variant
+    - add a dedicated right-side backplate behind the actionable columns so the live panel stays readable over gameplay without obscuring the full row lane
+    - place the dedicated `Close` action below the row stack so it dismisses the live menu without affecting player state
+    - keep the current row button order, timer surfaces, and button positioning so the in-world version stays visually aligned with the deploy-screen version
+    - keep the same practical vehicle outcome as the deploy screen, with only the final deploy/undeploy step removed because the player is already alive
 - Ammo resupply menu contract:
   - build this as a wholly new menu; it should not reuse the vehicle deploy HUD shell
   - initial scope:
@@ -2555,6 +2554,9 @@ World interactable feature contract:
     - replenish demolition charge / C4 ammo
     - acquire or replace launcher gadgets such as RPG / Stinger / IGLA labels
     - modify the player gadget slots and gadget ammo counts under one authoritative menu flow
+  - authoring note:
+    - `WeaponCase_AR_01` and `WeaponCase_Sniper_01` are approved universal world props for this menu family
+    - treat both as indestructible and available on all maps
   - locally verified runtime mutation surface that may back this menu:
     - `AddEquipment(...)`
     - `RemoveEquipment(...)`
@@ -2565,11 +2567,10 @@ World interactable feature contract:
   - exact mapping of player-facing launcher names (`RPG`, `Stinger`, `IGLA`) onto validated `mod.Gadgets` entries must be locked during implementation
   - exact slot ownership (`GadgetOne`, `GadgetTwo`, `ClassGadget`, `MiscGadget`) and persistence/reset rules must be locked before implementation
 - Implementation routing notes:
-  - load the active interactable list from map config into lookup tables keyed by `objId` and/or `interactPointId`
-  - configure authored world icons/interact points during `OnGameModeStarted`
-  - use `mod.SetWorldIconOwner(...)` for team-restricted visibility
-  - validate unique ids, explicit config coverage, even/odd main-base pair rules, and `1050-1099` point rules before enabling the interactables
-  - if visibility range + alpha/opacity cannot be applied in script, emit validator/debug warnings that the authored object settings must match map config
+  - load the active interactable ObjId arrays from map config into lookup tables keyed by `objId`
+  - derive `scope` / `action` from the source array plus the locked even/odd and `1050-1099` rubric
+  - validate unique ids, explicit array coverage, even/odd main-base pair rules, and `1050-1099` point rules before enabling the interactables
+  - treat image/color/visibility/range/alpha as authored-object validation concerns in the first pass
   - ready-dialog interactables should call the same local dialog-open path already used by the current interact flow so UI ownership stays single-source
   - vehicle-spawn interactables should route through a menu-open path that reuses the current vehicle deploy HUD and swaps in teleport fulfillment callbacks
   - ammo-resupply interactables should route through a dedicated new menu owner/path rather than piggybacking on ready-dialog or vehicle-HUD ownership
@@ -2579,88 +2580,36 @@ World interactable feature contract:
 type WorldInteractableAction = 'open_ready_dialog' | 'open_vehicle_spawn_menu' | 'open_ammo_resupply_menu';
 type WorldInteractableScope = 'main_base' | 'point';
 
-type WorldInteractableConfig = {
-    objId: number;
-    worldIconId?: number;
-    interactPointId?: number;
-    scope: WorldInteractableScope;
-    action: WorldInteractableAction;
-    position: mod.Vector;
-    color: mod.Vector;
-    image: mod.WorldIconImages;
-    ownerVisibility: 'all' | 'team1' | 'team2';
-    visibilityRangeMeters: number;
-    iconAlpha: number;
-};
+type WorldInteractableAction = 'open_ready_dialog' | 'open_vehicle_spawn_menu' | 'open_ammo_resupply_menu';
 
-const WORLD_INTERACTABLES: WorldInteractableConfig[] = [
-    {
-        objId: 1000,
-        scope: 'main_base',
-        action: 'open_ready_dialog',
-        position: mod.CreateVector(25, 10, 40),
-        color: mod.CreateVector(0, 1, 0),
-        image: mod.WorldIconImages.Triangle,
-        ownerVisibility: 'team1',
-        visibilityRangeMeters: 40,
-        iconAlpha: 1.0,
-    },
-    {
-        objId: 1001,
-        scope: 'main_base',
-        action: 'open_vehicle_spawn_menu',
-        position: mod.CreateVector(29, 10, 40),
-        color: mod.CreateVector(1, 0.75, 0),
-        image: mod.WorldIconImages.Flag,
-        ownerVisibility: 'team1',
-        visibilityRangeMeters: 40,
-        iconAlpha: 1.0,
-    },
-    {
-        objId: 1051,
-        scope: 'point',
-        action: 'open_ammo_resupply_menu',
-        position: mod.CreateVector(120, 8, -45),
-        color: mod.CreateVector(1, 1, 1),
-        image: mod.WorldIconImages.Cross,
-        ownerVisibility: 'all',
-        visibilityRangeMeters: 25,
-        iconAlpha: 0.8,
-    },
-];
+const MAIN_BASE_INTERACTABLE_OBJ_IDS = [1000, 1001, 1002, 1003];
+const FLAG_INTERACTABLE_OBJ_IDS = [1050, 1051];
 
-export function OnGameModeStarted(): void {
-    for (const interactable of WORLD_INTERACTABLES) {
-        const worldIcon = mod.GetWorldIcon(interactable.worldIconId ?? interactable.objId);
-        const interactPoint = mod.GetInteractPoint(interactable.interactPointId ?? interactable.objId);
-
-        mod.SetWorldIconPosition(worldIcon, interactable.position);
-        mod.SetWorldIconImage(worldIcon, interactable.image);
-        mod.SetWorldIconColor(worldIcon, interactable.color);
-        mod.EnableWorldIconImage(worldIcon, true);
-
-        // Team visibility is locally verified. Range/alpha remain map-config-owned authoring
-        // data until a runtime setter is validated in the BF6 refs.
-        if (interactable.ownerVisibility !== 'all') {
-            applyWorldIconOwner(worldIcon, interactable.ownerVisibility); // local helper
-        }
-
-        mod.EnableInteractPoint(interactPoint, true);
+function resolveWorldInteractableAction(objId: number): WorldInteractableAction | undefined {
+    if (objId >= 1000 && objId <= 1049) {
+        return objId % 2 === 0
+            ? 'open_ready_dialog'
+            : 'open_vehicle_spawn_menu';
     }
+
+    if (objId >= 1050 && objId <= 1099) {
+        return 'open_ammo_resupply_menu';
+    }
+
+    return undefined;
 }
 
 export function OnPlayerInteract(eventPlayer: mod.Player, eventInteractPoint: mod.InteractPoint): void {
-    const interactable = WORLD_INTERACTABLES.find(
-        (config) => (config.interactPointId ?? config.objId) === mod.GetObjId(eventInteractPoint)
-    );
-    if (!interactable) return;
+    const objId = mod.GetObjId(eventInteractPoint);
+    const action = resolveWorldInteractableAction(objId);
+    if (!action) return;
 
-    if (interactable.action === 'open_ready_dialog') {
+    if (action === 'open_ready_dialog') {
         openReadyDialogFromWorldTerminal(eventPlayer); // local Conquest hook; reuse existing ready-dialog path
         return;
     }
 
-    if (interactable.action === 'open_vehicle_spawn_menu') {
+    if (action === 'open_vehicle_spawn_menu') {
         openVehicleSpawnMenu(eventPlayer); // reuse current vehicle deploy HUD shell with teleport-based fulfillment
         return;
     }
@@ -2684,7 +2633,7 @@ Codex To-Do Checklist:
 - [ ] Enforce single end transition path through end latch (no duplicate finalize paths).
 - [ ] Clean up the ready-up dialog for pre-match/post-match transition correctness and ownership clarity.
 - [ ] Redesign the join prompt and validate its ownership/flow across first join, reconnect, and transition to match-live state.
-- [ ] Extend `MapConfig` with an explicit `worldInteractables[]` registry keyed per object id.
+- [x] Extend `MapConfig` with explicit `mainBaseInteractableObjIds[]` and `flagInteractableObjIds[]` arrays.
 - [ ] Validate unique world-interactable ids plus the main-base even/odd pair rule and the `1050-1099` point rule before enabling any interactable.
 - [ ] Route even main-base ids into the existing ready-dialog open path without creating a second UI owner.
 - [ ] Reuse the current vehicle deploy HUD shell for odd main-base ids, add a clean back plate, and replace deploy/undeploy fulfillment with teleport-based button handlers.

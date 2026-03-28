@@ -8,6 +8,8 @@ let ACTIVE_MAP_KEY: MapKey = "Blackwell_Fields";
 let ACTIVE_MAP_CONFIG = MAP_CONFIGS[ACTIVE_MAP_KEY];
 let ACTIVE_CAPTURE_POINT_CONFIGS: CapturePointConfig[] = ACTIVE_MAP_CONFIG.capturePoints ?? [];
 const ACTIVE_CAPTURE_POINT_CONFIG_BY_OBJ_ID: Record<number, CapturePointConfig> = {};
+let ACTIVE_WORLD_INTERACTABLE_CONFIGS: WorldInteractableConfig[] = [];
+const ACTIVE_WORLD_INTERACTABLE_CONFIG_BY_OBJ_ID: Record<number, WorldInteractableConfig> = {};
 
 // Rebuilds the active capture-point config lookup map keyed by ObjId.
 function rebuildActiveCapturePointConfigIndex(): void {
@@ -23,6 +25,28 @@ function rebuildActiveCapturePointConfigIndex(): void {
 // Returns active capture-point config for one ObjId, if present.
 function getActiveCapturePointConfigByObjId(objId: number): CapturePointConfig | undefined {
     return ACTIVE_CAPTURE_POINT_CONFIG_BY_OBJ_ID[objId];
+}
+
+// Rebuilds the active world-interactable lookup map keyed by ObjId.
+function rebuildActiveWorldInteractableConfigIndex(): void {
+    for (const key of Object.keys(ACTIVE_WORLD_INTERACTABLE_CONFIG_BY_OBJ_ID)) {
+        delete ACTIVE_WORLD_INTERACTABLE_CONFIG_BY_OBJ_ID[Number(key)];
+    }
+    for (let i = 0; i < ACTIVE_WORLD_INTERACTABLE_CONFIGS.length; i++) {
+        const cfg = ACTIVE_WORLD_INTERACTABLE_CONFIGS[i];
+        ACTIVE_WORLD_INTERACTABLE_CONFIG_BY_OBJ_ID[cfg.objId] = cfg;
+    }
+}
+
+// Replaces the active derived world-interactable config list and refreshes the ObjId lookup.
+function syncActiveWorldInteractableConfigs(configs: WorldInteractableConfig[]): void {
+    ACTIVE_WORLD_INTERACTABLE_CONFIGS = configs.slice();
+    rebuildActiveWorldInteractableConfigIndex();
+}
+
+// Returns active world-interactable config for one ObjId, if present.
+function getActiveWorldInteractableConfigByObjId(objId: number): WorldInteractableConfig | undefined {
+    return ACTIVE_WORLD_INTERACTABLE_CONFIG_BY_OBJ_ID[objId];
 }
 
 // Baseline team inference from static main-base anchor coordinates.
@@ -61,3 +85,4 @@ let VEHICLE_SPAWN_YAW_OFFSET_DEG = ACTIVE_MAP_CONFIG.vehicleSpawnYawOffsetDeg;
 const MAP_DETECT_DISTANCE_METERS = 5.0;
 
 rebuildActiveCapturePointConfigIndex();
+rebuildActiveWorldInteractableConfigIndex();

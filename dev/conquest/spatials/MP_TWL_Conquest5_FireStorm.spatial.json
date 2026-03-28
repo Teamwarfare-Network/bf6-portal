@@ -1245,67 +1245,67 @@
             "points": [
                 {
                     "x": 469.236,
-                    "y": 115.3369,
+                    "y": 123.0088,
                     "z": -154.2134
                 },
                 {
                     "x": 499.1264,
-                    "y": 115.3369,
+                    "y": 123.0088,
                     "z": -110.402
                 },
                 {
                     "x": 547.7312,
-                    "y": 115.3369,
+                    "y": 123.0088,
                     "z": -93.973
                 },
                 {
                     "x": 693.586,
-                    "y": 115.3369,
+                    "y": 123.0088,
                     "z": -90.117
                 },
                 {
                     "x": 700.387,
-                    "y": 115.3369,
+                    "y": 123.0088,
                     "z": -226.0712
                 },
                 {
                     "x": 684.754,
-                    "y": 115.3369,
+                    "y": 123.0088,
                     "z": -320.7504
                 },
                 {
                     "x": 379.496,
-                    "y": 115.3369,
+                    "y": 123.0088,
                     "z": -553.534
                 },
                 {
                     "x": 341.434,
-                    "y": 115.3369,
+                    "y": 123.0088,
                     "z": -496.424
                 },
                 {
                     "x": 470.854,
-                    "y": 115.3369,
+                    "y": 123.0088,
                     "z": -388.906
                 },
                 {
                     "x": 496.2366,
-                    "y": 115.3369,
+                    "y": 123.0088,
                     "z": -340.955
                 },
                 {
                     "x": 511.9771,
-                    "y": 115.3369,
+                    "y": 123.0088,
                     "z": -296.1494
                 },
                 {
                     "x": 501.5863,
-                    "y": 115.3369,
+                    "y": 123.0088,
                     "z": -250.8113
                 },
                 {
                     "x": 467.232,
-                    "y": 115.3369,
+                    "y": 123.0088,
                     "z": -205.6324
                 }
             ]
@@ -1321,7 +1321,7 @@
             },
             "up": {
                 "x": 0,
-                "y": 1,
+                "y": 0.257029,
                 "z": 0
             },
             "front": {
@@ -2149,7 +2149,7 @@
         },
         {
             "name": "CapturePoint Sector Ordering",
-            "ObjId": 1000,
+            "ObjId": -1,
             "CapturePoints": [
                 "CapturePoint A",
                 "CapturePoint B",
@@ -2182,8 +2182,16 @@
             ]
         },
         {
-            "name": "WorldIcon T2 MainBase A",
+            "name": "WorldIcon T2 MainBase Even 1",
             "ObjId": 1000,
+            "iconColor": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "iconImagePicker": "Flag",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 2,
             "type": "WorldIcon",
             "right": {
                 "x": 0.734216,
@@ -2205,11 +2213,46 @@
                 "y": 114.503,
                 "z": -222.605
             },
-            "id": "WorldIconsInteractables/WorldIcon T2 MainBase A"
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Even 1"
         },
         {
-            "name": "WorldIcon T2 MainBase B",
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1000,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.734216,
+                "y": 0,
+                "z": 0.678916
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.678916,
+                "y": 0,
+                "z": 0.734216
+            },
+            "position": {
+                "x": 543.66,
+                "y": 114.503,
+                "z": -222.605
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Even 1/InteractPoint"
+        },
+        {
+            "name": "WorldIcon T2 MainBase Odd 1",
             "ObjId": 1001,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Assist",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 2,
             "type": "WorldIcon",
             "right": {
                 "x": 0.734216,
@@ -2231,11 +2274,46 @@
                 "y": 114.503,
                 "z": -225.179
             },
-            "id": "WorldIconsInteractables/WorldIcon T2 MainBase B"
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Odd 1"
         },
         {
-            "name": "WorldIcon T2 MainBase C",
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1001,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.734216,
+                "y": 0,
+                "z": 0.678916
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.678916,
+                "y": 0,
+                "z": 0.734216
+            },
+            "position": {
+                "x": 540.783,
+                "y": 114.503,
+                "z": -225.179
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Odd 1/InteractPoint"
+        },
+        {
+            "name": "WorldIcon T2 MainBase Even 2",
             "ObjId": 1002,
+            "iconColor": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "iconImagePicker": "Flag",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 2,
             "type": "WorldIcon",
             "right": {
                 "x": 0.951067,
@@ -2257,11 +2335,46 @@
                 "y": 113.856,
                 "z": -179.954
             },
-            "id": "WorldIconsInteractables/WorldIcon T2 MainBase C"
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Even 2"
         },
         {
-            "name": "WorldIcon T2 MainBase D",
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1002,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.951067,
+                "y": 0,
+                "z": 0.308984
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.308984,
+                "y": 0,
+                "z": 0.951067
+            },
+            "position": {
+                "x": 576.474,
+                "y": 113.856,
+                "z": -179.954
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Even 2/InteractPoint"
+        },
+        {
+            "name": "WorldIcon T2 MainBase Odd 2",
             "ObjId": 1003,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Assist",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 2,
             "type": "WorldIcon",
             "right": {
                 "x": 0.951067,
@@ -2283,11 +2396,46 @@
                 "y": 113.856,
                 "z": -181.087
             },
-            "id": "WorldIconsInteractables/WorldIcon T2 MainBase D"
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Odd 2"
         },
         {
-            "name": "WorldIcon T2 MainBase E",
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1003,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.951067,
+                "y": 0,
+                "z": 0.308984
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.308984,
+                "y": 0,
+                "z": 0.951067
+            },
+            "position": {
+                "x": 572.784,
+                "y": 113.856,
+                "z": -181.087
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Odd 2/InteractPoint"
+        },
+        {
+            "name": "WorldIcon T2 MainBase Even 3",
             "ObjId": 1004,
+            "iconColor": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "iconImagePicker": "Flag",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 2,
             "type": "WorldIcon",
             "right": {
                 "x": 0.622528,
@@ -2305,15 +2453,50 @@
                 "z": 0.622528
             },
             "position": {
-                "x": 642.903,
-                "y": 112.227,
-                "z": -245.484
+                "x": 642.969,
+                "y": 112.215,
+                "z": -245.541
             },
-            "id": "WorldIconsInteractables/WorldIcon T2 MainBase E"
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Even 3"
         },
         {
-            "name": "WorldIcon T2 MainBase F",
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1004,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.622528,
+                "y": 0,
+                "z": -0.782597
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.782597,
+                "y": 0,
+                "z": 0.622528
+            },
+            "position": {
+                "x": 642.969,
+                "y": 112.215,
+                "z": -245.541
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Even 3/InteractPoint"
+        },
+        {
+            "name": "WorldIcon T2 MainBase Odd 3",
             "ObjId": 1005,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Assist",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 2,
             "type": "WorldIcon",
             "right": {
                 "x": 0.622528,
@@ -2331,15 +2514,50 @@
                 "z": 0.622528
             },
             "position": {
-                "x": 640.549,
-                "y": 112.227,
-                "z": -242.424
+                "x": 640.976,
+                "y": 112.408,
+                "z": -242.724
             },
-            "id": "WorldIconsInteractables/WorldIcon T2 MainBase F"
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Odd 3"
         },
         {
-            "name": "WorldIcon T2 MainBase G",
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1005,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.622528,
+                "y": 0,
+                "z": -0.782597
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.782597,
+                "y": 0,
+                "z": 0.622528
+            },
+            "position": {
+                "x": 640.976,
+                "y": 112.408,
+                "z": -242.724
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Odd 3/InteractPoint"
+        },
+        {
+            "name": "WorldIcon T2 MainBase Even 4",
             "ObjId": 1006,
+            "iconColor": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "iconImagePicker": "Flag",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 2,
             "type": "WorldIcon",
             "right": {
                 "x": 0.885394,
@@ -2361,11 +2579,46 @@
                 "y": 113.899,
                 "z": -281.681
             },
-            "id": "WorldIconsInteractables/WorldIcon T2 MainBase G"
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Even 4"
         },
         {
-            "name": "WorldIcon T2 MainBase H",
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1006,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.885394,
+                "y": 0,
+                "z": -0.464842
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.464842,
+                "y": 0,
+                "z": 0.885394
+            },
+            "position": {
+                "x": 565.159,
+                "y": 113.899,
+                "z": -281.681
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Even 4/InteractPoint"
+        },
+        {
+            "name": "WorldIcon T2 MainBase Odd 4",
             "ObjId": 1007,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Assist",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 2,
             "type": "WorldIcon",
             "right": {
                 "x": 0.886204,
@@ -2387,16 +2640,17 @@
                 "y": 113.899,
                 "z": -279.824
             },
-            "id": "WorldIconsInteractables/WorldIcon T2 MainBase H"
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Odd 4"
         },
         {
-            "name": "WorldIcon T1 MainBase A",
-            "ObjId": 1008,
-            "type": "WorldIcon",
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1007,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
             "right": {
-                "x": -0.214735,
+                "x": 0.886204,
                 "y": 0,
-                "z": -0.976672
+                "z": -0.463296
             },
             "up": {
                 "x": 0,
@@ -2404,20 +2658,89 @@
                 "z": 0
             },
             "front": {
-                "x": 0.976672,
+                "x": 0.463296,
                 "y": 0,
-                "z": -0.214735
+                "z": 0.886203
             },
             "position": {
-                "x": -810.243,
-                "y": 134.266,
-                "z": 200.148
+                "x": 561.822,
+                "y": 113.899,
+                "z": -279.824
             },
-            "id": "WorldIconsInteractables/WorldIcon T1 MainBase A"
+            "id": "WorldIconsInteractables/WorldIcon T2 MainBase Odd 4/InteractPoint"
         },
         {
-            "name": "WorldIcon T1 MainBase B",
+            "name": "WorldIcon T1 MainBase Even 5",
+            "ObjId": 1008,
+            "iconColor": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "iconImagePicker": "Flag",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
+            "type": "WorldIcon",
+            "right": {
+                "x": -0.274647,
+                "y": 0,
+                "z": -0.961545
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.961545,
+                "y": 0,
+                "z": -0.274647
+            },
+            "position": {
+                "x": -810.319,
+                "y": 134.252,
+                "z": 200.224
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Even 5"
+        },
+        {
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1008,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": -0.274647,
+                "y": 0,
+                "z": -0.961545
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.961545,
+                "y": 0,
+                "z": -0.274647
+            },
+            "position": {
+                "x": -810.319,
+                "y": 134.252,
+                "z": 200.224
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Even 5/InteractPoint"
+        },
+        {
+            "name": "WorldIcon T1 MainBase Odd 5",
             "ObjId": 1009,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Assist",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
             "type": "WorldIcon",
             "right": {
                 "x": -0.21303,
@@ -2439,11 +2762,46 @@
                 "y": 134.266,
                 "z": 203.858
             },
-            "id": "WorldIconsInteractables/WorldIcon T1 MainBase B"
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Odd 5"
         },
         {
-            "name": "WorldIcon T1 MainBase C",
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1009,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": -0.21303,
+                "y": 0,
+                "z": -0.977046
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.977046,
+                "y": 0,
+                "z": -0.21303
+            },
+            "position": {
+                "x": -809.334,
+                "y": 134.266,
+                "z": 203.858
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Odd 5/InteractPoint"
+        },
+        {
+            "name": "WorldIcon T1 MainBase Even 6",
             "ObjId": 1010,
+            "iconColor": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "iconImagePicker": "Flag",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
             "type": "WorldIcon",
             "right": {
                 "x": 0.741976,
@@ -2462,14 +2820,49 @@
             },
             "position": {
                 "x": -756.764,
-                "y": 134.212,
+                "y": 134.248,
                 "z": 161.88
             },
-            "id": "WorldIconsInteractables/WorldIcon T1 MainBase C"
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Even 6"
         },
         {
-            "name": "WorldIcon T1 MainBase D",
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1010,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.741976,
+                "y": 0,
+                "z": 0.670427
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.670427,
+                "y": 0,
+                "z": 0.741976
+            },
+            "position": {
+                "x": -756.764,
+                "y": 134.248,
+                "z": 161.88
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Even 6/InteractPoint"
+        },
+        {
+            "name": "WorldIcon T1 MainBase Odd 6",
             "ObjId": 1011,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Assist",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
             "type": "WorldIcon",
             "right": {
                 "x": 0.740805,
@@ -2487,15 +2880,50 @@
                 "z": 0.740805
             },
             "position": {
-                "x": -759.659,
-                "y": 134.212,
-                "z": 159.387
+                "x": -759.567,
+                "y": 134.258,
+                "z": 159.426
             },
-            "id": "WorldIconsInteractables/WorldIcon T1 MainBase D"
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Odd 6"
         },
         {
-            "name": "WorldIcon T1 MainBase E",
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1011,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.740805,
+                "y": 0,
+                "z": 0.671721
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.671721,
+                "y": 0,
+                "z": 0.740805
+            },
+            "position": {
+                "x": -759.567,
+                "y": 134.258,
+                "z": 159.426
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Odd 6/InteractPoint"
+        },
+        {
+            "name": "WorldIcon T1 MainBase Even 7",
             "ObjId": 1012,
+            "iconColor": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "iconImagePicker": "Flag",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
             "type": "WorldIcon",
             "right": {
                 "x": 0.905569,
@@ -2513,15 +2941,50 @@
                 "z": 0.905569
             },
             "position": {
-                "x": -712.357,
-                "y": 134.269,
-                "z": 201.934
+                "x": -712.187,
+                "y": 134.31,
+                "z": 201.762
             },
-            "id": "WorldIconsInteractables/WorldIcon T1 MainBase E"
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Even 7"
         },
         {
-            "name": "WorldIcon T1 MainBase F",
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1012,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.905569,
+                "y": 0,
+                "z": 0.4242
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.424199,
+                "y": 0,
+                "z": 0.905569
+            },
+            "position": {
+                "x": -712.187,
+                "y": 134.31,
+                "z": 201.762
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Even 7/InteractPoint"
+        },
+        {
+            "name": "WorldIcon T1 MainBase Odd 7",
             "ObjId": 1013,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Assist",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
             "type": "WorldIcon",
             "right": {
                 "x": 0.904827,
@@ -2539,20 +3002,21 @@
                 "z": 0.904827
             },
             "position": {
-                "x": -715.854,
-                "y": 134.269,
-                "z": 200.397
+                "x": -715.728,
+                "y": 134.284,
+                "z": 200.155
             },
-            "id": "WorldIconsInteractables/WorldIcon T1 MainBase F"
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Odd 7"
         },
         {
-            "name": "WorldIcon T1 MainBase G",
-            "ObjId": 1014,
-            "type": "WorldIcon",
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1013,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
             "right": {
-                "x": -0.845262,
+                "x": 0.904827,
                 "y": 0,
-                "z": -0.534353
+                "z": 0.425779
             },
             "up": {
                 "x": 0,
@@ -2560,20 +3024,89 @@
                 "z": 0
             },
             "front": {
-                "x": 0.534352,
+                "x": -0.425779,
                 "y": 0,
-                "z": -0.845262
+                "z": 0.904827
             },
             "position": {
-                "x": -774.759,
-                "y": 133.919,
-                "z": 278.014
+                "x": -715.728,
+                "y": 134.284,
+                "z": 200.155
             },
-            "id": "WorldIconsInteractables/WorldIcon T1 MainBase G"
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Odd 7/InteractPoint"
         },
         {
-            "name": "WorldIcon T1 MainBase H",
+            "name": "WorldIcon T1 MainBase Even 8",
+            "ObjId": 1014,
+            "iconColor": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "iconImagePicker": "Flag",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
+            "type": "WorldIcon",
+            "right": {
+                "x": -0.86123,
+                "y": 0,
+                "z": -0.508216
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.508215,
+                "y": 0,
+                "z": -0.86123
+            },
+            "position": {
+                "x": -774.771,
+                "y": 133.96,
+                "z": 278.1
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Even 8"
+        },
+        {
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1014,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": -0.86123,
+                "y": 0,
+                "z": -0.508216
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.508215,
+                "y": 0,
+                "z": -0.86123
+            },
+            "position": {
+                "x": -774.771,
+                "y": 133.96,
+                "z": 278.1
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Even 8/InteractPoint"
+        },
+        {
+            "name": "WorldIcon T1 MainBase Odd 8",
             "ObjId": 1015,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Assist",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
             "type": "WorldIcon",
             "right": {
                 "x": -0.845262,
@@ -2595,7 +3128,34 @@
                 "y": 133.919,
                 "z": 279.972
             },
-            "id": "WorldIconsInteractables/WorldIcon T1 MainBase H"
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Odd 8"
+        },
+        {
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1015,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": -0.845262,
+                "y": 0,
+                "z": -0.534352
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.534352,
+                "y": 0,
+                "z": -0.845262
+            },
+            "position": {
+                "x": -771.48,
+                "y": 133.919,
+                "z": 279.972
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 MainBase Odd 8/InteractPoint"
         },
         {
             "name": "WorldIcon A Resupply 1",

@@ -16,6 +16,8 @@ function isTankSpawnVolumeVehicleType(vehicleType: mod.VehicleList): boolean {
 function doesVehicleMatchConfiguredSlotType(vehicle: mod.Vehicle | undefined, slot: VehicleSpawnerSlot | undefined): boolean {
     if (!vehicle || !slot) return false;
     try {
+        // BF6 only exposes CompareVehicleName here, and the local docs note it can accept "same type"
+        // matches as well as exact-name matches. Treat this as a best-effort guard, not strict model identity.
         return mod.CompareVehicleName(vehicle, slot.vehicleType);
     } catch {
         return false;

@@ -27,6 +27,7 @@ function ongoingPlayerImpl(eventPlayer: mod.Player): void {
 
 // Routes interact-point activation events into Ready Dialog interaction handler.
 function onPlayerInteractImpl(eventPlayer: mod.Player, eventInteractPoint: mod.InteractPoint) {
+    if (tryHandleWorldInteractableActivation(eventPlayer, eventInteractPoint)) return;
     teamSwitchInteractPointActivated(eventPlayer, eventInteractPoint);
 }
 

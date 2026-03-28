@@ -248,6 +248,8 @@ type MapConfigObjIdValidationEntry = {
     label: string;
     objId?: number;
     required: boolean;
+    expectedRangeMin?: number;
+    expectedRangeMax?: number;
 };
 
 function isValidConfiguredObjId(objId: number | undefined): objId is number {
@@ -259,6 +261,48 @@ function addUniqueValidationWarning(target: string[], warning: string): void {
         if (target[i] === warning) return;
     }
     target.push(warning);
+}
+
+// Returns true when an ObjId falls within one reserved inclusive range.
+function isObjIdWithinInclusiveRange(objId: number, min: number, max: number): boolean {
+    return objId >= min && objId <= max;
+}
+
+// Derives the Phase 7 main-base interactable action from the locked even/odd rubric.
+function classifyMainBaseInteractableActionFromObjId(objId: number): WorldInteractableAction {
+    return objId % 2 === 0
+        ? "open_ready_dialog"
+        : "open_vehicle_spawn_menu";
+}
+
+// Builds the active derived world-interactable configs from the authored per-map ObjId arrays.
+function buildWorldInteractableConfigsFromMapConfig(cfg: MapConfig): WorldInteractableConfig[] {
+    const configs: WorldInteractableConfig[] = [];
+    const mainBaseIds = cfg.mainBaseInteractableObjIds ?? [];
+    const flagIds = cfg.flagInteractableObjIds ?? [];
+
+    for (let i = 0; i < mainBaseIds.length; i++) {
+        const objId = Math.floor(mainBaseIds[i]);
+        if (!isValidConfiguredObjId(objId)) continue;
+        const action = classifyMainBaseInteractableActionFromObjId(objId);
+        configs.push({
+            objId,
+            scope: "main_base",
+            action,
+        });
+    }
+
+    for (let i = 0; i < flagIds.length; i++) {
+        const objId = Math.floor(flagIds[i]);
+        if (!isValidConfiguredObjId(objId)) continue;
+        configs.push({
+            objId,
+            scope: "point",
+            action: "open_ammo_resupply_menu",
+        });
+    }
+
+    return configs;
 }
 
 function buildMapConfigObjIdValidationEntries(cfg: MapConfig): MapConfigObjIdValidationEntry[] {
@@ -278,6 +322,28 @@ function buildMapConfigObjIdValidationEntries(cfg: MapConfig): MapConfigObjIdVal
             label: `capturePoints[${i}](${capturePoints[i].label})`,
             objId: capturePoints[i].objId,
             required: true,
+        });
+    }
+
+    const mainBaseIds = cfg.mainBaseInteractableObjIds ?? [];
+    for (let i = 0; i < mainBaseIds.length; i++) {
+        entries.push({
+            label: `mainBaseInteractableObjIds[${i}]`,
+            objId: mainBaseIds[i],
+            required: false,
+            expectedRangeMin: 1000,
+            expectedRangeMax: 1049,
+        });
+    }
+
+    const flagIds = cfg.flagInteractableObjIds ?? [];
+    for (let i = 0; i < flagIds.length; i++) {
+        entries.push({
+            label: `flagInteractableObjIds[${i}]`,
+            objId: flagIds[i],
+            required: false,
+            expectedRangeMin: 1050,
+            expectedRangeMax: 1099,
         });
     }
 
@@ -302,6 +368,16 @@ function buildMapConfigValidationWarnings(mapKey: MapKey, cfg: MapConfig): strin
         }
 
         const objId = Math.floor(entry.objId);
+        if (
+            entry.expectedRangeMin !== undefined &&
+            entry.expectedRangeMax !== undefined &&
+            !isObjIdWithinInclusiveRange(objId, entry.expectedRangeMin, entry.expectedRangeMax)
+        ) {
+            addUniqueValidationWarning(
+                warnings,
+                `[CONFIG WARNING] ${mapKey}: ${entry.label}=${objId} is outside reserved range ${entry.expectedRangeMin}-${entry.expectedRangeMax}.`
+            );
+        }
         if (!labelsByObjId[objId]) {
             labelsByObjId[objId] = [];
         }
@@ -513,6 +589,8 @@ function applyMapConfig(mapKey: MapKey): void {
     TEAM2_TANK_SPAWN_VOLUMES = resolveVehicleSpawnVolumes(ACTIVE_MAP_CONFIG.team2TankSpawnVolumes);
     TEAM1_VEHICLE_SLOT_INVENTORY_SPECS = buildRuntimeVehicleSlotInventoryForTeam(ACTIVE_MAP_CONFIG, TeamID.Team1);
     TEAM2_VEHICLE_SLOT_INVENTORY_SPECS = buildRuntimeVehicleSlotInventoryForTeam(ACTIVE_MAP_CONFIG, TeamID.Team2);
+    syncActiveWorldInteractableConfigs(buildWorldInteractableConfigsFromMapConfig(ACTIVE_MAP_CONFIG));
+    configureActiveWorldInteractables();
     syncActiveMapValidationWarnings(ACTIVE_MAP_KEY, ACTIVE_MAP_CONFIG);
     const defaultGameMode = READY_DIALOG_GAME_MODE_OPTIONS[READY_DIALOG_GAME_MODE_DEFAULT_INDEX];
     const defaultPlayersPerSide = getReadyDialogPresetPlayersPerSide(defaultGameMode);

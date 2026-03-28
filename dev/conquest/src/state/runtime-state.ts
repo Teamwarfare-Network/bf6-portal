@@ -273,6 +273,7 @@ const State: GameState = {
         deployedByPid: {},
         disconnectedByPid: {},
         uiInputEnabledByPid: {},
+        liveVehicleDeployMenuVisibleByPid: {},
         posDebugTransformSourceByPid: {},
         posDebugVehicleObjIdByPid: {},
     },

@@ -44,6 +44,24 @@ Purpose:
   - Capture-point/ammo-resupply interactables
   - Not active runtime ownership yet.
 
+## Phase 7 World-Interactable Quick Map
+
+- `1000-1049`
+  - scope: `main_base`
+  - even `objId`: show an authored ready-dialog world icon, show `READY`, enable the authored interact point with the same numeric id, and route interaction to `open_ready_dialog`
+  - odd `objId`: show a vehicle-spawn terminal, show `DEPLOY`, enable the authored interact point with the same numeric id, and route interaction to `open_vehicle_spawn_menu`
+  - default phase intent: enabled in pre-match and live, disabled during post-match unless setup/reset reclaims ownership
+  - team assignment, icon art, color, visibility range, alpha, and exact world-icon/interact-point pairing are not implied by the range; they must come from explicit map config
+
+- `1050-1099`
+  - scope: `point`
+  - all `objId`s: show a point/ammo terminal and route interaction to `open_ammo_resupply_menu`
+  - default phase intent: placeholder or disabled until the ammo-resupply menu is designed; later can be enabled by explicit phase-state rules
+  - ownership/visibility, icon art, color, range, alpha, and exact world-icon/interact-point pairing are not implied by the range; they must come from explicit map config
+
+- Range/parity tells you only the family and default action.
+- Exact behavior still needs explicit per-object map-config authoring; runtime should not infer the full contract from the numeric id alone.
+
 ## Deprecated Legacy Ranges
 
 - Old helis-only overtime-zone conventions do not need to be preserved for Conquest authoring:

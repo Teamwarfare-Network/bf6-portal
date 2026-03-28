@@ -97,6 +97,7 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     if (State.players.readyDialogData[pid]?.dialogVisible) {
         hideReadyDialogUI(eventPlayer);
     }
+    closeVehicleDeployLiveMenuForPlayer(eventPlayer);
 
     removeReadyDialogInteractPoint(pid);
     if (State.players.readyDialogData[pid]?.hudSwapTransitionActive) {

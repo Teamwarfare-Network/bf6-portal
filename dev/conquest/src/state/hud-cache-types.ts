@@ -102,6 +102,21 @@ type VehicleDeployTimerRowCacheEntry = {
 type VehicleDeployTimerHudCacheEntry = {
     rootName: string;
     root?: mod.UIWidget;
+    livePanelBorder?: mod.UIWidget;
+    livePanelBlur?: mod.UIWidget;
+    livePanelFill?: mod.UIWidget;
+    closeButtonBorder?: mod.UIWidget;
+    closeButtonBlur?: mod.UIWidget;
+    closeButtonFill?: mod.UIWidget;
+    closeButton?: mod.UIWidget;
+    closeButtonTextShadow?: mod.UIWidget;
+    closeButtonText?: mod.UIWidget;
+    closeButtonHovered?: boolean;
+    closeButtonFocused?: boolean;
+    closeButtonPressed?: boolean;
+    lastCloseButtonVisible?: boolean;
+    lastCloseButtonVisualState?: "base" | "hover" | "pressed";
+    lastLiveTerminalChromeVisible?: boolean;
     rows: VehicleDeployTimerRowCacheEntry[];
     lastVisibleState?: boolean;
     lastRenderSignature?: string;

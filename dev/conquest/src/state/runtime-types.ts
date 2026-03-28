@@ -390,6 +390,7 @@ interface GameState {
         deployedByPid: Record<number, boolean>;
         disconnectedByPid: Record<number, boolean>;
         uiInputEnabledByPid: Record<number, boolean>;
+        liveVehicleDeployMenuVisibleByPid: Record<number, boolean>;
         posDebugTransformSourceByPid: Record<number, PositionDebugTransformSource>;
         posDebugVehicleObjIdByPid: Record<number, number>;
     };

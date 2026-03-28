@@ -46,6 +46,30 @@ async function spawnReadyDialogInteractPoint(eventPlayer: mod.Player) {
     }
 }
 
+// Opens the ready dialog through the single shared UI path and restores local input state on failure.
+function tryOpenReadyDialogForPlayer(eventPlayer: mod.Player): boolean {
+    const playerId = mod.GetObjId(eventPlayer);
+    try {
+        closeVehicleDeployLiveMenuForPlayer(playerId);
+        setUIInputModeForPlayer(eventPlayer, true);
+        if (consumeJoinPromptTripleTapForPid(playerId)) {
+            markJoinPromptReadyDialogOpened(playerId);
+        }
+        updateHelpTextVisibilityForPid(playerId);
+        const dialogRoot = showReadyDialogUI(eventPlayer);
+        if (!dialogRoot) {
+            throw new Error(`Ready dialog root missing for pid ${playerId}`);
+        }
+        return true;
+    } catch {
+        State.players.readyDialogData[playerId].dialogVisible = false;
+        setUIInputModeForPlayer(eventPlayer, false);
+        hideReadyDialogUI(eventPlayer);
+        updateHelpTextVisibilityForPid(playerId);
+        return false;
+    }
+}
+
 // Handles interact activation for the owning player's ready-dialog interact point.
 function teamSwitchInteractPointActivated(eventPlayer: mod.Player, eventInteractPoint: mod.InteractPoint) {
     const playerId = mod.GetObjId(eventPlayer);
@@ -55,22 +79,7 @@ function teamSwitchInteractPointActivated(eventPlayer: mod.Player, eventInteract
         const interactPointId = mod.GetObjId(State.players.readyDialogData[playerId].interactPoint);
         const eventInteractPointId = mod.GetObjId(eventInteractPoint);
         if (interactPointId === eventInteractPointId) {
-            try {
-                setUIInputModeForPlayer(eventPlayer, true);
-                if (consumeJoinPromptTripleTapForPid(playerId)) {
-                    markJoinPromptReadyDialogOpened(playerId);
-                }
-                updateHelpTextVisibilityForPid(playerId);
-                const dialogRoot = showReadyDialogUI(eventPlayer);
-                if (!dialogRoot) {
-                    throw new Error(`Ready dialog root missing for pid ${playerId}`);
-                }
-            } catch {
-                State.players.readyDialogData[playerId].dialogVisible = false;
-                setUIInputModeForPlayer(eventPlayer, false);
-                hideReadyDialogUI(eventPlayer);
-                updateHelpTextVisibilityForPid(playerId);
-            }
+            tryOpenReadyDialogForPlayer(eventPlayer);
         }
     }
 }

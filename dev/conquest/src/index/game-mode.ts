@@ -80,6 +80,7 @@ async function onGameModeStartedImpl(): Promise<void> {
             ensureTopHudShellForPlayer(p);
         }
     }
+    ensureActiveWorldInteractablesReady();
 
     // Reset HUD state through the lifecycle mutator owner.
     lifecycleSetNotReadyBaseline("game-mode-start");
@@ -130,6 +131,7 @@ async function onGameModeStartedImpl(): Promise<void> {
                     updateAllPlayersClock();
                 }
                 updateVehicleDeployTimerHudForAllPlayers();
+                ensureActiveWorldInteractablesReady();
                 checkTakeoffLimitForAllPlayers();
                 tickBoundaryEnforcement();
                 if (State.match.victoryDialogActive) {

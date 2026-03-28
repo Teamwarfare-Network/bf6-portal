@@ -73,6 +73,16 @@ function getVehicleDeployGroundButtonName(pid: number, rowIndex: number): string
     return `${UI_VEHICLE_DEPLOY_TIMER_GROUND_BUTTON_ID}${pid}_${rowIndex}`;
 }
 
+// Returns the widget name for the modal close button used by the live terminal variant.
+function getVehicleDeployCloseButtonName(pid: number): string {
+    return `VehicleDeployTimerCloseButton_${pid}`;
+}
+
+// Returns true when the viewer is using the in-world live terminal variant instead of the undeployed deploy screen.
+function isVehicleDeployLiveTerminalModeForPid(pid: number): boolean {
+    return isVehicleDeployLiveMenuOpenForPid(pid);
+}
+
 function isVehicleDeployTimerAdminOverrideEnabledForPid(pid: number): boolean {
     return !!State.players.readyDialogData[pid]?.vehicleTimersVisibleWhileDeployed;
 }
@@ -93,7 +103,11 @@ function getVehicleDeployRenderSlotsForPlayer(player: mod.Player): VehicleSpawne
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return [];
     const slots = getVehicleDeployTrackedSlotsForPlayer(player);
-    if (!State.players.deployedByPid[pid] || isVehicleDeployTimerAdminOverrideEnabledForPid(pid)) {
+    if (
+        !State.players.deployedByPid[pid]
+        || isVehicleDeployTimerAdminOverrideEnabledForPid(pid)
+        || isVehicleDeployLiveTerminalModeForPid(pid)
+    ) {
         return slots;
     }
     return slots.filter((slot) => slot.vehicleId === -1);
@@ -111,11 +125,13 @@ type VehicleDeployTimerRenderPlan = {
     warmReady: boolean;
     shouldShowRows: boolean;
     visible: boolean;
+    liveTerminalOpen: boolean;
     signature: string;
 };
 
 function buildVehicleDeployTimerRenderPlan(player: mod.Player, pid: number): VehicleDeployTimerRenderPlan {
     const slots = getVehicleDeployRenderSlotsForPlayer(player);
+    const liveTerminalOpen = isVehicleDeployLiveTerminalModeForPid(pid);
     const hasPendingDirectSpawnClaim = !State.players.deployedByPid[pid] && !!findVehicleSlotByPendingSpawnOwnerPid(pid);
     const warmReady = isHudWarmReadyForPid(pid) && !isHudSwapTransitionActiveForPid(pid);
     const shouldShowRows = shouldShowVehicleDeployTimersForPid(pid)
@@ -123,7 +139,7 @@ function buildVehicleDeployTimerRenderPlan(player: mod.Player, pid: number): Veh
         && !hasPendingDirectSpawnClaim;
     const visible = shouldShowRows && warmReady;
 
-    let signature = `${warmReady ? 1 : 0}|${shouldShowRows ? 1 : 0}|${visible ? 1 : 0}|${State.players.deployedByPid[pid] ? 1 : 0}|${hasPendingDirectSpawnClaim ? 1 : 0}`;
+    let signature = `${warmReady ? 1 : 0}|${shouldShowRows ? 1 : 0}|${visible ? 1 : 0}|${State.players.deployedByPid[pid] ? 1 : 0}|${hasPendingDirectSpawnClaim ? 1 : 0}|${liveTerminalOpen ? 1 : 0}`;
     for (let i = 0; i < slots.length; i++) {
         const slot = slots[i];
         signature += `#${i}:${slot.slotNumber},${slot.vehicleType},${slot.vehicleId},${slot.activeOwnerPid ?? -1},${slot.pendingSpawnOwnerPid ?? -1},${slot.pendingSpawnMode ?? "none"},${getVehicleSlotRespawnRemainingSeconds(slot)},${isVehicleDeploySlotReadyForSpawnButton(slot) ? 1 : 0}`;
@@ -134,6 +150,7 @@ function buildVehicleDeployTimerRenderPlan(player: mod.Player, pid: number): Veh
         warmReady,
         shouldShowRows,
         visible,
+        liveTerminalOpen,
         signature,
     };
 }
@@ -173,6 +190,15 @@ function doesVehicleTypeSupportGroundDeploy(vehicleType: mod.VehicleList): boole
 
 function deleteVehicleDeployTimerHudArtifactsForPid(pid: number): void {
     deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerHudRoot_${pid}`);
+    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerLivePanelBorder_${pid}`);
+    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerLivePanelBlur_${pid}`);
+    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerLivePanelFill_${pid}`);
+    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCloseButtonBorder_${pid}`);
+    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCloseButtonBlur_${pid}`);
+    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCloseButtonFill_${pid}`);
+    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCloseButtonText_${pid}`);
+    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCloseButtonTextShadow_${pid}`);
+    deleteAllReusableTimerWidgetsByName(getVehicleDeployCloseButtonName(pid));
     for (let i = 0; i < VEHICLE_DEPLOY_TIMER_MAX_ROWS; i++) {
         deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerPlayerPlate_${pid}_${i}`);
         deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerPlayerText_${pid}_${i}`);
@@ -205,7 +231,7 @@ function deleteVehicleDeployTimerHudArtifactsForPid(pid: number): void {
 }
 
 function getVehicleDeployTimerRowBaseY(index: number): number {
-    return VEHICLE_DEPLOY_TIMER_ROOT_HEIGHT
+    return VEHICLE_DEPLOY_TIMER_CONTENT_HEIGHT
         - VEHICLE_DEPLOY_TIMER_ROW_HEIGHT
         - ((VEHICLE_DEPLOY_TIMER_ROW_HEIGHT + VEHICLE_DEPLOY_TIMER_ROW_GAP_Y) * index);
 }
@@ -258,6 +284,19 @@ function isVehicleDeployTimerRowCacheUsable(row: VehicleDeployTimerRowCacheEntry
 
 function isVehicleDeployTimerHudCacheUsable(cache: VehicleDeployTimerHudCacheEntry | undefined): boolean {
     if (!cache || !safeFind(cache.rootName)) return false;
+    if (
+        !cache.livePanelBorder
+        || !cache.livePanelBlur
+        || !cache.livePanelFill
+        || !cache.closeButtonBorder
+        || !cache.closeButtonBlur
+        || !cache.closeButtonFill
+        || !cache.closeButton
+        || !cache.closeButtonTextShadow
+        || !cache.closeButtonText
+    ) {
+        return false;
+    }
     if (cache.rows.length < VEHICLE_DEPLOY_TIMER_MAX_ROWS) return false;
     for (let i = 0; i < VEHICLE_DEPLOY_TIMER_MAX_ROWS; i++) {
         if (!isVehicleDeployTimerRowCacheUsable(cache.rows[i])) {
@@ -530,6 +569,202 @@ function ensureVehicleDeployActionButtonWidgets(
     return { border, blur, fill, button, textShadow, text };
 }
 
+// Builds the dedicated right-side modal backplate used only by the live-terminal variant.
+function ensureVehicleDeployLivePanelWidgets(
+    player: mod.Player,
+    parent: mod.UIWidget,
+    pid: number
+): { border?: mod.UIWidget; blur?: mod.UIWidget; fill?: mod.UIWidget } {
+    const border = ensureVehicleDeployInfoPlate(
+        `VehicleDeployTimerLivePanelBorder_${pid}`,
+        player,
+        parent,
+        VEHICLE_DEPLOY_TIMER_LIVE_PANEL_X,
+        VEHICLE_DEPLOY_TIMER_LIVE_PANEL_Y,
+        VEHICLE_DEPLOY_TIMER_LIVE_PANEL_WIDTH,
+        VEHICLE_DEPLOY_TIMER_LIVE_PANEL_HEIGHT,
+        mod.UIBgFill.OutlineThin,
+        1,
+        COLOR_WHITE
+    );
+
+    const blur = border
+        ? ensureVehicleDeployInfoPlate(
+            `VehicleDeployTimerLivePanelBlur_${pid}`,
+            player,
+            border,
+            1,
+            1,
+            Math.max(1, VEHICLE_DEPLOY_TIMER_LIVE_PANEL_WIDTH - 2),
+            Math.max(1, VEHICLE_DEPLOY_TIMER_LIVE_PANEL_HEIGHT - 2),
+            mod.UIBgFill.Blur,
+            VEHICLE_DEPLOY_TIMER_LIVE_PANEL_BG_ALPHA,
+            COLOR_DARK_BLACK
+        )
+        : undefined;
+
+    const fill = border
+        ? ensureVehicleDeployInfoPlate(
+            `VehicleDeployTimerLivePanelFill_${pid}`,
+            player,
+            border,
+            1,
+            1,
+            Math.max(1, VEHICLE_DEPLOY_TIMER_LIVE_PANEL_WIDTH - 2),
+            Math.max(1, VEHICLE_DEPLOY_TIMER_LIVE_PANEL_HEIGHT - 2),
+            mod.UIBgFill.Solid,
+            VEHICLE_DEPLOY_TIMER_LIVE_PANEL_BG_ALPHA,
+            COLOR_DARK_BLACK
+        )
+        : undefined;
+
+    safeSetUIWidgetVisible(border, false);
+    safeSetUIWidgetVisible(blur, false);
+    safeSetUIWidgetVisible(fill, false);
+    return { border, blur, fill };
+}
+
+// Builds the close button widgets reused by the live-terminal modal variant.
+function ensureVehicleDeployCloseButtonWidgets(
+    player: mod.Player,
+    parent: mod.UIWidget,
+    pid: number
+): VehicleDeployActionButtonWidgets {
+    const borderName = `VehicleDeployTimerCloseButtonBorder_${pid}`;
+    const blurName = `VehicleDeployTimerCloseButtonBlur_${pid}`;
+    const fillName = `VehicleDeployTimerCloseButtonFill_${pid}`;
+    const textShadowName = `VehicleDeployTimerCloseButtonTextShadow_${pid}`;
+    const textName = `VehicleDeployTimerCloseButtonText_${pid}`;
+    const buttonName = getVehicleDeployCloseButtonName(pid);
+    const width = VEHICLE_DEPLOY_TIMER_CLOSE_BUTTON_WIDTH;
+    const height = VEHICLE_DEPLOY_TIMER_CLOSE_BUTTON_HEIGHT;
+    const buttonPadding = VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_BORDER_PADDING;
+    const buttonInnerWidth = Math.max(1, width - (buttonPadding * 2));
+    const buttonInnerHeight = Math.max(1, height - (buttonPadding * 2));
+
+    const border = ensureVehicleDeployInfoPlate(
+        borderName,
+        player,
+        parent,
+        VEHICLE_DEPLOY_TIMER_CLOSE_BUTTON_X,
+        VEHICLE_DEPLOY_TIMER_CLOSE_BUTTON_Y,
+        width,
+        height,
+        mod.UIBgFill.OutlineThin,
+        1,
+        COLOR_WHITE
+    );
+
+    const blur = border
+        ? ensureVehicleDeployInfoPlate(
+            blurName,
+            player,
+            border,
+            VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_PADDING_BASE,
+            VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_PADDING_BASE,
+            Math.max(1, width - (VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_PADDING_BASE * 2)),
+            Math.max(1, height - (VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_PADDING_BASE * 2)),
+            mod.UIBgFill.Blur,
+            VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_BLUR_ALPHA,
+            COLOR_WHITE
+        )
+        : undefined;
+
+    const fill = border
+        ? ensureVehicleDeployInfoPlate(
+            fillName,
+            player,
+            border,
+            VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_PADDING_BASE,
+            VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_PADDING_BASE,
+            Math.max(1, width - (VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_PADDING_BASE * 2)),
+            Math.max(1, height - (VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_PADDING_BASE * 2)),
+            mod.UIBgFill.GradientTop,
+            VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_BG_ALPHA,
+            COLOR_GRAY_DARK
+        )
+        : undefined;
+
+    let button = safeFind(buttonName);
+    if (!button && border) {
+        mod.AddUIButton(
+            buttonName,
+            mod.CreateVector(buttonPadding, buttonPadding, 0),
+            mod.CreateVector(buttonInnerWidth, buttonInnerHeight, 0),
+            mod.UIAnchor.Center,
+            border,
+            true,
+            0,
+            COLOR_GRAY_DARK,
+            1,
+            mod.UIBgFill.Solid,
+            true,
+            COLOR_GRAY_DARK,
+            1,
+            COLOR_GRAY_DARK,
+            1,
+            COLOR_GREEN,
+            1,
+            COLOR_BLUE,
+            1,
+            COLOR_BLUE,
+            1,
+            mod.UIDepth.AboveGameUI,
+            player
+        );
+        button = safeFind(buttonName);
+    }
+
+    if (button && border) {
+        try {
+            mod.SetUIWidgetParent(button, border);
+            mod.SetUIWidgetAnchor(button, mod.UIAnchor.TopLeft);
+            mod.SetUIWidgetPosition(button, mod.CreateVector(buttonPadding, buttonPadding, 0));
+            mod.SetUIWidgetSize(button, mod.CreateVector(buttonInnerWidth, buttonInnerHeight, 0));
+            mod.SetUIWidgetDepth(button, mod.UIDepth.AboveGameUI);
+            mod.EnableUIButtonEvent(button, mod.UIButtonEvent.HoverIn, true);
+            mod.EnableUIButtonEvent(button, mod.UIButtonEvent.HoverOut, true);
+            mod.EnableUIButtonEvent(button, mod.UIButtonEvent.FocusIn, true);
+            mod.EnableUIButtonEvent(button, mod.UIButtonEvent.FocusOut, true);
+            mod.EnableUIButtonEvent(button, mod.UIButtonEvent.ButtonDown, true);
+            mod.EnableUIButtonEvent(button, mod.UIButtonEvent.ButtonUp, true);
+            mod.SetUIButtonEnabled(button, true);
+            mod.SetUIButtonColorBase(button, COLOR_GRAY_DARK);
+            mod.SetUIButtonColorHover(button, COLOR_BLUE);
+            mod.SetUIButtonColorFocused(button, COLOR_BLUE);
+            mod.SetUIButtonColorPressed(button, COLOR_GREEN);
+            mod.SetUIButtonColorDisabled(button, COLOR_GRAY_DARK);
+            mod.SetUIButtonAlphaBase(button, 1);
+            mod.SetUIButtonAlphaHover(button, 1);
+            mod.SetUIButtonAlphaFocused(button, 1);
+            mod.SetUIButtonAlphaPressed(button, 1);
+            mod.SetUIButtonAlphaDisabled(button, 1);
+            mod.SetUIWidgetVisible(button, false);
+        } catch {
+            button = undefined;
+        }
+    }
+
+    const textShadow = border
+        ? ensureVehicleDeployCenteredText(textShadowName, player, border, width, height, true, VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_TEXT_SIZE)
+        : undefined;
+    const text = border
+        ? ensureVehicleDeployCenteredText(textName, player, border, width, height, false, VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_TEXT_SIZE)
+        : undefined;
+    safeSetUITextLabel(textShadow, mod.Message(mod.stringkeys.twl.teamSwitch.buttons.cancel));
+    safeSetUITextLabel(text, mod.Message(mod.stringkeys.twl.teamSwitch.buttons.cancel));
+    safeSetUITextColor(text, COLOR_WHITE);
+    safeSetUITextColor(textShadow, COLOR_DARK_BLACK);
+    safeSetUIWidgetVisible(border, false);
+    safeSetUIWidgetVisible(blur, false);
+    safeSetUIWidgetVisible(fill, false);
+    safeSetUIWidgetVisible(button, false);
+    safeSetUIWidgetVisible(textShadow, false);
+    safeSetUIWidgetVisible(text, false);
+
+    return { border, blur, fill, button, textShadow, text };
+}
+
 function getVehicleDeployActionButtonWidgets(
     row: VehicleDeployTimerRowCacheEntry | undefined,
     mode: VehicleDirectSpawnMode
@@ -554,6 +789,25 @@ function getVehicleDeployActionButtonWidgets(
     };
 }
 
+// Applies visibility to the cached live-terminal close button widgets.
+function setVehicleDeployCloseButtonVisible(
+    cache: VehicleDeployTimerHudCacheEntry | undefined,
+    visible: boolean
+): void {
+    if (!cache) return;
+    if (cache.lastCloseButtonVisible === visible) return;
+    if (cache.closeButton) {
+        mod.SetUIButtonEnabled(cache.closeButton, visible);
+    }
+    safeSetUIWidgetVisible(cache.closeButtonBorder, visible);
+    safeSetUIWidgetVisible(cache.closeButtonBlur, false);
+    safeSetUIWidgetVisible(cache.closeButtonFill, false);
+    safeSetUIWidgetVisible(cache.closeButton, visible);
+    safeSetUIWidgetVisible(cache.closeButtonTextShadow, visible);
+    safeSetUIWidgetVisible(cache.closeButtonText, visible);
+    cache.lastCloseButtonVisible = visible;
+}
+
 function applyVehicleDeployActionButtonVisualState(
     widgets: VehicleDeployActionButtonWidgets,
     active: boolean,
@@ -568,6 +822,43 @@ function applyVehicleDeployActionButtonVisualState(
     safeSetUITextColor(widgets.text, COLOR_WHITE);
     safeSetUITextColor(widgets.textShadow, COLOR_DARK_BLACK);
     return visualState;
+}
+
+// Applies the shared button visual policy to the live-terminal close button.
+function applyVehicleDeployCloseButtonVisualState(
+    cache: VehicleDeployTimerHudCacheEntry | undefined,
+    active: boolean,
+    pressed: boolean
+): void {
+    if (!cache) return;
+    cache.lastCloseButtonVisualState = applyVehicleDeployActionButtonVisualState(
+        {
+            border: cache.closeButtonBorder,
+            blur: cache.closeButtonBlur,
+            fill: cache.closeButtonFill,
+            button: cache.closeButton,
+            textShadow: cache.closeButtonTextShadow,
+            text: cache.closeButtonText,
+        },
+        active,
+        pressed,
+        cache.lastCloseButtonVisualState
+    );
+}
+
+// Reconfigures the shared deploy HUD root into modal chrome when the live terminal owns the surface.
+function applyVehicleDeployLiveTerminalChromeState(
+    cache: VehicleDeployTimerHudCacheEntry | undefined,
+    visible: boolean
+): void {
+    if (!cache?.root) return;
+    if (cache.lastLiveTerminalChromeVisible !== visible) {
+        safeSetUIWidgetVisible(cache.livePanelBorder, visible);
+        safeSetUIWidgetVisible(cache.livePanelBlur, visible);
+        safeSetUIWidgetVisible(cache.livePanelFill, visible);
+        cache.lastLiveTerminalChromeVisible = visible;
+    }
+    setVehicleDeployCloseButtonVisible(cache, visible);
 }
 
 function applyVehicleDeployActionButtonVisualStateForMode(
@@ -776,6 +1067,16 @@ function clearVehicleDeployActionButtonStateForAllRows(
     }
 }
 
+// Resets cached hover/focus/pressed state for the live-terminal close button.
+function clearVehicleDeployCloseButtonState(cache: VehicleDeployTimerHudCacheEntry | undefined): void {
+    if (!cache) return;
+    if (!cache.closeButtonHovered && !cache.closeButtonFocused && !cache.closeButtonPressed) return;
+    cache.closeButtonHovered = false;
+    cache.closeButtonFocused = false;
+    cache.closeButtonPressed = false;
+    applyVehicleDeployCloseButtonVisualState(cache, false, false);
+}
+
 function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeployTimerHudCacheEntry | undefined {
     if (!player || !mod.IsPlayerValid(player)) return undefined;
     const pid = mod.GetObjId(player);
@@ -802,6 +1103,21 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
     cache = {
         rootName: `VehicleDeployTimerHudRoot_${pid}`,
         root: safeFind(`VehicleDeployTimerHudRoot_${pid}`),
+        livePanelBorder: priorCache?.livePanelBorder,
+        livePanelBlur: priorCache?.livePanelBlur,
+        livePanelFill: priorCache?.livePanelFill,
+        closeButtonBorder: priorCache?.closeButtonBorder,
+        closeButtonBlur: priorCache?.closeButtonBlur,
+        closeButtonFill: priorCache?.closeButtonFill,
+        closeButton: priorCache?.closeButton,
+        closeButtonTextShadow: priorCache?.closeButtonTextShadow,
+        closeButtonText: priorCache?.closeButtonText,
+        closeButtonHovered: priorCache?.closeButtonHovered ?? false,
+        closeButtonFocused: priorCache?.closeButtonFocused ?? false,
+        closeButtonPressed: priorCache?.closeButtonPressed ?? false,
+        lastCloseButtonVisible: priorCache?.lastCloseButtonVisible,
+        lastCloseButtonVisualState: undefined,
+        lastLiveTerminalChromeVisible: priorCache?.lastLiveTerminalChromeVisible,
         rows: [],
         lastVisibleState: priorCache?.lastVisibleState,
         lastRenderSignature: priorCache?.lastRenderSignature,
@@ -816,10 +1132,32 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
         mod.SetUIWidgetAnchor(cache.root, mod.UIAnchor.CenterRight);
         mod.SetUIWidgetPosition(cache.root, mod.CreateVector(VEHICLE_DEPLOY_TIMER_ROOT_OFFSET_X, VEHICLE_DEPLOY_TIMER_ROOT_OFFSET_Y, 0));
         mod.SetUIWidgetSize(cache.root, mod.CreateVector(VEHICLE_DEPLOY_TIMER_ROOT_WIDTH, VEHICLE_DEPLOY_TIMER_ROOT_HEIGHT, 0));
+        mod.SetUIWidgetBgColor(cache.root, COLOR_DARK_BLACK);
+        mod.SetUIWidgetBgAlpha(cache.root, 0);
+        mod.SetUIWidgetBgFill(cache.root, mod.UIBgFill.None);
         mod.SetUIWidgetDepth(cache.root, mod.UIDepth.AboveGameUI);
     } catch {
         return undefined;
     }
+
+    const livePanelWidgets = ensureVehicleDeployLivePanelWidgets(player, cache.root, pid);
+    cache.livePanelBorder = livePanelWidgets.border;
+    cache.livePanelBlur = livePanelWidgets.blur;
+    cache.livePanelFill = livePanelWidgets.fill;
+
+    const closeButtonWidgets = ensureVehicleDeployCloseButtonWidgets(player, cache.root, pid);
+    cache.closeButtonBorder = closeButtonWidgets.border;
+    cache.closeButtonBlur = closeButtonWidgets.blur;
+    cache.closeButtonFill = closeButtonWidgets.fill;
+    cache.closeButton = closeButtonWidgets.button;
+    cache.closeButtonTextShadow = closeButtonWidgets.textShadow;
+    cache.closeButtonText = closeButtonWidgets.text;
+    applyVehicleDeployCloseButtonVisualState(
+        cache,
+        (cache.closeButtonHovered === true) || (cache.closeButtonFocused === true),
+        cache.closeButtonPressed === true
+    );
+    setVehicleDeployCloseButtonVisible(cache, false);
 
     for (let i = 0; i < VEHICLE_DEPLOY_TIMER_MAX_ROWS; i++) {
         const baseY = getVehicleDeployTimerRowBaseY(i);
@@ -1115,9 +1453,10 @@ function renderVehicleDeployTimerRow(
     }
 
     const deployed = !!State.players.deployedByPid[viewerPid];
+    const liveTerminalOpen = isVehicleDeployLiveTerminalModeForPid(viewerPid);
     const activeOwnerMessage = getVehicleDeployActiveOwnerNameMessage(slot);
     const showPlayerName = slot.vehicleId !== -1;
-    const slotReadyForButtons = !deployed && isVehicleDeploySlotReadyForSpawnButton(slot);
+    const slotReadyForButtons = (!deployed || liveTerminalOpen) && isVehicleDeploySlotReadyForSpawnButton(slot);
     const showSpawnButton = slotReadyForButtons && doesVehicleTypeSupportAirDeploy(slot.vehicleType);
     const showGroundButton = slotReadyForButtons && doesVehicleTypeSupportGroundDeploy(slot.vehicleType);
     let showTimer = true;
@@ -1179,6 +1518,8 @@ function hideVehicleDeployTimerHudFamily(
     parkOffscreen: boolean
 ): void {
     if (!cache?.root) return;
+    clearVehicleDeployCloseButtonState(cache);
+    applyVehicleDeployLiveTerminalChromeState(cache, false);
     if (parkOffscreen) {
         setVehicleDeployTimerRootOnscreen(cache, false);
     }
@@ -1199,6 +1540,8 @@ function applyVehicleDeployTimerRenderPlanContent(
         hideVehicleDeployTimerHudFamily(cache, false);
         return false;
     }
+
+    applyVehicleDeployLiveTerminalChromeState(cache, renderPlan.liveTerminalOpen);
 
     const hiddenState = buildHiddenVehicleDeployTimerRowVisibilityState();
     const rowVisibilityStates: VehicleDeployTimerRowVisibilityState[] = [];
@@ -1224,8 +1567,9 @@ function setVehicleDeployTimerHudFamilyVisible(
 
 // Restores UI input mode when the vehicle HUD is the active undeployed interaction surface.
 function syncVehicleDeployHudViewerInputMode(player: mod.Player, pid: number): void {
+    const liveTerminalOpen = isVehicleDeployLiveTerminalModeForPid(pid);
     if (
-        !State.players.deployedByPid[pid]
+        (!State.players.deployedByPid[pid] || liveTerminalOpen)
         && !State.players.readyDialogData[pid]?.dialogVisible
         && !safeFind(joinPromptRootName(pid))
         && !State.players.uiInputEnabledByPid[pid]
@@ -1244,6 +1588,52 @@ function tryHandleVehicleDeployTimerButtonEvent(
     if (pid === undefined) return false;
 
     const widgetName = mod.GetUIWidgetName(eventUIWidget);
+    const closeButtonName = getVehicleDeployCloseButtonName(pid);
+    const cache = State.hudCache.vehicleDeployTimerCache[pid];
+    const liveTerminalOpen = isVehicleDeployLiveTerminalModeForPid(pid);
+    if (widgetName === closeButtonName) {
+        if (!cache) return true;
+        if (!liveTerminalOpen) return true;
+        if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.FocusIn)) {
+            cache.closeButtonHovered = false;
+            cache.closeButtonFocused = true;
+            cache.closeButtonPressed = false;
+            applyVehicleDeployCloseButtonVisualState(cache, true, false);
+            return true;
+        }
+        if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.FocusOut)) {
+            cache.closeButtonFocused = false;
+            cache.closeButtonPressed = false;
+            applyVehicleDeployCloseButtonVisualState(cache, !!cache.closeButtonHovered, false);
+            return true;
+        }
+        if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.HoverIn)) {
+            cache.closeButtonHovered = true;
+            cache.closeButtonFocused = false;
+            cache.closeButtonPressed = false;
+            applyVehicleDeployCloseButtonVisualState(cache, true, false);
+            return true;
+        }
+        if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.HoverOut)) {
+            cache.closeButtonHovered = false;
+            cache.closeButtonPressed = false;
+            applyVehicleDeployCloseButtonVisualState(cache, !!cache.closeButtonFocused, false);
+            return true;
+        }
+        if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.ButtonDown)) {
+            cache.closeButtonHovered = cache.closeButtonHovered === true;
+            cache.closeButtonFocused = cache.closeButtonFocused === true || !cache.closeButtonHovered;
+            cache.closeButtonPressed = true;
+            applyVehicleDeployCloseButtonVisualState(cache, true, true);
+            return true;
+        }
+        if (!mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.ButtonUp)) return true;
+        cache.closeButtonPressed = false;
+        applyVehicleDeployCloseButtonVisualState(cache, !!cache.closeButtonHovered || !!cache.closeButtonFocused, false);
+        closeVehicleDeployLiveMenuForPlayer(eventPlayer);
+        return true;
+    }
+
     const airPrefix = `${UI_VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_ID}${pid}_`;
     const groundPrefix = `${UI_VEHICLE_DEPLOY_TIMER_GROUND_BUTTON_ID}${pid}_`;
     let mode: VehicleDirectSpawnMode | undefined = undefined;
@@ -1262,7 +1652,6 @@ function tryHandleVehicleDeployTimerButtonEvent(
     if (!Number.isInteger(rowIndex) || rowIndex < 0 || rowIndex >= VEHICLE_DEPLOY_TIMER_MAX_ROWS) return true;
     if (!isHudWarmReadyForPid(pid)) return true;
 
-    const cache = State.hudCache.vehicleDeployTimerCache[pid];
     const row = cache?.rows[rowIndex];
     const setVisual = (active: boolean, pressed: boolean): void => {
         applyVehicleDeployActionButtonVisualStateForMode(row, mode, active, pressed);
@@ -1344,7 +1733,7 @@ function tryHandleVehicleDeployTimerButtonEvent(
         return true;
     }
     if (!mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.ButtonUp)) return true;
-    if (State.players.deployedByPid[pid]) return true;
+    if (State.players.deployedByPid[pid] && !liveTerminalOpen) return true;
     if (row) {
         if (mode === "ground") {
             const keepActive = !!row.groundButtonHovered || !!row.groundButtonFocused;
@@ -1364,6 +1753,13 @@ function tryHandleVehicleDeployTimerButtonEvent(
     const claimed = tryClaimVehicleDirectSpawnForPlayer(eventPlayer, slot, mode);
     if (!claimed) {
         updateVehicleDeployTimerHudForPlayer(eventPlayer);
+        return true;
+    }
+
+    if (liveTerminalOpen) {
+        closeVehicleDeployLiveMenuForPlayer(eventPlayer);
+        updateVehicleDeployTimerHudForAllPlayers();
+        void beginVehicleLiveTerminalSpawnForPlayer(eventPlayer);
         return true;
     }
 
