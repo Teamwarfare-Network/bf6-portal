@@ -3,72 +3,111 @@
 
 //#region -------------------- World Interactables --------------------
 
-// Resolves the runtime terminal label string key for the supported main-base actions.
+const WORLD_INTERACTABLE_DEPLOY_BLUE = mod.CreateVector(0 / 255, 110 / 255, 255 / 255);
+const WORLD_INTERACTABLE_READY_GREEN = mod.CreateVector(0 / 255, 155 / 255, 38 / 255);
+
 function getWorldInteractableRuntimeIconTextKey(config: WorldInteractableConfig): number | undefined {
     switch (config.action) {
         case "open_ready_dialog":
             return STR_UI_READY;
         case "open_vehicle_spawn_menu":
             return STR_UI_SPAWN;
+        case "open_ammo_resupply_menu":
+            return STR_UI_GADGETS;
         default:
             return undefined;
     }
 }
 
-// Resolves the runtime icon image/color pair for the supported main-base terminal actions.
 function getWorldInteractableRuntimeIconStyle(
     config: WorldInteractableConfig
 ): { image: number; color: mod.Vector } {
+    if (config.action === "open_ammo_resupply_menu") {
+        return {
+            image: mod.WorldIconImages.Explosion,
+            color: COLOR_NOT_READY_RED,
+        };
+    }
+
     if (config.action === "open_vehicle_spawn_menu") {
         return {
             image: mod.WorldIconImages.Assist,
-            color: COLOR_NOT_READY_RED,
+            color: WORLD_INTERACTABLE_DEPLOY_BLUE,
         };
     }
 
     return {
         image: mod.WorldIconImages.Flag,
-        color: COLOR_READY_GREEN,
+        color: WORLD_INTERACTABLE_READY_GREEN,
     };
 }
 
-// Hides the authored shared WorldIcon so only the per-player runtime marker remains visible.
 function hideAuthoredWorldInteractableIconPresentation(config: WorldInteractableConfig): void {
-    if (config.scope !== "main_base") return;
-
     try {
         const worldIcon = mod.GetWorldIcon(config.objId);
         mod.EnableWorldIconImage(worldIcon, false);
         mod.EnableWorldIconText(worldIcon, false);
     } catch {
-        // Keep this best-effort so missing authored objects do not break map apply.
     }
 }
 
-// Returns true when the authored interact point should stay globally enabled for this terminal type.
 function shouldEnableWorldInteractableAuthoredInteractPoint(config: WorldInteractableConfig): boolean {
-    return config.action === "open_ready_dialog" || config.action === "open_vehicle_spawn_menu";
+    return true;
 }
 
-// Applies the authoritative enabled state to an authored interact point so menus stay reachable while icons stay player-scoped.
 function applyWorldInteractableAuthoredInteractPointState(config: WorldInteractableConfig): void {
     try {
         const interactPoint = mod.GetInteractPoint(config.objId);
         mod.EnableInteractPoint(interactPoint, shouldEnableWorldInteractableAuthoredInteractPoint(config));
     } catch {
-        // Keep this best-effort so missing authored objects do not break map apply.
     }
 }
 
-// Returns true when the player should currently see this terminal's runtime icon.
+function isPlayerInsideWorldInteractableArea(pid: number, objId: number): boolean {
+    return State.players.worldInteractableAreaByPidByObjId[pid]?.[objId] === true;
+}
+
+function setPlayerWorldInteractableAreaMembership(pid: number, objId: number, inside: boolean): void {
+    if (inside) {
+        if (!State.players.worldInteractableAreaByPidByObjId[pid]) {
+            State.players.worldInteractableAreaByPidByObjId[pid] = {};
+        }
+        State.players.worldInteractableAreaByPidByObjId[pid][objId] = true;
+        return;
+    }
+
+    const byObjId = State.players.worldInteractableAreaByPidByObjId[pid];
+    if (!byObjId) return;
+    delete byObjId[objId];
+    if (Object.keys(byObjId).length <= 0) {
+        delete State.players.worldInteractableAreaByPidByObjId[pid];
+    }
+}
+
+function resolveWorldInteractableRuntimeIconAnchorPos(config: WorldInteractableConfig): mod.Vector | undefined {
+    if (config.iconAnchorPos) return config.iconAnchorPos;
+    try {
+        return mod.GetObjectPosition(mod.GetWorldIcon(config.objId));
+    } catch {
+        return undefined;
+    }
+}
+
 function shouldShowWorldInteractableRuntimeIconForPlayer(player: mod.Player, config: WorldInteractableConfig): boolean {
     if (!player || !mod.IsPlayerValid(player)) return false;
-    if (config.scope !== "main_base") return false;
     if (!isPlayerDeployed(player)) return false;
-    if (!config.iconAnchorPos) return false;
 
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return false;
+
+    const anchorPos = resolveWorldInteractableRuntimeIconAnchorPos(config);
+    if (!anchorPos) return false;
+
+    if (config.scope === "point") {
+        return isPlayerInsideWorldInteractableArea(pid, config.objId);
+    }
+
+    if (config.scope !== "main_base") return false;
     if (State.players.inMainBaseByPid[pid] !== true) return false;
 
     const ownerTeamId = config.ownerTeamId;
@@ -76,17 +115,17 @@ function shouldShowWorldInteractableRuntimeIconForPlayer(player: mod.Player, con
     return safeGetTeamNumberFromPlayer(player, 0) === ownerTeamId;
 }
 
-// Returns true when this player should be allowed to activate the authored terminal right now.
 function shouldAllowWorldInteractableActivationForPlayer(player: mod.Player, config: WorldInteractableConfig): boolean {
+    if (config.action === "open_ammo_resupply_menu") {
+        return true;
+    }
     return shouldShowWorldInteractableRuntimeIconForPlayer(player, config);
 }
 
-// Returns the currently spawned per-player runtime world icon handle for one terminal, if any.
 function getWorldInteractableRuntimeIconHandle(pid: number, objId: number): mod.WorldIcon | undefined {
     return State.players.worldInteractableIconByPidByObjId[pid]?.[objId];
 }
 
-// Returns true when a cached runtime world icon handle still appears usable.
 function isWorldInteractableRuntimeIconHandleUsable(icon: mod.WorldIcon | undefined): boolean {
     if (!icon) return false;
     try {
@@ -96,7 +135,6 @@ function isWorldInteractableRuntimeIconHandleUsable(icon: mod.WorldIcon | undefi
     }
 }
 
-// Stores or clears one per-player runtime world icon handle for a terminal ObjId.
 function setWorldInteractableRuntimeIconHandle(
     pid: number,
     objId: number,
@@ -118,11 +156,11 @@ function setWorldInteractableRuntimeIconHandle(
     }
 }
 
-// Spawns one per-player terminal marker at the explicit authored anchor position from map config.
 function showWorldInteractableRuntimeIconForPlayer(player: mod.Player, config: WorldInteractableConfig): void {
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return;
-    if (!config.iconAnchorPos) return;
+    const anchorPos = resolveWorldInteractableRuntimeIconAnchorPos(config);
+    if (!anchorPos) return;
 
     const priorIcon = getWorldInteractableRuntimeIconHandle(pid, config.objId);
     if (isWorldInteractableRuntimeIconHandleUsable(priorIcon)) return;
@@ -137,11 +175,11 @@ function showWorldInteractableRuntimeIconForPlayer(player: mod.Player, config: W
     try {
         const worldIcon = mod.SpawnObject(
             mod.RuntimeSpawn_Common.WorldIcon,
-            config.iconAnchorPos,
+            anchorPos,
             mod.CreateVector(0, 0, 0),
             mod.CreateVector(1, 1, 1)
         ) as mod.WorldIcon;
-        mod.SetWorldIconPosition(worldIcon, config.iconAnchorPos);
+        mod.SetWorldIconPosition(worldIcon, anchorPos);
         mod.SetWorldIconOwner(worldIcon, player);
         mod.SetWorldIconColor(worldIcon, style.color);
         mod.SetWorldIconImage(worldIcon, style.image);
@@ -154,7 +192,6 @@ function showWorldInteractableRuntimeIconForPlayer(player: mod.Player, config: W
     }
 }
 
-// Removes the per-player runtime world icon when the player leaves eligibility.
 function hideWorldInteractableRuntimeIconForPlayer(player: mod.Player, config: WorldInteractableConfig): void {
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return;
@@ -164,13 +201,28 @@ function hideWorldInteractableRuntimeIconForPlayer(player: mod.Player, config: W
     try {
         mod.UnspawnObject(icon);
     } catch {
-        // Best-effort cleanup; always clear script state even if the engine already removed the icon.
     }
 
     setWorldInteractableRuntimeIconHandle(pid, config.objId, undefined);
 }
 
-// Reconciles one terminal's per-player runtime icon against the player's current HQ/team eligibility.
+function updateWorldInteractableAreaTriggerMembershipForPlayer(
+    player: mod.Player,
+    areaTrigger: mod.AreaTrigger,
+    inside: boolean
+): boolean {
+    if (!player || !mod.IsPlayerValid(player) || !areaTrigger) return false;
+    const pid = safeGetPlayerId(player);
+    if (pid === undefined) return false;
+
+    const config = getActiveWorldInteractableConfigByObjId(mod.GetObjId(areaTrigger));
+    if (!config || config.scope !== "point") return false;
+
+    setPlayerWorldInteractableAreaMembership(pid, config.objId, inside);
+    syncWorldInteractableRuntimeIconForPlayer(player, config);
+    return true;
+}
+
 function syncWorldInteractableRuntimeIconForPlayer(player: mod.Player, config: WorldInteractableConfig): void {
     if (shouldShowWorldInteractableRuntimeIconForPlayer(player, config)) {
         showWorldInteractableRuntimeIconForPlayer(player, config);
@@ -180,7 +232,6 @@ function syncWorldInteractableRuntimeIconForPlayer(player: mod.Player, config: W
     hideWorldInteractableRuntimeIconForPlayer(player, config);
 }
 
-// Reconciles all terminal runtime icons for one player so HQ enter/exit and team changes take effect immediately.
 function syncWorldInteractableRuntimeIconsForPlayer(player: mod.Player): void {
     if (!player || !mod.IsPlayerValid(player)) return;
     for (let i = 0; i < ACTIVE_WORLD_INTERACTABLE_CONFIGS.length; i++) {
@@ -188,7 +239,6 @@ function syncWorldInteractableRuntimeIconsForPlayer(player: mod.Player): void {
     }
 }
 
-// Reconciles all active terminal runtime icons for every connected player as a periodic repair pass.
 function syncWorldInteractableRuntimeIconsForAllPlayers(): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -199,11 +249,13 @@ function syncWorldInteractableRuntimeIconsForAllPlayers(): void {
     }
 }
 
-// Removes all currently spawned runtime terminal icons for one pid and clears the cached handles.
 function cleanupWorldInteractableRuntimeIconsForPid(pid: number): void {
     if (!Number.isInteger(pid)) return;
     const byObjId = State.players.worldInteractableIconByPidByObjId[pid];
-    if (!byObjId) return;
+    if (!byObjId) {
+        delete State.players.worldInteractableAreaByPidByObjId[pid];
+        return;
+    }
 
     for (const objIdKey in byObjId) {
         const icon = byObjId[objIdKey];
@@ -211,14 +263,13 @@ function cleanupWorldInteractableRuntimeIconsForPid(pid: number): void {
         try {
             mod.UnspawnObject(icon);
         } catch {
-            // Best-effort cleanup; disconnect/reset should always clear cached icon handles.
         }
     }
 
     delete State.players.worldInteractableIconByPidByObjId[pid];
+    delete State.players.worldInteractableAreaByPidByObjId[pid];
 }
 
-// Removes all currently spawned runtime terminal icons before active map/world-terminal ownership changes.
 function cleanupActiveWorldInteractableRuntimeIconsForAllPlayers(): void {
     const iconsByPid = State.players.worldInteractableIconByPidByObjId;
     for (const pidKey in iconsByPid) {
@@ -226,20 +277,17 @@ function cleanupActiveWorldInteractableRuntimeIconsForAllPlayers(): void {
     }
 }
 
-// Applies the current authored/shared terminal setup for one config.
 function configureWorldInteractablePresentation(config: WorldInteractableConfig): void {
     hideAuthoredWorldInteractableIconPresentation(config);
     applyWorldInteractableAuthoredInteractPointState(config);
 }
 
-// Applies the active authored/shared terminal setup to every configured world interactable on the map.
 function configureActiveWorldInteractables(): void {
     for (let i = 0; i < ACTIVE_WORLD_INTERACTABLE_CONFIGS.length; i++) {
         configureWorldInteractablePresentation(ACTIVE_WORLD_INTERACTABLE_CONFIGS[i]);
     }
 }
 
-// Re-applies authored/shared terminal setup and repairs per-player runtime icon visibility after startup settles.
 function ensureActiveWorldInteractablesReady(): void {
     for (let i = 0; i < ACTIVE_WORLD_INTERACTABLE_CONFIGS.length; i++) {
         configureWorldInteractablePresentation(ACTIVE_WORLD_INTERACTABLE_CONFIGS[i]);
@@ -247,18 +295,23 @@ function ensureActiveWorldInteractablesReady(): void {
     syncWorldInteractableRuntimeIconsForAllPlayers();
 }
 
-// Routes one authored world interactable activation into its implemented menu owner after HQ/team gating.
 function tryHandleWorldInteractableActivation(eventPlayer: mod.Player, eventInteractPoint: mod.InteractPoint): boolean {
     const config = getActiveWorldInteractableConfigByObjId(mod.GetObjId(eventInteractPoint));
     if (!config) return false;
     if (!shouldAllowWorldInteractableActivationForPlayer(eventPlayer, config)) return false;
 
     if (config.action === "open_ready_dialog") {
+        closeAmmoResupplyMenuForPlayer(eventPlayer);
         return tryOpenReadyDialogForPlayer(eventPlayer);
     }
 
     if (config.action === "open_vehicle_spawn_menu") {
+        closeAmmoResupplyMenuForPlayer(eventPlayer);
         return tryOpenVehicleDeployLiveMenuForPlayer(eventPlayer);
+    }
+
+    if (config.action === "open_ammo_resupply_menu") {
+        return tryOpenAmmoResupplyMenuForPlayer(eventPlayer, config.objId);
     }
 
     return false;

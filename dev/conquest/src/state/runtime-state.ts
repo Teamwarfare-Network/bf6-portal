@@ -1,27 +1,6 @@
 // @ts-nocheck
 // Module: state/runtime-state -- authoritative mutable mode state singleton.
 
-// -------------------- Authoritative State Map --------------------
-//
-// Flow state (resets at mode setup):
-// - State.round.phase: MatchPhase.NotReady | MatchPhase.Live | MatchPhase.GameOver.
-// - State.round.clock.durationSeconds: authoritative remaining seconds in the live-phase timer.
-// - State.round.clock.matchLengthSeconds: configured starting duration for each live start.
-//
-// Match state (resets at match start):
-// - State.match.isEnded: indicates match is over and victory dialog should be shown.
-//
-// Vehicle registration (persists across live-flow transitions unless explicitly cleared):
-// - regVehiclesTeam1 (GlobalVariable 0): array of vehicles registered to Team 1.
-// - regVehiclesTeam2 (GlobalVariable 1): array of vehicles registered to Team 2.
-// - vehIds/vehOwners: best-effort 'last driver' mapping used for messages only.
-//
-// UI caches (per-player, rebuilt as needed):
-// - State.hudCache.topHudShellByPid[pid]: cached non-combat top-HUD shell references.
-// - dialog/widget caches: cached references to modal UI elements (ready dialog, victory, clock digits).
-//
-// ------------------------------------------------------------------
-
 // Centralized mutable state for mode flow and UI caches.
 const State: GameState = {
     round: {
@@ -254,18 +233,12 @@ const State: GameState = {
         readyByPid: {},
         readyNeedsReconfirmByPid: {},
         readyMessageCooldownByPid: {},
-        joinPromptShownByPid: {},
-        joinPromptNeverShowByPidMap: {},
-        joinPromptReadyDialogOpenedByPid: {},
-        joinPromptTipIndexByPid: {},
-        joinPromptTipsUnlockedByPid: {},
-        joinPromptTripleTapArmedByPid: {},
-        joinPromptPolicyDisabledByPid: {},
-        joinPromptPolicySuppressedCountByPid: {},
-        joinPromptLastPolicySuppressedAtSecondsByPid: {},
-        joinPromptLastSuppressionReasonByPid: {},
         inMainBaseByPid: {},
+        worldInteractableAreaByPidByObjId: {},
         worldInteractableIconByPidByObjId: {},
+        ammoResupplyMenuVisibleByPid: {},
+        ammoResupplyMenuObjIdByPid: {},
+        ammoResupplyStateByPidByObjId: {},
         deployedByPid: {},
         disconnectedByPid: {},
         uiInputEnabledByPid: {},
@@ -291,6 +264,7 @@ const State: GameState = {
         clockWidgetCache: {},
         countdownWidgetCache: {},
         vehicleDeployTimerCache: {},
+        ammoResupplyMenuCache: {},
         boundaryPromptCache: {},
     },
 };

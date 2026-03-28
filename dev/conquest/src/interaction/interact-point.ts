@@ -50,11 +50,9 @@ async function spawnReadyDialogInteractPoint(eventPlayer: mod.Player) {
 function tryOpenReadyDialogForPlayer(eventPlayer: mod.Player): boolean {
     const playerId = mod.GetObjId(eventPlayer);
     try {
+        closeAmmoResupplyMenuForPlayer(playerId);
         closeVehicleDeployLiveMenuForPlayer(playerId);
         setUIInputModeForPlayer(eventPlayer, true);
-        if (consumeJoinPromptTripleTapForPid(playerId)) {
-            markJoinPromptReadyDialogOpened(playerId);
-        }
         updateHelpTextVisibilityForPid(playerId);
         const dialogRoot = showReadyDialogUI(eventPlayer);
         if (!dialogRoot) {

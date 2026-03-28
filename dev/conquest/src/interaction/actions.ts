@@ -6,8 +6,6 @@
 const TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS = 0.6;
 type HudWarmOptions = {
     refreshReadyDialogs?: boolean;
-    createJoinPrompt?: boolean;
-    joinPromptDelaySeconds?: number;
 };
 
 const TEAM_SWAP_HUD_UNDEPLOY_WAIT_SECONDS = 0.05;
@@ -204,6 +202,7 @@ function prebuildCriticalHudWhileHidden(eventPlayer: mod.Player, pid: number): v
 
 function prebuildDeferredUiWhileHidden(eventPlayer: mod.Player, pid: number): void {
     prebuildReadyDialogUiFamilyWhileHidden(eventPlayer, pid);
+    prebuildAmmoResupplyMenuUiWhileHidden(eventPlayer);
 }
 
 function renderTopLeftUiFamilyImmediate(eventPlayer: mod.Player, pid: number): void {
@@ -390,8 +389,6 @@ async function runTeamSwapHudWarmController(
     if (!isHudWarmTokenCurrent(pid, token)) return;
 
     await warmCriticalHudForPlayer(eventPlayer, {
-        createJoinPrompt: false,
-        joinPromptDelaySeconds: 0,
     });
 
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
@@ -493,21 +490,6 @@ async function warmCriticalHudForPlayer(
         renderReadyDialogForAllVisibleViewers();
     }
     releaseHudWarmTransitionForPlayer(eventPlayer, token);
-
-    if (
-        options?.createJoinPrompt
-        && !State.players.deployedByPid[pid]
-        && shouldShowJoinPromptForPlayer(eventPlayer)
-    ) {
-        const delaySeconds = options.joinPromptDelaySeconds ?? 0;
-        if (delaySeconds > 0) {
-            await mod.Wait(delaySeconds);
-            if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-            if (!isHudWarmTokenCurrent(pid, token)) return;
-            if (State.players.deployedByPid[pid]) return;
-        }
-        createJoinPromptForPlayer(eventPlayer);
-    }
 }
 
 // Performs the authoritative conquest HUD reset for one player before team-swap redraw.

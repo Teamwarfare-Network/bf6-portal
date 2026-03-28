@@ -522,7 +522,7 @@ Player-impact telemetry additions:
   - spawn sets must not contain duplicate ObjIds
   - when phase requires spawn sets, empty required sets emit warnings and force safe fallback behavior
 - `CF-100` Capability-bounded validator rule: map validation must be restricted to checks proven observable in Portal runtime; unsupported type-introspection assumptions are forbidden.
-- `CF-119` World-interactable schema ownership: `MapConfig.mainBaseInteractableObjIds[]` and `MapConfig.flagInteractableObjIds[]` are the canonical explicit per-map lists for retained world interactables; runtime must not infer interactables by scanning ranges alone.
+- `CF-119` World-interactable schema ownership: `MapConfig.mainBaseInteractableObjIds[]` and `MapConfig.gadgetInteractableObjIds[]` are the canonical explicit per-map lists for retained world interactables; runtime must not infer interactables by scanning ranges alone.
 - `CF-120` World-interactable ObjId allocation contract:
   - main-base interactables start at `1000` and are authored as even/odd pairs
   - even `objId` => ready dialog
@@ -2407,7 +2407,7 @@ Godot/map prerequisites:
 
 - optional camera anchors only if cinematic flow is added
 - authored/placed main-base and point `WorldIcon` + `InteractPoint` pairs for every retained world interactable
-- explicit `MapConfig.mainBaseInteractableObjIds[]` and `MapConfig.flagInteractableObjIds[]` coverage for every retained interactable object id; do not rely on global range scans without a concrete map-config entry
+- explicit `MapConfig.mainBaseInteractableObjIds[]` and `MapConfig.gadgetInteractableObjIds[]` coverage for every retained interactable object id; do not rely on global range scans without a concrete map-config entry
 - first-pass authored object requirements remain in Godot:
   - `WorldIcon` and `InteractPoint` placement
   - icon image
@@ -2459,7 +2459,7 @@ Open design questions / locks still needed before implementation:
   - lock the teleport-arrival contract for the reused vehicle spawn menu (`teleport the player` instead of deploy fulfillment)
   - lock the gadget-slot ownership, persistence, cooldown, and reset rules for the ammo resupply menu
 - map-config schema lock for world interactables:
-  - lock the exact `MapConfig.mainBaseInteractableObjIds[]` / `MapConfig.flagInteractableObjIds[]` shape and validator behavior
+  - lock the exact `MapConfig.mainBaseInteractableObjIds[]` / `MapConfig.gadgetInteractableObjIds[]` shape and validator behavior
   - keep the explicit map-config arrays authoritative even when range/parity conventions are also enforced
 - round-start behavior limitations:
   - define exactly what can change pre-live, what requires setup/reset, and what is forbidden once the match is live
@@ -2506,11 +2506,12 @@ World interactable feature contract:
 - Current shipped checkpoint:
   - even main-base ids now hide the shared authored `WorldIcon`, show a per-player runtime `READY` icon only while that player is deployed inside their own HQ, keep the authored interact point enabled, and open the existing ready dialog
   - odd main-base ids now hide the shared authored `WorldIcon`, show a per-player runtime `DEPLOY` icon only while that player is deployed inside their own HQ, keep the authored interact point enabled, and open the in-world live deploy menu that reuses the deploy-screen vehicle HUD family
-  - point/ammo interactables remain authored placeholders only
-  - per-player visibility is currently implemented for the icon layer only; authored interact points remain shared and activation is still gated in script by team/HQ state
+  - point/ammo interactables now hide the shared authored `WorldIcon`, show a per-player runtime red `AMMO` explosion icon only while that deployed player is inside the same-id authored point-local `AreaTrigger`, keep the authored interact point enabled, and open a dedicated center-screen ammo resupply modal when interacted with
+  - the current ammo resupply modal uses only verified 2D gadget-image UI paths: a large `AddUIGadgetImage(...)` ammo-drop hero icon, four launcher pickup rows with icon-button + label + right-side status, three ammo-charge icon buttons with per-charge timers, and a centered bottom close button
+  - per-player visibility is currently implemented for the icon layer only; authored interact points remain shared and activation is still gated in script by team/HQ state or left globally available where the menu contract is still deferred
   - current accepted regression record for the main-base slice lives in `design_doc/conquest_issues.md` so future HUD/world-terminal regressions can be compared against the resolved fixes before new changes are made
 - Locked first-pass direction:
-  - `MapConfig.mainBaseInteractableObjIds[]` and `MapConfig.flagInteractableObjIds[]` are the authoritative explicit lists for retained interactables on a map; runtime must not discover them by scanning ids alone
+  - `MapConfig.mainBaseInteractableObjIds[]` and `MapConfig.gadgetInteractableObjIds[]` are the authoritative explicit lists for retained interactables on a map; runtime must not discover them by scanning ids alone
   - Phase 7 world interactables are shared authored objects, not per-player runtime-spawned interact points
   - first-pass runtime should derive scope/action from the authored array plus the locked range/parity rubric
   - even and odd main-base terminals keep authored `WorldIcon` + `InteractPoint` pairs with the same numeric id, but the shared authored `WorldIcon` is only an anchor object and script owns the actual visible per-player icon
@@ -2526,13 +2527,14 @@ World interactable feature contract:
   - keep the current ready-dialog open path as fallback while the physical terminal flow is validated
 - First-pass required map-config data:
   - `mainBaseInteractableObjIds[]`
-  - `flagInteractableObjIds[]`
+  - `gadgetInteractableObjIds[]`
+  - `gadgetInteractableAnchors[]` when authored runtime `WorldIcon` position lookup is unreliable and the point/ammo icon layer needs explicit authored placement data
 - First-pass authored object requirements:
   - matching `WorldIcon` + `InteractPoint` objects in Godot
   - correct image/color/visibility settings on those placed objects
 - Phase-state rules:
-  - pre-match/setup: main-base even/odd pairs may be enabled; point ammo interactables remain disabled or placeholder-only until the ammo menu is designed
-  - live: main-base ready-dialog and vehicle-spawn interactables are approved for use; point ammo interactables may enable only when the ammo resupply menu is defined
+  - pre-match/setup: main-base even/odd pairs may be enabled; point ammo interactables may show only their area-trigger-gated icon layer while the ammo menu remains deferred
+  - live: main-base ready-dialog and vehicle-spawn interactables are approved for use; point ammo interactables may expose shared interact points while their icon layer remains area-trigger-gated and the ammo resupply menu is still deferred
   - post-match/result display: disable all world interactables unless ownership explicitly returns to setup/reset
 - Vehicle spawn menu contract:
   - reuse as much of the current vehicle deploy HUD family as possible:
@@ -2584,6 +2586,19 @@ World interactable feature contract:
     - explicit world-interactable anchor data is acceptable now, but additional maps should use a compact authored schema so Phase 7 icon-anchor data does not bloat linearly per map
 - Ammo resupply menu contract:
   - build this as a wholly new menu; it should not reuse the vehicle deploy HUD shell
+  - current accepted functional shell:
+    - centered square modal
+    - centered bottom close button
+    - large hero icon rendered through verified `AddUIGadgetImage(...)`
+    - four launcher pickup rows: `RPG`, `IGLA`, `Stinger`, `AT4`
+    - each launcher row uses an icon button, a text label, and a right-side `READY` or countdown status
+    - all four launcher rows share one `180` second cooldown once any launcher is taken
+    - three ammo-charge icon buttons sit below the launcher rows
+    - each ammo-charge button owns its own `60` second cooldown
+    - ammo-charge buttons only attempt to resupply managed rocket-launcher ammo, not general inventory ammo
+    - current implementation always replaces `InventorySlots.GadgetTwo`; first-slot preference preservation is deferred follow-up work
+    - temporary icon evaluation should stay on the verified 2D UI paths only; do not rely on unverified string-key icon registries
+    - current accepted ammo-button icon path is the verified `AddUIGadgetImage(...)` gadget-image route, using `CallIn_Ammo_Drop` as the safe ammo-box proxy until a better verified 2D icon source is locked
   - initial scope:
     - replenish rocket ammo
     - replenish demolition charge / C4 ammo
@@ -2599,13 +2614,153 @@ World interactable feature contract:
     - `SetInventoryAmmo(...)`
     - `SetInventoryMagazineAmmo(...)`
     - `Resupply(...)`
+  - verified 2D UI icon reference:
+    - for 2D UI there are 3 separate buckets
+    - generic UI images via `AddUIImage(...)`
+    - these are the only explicitly listed generic 2D UI icons in `UIImageType`
+    - `mod.UIImageType.CrownOutline`
+    - `mod.UIImageType.CrownSolid`
+    - `mod.UIImageType.None`
+    - `mod.UIImageType.QuestionMark`
+    - `mod.UIImageType.RifleAmmo`
+    - `mod.UIImageType.SelfHeal`
+    - `mod.UIImageType.SpawnBeacon`
+    - `mod.UIImageType.TEMP_PortalIcon`
+    - gadget images via `AddUIGadgetImage(...)`
+    - this is where most of the extra 2D menu icons come from; the SDK exposes `AddUIGadgetImage(name, position, size, anchor, gadget: Gadgets, parent, ...)`, so the image list is effectively the `Gadgets` enum rather than a separate icon enum
+    - best practical menu-icon set therefore includes gadget-derived images for things like:
+    - call-ins:
+    - `CallIn_Air_Strike`
+    - `CallIn_Ammo_Drop`
+    - `CallIn_Anti_Vehicle_Drop`
+    - `CallIn_Artillery_Strike`
+    - `CallIn_Smoke_Screen`
+    - `CallIn_UAV_Overwatch`
+    - `CallIn_Weapon_Drop`
+    - class gadgets:
+    - `Class_Adrenaline_Injector`
+    - `Class_Motion_Sensor`
+    - `Class_Repair_Tool`
+    - `Class_Supply_Bag`
+    - deployables:
+    - `Deployable_Cover`
+    - `Deployable_Deploy_Beacon`
+    - `Deployable_EOD_Bot`
+    - `Deployable_Grenade_Intercept_System`
+    - `Deployable_Missile_Intercept_System`
+    - `Deployable_Portable_Mortar`
+    - `Deployable_Recon_Drone`
+    - `Deployable_Vehicle_Supply_Crate`
+    - launchers:
+    - `Launcher_Aim_Guided`
+    - `Launcher_Air_Defense`
+    - `Launcher_Auto_Guided`
+    - `Launcher_Breaching_Projectile`
+    - `Launcher_High_Explosive`
+    - `Launcher_Incendiary_Airburst`
+    - `Launcher_Long_Range`
+    - `Launcher_Smoke_Grenade`
+    - `Launcher_Thermobaric_Grenade`
+    - `Launcher_Unguided_Rocket`
+    - melee:
+    - `Melee_Combat_Knife`
+    - `Melee_Hunting_Knife`
+    - `Melee_Sledgehammer`
+    - misc:
+    - `Misc_Acoustic_Sensor_AV_Mine`
+    - `Misc_Anti_Personnel_Mine`
+    - `Misc_Anti_Vehicle_Mine`
+    - `Misc_Assault_Ladder`
+    - `Misc_Defibrillator`
+    - `Misc_Demolition_Charge`
+    - `Misc_Incendiary_Round_Shotgun`
+    - `Misc_Laser_Designator`
+    - `Misc_Sniper_Decoy`
+    - `Misc_Supply_Pouch`
+    - `Misc_Tracer_Dart`
+    - `Misc_Tripwire_Sensor_AV_Mine`
+    - throwables:
+    - `Throwable_Anti_Vehicle_Grenade`
+    - `Throwable_Flash_Grenade`
+    - `Throwable_Fragmentation_Grenade`
+    - `Throwable_Incendiary_Grenade`
+    - `Throwable_Mini_Frag_Grenade`
+    - `Throwable_Proximity_Detector`
+    - `Throwable_Smoke_Grenade`
+    - `Throwable_Stun_Grenade`
+    - `Throwable_Throwing_Knife`
+    - weapon images via `AddUIWeaponImage(...)`
+    - `AddUIWeaponImage(...)` is locally verified, including overloads with optional `WeaponPackage` and `Player | Team` visibility
+    - the usable image list is therefore the `Weapons` enum
+    - examples:
+    - assault rifles:
+    - `AssaultRifle_AK4D`
+    - `AssaultRifle_B36A4`
+    - `AssaultRifle_KORD_6P67`
+    - `AssaultRifle_L85A3`
+    - `AssaultRifle_M433`
+    - `AssaultRifle_NVO_228E`
+    - `AssaultRifle_SOR_556_Mk2`
+    - `AssaultRifle_TR_7`
+    - carbines:
+    - `Carbine_AK_205`
+    - `Carbine_GRT_BC`
+    - `Carbine_M277`
+    - `Carbine_M417_A2`
+    - `Carbine_M4A1`
+    - `Carbine_QBZ_192`
+    - `Carbine_SG_553R`
+    - `Carbine_SOR_300SC`
+    - DMRs:
+    - `DMR_LMR27`
+    - `DMR_M39_EMR`
+    - `DMR_SVDM`
+    - `DMR_SVK_86`
+    - LMGs:
+    - `LMG_DRS_IAR`
+    - `LMG_KTS100_MK8`
+    - `LMG_L110`
+    - `LMG_M_60`
+    - `LMG_M123K`
+    - `LMG_M240L`
+    - `LMG_M250`
+    - `LMG_RPKM`
+    - shotguns:
+    - `Shotgun__185KS_K`
+    - `Shotgun_M1014`
+    - `Shotgun_M87A1`
+    - sidearms:
+    - `Sidearm_ES_57`
+    - `Sidearm_GGH_22`
+    - `Sidearm_M44`
+    - `Sidearm_M45A1`
+    - `Sidearm_P18`
+    - SMGs:
+    - `SMG_KV9`
+    - `SMG_PW5A3`
+    - `SMG_PW7A2`
+    - `SMG_SCW_10`
+    - `SMG_SGX`
+    - `SMG_SL9`
+    - `SMG_UMG_40`
+    - `SMG_USG_90`
+    - snipers:
+    - `Sniper_M2010_ESR`
+    - `Sniper_Mini_Scout`
+    - `Sniper_PSR`
+    - `Sniper_SV_98`
+    - best non-handwavy summary:
+    - 8 generic `UIImageType` icons
+    - all `Gadgets` as gadget-image icons
+    - all `Weapons` as weapon-image icons
+    - explicitly do not assume arbitrary `UI_Gadget_*`, `UI_Weapon_*`, `UI_Vehicle_*`, or `UI_Icon_*` string keys are valid unless a working key is verified in this project
   - exact mapping of player-facing launcher names (`RPG`, `Stinger`, `IGLA`) onto validated `mod.Gadgets` entries must be locked during implementation
   - exact slot ownership (`GadgetOne`, `GadgetTwo`, `ClassGadget`, `MiscGadget`) and persistence/reset rules must be locked before implementation
   - point/ammo implementation prerequisites still needed:
-    - define the actual ammo-crate interaction/menu contract in writing before code work resumes
+    - define the actual ammo-crate interaction/menu contract in writing before the actual menu/UI work resumes
     - author custom Godot point-local `AreaTrigger` volumes for those interactables
     - decide whether those point-local trigger ids need explicit `MapConfig` ownership or can remain purely authored/map-side data
-    - lock when point/ammo icons and interact prompts should be visible relative to those authored trigger volumes
+    - lock whether point/ammo interact prompts stay always available or later become area-gated alongside the icon layer
   - next optional world-interactable slice:
     - document the ammo-crate menu behavior first
     - author the point-local Godot trigger volumes second
@@ -2677,10 +2832,11 @@ Codex To-Do Checklist:
 - [ ] Enforce single end transition path through end latch (no duplicate finalize paths).
 - [ ] Clean up the ready-up dialog for pre-match/post-match transition correctness and ownership clarity.
 - [ ] Redesign the join prompt and validate its ownership/flow across first join, reconnect, and transition to match-live state.
-- [x] Extend `MapConfig` with explicit `mainBaseInteractableObjIds[]` and `flagInteractableObjIds[]` arrays.
+- [x] Extend `MapConfig` with explicit `mainBaseInteractableObjIds[]` and `gadgetInteractableObjIds[]` arrays.
 - [ ] Validate unique world-interactable ids plus the main-base even/odd pair rule and the `1050-1099` point rule before enabling any interactable.
 - [x] Route even main-base ids into the existing ready-dialog open path without creating a second UI owner.
 - [x] Reuse the current vehicle deploy HUD shell for odd main-base ids, add a clean back plate, and replace deploy/undeploy fulfillment with teleport-based button handlers.
+- [x] Show point/ammo interactable runtime icons per-player only while the player is inside the same-id authored point-local `AreaTrigger`.
 - [ ] Design and build the new ammo resupply menu for point interactables, including gadget-slot ownership and launcher/ammo mutation rules.
 - [x] Apply per-player HQ/team visibility for main-base terminal icons through runtime icon ownership and script gating.
 - [ ] Validate interactable state gating across pre-match, reconnect, live lockout, and post-match/result ownership.
@@ -2696,6 +2852,7 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-03-28 | Point/ammo interactable icon gating follow-up | Renamed the explicit point interactable list to `MapConfig.gadgetInteractableObjIds[]`, kept the shared authored `InteractPoint` live, and implemented per-player runtime `AMMO` explosion icons that only appear while a deployed player is inside the same-id authored point-local `AreaTrigger`; the actual ammo menu remains deferred | Phase 7, CF-119, CF-120, CF-121 | accepted | current status + world-interactable contract + ammo prerequisites + checklist consistency`
   - `2026-03-28 | Main-base terminal acceptance + regression capture sync | Recorded the accepted current Phase 7 world-terminal checkpoint: even `READY` and odd `DEPLOY` main-base terminals are now functional, per-player icon placement/visibility uses explicit authored anchor data plus own-HQ gating, the live deploy menu reuses the deploy HUD shell, passive deployed vehicle-HUD refresh after config apply is back on hidden-prebuild/reveal ownership, and the next optional world-interactable slice is the point/ammo menu plus custom Godot-authored point-local `AreaTrigger` volumes | Phase 7, CF-119, CF-120, CF-121 | accepted | current status + world-interactable contract + ammo prerequisites + cleanup backlog + checklist + issues tracker consistency`
   - `2026-03-27 | Main-base terminal icon ownership follow-up | Replaced the shared authored main-base world-icon visibility model with per-player runtime `AddUIIcon(...)` ownership anchored to the authored `WorldIcon` + `InteractPoint` pair, restricted icon visibility to players deployed inside their own HQ, and clarified that authored interact points remain shared while script gates activation by team/HQ state | Phase 7, CF-121 | accepted | world-interactable contract + implementation notes + schema constraints + rubric sync`
   - `2026-03-22 | Phase ordering swap request | Renumbered Pre & Post Match Events from Phase 6 to Phase 7 because functional boundary-zone work was promoted ahead of it; historical entries below may still reference the prior numbering | Phase 6, Phase 7 | accepted | TOC + current-status target + Phase 6/7 section order + consistency pass`

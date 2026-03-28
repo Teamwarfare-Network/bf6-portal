@@ -8,7 +8,6 @@
 const ROUND_START_SECONDS = 25 * 60; // Initial match clock duration before the live phase starts.
 const MATCH_END_DELAY_SECONDS = 45; // Victory dialog duration before match end.
 const READY_UP_MESSAGE_COOLDOWN_SECONDS = 2.0; // Throttle ready-up broadcast spam per player.
-const SHOW_HELP_TEXT_PROMPT_ON_JOIN = false; // Show the join help prompt overlay on first connect.
 const ROUND_CLOCK_DEFAULT_SECONDS = ROUND_START_SECONDS; // Source of truth for clock reset.
 const ADMIN_MATCH_LENGTH_STEP_SECONDS = 60;
 const ADMIN_MATCH_LENGTH_MIN_SECONDS = 60;
@@ -19,8 +18,6 @@ const GAMEMODE_TARGET_SCORE_SAFETY_CAP = 9999; // Prevent engine auto-end from l
 // - "Debug" messages are development/diagnostic UX (white log / green box).
 // - "Gameplay" messages are player-facing mode-flow information.
 const ENABLE_GAMEPLAY_MESSAGES = true; // Gameplay-critical messaging (both channels). This should be on at all times
-const ENABLE_DEBUG_NOTIFICATION_MESSAGES = false; // Green box notifications. Defaults to false.
-const ENABLE_DEBUG_HIGHLIGHTED_MESSAGES = false; // CP visibility debug logs in highlighted world log.
 const TEAM_ROSTER_MAX_ROWS = 16;
 
 // Team identifiers (script uses T1/T2 semantics).

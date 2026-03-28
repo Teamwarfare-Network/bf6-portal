@@ -1,29 +1,15 @@
 // @ts-nocheck
-// Module: state/core -- gameplay state helpers and world-log messaging gates
 
-//#region -------------------- Core gameplay state helpers --------------------
-
-// Core gameplay helper utilities (state sync + messaging gates).
-
-// Central message-gating policy: gameplay vs debug, and highlighted vs notification.
-function shouldSendMessage(isGameplay: boolean, isHighlighted: boolean): boolean {
-    if (isGameplay) return ENABLE_GAMEPLAY_MESSAGES;
-    return isHighlighted ? ENABLE_DEBUG_HIGHLIGHTED_MESSAGES : ENABLE_DEBUG_NOTIFICATION_MESSAGES;
-}
-
-// Toggles UI input mode for one player and mirrors the state in script cache.
 function setUIInputModeForPlayer(player: mod.Player, enabled: boolean): void {
     if (!player || !mod.IsPlayerValid(player)) return;
     mod.EnableUIInputMode(enabled, player);
     State.players.uiInputEnabledByPid[mod.GetObjId(player)] = enabled;
 }
 
-// Phase helper for readability (avoids scattered enum comparisons).
 function isMatchLive(): boolean {
     return State.round.phase === MatchPhase.Live;
 }
 
-// Returns true if the given team currently has at least one valid player.
 function hasPlayersOnTeam(team: mod.Team): boolean {
     if (mod.Equals(team, mod.GetTeam(0))) return false;
     const players = mod.AllPlayers();
@@ -36,11 +22,9 @@ function hasPlayersOnTeam(team: mod.Team): boolean {
     return false;
 }
 
-// World-log wrapper; respects gameplay/debug gates and optional target.
 function sendHighlightedWorldLogMessage(message: mod.Message, isGameplay: boolean, target?: mod.Player | mod.Team, debugKey?: number): void {
-    if (!shouldSendMessage(isGameplay, true)) return;
+    if (!isGameplay) return;
     if (target) {
-        // Route to the correct overload; Team cast-as-Player can silently drop messages after team swaps.
         if (mod.IsType(target, mod.Types.Team)) {
             const teamTarget = target as mod.Team;
             if (!hasPlayersOnTeam(teamTarget)) return;
@@ -58,13 +42,7 @@ function sendHighlightedWorldLogMessage(message: mod.Message, isGameplay: boolea
     mod.DisplayHighlightedWorldLogMessage(message);
 }
 
-// Ends the current mode for the provided team number using team-targeted engine call.
 function endGameModeForTeamNum(teamNum: TeamID | 0): void {
     const winningTeam = mod.GetTeam(teamNum);
-
-    // End the match by team consistently; ending "by player" can yield inconsistent engine finalization
-    // when players reconnect or briefly join different teams.
     mod.EndGameMode(winningTeam);
 }
-
-//#endregion ----------------- Core gameplay state helpers --------------------

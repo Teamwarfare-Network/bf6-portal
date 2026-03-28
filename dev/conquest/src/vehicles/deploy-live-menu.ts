@@ -59,6 +59,10 @@ function tryOpenVehicleDeployLiveMenuForPlayer(eventPlayer: mod.Player): boolean
     if (pid === undefined) return false;
     if (!State.players.deployedByPid[pid]) return false;
 
+    if (isAmmoResupplyMenuOpenForPid(pid)) {
+        closeAmmoResupplyMenuForPlayer(eventPlayer);
+    }
+
     if (State.players.readyDialogData[pid]?.dialogVisible) {
         hideReadyDialogUI(eventPlayer);
     }

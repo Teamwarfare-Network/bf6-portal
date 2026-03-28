@@ -279,13 +279,19 @@ function classifyMainBaseInteractableActionFromObjId(objId: number): WorldIntera
 function buildWorldInteractableConfigsFromMapConfig(cfg: MapConfig): WorldInteractableConfig[] {
     const configs: WorldInteractableConfig[] = [];
     const mainBaseIds = cfg.mainBaseInteractableObjIds ?? [];
-    const flagIds = cfg.flagInteractableObjIds ?? [];
+    const gadgetIds = cfg.gadgetInteractableObjIds ?? [];
     const mainBaseAnchorByObjId: Record<number, WorldInteractableAnchorConfig> = {};
+    const gadgetAnchorByObjId: Record<number, WorldInteractableAnchorConfig> = {};
 
     for (let i = 0; i < (cfg.mainBaseInteractableAnchors?.length ?? 0); i++) {
         const anchor = cfg.mainBaseInteractableAnchors?.[i];
         if (!anchor || !isValidConfiguredObjId(anchor.objId)) continue;
         mainBaseAnchorByObjId[Math.floor(anchor.objId)] = anchor;
+    }
+    for (let i = 0; i < (cfg.gadgetInteractableAnchors?.length ?? 0); i++) {
+        const anchor = cfg.gadgetInteractableAnchors?.[i];
+        if (!anchor || !isValidConfiguredObjId(anchor.objId)) continue;
+        gadgetAnchorByObjId[Math.floor(anchor.objId)] = anchor;
     }
 
     for (let i = 0; i < mainBaseIds.length; i++) {
@@ -302,13 +308,15 @@ function buildWorldInteractableConfigsFromMapConfig(cfg: MapConfig): WorldIntera
         });
     }
 
-    for (let i = 0; i < flagIds.length; i++) {
-        const objId = Math.floor(flagIds[i]);
+    for (let i = 0; i < gadgetIds.length; i++) {
+        const objId = Math.floor(gadgetIds[i]);
         if (!isValidConfiguredObjId(objId)) continue;
+        const anchor = gadgetAnchorByObjId[objId];
         configs.push({
             objId,
             scope: "point",
             action: "open_ammo_resupply_menu",
+            iconAnchorPos: anchor?.pos,
         });
     }
 
@@ -346,11 +354,11 @@ function buildMapConfigObjIdValidationEntries(cfg: MapConfig): MapConfigObjIdVal
         });
     }
 
-    const flagIds = cfg.flagInteractableObjIds ?? [];
-    for (let i = 0; i < flagIds.length; i++) {
+    const gadgetIds = cfg.gadgetInteractableObjIds ?? [];
+    for (let i = 0; i < gadgetIds.length; i++) {
         entries.push({
-            label: `flagInteractableObjIds[${i}]`,
-            objId: flagIds[i],
+            label: `gadgetInteractableObjIds[${i}]`,
+            objId: gadgetIds[i],
             required: false,
             expectedRangeMin: 1050,
             expectedRangeMax: 1099,
@@ -580,8 +588,10 @@ function applyVehicleSpawnSpecsToExistingSlots(): void {
 // Applies the selected map's base anchors, spawn specs, and yaw offsets to the active runtime config.
 // Also refreshes the Ready dialog map label so the UI matches the active map.
 function applyMapConfig(mapKey: MapKey): void {
+    const cfg = MAP_CONFIGS[mapKey];
+    if (!cfg) return;
     ACTIVE_MAP_KEY = mapKey;
-    ACTIVE_MAP_CONFIG = MAP_CONFIGS[ACTIVE_MAP_KEY];
+    ACTIVE_MAP_CONFIG = cfg;
     ACTIVE_CAPTURE_POINT_CONFIGS = ACTIVE_MAP_CONFIG.capturePoints ?? [];
     rebuildActiveCapturePointConfigIndex();
     MAIN_BASE_TEAM1_POS = ACTIVE_MAP_CONFIG.team1Base;

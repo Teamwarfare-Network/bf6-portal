@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v0.873)",
+        "title": "teamwarfare . net | TWL Conquest (v0.903)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -256,6 +256,19 @@
       "left": "<",
       "right": ">",
       "loading": "Loading...",
+      "assault": "ASSAULT",
+      "ammo": "AMMO",
+      "gadgets": "GADGETS",
+      "engineer": "ENGINEER",
+      "medic": "MEDIC",
+      "recon": "RECON",
+      "rocketAmmo": "LAUNCHER AMMO",
+      "rpg": "RPG",
+      "igla": "IGLA",
+      "iglaMarked": "IGLA*",
+      "stinger": "STINGER",
+      "at4": "AT4",
+      "noLauncher": "NO LAUNCHER",
       "spawn": "DEPLOY",
       "airDeploy": "AIR DEPLOY",
       "groundDeploy": "GROUND DEPLOY",
@@ -270,6 +283,7 @@
     },
     "countdown": {
       "format": "{0}",
+      "clockFormat": "{0}:{1}{2}",
       "go": "GO!"
     },
     "debug": {

@@ -58,8 +58,6 @@ function buildReadyDialogRosterSignature(viewer: mod.Player, viewerPlayerId: num
             if (entry?.player) {
                 const pid = mod.GetObjId(entry.player);
                 signature += `${pid},${State.players.readyByPid[pid] ? 1 : 0},${isPlayerInMainBaseForReady(pid) ? 1 : 0};`;
-            } else if (entry?.nameKey !== undefined) {
-                signature += `key:${entry.nameKey};`;
             } else {
                 signature += `empty;`;
             }

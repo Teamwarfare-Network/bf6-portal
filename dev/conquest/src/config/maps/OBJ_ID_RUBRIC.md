@@ -42,7 +42,7 @@ Purpose:
 
 - `1050-1099`: reserved for Phase 7 capture-point world interactables
   - Capture-point/ammo-resupply interactables
-  - Placeholder/runtime-disabled until the ammo menu and point-local trigger rules are defined.
+  - Current accepted first slice: shared authored interact points may remain live while the per-player icon layer is gated by the same-id authored point-local `AreaTrigger`.
 
 ## Phase 7 World-Interactable Quick Map
 
@@ -56,7 +56,8 @@ Purpose:
 - `1050-1099`
   - scope: `point`
   - all `objId`s: show a point/ammo terminal and route interaction to `open_ammo_resupply_menu`
-  - default phase intent: placeholder or disabled until the ammo-resupply menu is designed; later can be enabled by explicit phase-state rules
+  - current accepted first slice: hide the authored shared `WorldIcon`, show a per-player runtime red `AMMO` explosion icon only while the deployed player is inside the same-id authored point-local `AreaTrigger`, and keep the authored interact point live while the menu is still deferred
+  - explicit `gadgetInteractableAnchors[]` map-config data is allowed when runtime authored-position lookup is unreliable and the point icon layer needs fixed authored placement
   - ownership/visibility, icon art, color, range, alpha, and exact world-icon/interact-point pairing are not implied by the range; they must come from explicit map config
 
 - Range/parity tells you only the family and default action.

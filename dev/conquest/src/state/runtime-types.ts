@@ -367,22 +367,16 @@ interface GameState {
         readyByPid: Record<number, boolean>;
         readyNeedsReconfirmByPid: Record<number, boolean>;
         readyMessageCooldownByPid: Record<number, number>;
-        // Join-time prompt: only once per player, regardless of undeploy repeats.
-        joinPromptShownByPid: Record<number, boolean>;
-        // "Never Show Again" is stored per map so other maps can still show the prompt.
-        joinPromptNeverShowByPidMap: Record<number, Partial<Record<MapKey, boolean>>>;
-        // Join prompt sequencing (tips + unlock tracking).
-        joinPromptReadyDialogOpenedByPid: Record<number, boolean>;
-        joinPromptTipIndexByPid: Record<number, number>;
-        joinPromptTipsUnlockedByPid: Record<number, boolean>;
-        joinPromptTripleTapArmedByPid: Record<number, boolean>;
-        // Join prompt policy/telemetry tracking (prompt can be intentionally disabled by design).
-        joinPromptPolicyDisabledByPid: Record<number, boolean>;
-        joinPromptPolicySuppressedCountByPid: Record<number, number>;
-        joinPromptLastPolicySuppressedAtSecondsByPid: Record<number, number>;
-        joinPromptLastSuppressionReasonByPid: Record<number, number>;
         inMainBaseByPid: Record<number, boolean>;
+        worldInteractableAreaByPidByObjId: Record<number, Record<number, boolean>>;
         worldInteractableIconByPidByObjId: Record<number, Record<number, mod.WorldIcon>>;
+        ammoResupplyMenuVisibleByPid: Record<number, boolean>;
+        ammoResupplyMenuObjIdByPid: Record<number, number>;
+        ammoResupplyStateByPidByObjId: Record<number, Record<number, {
+            launcherSharedReadyAtSeconds: number;
+            ammoChargeCount: number;
+            ammoChargeNextReadyAtSeconds: number;
+        }>>;
         deployedByPid: Record<number, boolean>;
         disconnectedByPid: Record<number, boolean>;
         uiInputEnabledByPid: Record<number, boolean>;
@@ -408,6 +402,7 @@ interface GameState {
         clockWidgetCache: Record<number, ClockWidgetCacheEntry>;
         countdownWidgetCache: Record<number, CountdownWidgetCacheEntry>;
         vehicleDeployTimerCache: Record<number, VehicleDeployTimerHudCacheEntry>;
+        ammoResupplyMenuCache: Record<number, AmmoResupplyMenuCacheEntry>;
         boundaryPromptCache: Record<number, BoundaryPromptWidgetCacheEntry>;
     };
 }

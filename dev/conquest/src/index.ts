@@ -59,6 +59,7 @@ import './interaction/hud-warm-state';
 import './interaction/ui-primary-click';
 import './interaction/interact-point';
 import './interaction/world-interactables';
+import './interaction/ammo-resupply-menu';
 import './interaction/actions';
 import './interaction/spawn-selector';
 import './interaction/ui-events-ready';

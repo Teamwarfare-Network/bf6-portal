@@ -29,7 +29,6 @@ type ActivePlayers_t = {
 
 type RosterDisplayEntry = {
     player?: mod.Player;
-    nameKey?: number;
 };
 
 type RosterDisplay_t = {
@@ -99,7 +98,6 @@ function getRosterDisplayEntries(): RosterDisplay_t {
 function getRosterEntryNameMessage(entry: RosterDisplayEntry | undefined): mod.Message {
     if (!entry) return mod.Message(mod.stringkeys.twl.system.genericCounter, "");
     if (entry.player) return getUiSafePlayerMessage(entry.player);
-    if (entry.nameKey) return mod.Message(entry.nameKey);
     return mod.Message(mod.stringkeys.twl.system.genericCounter, "");
 }
 

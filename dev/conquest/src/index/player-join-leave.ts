@@ -3,7 +3,6 @@
 
 //#region -------------------- Exported Event Handlers - Player Join + Leave --------------------
 
-// Clears residual modal/UI state for a joining player before rebuilding HUD/dialog surfaces.
 function resetUiForPlayerOnJoin(player: mod.Player): void {
     if (!player || !mod.IsPlayerValid(player)) return;
     const pid = safeGetPlayerId(player);
@@ -11,19 +10,11 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
 
     setUIInputModeForPlayer(player, false);
     resetVehicleDeployLiveMenuStateForPid(pid);
+    resetAmmoResupplyMenuStateForPid(pid);
     cleanupWorldInteractableRuntimeIconsForPid(pid);
-
-    deleteJoinPromptWidget(joinPromptButtonTextName(pid));
-    deleteJoinPromptWidget(joinPromptButtonName(pid));
-    deleteJoinPromptWidget(joinPromptButtonBorderName(pid));
-    deleteJoinPromptWidget(joinPromptNeverShowButtonTextName(pid));
-    deleteJoinPromptWidget(joinPromptNeverShowButtonName(pid));
-    deleteJoinPromptWidget(joinPromptNeverShowButtonBorderName(pid));
-    deleteJoinPromptWidget(joinPromptBodyName(pid));
-    deleteJoinPromptWidget(joinPromptTitleName(pid));
-    deleteJoinPromptWidget(joinPromptPanelName(pid));
-    deleteJoinPromptWidget(joinPromptRootName(pid));
+    clearJoinPromptForPlayerId(pid);
     hideReadyDialogUI(player);
+    destroyAmmoResupplyMenuUiForPid(pid);
 
     const deleteAllByName = (name: string, maxPasses: number = 64): void => {
         for (let i = 0; i < maxPasses; i++) {
@@ -62,11 +53,10 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
     deleteAllByName(`Container_ReadyStatus_${pid}`);
     deleteAllByName(`ReadyStatusText_${pid}`);
     deleteVehicleDeployTimerHudArtifactsForPid(pid);
+    destroyAmmoResupplyMenuUiForPid(pid);
     destroyBoundaryPromptUiForPid(pid);
 }
 
-// Deletes all known per-player HUD roots and cache entries for disconnect/reconnect safety.
-// This prevents duplicate HUD instances if the engine keeps stale widgets alive across leave/swap churn.
 function cleanupHudForPid(pid: number): void {
     const deleteAllByName = (name: string, maxPasses: number = 128): void => {
         for (let i = 0; i < maxPasses; i++) {
@@ -80,7 +70,6 @@ function cleanupHudForPid(pid: number): void {
         }
     };
 
-    // Conquest HUD widgets are torn down through the active hard-cut combat owner.
     twlConquestHudDestroyPlayer(pid);
 
     const rootNames = [
@@ -150,7 +139,6 @@ function cleanupHudForPid(pid: number): void {
     delete State.conquest.debug.hudClockVmByPid[pid];
 }
 
-// Join entrypoint: initializes per-player state, rebuilds HUD, and re-syncs shared UI projections.
 async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     initReadyDialogData(eventPlayer);
     const joinPid = safeGetPlayerId(eventPlayer);
@@ -181,30 +169,11 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     resetUiForPlayerOnJoin(eventPlayer);
     await warmCriticalHudForPlayer(eventPlayer, {
         refreshReadyDialogs: true,
-        createJoinPrompt: false,
     });
     ensureReadyDialogUiBuiltHidden(eventPlayer);
     replayActiveMapValidationWarningsToPlayer(eventPlayer);
-
-    // Join-time prompt is only shown once per player (undeploy prompts can repeat unless suppressed).
-    if (!shouldShowJoinPromptForPlayer(eventPlayer)) return;
-    const joinPromptPid = safeGetPlayerId(eventPlayer);
-    if (joinPromptPid === undefined) return;
-    if (State.players.joinPromptShownByPid[joinPromptPid]) return;
-    State.players.joinPromptShownByPid[joinPromptPid] = true;
-
-    await mod.Wait(0.2);
-    if (!mod.IsPlayerValid(eventPlayer)) return;
-    if (State.players.deployedByPid[joinPromptPid]) return;
-    if (!shouldShowJoinPromptForPlayer(eventPlayer)) return;
-    createJoinPromptForPlayer(eventPlayer);
 }
 
-/**
- * Disconnect handling:
- * - Clears per-player state maps so rejoin starts clean (NOT READY).
- * - Forces UI/HUD refresh for remaining players to drop the departed player immediately.
- */
 function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     let pid: number | undefined;
     if (mod.IsType(eventNumber, mod.Types.Player)) {
@@ -216,6 +185,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
 
     State.players.disconnectedByPid[pid] = true;
     resetVehicleDeployLiveMenuStateForPid(pid);
+    resetAmmoResupplyMenuStateForPid(pid);
     cleanupWorldInteractableRuntimeIconsForPid(pid);
     removeReadyDialogInteractPoint(pid);
     cleanupHudForPid(pid);
@@ -223,36 +193,25 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     conquestPhase4OnPlayerLeaveOrResetPid(pid);
     conquestPhase4BOnPlayerLeaveOrResetPid(pid);
     clearVehicleReservationForPid(pid);
-    // Cleanup: delete cached UI widgets so we do not leak UI for disconnected players.
     destroyReadyDialogUI(pid);
-    // Remove any persisted per-player state so rejoin starts clean (NOT READY by default).
     delete State.players.readyByPid[pid];
     delete State.players.readyNeedsReconfirmByPid[pid];
     delete State.players.readyMessageCooldownByPid[pid];
-    delete State.players.joinPromptShownByPid[pid];
-    delete State.players.joinPromptNeverShowByPidMap[pid];
-    delete State.players.joinPromptReadyDialogOpenedByPid[pid];
-    delete State.players.joinPromptTipIndexByPid[pid];
-    delete State.players.joinPromptTipsUnlockedByPid[pid];
-    delete State.players.joinPromptTripleTapArmedByPid[pid];
-    delete State.players.joinPromptPolicyDisabledByPid[pid];
-    delete State.players.joinPromptPolicySuppressedCountByPid[pid];
-    delete State.players.joinPromptLastPolicySuppressedAtSecondsByPid[pid];
-    delete State.players.joinPromptLastSuppressionReasonByPid[pid];
     delete State.players.uiInputEnabledByPid[pid];
     delete State.players.liveVehicleDeployMenuVisibleByPid[pid];
+    delete State.players.ammoResupplyMenuVisibleByPid[pid];
+    delete State.players.ammoResupplyMenuObjIdByPid[pid];
+    delete State.players.ammoResupplyStateByPidByObjId[pid];
     cleanupWorldInteractableRuntimeIconsForPid(pid);
     delete State.players.posDebugTransformSourceByPid[pid];
     delete State.players.posDebugVehicleObjIdByPid[pid];
     delete State.players.inMainBaseByPid[pid];
     delete State.players.deployedByPid[pid];
     conquestPhase2BOnPlayerLeave(pid);
-    // Also drop dialog-visible tracking if present (viewer is gone).
     delete State.players.readyDialogData[pid];
     invalidateHiddenReadyDialogCacheForAllPlayers();
     clearJoinPromptForPlayerId(pid);
 
-    // Refresh UI for remaining players so rosters + HUD ready counts immediately reflect the disconnect.
     if (!isMatchLive()) {
         renderReadyDialogForAllVisibleViewers();
         updatePlayersReadyHudTextForAllPlayers();

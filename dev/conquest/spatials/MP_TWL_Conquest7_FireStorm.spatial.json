@@ -3144,11 +3144,19 @@
         {
             "name": "WorldIcon A Resupply 1",
             "ObjId": 1050,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Explosion",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
             "type": "WorldIcon",
             "right": {
-                "x": -0.808617,
+                "x": 0.0172773,
                 "y": 0,
-                "z": -0.588336
+                "z": 0.999851
             },
             "up": {
                 "x": 0,
@@ -3156,25 +3164,26 @@
                 "z": 0
             },
             "front": {
-                "x": 0.588336,
+                "x": -0.999852,
                 "y": 0,
-                "z": -0.808617
+                "z": 0.0172769
             },
             "position": {
-                "x": -302.051,
-                "y": 134.895,
-                "z": -45.4056
+                "x": -305.456,
+                "y": 135.272,
+                "z": -42.2898
             },
             "id": "WorldIconsInteractables/WorldIcon A Resupply 1"
         },
         {
-            "name": "WorldIcon A Resupply 2",
-            "ObjId": 1051,
-            "type": "WorldIcon",
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1050,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
             "right": {
-                "x": -0.99989,
+                "x": 0.017277240404221482,
                 "y": 0,
-                "z": 0.0148172
+                "z": 0.9998510010297827
             },
             "up": {
                 "x": 0,
@@ -3182,25 +3191,26 @@
                 "z": 0
             },
             "front": {
-                "x": -0.0148172,
+                "x": -0.9998520010298065,
                 "y": 0,
-                "z": -0.99989
+                "z": 0.017276840404281086
             },
             "position": {
-                "x": -279.465,
-                "y": 134.895,
-                "z": -104.44
+                "x": -305.456,
+                "y": 135.272,
+                "z": -42.2898
             },
-            "id": "WorldIconsInteractables/WorldIcon A Resupply 2"
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 1/InteractPoint"
         },
         {
-            "name": "WorldIcon B Resupply 1",
-            "ObjId": 1052,
-            "type": "WorldIcon",
+            "name": "AreaTrigger A Resupply 1",
+            "ObjId": 1050,
+            "Area": "WorldIconsInteractables/WorldIcon A Resupply 1/AreaTrigger A Resupply 1/PolygonVolume A Resupply 1",
+            "type": "AreaTrigger",
             "right": {
-                "x": -0.62149,
+                "x": 0.017277240404221482,
                 "y": 0,
-                "z": 0.783422
+                "z": 0.9998510010297827
             },
             "up": {
                 "x": 0,
@@ -3208,228 +3218,80 @@
                 "z": 0
             },
             "front": {
-                "x": -0.783422,
+                "x": -0.9998520010298065,
                 "y": 0,
-                "z": -0.62149
+                "z": 0.017276840404281086
             },
             "position": {
-                "x": -107.527,
-                "y": 131.591,
-                "z": -118.211
+                "x": -305.456,
+                "y": 141.56369,
+                "z": -42.2898
             },
-            "id": "WorldIconsInteractables/WorldIcon B Resupply 1"
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 1/AreaTrigger A Resupply 1",
+            "linked": [
+                "Area"
+            ]
         },
         {
-            "name": "WorldIcon B Resupply 2",
-            "ObjId": 1053,
-            "type": "WorldIcon",
-            "right": {
-                "x": -0.782086,
-                "y": 0,
-                "z": 0.62317
-            },
-            "up": {
-                "x": 0,
-                "y": 1,
-                "z": 0
-            },
-            "front": {
-                "x": -0.62317,
-                "y": 0,
-                "z": -0.782086
-            },
-            "position": {
-                "x": -100.222,
-                "y": 124.471,
-                "z": -1.11487
-            },
-            "id": "WorldIconsInteractables/WorldIcon B Resupply 2"
-        },
-        {
-            "name": "WorldIcon C Resupply 1",
-            "ObjId": 1054,
-            "type": "WorldIcon",
-            "right": {
-                "x": 0.579423,
-                "y": 0,
-                "z": 0.815027
-            },
-            "up": {
-                "x": 0,
-                "y": 1,
-                "z": 0
-            },
-            "front": {
-                "x": -0.815027,
-                "y": 0,
-                "z": 0.579424
-            },
-            "position": {
-                "x": 84.0512,
-                "y": 127.108,
-                "z": -152.204
-            },
-            "id": "WorldIconsInteractables/WorldIcon C Resupply 1"
-        },
-        {
-            "name": "WorldIcon C Resupply 2",
-            "ObjId": 1055,
-            "type": "WorldIcon",
-            "right": {
-                "x": -0.999937,
-                "y": 0,
-                "z": -0.0112571
-            },
-            "up": {
-                "x": 0,
-                "y": 1,
-                "z": 0
-            },
-            "front": {
-                "x": 0.0112569,
-                "y": 0,
-                "z": -0.999937
-            },
-            "position": {
-                "x": 65.6515,
-                "y": 121.916,
-                "z": -69.8869
-            },
-            "id": "WorldIconsInteractables/WorldIcon C Resupply 2"
-        },
-        {
-            "name": "WorldIcon T1 Resupply 1",
-            "ObjId": 1056,
-            "type": "WorldIcon",
-            "right": {
-                "x": 0.998362,
-                "y": 0,
-                "z": 0.057233
-            },
-            "up": {
-                "x": 0,
-                "y": 1,
-                "z": 0
-            },
-            "front": {
-                "x": -0.057233,
-                "y": 0,
-                "z": 0.998362
-            },
-            "position": {
-                "x": -726.777,
-                "y": 133.846,
-                "z": 207.637
-            },
-            "id": "WorldIconsInteractables/WorldIcon T1 Resupply 1"
+            "name": "PolygonVolume A Resupply 1",
+            "type": "PolygonVolume",
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 1/AreaTrigger A Resupply 1/PolygonVolume A Resupply 1",
+            "height": 0,
+            "points": [
+                {
+                    "x": -315.456,
+                    "y": 134.0986,
+                    "z": -52.2898
+                },
+                {
+                    "x": -315.456,
+                    "y": 134.0986,
+                    "z": -32.2898
+                },
+                {
+                    "x": -295.456,
+                    "y": 134.0986,
+                    "z": -32.2898
+                },
+                {
+                    "x": -295.456,
+                    "y": 134.0986,
+                    "z": -52.2898
+                }
+            ]
         },
         {
             "name": "AmmoChest_Small_01",
             "type": "AmmoChest_Small_01",
             "right": {
-                "x": 1,
+                "x": -0.75000039889332,
                 "y": 0,
-                "z": 0
+                "z": 0.0005493443309
             },
             "up": {
                 "x": 0,
-                "y": 1,
+                "y": 0.75,
                 "z": 0
             },
             "front": {
-                "x": 0,
+                "x": -0.0005496318813,
                 "y": 0,
-                "z": 1
+                "z": -0.74999964403296
             },
             "position": {
-                "x": -728.37,
-                "y": 132.886,
-                "z": 208.715
+                "x": -305.7875803850783,
+                "y": 134.779996,
+                "z": -42.8048393362402
             },
-            "id": "WorldIconsInteractables/AmmoChest_Small_01"
-        },
-        {
-            "name": "AmmoChest_Small_Ext_01",
-            "type": "AmmoChest_Small_Ext_01",
-            "right": {
-                "x": 1,
-                "y": 0,
-                "z": 0
-            },
-            "up": {
-                "x": 0,
-                "y": 1,
-                "z": 0
-            },
-            "front": {
-                "x": 0,
-                "y": 0,
-                "z": 1
-            },
-            "position": {
-                "x": -730.164,
-                "y": 132.969,
-                "z": 209.381
-            },
-            "id": "WorldIconsInteractables/AmmoChest_Small_Ext_01"
-        },
-        {
-            "name": "AmmoChest_Small_Int_01",
-            "type": "AmmoChest_Small_Int_01",
-            "right": {
-                "x": 1,
-                "y": 0,
-                "z": 0
-            },
-            "up": {
-                "x": 0,
-                "y": 1,
-                "z": 0
-            },
-            "front": {
-                "x": 0,
-                "y": 0,
-                "z": 1
-            },
-            "position": {
-                "x": -730.822,
-                "y": 134.714,
-                "z": 210.307
-            },
-            "id": "WorldIconsInteractables/AmmoChest_Small_Int_01"
-        },
-        {
-            "name": "CrateAmmo_01",
-            "type": "CrateAmmo_01",
-            "right": {
-                "x": 1,
-                "y": 0,
-                "z": 0
-            },
-            "up": {
-                "x": 0,
-                "y": 1,
-                "z": 0
-            },
-            "front": {
-                "x": 0,
-                "y": 0,
-                "z": 1
-            },
-            "position": {
-                "x": -730.418,
-                "y": 132.971,
-                "z": 210.784
-            },
-            "id": "WorldIconsInteractables/CrateAmmo_01"
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 1/AmmoChest_Small_01"
         },
         {
             "name": "WeaponCase_AR_01",
             "type": "WeaponCase_AR_01",
             "right": {
-                "x": 1,
+                "x": 0.999952249064451,
                 "y": 0,
-                "z": 0
+                "z": -0.00991266088933
             },
             "up": {
                 "x": 0,
@@ -3437,24 +3299,24 @@
                 "z": 0
             },
             "front": {
-                "x": 0,
+                "x": 0.00991305351366,
                 "y": 0,
-                "z": 1
+                "z": 0.999951246145503
             },
             "position": {
-                "x": -731.123,
-                "y": 132.874,
-                "z": 213.003
+                "x": -305.8243913269118,
+                "y": 134.781033,
+                "z": -41.9606321323773
             },
-            "id": "WorldIconsInteractables/WeaponCase_AR_01"
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 1/WeaponCase_AR_01"
         },
         {
-            "name": "WeaponBench_Storagebox_01",
-            "type": "WeaponBench_Storagebox_01",
+            "name": "WeaponCase_AR_02",
+            "type": "WeaponCase_AR_01",
             "right": {
-                "x": 1,
+                "x": 0.999952249064451,
                 "y": 0,
-                "z": 0
+                "z": -0.00991266088933
             },
             "up": {
                 "x": 0,
@@ -3462,24 +3324,24 @@
                 "z": 0
             },
             "front": {
-                "x": 0,
+                "x": 0.00991305351366,
                 "y": 0,
-                "z": 1
+                "z": 0.999951246145503
             },
             "position": {
-                "x": -728.836,
-                "y": 132.893,
-                "z": 211.384
+                "x": -305.7925465544133,
+                "y": 135.658261,
+                "z": -42.2620697814509
             },
-            "id": "WorldIconsInteractables/WeaponBench_Storagebox_01"
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 1/WeaponCase_AR_02"
         },
         {
             "name": "WeaponCase_Sniper_01",
             "type": "WeaponCase_Sniper_01",
             "right": {
-                "x": 1,
+                "x": 0.99953574188094,
                 "y": 0,
-                "z": 0
+                "z": -0.030485611015
             },
             "up": {
                 "x": 0,
@@ -3487,74 +3349,24 @@
                 "z": 0
             },
             "front": {
-                "x": 0,
+                "x": 0.030486024192,
                 "y": 0,
-                "z": 1
+                "z": 0.99953474725382
             },
             "position": {
-                "x": -730.438,
-                "y": 132.884,
-                "z": 212.675
+                "x": -305.79073107615204,
+                "y": 135.492261,
+                "z": -42.2947598350567
             },
-            "id": "WorldIconsInteractables/WeaponCase_Sniper_01"
-        },
-        {
-            "name": "WeaponCasesPack_03",
-            "type": "WeaponCasesPack_03",
-            "right": {
-                "x": 1,
-                "y": 0,
-                "z": 0
-            },
-            "up": {
-                "x": 0,
-                "y": 1,
-                "z": 0
-            },
-            "front": {
-                "x": 0,
-                "y": 0,
-                "z": 1
-            },
-            "position": {
-                "x": -728.819,
-                "y": 132.891,
-                "z": 212.283
-            },
-            "id": "WorldIconsInteractables/WeaponCasesPack_03"
-        },
-        {
-            "name": "WeaponCasesPallet_01",
-            "type": "WeaponCasesPallet_01",
-            "right": {
-                "x": 1,
-                "y": 0,
-                "z": 0
-            },
-            "up": {
-                "x": 0,
-                "y": 1,
-                "z": 0
-            },
-            "front": {
-                "x": 0,
-                "y": 0,
-                "z": 1
-            },
-            "position": {
-                "x": -732.559,
-                "y": 132.901,
-                "z": 214.31
-            },
-            "id": "WorldIconsInteractables/WeaponCasesPallet_01"
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 1/WeaponCase_Sniper_01"
         },
         {
             "name": "WeaponsCache_01_Crate_B",
             "type": "WeaponsCache_01_Crate_B",
             "right": {
-                "x": 1,
+                "x": -0.00972117735582,
                 "y": 0,
-                "z": 0
+                "z": -0.999952561362306
             },
             "up": {
                 "x": 0,
@@ -3562,16 +3374,2149 @@
                 "z": 0
             },
             "front": {
-                "x": 0,
+                "x": 0.999953564356002,
                 "y": 0,
-                "z": 1
+                "z": -0.00972078492416
             },
             "position": {
-                "x": -729.413,
-                "y": 132.874,
-                "z": 214.909
+                "x": -305.73014227557206,
+                "y": 134.031,
+                "z": -42.2681537419708
             },
-            "id": "WorldIconsInteractables/WeaponsCache_01_Crate_B"
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 1/WeaponsCache_01_Crate_B"
+        },
+        {
+            "name": "WeaponCase_Pistol_01",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": 0.99813940489032,
+                "y": 0,
+                "z": -0.0609954485083
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.0609958918671,
+                "y": 0,
+                "z": 0.99813842334396
+            },
+            "position": {
+                "x": -305.4365989908827,
+                "y": 134.25432,
+                "z": -41.7711366382343
+            },
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 1/WeaponCase_Pistol_01"
+        },
+        {
+            "name": "WeaponCase_Pistol_02",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": 0.99999614722485,
+                "y": 0,
+                "z": -0.0032627950243
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.0032631809706,
+                "y": 0,
+                "z": 0.99999514171705
+            },
+            "position": {
+                "x": -305.4485755081554,
+                "y": 134.25465,
+                "z": -42.39004126008226
+            },
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 1/WeaponCase_Pistol_02"
+        },
+        {
+            "name": "WorldIcon A Resupply 2",
+            "ObjId": 1051,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Explosion",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
+            "type": "WorldIcon",
+            "right": {
+                "x": 0.0222679,
+                "y": 0,
+                "z": 0.999753
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.999753,
+                "y": 0,
+                "z": 0.0222675
+            },
+            "position": {
+                "x": -275.772,
+                "y": 135.311,
+                "z": -108.527
+            },
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 2"
+        },
+        {
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1051,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.022267840410122336,
+                "y": 0,
+                "z": 0.9997530013272454
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.9997530013272693,
+                "y": 0,
+                "z": 0.022267440410122335
+            },
+            "position": {
+                "x": -275.772,
+                "y": 135.311,
+                "z": -108.527
+            },
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 2/InteractPoint"
+        },
+        {
+            "name": "AreaTrigger A Resupply 2",
+            "ObjId": 1051,
+            "Area": "WorldIconsInteractables/WorldIcon A Resupply 2/AreaTrigger A Resupply 2/PolygonVolume A Resupply 2",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 0.022267840410122336,
+                "y": 0,
+                "z": 0.9997530013272454
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.9997530013272693,
+                "y": 0,
+                "z": 0.022267440410122335
+            },
+            "position": {
+                "x": -275.772,
+                "y": 141.60269,
+                "z": -108.527
+            },
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 2/AreaTrigger A Resupply 2",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "PolygonVolume A Resupply 2",
+            "type": "PolygonVolume",
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 2/AreaTrigger A Resupply 2/PolygonVolume A Resupply 2",
+            "height": 0,
+            "points": [
+                {
+                    "x": -285.772,
+                    "y": 134.1376,
+                    "z": -118.527
+                },
+                {
+                    "x": -285.772,
+                    "y": 134.1376,
+                    "z": -98.527
+                },
+                {
+                    "x": -265.772,
+                    "y": 134.1376,
+                    "z": -98.527
+                },
+                {
+                    "x": -265.772,
+                    "y": 134.1376,
+                    "z": -118.527
+                }
+            ]
+        },
+        {
+            "name": "AmmoChest_Small_01",
+            "type": "AmmoChest_Small_01",
+            "right": {
+                "x": -0.74998808445136,
+                "y": 0,
+                "z": 0.0042929963223
+            },
+            "up": {
+                "x": 0,
+                "y": 0.75,
+                "z": 0
+            },
+            "front": {
+                "x": -0.0042932962811,
+                "y": 0,
+                "z": -0.749988079488
+            },
+            "position": {
+                "x": -276.1061470050149,
+                "y": 134.818996,
+                "z": -109.040378181263
+            },
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 2/AmmoChest_Small_01"
+        },
+        {
+            "name": "WeaponCase_AR_01",
+            "type": "WeaponCase_AR_01",
+            "right": {
+                "x": 0.999890006857673,
+                "y": 0,
+                "z": -0.01490384790039
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.01490424788959,
+                "y": 0,
+                "z": 0.999890003911725
+            },
+            "position": {
+                "x": -276.1387435625224,
+                "y": 134.820033,
+                "z": -108.1959971630855
+            },
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 2/WeaponCase_AR_01"
+        },
+        {
+            "name": "WeaponCase_AR_02",
+            "type": "WeaponCase_AR_01",
+            "right": {
+                "x": 0.999890006857673,
+                "y": 0,
+                "z": -0.01490384790039
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.01490424788959,
+                "y": 0,
+                "z": 0.999890003911725
+            },
+            "position": {
+                "x": -276.10840384185735,
+                "y": 135.697261,
+                "z": -108.4975902213527
+            },
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 2/WeaponCase_AR_02"
+        },
+        {
+            "name": "WeaponCase_Sniper_01",
+            "type": "WeaponCase_Sniper_01",
+            "right": {
+                "x": 0.99937081378762,
+                "y": 0,
+                "z": -0.0354744770466
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.0354748770114,
+                "y": 0,
+                "z": 0.9993708190725
+            },
+            "position": {
+                "x": -276.10675156127036,
+                "y": 135.531261,
+                "z": -108.5302889525141
+            },
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 2/WeaponCase_Sniper_01"
+        },
+        {
+            "name": "WeaponsCache_01_Crate_B",
+            "type": "WeaponsCache_01_Crate_B",
+            "right": {
+                "x": -0.01471238074568,
+                "y": 0,
+                "z": -0.99989227687095
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.999892279893646,
+                "y": 0,
+                "z": -0.01471198075728
+            },
+            "position": {
+                "x": -276.04603072797005,
+                "y": 134.07,
+                "z": -108.5039856038924
+            },
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 2/WeaponsCache_01_Crate_B"
+        },
+        {
+            "name": "WeaponCase_Pistol_01",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": 0.99782220280436,
+                "y": 0,
+                "z": -0.0659769858273
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.0659773854445,
+                "y": 0,
+                "z": 0.997822220301
+            },
+            "position": {
+                "x": -275.7500102970031,
+                "y": 134.29332,
+                "z": -108.0084395793845
+            },
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 2/WeaponCase_Pistol_01"
+        },
+        {
+            "name": "WeaponCase_Pistol_02",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": 0.99996709769055,
+                "y": 0,
+                "z": -0.0082542793665
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.0082546793273,
+                "y": 0,
+                "z": 0.99996709208475
+            },
+            "position": {
+                "x": -275.7650759636059,
+                "y": 134.29365,
+                "z": -108.62727714076873
+            },
+            "id": "WorldIconsInteractables/WorldIcon A Resupply 2/WeaponCase_Pistol_02"
+        },
+        {
+            "name": "WorldIcon B Resupply 1",
+            "ObjId": 1052,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Explosion",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
+            "type": "WorldIcon",
+            "right": {
+                "x": -0.0211162,
+                "y": 0,
+                "z": -0.999778
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.999778,
+                "y": 0,
+                "z": -0.0211158
+            },
+            "position": {
+                "x": -107.042,
+                "y": 126.269,
+                "z": -117.805
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 1"
+        },
+        {
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1052,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": -0.02111614040863222,
+                "y": 0,
+                "z": -0.9997780012585988
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.9997780012586227,
+                "y": 0,
+                "z": -0.021115740408632223
+            },
+            "position": {
+                "x": -107.042,
+                "y": 126.269,
+                "z": -117.805
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 1/InteractPoint"
+        },
+        {
+            "name": "AreaTrigger B Resupply 1",
+            "ObjId": 1052,
+            "Area": "WorldIconsInteractables/WorldIcon B Resupply 1/AreaTrigger B Resupply 1/PolygonVolume B Resupply 1",
+            "type": "AreaTrigger",
+            "right": {
+                "x": -0.02111614040863222,
+                "y": 0,
+                "z": -0.9997780012585988
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.9997780012586227,
+                "y": 0,
+                "z": -0.021115740408632223
+            },
+            "position": {
+                "x": -107.042,
+                "y": 132.56069,
+                "z": -117.805
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 1/AreaTrigger B Resupply 1",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "PolygonVolume B Resupply 1",
+            "type": "PolygonVolume",
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 1/AreaTrigger B Resupply 1/PolygonVolume B Resupply 1",
+            "height": 0,
+            "points": [
+                {
+                    "x": -117.042,
+                    "y": 125.0956,
+                    "z": -127.805
+                },
+                {
+                    "x": -117.042,
+                    "y": 125.0956,
+                    "z": -107.805
+                },
+                {
+                    "x": -97.042,
+                    "y": 125.0956,
+                    "z": -107.805
+                },
+                {
+                    "x": -97.042,
+                    "y": 125.0956,
+                    "z": -127.805
+                }
+            ]
+        },
+        {
+            "name": "AmmoChest_Small_01",
+            "type": "AmmoChest_Small_01",
+            "right": {
+                "x": 0.74999254112208,
+                "y": 0,
+                "z": -0.0034290297374
+            },
+            "up": {
+                "x": 0,
+                "y": 0.75,
+                "z": 0
+            },
+            "front": {
+                "x": 0.0034293296962,
+                "y": 0,
+                "z": 0.74999253615872
+            },
+            "position": {
+                "x": -106.7084446090098,
+                "y": 125.776996,
+                "z": -117.2912372261876
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 1/AmmoChest_Small_01"
+        },
+        {
+            "name": "WeaponCase_AR_01",
+            "type": "WeaponCase_AR_01",
+            "right": {
+                "x": -0.999906524061894,
+                "y": 0,
+                "z": 0.01375199487454
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.01375239486374,
+                "y": 0,
+                "z": -0.999906521115946
+            },
+            "position": {
+                "x": -106.6748753711208,
+                "y": 125.778033,
+                "z": -118.1355801434754
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 1/WeaponCase_AR_01"
+        },
+        {
+            "name": "WeaponCase_AR_02",
+            "type": "WeaponCase_AR_01",
+            "right": {
+                "x": -0.999906524061894,
+                "y": 0,
+                "z": 0.01375199487454
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.01375239486374,
+                "y": 0,
+                "z": -0.999906521115946
+            },
+            "position": {
+                "x": -106.70556249817793,
+                "y": 126.655261,
+                "z": -117.8340222323298
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 1/WeaponCase_AR_02"
+        },
+        {
+            "name": "WeaponCase_Sniper_01",
+            "type": "WeaponCase_Sniper_01",
+            "right": {
+                "x": -0.99941102807836,
+                "y": 0,
+                "z": 0.0343232087012
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.034323608666,
+                "y": 0,
+                "z": -0.99941103336324
+            },
+            "position": {
+                "x": -106.70725244564636,
+                "y": 126.489261,
+                "z": -117.8013254258694
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 1/WeaponCase_Sniper_01"
+        },
+        {
+            "name": "WeaponsCache_01_Crate_B",
+            "type": "WeaponsCache_01_Crate_B",
+            "right": {
+                "x": 0.01356052522648,
+                "y": 0,
+                "z": 0.999908573048492
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.999908576071188,
+                "y": 0,
+                "z": 0.01356012523808
+            },
+            "position": {
+                "x": -106.76794293870854,
+                "y": 125.028,
+                "z": -117.8276987059176
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 1/WeaponsCache_01_Crate_B"
+        },
+        {
+            "name": "WeaponCase_Pistol_01",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": -0.99789755608008,
+                "y": 0,
+                "z": 0.0648274815442
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.0648278811614,
+                "y": 0,
+                "z": -0.99789757357672
+            },
+            "position": {
+                "x": -107.0633923226062,
+                "y": 125.25132,
+                "z": -118.3235854139334
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 1/WeaponCase_Pistol_01"
+        },
+        {
+            "name": "WeaponCase_Pistol_02",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": -0.9999759547409,
+                "y": 0,
+                "z": 0.0071023418706
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.0071027418314,
+                "y": 0,
+                "z": -0.9999759491351
+            },
+            "position": {
+                "x": -107.04903954814246,
+                "y": 125.25165,
+                "z": -117.70473090090573
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 1/WeaponCase_Pistol_02"
+        },
+        {
+            "name": "WorldIcon B Resupply 2",
+            "ObjId": 1053,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Explosion",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
+            "type": "WorldIcon",
+            "right": {
+                "x": 0.999992,
+                "y": 0,
+                "z": 0.004172
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.00417246,
+                "y": 0,
+                "z": 0.999993
+            },
+            "position": {
+                "x": -99.6367,
+                "y": 124.729,
+                "z": -2.18033
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 2"
+        },
+        {
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1053,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.9999919997513022,
+                "y": 0,
+                "z": 0.004172059604182768
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.004172519604123163,
+                "y": 0,
+                "z": 0.9999929997513296
+            },
+            "position": {
+                "x": -99.6367,
+                "y": 124.729,
+                "z": -2.18033
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 2/InteractPoint"
+        },
+        {
+            "name": "AreaTrigger B Resupply 2",
+            "ObjId": 1053,
+            "Area": "WorldIconsInteractables/WorldIcon B Resupply 2/AreaTrigger B Resupply 2/PolygonVolume B Resupply 2",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 0.9999919997513022,
+                "y": 0,
+                "z": 0.004172059604182768
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.004172519604123163,
+                "y": 0,
+                "z": 0.9999929997513296
+            },
+            "position": {
+                "x": -99.6367,
+                "y": 131.02069,
+                "z": -2.18033
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 2/AreaTrigger B Resupply 2",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "PolygonVolume B Resupply 2",
+            "type": "PolygonVolume",
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 2/AreaTrigger B Resupply 2/PolygonVolume B Resupply 2",
+            "height": 0,
+            "points": [
+                {
+                    "x": -109.6367,
+                    "y": 123.5556,
+                    "z": -12.18033
+                },
+                {
+                    "x": -109.6367,
+                    "y": 123.5556,
+                    "z": 7.81967
+                },
+                {
+                    "x": -89.6367,
+                    "y": 123.5556,
+                    "z": 7.81967
+                },
+                {
+                    "x": -89.6367,
+                    "y": 123.5556,
+                    "z": -12.18033
+                }
+            ]
+        },
+        {
+            "name": "AmmoChest_Small_01",
+            "type": "AmmoChest_Small_01",
+            "right": {
+                "x": -0.01553721596942,
+                "y": 0,
+                "z": 0.7498399828762
+            },
+            "up": {
+                "x": 0,
+                "y": 0.75,
+                "z": 0
+            },
+            "front": {
+                "x": -0.749839227271336,
+                "y": 0,
+                "z": -0.0155368834252
+            },
+            "position": {
+                "x": -100.15873300358672,
+                "y": 124.236996,
+                "z": -1.859872581276
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 2/AmmoChest_Small_01"
+        },
+        {
+            "name": "WeaponCase_AR_01",
+            "type": "WeaponCase_AR_01",
+            "right": {
+                "x": 0.01153715842462,
+                "y": 0,
+                "z": -0.99993527395136
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.9999342705905198,
+                "y": 0,
+                "z": 0.01153670580191
+            },
+            "position": {
+                "x": -99.31550917803858,
+                "y": 124.238033,
+                "z": -1.804963088473
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 2/WeaponCase_AR_01"
+        },
+        {
+            "name": "WeaponCase_AR_02",
+            "type": "WeaponCase_AR_01",
+            "right": {
+                "x": 0.01153715842462,
+                "y": 0,
+                "z": -0.99993527395136
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.9999342705905198,
+                "y": 0,
+                "z": 0.01153670580191
+            },
+            "position": {
+                "x": -99.6161945900013,
+                "y": 125.115261,
+                "z": -1.8432659436298
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 2/WeaponCase_AR_02"
+        },
+        {
+            "name": "WeaponCase_Sniper_01",
+            "type": "WeaponCase_Sniper_01",
+            "right": {
+                "x": -0.00904000147888,
+                "y": 0,
+                "z": -0.9999601219144
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.999959128080012,
+                "y": 0,
+                "z": -0.0090404746506
+            },
+            "position": {
+                "x": -99.6488381983161,
+                "y": 124.949261,
+                "z": -1.8457821586234
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 2/WeaponCase_Sniper_01"
+        },
+        {
+            "name": "WeaponsCache_01_Crate_B",
+            "type": "WeaponsCache_01_Crate_B",
+            "right": {
+                "x": -0.9999314700366196,
+                "y": 0,
+                "z": -0.01172856611482
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.01172901854474,
+                "y": 0,
+                "z": -0.99993247348372
+            },
+            "position": {
+                "x": -99.6209386712121,
+                "y": 123.488,
+                "z": -1.9057863865726
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 2/WeaponsCache_01_Crate_B"
+        },
+        {
+            "name": "WeaponCase_Pistol_01",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": -0.03957278311142,
+                "y": 0,
+                "z": -0.9992184966542
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.999217517732336,
+                "y": 0,
+                "z": -0.0395732864128
+            },
+            "position": {
+                "x": -99.11773960340298,
+                "y": 123.71132,
+                "z": -2.188601988529
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 2/WeaponCase_Pistol_01"
+        },
+        {
+            "name": "WeaponCase_Pistol_02",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": 0.01818643898292,
+                "y": 0,
+                "z": -0.999836532192
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.99983552584333,
+                "y": 0,
+                "z": 0.0181859930425
+            },
+            "position": {
+                "x": -99.73675899921814,
+                "y": 123.71165,
+                "z": -2.18990281476911
+            },
+            "id": "WorldIconsInteractables/WorldIcon B Resupply 2/WeaponCase_Pistol_02"
+        },
+        {
+            "name": "WorldIcon C Resupply 1",
+            "ObjId": 1054,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Explosion",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
+            "type": "WorldIcon",
+            "right": {
+                "x": 0.998424,
+                "y": 0,
+                "z": 0.0561359
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.0561364,
+                "y": 0,
+                "z": 0.998424
+            },
+            "position": {
+                "x": 85.3952,
+                "y": 123.083,
+                "z": -152.513
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 1"
+        },
+        {
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1054,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.9984239966540124,
+                "y": 0,
+                "z": 0.05613595951066315
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.05613645951066315,
+                "y": 0,
+                "z": 0.9984239966540421
+            },
+            "position": {
+                "x": 85.3952,
+                "y": 123.083,
+                "z": -152.513
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 1/InteractPoint"
+        },
+        {
+            "name": "AreaTrigger C Resupply 1",
+            "ObjId": 1054,
+            "Area": "WorldIconsInteractables/WorldIcon C Resupply 1/AreaTrigger C Resupply 1/PolygonVolume C Resupply 1",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 0.9984239966540124,
+                "y": 0,
+                "z": 0.05613595951066315
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.05613645951066315,
+                "y": 0,
+                "z": 0.9984239966540421
+            },
+            "position": {
+                "x": 85.3952,
+                "y": 129.37469,
+                "z": -152.513
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 1/AreaTrigger C Resupply 1",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "PolygonVolume C Resupply 1",
+            "type": "PolygonVolume",
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 1/AreaTrigger C Resupply 1/PolygonVolume C Resupply 1",
+            "height": 0,
+            "points": [
+                {
+                    "x": 75.3952,
+                    "y": 121.9096,
+                    "z": -162.513
+                },
+                {
+                    "x": 75.3952,
+                    "y": 121.9096,
+                    "z": -142.513
+                },
+                {
+                    "x": 95.3952,
+                    "y": 121.9096,
+                    "z": -142.513
+                },
+                {
+                    "x": 95.3952,
+                    "y": 121.9096,
+                    "z": -162.513
+                }
+            ]
+        },
+        {
+            "name": "AmmoChest_Small_01",
+            "type": "AmmoChest_Small_01",
+            "right": {
+                "x": -0.0544853623124,
+                "y": 0,
+                "z": 0.74801860562644
+            },
+            "up": {
+                "x": 0,
+                "y": 0.75,
+                "z": 0
+            },
+            "front": {
+                "x": -0.74801859942224,
+                "y": 0,
+                "z": -0.0544849873639
+            },
+            "position": {
+                "x": 84.8572182100112,
+                "y": 122.590996,
+                "z": -152.2201059259389
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 1/AmmoChest_Small_01"
+        },
+        {
+            "name": "WeaponCase_AR_01",
+            "type": "WeaponCase_AR_01",
+            "right": {
+                "x": 0.06348814728208,
+                "y": 0,
+                "z": -0.997983608946167
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.997983605263732,
+                "y": 0,
+                "z": 0.06348764729558
+            },
+            "position": {
+                "x": 85.6964490349588,
+                "y": 122.592033,
+                "z": -152.1214483739794
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 1/WeaponCase_AR_01"
+        },
+        {
+            "name": "WeaponCase_AR_02",
+            "type": "WeaponCase_AR_01",
+            "right": {
+                "x": 0.06348814728208,
+                "y": 0,
+                "z": -0.997983608946167
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.997983605263732,
+                "y": 0,
+                "z": 0.06348764729558
+            },
+            "position": {
+                "x": 85.3981605039284,
+                "y": 123.469261,
+                "z": -152.17532604521355
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 1/WeaponCase_AR_02"
+        },
+        {
+            "name": "WeaponCase_Sniper_01",
+            "type": "WeaponCase_Sniper_01",
+            "right": {
+                "x": 0.042940082424,
+                "y": 0,
+                "z": -0.99907781742598
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.99907782403208,
+                "y": 0,
+                "z": 0.042939582468
+            },
+            "position": {
+                "x": 85.3656917709492,
+                "y": 123.303261,
+                "z": -152.17953534478497
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 1/WeaponCase_Sniper_01"
+        },
+        {
+            "name": "WeaponsCache_01_Crate_B",
+            "type": "WeaponsCache_01_Crate_B",
+            "right": {
+                "x": -0.997970837524664,
+                "y": 0,
+                "z": -0.06367910263666
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.06367960262216,
+                "y": 0,
+                "z": -0.997970841303034
+            },
+            "position": {
+                "x": 85.3966720166508,
+                "y": 121.842,
+                "z": -152.23800849977948
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 1/WeaponsCache_01_Crate_B"
+        },
+        {
+            "name": "WeaponCase_Pistol_01",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": 0.0124100142268,
+                "y": 0,
+                "z": -0.99992398231544
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.99992400418624,
+                "y": 0,
+                "z": 0.0124095147053
+            },
+            "position": {
+                "x": 85.9138890761108,
+                "y": 122.06532,
+                "z": -152.4942904539241
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 1/WeaponCase_Pistol_01"
+        },
+        {
+            "name": "WeaponCase_Pistol_02",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": 0.0701233117808,
+                "y": 0,
+                "z": -0.99753943787745
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.9975394308702,
+                "y": 0,
+                "z": 0.0701228118298
+            },
+            "position": {
+                "x": 85.29577369834684,
+                "y": 122.06565,
+                "z": -152.52775993261267
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 1/WeaponCase_Pistol_02"
+        },
+        {
+            "name": "WorldIcon C Resupply 2",
+            "ObjId": 1055,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Explosion",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
+            "type": "WorldIcon",
+            "right": {
+                "x": 0.0042578,
+                "y": 0,
+                "z": 0.999992
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.999992,
+                "y": 0,
+                "z": 0.00425739
+            },
+            "position": {
+                "x": 68.7635,
+                "y": 122.277,
+                "z": -72.5763
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 2"
+        },
+        {
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1055,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.004257740395876837,
+                "y": 0,
+                "z": 0.99999200025376
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.9999920002537844,
+                "y": 0,
+                "z": 0.004257330395876837
+            },
+            "position": {
+                "x": 68.7635,
+                "y": 122.277,
+                "z": -72.5763
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 2/InteractPoint"
+        },
+        {
+            "name": "AreaTrigger C Resupply 2",
+            "ObjId": 1055,
+            "Area": "WorldIconsInteractables/WorldIcon C Resupply 2/AreaTrigger C Resupply 2/PolygonVolume C Resupply 2",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 0.004257740395876837,
+                "y": 0,
+                "z": 0.99999200025376
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.9999920002537844,
+                "y": 0,
+                "z": 0.004257330395876837
+            },
+            "position": {
+                "x": 68.7635,
+                "y": 128.56869,
+                "z": -72.5763
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 2/AreaTrigger C Resupply 2",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "PolygonVolume C Resupply 2",
+            "type": "PolygonVolume",
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 2/AreaTrigger C Resupply 2/PolygonVolume C Resupply 2",
+            "height": 0,
+            "points": [
+                {
+                    "x": 58.7635,
+                    "y": 121.1036,
+                    "z": -82.5763
+                },
+                {
+                    "x": 58.7635,
+                    "y": 121.1036,
+                    "z": -62.5763
+                },
+                {
+                    "x": 78.7635,
+                    "y": 121.1036,
+                    "z": -62.5763
+                },
+                {
+                    "x": 78.7635,
+                    "y": 121.1036,
+                    "z": -82.5763
+                }
+            ]
+        },
+        {
+            "name": "AmmoChest_Small_01",
+            "type": "AmmoChest_Small_01",
+            "right": {
+                "x": -0.74994383330952,
+                "y": 0,
+                "z": -0.00921569674397
+            },
+            "up": {
+                "x": 0,
+                "y": 0.75,
+                "z": 0
+            },
+            "front": {
+                "x": 0.0092153892862,
+                "y": 0,
+                "z": -0.749943828222076
+            },
+            "position": {
+                "x": 68.4386535829162,
+                "y": 121.784996,
+                "z": -73.09561326422153
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 2/AmmoChest_Small_01"
+        },
+        {
+            "name": "WeaponCase_AR_01",
+            "type": "WeaponCase_AR_01",
+            "right": {
+                "x": 0.999996358359486,
+                "y": 0,
+                "z": 0.00310753603057
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.00310712604164,
+                "y": 0,
+                "z": 0.9999963553398893
+            },
+            "position": {
+                "x": 68.3908542141652,
+                "y": 121.786033,
+                "z": -72.25195622025203
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 2/WeaponCase_AR_01"
+        },
+        {
+            "name": "WeaponCase_AR_02",
+            "type": "WeaponCase_AR_01",
+            "right": {
+                "x": 0.999996358359486,
+                "y": 0,
+                "z": 0.00310753603057
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.00310712604164,
+                "y": 0,
+                "z": 0.9999963553398893
+            },
+            "position": {
+                "x": 68.42662099101048,
+                "y": 122.663261,
+                "z": -72.55295394129755
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 2/WeaponCase_AR_02"
+        },
+        {
+            "name": "WeaponCase_Sniper_01",
+            "type": "WeaponCase_Sniper_01",
+            "right": {
+                "x": 0.99984774579884,
+                "y": 0,
+                "z": -0.01746910965208
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.017469519616,
+                "y": 0,
+                "z": 0.999847751215842
+            },
+            "position": {
+                "x": 68.42886193862084,
+                "y": 122.497261,
+                "z": -72.58561761265535
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 2/WeaponCase_Sniper_01"
+        },
+        {
+            "name": "WeaponsCache_01_Crate_B",
+            "type": "WeaponsCache_01_Crate_B",
+            "right": {
+                "x": 0.00329900302228,
+                "y": 0,
+                "z": -0.9999951722213086
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.999995175319572,
+                "y": 0,
+                "z": 0.00329941301039
+            },
+            "position": {
+                "x": 68.48909918114725,
+                "y": 121.036,
+                "z": -72.55822488813335
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 2/WeaponsCache_01_Crate_B"
+        },
+        {
+            "name": "WeaponCase_Pistol_01",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": 0.99884876467152,
+                "y": 0,
+                "z": -0.04799456574497
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.0479949753526,
+                "y": 0,
+                "z": 0.998848782605576
+            },
+            "position": {
+                "x": 68.7761463783378,
+                "y": 121.25932,
+                "z": -72.05742758574743
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 2/WeaponCase_Pistol_01"
+        },
+        {
+            "name": "WeaponCase_Pistol_02",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": 0.9999536717221,
+                "y": 0,
+                "z": 0.00975741510822
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.0097570051484,
+                "y": 0,
+                "z": 0.999953665976155
+            },
+            "position": {
+                "x": 68.77222899949344,
+                "y": 121.25965,
+                "z": -72.67643617677095
+            },
+            "id": "WorldIconsInteractables/WorldIcon C Resupply 2/WeaponCase_Pistol_02"
+        },
+        {
+            "name": "WorldIcon T1 Resupply 1",
+            "ObjId": 1056,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Explosion",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
+            "type": "WorldIcon",
+            "right": {
+                "x": 0.45553,
+                "y": 0,
+                "z": -0.890221
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.890221,
+                "y": 0,
+                "z": 0.45553
+            },
+            "position": {
+                "x": -729.66,
+                "y": 134.095,
+                "z": 202.982
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 Resupply 1"
+        },
+        {
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1056,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.4555300530612666,
+                "y": 0,
+                "z": -0.8902209728483166
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.8902209728483166,
+                "y": 0,
+                "z": 0.4555300530612666
+            },
+            "position": {
+                "x": -729.66,
+                "y": 134.095,
+                "z": 202.982
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 Resupply 1/InteractPoint"
+        },
+        {
+            "name": "AreaTrigger  T1 Resupply 1",
+            "ObjId": 1056,
+            "Area": "WorldIconsInteractables/WorldIcon T1 Resupply 1/AreaTrigger  T1 Resupply 1/PolygonVolume  T1 Resupply 1",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 0.4555300530612666,
+                "y": 0,
+                "z": -0.8902209728483166
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.8902209728483166,
+                "y": 0,
+                "z": 0.4555300530612666
+            },
+            "position": {
+                "x": -729.66,
+                "y": 140.38669,
+                "z": 202.982
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 Resupply 1/AreaTrigger  T1 Resupply 1",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "PolygonVolume  T1 Resupply 1",
+            "type": "PolygonVolume",
+            "id": "WorldIconsInteractables/WorldIcon T1 Resupply 1/AreaTrigger  T1 Resupply 1/PolygonVolume  T1 Resupply 1",
+            "height": 0,
+            "points": [
+                {
+                    "x": -739.66,
+                    "y": 132.9216,
+                    "z": 192.982
+                },
+                {
+                    "x": -739.66,
+                    "y": 132.9216,
+                    "z": 212.982
+                },
+                {
+                    "x": -719.66,
+                    "y": 132.9216,
+                    "z": 212.982
+                },
+                {
+                    "x": -719.66,
+                    "y": 132.9216,
+                    "z": 192.982
+                }
+            ]
+        },
+        {
+            "name": "AmmoChest_Small_01",
+            "type": "AmmoChest_Small_01",
+            "right": {
+                "x": 0.661921658785,
+                "y": 0,
+                "z": 0.3526467986664
+            },
+            "up": {
+                "x": 0,
+                "y": 0.75,
+                "z": 0
+            },
+            "front": {
+                "x": -0.3526467986664,
+                "y": 0,
+                "z": 0.661921658785
+            },
+            "position": {
+                "x": -729.609976589558,
+                "y": 133.602996,
+                "z": 203.592498617671
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 Resupply 1/AmmoChest_Small_01"
+        },
+        {
+            "name": "WeaponCase_AR_01",
+            "type": "WeaponCase_AR_01",
+            "right": {
+                "x": -0.8868420448019,
+                "y": 0,
+                "z": -0.46207406262627
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.46207406262627,
+                "y": 0,
+                "z": -0.8868420448019
+            },
+            "position": {
+                "x": -729.180012741297,
+                "y": 133.604033,
+                "z": 202.865056308556
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 Resupply 1/WeaponCase_AR_01"
+        },
+        {
+            "name": "WeaponCase_AR_02",
+            "type": "WeaponCase_AR_01",
+            "right": {
+                "x": -0.8868420448019,
+                "y": 0,
+                "z": -0.46207406262627
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.46207406262627,
+                "y": 0,
+                "z": -0.8868420448019
+            },
+            "position": {
+                "x": -729.350036387377,
+                "y": 134.481261,
+                "z": 203.1159960552864
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 Resupply 1/WeaponCase_AR_02"
+        },
+        {
+            "name": "WeaponCase_Sniper_01",
+            "type": "WeaponCase_Sniper_01",
+            "right": {
+                "x": -0.896161214018,
+                "y": 0,
+                "z": -0.4437281354638
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.4437281354638,
+                "y": 0,
+                "z": -0.896161214018
+            },
+            "position": {
+                "x": -729.367029898871,
+                "y": 134.315261,
+                "z": 203.1439809923762
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 Resupply 1/WeaponCase_Sniper_01"
+        },
+        {
+            "name": "WeaponsCache_01_Crate_B",
+            "type": "WeaponsCache_01_Crate_B",
+            "right": {
+                "x": -0.46224395826954,
+                "y": 0,
+                "z": 0.8867528618188
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.8867528618188,
+                "y": 0,
+                "z": -0.46224395826954
+            },
+            "position": {
+                "x": -729.407955081974,
+                "y": 132.854,
+                "z": 203.0919808973693
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 Resupply 1/WeaponsCache_01_Crate_B"
+        },
+        {
+            "name": "CratePack_09",
+            "type": "CratePack_09",
+            "right": {
+                "x": 0.985603080002,
+                "y": 0,
+                "z": 0.169074274442
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.169074274442,
+                "y": 0,
+                "z": 0.985603080002
+            },
+            "position": {
+                "x": -729.269368649363,
+                "y": 132.88568,
+                "z": 201.09726848424
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 Resupply 1/CratePack_09"
+        },
+        {
+            "name": "WeaponCase_Pistol_01",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": -0.909294669551,
+                "y": 0,
+                "z": -0.4161543668964
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.4161543668964,
+                "y": 0,
+                "z": -0.909294669551
+            },
+            "position": {
+                "x": -729.432907153447,
+                "y": 133.07732,
+                "z": 202.515291261849
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 Resupply 1/WeaponCase_Pistol_01"
+        },
+        {
+            "name": "WeaponCase_Pistol_02",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": -0.883749733157,
+                "y": 0,
+                "z": -0.4679613602645
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.4679613602645,
+                "y": 0,
+                "z": -0.883749733157
+            },
+            "position": {
+                "x": -729.7137478555546,
+                "y": 133.07765,
+                "z": 203.0669388415149
+            },
+            "id": "WorldIconsInteractables/WorldIcon T1 Resupply 1/WeaponCase_Pistol_02"
+        },
+        {
+            "name": "WorldIcon T2 Resupply 1",
+            "ObjId": 1057,
+            "iconColor": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "iconImagePicker": "Explosion",
+            "iconImageVisible": true,
+            "iconTeamOwnerId": 1,
+            "type": "WorldIcon",
+            "right": {
+                "x": 0.323308,
+                "y": 0,
+                "z": -0.946295
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.946295,
+                "y": 0,
+                "z": 0.323308
+            },
+            "position": {
+                "x": 602.479,
+                "y": 111.496,
+                "z": -222.861
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 Resupply 1"
+        },
+        {
+            "name": "InteractPoint",
+            "type": "InteractPoint",
+            "ObjId": 1057,
+            "metadata/_custom_type_script": "uid://tpqsure8kbo8",
+            "right": {
+                "x": 0.32330805640353494,
+                "y": 0,
+                "z": -0.946294980729356
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.946294980729356,
+                "y": 0,
+                "z": 0.32330805640353494
+            },
+            "position": {
+                "x": 602.479,
+                "y": 111.496,
+                "z": -222.861
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 Resupply 1/InteractPoint"
+        },
+        {
+            "name": "AreaTrigger  T2 Resupply 1",
+            "ObjId": 1057,
+            "Area": "WorldIconsInteractables/WorldIcon T2 Resupply 1/AreaTrigger  T2 Resupply 1/PolygonVolume  T2 Resupply 1",
+            "type": "AreaTrigger",
+            "right": {
+                "x": 0.32330805640353494,
+                "y": 0,
+                "z": -0.946294980729356
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.946294980729356,
+                "y": 0,
+                "z": 0.32330805640353494
+            },
+            "position": {
+                "x": 602.479,
+                "y": 117.78769,
+                "z": -222.861
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 Resupply 1/AreaTrigger  T2 Resupply 1",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "PolygonVolume  T2 Resupply 1",
+            "type": "PolygonVolume",
+            "id": "WorldIconsInteractables/WorldIcon T2 Resupply 1/AreaTrigger  T2 Resupply 1/PolygonVolume  T2 Resupply 1",
+            "height": 0,
+            "points": [
+                {
+                    "x": 592.479,
+                    "y": 110.3226,
+                    "z": -232.861
+                },
+                {
+                    "x": 592.479,
+                    "y": 110.3226,
+                    "z": -212.861
+                },
+                {
+                    "x": 612.479,
+                    "y": 110.3226,
+                    "z": -212.861
+                },
+                {
+                    "x": 612.479,
+                    "y": 110.3226,
+                    "z": -232.861
+                }
+            ]
+        },
+        {
+            "name": "AmmoChest_Small_01",
+            "type": "AmmoChest_Small_01",
+            "right": {
+                "x": 0.7056120466278,
+                "y": 0,
+                "z": 0.254189706154
+            },
+            "up": {
+                "x": 0,
+                "y": 0.75,
+                "z": 0
+            },
+            "front": {
+                "x": -0.254189706154,
+                "y": 0,
+                "z": 0.7056120466278
+            },
+            "position": {
+                "x": 602.615961482612,
+                "y": 111.003996,
+                "z": -222.263963203499
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 Resupply 1/AmmoChest_Small_01"
+        },
+        {
+            "name": "WeaponCase_AR_01",
+            "type": "WeaponCase_AR_01",
+            "right": {
+                "x": -0.94388832864504,
+                "y": 0,
+                "z": -0.33026861034065
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.33026861034065,
+                "y": 0,
+                "z": -0.94388832864504
+            },
+            "position": {
+                "x": 602.937285045017,
+                "y": 111.005033,
+                "z": -223.045495868346
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 Resupply 1/WeaponCase_AR_01"
+        },
+        {
+            "name": "WeaponCase_AR_02",
+            "type": "WeaponCase_AR_01",
+            "right": {
+                "x": -0.94388832864504,
+                "y": 0,
+                "z": -0.33026861034065
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.33026861034065,
+                "y": 0,
+                "z": -0.94388832864504
+            },
+            "position": {
+                "x": 602.8049619531978,
+                "y": 111.882261,
+                "z": -222.772788124222
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 Resupply 1/WeaponCase_AR_02"
+        },
+        {
+            "name": "WeaponCase_Sniper_01",
+            "type": "WeaponCase_Sniper_01",
+            "right": {
+                "x": -0.9504833359976,
+                "y": 0,
+                "z": -0.310776910097
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.310776910097,
+                "y": 0,
+                "z": -0.9504833359976
+            },
+            "position": {
+                "x": 602.7921525363274,
+                "y": 111.716261,
+                "z": -222.742657469591
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 Resupply 1/WeaponCase_Sniper_01"
+        },
+        {
+            "name": "WeaponsCache_01_Crate_B",
+            "type": "WeaponsCache_01_Crate_B",
+            "right": {
+                "x": -0.3304495293463,
+                "y": 0,
+                "z": 0.94382440294908
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.94382440294908,
+                "y": 0,
+                "z": -0.3304495293463
+            },
+            "position": {
+                "x": 602.7442003914886,
+                "y": 110.255,
+                "z": -222.7882587623765
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 Resupply 1/WeaponsCache_01_Crate_B"
+        },
+        {
+            "name": "WeaponCase_Pistol_01",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": -0.9595314048978,
+                "y": 0,
+                "z": -0.281606136872
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.281606136872,
+                "y": 0,
+                "z": -0.9595314048978
+            },
+            "position": {
+                "x": 602.636894829753,
+                "y": 110.47832,
+                "z": -223.355426713291
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 Resupply 1/WeaponCase_Pistol_01"
+        },
+        {
+            "name": "WeaponCase_Pistol_02",
+            "type": "WeaponCase_Pistol_01",
+            "right": {
+                "x": -0.941671263124,
+                "y": 0,
+                "z": -0.3365381670935
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.3365381670935,
+                "y": 0,
+                "z": -0.941671263124
+            },
+            "position": {
+                "x": 602.4379739295913,
+                "y": 110.47865,
+                "z": -222.76923773512317
+            },
+            "id": "WorldIconsInteractables/WorldIcon T2 Resupply 1/WeaponCase_Pistol_02"
         }
     ],
     "Static": [

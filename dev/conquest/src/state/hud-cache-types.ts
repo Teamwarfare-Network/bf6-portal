@@ -1,13 +1,7 @@
 // @ts-nocheck
-// Module: state/hud-cache-types -- HUD reference/cache type definitions
 
-//#region -------------------- HUD Types + Caches --------------------
-
-// Active non-combat top-HUD shell refs owned by the dedicated top-hud-shell path.
-// This is the accepted always-visible shell family used by top-left/help/admin/victory code.
 type TopHudShellRefs = {
     pid: number;
-    // Authoritative centered root chain handles for this player's Conquest top HUD.
     topHudRoot?: mod.UIWidget;
     conquestCombatRoot?: mod.UIWidget;
     upperLeftContainer?: mod.UIWidget;
@@ -16,7 +10,6 @@ type TopHudShellRefs = {
     upperLeftStatusReadyText?: mod.UIWidget;
     topCenterAuxRoot?: mod.UIWidget;
 
-    // Victory results dialog widgets (shown during match end countdown)
     victoryRoot?: mod.UIWidget;
     victoryRestartText?: mod.UIWidget;
     victoryTimeHoursTens?: mod.UIWidget;
@@ -36,7 +29,6 @@ type TopHudShellRefs = {
     helpTextContainer?: mod.UIWidget;
     readyStatusContainer?: mod.UIWidget;
 
-    // Optional roots (for cleanup if needed)
     roots: mod.UIWidget[];
 };
 
@@ -153,4 +145,37 @@ type BoundaryPromptWidgetCacheEntry = {
     lastRemainingSeconds?: number;
 };
 
-//#endregion ----------------- HUD Types + Caches --------------------
+type AmmoResupplyMenuActionRowCacheEntry = {
+    buttonBorder?: mod.UIWidget;
+    button?: mod.UIWidget;
+    buttonIcon?: mod.UIWidget;
+    labelText?: mod.UIWidget;
+    cooldownText?: mod.UIWidget;
+};
+
+type AmmoResupplyMenuChargeCacheEntry = {
+    buttonBorder?: mod.UIWidget;
+    button?: mod.UIWidget;
+    buttonIcon?: mod.UIWidget;
+    labelText?: mod.UIWidget;
+    cooldownText?: mod.UIWidget;
+    countShadow?: mod.UIWidget;
+    countText?: mod.UIWidget;
+};
+
+type AmmoResupplyMenuCacheEntry = {
+    rootName: string;
+    root?: mod.UIWidget;
+    borderTop?: mod.UIWidget;
+    borderBottom?: mod.UIWidget;
+    borderLeft?: mod.UIWidget;
+    borderRight?: mod.UIWidget;
+    title?: mod.UIWidget;
+    classHeaders?: Array<mod.UIWidget | undefined>;
+    rows: AmmoResupplyMenuActionRowCacheEntry[];
+    ammoCharge: AmmoResupplyMenuChargeCacheEntry;
+    closeButtonBorder?: mod.UIWidget;
+    closeButton?: mod.UIWidget;
+    closeButtonText?: mod.UIWidget;
+    lastVisibleState?: boolean;
+};

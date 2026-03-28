@@ -85,6 +85,7 @@ function onPlayerEnterAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger:
             syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
         }
 
+        updateWorldInteractableAreaTriggerMembershipForPlayer(eventPlayer, eventAreaTrigger, true);
         onPlayerEnterBoundaryAreaTrigger(eventPlayer, eventAreaTrigger);
     } catch {
         return;
@@ -113,6 +114,7 @@ function onPlayerExitAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: 
             syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
         }
 
+        updateWorldInteractableAreaTriggerMembershipForPlayer(eventPlayer, eventAreaTrigger, false);
         onPlayerExitBoundaryAreaTrigger(eventPlayer, eventAreaTrigger);
     } catch {
         return;

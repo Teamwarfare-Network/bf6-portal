@@ -3,8 +3,8 @@
 
 //#region -------------------- Map Config (Constants + Types) --------------------
 
-// Supported maps for this mode; each key must have an entry in MAP_CONFIGS.
-type MapKey = "Blackwell_Fields" | "Defense_Nexus" | "Golf_Course" | "Mirak_Valley" | "Operation_Firestorm" | "Liberation_Peak" | "Manhattan_Bridge" | "Sobek_City" | "Area_22B";
+// Current shipped map registry is Firestorm-only; archived map configs live outside src until they are needed again.
+type MapKey = "Operation_Firestorm";
 
 // slotNumber defines the explicit spawn priority per team (used for 1v1/2v2/3v3/4v4 enablement).
 // Map-authored anchors define slot ownership + transform only; ready-dialog presets are the authoritative vehicle source.
@@ -27,7 +27,7 @@ type WorldInteractableAction = "open_ready_dialog" | "open_vehicle_spawn_menu" |
 type WorldInteractableAnchorConfig = {
     objId: number;
     pos: mod.Vector;
-    ownerTeamId: TeamID;
+    ownerTeamId: TeamID | 0;
 };
 type WorldInteractableConfig = {
     objId: number;
@@ -54,7 +54,8 @@ type MapConfig = {
     team2VehicleDeploySpawnPointId?: number;
     mainBaseInteractableObjIds?: number[]; // Phase 7 main-base interactables; even ids map to ready dialog, odd ids map to vehicle menu.
     mainBaseInteractableAnchors?: WorldInteractableAnchorConfig[]; // Explicit Phase 7 terminal marker anchors used for per-player runtime icon spawning.
-    flagInteractableObjIds?: number[]; // Phase 7 flag/point interactables; all ids map to ammo resupply menu.
+    gadgetInteractableObjIds?: number[]; // Phase 7 gadget/ammo interactables; all ids map to ammo resupply menu.
+    gadgetInteractableAnchors?: WorldInteractableAnchorConfig[]; // Explicit Phase 7 point/gadget marker anchors used when authored runtime position lookup is unreliable.
     team1Name: number;
     team2Name: number;
     aircraftCeiling: number;
