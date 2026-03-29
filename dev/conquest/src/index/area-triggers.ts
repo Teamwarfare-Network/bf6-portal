@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: index/area-triggers -- capture-point tick suppression and main-base trigger handlers
 
 //#region -------------------- Enter/Exit Triggers --------------------
@@ -122,3 +122,4 @@ function onPlayerExitAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: 
 }
 
 //#endregion ----------------- Enter/Exit Triggers --------------------
+

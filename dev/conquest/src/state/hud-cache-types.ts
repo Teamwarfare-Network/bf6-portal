@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 
 type TopHudShellRefs = {
     pid: number;
@@ -146,36 +146,63 @@ type BoundaryPromptWidgetCacheEntry = {
 };
 
 type AmmoResupplyMenuActionRowCacheEntry = {
-    buttonBorder?: mod.UIWidget;
+    bb?: mod.UIWidget;
     button?: mod.UIWidget;
-    buttonIcon?: mod.UIWidget;
-    labelText?: mod.UIWidget;
-    cooldownText?: mod.UIWidget;
+    i?: mod.UIWidget;
+    l1?: mod.UIWidget;
+    l2?: mod.UIWidget;
+    l3?: mod.UIWidget;
+    s?: mod.UIWidget;
+    cd?: mod.UIWidget;
+    r?: mod.UIWidget;
+    cs?: mod.UIWidget;
+    ct?: mod.UIWidget;
 };
 
 type AmmoResupplyMenuChargeCacheEntry = {
-    buttonBorder?: mod.UIWidget;
+    bb?: mod.UIWidget;
     button?: mod.UIWidget;
-    buttonIcon?: mod.UIWidget;
-    labelText?: mod.UIWidget;
-    cooldownText?: mod.UIWidget;
-    countShadow?: mod.UIWidget;
-    countText?: mod.UIWidget;
+    i?: mod.UIWidget;
+    l1?: mod.UIWidget;
+    l2?: mod.UIWidget;
+    l3?: mod.UIWidget;
+    s?: mod.UIWidget;
+    cd?: mod.UIWidget;
+    r?: mod.UIWidget;
+    cs?: mod.UIWidget;
+    ct?: mod.UIWidget;
 };
 
 type AmmoResupplyMenuCacheEntry = {
     rootName: string;
+    sv?: number;
     root?: mod.UIWidget;
     borderTop?: mod.UIWidget;
     borderBottom?: mod.UIWidget;
     borderLeft?: mod.UIWidget;
     borderRight?: mod.UIWidget;
     title?: mod.UIWidget;
-    classHeaders?: Array<mod.UIWidget | undefined>;
+    h?: Array<mod.UIWidget | undefined>;
+    a: AmmoResupplyMenuChargeCacheEntry[];
     rows: AmmoResupplyMenuActionRowCacheEntry[];
-    ammoCharge: AmmoResupplyMenuChargeCacheEntry;
+    m: AmmoResupplyMenuChargeCacheEntry;
+    x: AmmoResupplyMenuChargeCacheEntry[];
+    e: AmmoResupplyMenuChargeCacheEntry;
+    q: AmmoResupplyMenuChargeCacheEntry[];
+    ag?: mod.UIWidget;
+    ah?: mod.UIWidget;
+    at?: mod.UIWidget;
+    mg?: mod.UIWidget;
+    mh?: mod.UIWidget;
+    mt?: mod.UIWidget;
+    eg?: mod.UIWidget;
+    eh?: mod.UIWidget;
+    et?: mod.UIWidget;
+    rg?: mod.UIWidget;
+    rh?: mod.UIWidget;
+    rt?: mod.UIWidget;
     closeButtonBorder?: mod.UIWidget;
     closeButton?: mod.UIWidget;
     closeButtonText?: mod.UIWidget;
-    lastVisibleState?: boolean;
 };
+

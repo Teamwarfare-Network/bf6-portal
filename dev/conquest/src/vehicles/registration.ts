@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: vehicles/registration -- team vehicle registry + base team inference cache
 
 //#region -------------------- Vehicle Registration (team arrays) --------------------
@@ -41,3 +41,4 @@ function inferBaseTeamFromPosition(pos: mod.Vector): TeamID | 0 {
 }
 
 //#endregion ----------------- Vehicle Registration (team arrays) --------------------
+

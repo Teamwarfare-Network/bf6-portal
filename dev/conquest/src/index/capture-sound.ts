@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: index/capture-sound -- Phase 4 isolated capture-sound backbone and V1 capture-tick dispatch
 
 function conquestPhase4HasValidHandle(handle: any): boolean {
@@ -263,3 +263,4 @@ function conquestPhase4FlushCaptureSoundQueue(): void {
 
     }
 }
+

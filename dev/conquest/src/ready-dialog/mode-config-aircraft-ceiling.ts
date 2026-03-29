@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ready-dialog/mode-config-aircraft-ceiling -- map-default and custom aircraft ceiling control
 
 //#region -------------------- Aircraft Ceiling (Hard Enforcement) --------------------
@@ -58,3 +58,4 @@ function syncAircraftCeilingFromMapConfig(): void {
 }
 
 //#endregion ----------------- Aircraft Ceiling (Soft Enforcement) --------------------
+

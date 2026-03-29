@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: index/vehicle-events -- player vehicle enter/exit and vehicle spawn/destroy handlers
 
 //#region -------------------- Exported Event Handlers - Vehicle Entry + Exit --------------------
@@ -198,3 +198,4 @@ async function onVehicleDestroyedImpl(eventVehicle: mod.Vehicle) {
 }
 
 //#endregion -------------------- Exported Event Handlers - Vehicle Spawn + Destroy --------------------
+

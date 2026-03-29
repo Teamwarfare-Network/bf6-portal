@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: boundary/enforcement -- boundary occupancy, prompt, and kill-timer enforcement
 
 const PRELIVE_MAIN_BASE_KILL_SECONDS = 10;
@@ -339,3 +339,4 @@ function clearActiveBoundaryViolationsForAllPlayers(): void {
         delete State.round.boundary.activeViolationByPid[Number(key)];
     }
 }
+

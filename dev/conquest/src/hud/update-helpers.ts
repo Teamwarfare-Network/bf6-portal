@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: hud/update-helpers -- HUD state sync helpers and admin action count
 
 //#region -------------------- HUD Update Helpers --------------------
@@ -30,3 +30,4 @@ function handleAdminPanelAction(eventPlayer: mod.Player, actionKey: number): voi
 }
 
 //#endregion ----------------- HUD Update Helpers --------------------
+

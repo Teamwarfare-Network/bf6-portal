@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: interaction/ui-primary-click -- shared primary-click dedupe helpers for UI buttons
 
 type UIButtonPrimaryClickPhase = "down" | "up";
@@ -69,3 +69,4 @@ function tryConsumeUIButtonPrimaryClickEvent(
         releaseGraceSeconds
     );
 }
+

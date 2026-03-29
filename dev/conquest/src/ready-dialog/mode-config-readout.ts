@@ -270,7 +270,7 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
             if (knob.key === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) {
                 const playersLabelWidget = safeFind(UI_READY_DIALOG_MODE_GRID_KNOB_LABEL_ID + knob.key + "_" + pid);
                 if (playersLabelWidget) {
-                    safeSetUITextLabel(playersLabelWidget, mod.Message(mod.stringkeys.twl.system.genericCounter, ""));
+                    safeSetUITextLabel(playersLabelWidget, mod.Message(mod.stringkeys.twl.system.genericCounter, " "));
                     mod.SetUIWidgetVisible(playersLabelWidget, false);
                 }
             } else {
@@ -355,3 +355,5 @@ function updateReadyDialogModeConfigForAllHiddenBuiltCaches(): void {
 }
 
 //#endregion ----------------- Ready Dialog - Map/Mode Config UI Readout --------------------
+
+

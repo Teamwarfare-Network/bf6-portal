@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ready-dialog/mode-config-schema -- shared knob/column metadata for the ready-dialog grid
 
 type ReadyDialogGridKnobSpec = {
@@ -143,3 +143,4 @@ function isReadyDialogModeGridPlaceholderKnobKey(knobKey: string): boolean {
     return knobKey === READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY
         || knobKey === READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY;
 }
+

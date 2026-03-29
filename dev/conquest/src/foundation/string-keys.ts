@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 const STR_READYUP_RETURN_TO_BASE_NOT_LIVE = mod.stringkeys.twl.notifications.readyupReturnToBaseNotLive;
 const STR_PLAYER_READIED_UP = mod.stringkeys.twl.notifications.playerReadiedUp;
 const STR_BOUNDARY_WARNING_ICON = mod.stringkeys.twl.boundary.warningIcon;
@@ -9,7 +9,6 @@ const STR_BOUNDARY_ENEMY_MAIN_BASE_BUFFER_TITLE_2 = mod.stringkeys.twl.boundary.
 const STR_BOUNDARY_GROUND_COMBAT_ZONE_TITLE_1 = mod.stringkeys.twl.boundary.groundCombatZoneTitle1;
 const STR_BOUNDARY_GROUND_COMBAT_ZONE_TITLE_2 = mod.stringkeys.twl.boundary.groundCombatZoneTitle2;
 const STR_BOUNDARY_COUNTDOWN_SUBTITLE_FORMAT = mod.stringkeys.twl.boundary.countdownSubtitleFormat;
-
 const STR_VEHICLE_SPAWN_RETRY = mod.stringkeys.twl.messages.vehicleSpawnRetry;
 const STR_READY_DIALOG_MATCHUP_CHANGED = mod.stringkeys.twl.readyDialog.matchupChanged;
 const STR_READY_DIALOG_PLAYERS_CHANGED = mod.stringkeys.twl.readyDialog.playersChanged;
@@ -41,16 +40,41 @@ const STR_HUD_CONQUEST_CAPTURE_STATUS_CONTESTING = mod.stringkeys.twl.hud.conque
 const STR_HUD_CONQUEST_CAPTURE_STATUS_CAPTURING = mod.stringkeys.twl.hud.conquest.captureStatus.capturing;
 const STR_SYSTEM_GENERIC_PERCENT = mod.stringkeys.twl.system.genericPercent;
 const STR_UI_ASSAULT = mod.stringkeys.twl.ui.assault;
-const STR_UI_AMMO = mod.stringkeys.twl.ui.ammo;
 const STR_UI_ENGINEER = mod.stringkeys.twl.ui.engineer;
 const STR_UI_GADGETS = mod.stringkeys.twl.ui.gadgets;
+const STR_UI_ARTILLERY_STRIKE = mod.stringkeys.twl.ui.artilleryStrike;
 const STR_UI_MEDIC = mod.stringkeys.twl.ui.medic;
 const STR_UI_LAUNCHER_AMMO = mod.stringkeys.twl.ui.rocketAmmo;
 const STR_UI_RECON = mod.stringkeys.twl.ui.recon;
+const STR_UI_DRONE = mod.stringkeys.twl.ui.drone;
+const STR_UI_C4 = mod.stringkeys.twl.ui.c4;
+const STR_UI_ANTI_VEHICLE_GRENADE = mod.stringkeys.twl.ui.antiVehicleGrenade;
 const STR_UI_RPG = mod.stringkeys.twl.ui.rpg;
 const STR_UI_IGLA_MARKED = mod.stringkeys.twl.ui.iglaMarked;
 const STR_UI_STINGER = mod.stringkeys.twl.ui.stinger;
 const STR_UI_AT4 = mod.stringkeys.twl.ui.at4;
+const STR_UI_SMOKE_SCREEN = mod.stringkeys.twl.ui.smokeScreen;
+const STR_UI_GRENADE_INTERCEPT = mod.stringkeys.twl.ui.grenadeIntercept;
+const STR_UI_MISSILE_INTERCEPT = mod.stringkeys.twl.ui.missileIntercept;
+const STR_UI_SPAWN_BEACON = mod.stringkeys.twl.ui.spawnBeacon;
+const STR_UI_ASSAULT_LADDER = mod.stringkeys.twl.ui.assaultLadder;
 const STR_UI_NO_LAUNCHER = mod.stringkeys.twl.ui.noLauncher;
-const STR_UI_READY = mod.stringkeys.twl.ui.ready;
+const STR_UI_ONE_PER_TEAM = mod.stringkeys.twl.ui.onePerTeam;
+const STR_UI_ONE_PER_PLAYER = mod.stringkeys.twl.ui.onePerPlayer;
+const STR_UI_CHOOSE_ONLY_ONE = mod.stringkeys.twl.ui.chooseOnlyOne;
+const STR_UI_LINE_SMOKE = mod.stringkeys.twl.ui.lineSmoke;
+const STR_UI_LINE_ARTILLERY = mod.stringkeys.twl.ui.lineArtillery;
+const STR_UI_LINE_CALL_IN = mod.stringkeys.twl.ui.lineCallIn;
+const STR_UI_LINE_SPAWN = mod.stringkeys.twl.ui.lineSpawn;
+const STR_UI_LINE_BEACON = mod.stringkeys.twl.ui.lineBeacon;
+const STR_UI_LINE_ASSAULT = mod.stringkeys.twl.ui.lineAssault;
+const STR_UI_LINE_LADDER = mod.stringkeys.twl.ui.lineLadder;
+const STR_UI_LINE_ANTI_VEHICLE = mod.stringkeys.twl.ui.lineAntiVehicle;
+const STR_UI_LINE_GRENADE = mod.stringkeys.twl.ui.lineGrenade;
+const STR_UI_LINE_LAUNCHER = mod.stringkeys.twl.ui.lineLauncher;
+const STR_UI_LINE_AMMO = mod.stringkeys.twl.ui.lineAmmo;
+const STR_UI_LINE_INTERCEPT = mod.stringkeys.twl.ui.lineIntercept;
+const STR_UI_LINE_MISSILE = mod.stringkeys.twl.ui.lineMissile;
 const STR_UI_SPAWN = mod.stringkeys.twl.ui.spawn;
+const STR_UI_READY = mod.stringkeys.twl.ui.ready;
+

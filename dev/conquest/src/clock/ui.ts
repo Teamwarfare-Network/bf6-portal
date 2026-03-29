@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: clock/ui -- clock widget build, cache, and digit rendering helpers
 
 //#region -------------------- Match Clock - UI Build + Cache Helpers --------------------
@@ -321,4 +321,5 @@ function setClockVisibilityCached(cacheEntry: ClockWidgetCacheEntry, visible: bo
 }
 
 //#endregion ----------------- Match Clock - UI Build + Cache Helpers --------------------
+
 

@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: boundary/prompt-ui -- cached per-player center-screen boundary warning prompt family
 
 const BOUNDARY_PROMPT_PANEL_WIDTH = 1320;
@@ -474,3 +474,4 @@ function destroyBoundaryPromptUiForPid(pid: number): void {
     }
     delete State.hudCache.boundaryPromptCache[pid];
 }
+

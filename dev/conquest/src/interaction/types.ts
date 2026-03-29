@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: interaction/types -- per-player ready-dialog interaction data and config types
 
 //#region -------------------- Ready Dialog Interaction Data + Config --------------------
@@ -39,3 +39,4 @@ interface readyDialogData_t {
 // - inMainBaseByPid: main-base presence for pre-live gating + UI.
 
 //#endregion ----------------- Ready Dialog Interaction Data + Config --------------------
+

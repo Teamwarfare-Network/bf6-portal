@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: interaction/ui-events-ready -- ready-dialog and admin-panel toggle button handlers
 
 // Handles ready-dialog actions and admin panel open/close.
@@ -201,3 +201,4 @@ function tryHandleReadyDialogButtonEvent(
 
     return false;
 }
+

@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: vehicles/deploy-live-menu -- alive-player world-terminal ownership for the deploy HUD family
 
 //#region -------------------- Live Deploy Menu State --------------------
@@ -59,8 +59,8 @@ function tryOpenVehicleDeployLiveMenuForPlayer(eventPlayer: mod.Player): boolean
     if (pid === undefined) return false;
     if (!State.players.deployedByPid[pid]) return false;
 
-    if (isAmmoResupplyMenuOpenForPid(pid)) {
-        closeAmmoResupplyMenuForPlayer(eventPlayer);
+    if (isArmOpen(pid)) {
+        closeArmMenu(eventPlayer);
     }
 
     if (State.players.readyDialogData[pid]?.dialogVisible) {
@@ -80,3 +80,4 @@ function tryOpenVehicleDeployLiveMenuForPlayer(eventPlayer: mod.Player): boolean
 }
 
 //#endregion ----------------- Live Deploy Menu State --------------------
+

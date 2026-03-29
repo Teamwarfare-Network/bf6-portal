@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: vehicles/spawner-bootstrap -- one-time spawner startup and initial spawn kick
 
 // Reveals the vehicle-spawner HUD family once slot inventory exists for already-warmed undeployed players.
@@ -97,3 +97,4 @@ async function startVehicleSpawnerSystem(): Promise<void> {
 }
 
 //#endregion ----------------- Vehicle Spawner System --------------------
+

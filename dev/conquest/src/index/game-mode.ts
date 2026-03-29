@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: index/game-mode -- mode start loop and top-level initialization
 
 const CONQUEST_LIVE_STATE_SUBTICK_SECONDS = 0.12;
@@ -153,3 +153,4 @@ async function onGameModeStartedImpl(): Promise<void> {
 }
 
 //#endregion -------------------- Exported Event Handlers - Game Mode Start --------------------
+

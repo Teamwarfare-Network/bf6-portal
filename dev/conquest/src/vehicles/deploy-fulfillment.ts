@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: vehicles/deploy-fulfillment -- direct vehicle spawn-button fulfillment on deploy
 
 const VEHICLE_DIRECT_SPAWN_FULFILLMENT_SEAT_NUMBER = 0;
@@ -512,3 +512,4 @@ async function beginVehicleLiveTerminalSpawnForPlayer(player: mod.Player): Promi
     const result = await tryFulfillPendingVehicleDirectSpawnSeatForPlayer(player, "leave_alive");
     return result.fulfilled;
 }
+

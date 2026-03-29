@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: config/map-runtime -- map detection/apply and spawn-preset helpers
 
 //#region -------------------- Map + Matchup Helpers --------------------
@@ -751,3 +751,4 @@ function findMatchupPresetIndex(leftPlayers: number, rightPlayers: number): numb
 }
 
 //#endregion ----------------- Map + Matchup Helpers --------------------
+

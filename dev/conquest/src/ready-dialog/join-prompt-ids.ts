@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ready-dialog/join-prompt-ids -- join prompt widget naming and cleanup helpers
 
 //#region -------------------- Join Prompt - IDs + Gating --------------------
@@ -36,3 +36,4 @@ function deleteJoinPromptWidget(name: string): void {
 }
 
 //#endregion ----------------- Join Prompt - IDs + Gating --------------------
+

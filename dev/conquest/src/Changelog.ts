@@ -1,8 +1,55 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: compact runtime changelog
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.953: harden UI text writes against stale or non-text widgets
+// v0.952: restore dist type context with triple-slash types reference
+// v0.949: emit modlib import with ts-ignore and no ts-nocheck
+// v0.947: preserve modlib import comment in dist bundle
+// v0.946: preserve top and bottom version lines in dist bundle
+// v0.945: replace empty genericCounter placeholders with single-space messages
+// v0.944: toggle gadget image widgets explicitly with gadget menu visibility
+// v0.943: restore cached gadget menu widget visibility
+// v0.942: restore source header license and attribution
+// v0.941: put medic smoke in callins without removing gadget two
+// v0.940: increase launcher ammo icon size
+// v0.939: choose-one group timers and engineer launcher counts
+// v0.938: arm root-only show hide
+// v0.937: restore specified callin gadget icons
+// v0.936: arm cache/global launchers
+// v0.935: nudge gadget tile headers up, move weapon icons down, and enlarge launcher ammo icon
+// v0.934: fix gadget menu split header string keys and reposition tile headers inside buttons
+// v0.933: replace gadget tile multiline headers with explicit per-line widgets
+// v0.932: apply larger measured gadget tile header and icon shift based on screenshot sequence
+// v0.931: move gadget tile headers and icons further down based on screenshot delta
+// v0.930: retune gadget tile header and icon alignment and update assault artillery and ladder cooldowns
+// v0.929: stabilize gadget menu tile layout by separating text frames from gadget image placement
+// v0.928: strip UTF-8 BOM characters from conquest postbuild bundle output
+// v0.927: add medic intercept system gadget tiles and trim bundle header payload
+// v0.926: fix gadget menu static timer labels and reparent tile headers to their buttons
+// v0.925: nudge gadget menu icons upward within their tiles
+// v0.924: tighten gadget menu layout, restore close button, and split assault team cooldown from player lockout
+// v0.923: tighten gadget menu layout, add grouped choose-one borders, share assault cooldowns, and add admin reset gadget timers
+// v0.922: move gadget menu headers and tiles up, add per-team/player labels, shrink gadget icons and fix close button parenting
+// v0.921: fix gadget menu close handling and align multiline tile labels with icon centerline
+// v0.920: retune gadget menu layout, remove recon ammo tile, and adjust assault/recon cooldowns
+// v0.919: remove assault air strike, add recon class gadget tiles, and compress ammo menu state for headroom
+// v0.918: replace assault armor tile with assault callins beacon and ladder
+// v0.917: guard GetVehicleFromPlayer behind seat check and remove smoke notify probe
+// v0.916: change no launcher label to N/A and harden medic smoke grant verification
+// v0.915: use CallIn_Smoke_Screen for medic tile display and grant path
+// v0.914: add assault armor tile with per-player per-locker cooldown
+// v0.913: fix ammo menu partial-build cache reuse and smoke icon fallback
+// v0.912: add team-shared support smoke tile and support class gating for engineer launchers
+// v0.911: move launcher ammo badge lower left onto timer line
+// v0.910: move launcher ammo count badge further down and left
+// v0.909: move gadget icons down again and relocate ammo count badge
+// v0.908: move gadget tile icons further down toward visual center
+// v0.907: restore launcher ammo tile count overlay and bottom timer
+// v0.906: increase gadget icon offset to compensate for top-heavy art
+// v0.905: move ammo menu icons down toward button center
+// v0.904: ammo tile align to top label center icon bottom status
 // v0.902: revert world interactible AddUIIcon attempt and retune ammo tile layout
 // v0.901: switch world interactible icons to AddUIIcon per-player visibility
 // v0.900: ammo menu layout shift and ammo count overlay pass
@@ -604,3 +651,4 @@
 // - Keep this file compact; deep historical notes belong in design docs, not runtime script.
 
 //#endregion ----------------- Changelog / History --------------------
+

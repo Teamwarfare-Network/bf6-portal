@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: hud/conquest-scaffold -- Phase 1 conquest HUD seam (inactive by design)
 
 // Phase 1 scaffold hook for future conquest ticket/flag HUD.
@@ -6,3 +6,4 @@
 function refreshConquestScaffoldHudForAllPlayers(): void {
     return;
 }
+

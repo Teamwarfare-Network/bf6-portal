@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: utils/main-base -- main-base trigger membership + event messaging
 
 //#region -------------------- Main Base Restock (area triggers) --------------------
@@ -17,3 +17,4 @@ function IsPlayerInOwnMainBase(player: mod.Player, areaTrigger: mod.AreaTrigger)
 }
 
 //#endregion ----------------- Main Base Area Trigger Messaging --------------------
+

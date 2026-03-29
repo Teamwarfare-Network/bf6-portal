@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ready-dialog/mode-config-presets -- mode preset application and confirm/setters
 
 //#region -------------------- Ready Dialog - Mode Presets + Confirm --------------------
@@ -217,3 +217,4 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
 }
 
 //#endregion ----------------- Ready Dialog - Mode Presets + Confirm --------------------
+

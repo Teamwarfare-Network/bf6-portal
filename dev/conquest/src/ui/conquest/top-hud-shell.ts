@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ui/conquest/top-hud-shell -- dedicated non-combat top HUD shell ensure/cache owner
 
 type ConquestTopHudShellLayout = {
@@ -133,3 +133,4 @@ function ensureTopHudShellForPlayer(player: mod.Player): TopHudShellRefs | undef
 
     return refs;
 }
+

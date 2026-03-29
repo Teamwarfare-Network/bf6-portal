@@ -1,8 +1,5 @@
-// @ts-nocheck
-// Module: admin-panel/events -- tester/admin clock action button handlers
+﻿// @ts-nocheck
 
-// Handles admin tester controls that mutate match clock/start/end flow.
-// Returns true when a button name is recognized (including gated no-op actions).
 const ADMIN_PANEL_PRIMARY_CLICK_DEBOUNCE_SECONDS = 0.12;
 const ADMIN_PANEL_PRIMARY_CLICK_RELEASE_GRACE_SECONDS = 2.0;
 const adminPanelLastPrimaryClickByPid: UIButtonPrimaryClickTracker = {};
@@ -140,6 +137,18 @@ function tryHandleAdminTesterButtonEvent(
     );
     if (deployTimerHandled !== undefined) return deployTimerHandled;
 
+    const resetGadgetTimersHandled = tryHandleAdminPanelPrimaryAction(
+        playerId,
+        widgetName,
+        eventUIButtonEvent,
+        UI_TEST_BUTTON_RESET_GADGET_TIMERS_ID,
+        () => {
+            resetAllArmTimers();
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.resetGadgetTimers);
+        }
+    );
+    if (resetGadgetTimersHandled !== undefined) return resetGadgetTimersHandled;
+
     const matchLengthDecHandled = tryHandleAdminPanelPrimaryAction(
         playerId,
         widgetName,
@@ -180,6 +189,7 @@ function tryHandleAdminTesterButtonEvent(
         case UI_TEST_BUTTON_MATCH_END_ID + playerId:
         case UI_TEST_BUTTON_POS_DEBUG_ID + playerId:
         case UI_TEST_BUTTON_DEPLOY_TIMERS_TOGGLE_ID + playerId:
+        case UI_TEST_BUTTON_RESET_GADGET_TIMERS_ID + playerId:
         case UI_ADMIN_MATCH_LENGTH_DEC_ID + playerId:
         case UI_ADMIN_MATCH_LENGTH_INC_ID + playerId:
             return true;
@@ -187,3 +197,4 @@ function tryHandleAdminTesterButtonEvent(
 
     return false;
 }
+

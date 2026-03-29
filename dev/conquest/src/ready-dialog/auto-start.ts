@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ready-dialog/auto-start -- all-ready auto-start gate
 
 //#region -------------------- Ready Dialog - Auto-Start --------------------
@@ -15,3 +15,4 @@ function tryAutoStartMatchIfAllReady(triggerPlayer?: mod.Player): void {
 }
 
 //#endregion -------------------- Ready Dialog - Auto-Start --------------------
+

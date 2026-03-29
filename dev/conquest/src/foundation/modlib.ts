@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: foundation/modlib -- shared modlib import for local helpers
 
 //#region -------------------- Modlib import --------------------
@@ -10,3 +10,4 @@ import * as modlib from "modlib";
 // - There seems to be an error with TS template's project local modlib FilteredArray function (drops all vehicles in vehicle array?!)
 
 //#endregion ----------------- Modlib import --------------------
+

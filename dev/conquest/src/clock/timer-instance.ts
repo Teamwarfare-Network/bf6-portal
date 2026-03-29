@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: clock/timer-instance -- reusable MM:SS timer widget helpers for clock-adjacent UI
 
 type ReusableTimerUiConfig = {
@@ -400,4 +400,5 @@ function setReusableTimerVisible(cache: ReusableTimerWidgetCacheEntry, visible: 
     safeSetUIWidgetVisible(cache.secOnes, showDigits);
     cache.lastVisibleState = visible;
 }
+
 

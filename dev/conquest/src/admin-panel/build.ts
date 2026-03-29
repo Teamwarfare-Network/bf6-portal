@@ -1,12 +1,8 @@
 // @ts-nocheck
-// Module: admin-panel/build -- admin panel layout and builder helpers
 
-//#region -------------------- Admin Panel UI (Right Side) --------------------
 
-// Builds the Admin Panel widgets lazily (to avoid a 1-frame flicker on dialog open).
 function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIWidget, playerId: number): void {
 
-    // Fit at target resolutions.
     const testerBaseX = ADMIN_PANEL_BASE_X;
     const testerBaseY = ADMIN_PANEL_BASE_Y;
 
@@ -94,14 +90,25 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         getVehicleDeployTimerAdminToggleLabelKey(playerId)
     );
 
+    addTesterActionButton(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 7,
+        (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX),
+        36,
+        UI_TEST_BUTTON_RESET_GADGET_TIMERS_ID,
+        UI_TEST_RESET_GADGET_TIMERS_TEXT_ID,
+        mod.stringkeys.twl.adminPanel.tester.buttons.resetGadgetTimers
+    );
+
     syncAdminMatchLengthLabelForAllPlayers();
 }
 
-//#endregion ----------------- Admin Panel UI (Right Side) --------------------
 
 
 
-//#region -------------------- Admin Panel UI builder helpers --------------------
 
 function addTesterRow(
     eventPlayer: mod.Player,
@@ -189,7 +196,6 @@ function addTesterRow(
     }
 }
 
-// Adds the tester clock reset action button and its centered label.
 function addTesterResetButton(
     eventPlayer: mod.Player,
     containerBase: mod.UIWidget,
@@ -228,7 +234,6 @@ function addTesterResetButton(
     }
 }
 
-// Adds a full-width tester action button used for start/end/debug controls.
 function addTesterActionButton(
     eventPlayer: mod.Player,
     containerBase: mod.UIWidget,
@@ -270,7 +275,6 @@ function addTesterActionButton(
     }
 }
 
-// Ensures per-player position debug text widgets exist and returns widget handles.
 function ensurePositionDebugWidgets(player: mod.Player): {
     posXLabel: mod.UIWidget; posYLabel: mod.UIWidget; posZLabel: mod.UIWidget;
     posXValue: mod.UIWidget; posYValue: mod.UIWidget; posZValue: mod.UIWidget;
@@ -312,7 +316,7 @@ function ensurePositionDebugWidgets(player: mod.Player): {
     }
     safeSetUIWidgetVisible(container, false);
 
-    const emptyValueMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, "");
+    const emptyValueMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, " ");
 
     const makeText = (id: string, posX: number, posY: number, width: number, color: mod.Vector, anchor: mod.UIAnchor, label: mod.Message) => {
         let w = safeFind(id);
@@ -538,7 +542,6 @@ async function positionDebugLoop(player: mod.Player, expectedToken: number): Pro
     }
 }
 
-// Toggles position-debug visibility for a single player and starts/stops refresh loop.
 function setPositionDebugVisibleForPlayer(player: mod.Player, visible: boolean): void {
     const pid = mod.GetObjId(player);
     const state = State.players.readyDialogData[pid];
@@ -584,5 +587,6 @@ function setPositionDebugVisibleForPlayer(player: mod.Player, visible: boolean):
     void positionDebugLoop(player, state.posDebugToken);
 }
 
-//#endregion ----------------- Admin Panel UI builder helpers --------------------
+
+
 

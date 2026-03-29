@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: vehicles/array-helpers -- engine array helpers for vehicle registry operations
 
 //#region -------------------- Portal Array Helpers (engine arrays) --------------------
@@ -14,3 +14,4 @@ function arrayRemoveVehicle(arr: any, vehicle: mod.Vehicle): any {
 }
 
 //#endregion ----------------- Portal Array Helpers (engine arrays) --------------------
+

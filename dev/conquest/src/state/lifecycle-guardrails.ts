@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: state/lifecycle-guardrails -- centralized legacy lifecycle mutator owner (Phase 1 scaffold)
 
 type LegacyLifecycleMutator =
@@ -63,3 +63,4 @@ function lifecycleTrySetGameOver(_mutatedBy: LegacyLifecycleMutator, winnerTeam:
     );
     return true;
 }
+

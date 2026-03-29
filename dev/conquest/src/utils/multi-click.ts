@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: utils/multi-click -- interact triple-tap detector
 
 //#region -------------------- MultiClickDetector (triple tap interact) --------------------
@@ -48,3 +48,4 @@ class InteractMultiClickDetector {
 }
 
 //#endregion ----------------- MultiClickDetector (triple tap interact) --------------------
+

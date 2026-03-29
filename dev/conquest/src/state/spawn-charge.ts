@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: state/spawn-charge -- Phase 2B spawn-charge reason matrix and transaction safeguards
 
 // Allocates zeroed per-reason counters for deploy attempts/charges.
@@ -245,3 +245,4 @@ function conquestPhase2BOnPlayerDeployed(eventPlayer: mod.Player, wasAlreadyDepl
     updateConquestCombatHudForAllPlayers(true);
     conquestPhase2BMaybeEmitDebugSnapshot(reason);
 }
+

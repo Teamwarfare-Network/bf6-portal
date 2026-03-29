@@ -5517,6 +5517,302 @@
                 "z": -222.76923773512317
             },
             "id": "WorldIconsInteractables/WorldIcon T2 Resupply 1/WeaponCase_Pistol_02"
+        },
+        {
+            "name": "StationaryEmplacementSpawner",
+            "StationaryEmplacementType": "GDF009",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 120,
+            "P_ApplyDamageToAbandonVehicle": false,
+            "P_AbandonVehiclesOutOfCombatArea": false,
+            "type": "StationaryEmplacementSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -180.196,
+                "y": 124.644,
+                "z": 126.815
+            },
+            "id": "StationaryEmplacementSpawner"
+        },
+        {
+            "name": "StationaryEmplacementSpawner2",
+            "StationaryEmplacementType": "GDF009",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 120,
+            "P_ApplyDamageToAbandonVehicle": false,
+            "P_AbandonVehiclesOutOfCombatArea": false,
+            "type": "StationaryEmplacementSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -299.101,
+                "y": 142.051,
+                "z": -47.2346
+            },
+            "id": "StationaryEmplacementSpawner2"
+        },
+        {
+            "name": "StationaryEmplacementSpawner3",
+            "StationaryEmplacementType": "GDF009",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 120,
+            "P_ApplyDamageToAbandonVehicle": false,
+            "P_AbandonVehiclesOutOfCombatArea": false,
+            "type": "StationaryEmplacementSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 83.6206,
+                "y": 129.852,
+                "z": -149.554
+            },
+            "id": "StationaryEmplacementSpawner3"
+        },
+        {
+            "name": "StationaryEmplacementSpawner4",
+            "StationaryEmplacementType": "GDF009",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 120,
+            "P_ApplyDamageToAbandonVehicle": false,
+            "P_AbandonVehiclesOutOfCombatArea": false,
+            "type": "StationaryEmplacementSpawner",
+            "right": {
+                "x": 0.998783,
+                "y": -0.0492194,
+                "z": -0.00315613
+            },
+            "up": {
+                "x": 0.0493204,
+                "y": 0.996736,
+                "z": 0.0639145
+            },
+            "front": {
+                "x": 0,
+                "y": -0.0639924,
+                "z": 0.99795
+            },
+            "position": {
+                "x": 92.0956,
+                "y": 123.369,
+                "z": 127.575
+            },
+            "id": "StationaryEmplacementSpawner4"
+        },
+        {
+            "name": "StationaryEmplacementSpawner5",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 120,
+            "P_ApplyDamageToAbandonVehicle": false,
+            "P_AbandonVehiclesOutOfCombatArea": false,
+            "type": "StationaryEmplacementSpawner",
+            "right": {
+                "x": 0.0220484,
+                "y": 0.00257956,
+                "z": 0.999754
+            },
+            "up": {
+                "x": -0.116203,
+                "y": 0.993226,
+                "z": 2.17001e-10
+            },
+            "front": {
+                "x": -0.992981,
+                "y": -0.116174,
+                "z": 0.0221988
+            },
+            "position": {
+                "x": 80.7422,
+                "y": 121.789,
+                "z": 42.948
+            },
+            "id": "StationaryEmplacementSpawner5"
+        },
+        {
+            "name": "StationaryEmplacementSpawner6",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 120,
+            "P_ApplyDamageToAbandonVehicle": false,
+            "P_AbandonVehiclesOutOfCombatArea": false,
+            "type": "StationaryEmplacementSpawner",
+            "right": {
+                "x": 0.372614,
+                "y": -0.0333173,
+                "z": -0.927388
+            },
+            "up": {
+                "x": 0.215191,
+                "y": 0.975217,
+                "z": 0.0514258
+            },
+            "front": {
+                "x": 0.902691,
+                "y": -0.218727,
+                "z": 0.37055
+            },
+            "position": {
+                "x": -232.57,
+                "y": 132.228,
+                "z": 15.0727
+            },
+            "id": "StationaryEmplacementSpawner6"
+        },
+        {
+            "name": "StationaryEmplacementSpawner7",
+            "StationaryEmplacementType": "GDF009",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 120,
+            "P_ApplyDamageToAbandonVehicle": false,
+            "P_AbandonVehiclesOutOfCombatArea": false,
+            "type": "StationaryEmplacementSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -693.5,
+                "y": 132.723,
+                "z": 246.548
+            },
+            "id": "StationaryEmplacementSpawner7"
+        },
+        {
+            "name": "StationaryEmplacementSpawner8",
+            "StationaryEmplacementType": "GDF009",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 120,
+            "P_ApplyDamageToAbandonVehicle": false,
+            "P_AbandonVehiclesOutOfCombatArea": false,
+            "type": "StationaryEmplacementSpawner",
+            "right": {
+                "x": 0.998542,
+                "y": 0.0539742,
+                "z": 0
+            },
+            "up": {
+                "x": -0.0539742,
+                "y": 0.998542,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 553.929,
+                "y": 111.86,
+                "z": -296.875
+            },
+            "id": "StationaryEmplacementSpawner8"
+        },
+        {
+            "name": "StationaryEmplacementSpawner9",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 120,
+            "P_ApplyDamageToAbandonVehicle": false,
+            "P_AbandonVehiclesOutOfCombatArea": false,
+            "type": "StationaryEmplacementSpawner",
+            "right": {
+                "x": 0.185821,
+                "y": 0,
+                "z": -0.982584
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.982584,
+                "y": 0,
+                "z": 0.185821
+            },
+            "position": {
+                "x": -765.139,
+                "y": 132.228,
+                "z": 293.989
+            },
+            "id": "StationaryEmplacementSpawner9"
+        },
+        {
+            "name": "StationaryEmplacementSpawner10",
+            "P_AutoSpawnEnabled": true,
+            "P_DefaultRespawnTime": 120,
+            "P_ApplyDamageToAbandonVehicle": false,
+            "P_AbandonVehiclesOutOfCombatArea": false,
+            "type": "StationaryEmplacementSpawner",
+            "right": {
+                "x": 0.963742,
+                "y": 0,
+                "z": 0.266835
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": -0.266835,
+                "y": 0,
+                "z": 0.963742
+            },
+            "position": {
+                "x": 647.638,
+                "y": 110.548,
+                "z": -289.535
+            },
+            "id": "StationaryEmplacementSpawner10"
         }
     ],
     "Static": [

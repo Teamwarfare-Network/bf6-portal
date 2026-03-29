@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ui/admin/action-counter -- top-right admin action counter HUD widget
 
 function buildConquestAdminActionCounterWidget(player: mod.Player, pid: number, refs: TopHudShellRefs): void {
@@ -22,4 +22,5 @@ function buildConquestAdminActionCounterWidget(player: mod.Player, pid: number, 
     if (auditCounter) refs.roots.push(auditCounter);
     refs.adminPanelActionCountText = safeFind(`AdminPanelActionCount_${pid}`);
 }
+
 

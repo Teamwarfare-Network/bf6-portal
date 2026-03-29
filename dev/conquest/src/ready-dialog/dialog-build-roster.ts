@@ -145,7 +145,7 @@ function buildReadyDialogRosterSection(
             y,
             colNameW,
             rowH,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+            mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
             14,
             mod.UIAnchor.TopLeft
         );
@@ -158,7 +158,7 @@ function buildReadyDialogRosterSection(
             y,
             colStatusW,
             rowH,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+            mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
             14,
             mod.UIAnchor.TopLeft
         );
@@ -171,7 +171,7 @@ function buildReadyDialogRosterSection(
             y,
             colStatusW,
             rowH,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+            mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
             14,
             mod.UIAnchor.TopLeft
         );
@@ -188,7 +188,7 @@ function buildReadyDialogRosterSection(
             y,
             colNameW,
             rowH,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+            mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
             14,
             mod.UIAnchor.TopLeft
         );
@@ -201,7 +201,7 @@ function buildReadyDialogRosterSection(
             y,
             colStatusW,
             rowH,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+            mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
             14,
             mod.UIAnchor.TopLeft
         );
@@ -214,7 +214,7 @@ function buildReadyDialogRosterSection(
             y,
             colStatusW,
             rowH,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+            mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
             14,
             mod.UIAnchor.TopLeft
         );
@@ -222,3 +222,5 @@ function buildReadyDialogRosterSection(
     }
     refreshReadyDialogRosterForViewer(eventPlayer, playerId);
 }
+
+

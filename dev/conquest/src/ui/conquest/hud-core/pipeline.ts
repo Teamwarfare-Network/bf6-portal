@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ui/conquest/hud-core/pipeline -- top-down runtime pipeline for hard-cut combat HUD
 
 // Deep parent/anchor validation is expensive; sample periodically instead of every frame.
@@ -165,3 +165,4 @@ function twlConquestHudTickAnimation(force?: boolean): void {
         twlConquestHudFailSafeOff();
     }
 }
+

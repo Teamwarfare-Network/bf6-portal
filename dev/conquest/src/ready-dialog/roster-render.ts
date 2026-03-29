@@ -108,7 +108,7 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
     const t2Players = roster.team2;
 
     const maxRowsPerTeam = TEAM_ROSTER_MAX_ROWS;
-    const emptyMsg = mod.Message(mod.stringkeys.twl.system.genericCounter, "");
+    const emptyMsg = mod.Message(mod.stringkeys.twl.system.genericCounter, " ");
     for (let row = 0; row < maxRowsPerTeam; row++) {
         const t1NameId = UI_READY_DIALOG_T1_ROW_NAME_ID + viewerPlayerId + "_" + row;
         const t1ReadyId = UI_READY_DIALOG_T1_ROW_READY_ID + viewerPlayerId + "_" + row;
@@ -266,3 +266,5 @@ function refreshReadyStatusForAllBuiltReadyDialogs(): void {
 }
 
 //#endregion ----------------- Ready Dialog - Roster Render + Toggle Labels --------------------
+
+

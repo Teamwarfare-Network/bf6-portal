@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: config/runtime -- active map state, derived spawn specs, and runtime map constants
 
 // Change this MapKey to switch active map configuration for that map, only one map can be active at a time.
@@ -86,3 +86,4 @@ const MAP_DETECT_DISTANCE_METERS = 5.0;
 
 rebuildActiveCapturePointConfigIndex();
 rebuildActiveWorldInteractableConfigIndex();
+

@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ui/dialog/victory -- victory dialog content + winner presentation
 
 //#region -------------------- HUD Victory Dialog Updates --------------------
@@ -136,3 +136,4 @@ function updateVictoryDialogForAllPlayers(remainingSeconds: number): void {
 }
 
 //#endregion ----------------- HUD Victory Dialog Updates --------------------
+

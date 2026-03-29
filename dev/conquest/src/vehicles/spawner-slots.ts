@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: vehicles/spawner-slots -- spawner config, slot registration, and matchup enablement
 
 function configureVehicleSpawner(spawner: mod.VehicleSpawner, vehicleType: mod.VehicleList): void {
@@ -199,4 +199,5 @@ function queueSequentialSpawns(slotIndices: number[]): void {
     State.vehicles.spawnSequenceInProgress = true;
     void runSequentialSpawns(slotIndices, token);
 }
+
 

@@ -1,9 +1,9 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 function ongoingPlayerImpl(eventPlayer: mod.Player): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     if (!isPlayerDeployed(eventPlayer)) return;
     checkReadyDialogInteractPointRemoval(eventPlayer);
-    updateAmmoResupplyMenuForPlayer(eventPlayer);
+    updateArmMenu(eventPlayer);
     if (InteractMultiClickDetector.checkMultiClick(eventPlayer)) spawnReadyDialogInteractPoint(eventPlayer);
 }
 
@@ -16,3 +16,4 @@ function onPlayerUIButtonEventImpl(eventPlayer: mod.Player, eventUIWidget: mod.U
     if (tryHandleJoinPromptButton(eventPlayer, eventUIWidget, eventUIButtonEvent)) return;
     teamSwitchButtonEvent(eventPlayer, eventUIWidget, eventUIButtonEvent);
 }
+

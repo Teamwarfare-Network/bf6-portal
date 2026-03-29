@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: index/capture-tickets -- Phase 2A capture routing, ticket bleed, end checks, and temporary debug HUD
 
 // Clamps engine capture-progress reads to a safe [0..1] range.
@@ -2235,3 +2235,4 @@ function conquestPhase2AOnLiveTick(): void {
     conquestPhase2ACheckEndCondition();
     updateConquestCombatHudForAllPlayers();
 }
+

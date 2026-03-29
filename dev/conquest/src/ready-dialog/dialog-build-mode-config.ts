@@ -84,7 +84,7 @@ function buildReadyDialogGridKnobRow(
         labelHeight,
         mod.UIAnchor.TopLeft,
         mod.UIAnchor.Center,
-        hideLabel ? mod.Message(mod.stringkeys.twl.system.genericCounter, "") : mod.Message(labelKey),
+        hideLabel ? mod.Message(mod.stringkeys.twl.system.genericCounter, " ") : mod.Message(labelKey),
         11,
         eventPlayer,
         containerBase
@@ -122,7 +122,7 @@ function buildReadyDialogGridKnobRow(
         valueHeight,
         mod.UIAnchor.TopLeft,
         mod.UIAnchor.Center,
-        mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+        mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
         12,
         eventPlayer,
         containerBase
@@ -317,3 +317,5 @@ function buildReadyDialogModeConfigSection(
 
     updateReadyDialogModeConfigForPid(playerId);
 }
+
+

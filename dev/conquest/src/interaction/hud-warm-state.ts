@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: interaction/hud-warm-state -- per-player HUD warm/reveal state accessors and signature reset helpers
 
 //#region -------------------- HUD Warm State --------------------
@@ -78,3 +78,4 @@ function isCombatHudRevealAllowedForPid(pid: number): boolean {
 }
 
 //#endregion ----------------- HUD Warm State --------------------
+

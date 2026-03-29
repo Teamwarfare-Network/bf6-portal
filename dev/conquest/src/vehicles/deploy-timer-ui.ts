@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: vehicles/deploy-timer-ui -- Firestorm helicopter deploy/live timer display with direct spawn buttons
 
 function getVehicleDeployTimerAdminToggleLabelKey(pid: number): number {
@@ -1901,4 +1901,5 @@ function prebuildAndRevealVehicleDeployTimerHudForAllPlayers(): void {
         revealVehicleDeployTimerHudForPlayer(player);
     }
 }
+
 

@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: state/runtime-state -- authoritative mutable mode state singleton.
 
 // Centralized mutable state for mode flow and UI caches.
@@ -62,6 +62,8 @@ const State: GameState = {
             alarmReady: false,
             validationWarnings: [],
         },
+        smk: {},
+        asg: {},
     },
     conquest: {
         lifecyclePhase: "NOT_READY",
@@ -236,9 +238,11 @@ const State: GameState = {
         inMainBaseByPid: {},
         worldInteractableAreaByPidByObjId: {},
         worldInteractableIconByPidByObjId: {},
-        ammoResupplyMenuVisibleByPid: {},
-        ammoResupplyMenuObjIdByPid: {},
-        ammoResupplyStateByPidByObjId: {},
+        armO: {},
+        armI: {},
+        armG: {},
+        armL: {},
+        armS: {},
         deployedByPid: {},
         disconnectedByPid: {},
         uiInputEnabledByPid: {},
@@ -268,3 +272,4 @@ const State: GameState = {
         boundaryPromptCache: {},
     },
 };
+

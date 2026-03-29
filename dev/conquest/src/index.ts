@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 import './header-file';
 import './types';
 import './config/types';
@@ -201,3 +201,4 @@ export function OnPlayerEnterAreaTrigger(eventPlayer: mod.Player, eventAreaTrigg
 export function OnPlayerExitAreaTrigger(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger): void {
     onPlayerExitAreaTriggerImpl(eventPlayer, eventAreaTrigger);
 }
+

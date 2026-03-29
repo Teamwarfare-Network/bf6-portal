@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ui/conquest/hud-core/state -- runtime cache/scheduler state for hard-cut combat HUD
 
 const twlConquestHudEntriesByPid: Record<number, TwlConquestHudPlayerEntry> = {};
@@ -94,3 +94,4 @@ function twlConquestHudClearAllEntries(): void {
     }
     twlConquestHudResetSchedulerState();
 }
+

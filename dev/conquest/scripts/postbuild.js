@@ -14,10 +14,12 @@ const fs = require("fs");
 const path = require("path");
 
 const bundlePath = path.resolve(__dirname, "..", "dist", "bundle.ts");
+const headerSourcePath = path.resolve(__dirname, "..", "src", "header-file.ts");
 let src = fs.readFileSync(bundlePath, "utf8");
 
 // Normalize to LF so matching is stable on Windows and Linux.
 src = src.replace(/\r\n/g, "\n");
+src = src.replace(/\uFEFF/g, "");
 
 // 1. Remove every `// @ts-nocheck` line.
 src = src.replace(/^\/\/ @ts-nocheck\n/gm, "");
@@ -44,6 +46,7 @@ src = src.replace(/\n+$/, "\n");
 const modlibSourcePath = path.resolve(__dirname, "..", "src", "foundation", "modlib.ts");
 if (fs.existsSync(modlibSourcePath)) {
   let modlibSource = fs.readFileSync(modlibSourcePath, "utf8").replace(/\r\n/g, "\n");
+  modlibSource = modlibSource.replace(/\uFEFF/g, "");
   modlibSource = modlibSource.replace(/^\/\/ @ts-nocheck\n/gm, "");
   modlibSource = modlibSource.replace(/^\/\/ Module: .+\n/gm, "");
   modlibSource = modlibSource.replace(/^\n+/, "");
@@ -93,6 +96,7 @@ const footerSourcePath = path.resolve(__dirname, "..", "src", "footer-file.ts");
 let eofFooterFromSource = "";
 if (fs.existsSync(footerSourcePath)) {
   eofFooterFromSource = fs.readFileSync(footerSourcePath, "utf8").replace(/\r\n/g, "\n");
+  eofFooterFromSource = eofFooterFromSource.replace(/\uFEFF/g, "");
   eofFooterFromSource = eofFooterFromSource.replace(/^\/\/ @ts-nocheck\n/gm, "");
   eofFooterFromSource = eofFooterFromSource.replace(/^\/\/ Module: .+\n/gm, "");
   eofFooterFromSource = eofFooterFromSource.replace(/^\n+/, "");
@@ -106,13 +110,45 @@ if (eofFooter) {
   src = src.replace(/\n+$/, "\n\n\n\n") + eofFooter;
 }
 
-// 10. Ensure single trailing newline.
+// 10. Strip full-line comments from the emitted bundle to preserve headroom.
+src = src.replace(/^[ \t]*\/\/.*\n/gm, "");
+src = src.replace(/\n{3,}/g, "\n\n");
+let headerVersionLine = "";
+if (fs.existsSync(headerSourcePath)) {
+  const headerSource = fs.readFileSync(headerSourcePath, "utf8").replace(/\r\n/g, "\n");
+  const headerMatch = headerSource.match(/^\/\/ version: .+$/m);
+  headerVersionLine = headerMatch ? headerMatch[0] : "";
+}
+let footerVersionLine = "";
+if (fs.existsSync(footerSourcePath)) {
+  const footerSource = fs.readFileSync(footerSourcePath, "utf8").replace(/\r\n/g, "\n");
+  const footerMatch = footerSource.match(/^\/\/ EOF version: .+$/m);
+  footerVersionLine = footerMatch ? footerMatch[0] : "";
+}
+let modlibIgnoreLine = "";
+if (fs.existsSync(modlibSourcePath)) {
+  const modlibSource = fs.readFileSync(modlibSourcePath, "utf8").replace(/\r\n/g, "\n");
+  const modlibIgnoreMatch = modlibSource.match(/^\/\/ @ts-ignore - ignores error on Portal webclient with importing modlib$/m);
+  modlibIgnoreLine = modlibIgnoreMatch ? modlibIgnoreMatch[0] : "";
+}
+src = `${headerVersionLine ? `${headerVersionLine}\n` : ""}${src.replace(/^\n+/, "")}`;
+if (modlibIgnoreLine) {
+  src = src.replace(
+    /^import \* as modlib from "modlib";$/m,
+    `${modlibIgnoreLine}\nimport * as modlib from "modlib";`
+  );
+}
+if (footerVersionLine) {
+  src = src.replace(/\n+$/, "\n") + footerVersionLine + "\n";
+}
+
+// 11. Ensure single trailing newline.
 src = src.replace(/\n+$/, "\n");
 
 fs.writeFileSync(bundlePath, src);
 console.log("postbuild: cleaned bundle.ts (removed markers, incorporated modlib source, moved EOF footer last)");
 
-// 11. Replace bundle.strings.json with source strings.json (preserve original formatting).
+// 12. Replace bundle.strings.json with source strings.json (preserve original formatting).
 const stringsPath = path.resolve(__dirname, "..", "dist", "bundle.strings.json");
 const sourceStrings = path.resolve(__dirname, "..", "src", "strings.json");
 if (fs.existsSync(stringsPath) && fs.existsSync(sourceStrings)) {

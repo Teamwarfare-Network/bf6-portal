@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: interaction/spawn-selector -- Phase 1 seam for future conquest spawn selection policy
 
 type ConquestSpawnSelectionReason =
@@ -33,3 +33,4 @@ function conquestSelectSpawnPoint(_input: ConquestSpawnSelectorInput): ConquestS
         reason: "phase1_scaffold_no_custom_spawn_selection",
     };
 }
+

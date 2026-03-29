@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ready-dialog/lifecycle -- ready-dialog close/destroy lifecycle and chrome visibility ownership
 
 //#region -------------------- Ready Dialog Lifecycle --------------------
@@ -155,3 +155,4 @@ function warmHiddenReadyDialogCacheForPid(playerId: number): void {
 }
 
 //#endregion ----------------- Ready Dialog Lifecycle --------------------
+

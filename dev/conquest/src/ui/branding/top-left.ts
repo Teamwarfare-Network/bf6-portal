@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ui/branding/top-left -- static top-left branding and status widgets
 
 const TOP_LEFT_BASE_X = 5;
@@ -213,4 +213,5 @@ function buildConquestStaticStatusLaneWidgets(player: mod.Player, pid: number, r
     refs.upperLeftStatusStateText = statusPrimaryText;
     refs.upperLeftStatusReadyText = statusSecondaryText;
 }
+
 

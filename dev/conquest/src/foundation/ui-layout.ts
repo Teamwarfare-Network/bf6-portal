@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: foundation/ui-layout -- HUD, dialog, admin, and victory layout constants
 
 // Clock + HUD layout constants (pixels unless noted).
@@ -321,3 +321,4 @@ const VICTORY_DIALOG_ROSTER_ROW_HEIGHT = 12;
 const VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP = 4;
 const VICTORY_DIALOG_ROSTER_ROW_PADDING_BOTTOM = 4;
 const VICTORY_DIALOG_BOTTOM_PADDING = 18;
+

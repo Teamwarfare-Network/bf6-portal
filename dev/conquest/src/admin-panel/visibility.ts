@@ -1,29 +1,23 @@
-// @ts-nocheck
-// Module: admin-panel/visibility -- toggle lifecycle and child visibility guards.
+﻿// @ts-nocheck
 
-// Some UI implementations do not cascade visibility from a container to its children.
-// To avoid "ghost" admin widgets appearing when the panel is hidden, explicitly toggle all admin/tester widgets.
 function setAdminPanelChildWidgetsVisible(playerId: number, visible: boolean): void {
     const ids: string[] = [
-        // Admin panel header + row labels.
         UI_TEST_HEADER_LABEL_ID,
         UI_TEST_LABEL_CLOCK_TIME_ID,
         UI_ADMIN_MATCH_LENGTH_LABEL_ID,
 
-        // Row +/- buttons.
         UI_TEST_BUTTON_CLOCK_TIME_DEC_ID, UI_TEST_BUTTON_CLOCK_TIME_INC_ID,
         UI_ADMIN_MATCH_LENGTH_DEC_ID, UI_ADMIN_MATCH_LENGTH_INC_ID,
 
-        // +/- text overlays.
         UI_TEST_MINUS_TEXT_ID,
         UI_TEST_PLUS_TEXT_ID,
 
-        // Admin action buttons.
         UI_TEST_BUTTON_CLOCK_RESET_ID, UI_TEST_RESET_TEXT_ID,
         UI_TEST_BUTTON_MATCH_START_ID, UI_TEST_MATCH_START_TEXT_ID,
         UI_TEST_BUTTON_MATCH_END_ID, UI_TEST_MATCH_END_TEXT_ID,
         UI_TEST_BUTTON_POS_DEBUG_ID, UI_TEST_POS_DEBUG_TEXT_ID,
         UI_TEST_BUTTON_DEPLOY_TIMERS_TOGGLE_ID, UI_TEST_DEPLOY_TIMERS_TOGGLE_TEXT_ID,
+        UI_TEST_BUTTON_RESET_GADGET_TIMERS_ID, UI_TEST_RESET_GADGET_TIMERS_TEXT_ID,
     ];
 
     for (const baseId of ids) {
@@ -34,11 +28,7 @@ function setAdminPanelChildWidgetsVisible(playerId: number, visible: boolean): v
     }
 }
 
-// Admin panel lifecycle helper.
-// We do not cache panel contents because some clients do not reliably hide child widgets with container visibility.
-// Instead, we delete the panel container + children whenever it is closed, and rebuild on demand.
 function deleteAdminPanelUI(playerId: number, deleteToggle: boolean): void {
-    // Hide child widgets first (covers any detached children that may outlive container hides).
     setAdminPanelChildWidgetsVisible(playerId, false);
 
     const adminContainer = safeFind(UI_ADMIN_PANEL_CONTAINER_ID + playerId);
@@ -54,8 +44,6 @@ function deleteAdminPanelUI(playerId: number, deleteToggle: boolean): void {
     }
 }
 
-// Ensures the static admin-panel toggle exists under the ready dialog.
-// The panel contents remain lazy-built from the button event path.
 function ensureAdminPanelWidgets(
     eventPlayer: mod.Player,
     playerId: number,
@@ -66,7 +54,6 @@ function ensureAdminPanelWidgets(
     const adminToggleLabelId = UI_ADMIN_PANEL_BUTTON_LABEL_ID + playerId;
     const adminToggleParent = mod.GetUIRoot();
 
-    // Create toggle button if missing.
     let toggleBtn = safeFind(adminToggleButtonId);
     if (!toggleBtn) {
         addOutlinedButton(
@@ -129,7 +116,6 @@ function ensureAdminPanelWidgets(
     }
 }
 
-// Toggles the lazy admin panel body from the ready-dialog admin button without leaking that lifecycle into input routing.
 function toggleReadyDialogAdminPanel(eventPlayer: mod.Player, playerId: number): void {
     if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
     const state = State.players.readyDialogData[playerId];
@@ -182,3 +168,4 @@ function toggleReadyDialogAdminPanel(eventPlayer: mod.Player, playerId: number):
     safeSetUIWidgetVisible(adminContainer, true);
     setAdminPanelChildWidgetsVisible(playerId, true);
 }
+

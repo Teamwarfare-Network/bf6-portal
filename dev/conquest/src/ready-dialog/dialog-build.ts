@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ready-dialog/dialog-build -- ready dialog root/container assembly and section orchestration
 
 //#region -------------------- UI - Ready Up Dialog (construction) --------------------
@@ -268,3 +268,4 @@ function createReadyDialogUI(eventPlayer: mod.Player, reveal: boolean = true) {
 }
 
 //#endregion ----------------- Dialog Buttons (Left Side) - Cancel --------------------
+

@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ui/conquest/hud-core/lifecycle -- hide/destroy/reset ownership for hard-cut combat HUD
 
 function twlConquestHudDeleteAllByName(name: string, maxPasses: number = 128): void {
@@ -286,3 +286,4 @@ function twlConquestHudDestroyAllPlayers(): void {
     }
     twlConquestHudClearAllEntries();
 }
+

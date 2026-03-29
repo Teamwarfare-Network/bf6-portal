@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: state/player-lookup -- safe player lookup by pid
 
 function safeFindPlayer(pid: number): mod.Player | undefined {
@@ -17,3 +17,4 @@ function safeFindPlayer(pid: number): mod.Player | undefined {
 }
 
 //#endregion ----------------- Shared ID helpers --------------------
+

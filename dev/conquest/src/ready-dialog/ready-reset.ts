@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ready-dialog/ready-reset -- reset all player ready states between flow transitions
 
 //#region -------------------- Ready Dialog - Ready State Reset --------------------
@@ -22,3 +22,4 @@ function resetReadyStateForAllPlayers(): void {
 }
 
 //#endregion -------------------- Ready Dialog - Ready State Reset --------------------
+

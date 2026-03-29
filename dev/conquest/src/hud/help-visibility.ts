@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: hud/help-visibility -- ready-dialog visibility and top-center help/ready text visibility
 
 //#region -------------------- HUD Build/Ensure - Dialog Open + Help Text Visibility --------------------
@@ -48,3 +48,4 @@ function updateHelpTextVisibilityForAllPlayers(): void {
 }
 
 //#endregion ----------------- HUD Build/Ensure - Dialog Open + Help Text Visibility --------------------
+

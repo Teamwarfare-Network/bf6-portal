@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ui/conquest/hud-core/names -- deterministic new widget IDs (non-colliding legacy-safe prefix)
 
 function twlConquestHudRootName(pid: number): string {
@@ -177,3 +177,4 @@ function twlConquestHudEngageStatusName(pid: number): string {
 function twlConquestHudShadowLayerName(baseName: string, layerSuffix: string): string {
     return `${baseName}_Shadow${layerSuffix}`;
 }
+

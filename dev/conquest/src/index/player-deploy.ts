@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 
 async function deferForcedUndeploy(player: mod.Player, reason: string): Promise<void> {
     try {
@@ -51,6 +51,7 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
         ensureTopHudShellForPlayer(eventPlayer);
     }
     prepareVehicleDeployTimerHudForHiddenPrebuild(eventPlayer);
+    prebuildArmMenu(eventPlayer);
     renderCriticalHudForReveal(eventPlayer, pid);
     const directSpawnDeployResult = await conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(eventPlayer);
     if (directSpawnDeployResult.consumedDeploy) {
@@ -78,7 +79,7 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     if (State.players.readyDialogData[pid]?.dialogVisible) {
         hideReadyDialogUI(eventPlayer);
     }
-    closeAmmoResupplyMenuForPlayer(eventPlayer);
+    closeArmMenu(eventPlayer);
     closeVehicleDeployLiveMenuForPlayer(eventPlayer);
 
     removeReadyDialogInteractPoint(pid);
@@ -90,4 +91,5 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
         });
     }
 }
+
 

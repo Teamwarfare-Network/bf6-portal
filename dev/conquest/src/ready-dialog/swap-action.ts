@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ready-dialog/swap-action -- single-button team swap action handler
 
 //#region -------------------- Ready Dialog - Swap Teams Button (single toggle) --------------------
@@ -26,3 +26,4 @@ function swapPlayerTeam(eventPlayer: mod.Player): void {
 }
 
 //#endregion ----------------- Ready Dialog - Swap Teams Button (single toggle) --------------------
+

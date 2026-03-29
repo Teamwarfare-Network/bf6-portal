@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: vehicles/timers -- authoritative per-slot respawn timer ownership for Phase 5 vehicle systems
 
 function resolveVehicleSlotSpawnCategory(vehicleType: mod.VehicleList): VehicleSlotSpawnCategory {
@@ -139,3 +139,4 @@ function getVehicleSlotRespawnRemainingSeconds(slot: VehicleSpawnerSlot): number
     if (slot.respawnReadyAtSeconds < 0) return 0;
     return Math.max(0, Math.ceil(slot.respawnReadyAtSeconds - mod.GetMatchTimeElapsed()));
 }
+

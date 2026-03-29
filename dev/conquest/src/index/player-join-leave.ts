@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: index/player-join-leave -- join/leave lifecycle handlers and join-time UI reset
 
 //#region -------------------- Exported Event Handlers - Player Join + Leave --------------------
@@ -10,11 +10,11 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
 
     setUIInputModeForPlayer(player, false);
     resetVehicleDeployLiveMenuStateForPid(pid);
-    resetAmmoResupplyMenuStateForPid(pid);
+    resetArmState(pid);
     cleanupWorldInteractableRuntimeIconsForPid(pid);
     clearJoinPromptForPlayerId(pid);
     hideReadyDialogUI(player);
-    destroyAmmoResupplyMenuUiForPid(pid);
+    destroyArmMenu(pid);
 
     const deleteAllByName = (name: string, maxPasses: number = 64): void => {
         for (let i = 0; i < maxPasses; i++) {
@@ -53,7 +53,7 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
     deleteAllByName(`Container_ReadyStatus_${pid}`);
     deleteAllByName(`ReadyStatusText_${pid}`);
     deleteVehicleDeployTimerHudArtifactsForPid(pid);
-    destroyAmmoResupplyMenuUiForPid(pid);
+    destroyArmMenu(pid);
     destroyBoundaryPromptUiForPid(pid);
 }
 
@@ -185,7 +185,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
 
     State.players.disconnectedByPid[pid] = true;
     resetVehicleDeployLiveMenuStateForPid(pid);
-    resetAmmoResupplyMenuStateForPid(pid);
+    resetArmState(pid);
     cleanupWorldInteractableRuntimeIconsForPid(pid);
     removeReadyDialogInteractPoint(pid);
     cleanupHudForPid(pid);
@@ -199,9 +199,9 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.readyMessageCooldownByPid[pid];
     delete State.players.uiInputEnabledByPid[pid];
     delete State.players.liveVehicleDeployMenuVisibleByPid[pid];
-    delete State.players.ammoResupplyMenuVisibleByPid[pid];
-    delete State.players.ammoResupplyMenuObjIdByPid[pid];
-    delete State.players.ammoResupplyStateByPidByObjId[pid];
+    delete State.players.armO[pid];
+    delete State.players.armI[pid];
+    delete State.players.armS[pid];
     cleanupWorldInteractableRuntimeIconsForPid(pid);
     delete State.players.posDebugTransformSourceByPid[pid];
     delete State.players.posDebugVehicleObjIdByPid[pid];
@@ -221,3 +221,4 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
 }
 
 //#endregion -------------------- Exported Event Handlers - Player Join + Leave --------------------
+

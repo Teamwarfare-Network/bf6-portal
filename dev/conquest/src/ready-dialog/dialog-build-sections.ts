@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ready-dialog/dialog-build-sections -- extracted Ready Dialog layout sections
 
 function buildReadyDialogHeaderAndMapSection(
@@ -262,3 +262,4 @@ function buildReadyDialogBottomButtonsSection(
 
     updateHelpTextVisibilityForPlayer(eventPlayer);
 }
+

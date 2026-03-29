@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: config/maps/operation-firestorm -- map config fragment for Operation_Firestorm
 
 // ObjId ownership, active allocations, and reserved ranges are documented in OBJ_ID_RUBRIC.md.
@@ -364,6 +364,7 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
     },
 
 };
+
 
 
 

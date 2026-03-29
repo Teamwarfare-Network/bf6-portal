@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ui/conquest/hud-core/render -- value/visibility render owner for hard-cut combat HUD
 
 function twlConquestHudClamp01(value: number): number {
@@ -664,3 +664,4 @@ function twlConquestHudRenderPlayerFrame(
         safeSetUIWidgetVisible(widgets.root, false);
     }
 }
+

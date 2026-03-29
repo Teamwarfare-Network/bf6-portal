@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: vehicles/vehicle-classification -- authoritative vehicle-type classification shared by spawn and boundary logic
 
 function isAircraftVehicleType(vehicleType: mod.VehicleList): boolean {
@@ -58,3 +58,4 @@ function isAircraftVehicleInstance(vehicle: mod.Vehicle): boolean {
         || mod.CompareVehicleName(vehicle, mod.VehicleList.SU57)
     );
 }
+

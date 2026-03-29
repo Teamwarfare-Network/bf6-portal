@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ready-dialog/matchup-summary -- team names and matchup/min-player readouts
 
 //#region -------------------- Ready Dialog - Team/Matchup Readouts --------------------
@@ -112,3 +112,4 @@ function applyMatchupPreset(index: number, eventPlayer: mod.Player): void {
 }
 
 //#endregion ----------------- Ready Dialog - Team/Matchup Readouts --------------------
+

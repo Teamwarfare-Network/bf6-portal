@@ -96,9 +96,9 @@ function getRosterDisplayEntries(): RosterDisplay_t {
 
 // Resolves roster entry label text from live player handle or debug placeholder key.
 function getRosterEntryNameMessage(entry: RosterDisplayEntry | undefined): mod.Message {
-    if (!entry) return mod.Message(mod.stringkeys.twl.system.genericCounter, "");
+    if (!entry) return mod.Message(mod.stringkeys.twl.system.genericCounter, " ");
     if (entry.player) return getUiSafePlayerMessage(entry.player);
-    return mod.Message(mod.stringkeys.twl.system.genericCounter, "");
+    return mod.Message(mod.stringkeys.twl.system.genericCounter, " ");
 }
 
 // Returns true when every currently active player satisfies ready state and min-player gate.
@@ -134,3 +134,5 @@ function areAllActivePlayersReady(): boolean {
 }
 
 //#endregion -------------------- Ready Dialog - Active Player Resolution + Roster --------------------
+
+

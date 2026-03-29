@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ready-dialog/takeoff-gating -- takeoff altitude gating and warning messaging
 
 //#region -------------------- Ready Dialog - Takeoff Limit Gating --------------------
@@ -13,3 +13,4 @@ function checkTakeoffLimitForAllPlayers(): void {
 }
 
 //#endregion -------------------- Ready Dialog - Takeoff Limit Gating --------------------
+

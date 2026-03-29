@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: config/types -- map config type definitions
 
 //#region -------------------- Map Config (Constants + Types) --------------------
@@ -78,3 +78,4 @@ type MapConfig = {
     readyDialogPresetPackages?: Record<number, ReadyDialogPresetPackage>; // Authored by knob key; runtime still maps knob order onto this map's spawn-anchor order.
     vehicleSpawnYawOffsetDeg: number; // Reserved for future spawn orientation tuning.
 };
+

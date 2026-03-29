@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ready-dialog/join-prompt-events -- dormant join prompt cleanup helpers
 
 //#region -------------------- Join Prompt - Lifecycle + Events --------------------
@@ -27,3 +27,4 @@ function tryHandleJoinPromptButton(
 }
 
 //#endregion ----------------- Join Prompt - Lifecycle + Events --------------------
+

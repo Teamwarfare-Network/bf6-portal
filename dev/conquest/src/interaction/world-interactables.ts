@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: interaction/world-interactables -- authored interact-point routing with explicit per-player runtime world icons
 
 //#region -------------------- World Interactables --------------------
@@ -301,20 +301,21 @@ function tryHandleWorldInteractableActivation(eventPlayer: mod.Player, eventInte
     if (!shouldAllowWorldInteractableActivationForPlayer(eventPlayer, config)) return false;
 
     if (config.action === "open_ready_dialog") {
-        closeAmmoResupplyMenuForPlayer(eventPlayer);
+        closeArmMenu(eventPlayer);
         return tryOpenReadyDialogForPlayer(eventPlayer);
     }
 
     if (config.action === "open_vehicle_spawn_menu") {
-        closeAmmoResupplyMenuForPlayer(eventPlayer);
+        closeArmMenu(eventPlayer);
         return tryOpenVehicleDeployLiveMenuForPlayer(eventPlayer);
     }
 
     if (config.action === "open_ammo_resupply_menu") {
-        return tryOpenAmmoResupplyMenuForPlayer(eventPlayer, config.objId);
+        return openArmMenu(eventPlayer, config.objId);
     }
 
     return false;
 }
 
 //#endregion ----------------- World Interactables --------------------
+

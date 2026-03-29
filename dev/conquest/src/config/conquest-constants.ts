@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: config/conquest-constants -- Phase 1 conquest scaffold constants (no gameplay activation yet)
 
 const CONQUEST_STARTING_TICKETS = 350;
@@ -50,3 +50,4 @@ function setConquestHudMode(mode: TwlConquestHudMode): void {
         // State may not be initialized yet during module load.
     }
 }
+

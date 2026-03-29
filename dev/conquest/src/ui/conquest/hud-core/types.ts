@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ui/conquest/hud-core/types -- hard-cut combat HUD contracts (no legacy combat name reuse)
 
 type TwlConquestHudMode = "off" | "core";
@@ -136,3 +136,4 @@ type TwlConquestHudPlayerEntry = {
     pendingFirstReveal: boolean;
     lastSnapshot?: TwlConquestHudSnapshot;
 };
+

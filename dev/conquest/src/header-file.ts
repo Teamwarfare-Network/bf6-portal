@@ -1,9 +1,9 @@
 // @ts-nocheck
-// Module: File header, versioning, license, and attribution
+// Module: File header, versioning, license, attribution, gamemode description
 
 //#region -------------------- Versioning --------------------
 
-// version: 0.903 | Date: 03.28.26 | Time: 20:43 UTC
+// version: 0.953 | Date: 03.29.26 | Time: 16:38 UTC
 // version policy header file: src/header-file.ts
 // version policy footer file: src/footer-file.ts
 // version policy strings file: src/strings.json
@@ -19,19 +19,19 @@
 //#region ----------------- License --------------------
 
 // MIT License
-// 
+//
 // Copyright (c) 2026 teamwarfare.net, uberdubersoldat, polykatana
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -49,7 +49,7 @@
 // Authors: UberDuberSoldat, Polynorblu, Dox
 // Code generation, assistance and support by: ChatGPT (OpenAI, GPT-5.2, GPT-5.2-Codex)
 //
-// This code is sourced controlled here: https://github.com/Teamwarfare-Network/bf6-portal/tree/main
+// This code is source controlled here: https://github.com/Teamwarfare-Network/bf6-portal/tree/main
 //
 // BF6 Portal Community Tools used/referenced:
 //  - Portal Community Discord: https://discord.com/invite/battlefield-portal-community-870246147455877181

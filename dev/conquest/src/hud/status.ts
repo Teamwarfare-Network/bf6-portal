@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: hud/status -- counter helpers, phase/help text, ready counts, safe widget setters
 
 //#region -------------------- HUD Counter Helpers --------------------
@@ -129,14 +129,26 @@ function safeSetUIWidgetVisible(widget: mod.UIWidget | undefined, visible: boole
     }
 }
 
+function isUITextWidget(widget: mod.UIWidget | undefined): widget is mod.UIWidget {
+    if (!widget) return false;
+    try {
+        mod.GetUITextSize(widget);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 // Re-resolves cached UI handles by name so reopen/rebuild paths do not keep
 // writing through stale widget references after dialog/HUD lifecycle changes.
-function resolveLiveUIWidget(widget: mod.UIWidget | undefined): mod.UIWidget | undefined {
+function resolveLiveUITextWidget(widget: mod.UIWidget | undefined): mod.UIWidget | undefined {
+    if (isUITextWidget(widget)) return widget;
     if (!widget) return undefined;
     try {
         const widgetName = mod.GetUIWidgetName(widget);
         if (!widgetName) return undefined;
-        return safeFind(widgetName);
+        const liveWidget = safeFind(widgetName);
+        return isUITextWidget(liveWidget) ? liveWidget : undefined;
     } catch {
         return undefined;
     }
@@ -147,7 +159,7 @@ function resolveLiveUIWidget(widget: mod.UIWidget | undefined): mod.UIWidget | u
 // undefined/null during UI lifecycle transitions, so normalize or skip before
 // reaching the engine overload boundary.
 function safeSetUITextLabel(widget: mod.UIWidget | undefined, label: mod.Message | number | undefined | null): void {
-    const liveWidget = resolveLiveUIWidget(widget);
+    const liveWidget = resolveLiveUITextWidget(widget);
     if (!liveWidget) return;
     if (label === undefined || label === null) return;
     let resolvedLabel: mod.Message;
@@ -169,9 +181,10 @@ function safeSetUITextLabel(widget: mod.UIWidget | undefined, label: mod.Message
 
 // Safe text-color write helper used by HUD render paths.
 function safeSetUITextColor(widget: mod.UIWidget | undefined, color: mod.Vector): void {
-    if (!widget) return;
+    const liveWidget = resolveLiveUITextWidget(widget);
+    if (!liveWidget) return;
     try {
-        mod.SetUITextColor(widget, color);
+        mod.SetUITextColor(liveWidget, color);
     } catch {
         return;
     }
@@ -179,9 +192,10 @@ function safeSetUITextColor(widget: mod.UIWidget | undefined, color: mod.Vector)
 
 // Safe text-alpha write helper used by HUD render paths.
 function safeSetUITextAlpha(widget: mod.UIWidget | undefined, alpha: number): void {
-    if (!widget) return;
+    const liveWidget = resolveLiveUITextWidget(widget);
+    if (!liveWidget) return;
     try {
-        mod.SetUITextAlpha(widget, alpha);
+        mod.SetUITextAlpha(liveWidget, alpha);
     } catch {
         return;
     }
@@ -535,4 +549,5 @@ function getReadyCountsForMessage(): { readyCount: number; totalCount: number } 
 }
 
 //#endregion ----------------- HUD Ready Count --------------------
+
 

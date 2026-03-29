@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: index/capture-vo -- Phase 4B isolated objective VO exploration path
 
 function conquestPhase4BHasValidHandle(handle: any): boolean {
@@ -433,3 +433,4 @@ function conquestPhase4BFlushCaptureVoiceOverQueue(): void {
         }
     }
 }
+

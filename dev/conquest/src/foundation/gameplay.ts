@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: foundation/gameplay -- gameplay constants, enums, and mode config types
 
 //#region -------------------- Constant, Enums and Types --------------------
@@ -292,4 +292,5 @@ const READY_DIALOG_INTERACT_CONFIG: ReadyDialogInteractConfig = {
 
 // Admin panel toggle debounce (seconds). Prevents double-toggle from press/release events.
 const ADMIN_PANEL_TOGGLE_COOLDOWN_SECONDS = 0.2;
+
 

@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: conquest-flow -- continuous-live flow orchestration and phase-state helpers.
 
 // Binds clock expiry to Conquest end-condition checks for continuous live flow.
@@ -147,3 +147,4 @@ function syncAdminMatchLengthLabelForAllPlayers(): void {
         safeSetUITextLabel(widget, label);
     }
 }
+

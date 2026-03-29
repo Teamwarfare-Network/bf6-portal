@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: index/conquest-scaffold -- Phase 1 conquest state reset/wiring seam
 
 // Resets conquest runtime scaffold fields to a known baseline before map/live flow starts.
@@ -123,4 +123,7 @@ function initializeConquestPhase1Scaffold(): void {
     State.conquest.debug.hudStatusVmByPid = {};
     State.conquest.debug.hudHelpReadyVmByPid = {};
     State.conquest.debug.hudClockVmByPid = {};
+    State.round.smk = {};
+    State.round.asg = {};
 }
+

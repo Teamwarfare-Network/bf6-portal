@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: state/id-helpers -- object/player/team guards and safe widget lookup
 
 //#region -------------------- Shared ID helpers --------------------
@@ -32,6 +32,8 @@ function safeGetPlayerId(player: mod.Player | null | undefined): number | undefi
 function safeGetVehicleFromPlayer(player: mod.Player | null | undefined): mod.Vehicle | undefined {
     if (!player || !mod.IsPlayerValid(player)) return undefined;
     if (!isPlayerDeployed(player)) return undefined;
+    const seatIndex = safeGetPlayerVehicleSeat(player, -1);
+    if (seatIndex < 0) return undefined;
     try {
         return mod.GetVehicleFromPlayer(player);
     } catch {
@@ -145,3 +147,4 @@ function safeFind(name: string): mod.UIWidget | undefined {
 }
 
 // Outlined button helper: wraps a solid button inside a thin-outline container.
+

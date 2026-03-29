@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: state/runtime-types -- GameState shape and related runtime type aliases.
 
 //#region -------------------- Game State Type Definitions --------------------
@@ -345,6 +345,18 @@ interface GameState {
             alarmReady: boolean;
             validationWarnings: string[];
         };
+        smk: Record<number, {
+            c: number;
+            n: number;
+        }>;
+        asg: Record<number, {
+            artC: number;
+            artN: number;
+            beaC: number;
+            beaN: number;
+            ladC: number;
+            ladN: number;
+        }>;
     };
     conquest: ConquestRuntimeScaffold;
     match: {
@@ -370,12 +382,24 @@ interface GameState {
         inMainBaseByPid: Record<number, boolean>;
         worldInteractableAreaByPidByObjId: Record<number, Record<number, boolean>>;
         worldInteractableIconByPidByObjId: Record<number, Record<number, mod.WorldIcon>>;
-        ammoResupplyMenuVisibleByPid: Record<number, boolean>;
-        ammoResupplyMenuObjIdByPid: Record<number, number>;
-        ammoResupplyStateByPidByObjId: Record<number, Record<number, {
-            launcherSharedReadyAtSeconds: number;
-            ammoChargeCount: number;
-            ammoChargeNextReadyAtSeconds: number;
+        armO: Record<number, boolean>;
+        armI: Record<number, number>;
+        armG: Record<number, {
+            n: number;
+            s: number;
+        }>;
+        armL: Record<number, {
+            lN: number;
+            aC: number;
+            aN: number;
+            s: number;
+        }>;
+        armS: Record<number, Record<number, {
+            mN: number;
+            mS: number;
+            rdN: number;
+            rgN: number;
+            rgS: number;
         }>>;
         deployedByPid: Record<number, boolean>;
         disconnectedByPid: Record<number, boolean>;
@@ -408,3 +432,4 @@ interface GameState {
 }
 
 //#endregion ----------------- Game State Type Definitions --------------------
+

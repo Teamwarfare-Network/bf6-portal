@@ -326,7 +326,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+                                    textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
                                     textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 11,
@@ -360,7 +360,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                                     padding: 0,
                                     bgAlpha: 0,
                                     bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
+                                    textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
                                     textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
                                     textAlpha: 1,
                                     textSize: 11,
@@ -378,4 +378,6 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
     if (modal) refs.roots.push(modal);
     bindVictoryDialogRefsByName(pid, refs);
 }
+
+
 

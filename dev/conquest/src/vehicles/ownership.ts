@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: vehicles/ownership -- last-driver tracking for spawned vehicles
 
 //#region -------------------- Vehicle Ownership Tracking (vehIds/vehOwners) --------------------
@@ -66,3 +66,4 @@ function clearLastDriverByVehicleObjId(vehicleObjId: number): void {
 }
 
 //#endregion ----------------- Vehicle Ownership Tracking (vehIds/vehOwners) --------------------
+

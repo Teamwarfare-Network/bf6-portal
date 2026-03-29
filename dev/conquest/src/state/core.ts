@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 
 function setUIInputModeForPlayer(player: mod.Player, enabled: boolean): void {
     if (!player || !mod.IsPlayerValid(player)) return;
@@ -46,3 +46,4 @@ function endGameModeForTeamNum(teamNum: TeamID | 0): void {
     const winningTeam = mod.GetTeam(teamNum);
     mod.EndGameMode(winningTeam);
 }
+

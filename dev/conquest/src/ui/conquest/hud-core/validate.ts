@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ui/conquest/hud-core/validate -- strict centered root-chain validation for hard-cut combat HUD
 
 function twlConquestHudWidgetHasParent(
@@ -153,3 +153,4 @@ function twlConquestHudValidateCriticalRefs(entry: TwlConquestHudPlayerEntry): b
 
     return true;
 }
+

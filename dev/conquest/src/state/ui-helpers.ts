@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: state/ui-helpers -- shared widget builder helpers and ready-dialog label refresh
 
 function addOutlinedButton(
@@ -86,7 +86,7 @@ function normalizeParseUITextConfigNode(node: any): any {
     if (node.type === "Text") {
         const label = node.textLabel;
         if (label === undefined || label === null) {
-            node.textLabel = mod.Message(mod.stringkeys.twl.system.genericCounter, "");
+            node.textLabel = mod.Message(mod.stringkeys.twl.hud.readyText);
         } else if (typeof label === "number") {
             node.textLabel = mod.Message(label);
         }
@@ -399,4 +399,5 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
 }
 
 // Safely resolve a Player by pid (mod.GetObjId(player)). Returns undefined if not found.
+
 

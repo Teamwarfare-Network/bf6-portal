@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ui/conquest/hud-core/constants -- single-source layout constants for hard-cut combat HUD
 
 const TWL_CONQUEST_HUD_MAIN_UPDATE_SECONDS = 0.12;
@@ -399,3 +399,4 @@ const TWL_CONQUEST_HUD_COLOR_ENGAGE_TRACK = mod.CreateVector(
     CONQUEST_HUD_FLAG_ENGAGE_TRACK_RGB[1],
     CONQUEST_HUD_FLAG_ENGAGE_TRACK_RGB[2]
 );
+

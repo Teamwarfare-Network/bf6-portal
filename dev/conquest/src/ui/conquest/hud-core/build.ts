@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ui/conquest/hud-core/build -- build/repair owner for hard-cut combat HUD root graph
 
 function twlConquestHudEnsureContainer(
@@ -1111,4 +1111,5 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
     entry.buildGeneration = entry.buildGeneration + 1;
     return entry;
 }
+
 

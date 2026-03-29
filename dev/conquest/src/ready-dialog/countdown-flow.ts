@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ready-dialog/countdown-flow -- countdown execution, cancellation, and live-start sequencing
 
 //#region -------------------- Ready Dialog - Pregame Countdown Flow --------------------
@@ -143,3 +143,4 @@ async function runPregameCountdown(expectedToken: number, triggerPlayer?: mod.Pl
 }
 
 //#endregion -------------------- Ready Dialog - Pregame Countdown Flow --------------------
+

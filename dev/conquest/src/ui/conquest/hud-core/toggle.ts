@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ui/conquest/hud-core/toggle -- mode helpers for hard-cut combat HUD runtime
 
 function twlConquestHudGetMode(): TwlConquestHudMode {
@@ -10,3 +10,4 @@ function twlConquestHudSetMode(mode: TwlConquestHudMode): void {
     if (mode === "core") return;
     twlConquestHudHideAllPlayers();
 }
+

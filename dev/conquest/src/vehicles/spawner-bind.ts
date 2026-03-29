@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: vehicles/spawner-bind -- spawn yaw apply + slot binding by active token/distance
 
 function isAircraftSpawnVolumeVehicleType(vehicleType: mod.VehicleList): boolean {
@@ -264,4 +264,5 @@ function findSpawnerSlotByPosition(spawnPos: mod.Vector): number {
     }
     return -1;
 }
+
 

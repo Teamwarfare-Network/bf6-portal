@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: vehicles/spawner-sequence -- sequential spawn orchestration, retries, and poll loop
 
 async function runSequentialSpawns(slotIndices: number[], token: number): Promise<void> {
@@ -196,3 +196,4 @@ async function pollVehicleSpawnerSlots(): Promise<void> {
         }
     }
 }
+

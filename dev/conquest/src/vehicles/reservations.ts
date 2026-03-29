@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: vehicles/reservations -- direct-spawn claim helpers retained after the reservation prototype removal
 
 function clearVehiclePendingSpawnRequestForSlot(slot: VehicleSpawnerSlot | undefined): void {
@@ -75,3 +75,4 @@ function tryClaimVehicleDirectSpawnForPlayer(eventPlayer: mod.Player, slot: Vehi
     slot.pendingSpawnMode = mode;
     return true;
 }
+

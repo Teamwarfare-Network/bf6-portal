@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ready-dialog/pregame-ui -- countdown widgets and shared countdown UI cache helpers
 
 //#region -------------------- Ready Dialog - Pregame Countdown UI --------------------
@@ -105,4 +105,5 @@ function hidePregameCountdownForAllPlayers(): void {
 }
 
 //#endregion -------------------- Ready Dialog - Pregame Countdown UI --------------------
+
 

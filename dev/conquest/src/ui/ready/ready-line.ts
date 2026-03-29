@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: ui/ready/ready-line -- top-center help and ready status containers
 
 type ConquestTopCenterAuxLayout = {
@@ -97,4 +97,5 @@ function buildConquestTopCenterAuxWidgets(
         refs.topCenterAuxRoot = mid;
     }
 }
+
 

@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: clock/state -- clock runtime state, reset, tick update, and duration adjustment
 
 //#region -------------------- Match Clock - Update + State --------------------
@@ -189,3 +189,4 @@ function updateAllPlayersClock(): void {
 }
 
 //#endregion ----------------- Match Clock - Update + State --------------------
+

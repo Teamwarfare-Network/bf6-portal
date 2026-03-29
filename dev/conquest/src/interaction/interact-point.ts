@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // Module: interaction/interact-point -- deploy interact-point lifecycle and ready-dialog trigger logic
 
 //#region -------------------- Ready Dialog Interact Point --------------------
@@ -50,7 +50,7 @@ async function spawnReadyDialogInteractPoint(eventPlayer: mod.Player) {
 function tryOpenReadyDialogForPlayer(eventPlayer: mod.Player): boolean {
     const playerId = mod.GetObjId(eventPlayer);
     try {
-        closeAmmoResupplyMenuForPlayer(playerId);
+        closeArmMenu(playerId);
         closeVehicleDeployLiveMenuForPlayer(playerId);
         setUIInputModeForPlayer(eventPlayer, true);
         updateHelpTextVisibilityForPid(playerId);
@@ -164,3 +164,4 @@ function initReadyDialogData(eventPlayer: mod.Player) {
 }
 
 //#endregion ----------------- Ready Dialog Interact Point --------------------
+
