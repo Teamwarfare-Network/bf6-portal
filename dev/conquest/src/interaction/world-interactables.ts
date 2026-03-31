@@ -301,12 +301,10 @@ function tryHandleWorldInteractableActivation(eventPlayer: mod.Player, eventInte
     if (!shouldAllowWorldInteractableActivationForPlayer(eventPlayer, config)) return false;
 
     if (config.action === "open_ready_dialog") {
-        closeArmMenu(eventPlayer);
         return tryOpenReadyDialogForPlayer(eventPlayer);
     }
 
     if (config.action === "open_vehicle_spawn_menu") {
-        closeArmMenu(eventPlayer);
         return tryOpenVehicleDeployLiveMenuForPlayer(eventPlayer);
     }
 

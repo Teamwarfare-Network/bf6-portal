@@ -143,7 +143,7 @@ function resetAllArmTimers(): void {
     State.players.armS = {};
     State.round.smk = {};
     State.round.asg = {};
-    refreshOpenArm();
+    refreshOpenArm(0, true);
 }
 function ammoResupplyMenuName(kind: string, pid: number, index?: number): string {
     if (typeof index === "number") {
@@ -505,7 +505,6 @@ function setTileHeaderWidgets(
     const ws = [cacheEntry.l1, cacheEntry.l2, cacheEntry.l3];
     for (let i = 0; i < 3; i++) {
         if (lines[i]) {
-            safeSetUITextLabel(ws[i], lines[i]);
             safeSetUITextColor(ws[i], color);
             safeSetUIWidgetVisible(ws[i], true);
             continue;
@@ -727,14 +726,21 @@ function setTileVis(
     safeSetUIWidgetBgAlpha(charge.bb, enabled ? BUTTON_BORDER_OPACITY : DIS_A);
     if (charge.button) mod.SetUIButtonEnabled(charge.button, enabled);
 }
-function refreshOpenArm(teamId: TeamID | 0 = 0): void {
+function refreshOpenArm(teamId: TeamID | 0 = 0, force: boolean = false): void {
     for (const pidKey in State.players.armO) {
         if (State.players.armO[Number(pidKey)] !== true) continue;
         const pid = Number(pidKey);
         const player = safeFindPlayer(pid);
         if (!player || !mod.IsPlayerValid(player)) continue;
         if (teamId !== 0 && safeGetTeamNumberFromPlayer(player, 0) !== teamId) continue;
-        updateArmMenu(player);
+        if (!force) {
+            updateArmMenu(player);
+            continue;
+        }
+        const objId = getArmObj(pid);
+        const cache = State.hudCache.ammoResupplyMenuCache[pid];
+        if (objId === undefined || !cache) continue;
+        refreshArmMenu(player, objId, cache, true);
     }
 }
 function hasManagedL(eventPlayer: mod.Player): boolean {
@@ -884,13 +890,21 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
     if (pid === undefined) return undefined;
     let cache = State.hudCache.ammoResupplyMenuCache[pid];
     if (!cache || cache.sv !== ARM_SCHEMA) {
-        if (cache) destroyArmMenu(pid);
+        if (cache) {
+            incrementUiCachePerfCounter(pid, "gadget", "invalid");
+            incrementUiCachePerfCounter(pid, "gadget", "rebuilt");
+            destroyArmMenu(pid);
+        } else {
+            incrementUiCachePerfCounter(pid, "gadget", "built");
+        }
         cache = mkArmCache(pid);
         State.hudCache.ammoResupplyMenuCache[pid] = cache;
     }
     cache.root = cache.root ?? safeFind(cache.rootName);
     if (cache.root) {
         if (!armCacheOk(cache)) {
+            incrementUiCachePerfCounter(pid, "gadget", "invalid");
+            incrementUiCachePerfCounter(pid, "gadget", "rebuilt");
             destroyArmMenu(pid);
             cache = mkArmCache(pid);
             State.hudCache.ammoResupplyMenuCache[pid] = cache;
@@ -1355,13 +1369,16 @@ function destroyArmMenu(pid: number): void {
     }
     delete State.hudCache.ammoResupplyMenuCache[pid];
 }
-function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResupplyMenuCacheEntry): void {
+function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResupplyMenuCacheEntry, force: boolean = false): void {
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     const assaultGroup = ensArmG(pid);
     const state = ensArm(pid, objId);
     const launch = ensArmL(pid);
     const now = mod.GetMatchTimeElapsed();
+    const nowSecond = Math.max(0, Math.floor(now));
+    if (!force && cache.lastRefreshSecond === nowSecond) return;
+    cache.lastRefreshSecond = nowSecond;
     const teamId = safeGetTeamNumberFromPlayer(eventPlayer, 0);
     const isAssaultClass = isCls(eventPlayer, mod.SoldierClass.Assault);
     const isMedicClass = isCls(eventPlayer, mod.SoldierClass.Support);
@@ -1402,7 +1419,6 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     const reconSharedRemaining = Math.max(0, state.rgN - now);
     if (cache.h) {
         for (let i = 0; i < cache.h.length; i++) {
-            safeSetUITextLabel(cache.h[i], mod.Message(HDR_KEYS[i]));
             const active = (i === 0 && isAssaultClass) || (i === 1 && isMedicClass) || (i === 2 && isEngineerClass) || (i === 3 && isReconClass);
             safeSetUITextColor(cache.h[i], active ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
         }
@@ -1450,49 +1466,71 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
                 : Math.max(0, (assaultState?.ladN ?? 0) - now);
         const ready = count > 0 && remaining <= 0;
         const enabled = isAssaultClass && assaultGroupRemaining <= 0 && ready;
-        const overlayMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, count);
         const showSelectedAssaultTimer = isAssaultClass && assaultGroupRemaining > 0 && assaultGroup.s === i;
         const hideAssaultTimer = isAssaultClass && assaultGroupRemaining > 0 && assaultGroup.s !== i;
-        setTileHeaderWidgets(tile, tileConfig[1], enabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
-        safeSetUITextLabel(tile.s, armScope(true));
-        safeSetUITextLabel(
-            tile.cd,
-            showSelectedAssaultTimer
-                ? fmtClock(assaultGroupRemaining)
-                : (remaining > 0 ? fmtClock(remaining) : mod.Message(STR_UI_READY))
-        );
-        safeSetUITextColor(
-            tile.cd,
-            !isAssaultClass ? COLOR_GRAY
-                : showSelectedAssaultTimer ? COLOR_GRAY
-                    : hideAssaultTimer ? COLOR_GRAY
-                    : remaining > 0 ? COLOR_WARNING_YELLOW
-                        : assaultGroupRemaining > 0 ? COLOR_GRAY
-                            : COLOR_READY_GREEN
-        );
-        safeSetUIWidgetVisible(tile.cd, !hideAssaultTimer);
-        safeSetUITextLabel(tile.cs, overlayMessage);
-        safeSetUITextLabel(tile.ct, overlayMessage);
-        safeSetUITextColor(tile.s, remaining > 0 ? COLOR_NOT_READY_RED : COLOR_GRAY);
-        safeSetUITextColor(tile.cs, COLOR_DARK_BLACK);
-        safeSetUITextColor(tile.ct, count > 0 ? COLOR_WHITE : COLOR_GRAY);
-        setTileVis(tile, enabled);
-        if (tile.i) {
-            mod.SetUIImageColor(tile.i, enabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
+        const sig = [
+            enabled ? 1 : 0,
+            count,
+            remaining > 0 ? Math.ceil(remaining) : 0,
+            showSelectedAssaultTimer ? Math.ceil(assaultGroupRemaining) : 0,
+            hideAssaultTimer ? 1 : 0,
+            isAssaultClass ? 1 : 0,
+            assaultGroupRemaining > 0 ? 1 : 0,
+        ].join("|");
+        if (tile.sig !== sig) {
+            const overlayMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, count);
+            setTileHeaderWidgets(tile, tileConfig[1], enabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
+            safeSetUITextLabel(
+                tile.cd,
+                showSelectedAssaultTimer
+                    ? fmtClock(assaultGroupRemaining)
+                    : (remaining > 0 ? fmtClock(remaining) : mod.Message(STR_UI_READY))
+            );
+            safeSetUITextColor(
+                tile.cd,
+                !isAssaultClass ? COLOR_GRAY
+                    : showSelectedAssaultTimer ? COLOR_GRAY
+                        : hideAssaultTimer ? COLOR_GRAY
+                        : remaining > 0 ? COLOR_WARNING_YELLOW
+                            : assaultGroupRemaining > 0 ? COLOR_GRAY
+                                : COLOR_READY_GREEN
+            );
+            safeSetUIWidgetVisible(tile.cd, !hideAssaultTimer);
+            safeSetUITextLabel(tile.cs, overlayMessage);
+            safeSetUITextLabel(tile.ct, overlayMessage);
+            safeSetUITextColor(tile.s, remaining > 0 ? COLOR_NOT_READY_RED : COLOR_GRAY);
+            safeSetUITextColor(tile.cs, COLOR_DARK_BLACK);
+            safeSetUITextColor(tile.ct, count > 0 ? COLOR_WHITE : COLOR_GRAY);
+            setTileVis(tile, enabled);
+            if (tile.i) {
+                mod.SetUIImageColor(tile.i, enabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
+            }
+            tile.sig = sig;
         }
     }
-    setTileHeaderWidgets(cache.m, STR_UI_SMOKE_SCREEN, smokeEnabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
-    safeSetUITextLabel(cache.m.s, armScope(true));
-    safeSetUITextLabel(cache.m.cd, smokeMessage);
-    safeSetUITextColor(cache.m.cd, isMedicClass ? (smokeReady ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW) : COLOR_GRAY);
-    safeSetUITextLabel(cache.m.cs, smokeOverlayMessage);
-    safeSetUITextLabel(cache.m.ct, smokeOverlayMessage);
-    safeSetUITextColor(cache.m.s, smokeRemaining > 0 ? COLOR_NOT_READY_RED : COLOR_GRAY);
-    safeSetUITextColor(cache.m.cs, COLOR_DARK_BLACK);
-    safeSetUITextColor(cache.m.ct, smokeCount > 0 ? COLOR_WHITE : COLOR_GRAY);
-    setTileVis(cache.m, smokeEnabled);
-    if (cache.m.i) {
-        mod.SetUIImageColor(cache.m.i, smokeEnabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
+    {
+        const sig = [
+            smokeEnabled ? 1 : 0,
+            smokeCount,
+            smokeRemaining > 0 ? Math.ceil(smokeRemaining) : 0,
+            isMedicClass ? 1 : 0,
+            smokeReady ? 1 : 0,
+        ].join("|");
+        if (cache.m.sig !== sig) {
+            setTileHeaderWidgets(cache.m, STR_UI_SMOKE_SCREEN, smokeEnabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
+            safeSetUITextLabel(cache.m.cd, smokeMessage);
+            safeSetUITextColor(cache.m.cd, isMedicClass ? (smokeReady ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW) : COLOR_GRAY);
+            safeSetUITextLabel(cache.m.cs, smokeOverlayMessage);
+            safeSetUITextLabel(cache.m.ct, smokeOverlayMessage);
+            safeSetUITextColor(cache.m.s, smokeRemaining > 0 ? COLOR_NOT_READY_RED : COLOR_GRAY);
+            safeSetUITextColor(cache.m.cs, COLOR_DARK_BLACK);
+            safeSetUITextColor(cache.m.ct, smokeCount > 0 ? COLOR_WHITE : COLOR_GRAY);
+            setTileVis(cache.m, smokeEnabled);
+            if (cache.m.i) {
+                mod.SetUIImageColor(cache.m.i, smokeEnabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
+            }
+            cache.m.sig = sig;
+        }
     }
     for (let i = 0; i < cache.x.length; i++) {
         const tile = cache.x[i];
@@ -1500,64 +1538,93 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         const enabled = isMedicClass && medicReady;
         const count = medicReady ? ASSAULT_ITEM_MAX : 0;
         const showSelectedMedicTimer = isMedicClass && medicRemaining > 0 && state.mS === i;
-        setTileHeaderWidgets(tile, tileConfig[1], enabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
-        safeSetUITextLabel(tile.s, armScope(false));
-        safeSetUITextLabel(tile.cd, medicRemaining > 0 ? fmtClock(medicRemaining) : mod.Message(STR_UI_READY));
-        safeSetUITextColor(tile.cd, isMedicClass ? (showSelectedMedicTimer ? COLOR_GRAY : (medicReady ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW)) : COLOR_GRAY);
-        safeSetUIWidgetVisible(tile.cd, !isMedicClass || medicRemaining <= 0 || showSelectedMedicTimer);
-        safeSetUITextLabel(tile.cs, mod.Message(mod.stringkeys.twl.system.genericCounter, count));
-        safeSetUITextLabel(tile.ct, mod.Message(mod.stringkeys.twl.system.genericCounter, count));
-        safeSetUITextColor(tile.s, COLOR_GRAY);
-        safeSetUITextColor(tile.cs, COLOR_DARK_BLACK);
-        safeSetUITextColor(tile.ct, count > 0 ? COLOR_WHITE : COLOR_GRAY);
-        setTileVis(tile, enabled);
-        if (tile.i) mod.SetUIImageColor(tile.i, enabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
+        const sig = [
+            enabled ? 1 : 0,
+            count,
+            medicRemaining > 0 ? Math.ceil(medicRemaining) : 0,
+            showSelectedMedicTimer ? 1 : 0,
+            isMedicClass ? 1 : 0,
+        ].join("|");
+        if (tile.sig !== sig) {
+            setTileHeaderWidgets(tile, tileConfig[1], enabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
+            safeSetUITextLabel(tile.cd, medicRemaining > 0 ? fmtClock(medicRemaining) : mod.Message(STR_UI_READY));
+            safeSetUITextColor(tile.cd, isMedicClass ? (showSelectedMedicTimer ? COLOR_GRAY : (medicReady ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW)) : COLOR_GRAY);
+            safeSetUIWidgetVisible(tile.cd, !isMedicClass || medicRemaining <= 0 || showSelectedMedicTimer);
+            safeSetUITextLabel(tile.cs, mod.Message(mod.stringkeys.twl.system.genericCounter, count));
+            safeSetUITextLabel(tile.ct, mod.Message(mod.stringkeys.twl.system.genericCounter, count));
+            safeSetUITextColor(tile.s, COLOR_GRAY);
+            safeSetUITextColor(tile.cs, COLOR_DARK_BLACK);
+            safeSetUITextColor(tile.ct, count > 0 ? COLOR_WHITE : COLOR_GRAY);
+            setTileVis(tile, enabled);
+            if (tile.i) mod.SetUIImageColor(tile.i, enabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
+            tile.sig = sig;
+        }
     }
     for (let i = 0; i < cache.rows.length; i++) {
         const row = cache.rows[i];
         const launcherEnabled = isEngineerClass && launcherReady;
         const launcherCount = launcherReady ? ASSAULT_ITEM_MAX : 0;
         const showSelectedLauncherTimer = isEngineerClass && launcherRemaining > 0 && launch.s === i;
-        setTileHeaderWidgets(row, ENG_ROWS[i][0], launcherEnabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
-        safeSetUITextLabel(row.s, armScope(false));
-        safeSetUITextLabel(row.cd, launcherRemaining > 0 ? launcherMessage : mod.Message(STR_UI_READY));
-        safeSetUITextColor(row.cd, isEngineerClass ? (showSelectedLauncherTimer ? COLOR_GRAY : launcherColor) : COLOR_GRAY);
-        safeSetUIWidgetVisible(row.cd, !isEngineerClass || launcherRemaining <= 0 || showSelectedLauncherTimer);
-        safeSetUITextLabel(row.cs, mod.Message(mod.stringkeys.twl.system.genericCounter, launcherCount));
-        safeSetUITextLabel(row.ct, mod.Message(mod.stringkeys.twl.system.genericCounter, launcherCount));
-        safeSetUITextColor(row.cs, COLOR_DARK_BLACK);
-        safeSetUITextColor(row.ct, launcherCount > 0 ? COLOR_WHITE : COLOR_GRAY);
-        setActVis(row, launcherEnabled);
-        const rowButtonIcon = row.i;
-        if (rowButtonIcon) {
-            mod.SetUIImageColor(rowButtonIcon, launcherEnabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
+        const sig = [
+            launcherEnabled ? 1 : 0,
+            launcherCount,
+            launcherRemaining > 0 ? Math.ceil(launcherRemaining) : 0,
+            showSelectedLauncherTimer ? 1 : 0,
+            isEngineerClass ? 1 : 0,
+        ].join("|");
+        if (row.sig !== sig) {
+            setTileHeaderWidgets(row, ENG_ROWS[i][0], launcherEnabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
+            safeSetUITextLabel(row.cd, launcherRemaining > 0 ? launcherMessage : mod.Message(STR_UI_READY));
+            safeSetUITextColor(row.cd, isEngineerClass ? (showSelectedLauncherTimer ? COLOR_GRAY : launcherColor) : COLOR_GRAY);
+            safeSetUIWidgetVisible(row.cd, !isEngineerClass || launcherRemaining <= 0 || showSelectedLauncherTimer);
+            safeSetUITextLabel(row.cs, mod.Message(mod.stringkeys.twl.system.genericCounter, launcherCount));
+            safeSetUITextLabel(row.ct, mod.Message(mod.stringkeys.twl.system.genericCounter, launcherCount));
+            safeSetUITextColor(row.cs, COLOR_DARK_BLACK);
+            safeSetUITextColor(row.ct, launcherCount > 0 ? COLOR_WHITE : COLOR_GRAY);
+            setActVis(row, launcherEnabled);
+            const rowButtonIcon = row.i;
+            if (rowButtonIcon) {
+                mod.SetUIImageColor(rowButtonIcon, launcherEnabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
+            }
+            safeSetUITextColor(row.s, COLOR_GRAY);
+            row.sig = sig;
         }
-        safeSetUITextColor(row.s, COLOR_GRAY);
     }
     const ammoCount = Math.max(0, Math.min(CH_MAX, launch.aC));
     const ammoRemaining = Math.max(0, launch.aN - now);
     const ammoEnabled = isEngineerClass && ammoCount > 0 && hasLauncher;
     const ammoOverlayMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, ammoCount);
-    setTileHeaderWidgets(cache.e, STR_UI_LAUNCHER_AMMO, ammoEnabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
-    safeSetUITextLabel(cache.e.s, armScope(false));
-    safeSetUITextLabel(
-        cache.e.cd,
-        !isEngineerClass || !hasLauncher
-            ? mod.Message(STR_UI_NO_LAUNCHER)
-            : (ammoRemaining > 0 ? fmtClock(ammoRemaining) : mod.Message(STR_UI_READY))
-    );
-    safeSetUITextColor(
-        cache.e.cd,
-        !isEngineerClass || !hasLauncher ? COLOR_GRAY : (ammoRemaining > 0 ? COLOR_WARNING_YELLOW : COLOR_READY_GREEN)
-    );
-    safeSetUITextLabel(cache.e.cs, ammoOverlayMessage);
-    safeSetUITextLabel(cache.e.ct, ammoOverlayMessage);
-    safeSetUITextColor(cache.e.s, COLOR_GRAY);
-    safeSetUITextColor(cache.e.cs, COLOR_DARK_BLACK);
-    safeSetUITextColor(cache.e.ct, ammoEnabled || ammoCount > 0 ? COLOR_WHITE : COLOR_GRAY);
-    setTileVis(cache.e, ammoEnabled);
-    if (cache.e.i) {
-        mod.SetUIImageColor(cache.e.i, ammoEnabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
+    {
+        const sig = [
+            ammoEnabled ? 1 : 0,
+            ammoCount,
+            ammoRemaining > 0 ? Math.ceil(ammoRemaining) : 0,
+            isEngineerClass ? 1 : 0,
+            hasLauncher ? 1 : 0,
+        ].join("|");
+        if (cache.e.sig !== sig) {
+            setTileHeaderWidgets(cache.e, STR_UI_LAUNCHER_AMMO, ammoEnabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
+            safeSetUITextLabel(
+                cache.e.cd,
+                !isEngineerClass || !hasLauncher
+                    ? mod.Message(STR_UI_NO_LAUNCHER)
+                    : (ammoRemaining > 0 ? fmtClock(ammoRemaining) : mod.Message(STR_UI_READY))
+            );
+            safeSetUITextColor(
+                cache.e.cd,
+                !isEngineerClass || !hasLauncher ? COLOR_GRAY : (ammoRemaining > 0 ? COLOR_WARNING_YELLOW : COLOR_READY_GREEN)
+            );
+            safeSetUITextLabel(cache.e.cs, ammoOverlayMessage);
+            safeSetUITextLabel(cache.e.ct, ammoOverlayMessage);
+            safeSetUITextColor(cache.e.s, COLOR_GRAY);
+            safeSetUITextColor(cache.e.cs, COLOR_DARK_BLACK);
+            safeSetUITextColor(cache.e.ct, ammoEnabled || ammoCount > 0 ? COLOR_WHITE : COLOR_GRAY);
+            setTileVis(cache.e, ammoEnabled);
+            if (cache.e.i) {
+                mod.SetUIImageColor(cache.e.i, ammoEnabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
+            }
+            cache.e.sig = sig;
+        }
     }
     for (let i = 0; i < cache.q.length; i++) {
         const tile = cache.q[i];
@@ -1567,19 +1634,29 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         const enabled = isReconClass && ready;
         const count = ready ? ASSAULT_ITEM_MAX : 0;
         const showSelectedReconTimer = i > 0 && isReconClass && reconSharedRemaining > 0 && state.rgS === i;
-        setTileHeaderWidgets(tile, tileConfig[1], enabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
-        safeSetUITextLabel(tile.s, armScope(false));
-        safeSetUITextLabel(tile.cd, remaining > 0 ? fmtClock(remaining) : mod.Message(STR_UI_READY));
-        safeSetUITextColor(tile.cd, isReconClass ? (showSelectedReconTimer ? COLOR_GRAY : (ready ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW)) : COLOR_GRAY);
-        safeSetUIWidgetVisible(tile.cd, !isReconClass || i === 0 || reconSharedRemaining <= 0 || showSelectedReconTimer);
-        safeSetUITextLabel(tile.cs, mod.Message(mod.stringkeys.twl.system.genericCounter, count));
-        safeSetUITextLabel(tile.ct, mod.Message(mod.stringkeys.twl.system.genericCounter, count));
-        safeSetUITextColor(tile.s, COLOR_GRAY);
-        safeSetUITextColor(tile.cs, COLOR_DARK_BLACK);
-        safeSetUITextColor(tile.ct, count > 0 ? COLOR_WHITE : COLOR_GRAY);
-        setTileVis(tile, enabled);
-        if (tile.i) {
-            mod.SetUIImageColor(tile.i, enabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
+        const sig = [
+            enabled ? 1 : 0,
+            count,
+            remaining > 0 ? Math.ceil(remaining) : 0,
+            showSelectedReconTimer ? 1 : 0,
+            isReconClass ? 1 : 0,
+            i,
+        ].join("|");
+        if (tile.sig !== sig) {
+            setTileHeaderWidgets(tile, tileConfig[1], enabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
+            safeSetUITextLabel(tile.cd, remaining > 0 ? fmtClock(remaining) : mod.Message(STR_UI_READY));
+            safeSetUITextColor(tile.cd, isReconClass ? (showSelectedReconTimer ? COLOR_GRAY : (ready ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW)) : COLOR_GRAY);
+            safeSetUIWidgetVisible(tile.cd, !isReconClass || i === 0 || reconSharedRemaining <= 0 || showSelectedReconTimer);
+            safeSetUITextLabel(tile.cs, mod.Message(mod.stringkeys.twl.system.genericCounter, count));
+            safeSetUITextLabel(tile.ct, mod.Message(mod.stringkeys.twl.system.genericCounter, count));
+            safeSetUITextColor(tile.s, COLOR_GRAY);
+            safeSetUITextColor(tile.cs, COLOR_DARK_BLACK);
+            safeSetUITextColor(tile.ct, count > 0 ? COLOR_WHITE : COLOR_GRAY);
+            setTileVis(tile, enabled);
+            if (tile.i) {
+                mod.SetUIImageColor(tile.i, enabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
+            }
+            tile.sig = sig;
         }
     }
 }
@@ -1594,6 +1671,7 @@ function closeArmMenu(eventPlayer: mod.Player | number): void {
         player = safeFindPlayer(pid);
     }
     if (pid === undefined) return;
+    if (!isArmOpen(pid)) return;
     setArmOpen(pid, false);
     setArmObj(pid, undefined);
     const cache = State.hudCache.ammoResupplyMenuCache[pid];
@@ -1609,6 +1687,7 @@ function openArmMenu(eventPlayer: mod.Player, objId: number): boolean {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return false;
+    if (isUiInteractionBlockedForPid(pid)) return false;
     if (!State.players.deployedByPid[pid]) return false;
     if (State.players.readyDialogData[pid]?.dialogVisible) {
         hideReadyDialogUI(eventPlayer);
@@ -1616,10 +1695,13 @@ function openArmMenu(eventPlayer: mod.Player, objId: number): boolean {
     if (isVehicleDeployLiveMenuOpenForPid(pid)) {
         closeVehicleDeployLiveMenuForPlayer(eventPlayer);
     }
+    if (!armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])) {
+        incrementUiCachePerfCounter(pid, "gadget", "cold");
+    }
     const cache = buildArmMenuHidden(eventPlayer);
     if (!cache) return false;
     setArmObj(pid, objId);
-    refreshArmMenu(eventPlayer, objId, cache);
+    refreshArmMenu(eventPlayer, objId, cache, true);
     showArmMenu(cache, true);
     setArmOpen(pid, true);
     setUIInputModeForPlayer(eventPlayer, true);
@@ -1716,7 +1798,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
                 assaultState.ladC = 0;
                 assaultState.ladN = next;
             }
-            refreshOpenArm(teamId);
+            refreshOpenArm(teamId, true);
         }
         return true;
     }
@@ -1725,7 +1807,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         if (giveMedicSmoke(eventPlayer)) {
             smokeState.c = 0;
             smokeState.n = now + SM_CD;
-            refreshOpenArm(teamId);
+            refreshOpenArm(teamId, true);
         }
         return true;
     }
@@ -1735,7 +1817,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         if (giveAssaultItem(eventPlayer, tile[2], mod.InventorySlots.GadgetTwo, false)) {
             state.mN = now + MI_CD;
             state.mS = medicTileIndex;
-            refreshArmMenu(eventPlayer, objId, cache);
+            refreshArmMenu(eventPlayer, objId, cache, true);
         }
         return true;
     }
@@ -1744,7 +1826,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         if (giveLauncher(eventPlayer, ENG_ROWS[actionIndex][2])) {
             launch.lN = now + L_CD;
             launch.s = actionIndex;
-            refreshArmMenu(eventPlayer, objId, cache);
+            refreshArmMenu(eventPlayer, objId, cache, true);
         }
         return true;
     }
@@ -1759,7 +1841,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
                 state.rgN = now + tile[4];
                 state.rgS = reconTileIndex;
             }
-            refreshArmMenu(eventPlayer, objId, cache);
+            refreshArmMenu(eventPlayer, objId, cache, true);
         }
         return true;
     }
@@ -1768,7 +1850,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         if (giveRocketCharge(eventPlayer)) {
             launch.aC = Math.max(0, launch.aC - 1);
             if (launch.aC < CH_MAX && launch.aN <= now) launch.aN = now + CH_CD;
-            refreshArmMenu(eventPlayer, objId, cache);
+            refreshArmMenu(eventPlayer, objId, cache, true);
         }
         return true;
     }

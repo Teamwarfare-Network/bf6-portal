@@ -3,6 +3,59 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.008: roll back the team-swap loading-gate changes and restore the pre-v1.005 baseline
+// v1.007: defer the single team-swap loading overlay show until the old deployed state is gone
+// v1.006: show the team-swap loading overlay only once per active loading session
+// v1.005: route team swap through the same staged loading-session release so deploy and movement stay blocked until finalize
+// v1.004: remove visible post-deploy loading and ready dialog re-show from join finalize and keep the finalize hidden
+// v1.003: require deployed ready finalize before movement release so first HQ ready open is pre-paid under the join lock
+// v1.002: hand off first join into a restricted post-deploy finalize so movement stays blocked until the real ready prime finishes
+// v1.001: prime the actual ready open path under the blocked join gate including UI input mode
+// v1.000: front-load ready dialog content refresh into the blocked warm prime so first open is closer to a pure reveal
+// v0.999: replace fixed proof lock with a conservative 15 second first-join gate and single release owner
+// v0.998: extend fixed first-join hard-lock proof path from 10 seconds to 30 seconds
+// v0.997: add a fixed 10 second first-join hard-lock proof path
+// v0.996: require multi-frame post-reveal hot-settle before first-join deploy release
+// v0.995: stop the player loop from reasserting the join loading overlay during release teardown
+// v0.994: add a dedicated first-join deploy lock so only join release can enable deploy
+// v0.993: stop undeploy refresh warm from preempting the first-join loading session
+// v0.991: stabilize join loading overlay lifecycle and purge duplicate join prompt widgets
+// v0.990: refactor first join into a single-stage pre-deploy loading gate with one release owner
+// v0.989: remove join-only in-world finalize and lengthen join deploy release settle
+// v0.988: arm one-shot first-join post-deploy finalize lock before movement is allowed
+// v0.987: move loading-gate audit state onto a persistent on-foot HUD panel
+// v0.986: move loading-gate debug projection from world logs onto persistent loading overlay labels
+// v0.985: split join loading release into overlay-hide settle and delayed deploy authorization
+// v0.984: separate deploy authorization from loading-gate flags so join deploy stays blocked until explicitly authorized
+// v0.983: move first-join deploy release ownership out of generic warm controller and back to join lifecycle
+// v0.982: add hard audit lock that never releases deploy and forcibly recaptures any deployed player
+// v0.981: continuously reassert join deploy block and project first-join load trace via existing debug messages
+// v0.980: refactor first-join loading gate into a smaller traced lifecycle and add deploy authority instrumentation
+// v0.979: run loading-gate recapture before script deployed-state gate and revert explicit spawn mode change
+// v0.978: set conquest spawn mode explicitly to deploy
+// v0.977: stage join deploy block earlier and recapture join gate slip-throughs
+// v0.976: freeze and immediately undeploy players who slip past the loading gate
+// v0.975: make join loading gate hold deploy until overlay clears
+// v0.974: keep loading gate active across deploy handoff until post-deploy finalize ends
+// v0.973: add post-deploy ui finalize lock to loading gate
+// v0.972: strengthen ui loading gate milestones and release ordering
+// v0.971: remove redundant menu close work from static ready dialog open path
+// v0.970: speed up ready interact arming and reassert loading overlay after team swap undeploy
+// v0.968: expand loading overlay to show header title subtitle and custom scripts body
+// v0.967: show loading overlay on team swap undeploy and prime ready dialog hidden reveal during load gate
+// v0.966: fix loading overlay string key and reassert loading overlay during team swap warm loops
+// v0.965: add player ui loading gate for deploy and menu warm release
+// v0.964: reduce vehicle warm-path duplicate builds and remove ready-dialog team-swap hidden-cache churn
+// v0.963: avoid join reset restoring vehicle HUD while hiding ready dialog
+// v0.962: narrow ready dialog join leave churn and clear stale vehicle HUD cache on fresh join
+// v0.961: increase UI cache panel text size and spacing
+// v0.960: include UI cache instrumentation module in conquest bundle
+// v0.959: add UI cache instrumentation panel and admin toggle
+// v0.958: invalidate vehicle HUD viewer cache when toggling live deploy menu
+// v0.957: always hidden-build live deploy HUD shell before first reveal
+// v0.956: stagger deferred menu warm and skip duplicate hidden UI builds
+// v0.955: diff-cache gadget locker entry renders
+// v0.954: throttle gadget locker refresh and remove static header label rewrites
 // v0.953: harden UI text writes against stale or non-text widgets
 // v0.952: restore dist type context with triple-slash types reference
 // v0.949: emit modlib import with ts-ignore and no ts-nocheck

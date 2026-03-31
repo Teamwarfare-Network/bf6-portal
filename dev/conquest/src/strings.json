@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v0.953)",
+        "title": "teamwarfare . net | TWL Conquest (v1.008)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -15,6 +15,12 @@
       "statusLiveModePlayersFormat": "{0}v{1} {2}",
       "playersReadyFormat": "{0} / {1} PLAYERS READY",
       "playersReadyWithServerFormat": "{0} / {1} PLAYERS READY ({2} IN SERVER)",
+      "uiCacheHeader": "UI CACHE",
+      "uiCacheVehicle": "Vehicle",
+      "uiCacheReady": "Ready",
+      "uiCacheGadget": "Gadget",
+      "uiCacheBuiltRebuiltFormat": "Built/Rebuilt {0}/{1}",
+      "uiCacheColdInvalidFormat": "Cold/Invalid {0}/{1}",
       "clock": {
         "digit": "{0}",
         "colon": ":"
@@ -220,6 +226,7 @@
         "positionDebug": "Toggle Position Debug",
         "deployTimersVisibleToggle": "Toggle Deploy Timers Visible While Deployed",
         "resetGadgetTimers": "Reset Gadget Timers",
+        "uiCachePerfToggle": "Toggle UI Cache Panel",
         "roundLengthDec": "Match Length -",
         "roundLengthInc": "Match Length +"
       },
@@ -238,7 +245,9 @@
           "positionDebug": "Toggle Position Debug",
           "resetGadgetTimers": "Reset Gadget Timers",
           "deployTimersVisibleOn": "Timers Visible Deployed ON",
-          "deployTimersVisibleOff": "Timers Visible Deployed OFF"
+          "deployTimersVisibleOff": "Timers Visible Deployed OFF",
+          "uiCachePerfOn": "UI Cache Panel ON",
+          "uiCachePerfOff": "UI Cache Panel OFF"
         },
         "labels": {
           "clockTime": "Clock Time -/+ 1m",
@@ -257,7 +266,8 @@
       "minus": "-",
       "left": "<",
       "right": ">",
-      "loading": "Loading...",
+      "loading": "SCRIPT LOADING",
+      "customScriptsLoading": "Custom Experience Engaging...",
       "assault": "ASSAULT\nONLY",
       "artilleryStrike": "ARTILLERY\nCALL-IN",
       "airStrike": "AIR STRIKE",

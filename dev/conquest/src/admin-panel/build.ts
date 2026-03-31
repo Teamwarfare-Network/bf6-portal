@@ -103,6 +103,19 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         mod.stringkeys.twl.adminPanel.tester.buttons.resetGadgetTimers
     );
 
+    addTesterActionButton(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 8,
+        (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX),
+        36,
+        UI_TEST_BUTTON_UI_CACHE_PERF_TOGGLE_ID,
+        UI_TEST_UI_CACHE_PERF_TOGGLE_TEXT_ID,
+        getUiCachePerfAdminToggleLabelKey()
+    );
+
     syncAdminMatchLengthLabelForAllPlayers();
 }
 

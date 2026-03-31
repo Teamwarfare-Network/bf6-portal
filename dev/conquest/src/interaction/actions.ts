@@ -4,6 +4,8 @@
 const TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS = 0.6;
 type HudWarmOptions = {
     refreshReadyDialogs?: boolean;
+    loadReason?: UiLoadReason;
+    reuseActiveLoadSession?: boolean;
 };
 
 const TEAM_SWAP_HUD_UNDEPLOY_WAIT_SECONDS = 0.05;
@@ -11,19 +13,56 @@ const TEAM_SWAP_HUD_UNDEPLOY_WAIT_ATTEMPTS = 20;
 const TEAM_SWAP_HUD_TEAM_SETTLE_SECONDS = 0.05;
 const TEAM_SWAP_HUD_TEAM_SETTLE_ATTEMPTS = 8;
 
-function enforceHudWarmTransitionDeployBlock(eventPlayer: mod.Player): void {
+// Keeps one player on the deploy screen while the current loading session is still blocking release.
+function holdPlayerAtDeploy(eventPlayer: mod.Player, pid: number, source: string): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     setUIInputModeForPlayer(eventPlayer, false);
+    recordUiLoadDeployEnabledForPid(pid, false, source);
     mod.EnablePlayerDeploy(eventPlayer, false);
     mod.SetRedeployTime(eventPlayer, HUD_WARM_REDEPLOY_BLOCK_SECONDS);
 }
 
+// Applies the current deploy-availability decision and records who changed it for the loading-gate audit.
+function applyPlayerDeployAvailability(eventPlayer: mod.Player, pid: number, deployEnabled: boolean, source: string): void {
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    recordUiLoadDeployEnabledForPid(pid, deployEnabled, source);
+    mod.EnablePlayerDeploy(eventPlayer, deployEnabled);
+    mod.SetRedeployTime(eventPlayer, deployEnabled ? 0 : (isHudTransitionBlockingForPid(pid) ? HUD_WARM_REDEPLOY_BLOCK_SECONDS : 0));
+}
+
+// Starts the first-join loading session and immediately takes deploy ownership before async warm work begins.
+function beginJoinLoadingGate(eventPlayer: mod.Player, pid: number): void {
+    clearJoinPromptForPlayerId(pid);
+    resetUiLoadTraceForPid(pid);
+    beginUiLoadSessionForPid(pid, "join");
+    setUiJoinDeployLockActiveForPid(pid, true);
+    pushUiLoadTraceForPid(pid, "JOIN_BEGIN");
+    reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
+}
+
+// Reasserts deploy ownership for an unreleased loading session so the gate keeps winning even if the engine or another path nudges deploy state.
+function maintainPlayerLoadingGateAuthority(eventPlayer: mod.Player, pid: number): void {
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isUiLoadGateActiveForPid(pid)) return;
+    reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
+    if (HARD_PLAYER_LOCK_AUDIT_MODE) {
+        setAllInputRestrictionsForPlayer(eventPlayer, true, "hard_lock_hold");
+    }
+}
+
+function enforceHudWarmTransitionDeployBlock(eventPlayer: mod.Player): void {
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    const pid = safeGetPlayerId(eventPlayer);
+    if (pid === undefined) return;
+    holdPlayerAtDeploy(eventPlayer, pid, "warm_block");
+}
+
 function canEnablePlayerDeployForPid(pid: number): boolean {
+    if (HARD_PLAYER_LOCK_AUDIT_MODE) return false;
+    if (!isUiLoadDeployAuthorizedForPid(pid)) return false;
     if (isPidDisconnected(pid)) return false;
     if (State.round.flow.cleanupActive && !State.round.flow.cleanupAllowDeploy) return false;
-    if (safeFind(joinPromptRootName(pid))) return false;
-    if (isHudSwapTransitionActiveForPid(pid)) return false;
-    if (!isHudWarmReadyForPid(pid)) return false;
+    if (isHudTransitionBlockingForPid(pid)) return false;
     return true;
 }
 
@@ -32,8 +71,7 @@ function syncPlayerDeployAvailability(eventPlayer: mod.Player): void {
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     const canEnableDeploy = canEnablePlayerDeployForPid(pid);
-    mod.EnablePlayerDeploy(eventPlayer, canEnableDeploy);
-    mod.SetRedeployTime(eventPlayer, canEnableDeploy ? 0 : (isHudTransitionBlockingForPid(pid) ? HUD_WARM_REDEPLOY_BLOCK_SECONDS : 0));
+    applyPlayerDeployAvailability(eventPlayer, pid, canEnableDeploy, "sync");
 }
 
 function isCriticalTopHudReadyForPid(pid: number): boolean {
@@ -61,17 +99,7 @@ function isCriticalCombatHudReadyForPid(pid: number): boolean {
 }
 
 function isCriticalVehicleDeployHudReadyForPid(pid: number): boolean {
-    if (!shouldShowVehicleDeployTimersForPid(pid)) return true;
-    const cache = State.hudCache.vehicleDeployTimerCache[pid];
-    if (!cache?.root) return false;
-    if (cache.rows.length < VEHICLE_DEPLOY_TIMER_MAX_ROWS) return false;
-    for (let i = 0; i < VEHICLE_DEPLOY_TIMER_MAX_ROWS; i++) {
-        const row = cache.rows[i];
-        if (!row?.vehiclePlate || !row?.vehicleText || !row?.timer?.root || !row?.timer?.plate) {
-            return false;
-        }
-    }
-    return true;
+    return isVehicleDeployTimerHudCacheUsable(State.hudCache.vehicleDeployTimerCache[pid]);
 }
 
 function isCriticalHudReadyForPlayer(eventPlayer: mod.Player, pid: number): boolean {
@@ -79,6 +107,46 @@ function isCriticalHudReadyForPlayer(eventPlayer: mod.Player, pid: number): bool
     return isCriticalTopHudReadyForPid(pid)
         && isCriticalCombatHudReadyForPid(pid)
         && isCriticalVehicleDeployHudReadyForPid(pid);
+}
+
+// Returns true once the deferred production-menu families required by the pre-deploy gate are built
+// and hidden-primed enough to hand off into the deployed finalize without releasing a cold menu path.
+function isDeferredProductionUiReadyForPid(pid: number): boolean {
+    return isUiProductionMenusWarmForPid(pid)
+        && State.players.readyDialogData[pid]?.readyDialogWarmPrimed === true
+        && isGadgetMenuHotReadyForPid(pid)
+        && isReadyDialogUiCacheUsableForPid(pid)
+        && armCacheOk(State.hudCache.ammoResupplyMenuCache[pid]);
+}
+
+// Returns true once the player-specific hidden warm prerequisites are complete for the current loading session.
+function isPlayerUiPreRevealReadyForPid(eventPlayer: mod.Player, pid: number): boolean {
+    return isCriticalHudReadyForPlayer(eventPlayer, pid) && isDeferredProductionUiReadyForPid(pid);
+}
+
+// Reasserts the player loading overlay + deploy block together so all gate paths share the same visible/blocking ownership.
+function reassertPlayerUiLoadingGateVisuals(eventPlayer: mod.Player, pid: number): void {
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    const overlayWasShown = isUiLoadOverlayShownForPid(pid);
+    showJoinPromptLoadingForPlayer(eventPlayer);
+    setUiLoadOverlayShownForPid(pid, true);
+    if (!overlayWasShown) pushUiLoadTraceForPid(pid, "OVERLAY_ON");
+    enforceHudWarmTransitionDeployBlock(eventPlayer);
+}
+
+// Begins or reuses one loading-gate session for a player so hidden warm, reveal, and release all share the same state bag.
+function beginPlayerUiLoadingGate(
+    eventPlayer: mod.Player,
+    pid: number,
+    reason: UiLoadReason,
+    reuseActiveSession: boolean = false
+): void {
+    if (reuseActiveSession !== true || !isUiLoadGateActiveForPid(pid)) {
+        if (reason !== "join") resetUiLoadTraceForPid(pid);
+        beginUiLoadSessionForPid(pid, reason);
+        pushUiLoadTraceForPid(pid, `LOAD_BEGIN:${reason}`);
+    }
+    reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
 }
 
 function refreshClockForPlayer(eventPlayer: mod.Player, pid: number): void {
@@ -170,6 +238,9 @@ function prebuildTopLeftUiFamilyWhileHidden(eventPlayer: mod.Player, pid: number
 
 function prebuildVehicleSpawnerUiFamilyWhileHidden(eventPlayer: mod.Player, _pid: number): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    const pid = safeGetPlayerId(eventPlayer);
+    if (pid === undefined) return;
+    if (isVehicleDeployTimerHudCacheUsable(State.hudCache.vehicleDeployTimerCache[pid])) return;
     try {
         prebuildVehicleDeployTimerHudHiddenForPlayer(eventPlayer);
     } catch {}
@@ -188,7 +259,10 @@ function prebuildReadyDialogUiFamilyWhileHidden(eventPlayer: mod.Player, pid: nu
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     try {
         const readyData = getReadyDialogStateForPid(pid);
-        if (readyData && !readyData.dialogVisible) ensureReadyDialogUiBuiltHidden(eventPlayer);
+        if (!readyData || readyData.dialogVisible) return;
+        if (!isReadyDialogUiCacheUsableForPid(pid)) {
+            ensureReadyDialogUiBuiltHidden(eventPlayer);
+        }
     } catch {}
 }
 
@@ -199,8 +273,54 @@ function prebuildCriticalHudWhileHidden(eventPlayer: mod.Player, pid: number): v
 }
 
 function prebuildDeferredUiWhileHidden(eventPlayer: mod.Player, pid: number): void {
-    prebuildReadyDialogUiFamilyWhileHidden(eventPlayer, pid);
-    prebuildArmMenu(eventPlayer);
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isReadyDialogUiCacheUsableForPid(pid)) {
+        prebuildReadyDialogUiFamilyWhileHidden(eventPlayer, pid);
+        return;
+    }
+    try {
+        if (!armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])) {
+            prebuildArmMenu(eventPlayer);
+        }
+    } catch {}
+}
+
+// Advances deferred production-menu warm while the loading gate is active.
+// Important: this only proves hidden pre-deploy warmth; the real deployed Ready-open hot path
+// is paid later during post-deploy finalize before movement is released.
+async function advanceDeferredProductionUiWarmWhileBlocked(eventPlayer: mod.Player, pid: number): Promise<void> {
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+
+    prebuildDeferredUiWhileHidden(eventPlayer, pid);
+
+    if (!isReadyDialogUiCacheUsableForPid(pid)) {
+        setUiProductionMenusWarmForPid(pid, false);
+        return;
+    }
+
+    if (!armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])) {
+        setUiProductionMenusWarmForPid(pid, false);
+        setGadgetMenuHotReadyForPid(pid, false);
+        return;
+    }
+
+    if (State.players.readyDialogData[pid]?.readyDialogWarmPrimed !== true) {
+        await primeReadyDialogRevealWhileBlocked(eventPlayer);
+        if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+        reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
+    }
+
+    if (!isGadgetMenuHotReadyForPid(pid) && armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])) {
+        setGadgetMenuHotReadyForPid(pid, true);
+    }
+
+    setUiProductionMenusWarmForPid(
+        pid,
+        isReadyDialogUiCacheUsableForPid(pid)
+        && armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])
+        && State.players.readyDialogData[pid]?.readyDialogWarmPrimed === true
+        && isGadgetMenuHotReadyForPid(pid)
+    );
 }
 
 function renderTopLeftUiFamilyImmediate(eventPlayer: mod.Player, pid: number): void {
@@ -241,6 +361,8 @@ function renderAdminUiFamilyForReveal(eventPlayer: mod.Player, pid: number): voi
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     const refs = ensureTopHudShellForPlayer(eventPlayer);
     safeSetUIWidgetVisible(refs?.adminPanelActionCountText, true);
+    syncUiCachePerfPanelForPid(pid);
+    setUiCachePerfPanelVisibleForPid(pid, true);
     try {
         if (State.players.readyDialogData[pid]?.posDebugVisible) {
             setPositionDebugVisibleForPlayer(eventPlayer, true);
@@ -310,6 +432,7 @@ function hideTopHudFamilyForWarmTransition(pid: number): void {
     safeSetUIWidgetVisible(refs?.topCenterAuxRoot, false);
     safeSetUIWidgetVisible(refs?.helpTextContainer, false);
     safeSetUIWidgetVisible(refs?.adminPanelActionCountText, false);
+    setUiCachePerfPanelVisibleForPid(pid, false);
     safeSetUIWidgetVisible(refs?.victoryRoot, false);
 
     setClockWidgetCacheVisible(State.hudCache.clockWidgetCache[pid], false);
@@ -328,6 +451,16 @@ function renderCriticalHudForReveal(eventPlayer: mod.Player, pid: number): void 
     renderAdminUiFamilyForReveal(eventPlayer, pid);
 }
 
+// Resets the per-session warm milestones before a hidden prebuild/reveal pass begins.
+function resetPlayerUiWarmMilestonesForPid(pid: number): void {
+    setCombatHudRevealAllowedForPid(pid, false);
+    setHudWarmCompletedForPid(pid, false);
+    setUiCriticalRevealCompletedForPid(pid, false);
+    setUiProductionMenusWarmForPid(pid, false);
+    setReadyDialogHotReadyForPid(pid, false);
+    setGadgetMenuHotReadyForPid(pid, false);
+}
+
 async function waitForPlayerToBecomeUndeployedForTeamSwap(
     eventPlayer: mod.Player,
     pid: number,
@@ -337,7 +470,7 @@ async function waitForPlayerToBecomeUndeployedForTeamSwap(
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
         if (!isHudWarmTokenCurrent(pid, token)) return false;
         if (!State.players.deployedByPid[pid]) return true;
-        enforceHudWarmTransitionDeployBlock(eventPlayer);
+        reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
         hideCriticalHudForWarmTransition(pid);
         await mod.Wait(TEAM_SWAP_HUD_UNDEPLOY_WAIT_SECONDS);
     }
@@ -354,7 +487,7 @@ async function waitForPlayerTeamToSettleForSwap(
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
         if (!isHudWarmTokenCurrent(pid, token)) return false;
         if (safeGetTeamNumberFromPlayer(eventPlayer, 0) === newTeamNum) return true;
-        enforceHudWarmTransitionDeployBlock(eventPlayer);
+        reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
         hideCriticalHudForWarmTransition(pid);
         await mod.Wait(TEAM_SWAP_HUD_TEAM_SETTLE_SECONDS);
     }
@@ -383,6 +516,8 @@ async function runTeamSwapHudWarmController(
     if (!isHudWarmTokenCurrent(pid, token)) return;
 
     await warmCriticalHudForPlayer(eventPlayer, {
+        loadReason: "team_swap",
+        reuseActiveLoadSession: true,
     });
 
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
@@ -392,15 +527,12 @@ async function runTeamSwapHudWarmController(
     if (latestToken !== token + 1 && latestToken !== token) {
         return;
     }
-    invalidateHiddenReadyDialogCacheForPid(pid);
-    ensureReadyDialogUiBuiltHidden(eventPlayer);
     syncPlayerDeployAvailability(eventPlayer);
 }
 
 function hideCriticalHudForWarmTransition(pid: number): void {
     setCombatHudRevealAllowedForPid(pid, false);
     twlConquestHudHideRootOnly(pid);
-    clearJoinPromptForPlayerId(pid);
     hideTopHudFamilyForWarmTransition(pid);
     setPositionDebugWidgetsVisibleForPid(pid, false);
     hideVehicleSpawnerUiFamilyForPid(pid);
@@ -409,6 +541,57 @@ function hideCriticalHudForWarmTransition(pid: number): void {
     safeSetUIWidgetVisible(safeFind(`HelpText_${pid}`), false);
 }
 
+// Releases the player loading gate through one idempotent cleanup path for both success and timeout.
+function releasePlayerUiLoadingGate(eventPlayer: mod.Player, pid: number, token: number): void {
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isHudWarmTokenCurrent(pid, token)) return;
+    pushUiLoadTraceForPid(pid, "GATE_RELEASE");
+    setUiLoadGateActiveForPid(pid, false);
+    setUiLoadGateReleasedForPid(pid, true);
+}
+
+// Releases first join by handing off from the deploy-screen lock into a short post-deploy finalize,
+// so the player still cannot move until the real deployed Ready-open prime has completed.
+async function releaseJoinLoadingGate(eventPlayer: mod.Player, pid: number, token: number): Promise<void> {
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isHudWarmTokenCurrent(pid, token)) return;
+    if (HARD_PLAYER_LOCK_AUDIT_MODE) {
+        pushUiLoadTraceForPid(pid, "JOIN_RELEASE_BLOCKED");
+        reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
+        setAllInputRestrictionsForPlayer(eventPlayer, true, "hard_lock_release_blocked");
+        return;
+    }
+
+    setUiPostDeployFinalizeActiveForPid(pid, false);
+    // Stop the ongoing player loop from reasserting the overlay while this release path hides and clears it.
+    setUiLoadGateActiveForPid(pid, false);
+    hideJoinPromptForPlayerId(pid);
+    pushUiLoadTraceForPid(pid, "OVERLAY_HIDE_BEGIN:join");
+    await mod.Wait(0);
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isHudWarmTokenCurrent(pid, token)) return;
+    hideJoinPromptForPlayerId(pid);
+    await mod.Wait(0);
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isHudWarmTokenCurrent(pid, token)) return;
+    clearJoinPromptForPlayerId(pid);
+    setUiLoadOverlayShownForPid(pid, false);
+    pushUiLoadTraceForPid(pid, "OVERLAY_OFF:join");
+    await mod.Wait(HUD_JOIN_DEPLOY_RELEASE_DELAY_SECONDS);
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isHudWarmTokenCurrent(pid, token)) return;
+
+    setUiPostDeployFinalizeActiveForPid(pid, true);
+    setAllInputRestrictionsForPlayer(eventPlayer, true, "join_release_finalize");
+    setUiLoadDeployAuthorizedForPid(pid, true);
+    setUiJoinDeployLockActiveForPid(pid, false);
+    pushUiLoadTraceForPid(pid, "JOIN_AUTHORIZE");
+    releasePlayerUiLoadingGate(eventPlayer, pid, token);
+    pushUiLoadTraceForPid(pid, "JOIN_RELEASE");
+    syncPlayerDeployAvailability(eventPlayer);
+}
+
+// Releases non-join warm transitions only after visible reveal has completed so follow-up paths can use the same loading session.
 function releaseHudWarmTransitionForPlayer(eventPlayer: mod.Player, token: number): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     const pid = safeGetPlayerId(eventPlayer);
@@ -418,19 +601,171 @@ function releaseHudWarmTransitionForPlayer(eventPlayer: mod.Player, token: numbe
     if (!isHudWarmTokenCurrent(pid, token)) return;
 
     setHudSwapTransitionActiveForPid(pid, false);
-
-    renderCriticalHudForReveal(eventPlayer, pid);
+    setUiLoadDeployAuthorizedForPid(pid, true);
+    setUiPostDeployFinalizeActiveForPid(pid, true);
+    setAllInputRestrictionsForPlayer(eventPlayer, true, "post_deploy_finalize");
+    releasePlayerUiLoadingGate(eventPlayer, pid, token);
     syncPlayerDeployAvailability(eventPlayer);
     void prebuildDeferredUiAfterReveal(eventPlayer, pid, token);
+}
+
+// Performs one post-reveal settle pass while the loading gate is still active so release happens after visible UI becomes usable.
+async function finalizeUiRevealWhileBlocked(eventPlayer: mod.Player, pid: number, token: number): Promise<boolean> {
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    if (!isHudWarmTokenCurrent(pid, token)) return false;
+    pushUiLoadTraceForPid(pid, "REVEAL_BEGIN");
+    renderCriticalHudForReveal(eventPlayer, pid);
+    await mod.Wait(HUD_WARM_POST_REVEAL_SETTLE_SECONDS);
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    if (!isHudWarmTokenCurrent(pid, token)) return false;
+    setUiCriticalRevealCompletedForPid(pid, true);
+    pushUiLoadTraceForPid(pid, "REVEAL_OK");
+    return true;
+}
+
+// Keeps first join blocked for a few post-reveal polls so hidden menu warm must remain stable after visible reveal before deploy can release.
+async function finalizeProductionUiHotReadinessWhileBlocked(
+    eventPlayer: mod.Player,
+    pid: number,
+    token: number
+): Promise<boolean> {
+    let stablePolls = 0;
+    const readyDeadline = mod.GetMatchTimeElapsed() + HUD_WARM_POST_REVEAL_READY_TIMEOUT_SECONDS;
+    while (true) {
+        if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+        if (!isHudWarmTokenCurrent(pid, token)) return false;
+
+        maintainPlayerLoadingGateAuthority(eventPlayer, pid);
+        await advanceDeferredProductionUiWarmWhileBlocked(eventPlayer, pid);
+        if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+        if (!isHudWarmTokenCurrent(pid, token)) return false;
+
+        if (isDeferredProductionUiReadyForPid(pid)) stablePolls += 1;
+        else stablePolls = 0;
+
+        const timedOut = mod.GetMatchTimeElapsed() >= readyDeadline;
+        if (stablePolls >= HUD_WARM_POST_REVEAL_STABLE_POLLS || timedOut) {
+            pushUiLoadTraceForPid(pid, timedOut ? "POST_REVEAL_TIMEOUT" : "POST_REVEAL_OK");
+            return true;
+        }
+
+        await mod.Wait(0);
+    }
 }
 
 async function prebuildDeferredUiAfterReveal(eventPlayer: mod.Player, pid: number, token: number): Promise<void> {
     await mod.Wait(0);
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     if (!isHudWarmTokenCurrent(pid, token)) return;
-    prebuildDeferredUiWhileHidden(eventPlayer, pid);
+    prebuildReadyDialogUiFamilyWhileHidden(eventPlayer, pid);
+
+    await mod.Wait(0);
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isHudWarmTokenCurrent(pid, token)) return;
+    try {
+        if (!armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])) {
+            prebuildArmMenu(eventPlayer);
+        }
+    } catch {}
 }
 
+// Runs the hidden warm loop until the current session is either stable enough to reveal or times out.
+async function warmPlayerUiUntilRevealSettled(
+    eventPlayer: mod.Player,
+    pid: number,
+    token: number,
+    refreshReadyDialogs: boolean = false
+): Promise<boolean> {
+    await mod.Wait(HUD_WARM_PREBUILD_DELAY_SECONDS);
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    if (!isHudWarmTokenCurrent(pid, token)) return false;
+
+    let readyStablePolls = 0;
+    const readyDeadline = mod.GetMatchTimeElapsed() + HUD_FULL_UI_READY_TIMEOUT_SECONDS;
+    while (true) {
+        if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+        if (!isHudWarmTokenCurrent(pid, token)) return false;
+
+        maintainPlayerLoadingGateAuthority(eventPlayer, pid);
+        prebuildCriticalHudWhileHidden(eventPlayer, pid);
+        await advanceDeferredProductionUiWarmWhileBlocked(eventPlayer, pid);
+        hideCriticalHudForWarmTransition(pid);
+
+        if (isPlayerUiPreRevealReadyForPid(eventPlayer, pid)) readyStablePolls += 1;
+        else readyStablePolls = 0;
+
+        const timedOut = mod.GetMatchTimeElapsed() >= readyDeadline;
+        if (readyStablePolls >= HUD_WARM_READY_STABLE_POLLS || timedOut) {
+            pushUiLoadTraceForPid(pid, timedOut ? "READY_TIMEOUT" : "READY_OK");
+            break;
+        }
+
+        await mod.Wait(HUD_WARM_READY_POLL_SECONDS);
+    }
+
+    if (!isHudWarmTokenCurrent(pid, token)) return false;
+
+    setHudWarmCompletedForPid(pid, true);
+    if (refreshReadyDialogs) {
+        renderReadyDialogForAllVisibleViewers();
+    }
+    const revealSettled = await finalizeUiRevealWhileBlocked(eventPlayer, pid, token);
+    if (!revealSettled) return false;
+    return await finalizeProductionUiHotReadinessWhileBlocked(eventPlayer, pid, token);
+}
+
+// Continues the already-started first-join loading session so deploy release cannot drift into generic warm helpers.
+async function runJoinLoadingGateUntilReady(eventPlayer: mod.Player, pid: number): Promise<void> {
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    const token = invalidateHudWarmTokenForPid(pid);
+    if (token === undefined) return;
+
+    resetPlayerUiWarmMilestonesForPid(pid);
+    hideCriticalHudForWarmTransition(pid);
+
+    const revealSettled = await warmPlayerUiUntilRevealSettled(eventPlayer, pid, token, true);
+    if (!revealSettled) return;
+
+    pushUiLoadTraceForPid(pid, "JOIN_WARM_DONE");
+    refreshBuiltReadyDialogCachesForAllPlayers();
+    replayActiveMapValidationWarningsToPlayer(eventPlayer);
+    await releaseJoinLoadingGate(eventPlayer, pid, token);
+}
+
+// Conservative first-join gate:
+// 1) keep deploy hard-blocked through one join-owned path
+// 2) warm the UI in the background
+// 3) never release before the minimum blocked window
+// 4) still fail safe through the existing warm timeout / release path
+async function runJoinLoadingGateWithConservativeRelease(eventPlayer: mod.Player, pid: number): Promise<void> {
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    const token = invalidateHudWarmTokenForPid(pid);
+    if (token === undefined) return;
+
+    resetPlayerUiWarmMilestonesForPid(pid);
+    hideCriticalHudForWarmTransition(pid);
+    setAllInputRestrictionsForPlayer(eventPlayer, true, "join_conservative_lock");
+    pushUiLoadTraceForPid(pid, "JOIN_CONSERVATIVE_LOCK_BEGIN");
+    const minimumReleaseAt = mod.GetMatchTimeElapsed() + JOIN_CONSERVATIVE_FIRST_JOIN_MIN_LOCK_SECONDS;
+
+    const revealSettled = await warmPlayerUiUntilRevealSettled(eventPlayer, pid, token, true);
+    if (!revealSettled) return;
+
+    pushUiLoadTraceForPid(pid, "JOIN_WARM_DONE");
+    refreshBuiltReadyDialogCachesForAllPlayers();
+    replayActiveMapValidationWarningsToPlayer(eventPlayer);
+
+    const remainingMinimumLock = minimumReleaseAt - mod.GetMatchTimeElapsed();
+    if (remainingMinimumLock > 0) {
+        await mod.Wait(remainingMinimumLock);
+    }
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isHudWarmTokenCurrent(pid, token)) return;
+    pushUiLoadTraceForPid(pid, "JOIN_CONSERVATIVE_LOCK_END");
+    await releaseJoinLoadingGate(eventPlayer, pid, token);
+}
+
+// Runs the shared non-join warm controller and must never preempt an active first-join loading session.
 async function warmCriticalHudForPlayer(
     eventPlayer: mod.Player,
     options?: HudWarmOptions
@@ -441,47 +776,29 @@ async function warmCriticalHudForPlayer(
     if (!State.players.readyDialogData[pid]) initReadyDialogData(eventPlayer);
     const state = State.players.readyDialogData[pid];
     if (!state) return;
+    if (state.uiLoadReason === "join" && isUiLoadGateActiveForPid(pid) && options?.loadReason !== "join") {
+        reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
+        return;
+    }
 
     const token = invalidateHudWarmTokenForPid(pid);
     if (token === undefined) return;
-    setCombatHudRevealAllowedForPid(pid, false);
-    if (state.hudWarmCompleted !== true) {
-        setHudWarmCompletedForPid(pid, false);
-        hideCriticalHudForWarmTransition(pid);
-    }
+    beginPlayerUiLoadingGate(
+        eventPlayer,
+        pid,
+        options?.loadReason ?? "refresh",
+        options?.reuseActiveLoadSession === true
+    );
+    resetPlayerUiWarmMilestonesForPid(pid);
+    hideCriticalHudForWarmTransition(pid);
 
-    await mod.Wait(HUD_WARM_PREBUILD_DELAY_SECONDS);
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    if (!isHudWarmTokenCurrent(pid, token)) return;
-
-    let readyStablePolls = 0;
-    const readyDeadline = mod.GetMatchTimeElapsed() + HUD_WARM_READY_TIMEOUT_SECONDS;
-    while (true) {
-        if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-        if (!isHudWarmTokenCurrent(pid, token)) return;
-
-        prebuildCriticalHudWhileHidden(eventPlayer, pid);
-        if (!state.hudWarmCompleted) {
-            hideCriticalHudForWarmTransition(pid);
-        }
-
-        if (isCriticalHudReadyForPlayer(eventPlayer, pid)) readyStablePolls += 1;
-        else readyStablePolls = 0;
-
-        const timedOut = mod.GetMatchTimeElapsed() >= readyDeadline;
-        if (readyStablePolls >= HUD_WARM_READY_STABLE_POLLS || timedOut) {
-            break;
-        }
-
-        await mod.Wait(HUD_WARM_READY_POLL_SECONDS);
-    }
-
-    if (!isHudWarmTokenCurrent(pid, token)) return;
-
-    setHudWarmCompletedForPid(pid, true);
-    if (options?.refreshReadyDialogs) {
-        renderReadyDialogForAllVisibleViewers();
-    }
+    const revealSettled = await warmPlayerUiUntilRevealSettled(
+        eventPlayer,
+        pid,
+        token,
+        options?.refreshReadyDialogs === true
+    );
+    if (!revealSettled) return;
     releaseHudWarmTransitionForPlayer(eventPlayer, token);
 }
 
@@ -545,6 +862,7 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
             setHudWarmCompletedForPid(pid, false);
             invalidateHudWarmTokenForPid(pid);
         }
+        beginPlayerUiLoadingGate(eventPlayer, pid, "team_swap");
         State.players.deployedByPid[pid] = false;
         resetPlayerBoundaryStateOnUndeployOrReset(pid);
         clearVehicleReservationForPid(pid);

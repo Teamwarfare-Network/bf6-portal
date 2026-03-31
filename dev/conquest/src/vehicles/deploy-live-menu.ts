@@ -38,7 +38,9 @@ function closeVehicleDeployLiveMenuForPlayer(eventPlayer: mod.Player | number): 
     }
 
     if (pid === undefined) return;
+    if (!isVehicleDeployLiveMenuOpenForPid(pid)) return;
     setVehicleDeployLiveMenuVisibleForPid(pid, false);
+    invalidateVehicleDeployTimerHudViewerCache(pid);
     const cache = State.hudCache.vehicleDeployTimerCache[pid];
     if (cache && !isVehicleDeployTimerAdminOverrideEnabledForPid(pid)) {
         hideVehicleDeployTimerHudFamily(cache, false);
@@ -57,6 +59,7 @@ function tryOpenVehicleDeployLiveMenuForPlayer(eventPlayer: mod.Player): boolean
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return false;
+    if (isUiInteractionBlockedForPid(pid)) return false;
     if (!State.players.deployedByPid[pid]) return false;
 
     if (isArmOpen(pid)) {
@@ -68,6 +71,7 @@ function tryOpenVehicleDeployLiveMenuForPlayer(eventPlayer: mod.Player): boolean
     }
 
     setVehicleDeployLiveMenuVisibleForPid(pid, true);
+    invalidateVehicleDeployTimerHudViewerCache(pid);
     setUIInputModeForPlayer(eventPlayer, true);
     const revealed = revealVehicleDeployTimerHudForPlayer(eventPlayer);
     if (revealed) {

@@ -26,6 +26,14 @@ type TopHudShellRefs = {
     victoryRosterRightContainer?: mod.UIWidget;
 
     adminPanelActionCountText?: mod.UIWidget;
+    uiCachePerfRoot?: mod.UIWidget;
+    uiCachePerfHeader?: mod.UIWidget;
+    uiCachePerfFamilyLabel?: Array<mod.UIWidget | undefined>;
+    uiCachePerfBuiltText?: Array<mod.UIWidget | undefined>;
+    uiCachePerfColdText?: Array<mod.UIWidget | undefined>;
+    uiLoadDebugRoot?: mod.UIWidget;
+    uiLoadDebugPrimaryText?: mod.UIWidget;
+    uiLoadDebugSecondaryText?: mod.UIWidget;
     helpTextContainer?: mod.UIWidget;
     readyStatusContainer?: mod.UIWidget;
 
@@ -149,6 +157,7 @@ type AmmoResupplyMenuActionRowCacheEntry = {
     bb?: mod.UIWidget;
     button?: mod.UIWidget;
     i?: mod.UIWidget;
+    sig?: string;
     l1?: mod.UIWidget;
     l2?: mod.UIWidget;
     l3?: mod.UIWidget;
@@ -163,6 +172,7 @@ type AmmoResupplyMenuChargeCacheEntry = {
     bb?: mod.UIWidget;
     button?: mod.UIWidget;
     i?: mod.UIWidget;
+    sig?: string;
     l1?: mod.UIWidget;
     l2?: mod.UIWidget;
     l3?: mod.UIWidget;
@@ -176,6 +186,7 @@ type AmmoResupplyMenuChargeCacheEntry = {
 type AmmoResupplyMenuCacheEntry = {
     rootName: string;
     sv?: number;
+    lastRefreshSecond?: number;
     root?: mod.UIWidget;
     borderTop?: mod.UIWidget;
     borderBottom?: mod.UIWidget;

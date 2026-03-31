@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 // Module: vehicles/deploy-timer-ui -- Firestorm helicopter deploy/live timer display with direct spawn buttons
 
 function getVehicleDeployTimerAdminToggleLabelKey(pid: number): number {
@@ -1097,6 +1097,12 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
     if (isVehicleDeployTimerHudCacheUsable(priorCache)) {
         return priorCache;
     }
+    if (priorCache) {
+        incrementUiCachePerfCounter(pid, "vehicle", "invalid");
+        incrementUiCachePerfCounter(pid, "vehicle", "rebuilt");
+    } else {
+        incrementUiCachePerfCounter(pid, "vehicle", "built");
+    }
     let cache = priorCache;
     const uiRoot = mod.GetUIRoot();
 
@@ -1359,7 +1365,6 @@ function prepareVehicleDeployTimerHudForHiddenPrebuild(player: mod.Player): Vehi
     if (!player || !mod.IsPlayerValid(player)) return;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return;
-    if (!shouldShowVehicleDeployTimersForPid(pid)) return;
     const cache = ensureVehicleDeployTimerHudForPlayer(player);
     if (!cache || !cache.root) return;
     safeSetUIWidgetVisible(cache.root, false);
@@ -1785,7 +1790,8 @@ function tryHandleVehicleDeployTimerButtonEvent(
 }
 
 // Owner-only hidden prebuild path for the vehicle HUD family.
-// This applies current row content while the root stays hidden/offscreen so later reveal is a visibility flip.
+// This always ensures the HUD shell exists while hidden/offscreen so later reveal never pays widget creation.
+// If row content is not ready yet, the hidden pass still caches the shell and keeps the family hidden.
 function prebuildVehicleDeployTimerHudHiddenForPlayer(player: mod.Player): boolean {
     if (!player || !mod.IsPlayerValid(player)) return false;
     const pid = safeGetPlayerId(player);
@@ -1806,6 +1812,9 @@ function revealVehicleDeployTimerHudForPlayer(player: mod.Player): boolean {
     if (!player || !mod.IsPlayerValid(player)) return false;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return false;
+    if (!isVehicleDeployTimerHudCacheUsable(State.hudCache.vehicleDeployTimerCache[pid])) {
+        incrementUiCachePerfCounter(pid, "vehicle", "cold");
+    }
 
     const cache = ensureVehicleDeployTimerHudForPlayer(player);
     if (!cache || !cache.root) return false;
@@ -1870,6 +1879,34 @@ function invalidateVehicleDeployTimerHudRenderSignaturesForAllPlayers(): void {
         const cache = caches[pidKey];
         if (!cache) continue;
         cache.lastRenderSignature = undefined;
+    }
+}
+
+function invalidateVehicleDeployTimerHudViewerCache(pid: number): void {
+    const cache = State.hudCache.vehicleDeployTimerCache[pid];
+    if (!cache) return;
+    cache.lastRenderSignature = undefined;
+    cache.lastVisibleState = undefined;
+    cache.lastCloseButtonVisible = undefined;
+    cache.lastCloseButtonVisualState = undefined;
+    cache.lastLiveTerminalChromeVisible = undefined;
+    for (let i = 0; i < cache.rows.length; i++) {
+        const row = cache.rows[i];
+        if (!row) continue;
+        row.lastVisibleState = undefined;
+        row.lastPlayerNameVisible = undefined;
+        row.lastSpawnButtonVisible = undefined;
+        row.lastGroundButtonVisible = undefined;
+        row.lastShowPlayerName = undefined;
+        row.lastShowSpawnButton = undefined;
+        row.lastShowGroundButton = undefined;
+        row.lastSpawnButtonVisualState = undefined;
+        row.lastGroundButtonVisualState = undefined;
+        if (row.timer) {
+            row.timer.lastVisibleState = undefined;
+            row.timer.lastStatusMode = undefined;
+            row.timer.lastDisplayedSeconds = undefined;
+        }
     }
 }
 

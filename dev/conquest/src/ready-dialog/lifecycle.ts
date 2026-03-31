@@ -120,6 +120,11 @@ function destroyReadyDialogUI(playerId: number): void {
         state.uiBuilt = false;
         state.adminPanelBuilt = false;
         state.dialogVisible = false;
+        state.readyDialogWarmPrimed = false;
+        state.readyDialogHotReady = false;
+        state.uiProductionMenusWarm = false;
+        state.uiPostDeployFinalizeActive = false;
+        state.uiJoinDeployLockActive = false;
         resetReadyDialogSectionSignaturesForPid(playerId);
     }
 }
@@ -133,6 +138,7 @@ function invalidateHiddenReadyDialogCacheForPid(playerId: number): void {
         resetReadyDialogSectionSignaturesForPid(playerId);
         return;
     }
+    incrementUiCachePerfCounter(playerId, "ready", "invalid");
     destroyReadyDialogUI(playerId);
 }
 
@@ -144,6 +150,38 @@ function invalidateHiddenReadyDialogCacheForAllPlayers(): void {
     }
 }
 
+// Refreshes every built ready-dialog cache in place after roster/player-count changes
+// so viewers keep warm shells instead of paying a broad destroy/rebuild cycle.
+function refreshBuiltReadyDialogCachesForAllPlayers(): void {
+    for (const pidStr in State.players.readyDialogData) {
+        const pid = Number(pidStr);
+        if (isPidDisconnected(pid)) continue;
+        const state = State.players.readyDialogData[pid];
+        if (!state || !state.uiBuilt) continue;
+        const viewer = safeFindPlayer(pid);
+        if (!viewer || !mod.IsPlayerValid(viewer)) continue;
+        refreshReadyDialogRosterForViewer(viewer, pid);
+        syncReadyToggleButtonWidgetsForPid(pid);
+        updateReadyDialogModeConfigForPid(pid);
+        updateReadyDialogMapLabelForPid(pid);
+    }
+}
+
+// Refreshes one player's hidden ready-dialog shell in place when it already exists,
+// otherwise builds the hidden shell once so future open stays on the cached reveal path.
+function refreshOrEnsureReadyDialogHiddenForPid(player: mod.Player, playerId: number): void {
+    const state = State.players.readyDialogData[playerId];
+    if (!state || state.dialogVisible) return;
+    if (isReadyDialogUiCacheUsableForPid(playerId)) {
+        refreshReadyDialogRosterForViewer(player, playerId);
+        syncReadyToggleButtonWidgetsForPid(playerId);
+        updateReadyDialogModeConfigForPid(playerId);
+        updateReadyDialogMapLabelForPid(playerId);
+        return;
+    }
+    ensureReadyDialogUiBuiltHidden(player);
+}
+
 // Rebuilds one hidden ready-dialog cache ahead of user open so cached reveal stays fast.
 function warmHiddenReadyDialogCacheForPid(playerId: number): void {
     const state = State.players.readyDialogData[playerId];
@@ -152,6 +190,14 @@ function warmHiddenReadyDialogCacheForPid(playerId: number): void {
     const player = safeFindPlayer(playerId);
     if (!player || !mod.IsPlayerValid(player)) return;
     ensureReadyDialogUiBuiltHidden(player);
+}
+
+// Returns true when the hidden ready-dialog shell is already built for the current layout version.
+function isReadyDialogUiCacheUsableForPid(playerId: number): boolean {
+    const state = State.players.readyDialogData[playerId];
+    if (!state || state.uiBuilt !== true) return false;
+    if (state.uiLayoutVersion !== READY_DIALOG_LAYOUT_VERSION) return false;
+    return !!safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId);
 }
 
 //#endregion ----------------- Ready Dialog Lifecycle --------------------

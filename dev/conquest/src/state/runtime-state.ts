@@ -229,6 +229,7 @@ const State: GameState = {
     admin: {
         actionCount: 0,
         debugLoopActive: false,
+        uiCachePerfVisible: true,
     },
     players: {
         readyDialogData: {},
@@ -243,6 +244,7 @@ const State: GameState = {
         armG: {},
         armL: {},
         armS: {},
+        uiCachePerfByPid: {},
         deployedByPid: {},
         disconnectedByPid: {},
         uiInputEnabledByPid: {},

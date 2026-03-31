@@ -72,6 +72,15 @@ function refreshReadyDialogSectionsWhileHidden(
     // so next open rebuilds fresh instead of relabeling a stale cached tree here.
 }
 
+// Refreshes the actual ready-dialog content path while the loading gate is still blocking,
+// so the first player-visible open pays roster/config/map update cost during the lock instead of on click.
+function refreshReadyDialogSectionsForWarmPrime(eventPlayer: mod.Player, playerId: number): void {
+    refreshReadyDialogRosterForViewer(eventPlayer, playerId);
+    syncReadyToggleButtonWidgetsForPid(playerId);
+    updateReadyDialogModeConfigForPid(playerId);
+    updateReadyDialogMapLabelForPid(playerId);
+}
+
 // Ensures the ready-dialog tree exists in a hidden state so later open paths can stay near-pure reveal.
 function ensureReadyDialogUiBuiltHidden(eventPlayer: mod.Player): mod.UIWidget | undefined {
     const playerId = mod.GetObjId(eventPlayer);
@@ -79,6 +88,14 @@ function ensureReadyDialogUiBuiltHidden(eventPlayer: mod.Player): mod.UIWidget |
     const state = State.players.readyDialogData[playerId];
     const existingBase = safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId) as mod.UIWidget | undefined;
     if (!state?.uiBuilt || !existingBase || state.uiLayoutVersion !== READY_DIALOG_LAYOUT_VERSION) {
+        const readyCounters = State.players.uiCachePerfByPid[playerId]?.ready;
+        const hadPriorReadyBuild = !!(
+            state?.uiBuilt
+            || existingBase
+            || (readyCounters && ((readyCounters.built > 0) || (readyCounters.rebuilt > 0)))
+        );
+        if (hadPriorReadyBuild) incrementUiCachePerfCounter(playerId, "ready", "rebuilt");
+        else incrementUiCachePerfCounter(playerId, "ready", "built");
         createReadyDialogUI(eventPlayer, false);
     }
     return safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId) as mod.UIWidget | undefined;
@@ -87,6 +104,9 @@ function ensureReadyDialogUiBuiltHidden(eventPlayer: mod.Player): mod.UIWidget |
 // Shows the ready dialog from the builder-owned lifecycle path after ensuring the hidden tree already exists.
 function showReadyDialogUI(eventPlayer: mod.Player): mod.UIWidget | undefined {
     const playerId = mod.GetObjId(eventPlayer);
+    if (!isReadyDialogUiCacheUsableForPid(playerId)) {
+        incrementUiCachePerfCounter(playerId, "ready", "cold");
+    }
     const dialogRoot = ensureReadyDialogUiBuiltHidden(eventPlayer);
     if (!dialogRoot) return undefined;
     refreshReadyDialogSectionsWhileHidden(eventPlayer, playerId, dialogRoot as mod.UIWidget);
@@ -94,6 +114,36 @@ function showReadyDialogUI(eventPlayer: mod.Player): mod.UIWidget | undefined {
     finalizeReadyDialogVisibility(eventPlayer, playerId, dialogRoot as mod.UIWidget, true);
     markReadyDialogLayoutBuilt(playerId);
     return dialogRoot as mod.UIWidget;
+}
+
+// Performs the actual ready-dialog open path while the loading gate is active:
+// refresh the real content, enable UI input mode, show the dialog, wait frames, then hide and restore input mode.
+async function primeReadyDialogRevealWhileBlocked(eventPlayer: mod.Player): Promise<void> {
+    const playerId = mod.GetObjId(eventPlayer);
+    const state = State.players.readyDialogData[playerId];
+    if (!state || state.readyDialogWarmPrimed === true) return;
+    setUIInputModeForPlayer(eventPlayer, true);
+    refreshReadyDialogSectionsForWarmPrime(eventPlayer, playerId);
+    const dialogRoot = showReadyDialogUI(eventPlayer);
+    if (!dialogRoot) {
+        setUIInputModeForPlayer(eventPlayer, false);
+        return;
+    }
+    await mod.Wait(0);
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    refreshReadyDialogSectionsForWarmPrime(eventPlayer, playerId);
+    showReadyDialogUI(eventPlayer);
+    await mod.Wait(0);
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    hideReadyDialogUI(eventPlayer);
+    await mod.Wait(0);
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    hideReadyDialogUI(eventPlayer);
+    await mod.Wait(0);
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    setUIInputModeForPlayer(eventPlayer, false);
+    state.dialogVisible = false;
+    state.readyDialogWarmPrimed = true;
 }
 
 // Legacy function name is preserved to avoid call-site churn.

@@ -1,7 +1,7 @@
 # Conquest Issues
 
-Last Updated: 2026-03-28  
-Last Tested Build: `v0.873` (main-base ready/deploy world terminals functional; live deploy menu functional; passive deployed vehicle HUD refresh fixed after config apply)
+Last Updated: 2026-03-31  
+Last Tested Build: `v1.008` (rolled back the staged team-swap loading-session changes introduced after `v1.004`; team-swap is back on the pre-redesign baseline)
 
 ## Current Snapshot
 - `CQ_Bug_1`: Resolved
@@ -28,6 +28,410 @@ Last Tested Build: `v0.873` (main-base ready/deploy world terminals functional; 
 - `CQ_Bug_22`: Resolved
 - `CQ_Bug_23`: Resolved
 - `CQ_Bug_24`: Resolved
+- `CQ_Bug_25`: Open (active investigation)
+- `CQ_Bug_26`: Open (active investigation)
+- `CQ_Bug_27`: Open (active investigation)
+- `CQ_Bug_28`: Open (active investigation)
+- `CQ_Bug_29`: Open (needs repro)
+- `CQ_Bug_30`: Open (active investigation)
+- `CQ_Bug_31`: Open (active investigation)
+
+## CQ_Bug_31
+Title: Runtime Errors After Gadget Locker / Deploy Interaction
+
+Observed:
+- Screenshot reference:
+  - `bf6-portal/dev/conquest/reference_design_documentation/testing_images/20260329161017_1.jpg`
+- At least two runtime errors were observed in the same failure window.
+- One appears related to the gadget locker path:
+  - cooldown
+  - charges
+  - button state
+  - or countdown state ownership
+- Another appears likely related to deploy behavior.
+- One observed engine error mentions `UnspawnObject`, but the exact ownership path is not yet confirmed.
+
+Expected:
+- Gadget locker interaction should not emit runtime errors while updating charges, cooldowns, or button states.
+- Ground/air deploy actions should not produce cleanup or unspawn errors during ordinary use.
+
+Status:
+- Open.
+- Active investigation.
+
+Current Best Read:
+- One issue is likely in the gadget locker UI/state path.
+- A second issue may be in ground or air deploy cleanup, but that remains an inference and is not yet confirmed.
+- Treat these as potentially separate failures until a shared repro proves otherwise.
+
+Recommended Later Investigation:
+- Reproduce with admin log visible and note the exact user action immediately before each error.
+- Separate:
+  - gadget locker click / cooldown update
+  - ground deploy
+  - air deploy
+- Confirm whether `UnspawnObject` is tied to deploy cleanup, world interactables, or a stale UI/widget ownership path.
+
+## CQ_Bug_30
+Title: First-Time Menu Creation Causes Noticeable Hitching / Delay
+
+Observed:
+- Menus are lagged and delayed when players are loading into them for the first time.
+- Once the major menus are cached and warmed, the script appears much more stable.
+- This hitching is most noticeable when one player is already using a menu and another player opens a different menu for the first time.
+- Latest playtest read with the `UI CACHE` panel during multiplayer stress:
+  - `Vehicle` commonly landed at `Built/Rebuilt 1/1`, `Cold/Invalid 0/1`
+  - `Ready` commonly landed at `Built/Rebuilt 2-3/0`, `Cold/Invalid 0/2`
+  - `Gadget` was the most stable at `Built/Rebuilt 1/0`, `Cold/Invalid 0/0`
+- The visible player experience is still unacceptable in bad cases:
+  - a player can see the script and menus loading in
+  - the first-use window can last roughly `10-15` seconds
+
+Expected:
+- Primary menus should already exist client-side before first deliberate interaction, so first opens should behave like reveals rather than cold builds.
+- Players should not be able to interact physically, open production menus, deploy, or otherwise advance into gameplay before the critical UI/menu warm path is complete.
+- Any temporary loading/lockout phase must be fail-safe:
+  - no permanent player lockout
+  - no infinite loading state if one warm/build step goes wrong
+  - late joiners and live-phase joiners must still transition cleanly into a playable state
+
+Status:
+- Open.
+- Active investigation.
+
+Current Best Read:
+- This is a UI lifecycle / warm-order / invalidation issue rather than a steady-state runtime issue.
+- Current likely candidate families:
+  - vehicle HUD family
+  - ready dialog
+  - gadget locker
+- The current problem is broader than one menu being slow.
+- The system still lacks a fully authoritative "player blocked until warm" contract, so players can reach production interaction states while caches are still being created.
+- Current code already has a partial deploy block / HUD-warm controller, but it currently proves only the critical HUD family and then lets deferred menu warm continue afterward.
+- That means the architecture still allows players to be released before all production menu families are actually warm and cache-usable.
+- Current playtests also suggest the gate is still releasing too early even after cache-usable checks pass:
+  - the visible reveal path can still settle after release
+  - the static HQ ready-dialog path can still feel cold on first use
+  - team-swap loading visibility can still flicker or disappear
+  - this suggests a missing second stage after deploy where deployed-only UI/runtime work still settles while the player is already free to move and interact
+- The likely next architecture direction is:
+  - extend the existing deploy-block / HUD-warm controller into a formal loading gate
+  - define readiness as script-authoritative global + per-player warm ownership
+  - block all production menu entry paths behind the same loading-state contract
+  - release player input/deploy only after:
+    - hidden warm is complete
+    - visible reveal is complete
+    - deploy is released
+    - post-deploy finalize is complete
+    - hot-open menu paths are primed
+    - or the timeout/fallback path fails over safely
+  - keep one idempotent release function so success and timeout use the same cleanup path
+- Latest confirmed playtest result:
+  - loading overlay timing is materially better on first join
+  - menus can feel hotter before the overlay clears
+  - but players are still not reliably prevented from deploying or moving while the loading gate is still active
+  - this means the next blocker is no longer just UI warm sequencing
+  - it is now a deploy/spawn gate correctness problem on first join
+- Verified local BF6 API position:
+  - per-player:
+    - `EnablePlayerDeploy(player, deployAllowed)`
+    - `SetRedeployTime(player, redeployTime)`
+    - `EnableAllInputRestrictions(player, restricted)`
+  - global:
+    - `SetSpawnMode(spawnModes)`
+  - current Conquest `src` does not call `SetSpawnMode(...)` / `AutoSpawn`
+- Current best interpretation of that combination:
+  - the remaining failure is likely in release timing or current deploy/spawn API usage
+  - not in a known global auto-spawn configuration
+- Latest confirmed evidence:
+  - the hard audit lock proved `EnablePlayerDeploy(player, false)` works in Conquest
+  - first-join screenshots through `v0.991` still show accepted deploy while the experience is not actually ready
+  - so the remaining bug is script-side early join release ownership, not API incapability
+  - later first-join testing showed undeploy-driven generic refresh warm could still preempt the join-owned loading session
+  - `v0.994` now adds a dedicated first-join deploy-lock latch so generic warm state and join deploy authority are separated in code
+  - `v1.003` now narrows Ready hotness ownership:
+    - pre-deploy warm only proves hidden Ready warmth
+    - deployed finalize refreshes hidden Ready state after spawn before movement release
+
+Implementation / Debugging Failures Observed:
+- Proven capability, weak conditional release:
+  - the hard lock / timed lock proofs worked
+  - this proves the BF6 deploy APIs are capable in this project
+  - the failures happened after conditional readiness was layered back in
+- Multiple concerns were mixed into one gate:
+  - deploy authority
+  - loading overlay lifecycle
+  - hidden UI warm
+  - visible reveal timing
+  - first Ready-open hotness
+  - this made it easy to "fix" one symptom while regressing another
+- Hidden cache warmth was treated as equivalent to real first-open readiness:
+  - hidden `uiBuilt`
+  - hidden prime/show-hide
+  - `readyDialogWarmPrimed`
+  - actual static HQ first open
+  - these are not the same thing and must not be collapsed into one flag
+- Overlay visibility was incorrectly used as truth:
+  - stale overlay could remain after release
+  - later, visible finalize code made the overlay disappear and then come back
+  - the overlay is presentation only; deploy authority must never depend on what the overlay appears to be doing on screen
+- A bad regression path was introduced in deployed finalize:
+  - finalize explicitly reasserted loading visuals after release
+  - finalize also visibly opened the Ready dialog
+  - this produced:
+    - loading UI returning after it had already hidden
+    - visible garbage / unknown strings in the Ready dialog
+  - this path is architecturally wrong and should not be reintroduced
+- Join-gate ownership drift happened repeatedly:
+  - generic warm / refresh paths
+  - undeploy handling
+  - join release
+  - deployed finalize
+  - all competed to decide whether the player was "ready"
+  - the result was early release, stale overlay state, or both
+- Documentation drift also contributed:
+  - some docs said first join must remain pre-deploy only
+  - other docs allowed a short post-deploy finalize
+  - that contradiction made it easier to rationalize the wrong implementation path
+- Debugging visibility was often poor:
+  - world-log messages were too transient
+  - overlay-projected debug was tied to the wrong surface
+  - temporary HUD debug helped more, but the core issue remained that the wrong state was being observed
+
+Latest Regression Evidence To Preserve:
+- Loading UI could hide and then come back.
+- Player could still deploy/move while the system was not truly ready.
+- Ready first-open still took roughly `2-3s` even after the lock period.
+- Visible post-deploy Ready prime produced garbage / unknown-string state and was not acceptable.
+
+Current Guardrail Before Further Work:
+- Do not reintroduce visible post-deploy loading or visible Ready-dialog priming.
+- Do not use overlay visibility as evidence that deploy should still be blocked or released.
+- Keep deploy authority, hidden warm readiness, and first real Ready-open latency as separate things in both code and debugging notes.
+- Locked next-step policy:
+  - do not continue broad loading-gate changes until the first-join deploy-release race is instrumented and understood
+  - do not revisit global spawn-mode changes without measured evidence
+  - keep the next implementation scoped to a small, commented first-join state machine:
+    - `beginJoinLoadingGate(...)`
+    - `holdPlayerAtDeploy(...)`
+    - `handlePlayerDeployedBeforeRelease(...)`
+    - `releaseJoinLoadingGate(...)`
+  - keep first join pre-deploy-first
+  - if the actual first Ready-open cost still only appears after spawn, use one short join-owned post-deploy finalize under full input restriction
+  - only `releaseJoinLoadingGate(...)` may authorize first-join deploy
+  - add a dedicated first-join deploy-lock latch that starts in `beginJoinLoadingGate(...)` and clears only in `releaseJoinLoadingGate(...)`
+  - no non-join path may clear that latch
+  - treat join release readiness as a multi-frame handshake instead of one optimistic poll:
+    - force widget visibility/build
+    - wait `1-2` frames
+    - write visibility/content again
+    - require several stable post-reveal polls before deploy release
+  - if the actual first Ready-open cost still only appears after spawn, first join may hand off into a short post-deploy finalize under full input restriction instead of freeing player movement immediately
+
+Newcomer Handoff / Resume-From-Here:
+- Current runtime baseline to resume from:
+  - `v1.008`
+  - team-swap staged loading-session work introduced in `v1.005-v1.007` has been rolled back
+  - treat `v1.005-v1.007` as failed experiments, not as valid design direction
+- What is currently true:
+  - first join still uses the conservative hybrid gate and remains architecturally incomplete
+  - team swap is back on the older baseline and still needs redesign
+  - Ready first-open latency is still unresolved
+- What is already proven:
+  - `EnablePlayerDeploy(player, false)` works in this project
+  - `EnableAllInputRestrictions(player, true)` works as the post-deploy movement lock
+  - the main unresolved problem is release ownership / readiness definition, not BF6 API absence
+- Proof timeline that should not be re-learned from scratch:
+  - `v0.982`
+    - hard audit lock proved deploy can be held indefinitely
+    - conclusion: deploy API works here
+  - `v0.997-v0.998`
+    - fixed `10s` then `30s` hard-lock proofs worked
+    - conclusion: deploy can be held and then released on demand
+  - `v0.999+`
+    - conservative hybrid gate with a minimum time floor improved safety
+    - conclusion: this is a temporary mask, not proof that readiness logic is correct
+  - `v1.003`
+    - visible post-deploy finalize and visible Ready priming caused major regressions
+    - conclusion: visible post-deploy loading / visible Ready prime is architecturally wrong for this project
+  - `v1.005-v1.007`
+    - staged team-swap loading-session attempt regressed into flicker / no-show / repeated ownership problems
+    - conclusion: that branch is failed architecture and was rolled back
+  - `v1.008`
+    - rollback baseline
+    - conclusion: resume redesign from here, not from the failed team-swap branch
+- Exact code files a newcomer should read first:
+  - `src/interaction/actions.ts`
+    - loading-session start/reassert/release ownership
+  - `src/interaction/hud-warm-state.ts`
+    - per-player loading state and trace fields
+  - `src/index/player-deploy.ts`
+    - deploy / undeploy / recapture / finalize behavior
+  - `src/index/player-join-leave.ts`
+    - join entry path
+  - `src/index/player-loop-inputs.ts`
+    - ongoing authority / recapture behavior
+  - `src/ready-dialog/dialog-build.ts`
+    - Ready warm/prime path
+  - `src/interaction/world-interactables.ts`
+    - static HQ Ready interaction entry path
+  - `src/interaction/interact-point.ts`
+    - shared Ready open path
+- What not to trust:
+  - any assumption that hidden cache existence equals real first-open hotness
+  - overlay visibility as evidence of deploy authority
+  - the reverted team-swap staged-release branch as a base for extension
+  - the current conservative first-join time floor as a finished design; it is only a temporary safety mask
+  - temporary debug surfaces as source-of-truth state; use them as hints only
+- Safest resume order:
+  1. instrument first-join deploy-release ownership cleanly
+  2. prove first-join deploy/movement authority end-to-end
+  3. instrument static HQ Ready first-open latency end-to-end
+  4. only then redesign team-swap loading from the older baseline
+- Suggested proof artifacts for the next engineer:
+  - one timeline table for first join
+  - one timeline table for static HQ Ready first open
+  - one list of exact show/hide owners for the loading overlay
+  - one list of exact deploy-enable owners
+- If a newcomer is unsure where to begin:
+  - begin in `src/interaction/actions.ts`
+  - identify every caller of:
+    - `showJoinPromptLoadingForPlayer(...)`
+    - `EnablePlayerDeploy(..., true)`
+    - `EnableAllInputRestrictions(..., false)`
+  - reduce those to explicit owners before changing behavior again
+
+Recommended Later Investigation:
+- Use the `UI CACHE` panel to identify which family is cold-building or rebuilding during the hitch window.
+- Re-test first-open behavior with multiple players while all current cache counters are visible.
+- Instrument the first-join deploy-release timeline specifically:
+  - record every place deploy is re-enabled for the player
+  - record whether `OnPlayerDeployed` fires while `!isUiLoadGateReleasedForPid(pid)`
+  - confirm whether the current undeploy fallback is actually winning the race
+- The staged team-swap loading-session attempt introduced after `v1.004` has been rolled back after repeated regressions.
+- Team-swap loading now needs redesign from the earlier baseline rather than incremental extension of the failed staged-release attempt.
+
+## CQ_Bug_29
+Title: Teleport While Live May Cause Performance Degradation
+
+Observed:
+- There is a suspected performance impact when a player is teleported while live.
+- Repro is currently unclear.
+
+Expected:
+- Teleporting a live player should not create a noticeable script hitch or broader runtime degradation.
+
+Status:
+- Open.
+- Needs repro.
+
+Current Best Read:
+- This is not isolated enough to assign to one subsystem yet.
+- Likely candidates include:
+  - HUD/viewer refresh churn
+  - vehicle/menu ownership changes
+  - deployment-state transitions
+
+Recommended Later Investigation:
+- Capture a clean repro sequence with:
+  - teleport source state
+  - destination state
+  - whether a menu was open
+  - whether the player was in a vehicle
+  - whether any cache counters changed at the same time
+
+## CQ_Bug_28
+Title: Air Deploy Can Spawn Player On Ground With Wrong Rotation
+
+Observed:
+- Air deploy can place the player on the ground instead of in the intended air spawn state.
+- When this happens, the player rotation is also wrong.
+
+Expected:
+- Air deploy should spawn in the authored air state with the intended orientation.
+
+Status:
+- Open.
+- Active investigation.
+
+Current Best Read:
+- This is likely in the spawn transform / spawn mode application path, not a UI-only problem.
+- Rotation and altitude failures should be treated as one deploy contract bug until proven otherwise.
+
+Recommended Later Investigation:
+- Reproduce across the authored air-deploy locations and compare:
+  - expected transform
+  - actual transform
+  - actual player orientation
+
+## CQ_Bug_27
+Title: Passive Vehicle Display Shows Zeroes For Empty Top Slots On Start
+
+Observed:
+- On round start, the passive vehicle display can show `0` values for the top four vehicle spots even when there are no active vehicles in those slots.
+
+Expected:
+- Empty vehicle slots should show the intended idle/empty state, not misleading zero values.
+
+Status:
+- Open.
+- Active investigation.
+
+Current Best Read:
+- This is likely a vehicle HUD row-state initialization problem rather than a late-match degradation.
+- The affected path appears limited to passive display startup state.
+
+Recommended Later Investigation:
+- Compare initial passive row state before and after the first active vehicle enters one of those slots.
+- Verify whether row render defaults are being projected before authoritative slot state is available.
+
+## CQ_Bug_26
+Title: Passive Vehicle Menu Can Stay Hidden After Opening Live Air Deploy Menu
+
+Observed:
+- Opening the live air deploy menu can make the passive vehicle menu disappear.
+- After that, the passive menu stays hidden until another menu is opened and closed, such as the ready dialog.
+
+Expected:
+- Closing or leaving the live deploy menu should restore the passive vehicle display immediately when that player still owns the passive vehicle HUD surface.
+
+Status:
+- Open.
+- Active investigation.
+
+Current Best Read:
+- This is likely another reveal-owner / visibility restoration issue inside the shared vehicle HUD family.
+- The passive and live variants likely disagree on who is responsible for the final reveal after the live menu closes.
+
+Recommended Later Investigation:
+- Reproduce by:
+  - observing passive vehicle HUD
+  - opening live air deploy menu
+  - closing it without further menu interaction
+- Verify whether passive row state still exists but remains hidden, or whether the passive content is also stale.
+
+## CQ_Bug_25
+Title: Main-Base / World Icons Still Fail Per-Player Distance And Visibility Ownership
+
+Observed:
+- Icons only appear correctly for the first player.
+- They are not showing uniquely per player.
+- Distance behavior is also wrong; visibility is not resolving correctly by each player's local position/state.
+
+Expected:
+- World icons should resolve independently per player, including distance gating and visibility state, instead of inheriting the first player's outcome.
+
+Status:
+- Open.
+- Active investigation.
+
+Current Best Read:
+- The current icon ownership path is still not truly per-player.
+- This is likely a world-icon visibility/ownership contract problem, not a simple placement bug.
+
+Recommended Later Investigation:
+- Reproduce with at least two players at different distances and team contexts.
+- Confirm whether the first player to enter the relevant state is effectively becoming the authority for icon visibility.
 
 ## CQ_Bug_24
 Title: Passive Deployed Vehicle HUD Failed To Refresh After Config Apply

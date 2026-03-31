@@ -10,6 +10,18 @@ interface ReadyDialogInteractConfig {
     velocityThreshold: number;
 }
 
+type UiLoadReason = "join" | "team_swap" | "refresh";
+
+// Temporary audit mode requested by the user: no human player should ever be allowed to deploy,
+// and any player that still reaches the world must be frozen and pushed back out immediately.
+const HARD_PLAYER_LOCK_AUDIT_MODE = false;
+// Conservative first-join gate mode:
+// keep deploy owned by one join-only release path, hold for a minimum blocked window,
+// warm UI in the background, then release or fall back after the hard timeout.
+const JOIN_CONSERVATIVE_FIRST_JOIN_GATE_MODE = true;
+const JOIN_CONSERVATIVE_FIRST_JOIN_MIN_LOCK_SECONDS = 15;
+const JOIN_CONSERVATIVE_FIRST_JOIN_FALLBACK_SECONDS = 30;
+
 interface readyDialogData_t {
     interactPoint: mod.InteractPoint | null;
     lastDeployTime: number;
@@ -27,6 +39,24 @@ interface readyDialogData_t {
     hudWarmCompleted: boolean;
     hudSwapTransitionActive: boolean;
     combatHudRevealAllowed: boolean;
+    uiLoadGateActive: boolean;
+    uiLoadGateReleased: boolean;
+    uiLoadSessionId: number;
+    uiLoadReason: UiLoadReason;
+    uiLoadOverlayShown: boolean;
+    uiCriticalRevealCompleted: boolean;
+    uiProductionMenusWarm: boolean;
+    uiPostDeployFinalizeActive: boolean;
+    uiJoinDeployLockActive: boolean;
+    uiSlipUndeployLastAttemptAt: number;
+    uiLoadDeployEnabled: boolean;
+    uiLoadDeployAuthorized: boolean;
+    uiLoadInputRestricted: boolean;
+    uiLoadLastEventDebugCode: number;
+    uiLoadTrace: string[];
+    readyDialogWarmPrimed: boolean;
+    readyDialogHotReady: boolean;
+    gadgetMenuHotReady: boolean;
     lastButtonSignature: string;
     lastRosterSignature: string;
     lastModeConfigSignature: string;

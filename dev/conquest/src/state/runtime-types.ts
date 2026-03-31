@@ -372,6 +372,7 @@ interface GameState {
     admin: {
         actionCount: number;
         debugLoopActive: boolean;
+        uiCachePerfVisible: boolean;
     };
     players: {
         // Property name is retained because existing UI/interaction modules still use it.
@@ -401,6 +402,26 @@ interface GameState {
             rgN: number;
             rgS: number;
         }>>;
+        uiCachePerfByPid: Record<number, {
+            vehicle: {
+                built: number;
+                rebuilt: number;
+                cold: number;
+                invalid: number;
+            };
+            ready: {
+                built: number;
+                rebuilt: number;
+                cold: number;
+                invalid: number;
+            };
+            gadget: {
+                built: number;
+                rebuilt: number;
+                cold: number;
+                invalid: number;
+            };
+        }>;
         deployedByPid: Record<number, boolean>;
         disconnectedByPid: Record<number, boolean>;
         uiInputEnabledByPid: Record<number, boolean>;

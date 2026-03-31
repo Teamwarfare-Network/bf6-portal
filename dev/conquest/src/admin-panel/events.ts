@@ -149,6 +149,18 @@ function tryHandleAdminTesterButtonEvent(
     );
     if (resetGadgetTimersHandled !== undefined) return resetGadgetTimersHandled;
 
+    const uiCachePerfHandled = tryHandleAdminPanelPrimaryAction(
+        playerId,
+        widgetName,
+        eventUIButtonEvent,
+        UI_TEST_BUTTON_UI_CACHE_PERF_TOGGLE_ID,
+        () => {
+            setUiCachePerfPanelEnabled(!isUiCachePerfPanelEnabled());
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.uiCachePerfToggle);
+        }
+    );
+    if (uiCachePerfHandled !== undefined) return uiCachePerfHandled;
+
     const matchLengthDecHandled = tryHandleAdminPanelPrimaryAction(
         playerId,
         widgetName,
@@ -190,6 +202,7 @@ function tryHandleAdminTesterButtonEvent(
         case UI_TEST_BUTTON_POS_DEBUG_ID + playerId:
         case UI_TEST_BUTTON_DEPLOY_TIMERS_TOGGLE_ID + playerId:
         case UI_TEST_BUTTON_RESET_GADGET_TIMERS_ID + playerId:
+        case UI_TEST_BUTTON_UI_CACHE_PERF_TOGGLE_ID + playerId:
         case UI_ADMIN_MATCH_LENGTH_DEC_ID + playerId:
         case UI_ADMIN_MATCH_LENGTH_INC_ID + playerId:
             return true;

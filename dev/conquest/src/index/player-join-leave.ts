@@ -8,12 +8,13 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return;
 
+    resetUiCachePerfCountersForPid(pid);
     setUIInputModeForPlayer(player, false);
     resetVehicleDeployLiveMenuStateForPid(pid);
     resetArmState(pid);
     cleanupWorldInteractableRuntimeIconsForPid(pid);
     clearJoinPromptForPlayerId(pid);
-    hideReadyDialogUI(player);
+    hideReadyDialogUI(pid);
     destroyArmMenu(pid);
 
     const deleteAllByName = (name: string, maxPasses: number = 64): void => {
@@ -53,6 +54,7 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
     deleteAllByName(`Container_ReadyStatus_${pid}`);
     deleteAllByName(`ReadyStatusText_${pid}`);
     deleteVehicleDeployTimerHudArtifactsForPid(pid);
+    delete State.hudCache.vehicleDeployTimerCache[pid];
     destroyArmMenu(pid);
     destroyBoundaryPromptUiForPid(pid);
 }
@@ -139,11 +141,13 @@ function cleanupHudForPid(pid: number): void {
     delete State.conquest.debug.hudClockVmByPid[pid];
 }
 
+// Starts the first-join loading session immediately, then keeps deploy blocked until the join-owned warm/reveal path explicitly releases it.
 async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     initReadyDialogData(eventPlayer);
     const joinPid = safeGetPlayerId(eventPlayer);
     const wasDisconnected = joinPid !== undefined && State.players.disconnectedByPid[joinPid] === true;
     if (joinPid !== undefined) {
+        beginJoinLoadingGate(eventPlayer, joinPid);
         resetPlayerBoundaryStateOnUndeployOrReset(joinPid, true);
         delete State.players.disconnectedByPid[joinPid];
         State.players.deployedByPid[joinPid] = false;
@@ -161,17 +165,18 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
         conquestPhase2BOnPlayerJoin(joinPid, wasDisconnected);
     }
 
-    invalidateHiddenReadyDialogCacheForAllPlayers();
-
     await mod.Wait(0.1);
     if (!mod.IsPlayerValid(eventPlayer)) return;
 
     resetUiForPlayerOnJoin(eventPlayer);
-    await warmCriticalHudForPlayer(eventPlayer, {
-        refreshReadyDialogs: true,
-    });
-    ensureReadyDialogUiBuiltHidden(eventPlayer);
-    replayActiveMapValidationWarningsToPlayer(eventPlayer);
+    if (joinPid !== undefined && mod.IsPlayerValid(eventPlayer)) {
+        reassertPlayerUiLoadingGateVisuals(eventPlayer, joinPid);
+        if (JOIN_CONSERVATIVE_FIRST_JOIN_GATE_MODE) {
+            await runJoinLoadingGateWithConservativeRelease(eventPlayer, joinPid);
+        } else {
+            await runJoinLoadingGateUntilReady(eventPlayer, joinPid);
+        }
+    }
 }
 
 function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
@@ -202,6 +207,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.armO[pid];
     delete State.players.armI[pid];
     delete State.players.armS[pid];
+    delete State.players.uiCachePerfByPid[pid];
     cleanupWorldInteractableRuntimeIconsForPid(pid);
     delete State.players.posDebugTransformSourceByPid[pid];
     delete State.players.posDebugVehicleObjIdByPid[pid];
@@ -209,7 +215,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.deployedByPid[pid];
     conquestPhase2BOnPlayerLeave(pid);
     delete State.players.readyDialogData[pid];
-    invalidateHiddenReadyDialogCacheForAllPlayers();
+    refreshBuiltReadyDialogCachesForAllPlayers();
     clearJoinPromptForPlayerId(pid);
 
     if (!isMatchLive()) {

@@ -1,6 +1,6 @@
 # TWL Conquest Design and Implementation Plan
 
-Last updated: 2026-03-26  
+Last updated: 2026-03-30  
 Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
 
 ## Current Status
@@ -14,6 +14,10 @@ Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
   - Phase 4, 4B: completed and accepted at the current multiplayer-tested checkpoint
   - Phase 5A-5G: completed and accepted as the current Phase 5 vehicle/UI baseline; remaining polish, validation depth, and follow-up bugs are intentionally deferred to later polish/Phase 10 and `design_doc/conquest_issues.md`
 - Current next implementation target:
+  - Immediate priority before remaining Phase 6/7/8/9 feature work:
+    - UI/menu lifecycle hardening
+    - first-use performance stabilization
+    - explicit loading/warm-gate design so players do not reach production interaction while critical UI families are still building
   - Phase 7 pre/post-match events, once the current Phase 6 boundary tuning/validation pass is accepted
   - Phase 7 should start with the core end-flow/result/join-prompt/reset-setup slice; optional world-interactable terminal extensions should not block that start
   - Spawn behavior and restrictions are now intentionally deferred into dedicated Phase 8 after Phase 7
@@ -30,6 +34,7 @@ Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
 ## Table Of Contents
 
 - [Phase 1: Foundation and Wiring](#phase-1)
+- [Current Design Change List](#current-design-change-list)
 - [Phase 2A: Capture Backbone + Tickets Core](#phase-2a)
 - [Phase 2B: Spawn-Charge Matrix and Diagnostics](#phase-2b)
 - [Phase 3A: Flag UI + Color Contract](#phase-3a)
@@ -67,6 +72,155 @@ Current workflow for this document:
 4. Implement and validate work phase by phase.
 5. Record closeout decisions, deferred risks, and carry-forward validation notes here.
 6. Move superseded planning documents into archive once their still-true guidance is merged here.
+
+## Current Design Change List
+
+- Design Change:
+  - If the game detects a production menu open state, such as:
+    - gadget locker
+    - ready dialog via world interactable
+    - vehicle menu
+  - then the triple-tap `E` detector should abandon spawning a separate interact event for that same player/input window.
+  - Rationale:
+    - avoid overlapping menu-open ownership
+    - reduce accidental duplicate interaction paths
+    - keep menu entry authority with the currently detected production UI owner
+  - Status:
+    - accepted design direction
+    - implementation pending
+- Design Change:
+  - Add an explicit loading/warm gate for critical UI/menu families.
+  - While that gate is active, the player should not be able to:
+    - deploy
+    - open production menus
+    - bypass entry via alternate interaction paths
+  - The gate must be fail-safe:
+    - no permanent lockout
+    - no indefinite loading if one warm step fails
+    - deterministic release behavior for:
+      - first join
+      - late join
+      - late join while match is already live
+      - team swap / redeploy warm transitions
+  - Rationale:
+    - current playtest evidence shows players can still see and feel menu/UI creation during the first-use window
+    - functionality and clean lifecycle ownership matter more than exposing interaction early while the system is still warming
+  - Implementation direction:
+    - extend the existing deploy-block / HUD-warm controller rather than introducing a second parallel loading system
+    - define readiness as script-authoritative, not engine-authoritative:
+      - global bootstrap ready
+      - per-player critical UI families warm and cache-usable
+    - critical release families currently include:
+      - top HUD shell
+      - combat HUD
+      - vehicle HUD family
+      - ready dialog hidden shell
+      - gadget locker hidden shell
+    - admin panel remains outside the release requirement because it is lowest-priority and intentionally allowed to stay lazy in worst-case timing
+    - one idempotent release path must own:
+      - hiding the loading overlay
+      - re-enabling deploy / restoring normal interaction
+      - clearing any temporary restrictions
+      - preventing double-release bugs
+  - success criteria must be explicit readiness flags and cache-usable checks, not a blind fixed delay
+  - cache-usable hidden UI alone is not a sufficient release signal:
+    - the player-visible reveal path must complete
+    - the first deliberate menu-open paths must be primed/hot before release
+  - deploy lock should be owned primarily by the deploy-availability controller; optional input restriction is only secondary polish for brief post-deploy settle windows
+    - one fail-safe timeout path must always release the player even if one warm step misbehaves
+    - fallback behavior should degrade gracefully:
+      - release the player into gameplay when critical families are ready or timeout is reached
+      - keep any still-cold non-critical menu path blocked until it finishes warming
+    - all production menu entry points must consult the same loading-state contract:
+      - ready dialog
+      - gadget locker
+      - live deploy menu
+      - world-interactable menu paths
+      - triple-tap `E`
+    - prefer a lightweight persistent loading overlay over transient notification messages so the player sees one stable state instead of trickling menu construction
+  - Status:
+    - accepted design direction
+    - partially implemented
+    - active hardening in progress
+  - Current hardening direction:
+    - treat loading as an explicit per-player session
+    - track more than `active/released`
+    - minimum state to track:
+      - loading session id / reason
+      - overlay shown for current session
+      - critical HUD reveal complete
+      - production-menu hidden warm complete
+      - post-deploy finalize active
+      - ready-dialog hot-open ready
+      - gadget-menu hot-open ready
+      - released
+    - release order must be:
+      - hidden warm complete
+      - visible reveal complete
+      - deploy release
+      - post-deploy finalize
+      - then full interaction release
+    - this is required because playtests have shown that:
+      - a cache can be technically usable
+      - while the player still sees popping / delayed first-open behavior
+  - Current verified API position:
+    - per-player controls:
+      - `EnablePlayerDeploy(player, deployAllowed)`
+      - `SetRedeployTime(player, redeployTime)`
+      - `EnableAllInputRestrictions(player, restricted)`
+    - global control:
+      - `SetSpawnMode(spawnModes)`
+    - current Conquest `src` does not call `SetSpawnMode(...)` / `AutoSpawn`
+  - Current verified gap after latest playtests:
+    - loading overlay timing is improving
+    - but first-join deploy and movement are still not authoritatively blocked in practice
+    - this means the remaining problem is not just UI warm ownership
+    - it is now a first-join deploy/spawn gate correctness problem
+  - Immediate next investigation order:
+    - instrument the first-join deploy-release timeline
+    - record every place deploy is re-enabled for the player
+    - confirm whether `OnPlayerDeployed` can still arrive while the loading gate says unreleased
+    - confirm whether the undeploy fallback is losing a race after deployment
+  - Anti-drift implementation constraints:
+    - first-join deploy authority must be proven before team-swap parity work resumes
+    - the next pass should be instrumentation-first, not another speculative behavior change
+    - do not reintroduce global spawn-mode changes unless measured evidence proves they are required
+    - the first-join loading path should be implemented as a small, commented state machine with four clear ownership functions:
+      - `beginJoinLoadingGate(...)`
+      - `holdPlayerAtDeploy(...)`
+      - `handlePlayerDeployedBeforeRelease(...)`
+      - `releaseJoinLoadingGate(...)`
+    - first join must remain a single-stage pre-deploy gate
+    - first join should prefer a single-stage pre-deploy gate, but if the real first-open cost still only exists after spawn then it may hand off into a short post-deploy finalize under full input restriction
+    - generic HUD/menu warm helpers may contribute readiness signals, but they must not authorize join deploy release
+    - only `releaseJoinLoadingGate(...)` may flip join deploy authorization to on
+    - first join must also own a dedicated deploy-lock latch that is set at join start and cleared only by `releaseJoinLoadingGate(...)`
+    - no non-join warm, refresh, undeploy, or finalize path may clear that join deploy-lock latch
+    - the debugging trace for first-join must capture:
+      - `OnPlayerJoinGame`
+      - every deploy enable/disable transition
+      - `OnPlayerDeployed`
+      - `OnPlayerUndeploy`
+      - input restriction on/off
+      - forced undeploy attempts
+    - the first-join contract is not considered proven until the trace shows:
+      - deploy stays disabled until intended release
+      - or, if deployment still occurs, the player is immediately frozen and recaptured
+      - and no alternate path re-enables deploy early
+    - latest confirmed interpretation after `v0.989`:
+      - the BF6 deploy APIs are working
+      - the remaining leak is script-side early join release ownership
+      - fix the release owner, not the API choice
+    - latest confirmed interpretation after `v0.993`:
+      - undeploy-driven generic refresh warm was still able to preempt the first-join session
+      - the next hardened implementation must therefore separate:
+        - join deploy-lock ownership
+        - generic warm/reveal readiness
+    - latest confirmed redesign rule after the `v1.005-v1.008` rollback:
+      - loading-overlay lifecycle must have exactly one show owner and one hide owner per session
+      - no wait loop, undeploy hook, or recapture helper may call the same overlay show path again once the session is active
+      - deploy authority and overlay visibility are related, but they are not the same state and must not share the same helper by default
+      - team swap should not be re-added by incrementally extending the failed staged-release attempt; it needs a fresh design pass from the earlier baseline
 
 ## Notes Before Implementation Phases
 

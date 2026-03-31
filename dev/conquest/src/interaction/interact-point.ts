@@ -3,19 +3,25 @@
 
 //#region -------------------- Ready Dialog Interact Point --------------------
 
+const READY_DIALOG_INTERACT_GROUND_POLL_SECONDS = 0.05;
+
 async function spawnReadyDialogInteractPoint(eventPlayer: mod.Player) {
     if (!isPlayerDeployed(eventPlayer)) return;
     const playerId = mod.GetObjId(eventPlayer);
     if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
+    if (isUiInteractionBlockedForPid(playerId)) return;
 
     if (
         State.players.readyDialogData[playerId].interactPoint === null &&
         READY_DIALOG_INTERACT_CONFIG.enableReadyDialog
     ) {
+        // Reassert the hidden dialog cache before any ground-wait so the eventual open path stays on the hot reveal branch.
+        warmHiddenReadyDialogCacheForPid(playerId);
+
         let isOnGround = safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsOnGround);
 
         while (!isOnGround) {
-            await mod.Wait(0.2);
+            await mod.Wait(READY_DIALOG_INTERACT_GROUND_POLL_SECONDS);
             if (!isPlayerDeployed(eventPlayer)) return;
             isOnGround = safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsOnGround);
         }
@@ -28,11 +34,6 @@ async function spawnReadyDialogInteractPoint(eventPlayer: mod.Player) {
             mod.Add(playerPosition, playerFacingDirection),
             mod.CreateVector(0, 1.5, 0)
         );
-
-        // Keep dialog open responsive: if the hidden cache was invalidated, rebuild it here
-        // before the interact point becomes usable rather than during the user's open action.
-        warmHiddenReadyDialogCacheForPid(playerId);
-        await mod.Wait(0);
 
         const interactPoint: mod.InteractPoint = mod.SpawnObject(
             mod.RuntimeSpawn_Common.InteractPoint,
@@ -49,9 +50,14 @@ async function spawnReadyDialogInteractPoint(eventPlayer: mod.Player) {
 // Opens the ready dialog through the single shared UI path and restores local input state on failure.
 function tryOpenReadyDialogForPlayer(eventPlayer: mod.Player): boolean {
     const playerId = mod.GetObjId(eventPlayer);
+    if (isUiInteractionBlockedForPid(playerId)) return false;
     try {
-        closeArmMenu(playerId);
-        closeVehicleDeployLiveMenuForPlayer(playerId);
+        if (isArmOpen(playerId)) {
+            closeArmMenu(playerId);
+        }
+        if (isVehicleDeployLiveMenuOpenForPid(playerId)) {
+            closeVehicleDeployLiveMenuForPlayer(playerId);
+        }
         setUIInputModeForPlayer(eventPlayer, true);
         updateHelpTextVisibilityForPid(playerId);
         const dialogRoot = showReadyDialogUI(eventPlayer);
@@ -156,6 +162,24 @@ function initReadyDialogData(eventPlayer: mod.Player) {
         hudWarmCompleted: false,
         hudSwapTransitionActive: false,
         combatHudRevealAllowed: false,
+        uiLoadGateActive: false,
+        uiLoadGateReleased: false,
+        uiLoadSessionId: 0,
+        uiLoadReason: "refresh",
+        uiLoadOverlayShown: false,
+        uiCriticalRevealCompleted: false,
+        uiProductionMenusWarm: false,
+        uiPostDeployFinalizeActive: false,
+        uiJoinDeployLockActive: false,
+        uiSlipUndeployLastAttemptAt: -1,
+        uiLoadDeployEnabled: false,
+        uiLoadDeployAuthorized: false,
+        uiLoadInputRestricted: false,
+        uiLoadLastEventDebugCode: 0,
+        uiLoadTrace: [],
+        readyDialogWarmPrimed: false,
+        readyDialogHotReady: false,
+        gadgetMenuHotReady: false,
         lastButtonSignature: "",
         lastRosterSignature: "",
         lastModeConfigSignature: "",

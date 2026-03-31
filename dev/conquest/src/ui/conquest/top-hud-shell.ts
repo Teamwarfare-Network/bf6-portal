@@ -59,6 +59,8 @@ function bindTopHudShellRefsByName(pid: number, refs: TopHudShellRefs): void {
     refs.topCenterAuxRoot = safeFind(`ConquestTopCenterAuxRoot_${pid}`);
     refs.helpTextContainer = safeFind(`Container_HelpText_${pid}`);
     refs.adminPanelActionCountText = safeFind(`AdminPanelActionCount_${pid}`);
+    bindUiCachePerfPanelRefsByName(pid, refs);
+    bindUiLoadDebugPanelRefsByName(pid, refs);
     bindVictoryDialogRefsByName(pid, refs);
 }
 
@@ -89,6 +91,8 @@ function hasCriticalTopHudShellRefs(refs: TopHudShellRefs | undefined): boolean 
 // Removes shell-only widgets before a deterministic shell rebuild without touching combat HUD ownership.
 function purgeTopHudShellArtifactsForPid(pid: number): void {
     deleteAllTopHudShellWidgetsByName(`AdminPanelActionCount_${pid}`);
+    deleteUiCachePerfWidgetsForPid(pid);
+    deleteUiLoadDebugWidgetsForPid(pid);
     deleteAllTopHudShellWidgetsByName(`VictoryDialogRoot_${pid}`);
 }
 
@@ -102,6 +106,10 @@ function ensureTopHudShellForPlayer(player: mod.Player): TopHudShellRefs | undef
     if (cached) {
         bindTopHudShellRefsByName(pid, cached);
         if (hasTopLeftHudShellRefs(cached)) {
+            if (!cached.adminPanelActionCountText) buildConquestAdminActionCounterWidget(player, pid, cached);
+            if (!cached.uiCachePerfRoot) buildConquestUiCachePerfPanelWidgets(player, pid, cached);
+            if (!cached.uiLoadDebugRoot) buildConquestUiLoadDebugPanelWidgets(player, pid, cached);
+            bindTopHudShellRefsByName(pid, cached);
             State.hudCache.topHudShellByPid[pid] = cached;
             setHudHelpDepthForPid(pid);
             return cached;
@@ -119,6 +127,8 @@ function ensureTopHudShellForPlayer(player: mod.Player): TopHudShellRefs | undef
     buildConquestStaticStatusLaneWidgets(player, pid, refs);
     buildConquestTopCenterAuxWidgets(player, pid, refs, CONQUEST_TOP_HUD_SHELL_LAYOUT);
     buildConquestAdminActionCounterWidget(player, pid, refs);
+    buildConquestUiCachePerfPanelWidgets(player, pid, refs);
+    buildConquestUiLoadDebugPanelWidgets(player, pid, refs);
     buildVictoryDialogWidgets(player, pid, refs);
     bindTopHudShellRefsByName(pid, refs);
 
@@ -126,6 +136,8 @@ function ensureTopHudShellForPlayer(player: mod.Player): TopHudShellRefs | undef
     State.hudCache.topHudShellByPid[pid] = refs;
 
     setAdminPanelActionCountText(refs.adminPanelActionCountText, State.admin.actionCount);
+    syncUiCachePerfPanelForPid(pid);
+    syncUiLoadDebugPanelForPid(pid);
     setMatchStateTextForPid(pid);
     updatePlayersReadyHudTextForAllPlayers();
     setHudHelpDepthForPid(pid);
