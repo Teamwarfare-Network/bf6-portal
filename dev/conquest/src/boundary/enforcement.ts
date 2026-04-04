@@ -335,8 +335,6 @@ function clearActiveBoundaryViolationsForAllPlayers(): void {
         hideBoundaryPromptForPid(pid);
     }
 
-    for (const key in State.round.boundary.activeViolationByPid) {
-        delete State.round.boundary.activeViolationByPid[Number(key)];
-    }
+    State.round.boundary.activeViolationByPid = {};
 }
 

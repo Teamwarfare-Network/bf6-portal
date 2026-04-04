@@ -146,7 +146,7 @@ function buildVehicleDeployTimerRenderPlan(player: mod.Player, pid: number): Veh
         && !hasPendingDirectSpawnClaim;
     const visible = shouldShowRows && warmReady;
 
-    let signature = `${warmReady ? 1 : 0}|${shouldShowRows ? 1 : 0}|${visible ? 1 : 0}|${State.players.deployedByPid[pid] ? 1 : 0}|${hasPendingDirectSpawnClaim ? 1 : 0}|${liveTerminalOpen ? 1 : 0}`;
+    let signature = `${warmReady ? 1 : 0}|${shouldShowRows ? 1 : 0}|${visible ? 1 : 0}|${State.players.deployedByPid[pid] ? 1 : 0}|${hasPendingDirectSpawnClaim ? 1 : 0}|${liveTerminalOpen ? 1 : 0}|${State.conquest.lifecyclePhase}`;
     for (let i = 0; i < slots.length; i++) {
         const slot = slots[i];
         signature += `#${i}:${slot.slotNumber},${slot.vehicleType},${slot.vehicleId},${slot.activeOwnerPid ?? -1},${slot.pendingSpawnOwnerPid ?? -1},${slot.pendingSpawnMode ?? "none"},${getVehicleSlotRespawnRemainingSeconds(slot)},${isVehicleDeploySlotReadyForSpawnButton(slot) ? 1 : 0}`;
@@ -1475,8 +1475,10 @@ function renderVehicleDeployTimerRow(
     const activeOwnerMessage = getVehicleDeployActiveOwnerNameMessage(slot);
     const showPlayerName = slot.vehicleId !== -1;
     const slotReadyForButtons = (!deployed || liveTerminalOpen) && isVehicleDeploySlotReadyForSpawnButton(slot);
-    const showSpawnButton = slotReadyForButtons && doesVehicleTypeSupportAirDeploy(slot.vehicleType);
-    const showGroundButton = slotReadyForButtons && doesVehicleTypeSupportGroundDeploy(slot.vehicleType);
+    // Air deploy hidden until live; ground deploy hidden during countdown; both visible when live.
+    const isCountdown = State.conquest.lifecyclePhase === "COUNTDOWN";
+    const showSpawnButton = slotReadyForButtons && doesVehicleTypeSupportAirDeploy(slot.vehicleType) && isMatchLive();
+    const showGroundButton = slotReadyForButtons && doesVehicleTypeSupportGroundDeploy(slot.vehicleType) && !isCountdown;
     let showTimer = true;
     layoutVehicleDeployRowForState(row, showPlayerName, showSpawnButton, showGroundButton);
 

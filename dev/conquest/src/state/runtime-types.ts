@@ -53,7 +53,7 @@ type VehicleSlotAvailabilityPhase =
     | "RESPAWN_PENDING"
     | "RESPAWN_READY";
 
-type ConquestLifecyclePhase = "NOT_READY" | "PRE_MATCH" | "LIVE_MATCH" | "POST_MATCH" | "RESET";
+type ConquestLifecyclePhase = "NOT_READY" | "COUNTDOWN" | "PRE_MATCH" | "LIVE_MATCH" | "POST_MATCH" | "RESET";
 type PositionDebugTransformSource = "soldier" | "vehicle";
 
 type ConquestCapturePointRuntimeState = {
@@ -286,16 +286,6 @@ type ConquestRuntimeScaffold = {
             isLowTime: boolean;
             isPaused: boolean;
         }>;
-        hudProjectionEngagedObjIdByPid: Record<number, number>;
-        hudProjectionPopoutVisibleByPid: Record<number, boolean>;
-        hudProjectionPopoutObjIdByPid: Record<number, number>;
-        hudProjectionEngageVisibleByPid: Record<number, boolean>;
-        hudProjectionActiveTopSlotNeutralizedByPid: Record<number, boolean>;
-        hudProjectionActiveTopSlotBorderVisibleByPid: Record<number, boolean>;
-        hudProjectionSwapPendingByPid: Record<number, boolean>;
-        hudProjectionDeployedByPid: Record<number, boolean>;
-        hudProjectionTransitionCountByPid: Record<number, number>;
-        hudProjectionLastChangedAtByPid: Record<number, number>;
     };
 };
 

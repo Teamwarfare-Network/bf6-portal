@@ -1,6 +1,30 @@
 ﻿// @ts-nocheck
 // Module: conquest-flow -- continuous-live flow orchestration and phase-state helpers.
 
+// Destroys all tracked vehicles in spawner slots using massive damage so the destruction animation plays.
+function destroyAllTrackedVehicles(): void {
+    if (!State.vehicles?.slots) return;
+    for (let i = 0; i < State.vehicles.slots.length; i++) {
+        const slot = State.vehicles.slots[i];
+        if (!slot.enabled || slot.vehicleId === -1) continue;
+        const vehicle = findVehicleById(slot.vehicleId);
+        if (vehicle) {
+            try { mod.DealDamage(vehicle, 9999); } catch {}
+        }
+        slot.vehicleId = -1;
+    }
+}
+
+// Force-spawns all enabled vehicle slots that currently have no live vehicle.
+function forceSpawnAllReadyVehicleSlots(): void {
+    if (!State.vehicles?.slots) return;
+    for (let i = 0; i < State.vehicles.slots.length; i++) {
+        const slot = State.vehicles.slots[i];
+        if (!slot.enabled || slot.vehicleId !== -1) continue;
+        try { mod.ForceVehicleSpawnerSpawn(slot.spawner); } catch {}
+    }
+}
+
 // Binds clock expiry to Conquest end-condition checks for continuous live flow.
 function bindClockExpiryForContinuousMode(): void {
     State.round.clock.expiryHandlers = [
@@ -50,9 +74,15 @@ function startMatch(_triggerPlayer?: mod.Player): void {
 // Ends the current round using one authoritative post-match transition and winner snapshot.
 function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number, overrideWinnerTeamNum?: TeamID | 0): void {
     clearAllVehicleReservations();
-    const winner = (overrideWinnerTeamNum === TeamID.Team1 || overrideWinnerTeamNum === TeamID.Team2)
-        ? overrideWinnerTeamNum
-        : 0;
+    // Determine winner: use explicit override if provided, otherwise infer from ticket counts.
+    let winner: TeamID | 0;
+    if (overrideWinnerTeamNum === TeamID.Team1 || overrideWinnerTeamNum === TeamID.Team2) {
+        winner = overrideWinnerTeamNum;
+    } else {
+        const t1 = State.conquest.tickets.team1;
+        const t2 = State.conquest.tickets.team2;
+        winner = t1 > t2 ? TeamID.Team1 : t2 > t1 ? TeamID.Team2 : 0;
+    }
 
     if (!State.conquest.endRace.endLatched) {
         State.conquest.lifecyclePhase = "POST_MATCH";

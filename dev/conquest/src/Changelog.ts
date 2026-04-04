@@ -3,6 +3,23 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.025: polish: move team names and tickets up (name 197->193, tickets 221->215)
+// v1.024: polish: revert border to original size, pack content tighter inside, tickets up and bigger (54px)
+// v1.023: polish: 1px gap between crown and team name in victory dialog
+// v1.022: polish: victory dialog - bigger result/crown/name/ticket sizes, tighter crown-to-name spacing, tickets moved up
+// v1.021: fix: victory dialog - compute winner from tickets on admin end, red draw color, bigger text, white results border
+// v1.020: feat: victory dialog ticket scoreboard with team names, crown, and win/draw result line
+// v1.019: fix: include lifecyclePhase in vehicle deploy timer signature so buttons refresh on match start
+// v1.018: fix: hide air button pre-game and both buttons during countdown; skip LIVE shrink animation to avoid startMatch stutter
+// v1.017: fix: undeploy during countdown with depth-aware widget recreation; dim air button text when disabled; remove force vehicle spawn
+// v1.016: feat: phase 7 pre-game start sequence with 20s countdown, vehicle reset, air deploy gating
+// v1.015: revert: restore inMainBaseByPid=true on deploy; false default caused immediate boundary kill before area trigger fires
+// v1.014: fix: clear inMainBaseByPid on undeploy and before exit handler deploy guard so main-base icons hide reliably when leaving HQ
+// v1.013: fix warm-prime flicker: reassert loading overlay and yield one frame before ready dialog hot-prime so overlay is fully rendered before dialog becomes briefly visible
+// v1.012: revert isHudWarmReadyForPid to !== false; original design intent is warm-on-unknown-state, not conservative false
+// v1.011: cleanup: delete dead HARD_PLAYER_LOCK_AUDIT_MODE branches, HUD projection debug dead code; gate UI load trace behind UI_LOAD_TRACE_ENABLED; fix for...in iteration safety; fix isHudWarmReadyForPid null guard; delete setHudSwapTransitionActiveForPid no-op
+// v1.010: fix team-swap overlay gap after mod.SetTeam; add uiLoadHardTimeout world-log string for gate hard-timeout; timeout broadcast now active
+// v1.009: re-architect loading gate as unified single-owner state machine for first-join and team-swap; eliminate post-deploy finalize, staged reveal, and join-vs-refresh ownership split; add 30s safety floor and 60s timeout with debug logging
 // v1.008: roll back the team-swap loading-gate changes and restore the pre-v1.005 baseline
 // v1.007: defer the single team-swap loading overlay show until the old deployed state is gone
 // v1.006: show the team-swap loading overlay only once per active loading session

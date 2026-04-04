@@ -46,6 +46,9 @@ function ensureCountdownUIAndGetWidget(player: mod.Player): mod.UIWidget | undef
     });
 
     const widget = safeFind(rootName);
+    if (widget) {
+        try { mod.SetUIWidgetDepth(widget, mod.UIDepth.AboveGameUI); } catch {}
+    }
     State.hudCache.countdownWidgetCache[pid] = { rootName, widget };
     return widget;
 }
@@ -89,6 +92,11 @@ function setPregameCountdownSizeForAllPlayers(size: number): void {
         if (!w) continue;
         mod.SetUITextSize(w, size);
     }
+}
+
+// Invalidates cached countdown widget handles so fresh widgets are created on the next show.
+function invalidateCountdownWidgetCacheForAllPlayers(): void {
+    State.hudCache.countdownWidgetCache = {};
 }
 
 // Hides the pregame countdown widget for all active players.

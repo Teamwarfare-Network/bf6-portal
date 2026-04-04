@@ -59,6 +59,7 @@ function validateVehicleSlotReservationState(slot: VehicleSpawnerSlot): void {
 
 function tryClaimVehicleDirectSpawnForPlayer(eventPlayer: mod.Player, slot: VehicleSpawnerSlot | undefined, mode: VehicleDirectSpawnMode): boolean {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer) || !slot) return false;
+    if (!isMatchLive() && mode === "air") return false;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return false;
     const playerTeam = safeGetTeamNumberFromPlayer(eventPlayer, 0);

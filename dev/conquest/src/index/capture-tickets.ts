@@ -38,7 +38,7 @@ type ConquestFlagVisualSample = {
 function conquestPhase2AClearInactiveEngagedObjectiveOwners(): void {
     let clearedAny = false;
     const engagedByPid = State.conquest.capture.engagedObjIdByPid;
-    for (const pidKey in engagedByPid) {
+    for (const pidKey of Object.keys(engagedByPid)) {
         const pid = Number(pidKey);
         if (!pid) continue;
         const engagedObjId = engagedByPid[pid];
@@ -231,66 +231,6 @@ function conquestPhase3EnsureTopHudDerivedSlicesForPid(pid: number): void {
 // Publishes derived top-HUD view-model slices for status/help/clock owners.
 function conquestPhase3PublishDerivedHudSlicesForPid(pid: number, vm: ConquestHudViewModel): void {
     conquestPhase3PublishTopHudDerivedSlicesForPid(pid, vm.status, vm.helpReady, vm.clock);
-}
-
-// Publishes one compact HUD projection snapshot for this player to aid transition debugging.
-// This is diagnostics-only state and does not own or mutate render/gameplay decisions.
-function conquestPhase3PublishHudProjectionDebugSnapshotForPid(
-    pid: number,
-    vm: ConquestHudViewModel | undefined
-): void {
-    const debug = State.conquest.debug;
-    const engagedObjId = State.conquest.capture.engagedObjIdByPid[pid] ?? 0;
-    const popoutVisible = vm?.activeFlagPopout.visible === true;
-    const popoutObjId = vm?.activeFlagPopout.objId ?? 0;
-    const engageVisible = vm?.engage.visible === true;
-    const swapPending = debug.teamSwapHudResetPendingByPid[pid] === true;
-    const deployed = State.players.deployedByPid[pid] === true;
-    let activeTopSlotNeutralized = false;
-    let activeTopSlotBorderVisible = false;
-    if (vm && engagedObjId !== 0) {
-        const slots = vm.flags.slots;
-        for (let i = 0; i < slots.length; i++) {
-            const slotVm = slots[i];
-            if (!slotVm || slotVm.objId !== engagedObjId) continue;
-            activeTopSlotBorderVisible = slotVm.borderVisible === true;
-            activeTopSlotNeutralized = slotVm.borderVisible === false
-                && slotVm.fillVisible === false
-                && slotVm.labelVisible === false
-                && slotVm.percentVisible === false;
-            break;
-        }
-    }
-
-    const previousEngagedObjId = debug.hudProjectionEngagedObjIdByPid[pid] ?? 0;
-    const previousPopoutVisible = debug.hudProjectionPopoutVisibleByPid[pid] === true;
-    const previousPopoutObjId = debug.hudProjectionPopoutObjIdByPid[pid] ?? 0;
-    const previousEngageVisible = debug.hudProjectionEngageVisibleByPid[pid] === true;
-    const previousActiveTopSlotNeutralized = debug.hudProjectionActiveTopSlotNeutralizedByPid[pid] === true;
-    const previousActiveTopSlotBorderVisible = debug.hudProjectionActiveTopSlotBorderVisibleByPid[pid] === true;
-    const previousSwapPending = debug.hudProjectionSwapPendingByPid[pid] === true;
-    const previousDeployed = debug.hudProjectionDeployedByPid[pid] === true;
-    const changed = previousEngagedObjId !== engagedObjId
-        || previousPopoutVisible !== popoutVisible
-        || previousPopoutObjId !== popoutObjId
-        || previousEngageVisible !== engageVisible
-        || previousActiveTopSlotNeutralized !== activeTopSlotNeutralized
-        || previousActiveTopSlotBorderVisible !== activeTopSlotBorderVisible
-        || previousSwapPending !== swapPending
-        || previousDeployed !== deployed;
-    if (changed) {
-        debug.hudProjectionTransitionCountByPid[pid] = (debug.hudProjectionTransitionCountByPid[pid] ?? 0) + 1;
-        debug.hudProjectionLastChangedAtByPid[pid] = debug.hudLastUpdatedAtSeconds;
-    }
-
-    debug.hudProjectionEngagedObjIdByPid[pid] = engagedObjId;
-    debug.hudProjectionPopoutVisibleByPid[pid] = popoutVisible;
-    debug.hudProjectionPopoutObjIdByPid[pid] = popoutObjId;
-    debug.hudProjectionEngageVisibleByPid[pid] = engageVisible;
-    debug.hudProjectionActiveTopSlotNeutralizedByPid[pid] = activeTopSlotNeutralized;
-    debug.hudProjectionActiveTopSlotBorderVisibleByPid[pid] = activeTopSlotBorderVisible;
-    debug.hudProjectionSwapPendingByPid[pid] = swapPending;
-    debug.hudProjectionDeployedByPid[pid] = deployed;
 }
 
 // Shared active-objective occupancy gate used by combat HUD and capture-sound dispatch.
@@ -1633,16 +1573,6 @@ function conquestPhase2AResetLiveState(): void {
     State.conquest.capture.unmappedSeenCount = 0;
     State.conquest.capture.visualByObjId = {};
     State.conquest.capture.engagedObjIdByPid = {};
-    State.conquest.debug.hudProjectionEngagedObjIdByPid = {};
-    State.conquest.debug.hudProjectionPopoutVisibleByPid = {};
-    State.conquest.debug.hudProjectionPopoutObjIdByPid = {};
-    State.conquest.debug.hudProjectionEngageVisibleByPid = {};
-    State.conquest.debug.hudProjectionActiveTopSlotNeutralizedByPid = {};
-    State.conquest.debug.hudProjectionActiveTopSlotBorderVisibleByPid = {};
-    State.conquest.debug.hudProjectionSwapPendingByPid = {};
-    State.conquest.debug.hudProjectionDeployedByPid = {};
-    State.conquest.debug.hudProjectionTransitionCountByPid = {};
-    State.conquest.debug.hudProjectionLastChangedAtByPid = {};
     State.conquest.endRace.endLatched = false;
     State.conquest.endRace.endReason = undefined;
     State.conquest.endRace.endSnapshot = undefined;
@@ -1669,16 +1599,6 @@ function conquestPhase2AResetNotLiveState(): void {
     State.conquest.capture.unmappedSeenCount = 0;
     State.conquest.capture.visualByObjId = {};
     State.conquest.capture.engagedObjIdByPid = {};
-    State.conquest.debug.hudProjectionEngagedObjIdByPid = {};
-    State.conquest.debug.hudProjectionPopoutVisibleByPid = {};
-    State.conquest.debug.hudProjectionPopoutObjIdByPid = {};
-    State.conquest.debug.hudProjectionEngageVisibleByPid = {};
-    State.conquest.debug.hudProjectionActiveTopSlotNeutralizedByPid = {};
-    State.conquest.debug.hudProjectionActiveTopSlotBorderVisibleByPid = {};
-    State.conquest.debug.hudProjectionSwapPendingByPid = {};
-    State.conquest.debug.hudProjectionDeployedByPid = {};
-    State.conquest.debug.hudProjectionTransitionCountByPid = {};
-    State.conquest.debug.hudProjectionLastChangedAtByPid = {};
     conquestPhase2AResetCaptureTimingConfigCache();
     conquestPhase2ABuildMappedCaptureIndexFromConfig();
     conquestPhase2AApplyCaptureTimingForMappedPoints();

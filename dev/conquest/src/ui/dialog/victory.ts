@@ -97,6 +97,44 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
         }
     }
 
+    // Update ticket scoreboard, team names, winner crown, and result line.
+    const snap = State.conquest.endRace.endSnapshot;
+    if (snap) {
+        const t1 = Math.max(0, Math.floor(snap.team1Tickets));
+        const t2 = Math.max(0, Math.floor(snap.team2Tickets));
+        const winner = snap.winnerTeam;
+
+        if (refs.victoryLeftTicketText) {
+            safeSetUITextLabel(refs.victoryLeftTicketText, mod.Message(mod.stringkeys.twl.system.genericCounter, t1));
+        }
+        if (refs.victoryRightTicketText) {
+            safeSetUITextLabel(refs.victoryRightTicketText, mod.Message(mod.stringkeys.twl.system.genericCounter, t2));
+        }
+        if (refs.victoryLeftTeamNameText) {
+            safeSetUITextLabel(refs.victoryLeftTeamNameText, mod.Message(getTeamNameKey(TeamID.Team1)));
+        }
+        if (refs.victoryRightTeamNameText) {
+            safeSetUITextLabel(refs.victoryRightTeamNameText, mod.Message(getTeamNameKey(TeamID.Team2)));
+        }
+        if (refs.victoryLeftCrown) {
+            setWidgetVisible(refs.victoryLeftCrown, winner === TeamID.Team1);
+        }
+        if (refs.victoryRightCrown) {
+            setWidgetVisible(refs.victoryRightCrown, winner === TeamID.Team2);
+        }
+        if (refs.victoryResultText) {
+            setWidgetVisible(refs.victoryResultText, true);
+            if (winner === TeamID.Team1 || winner === TeamID.Team2) {
+                const margin = Math.abs(t1 - t2);
+                safeSetUITextLabel(refs.victoryResultText, mod.Message(mod.stringkeys.twl.victory.winsResultFormat, getTeamNameKey(winner), margin));
+                safeSetUITextColor(refs.victoryResultText, mod.CreateVector(0, 1, 0));
+            } else {
+                safeSetUITextLabel(refs.victoryResultText, mod.Message(mod.stringkeys.twl.victory.drawResultFormat, t1, t2));
+                safeSetUITextColor(refs.victoryResultText, mod.CreateVector(1, 0, 0));
+            }
+        }
+    }
+
     if (refs.victoryLeftRosterText || refs.victoryRightRosterText) {
         const roster = getRosterDisplayEntries();
         updateVictoryDialogRosterSizing(refs, roster.maxRows);

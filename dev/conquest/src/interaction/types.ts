@@ -10,17 +10,14 @@ interface ReadyDialogInteractConfig {
     velocityThreshold: number;
 }
 
-type UiLoadReason = "join" | "team_swap" | "refresh";
+type UiLoadReason = "join" | "team_swap";
 
-// Temporary audit mode requested by the user: no human player should ever be allowed to deploy,
-// and any player that still reaches the world must be frozen and pushed back out immediately.
-const HARD_PLAYER_LOCK_AUDIT_MODE = false;
-// Conservative first-join gate mode:
-// keep deploy owned by one join-only release path, hold for a minimum blocked window,
-// warm UI in the background, then release or fall back after the hard timeout.
-const JOIN_CONSERVATIVE_FIRST_JOIN_GATE_MODE = true;
-const JOIN_CONSERVATIVE_FIRST_JOIN_MIN_LOCK_SECONDS = 15;
-const JOIN_CONSERVATIVE_FIRST_JOIN_FALLBACK_SECONDS = 30;
+// When true, enables the UI load trace diagnostic system (pushUiLoadTraceForPid, debug panel).
+// Set to false in production to disable all trace overhead. System is preserved for dev use.
+const UI_LOAD_TRACE_ENABLED = false;
+// Unified loading gate mode (replaces the old conservative/non-conservative split).
+// One gate entry point for both first-join and team-swap; released only after
+// all UI families are warm and the floor window has elapsed.
 
 interface readyDialogData_t {
     interactPoint: mod.InteractPoint | null;
@@ -57,6 +54,10 @@ interface readyDialogData_t {
     readyDialogWarmPrimed: boolean;
     readyDialogHotReady: boolean;
     gadgetMenuHotReady: boolean;
+    // Unified gate timing: set when beginLoadingGate starts, used by runLoadingGateUntilReady for floor/timeout checks.
+    gateStartTime: number;
+    safetyFloorTriggered: boolean;
+    safetyTimeoutTriggered: boolean;
     lastButtonSignature: string;
     lastRosterSignature: string;
     lastModeConfigSignature: string;

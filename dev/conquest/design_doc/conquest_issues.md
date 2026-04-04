@@ -1,12 +1,12 @@
 # Conquest Issues
 
-Last Updated: 2026-03-31  
-Last Tested Build: `v1.008` (rolled back the staged team-swap loading-session changes introduced after `v1.004`; team-swap is back on the pre-redesign baseline)
+Last Updated: 2026-04-04  
+Last Tested Build: `v1.025` (Phase 7 complete; pre-game countdown, victory dialog with ticket scoreboard/crown/result, endMatch winner fix)
 
 ## Current Snapshot
 - `CQ_Bug_1`: Resolved
 - `CQ_Bug_2`: Resolved
-- `CQ_Bug_3`: Open (deferred for now)
+- `CQ_Bug_3`: Open (Phase 10 polish)
 - `CQ_Bug_4`: Resolved
 - `CQ_Bug_5`: Resolved
 - `CQ_Bug_6`: Resolved
@@ -19,22 +19,88 @@ Last Tested Build: `v1.008` (rolled back the staged team-swap loading-session ch
 - `CQ_Bug_13`: Resolved
 - `CQ_Bug_14`: Resolved
 - `CQ_Bug_15`: Resolved
-- `CQ_Bug_16`: Open (deferred polish)
-- `CQ_Bug_17`: Open (deferred polish)
+- `CQ_Bug_16`: Open (Phase 10 polish)
+- `CQ_Bug_17`: Open (Phase 10 polish)
 - `CQ_Bug_18`: Resolved
-- `CQ_Bug_19`: Open (deferred investigation)
-- `CQ_Bug_20`: Open (deferred polish)
-- `CQ_Bug_21`: Open (deferred polish)
+- `CQ_Bug_19`: Open (Phase 10 investigation)
+- `CQ_Bug_20`: Open (Phase 10 polish)
+- `CQ_Bug_21`: Likely resolved (believed fixed by v1.013 loading gate rearchitecture; needs confirmation)
 - `CQ_Bug_22`: Resolved
 - `CQ_Bug_23`: Resolved
 - `CQ_Bug_24`: Resolved
-- `CQ_Bug_25`: Open (active investigation)
-- `CQ_Bug_26`: Open (active investigation)
-- `CQ_Bug_27`: Open (active investigation)
-- `CQ_Bug_28`: Open (active investigation)
-- `CQ_Bug_29`: Open (needs repro)
-- `CQ_Bug_30`: Open (active investigation)
-- `CQ_Bug_31`: Open (active investigation)
+- `CQ_Bug_25`: Open (Phase 10 — needs multi-player testing)
+- `CQ_Bug_26`: Likely resolved (believed fixed by vehicle HUD polish passes; needs confirmation)
+- `CQ_Bug_27`: Resolved (fixed in vehicle HUD render passes)
+- `CQ_Bug_28`: Open (Phase 10 — vehicle-specific, only some vehicles affected; needs investigation)
+- `CQ_Bug_29`: Open (Phase 10 — needs repro)
+- `CQ_Bug_30`: Likely resolved (believed fixed by loading gate rearchitecture and UI cache polish; needs confirmation)
+- `CQ_Bug_31`: Open (Phase 10 investigation)
+- `CQ_Bug_32`: Open (Phase 10 polish)
+- `CQ_Bug_33`: Open (Phase 10 polish)
+- `CQ_Bug_34`: Open (Phase 10 tuning — vehicle ground spawner orientations and positions need per-map pass)
+
+## CQ_Bug_34
+Title: Vehicle Ground Spawner Rotation and Position Tuning Needed Across Maps
+
+Observed:
+- Some main-base vehicle ground spawners spawn vehicles in the wrong orientation.
+- Positions may also be suboptimal for some slots on some maps.
+- This is a per-map data tuning issue, not a code bug.
+
+Expected:
+- All vehicle ground spawners should place vehicles facing a sensible direction (toward the map/exit, not into walls or backward).
+- Positions should avoid clipping or awkward placement.
+
+Status:
+- Open.
+- Phase 10 tuning pass.
+- Requires a per-map review of all `spawnPos` / `spawnRot` values in `src/config/maps/*.ts` and the corresponding Godot spawner transforms.
+
+## CQ_Bug_33
+Title: Loading Overlay Briefly Disappears During Team Swap
+
+Observed:
+- During a team swap, the loading overlay ("Custom Experience Engaging...") briefly vanishes for a frame or two before the warm prime cycle begins.
+- The overlay then reappears and the gate continues normally.
+- Likely the same root cause as CQ_Bug_32: the overlay show and warm prime are not separated by enough rendered frames.
+
+Expected:
+- The loading overlay should remain continuously visible from the moment the team-swap gate starts until the gate releases.
+
+Status:
+- Open.
+- Deferred polish.
+- Partially improved in `v1.013` by the same pre-prime overlay reassert + yield fix.
+- Full fix likely requires ensuring `hideAllUiFamiliesForPlayer` does not transiently hide the overlay, or that the overlay is immediately reasserted after it runs.
+
+Related:
+- CQ_Bug_32 (same underlying timing issue)
+- CQ_Bug_30 (parent issue for loading gate lifecycle)
+
+## CQ_Bug_32
+Title: Ready Dialog Flickers Briefly On First Join During Loading Gate
+
+Observed:
+- When a player first joins, the ready dialog is briefly visible for 1-2 frames before the loading overlay fully occludes it.
+- This was introduced in `v1.011` when `UI_LOAD_TRACE_ENABLED` gating removed ~10-20ms of trace overhead from the gate startup path. That overhead had acted as an inadvertent timing buffer, giving the overlay time to fully composite before `primeReadyDialogRevealWhileBlocked` made the dialog temporarily visible.
+- Partially improved in `v1.013` by reasserting the overlay and yielding one frame before the warm prime starts, but a small flicker may still be observable.
+
+Expected:
+- The loading overlay should be fully rendered and composited before any warm-prime show/hide cycle begins.
+- The ready dialog should never be player-visible during its hidden warm prime pass.
+
+Status:
+- Open.
+- Deferred polish.
+- v1.013 fix (reassert overlay + `await mod.Wait(0)` before prime) reduced but did not fully eliminate the flicker.
+- Full fix likely requires one of:
+  - Build the ready dialog with explicit `visible: false` on all children during the prime pass instead of relying on the overlay to occlude it
+  - Move the warm prime to occur before the player reaches the deploy screen (during an earlier lifecycle phase)
+  - Use z-depth ordering to guarantee the overlay is always above the ready dialog during the prime
+
+Related:
+- CQ_Bug_30 (parent issue for first-use menu creation hitching and loading gate lifecycle)
+- Design doc: loading gate "build -> refresh hidden/content-only -> reveal once" contract
 
 ## CQ_Bug_31
 Title: Runtime Errors After Gadget Locker / Deploy Interaction
@@ -96,8 +162,8 @@ Expected:
   - late joiners and live-phase joiners must still transition cleanly into a playable state
 
 Status:
-- Open.
-- Active investigation.
+- Likely resolved.
+- Believed fixed by loading gate rearchitecture and UI cache polish passes through v1.013–v1.025. Needs confirmation in multiplayer testing.
 
 Current Best Read:
 - This is a UI lifecycle / warm-order / invalidation issue rather than a steady-state runtime issue.
@@ -374,16 +440,8 @@ Expected:
 - Empty vehicle slots should show the intended idle/empty state, not misleading zero values.
 
 Status:
-- Open.
-- Active investigation.
-
-Current Best Read:
-- This is likely a vehicle HUD row-state initialization problem rather than a late-match degradation.
-- The affected path appears limited to passive display startup state.
-
-Recommended Later Investigation:
-- Compare initial passive row state before and after the first active vehicle enters one of those slots.
-- Verify whether row render defaults are being projected before authoritative slot state is available.
+- Resolved.
+- Fixed in vehicle HUD render passes during Phase 5/7 polish (v1.014–v1.025 era).
 
 ## CQ_Bug_26
 Title: Passive Vehicle Menu Can Stay Hidden After Opening Live Air Deploy Menu
@@ -396,19 +454,12 @@ Expected:
 - Closing or leaving the live deploy menu should restore the passive vehicle display immediately when that player still owns the passive vehicle HUD surface.
 
 Status:
-- Open.
-- Active investigation.
+- Likely resolved.
+- Believed fixed by vehicle HUD polish passes during Phase 5/7 work. Needs confirmation in multiplayer testing.
 
 Current Best Read:
 - This is likely another reveal-owner / visibility restoration issue inside the shared vehicle HUD family.
 - The passive and live variants likely disagree on who is responsible for the final reveal after the live menu closes.
-
-Recommended Later Investigation:
-- Reproduce by:
-  - observing passive vehicle HUD
-  - opening live air deploy menu
-  - closing it without further menu interaction
-- Verify whether passive row state still exists but remains hidden, or whether the passive content is also stale.
 
 ## CQ_Bug_25
 Title: Main-Base / World Icons Still Fail Per-Player Distance And Visibility Ownership
@@ -540,8 +591,8 @@ Current Accepted Behavior:
 - The remaining open-speed issue is therefore tracked as a standalone polish bug rather than being folded back into the older spam investigation.
 
 Status:
-- Open.
-- Deferred polish.
+- Likely resolved.
+- Believed fixed by v1.013 loading gate rearchitecture and UI cache warm-prime improvements. Needs confirmation.
 
 Current Best Read:
 - The current issue is no longer the old label-spam problem.

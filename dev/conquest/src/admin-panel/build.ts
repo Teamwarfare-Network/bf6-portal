@@ -563,7 +563,7 @@ function setPositionDebugVisibleForPlayer(player: mod.Player, visible: boolean):
     const widgets = ensurePositionDebugWidgets(player);
     if (!widgets) return;
 
-    if (visible && (state.hudSwapTransitionActive === true || !isHudWarmReadyForPid(pid))) {
+    if (visible && (isUiLoadGateActiveForPid(pid) || !isHudWarmReadyForPid(pid))) {
         visible = false;
     }
 
@@ -600,6 +600,48 @@ function setPositionDebugVisibleForPlayer(player: mod.Player, visible: boolean):
     void positionDebugLoop(player, state.posDebugToken);
 }
 
+// Returns true once the admin panel body has been built at least once for this player.
+// Non-admin players are considered warm immediately since they have no admin panel to warm.
+// Used by the unified loading gate readiness check.
+function isAdminPanelWarmForPid(pid: number): boolean {
+    return State.players.readyDialogData[pid]?.adminPanelBuilt === true;
+}
 
-
+// Prebuilds the admin panel hidden for one player so the first open is instant after the loading gate releases.
+// Idempotent: does nothing if already built. Must be called while the gate is still active (player is hidden).
+function prebuildAdminPanelWhileHidden(eventPlayer: mod.Player, pid: number): void {
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    const state = State.players.readyDialogData[pid];
+    if (!state) return;
+    if (state.adminPanelBuilt) return;
+    try {
+        let adminContainer = safeFind(UI_ADMIN_PANEL_CONTAINER_ID + pid);
+        if (!adminContainer) {
+            mod.AddUIContainer(
+                UI_ADMIN_PANEL_CONTAINER_ID + pid,
+                mod.CreateVector(ADMIN_PANEL_OFFSET_X, ADMIN_PANEL_OFFSET_Y, 0),
+                mod.CreateVector(
+                    ADMIN_PANEL_CONTENT_WIDTH + (ADMIN_PANEL_PADDING * 2),
+                    ADMIN_PANEL_HEIGHT + (ADMIN_PANEL_PADDING * 2),
+                    0
+                ),
+                mod.UIAnchor.TopRight,
+                mod.GetUIRoot(),
+                false,
+                10,
+                ADMIN_PANEL_BG_COLOR,
+                ADMIN_PANEL_BG_ALPHA,
+                ADMIN_PANEL_BG_FILL,
+                mod.UIDepth.AboveGameUI,
+                eventPlayer
+            );
+            adminContainer = safeFind(UI_ADMIN_PANEL_CONTAINER_ID + pid);
+        }
+        if (!adminContainer) return;
+        buildAdminPanelWidgets(eventPlayer, adminContainer, pid);
+        state.adminPanelBuilt = true;
+        safeSetUIWidgetVisible(adminContainer, false);
+        setAdminPanelChildWidgetsVisible(pid, false);
+    } catch {}
+}
 

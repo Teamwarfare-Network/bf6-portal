@@ -24,6 +24,13 @@ type TopHudShellRefs = {
     victoryRosterRow?: mod.UIWidget;
     victoryRosterLeftContainer?: mod.UIWidget;
     victoryRosterRightContainer?: mod.UIWidget;
+    victoryResultText?: mod.UIWidget;
+    victoryLeftCrown?: mod.UIWidget;
+    victoryRightCrown?: mod.UIWidget;
+    victoryLeftTeamNameText?: mod.UIWidget;
+    victoryRightTeamNameText?: mod.UIWidget;
+    victoryLeftTicketText?: mod.UIWidget;
+    victoryRightTicketText?: mod.UIWidget;
 
     adminPanelActionCountText?: mod.UIWidget;
     uiCachePerfRoot?: mod.UIWidget;

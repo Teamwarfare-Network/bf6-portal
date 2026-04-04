@@ -45,7 +45,9 @@ function shouldShowUiLoadDebugPanelForPid(pid: number): boolean {
 }
 
 // Builds the temporary loading-gate audit panel under the shared top-HUD root.
+// No-op when UI_LOAD_TRACE_ENABLED is false; panel is never created in production.
 function buildConquestUiLoadDebugPanelWidgets(player: mod.Player, pid: number, refs: TopHudShellRefs): void {
+    if (!UI_LOAD_TRACE_ENABLED) return;
     const parent = refs.topHudRoot ?? ensureTopHudRootForPid(pid, player);
     if (!parent) return;
 
@@ -120,13 +122,17 @@ function buildConquestUiLoadDebugPanelWidgets(player: mod.Player, pid: number, r
 }
 
 // Sets loading-gate debug panel visibility for one player without touching the rest of the HUD shell.
+// No-op when UI_LOAD_TRACE_ENABLED is false.
 function setUiLoadDebugPanelVisibleForPid(pid: number, visible: boolean): void {
+    if (!UI_LOAD_TRACE_ENABLED) return;
     const refs = getTopHudShellRefsForPid(pid);
     safeSetUIWidgetVisible(refs?.uiLoadDebugRoot, visible && shouldShowUiLoadDebugPanelForPid(pid));
 }
 
 // Renders the current loading-gate audit state into the temporary on-foot debug panel.
+// No-op when UI_LOAD_TRACE_ENABLED is false.
 function syncUiLoadDebugPanelForPid(pid: number): void {
+    if (!UI_LOAD_TRACE_ENABLED) return;
     const refs = getTopHudShellRefsForPid(pid);
     const state = State.players.readyDialogData[pid];
     if (!refs?.uiLoadDebugRoot || !state) return;

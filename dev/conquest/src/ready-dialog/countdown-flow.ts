@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 // Module: ready-dialog/countdown-flow -- countdown execution, cancellation, and live-start sequencing
 
 //#region -------------------- Ready Dialog - Pregame Countdown Flow --------------------
@@ -9,15 +9,37 @@ function cancelPregameCountdown(): void {
     State.round.countdown.isActive = false;
     State.round.countdown.isRequested = false;
     hidePregameCountdownForAllPlayers();
+    // Restore pre-countdown state so players can ready up again.
+    State.conquest.lifecyclePhase = "NOT_READY";
+    mod.EnableAllPlayerDeploy(true);
+    updateVehicleDeployTimerHudForAllPlayers();
 }
 
-// Starts the pregame countdown when gates pass, then launches async countdown flow.
+// Undeploys all currently deployed players for countdown lockout.
+function undeployAllDeployedPlayers(): void {
+    const players = mod.AllPlayers();
+    const count = mod.CountOf(players);
+    for (let i = 0; i < count; i++) {
+        const player = mod.ValueInArray(players, i) as mod.Player;
+        if (!player || !mod.IsPlayerValid(player)) continue;
+        if (!isPlayerDeployed(player)) continue;
+        try { mod.UndeployPlayer(player); } catch {}
+    }
+}
+
+// Starts the pregame countdown: undeploys all, destroys vehicles, disables deploy, then launches async countdown.
 function startPregameCountdown(triggerPlayer?: mod.Player, force?: boolean): void {
     if (State.round.countdown.isActive) return;
     if (State.match.isEnded || isMatchLive()) return;
     if (!force && !areAllActivePlayersReady()) return;
 
     closeReadyDialogForAllPlayers();
+    State.conquest.lifecyclePhase = "COUNTDOWN";
+    undeployAllDeployedPlayers();
+    mod.EnableAllPlayerDeploy(false);
+    invalidateCountdownWidgetCacheForAllPlayers();
+    destroyAllTrackedVehicles();
+
     State.round.countdown.isActive = true;
     State.round.countdown.isRequested = true;
     State.round.countdown.token++;
@@ -35,9 +57,9 @@ function isPregameCountdownStillValid(expectedToken: number, force?: boolean, al
     return true;
 }
 
-// Returns countdown digit color (yellow for 1, red otherwise).
+// Returns countdown digit color: red for >10, yellow for 10-1 (green reserved for LIVE).
 function getPregameCountdownColor(value: number): mod.Vector {
-    return value === 1 ? mod.CreateVector(1, 1, 0) : mod.CreateVector(1, 0, 0);
+    return value > 10 ? mod.CreateVector(1, 0, 0) : mod.CreateVector(1, 1, 0);
 }
 
 async function animatePregameCountdownSize(
@@ -101,39 +123,19 @@ async function runPregameCountdown(expectedToken: number, triggerPlayer?: mod.Pl
         return;
     }
 
+    // LIVE! transition: pop-in text, then enable deploy and start match.
+    // No shrink animation — startMatch triggers heavy HUD refresh work that causes stutter during animation.
     setPregameCountdownVisualForAllPlayers(
-        mod.stringkeys.twl.countdown.go,
+        mod.stringkeys.twl.countdown.live,
         undefined,
         mod.CreateVector(0, 1, 0),
-        PREGAME_COUNTDOWN_SIZE_GO_START,
+        PREGAME_COUNTDOWN_SIZE_LIVE_START,
         true
     );
+    mod.EnableAllPlayerDeploy(true);
     startMatch(triggerPlayer);
 
-    const ok = await animatePregameCountdownSize(
-        expectedToken,
-        force === true,
-        PREGAME_COUNTDOWN_SIZE_GO_START,
-        PREGAME_COUNTDOWN_SIZE_GO_END,
-        true
-    );
-    if (!ok || expectedToken !== State.round.countdown.token) {
-        // If the animation aborted, hide immediately to avoid a stuck GO.
-        if (expectedToken === State.round.countdown.token) {
-            hidePregameCountdownForAllPlayers();
-            State.round.countdown.isActive = false;
-        }
-        return;
-    }
-
-    // Keep GO visible for a short hold to finish the visual beat (unpredictable repro issues).
-    if (State.match.isEnded) {
-        hidePregameCountdownForAllPlayers();
-        State.round.countdown.isActive = false;
-        return;
-    }
-
-    await mod.Wait(PREGAME_COUNTDOWN_GO_HOLD_SECONDS);
+    await mod.Wait(PREGAME_COUNTDOWN_LIVE_HOLD_SECONDS);
     if (expectedToken !== State.round.countdown.token) return;
 
     hidePregameCountdownForAllPlayers();

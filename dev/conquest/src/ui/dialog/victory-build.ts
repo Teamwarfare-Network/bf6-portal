@@ -14,6 +14,13 @@ function bindVictoryDialogRefsByName(pid: number, refs: TopHudShellRefs): void {
     refs.victoryTimeSecondsOnes = safeFind(`VictoryDialog_TimeSO_${pid}`);
 
     refs.victoryAdminActionsText = safeFind(`VictoryDialog_AdminActions_${pid}`);
+    refs.victoryResultText = safeFind(`VictoryDialog_Result_${pid}`);
+    refs.victoryLeftCrown = safeFind(`VictoryDialog_LeftCrown_${pid}`);
+    refs.victoryRightCrown = safeFind(`VictoryDialog_RightCrown_${pid}`);
+    refs.victoryLeftTeamNameText = safeFind(`VictoryDialog_LeftTeamName_${pid}`);
+    refs.victoryRightTeamNameText = safeFind(`VictoryDialog_RightTeamName_${pid}`);
+    refs.victoryLeftTicketText = safeFind(`VictoryDialog_LeftTickets_${pid}`);
+    refs.victoryRightTicketText = safeFind(`VictoryDialog_RightTickets_${pid}`);
     refs.victoryRosterRow = safeFind(`VictoryDialog_RosterRow_${pid}`);
     refs.victoryRosterLeftContainer = safeFind(`VictoryDialog_RosterLeft_${pid}`);
     refs.victoryRosterRightContainer = safeFind(`VictoryDialog_RosterRight_${pid}`);
@@ -292,6 +299,98 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 textAnchor: mod.UIAnchor.Center,
             },
             {
+                name: `VictoryDialog_ResultBorder_${pid}`,
+                type: "Container",
+                position: [0, VICTORY_RESULT_BORDER_Y],
+                size: [VICTORY_RESULT_BORDER_WIDTH, VICTORY_RESULT_BORDER_HEIGHT],
+                anchor: mod.UIAnchor.TopCenter,
+                visible: true,
+                padding: 0,
+                bgColor: [1, 1, 1],
+                bgAlpha: 0.5,
+                bgFill: mod.UIBgFill.OutlineThin,
+            },
+            {
+                name: `VictoryDialog_Result_${pid}`,
+                type: "Text",
+                position: [0, VICTORY_RESULT_Y],
+                size: [340, 22],
+                anchor: mod.UIAnchor.TopCenter,
+                visible: false,
+                padding: 0,
+                bgAlpha: 0,
+                bgFill: mod.UIBgFill.None,
+                textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
+                textColor: [0, 1, 0],
+                textAlpha: 1,
+                textSize: VICTORY_RESULT_TEXT_SIZE,
+                textAnchor: mod.UIAnchor.Center,
+            },
+            {
+                name: `VictoryDialog_LeftTeamName_${pid}`,
+                type: "Text",
+                position: [-85, VICTORY_TEAM_NAME_Y],
+                size: [160, 24],
+                anchor: mod.UIAnchor.TopCenter,
+                visible: true,
+                padding: 0,
+                bgAlpha: 0,
+                bgFill: mod.UIBgFill.None,
+                textLabel: mod.Message(getTeamNameKey(TeamID.Team1)),
+                textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
+                textAlpha: 1,
+                textSize: VICTORY_TEAM_NAME_TEXT_SIZE,
+                textAnchor: mod.UIAnchor.Center,
+            },
+            {
+                name: `VictoryDialog_RightTeamName_${pid}`,
+                type: "Text",
+                position: [85, VICTORY_TEAM_NAME_Y],
+                size: [160, 24],
+                anchor: mod.UIAnchor.TopCenter,
+                visible: true,
+                padding: 0,
+                bgAlpha: 0,
+                bgFill: mod.UIBgFill.None,
+                textLabel: mod.Message(getTeamNameKey(TeamID.Team2)),
+                textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
+                textAlpha: 1,
+                textSize: VICTORY_TEAM_NAME_TEXT_SIZE,
+                textAnchor: mod.UIAnchor.Center,
+            },
+            {
+                name: `VictoryDialog_LeftTickets_${pid}`,
+                type: "Text",
+                position: [-85, VICTORY_TICKET_Y],
+                size: [160, 58],
+                anchor: mod.UIAnchor.TopCenter,
+                visible: true,
+                padding: 0,
+                bgAlpha: 0,
+                bgFill: mod.UIBgFill.None,
+                textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
+                textAlpha: 1,
+                textSize: VICTORY_TICKET_TEXT_SIZE,
+                textAnchor: mod.UIAnchor.Center,
+            },
+            {
+                name: `VictoryDialog_RightTickets_${pid}`,
+                type: "Text",
+                position: [85, VICTORY_TICKET_Y],
+                size: [160, 58],
+                anchor: mod.UIAnchor.TopCenter,
+                visible: true,
+                padding: 0,
+                bgAlpha: 0,
+                bgFill: mod.UIBgFill.None,
+                textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+                textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
+                textAlpha: 1,
+                textSize: VICTORY_TICKET_TEXT_SIZE,
+                textAnchor: mod.UIAnchor.Center,
+            },
+            {
                 name: `VictoryDialog_RosterRow_${pid}`,
                 type: "Container",
                 position: [0, VICTORY_DIALOG_ROSTER_ROW_Y],
@@ -376,6 +475,51 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
     });
 
     if (modal) refs.roots.push(modal);
+
+    // Crown images created as standalone widgets and parented to dialog root.
+    // ParseUI nested children only support Container and Text types.
+    const dialogRoot = safeFind(`VictoryDialogRoot_${pid}`);
+    if (dialogRoot) {
+        safeParseUI({
+            name: `VictoryDialog_LeftCrown_${pid}`,
+            type: "Image",
+            playerId: player,
+            position: [-85, VICTORY_CROWN_Y],
+            size: [VICTORY_CROWN_SIZE, VICTORY_CROWN_SIZE],
+            anchor: mod.UIAnchor.TopCenter,
+            visible: false,
+            padding: 0,
+            bgAlpha: 0,
+            bgFill: mod.UIBgFill.None,
+            imageType: mod.UIImageType.CrownSolid,
+            imageColor: [VICTORY_CROWN_RGB[0], VICTORY_CROWN_RGB[1], VICTORY_CROWN_RGB[2]],
+            imageAlpha: 1,
+        });
+        const leftCrown = safeFind(`VictoryDialog_LeftCrown_${pid}`);
+        if (leftCrown) {
+            try { mod.SetUIWidgetParent(leftCrown, dialogRoot); } catch {}
+        }
+        safeParseUI({
+            name: `VictoryDialog_RightCrown_${pid}`,
+            type: "Image",
+            playerId: player,
+            position: [85, VICTORY_CROWN_Y],
+            size: [VICTORY_CROWN_SIZE, VICTORY_CROWN_SIZE],
+            anchor: mod.UIAnchor.TopCenter,
+            visible: false,
+            padding: 0,
+            bgAlpha: 0,
+            bgFill: mod.UIBgFill.None,
+            imageType: mod.UIImageType.CrownSolid,
+            imageColor: [VICTORY_CROWN_RGB[0], VICTORY_CROWN_RGB[1], VICTORY_CROWN_RGB[2]],
+            imageAlpha: 1,
+        });
+        const rightCrown = safeFind(`VictoryDialog_RightCrown_${pid}`);
+        if (rightCrown) {
+            try { mod.SetUIWidgetParent(rightCrown, dialogRoot); } catch {}
+        }
+    }
+
     bindVictoryDialogRefsByName(pid, refs);
 }
 

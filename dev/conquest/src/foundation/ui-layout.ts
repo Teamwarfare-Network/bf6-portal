@@ -225,6 +225,11 @@ const HUD_POST_DEPLOY_FINALIZE_SECONDS = 0.35;
 const HUD_JOIN_DEPLOY_RELEASE_DELAY_SECONDS = 0.5;
 const HUD_WARM_READY_TIMEOUT_SECONDS = 2.5;
 const HUD_FULL_UI_READY_TIMEOUT_SECONDS = 15;
+// Unified loading gate constants.
+// Floor: minimum hold time before release even if all UI families are already warm (testing safety margin).
+// Timeout: maximum hold before forced release regardless of readiness.
+const GATE_FLOOR_SECONDS = 30;
+const GATE_TIMEOUT_SECONDS = 60;
 
 // Admin Panel
 const ADMIN_PANEL_HEIGHT = 330;
@@ -327,4 +332,18 @@ const VICTORY_DIALOG_ROSTER_ROW_HEIGHT = 12;
 const VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP = 4;
 const VICTORY_DIALOG_ROSTER_ROW_PADDING_BOTTOM = 4;
 const VICTORY_DIALOG_BOTTOM_PADDING = 18;
+
+// Victory dialog ticket scoreboard, result line, crown, and border layout.
+const VICTORY_RESULT_BORDER_Y = 144;
+const VICTORY_RESULT_BORDER_WIDTH = 340;
+const VICTORY_RESULT_BORDER_HEIGHT = 136;
+const VICTORY_RESULT_Y = 146;
+const VICTORY_RESULT_TEXT_SIZE = 20;
+const VICTORY_CROWN_Y = 169;
+const VICTORY_CROWN_SIZE = 26;
+const VICTORY_CROWN_RGB: [number, number, number] = [1, 252 / 255, 156 / 255];
+const VICTORY_TEAM_NAME_Y = 193;
+const VICTORY_TEAM_NAME_TEXT_SIZE = 22;
+const VICTORY_TICKET_Y = 215;
+const VICTORY_TICKET_TEXT_SIZE = 54;
 

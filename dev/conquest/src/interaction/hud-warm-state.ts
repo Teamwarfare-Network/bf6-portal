@@ -30,6 +30,8 @@ function getUiLoadTraceEventDebugCode(eventCode: string): number {
     if (eventCode === "JOIN_RELEASE") return 16;
     if (eventCode === "DEPLOY_ACCEPT") return 17;
     if (eventCode === "JOIN_AUTHORIZE") return 18;
+    if (eventCode === "FLOOR_HOLD") return 19;
+    if (eventCode === "GATE_TIMEOUT_FORCE") return 20;
     return 0;
 }
 
@@ -56,13 +58,6 @@ function setHudWarmCompletedForPid(pid: number, completed: boolean): void {
     const state = getReadyDialogStateForPid(pid);
     if (!state) return;
     state.hudWarmCompleted = completed;
-}
-
-// Marks whether the player's team-swap transition is actively blocking reveal/deploy.
-function setHudSwapTransitionActiveForPid(pid: number, active: boolean): void {
-    const state = getReadyDialogStateForPid(pid);
-    if (!state) return;
-    state.hudSwapTransitionActive = active;
 }
 
 // Marks whether the combat HUD scheduler is allowed to reveal the combat family.
@@ -114,11 +109,16 @@ function beginUiLoadSessionForPid(pid: number, reason: UiLoadReason): number | u
     state.readyDialogWarmPrimed = false;
     state.readyDialogHotReady = false;
     state.gadgetMenuHotReady = false;
+    state.gateStartTime = 0;
+    state.safetyFloorTriggered = false;
+    state.safetyTimeoutTriggered = false;
     return state.uiLoadSessionId;
 }
 
 // Resets the compact first-join loading trace so the next audit starts from a clean per-player history.
+// No-op when UI_LOAD_TRACE_ENABLED is false; trace overhead is skipped entirely.
 function resetUiLoadTraceForPid(pid: number): void {
+    if (!UI_LOAD_TRACE_ENABLED) return;
     const state = getReadyDialogStateForPid(pid);
     if (!state) return;
     state.uiLoadLastEventDebugCode = 0;
@@ -127,7 +127,9 @@ function resetUiLoadTraceForPid(pid: number): void {
 }
 
 // Appends one compact loading-trace snapshot so first-join deploy races can be inspected without adding player-facing UI strings.
+// No-op when UI_LOAD_TRACE_ENABLED is false; all call sites become zero-cost in production.
 function pushUiLoadTraceForPid(pid: number, eventCode: string): void {
+    if (!UI_LOAD_TRACE_ENABLED) return;
     const state = getReadyDialogStateForPid(pid);
     if (!state) return;
 
@@ -226,13 +228,16 @@ function resetReadyDialogSectionSignaturesForPid(pid: number): void {
 }
 
 // Returns true once the player's critical HUD family has completed its hidden warm build.
+// Returns true on missing state (no state = no gate active) so HUD rendering is not unnecessarily gated.
 function isHudWarmReadyForPid(pid: number): boolean {
     return getReadyDialogStateForPid(pid)?.hudWarmCompleted !== false;
 }
 
-// Returns true while the player's team-swap warm/reveal transition is still active.
+// Returns true while a team-swap gate is actively blocking this player.
+// In the new design: team-swap state is gate active AND reason is team_swap.
 function isHudSwapTransitionActiveForPid(pid: number): boolean {
-    return getReadyDialogStateForPid(pid)?.hudSwapTransitionActive === true;
+    const state = getReadyDialogStateForPid(pid);
+    return state?.uiLoadGateActive === true && state?.uiLoadReason === "team_swap";
 }
 
 // Returns true while the player's loading gate is still actively blocking release.
@@ -280,23 +285,57 @@ function isGadgetMenuHotReadyForPid(pid: number): boolean {
     return getReadyDialogStateForPid(pid)?.gadgetMenuHotReady === true;
 }
 
-// Returns true while deploy/UI should remain blocked for the player's active HUD or loading transition.
+// Returns true while deploy/UI should remain blocked for the player's active loading gate.
+// In the new unified gate design: blocking iff the gate is active or has not yet released once.
 function isHudTransitionBlockingForPid(pid: number): boolean {
-    return isHudSwapTransitionActiveForPid(pid)
-        || isUiJoinDeployLockActiveForPid(pid)
-        || isUiLoadGateActiveForPid(pid)
-        || !isUiLoadGateReleasedForPid(pid)
-        || !isUiLoadDeployAuthorizedForPid(pid);
+    return isUiLoadGateActiveForPid(pid) || !isUiLoadGateReleasedForPid(pid);
 }
 
-// Returns true while production interactions should stay blocked, including the brief post-deploy finalize window.
+// Returns true while production interactions (interact points, menus, vehicles) should stay blocked.
+// In the new design there is no post-deploy finalize window, so this is equivalent to the gate check.
 function isUiInteractionBlockedForPid(pid: number): boolean {
-    return isHudTransitionBlockingForPid(pid) || isUiPostDeployFinalizeActiveForPid(pid);
+    return isUiLoadGateActiveForPid(pid) || !isUiLoadGateReleasedForPid(pid);
 }
 
 // Returns true when the combat HUD scheduler may reveal the combat family for the player.
 function isCombatHudRevealAllowedForPid(pid: number): boolean {
     return getReadyDialogStateForPid(pid)?.combatHudRevealAllowed === true;
+}
+
+// Records the match elapsed time when a loading gate session begins so the warm loop can compute elapsed time.
+function setGateStartTimeForPid(pid: number, time: number): void {
+    const state = getReadyDialogStateForPid(pid);
+    if (!state) return;
+    state.gateStartTime = time;
+}
+
+// Returns the match elapsed time at which the current gate session started (0 if not set).
+function getGateStartTimeForPid(pid: number): number {
+    return getReadyDialogStateForPid(pid)?.gateStartTime ?? 0;
+}
+
+// Marks that the safety floor held release beyond the readiness-ready point for this session.
+function setSafetyFloorTriggeredForPid(pid: number, triggered: boolean): void {
+    const state = getReadyDialogStateForPid(pid);
+    if (!state) return;
+    state.safetyFloorTriggered = triggered;
+}
+
+// Returns true if the safety floor held the gate beyond when UI was already warm this session.
+function isSafetyFloorTriggeredForPid(pid: number): boolean {
+    return getReadyDialogStateForPid(pid)?.safetyFloorTriggered === true;
+}
+
+// Marks that the safety timeout forced release before UI was fully warm this session.
+function setSafetyTimeoutTriggeredForPid(pid: number, triggered: boolean): void {
+    const state = getReadyDialogStateForPid(pid);
+    if (!state) return;
+    state.safetyTimeoutTriggered = triggered;
+}
+
+// Returns true if the safety timeout force-released the gate this session.
+function isSafetyTimeoutTriggeredForPid(pid: number): boolean {
+    return getReadyDialogStateForPid(pid)?.safetyTimeoutTriggered === true;
 }
 
 //#endregion ----------------- HUD Warm State --------------------

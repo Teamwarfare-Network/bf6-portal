@@ -93,25 +93,33 @@ function onPlayerEnterAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger:
 }
 
 // Main-base exit enforces pre-live "not ready" behavior when a player leaves base.
+// Main-base flag is cleared unconditionally so undeploy/death inside base cannot leave stale state.
 function onPlayerExitAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger) {
     try {
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+
+        // Always clear main-base flag regardless of deploy/alive state so it cannot go stale.
+        if (IsPlayerInOwnMainBase(eventPlayer, eventAreaTrigger)) {
+            const pid = safeGetPlayerId(eventPlayer);
+            if (pid !== undefined) {
+                State.players.inMainBaseByPid[pid] = false;
+                syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
+            }
+        }
 
         if (!isPlayerDeployed(eventPlayer)) return;
         if (!safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsAlive, false)) return;
 
         if (IsPlayerInOwnMainBase(eventPlayer, eventAreaTrigger)) {
-            const pid = safeGetPlayerId(eventPlayer);
-            if (pid !== undefined) {
-                State.players.inMainBaseByPid[pid] = false;
-                if (!isMatchLive()) {
+            if (!isMatchLive()) {
+                const pid = safeGetPlayerId(eventPlayer);
+                if (pid !== undefined) {
                     notePreliveMainBaseViolation(eventPlayer, pid);
                 }
             }
             refreshPlayerBoundaryState(eventPlayer);
             refreshReadyStatusForAllBuiltReadyDialogs();
             renderReadyDialogForAllVisibleViewers();
-            syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
         }
 
         updateWorldInteractableAreaTriggerMembershipForPlayer(eventPlayer, eventAreaTrigger, false);

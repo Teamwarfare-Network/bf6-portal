@@ -173,3 +173,25 @@ Prompting examples:
 4. Do not use drive-letter markdown targets like `C:\...` because some clients route those to a browser.
 5. Link labels must include the project-relative folder path (for example `src/interaction/actions.ts`), not just a bare filename like `actions.ts`.
 6. Always prefer IDE-native local file links for local code/doc references.
+
+## Codebase Reference Map Maintenance Policy
+
+1. The authoritative codebase reference map lives in `./design_doc/TWL_Conquest_Design.md` under the "Codebase Reference Map" section.
+2. When a major change adds, removes, or renames files or directories under `src/`, update the reference map in the same change set.
+3. When a major change adds or removes exported functions in high-traffic files (index/, interaction/, hud/), add a brief note to the relevant file entry.
+4. The reference map is a navigation aid, not exhaustive documentation. Keep entries to 1-line descriptions per file and per function.
+5. Update the "Project Stats" header (line count, bundle size, version) after every bumpVersion.
+
+## BEFORE CODING:
+
+1. Confirm you loaded `AGENTS.md`.
+2. Confirm you will use `./design_doc/TWL_Conquest_Design.md` as primary requirements source.
+3. Confirm `./reference_design_documentation` is supporting analysis context (not canonical requirements).
+4. Confirm `./reference_design_documentation/archive` is treated as outdated and will only be used if explicitly requested.
+5. Confirm you will use `../reference_bf6_core` as API source of truth and validate every `mod.*` / `modlib.*` symbol.
+6. Confirm `./reference_implementations` is methodology-only and you will not copy code directly from its subfolders.
+7. Confirm you will create and maintain a task list with statuses (`pending`, `in_progress`, `completed`) before implementation starts.
+
+## AFTER CODING:
+
+- Ensure the Changelog is updated and version is bumped via bumpVersion

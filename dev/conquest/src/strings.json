@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.008)",
+        "title": "teamwarfare . net | TWL Conquest (v1.025)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -324,12 +324,15 @@
     "victory": {
       "restartInFormat": "Map will restart/rotate in {0}s",
       "screenshotPrompt": "Screenshot this to record match results",
-      "totalMatchTimeLabel": "Total Match Time:"
+      "totalMatchTimeLabel": "Total Match Time:",
+      "winsResultFormat": "{0} WINS! (+{1})",
+      "drawResultFormat": "DRAW ({0} : {1})"
     },
     "countdown": {
       "format": "{0}",
       "clockFormat": "{0}:{1}{2}",
-      "go": "GO!"
+      "go": "GO!",
+      "live": "LIVE!"
     },
     "debug": {
       "adminPos": "ADMIN POS X:{0} Y:{1} Z:{2}",
@@ -352,7 +355,8 @@
       "slash": "/",
       "unknownPlayer": "Unknown",
       "unassigned": "Unassigned",
-      "debugPlaceholderName": "PLACEHOLDER_PLAYER_NAME_HERE"
+      "debugPlaceholderName": "PLACEHOLDER_PLAYER_NAME_HERE",
+      "uiLoadHardTimeout": "ERROR: UI Load Hard Timeout after {0}s (pid {1})"
     }
   }
 }

@@ -1,33 +1,36 @@
 # TWL Conquest Design and Implementation Plan
 
-Last updated: 2026-03-30  
+Last updated: 2026-04-04  
 Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
 
 ## Current Status
 
 - This is the authoritative master design document for TWL Conquest.
-- Accepted current implementation baseline:
+- Accepted current implementation baseline (as of v1.025, 2026-04-04):
   - Phase 1: completed
   - Phase 2A: completed
-  - Phase 2B: implemented with remaining future validation deferred
-  - Phase 3A, 3B, 3C: completed and accepted as the current HUD/UI baseline
-  - Phase 4, 4B: completed and accepted at the current multiplayer-tested checkpoint
-  - Phase 5A-5G: completed and accepted as the current Phase 5 vehicle/UI baseline; remaining polish, validation depth, and follow-up bugs are intentionally deferred to later polish/Phase 10 and `design_doc/conquest_issues.md`
+  - Phase 2B: completed (remaining future validation deferred to Phase 10)
+  - Phase 3A, 3B, 3C: completed
+  - Phase 4, 4B: completed
+  - Phase 5A-5G: completed (remaining polish, validation depth, and follow-up bugs deferred to Phase 10)
+  - Phase 6: completed (boundary system functional; remaining tuning deferred to Phase 10)
+  - Phase 7: completed (pre-game 20s countdown with undeploy/vehicle reset/deploy gating, victory dialog with ticket scoreboard/crown/result line, endMatch winner inference; remaining polish deferred to Phase 10)
 - Current next implementation target:
-  - Immediate priority before remaining Phase 6/7/8/9 feature work:
-    - UI/menu lifecycle hardening
-    - first-use performance stabilization
-    - explicit loading/warm-gate design so players do not reach production interaction while critical UI families are still building
-  - Phase 7 pre/post-match events, once the current Phase 6 boundary tuning/validation pass is accepted
-  - Phase 7 should start with the core end-flow/result/join-prompt/reset-setup slice; optional world-interactable terminal extensions should not block that start
-  - Spawn behavior and restrictions are now intentionally deferred into dedicated Phase 8 after Phase 7
-  - Optional world-interactable note: main-base ready/deploy terminals are now functionally accepted; if world-interactable work resumes before core Phase 7 flow work, the next slice is the point/ammo interactable family
+  - Phase 8: Spawn behavior and restrictions
+  - Phase 9: Custom scoreboard + KPI tracking
+  - Phase 10: Iteration, playtesting, and polish — collects all deferred work from earlier phases including:
+    - UI/menu lifecycle hardening and first-use performance stabilization (from Phase 5/6 era)
+    - All open bugs tracked in `design_doc/conquest_issues.md`
+    - Victory dialog further polish (drop shadows, roster perspective swap, layout refinement)
+    - Countdown/pre-game polish
+    - Boundary tuning and edge cases
 - Current open Conquest bug status:
   - See `design_doc/conquest_issues.md` for the active issue list
-  - `CQ_Bug_3` remains intentionally deferred, and later deferred polish bugs are tracked there explicitly
+  - All open bugs are now tracked for Phase 10 polish unless otherwise noted
 - Active companion documents:
   - `design_doc/api_checklist.md`
   - `design_doc/conquest_issues.md`
+  - `design_doc/conquest_optimization_analysis.md`
   - `design_doc/phase1_capture_api_proof.md`
 - Archived planning documents are historical reference only. If an archived document conflicts with this file, this file is authoritative.
 
@@ -221,6 +224,14 @@ Current workflow for this document:
       - no wait loop, undeploy hook, or recapture helper may call the same overlay show path again once the session is active
       - deploy authority and overlay visibility are related, but they are not the same state and must not share the same helper by default
       - team swap should not be re-added by incrementally extending the failed staged-release attempt; it needs a fresh design pass from the earlier baseline
+    - Known polish items after `v1.013` pre-Phase 7 cleanup pass:
+      - `CQ_Bug_32`: ready dialog flickers briefly during warm prime on first join
+        - root cause: `UI_LOAD_TRACE_ENABLED` gating removed trace overhead that acted as an inadvertent timing buffer between overlay show and warm prime start
+        - `v1.013` partially fixes by reasserting overlay + yielding one frame before prime, but flicker not fully eliminated
+        - full fix options: build dialog children with `visible: false` during prime, move prime to earlier lifecycle phase, or enforce z-depth ordering overlay > dialog during prime
+      - `CQ_Bug_33`: loading overlay briefly disappears during team swap
+        - likely same timing root cause as CQ_Bug_32
+        - both are deferred polish, not blocking Phase 7
 
 ## Notes Before Implementation Phases
 
@@ -3022,11 +3033,13 @@ Phase Changelog:
 
 Deliverables:
 
-- random spawn-point selection flow with configured restrictions
-- neutral-flag spawn restriction and explicit fallback chain behavior
-- dedicated team-switch buttons on minimap
+- script-driven spawner system with absolute certainty that flag deploy uses our authored spawn positions
+- 10 authored spawn positions per team per flag, stored in map config (same pattern as vehicle spawner slots)
+- random spawn-point selection with full randomization (no weighting, no bias)
+- ownership-gated spawning: you own the flag or you don't spawn there (no fallback chain)
+- clean extensibility hooks for future logic (Phase 13 advanced contract) without enabling any in this pass
+- Godot PlayerSpawner objects authored per flag (script-first control, confirmed approach)
 - clear diagnostics for missing/invalid spawn sets per validator policy
-- preserve clean seams for later advanced spawn analysis without enabling node-risk/LOS/heatmap logic here
 
 Mapped clarifications:
 
@@ -3034,28 +3047,173 @@ Mapped clarifications:
 
 Godot/map prerequisites:
 
-- authored spawn-point sets (team, per-flag, fallback as applicable)
+- authored PlayerSpawner objects per flag per team in Godot (10 per team per flag)
+- spawn point IDs recorded and mapped to map config
 - Phase 6 boundary rules accepted so spawn eligibility is not competing with unstable out-of-bounds logic
 - Phase 7 pre/post-match flow accepted enough that spawn eligibility/reset handoff is stable
+
+#### Detailed Design
+
+##### Core Architecture
+
+The spawn system follows the same pattern as the vehicle spawner slot system: map-authored positions stored in `MapConfig`, managed by runtime state, and executed by script-authoritative logic.
+
+**Key principle:** The script must have absolute control over where players spawn when deploying on a flag. The engine's default flag spawn behavior must be overridden or intercepted so that every flag deploy goes through our authored spawn positions.
+
+##### API Foundation
+
+Verified BF6 Portal APIs for spawn control:
+
+| API | Signature | Purpose |
+|-----|-----------|---------|
+| `SpawnPlayerFromSpawnPoint` | `(player: Player, spawnPointId: number \| SpawnPoint): void` | Force-deploy player at specific spawn point (proven in vehicle direct-spawn) |
+| `GetSpawnPoint` | `(number): SpawnPoint` | Resolve SpawnPoint object from Godot ID |
+| `EnableCapturePointDeploying` | `(capturePoint: CapturePoint, enableDeploying: boolean): void` | Enable/disable deploying on a specific capture point |
+| `EnablePlayerDeploy` | `(player: Player, deployAllowed: boolean): void` | Per-player deploy gate |
+| `OnPlayerDeployed` | event | Fires after player successfully deploys |
+
+**Critical finding:** There is no `OnPlayerRequestSpawn` or pre-deploy interception event, and no verified hook for "player selected this flag, now override the exact child spawn choice." The engine fires `OnPlayerDeployed` *after* the player has already spawned. Partial override of the engine's per-flag spawn selection is not reliably achievable.
+
+**Accepted approach: Fully script-driven spawning.**
+- Disable engine flag deploying via `EnableCapturePointDeploying(cp, false)` for all conquest flags
+- Script owns the entire deploy flow via `SpawnPlayerFromSpawnPoint`
+- The engine is no longer deciding spawn locations — the script has full authority
+
+##### Godot Object Roles (Confirmed)
+
+| Godot Object | Role | Use In Phase 8 |
+|--------------|------|-----------------|
+| `HQ_PlayerSpawner` | Normal BF HQ spawn; tied to team, supports deploy screen HQ flow | **Not used** — main base spawns stay engine-default for now |
+| `PlayerSpawner` | Alternate spawn method, no HQ; designed for script-first control | **Primary** — author these around each flag for our spawn positions |
+| `SpawnPoint` | Lower-level spawn location used by CapturePoint infantry spawn lists; engine manages these internally | **Not used** — engine picks from these non-randomly; we bypass entirely |
+
+**Key insight:** If you attach normal `SpawnPoint` objects to a flag or HQ, the engine uses its own deploy logic (priority-based, not random). This is why default flag spawning does not feel random. The only way to get true randomness is to bypass the engine's selection entirely and call `SpawnPlayerFromSpawnPoint` directly.
+
+##### Remaining Validation Items
+
+The core approach is confirmed. These items still need test-build validation:
+
+1. **`EnableCapturePointDeploying(cp, false)` behavior on deploy screen:** When disabled, does the flag still appear visually on the deploy screen (just non-clickable)? Or does it disappear? If it disappears, we need an alternative way to present flag deploy options to the player (custom UI or keeping flags "enabled" but intercepting the deploy).
+
+2. **Deploy screen flag click detection with disabled deploy:** If engine flag deploy is disabled, how does the player indicate which flag they want to spawn at? Options:
+   - Keep engine flag deploy enabled, let engine spawn at default location, then immediately relocate via `SpawnPlayerFromSpawnPoint` (Approach B — functional but has teleport flash)
+   - Build a custom deploy-target UI in the deploy screen (more work but cleanest)
+   - Use the existing deploy screen with flags enabled, detect which flag was selected via proximity check in `OnPlayerDeployed`, then relocate
+
+3. **`SpawnPlayerFromSpawnPoint` with standalone `PlayerSpawner`:** Confirm that Godot `PlayerSpawner` objects not parented to any CapturePoint work with `SpawnPlayerFromSpawnPoint(player, spawnerId)`. Already proven for vehicle deploy spawn points — expect identical behavior.
+
+**These items determine the deploy-screen UX, not the core spawn mechanism.** The randomized selection + `SpawnPlayerFromSpawnPoint` path is confirmed regardless.
+
+##### Map Config Extension
+
+Add per-flag player spawn point arrays to `MapConfig`:
+
+```
+type FlagSpawnConfig = {
+    team1SpawnPointIds: number[];   // up to 10 Godot PlayerSpawner IDs for team 1
+    team2SpawnPointIds: number[];   // up to 10 Godot PlayerSpawner IDs for team 2
+};
+```
+
+Extend `CapturePointConfig`:
+```
+type CapturePointConfig = {
+    objId: number;
+    label: string;
+    order: number;
+    spawns?: FlagSpawnConfig;       // Phase 8 spawn positions
+};
+```
+
+For Operation Firestorm with 5 flags × 2 teams × 10 spawn points = 100 spawn point IDs. Each ID is a number (~4-8 bytes). Total data cost: ~400-800 bytes in map config.
+
+##### Spawn Selection Logic
+
+Location: `src/interaction/spawn-selector.ts` (replaces Phase 1 scaffold)
+
+```
+conquestSelectSpawnPoint(input: ConquestSpawnSelectorInput) -> ConquestSpawnSelectorResult
+```
+
+Algorithm:
+1. Resolve the requested flag from `input.preferredFlagObjId`
+2. Check ownership: if the player's team does not own the flag, return `{ denied: true, reason: "flag_not_owned" }`
+3. Look up `capturePointConfig.spawns` for the player's team → get array of spawn point IDs
+4. If the array is empty or missing, return `{ denied: true, reason: "no_spawn_points_configured" }`
+5. Select a random index: `Math.floor(Math.random() * spawnPointIds.length)`
+6. Return `{ denied: false, selectedSpawnObjId: spawnPointIds[randomIndex], reason: "random_selection" }`
+
+**No fallback chain.** If you don't own the flag, the deploy is denied. No cascading to another flag or main base. This keeps the system simple and deterministic.
+
+**No weighting or bias.** All 10 spawn points are equally likely. Future logic (Phase 13) can add distance-from-enemy weighting, LOS checks, or heatmap avoidance — the extensibility hook is the `ConquestSpawnSelectorResult` type which already has `fallbackUsed` and `reason` fields for richer selection metadata.
+
+##### Runtime Flow
+
+**On player deploy (clicking a flag):**
+1. `OnPlayerDeployed` fires
+2. Determine which flag the player selected (position proximity check against known flag positions from `CapturePointConfig`)
+3. Call `conquestSelectSpawnPoint({ pid, teamId, reason: "deploy", preferredFlagObjId })`
+4. If denied: `UndeployPlayer(player)` (send back to deploy screen)
+5. If approved: `SpawnPlayerFromSpawnPoint(player, result.selectedSpawnObjId)` — player is teleported to the randomly selected `PlayerSpawner` position
+
+**Pre-game / countdown phase:**
+- Deploy is already disabled during countdown (Phase 7)
+- Spawn selection is a no-op during `COUNTDOWN` lifecycle phase
+
+**Match end / post-match:**
+- Deploy is disabled
+- Spawn selection returns denied for all requests
+
+##### Main Base Spawns
+
+**Low priority for first pass.** Main base spawns currently use the engine's default spawn behavior, which is acceptable for V1. The existing `team1VehicleDeploySpawnPointId` / `team2VehicleDeploySpawnPointId` in map config handle vehicle direct-spawn deployment.
+
+If main base spawn control becomes needed later, the same pattern applies: author PlayerSpawner objects in main base, add IDs to map config, and route through `conquestSelectSpawnPoint` with a `"main_base"` flag type.
+
+##### Byte Budget Estimate
+
+| Component | Est. Bytes |
+|-----------|-----------|
+| `FlagSpawnConfig` type + `CapturePointConfig` extension | ~30 |
+| `conquestSelectSpawnPoint` implementation (replace scaffold) | ~200-300 |
+| Map config data (100 spawn point IDs for Firestorm) | ~400-800 |
+| Deploy integration in `player-deploy.ts` | ~100-200 |
+| Diagnostics for missing spawn sets | ~100-150 |
+| **Total** | **~830-1,480** |
+
+At current headroom of 19,316 bytes (1.8%), this is comfortably within budget. However, if investigation reveals that Approach A requires additional deploy-screen management code, the cost could increase by 200-500 bytes.
+
+**Risk note:** If multiple maps are added with per-flag spawn data, the map config data cost scales linearly. 3 maps × 100 IDs × ~6 bytes = ~1,800 bytes of pure data. This is manageable but should be monitored.
+
+##### Deferred Items
+
+- **Phase 13 (Advanced Spawn Contract):** LOS checks, distance-from-enemy weighting, heatmap avoidance, cooldown/safety scoring per spawn point. The `ConquestSpawnSelectorResult` type already accommodates this metadata.
+- **CQ_Bug_34 (Vehicle spawner orientation tuning):** Deferred to Phase 10 unless Phase 8 testing reveals rotation issues with player spawns that share the same investigation surface.
+- **Main base spawn control:** Not in Phase 8 scope unless engine default behavior proves inadequate during testing.
+- **Team-switch buttons on minimap:** Deferred from original Phase 8 scope — can be added in Phase 10 or as a standalone polish item.
 
 Verification:
 
 - `npm run verify`
-- random spawn selection sanity checks
-- neutral-flag restriction checks
-- explicit fallback-chain behavior checks
-- dedicated minimap team-switch button behavior checks
+- Godot PlayerSpawner investigation (test build required before implementation)
+- random spawn selection sanity checks (all 10 positions must be reachable)
+- ownership-gated spawn restriction checks (denied for unowned/neutral flags)
+- no advanced node/LOS/heatmap logic is active in Phase 8
 - missing/invalid spawn-set diagnostic checks
-- confirm no advanced node/LOS/heatmap logic is active in Phase 8
+- deploy integration correctness across: normal deploy, redeploy after death, team swap, reconnect
 
 Codex To-Do Checklist:
 
-- [ ] Implement random spawn selection using configured team/flag/fallback sets.
-- [ ] Enforce neutral-flag spawn restriction and explicit fallback chain behavior.
-- [ ] Add dedicated team-switch buttons on the minimap and validate their team-switch flow ownership.
-- [ ] Add clear diagnostics for missing/invalid spawn sets per validator policy.
-- [ ] Keep advanced node-risk/LOS/heatmap logic disabled in this phase.
-- [ ] Run spawn restriction/fallback tests across team swap/redeploy scenarios.
+- [ ] Validate deploy-screen UX with `EnableCapturePointDeploying(cp, false)` (test build: do flags still appear?)
+- [ ] Extend `CapturePointConfig` with `FlagSpawnConfig` type
+- [ ] Author 10 PlayerSpawner positions per team per flag in Godot for Operation Firestorm
+- [ ] Record spawn point IDs in Firestorm map config
+- [ ] Implement `conquestSelectSpawnPoint` with random selection and ownership gating
+- [ ] Integrate spawn selection into deploy flow (`player-deploy.ts` or custom deploy path)
+- [ ] Add diagnostics for missing/invalid spawn sets per validator policy
+- [ ] Keep advanced node-risk/LOS/heatmap logic disabled in this phase
+- [ ] Run spawn restriction tests across deploy/redeploy/team-swap/reconnect scenarios
+- [ ] Validate spawn selection across all 5 Firestorm flags with both teams
 
 Phase Changelog:
 
@@ -3064,6 +3222,8 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-04-04 | Godot spawner role clarification | Confirmed PlayerSpawner is the correct Godot object for script-first control; SpawnPoint is engine-managed and not random; engine flag deploy logic is priority-based not random. Approach confirmed: disable engine flag deploy + script-driven SpawnPlayerFromSpawnPoint. Remaining validation: deploy-screen UX with EnableCapturePointDeploying(false) | Phase 8 | accepted | Updated investigation section to confirmed findings, added Godot object role table`
+  - `2026-04-04 | Phase 8 detailed design pass | Added comprehensive spawn system design with API validation, Godot investigation requirements, map config extension spec, byte budget estimate, and implementation flow. Removed fallback chain (own-or-deny model). Main base spawns deferred. Minimap team-switch buttons deferred to Phase 10 | Phase 8, Phase 10, Phase 13 | accepted | Phase 8 section fully rewritten with detailed design`
   - `2026-03-26 | Dedicated spawn-phase split request | Moved spawn behavior/restriction/fallback work out of Phase 6 and into new Phase 8 after Phase 7 so boundaries can finish first, pre/post-match flow can follow second, and spawn behavior can be implemented as a separate system slice after that | Phase 6, Phase 7, Phase 8, Phase 9, Phase 10, Phase 11, Phase 12, Phase 13, Phase 14 | accepted | current status + TOC + Phase 6/7/8 scopes/checklists`
 
 <a id="phase-9"></a>
@@ -3551,5 +3711,283 @@ Required manual checks per phase (minimum):
 ## Open Punchlist (Blockers + Stop-The-Line Evidence Checklist)
 
 None
+
+## Codebase Reference Map
+
+Last updated: v1.025 (2026-04-04)
+
+### Project Stats
+
+| Metric | Value |
+|--------|-------|
+| Version | 1.025 |
+| Source files | 114 .ts files |
+| Source lines | ~23,900 |
+| Bundle size | 1,029,260 bytes |
+| Bundle limit | 1,048,576 bytes (1 MiB) |
+| Headroom | 19,316 bytes (1.8%) |
+| Entry point | `src/index.ts` -> 19 Portal event handlers |
+| Build tool | `bf6-portal-bundler` -> `dist/bundle.ts` + `dist/bundle.strings.json` |
+
+### Directory Tree
+
+```
+src/
+  index.ts                    -- Entry point: imports all modules, exports 19 Portal event handlers
+  types.ts                    -- Foundation type shim (imports foundation/*)
+  header-file.ts              -- Version, license (MIT), attribution
+  footer-file.ts              -- EOF version marker
+  Changelog.ts                -- Version history (724 lines)
+  conquest-flow.ts            -- Continuous-live flow: start/end match (with winner inference), clock binding, match length config
+  strings.json                -- All player-facing localized string keys
+
+  foundation/
+    modlib.ts                 -- Portal scripting API import wrapper
+    gameplay.ts               -- Core constants (TeamID, MatchPhase, colors, vehicle lists, presets)
+    ui-layout.ts              -- All HUD/dialog pixel dimensions, colors, timing constants (349 lines)
+    string-keys.ts            -- String key constant mappings (STR_* -> mod.stringkeys.twl.*)
+
+  state/
+    core.ts                   -- Shared state accessors (isMatchLive, setUIInputMode, sendWorldLog)
+    runtime-types.ts          -- GameState shape: all type definitions incl. ConquestLifecyclePhase (446 lines)
+    runtime-state.ts          -- State singleton initialization (277 lines)
+    runtime.ts                -- Composition shim
+    id-helpers.ts             -- Safe ID/object/team accessors (safeGetPlayerId, safeFind, etc.)
+    player-lookup.ts          -- Player lookup by PID
+    ui-helpers.ts             -- Widget builder helpers (safeParseUI, addOutlinedButton)
+    hud-cache-types.ts        -- HUD widget cache type definitions incl. victory dialog refs (226 lines)
+    lifecycle-guardrails.ts   -- Phase transition guards (NotReady/Live/GameOver)
+    spawn-charge.ts           -- Phase 2B spawn-charge reason matrix and deploy charging
+
+  config/
+    conquest-constants.ts     -- Gameplay tuning (tickets: 350, capture time: 10s, bleed: 1/3/s)
+    types.ts                  -- Map config types (MapConfig, CapturePointConfig, VehicleSpawnSpec)
+    maps.ts                   -- Map registry loader
+    maps/operation-firestorm.ts -- Firestorm map-specific spawn/capture/ceiling config
+    map-runtime.ts            -- Map detection and config application (754 lines)
+    runtime.ts                -- Runtime config initialization
+
+  index/
+    game-mode.ts              -- Mode start, main game loop (0.12s tick), clock/boundary/victory
+    conquest-scaffold.ts      -- Phase 1 state initialization scaffold
+    capture-tickets.ts        -- Phase 2A capture routing, ticket bleed, combat HUD dispatch (2,238 lines)
+    capture-sound.ts          -- Phase 4 capture-tick sound queue and dispatch
+    capture-vo.ts             -- Phase 4B objective voice-over queue and dispatch
+    player-join-leave.ts      -- Join/leave lifecycle, HUD cleanup, loading gate entry
+    player-deploy.ts          -- Deploy/undeploy handlers, loading gate enforcement
+    player-loop-inputs.ts     -- Per-tick player input: gate enforcement, interact routing
+    vehicle-events.ts         -- Vehicle enter/exit/spawn/destroy, slot binding
+    area-triggers.ts          -- Capture-point and main-base area trigger handlers
+
+  interaction/
+    types.ts                  -- readyDialogData_t (30+ fields), UiLoadReason, HARD_PLAYER_LOCK_AUDIT_MODE
+    actions.ts                -- Loading gate orchestration, HUD warm/reveal, deploy control (705 lines)
+    hud-warm-state.ts         -- Per-player gate state accessors (40+ getters/setters, 344 lines)
+    interact-point.ts         -- Ready-dialog interact point spawn/despawn lifecycle
+    world-interactables.ts    -- Authored interact-point routing, per-player world icons
+    ammo-resupply-menu.ts     -- Gadget/ammo menu UI, cooldowns, click handling (1,859 lines)
+    spawn-selector.ts         -- Custom spawn selection stub (Phase 8 placeholder)
+    ui-events.ts              -- Button event dispatcher
+    ui-events-ready.ts        -- Ready dialog + admin panel click handlers
+    ui-primary-click.ts       -- Primary-click debounce helpers
+
+  hud/
+    status.ts                 -- Top-left status dock, safe widget setters, clock formatting (553 lines)
+    help-visibility.ts        -- Help/ready text visibility control
+    conquest-scaffold.ts      -- Phase 1 HUD setup seam (no-op placeholder)
+    ui-cache-perf.ts          -- Per-player UI cache instrumentation panel (295 lines, dev diagnostics)
+    ui-load-debug.ts          -- Loading gate audit debug panel (153 lines, dev diagnostics)
+    update-helpers.ts         -- Admin action counter management
+
+  admin-panel/
+    build.ts                  -- Admin panel widget construction (647 lines)
+    events.ts                 -- Admin button click handlers
+    visibility.ts             -- Admin panel show/hide/toggle lifecycle
+
+  ready-dialog/
+    lifecycle.ts              -- Ready dialog lifecycle (init, prebuild hidden, open, close)
+    dialog-build.ts           -- Main dialog widget construction
+    dialog-build-sections.ts  -- Section headers, dividers, layout
+    dialog-build-mode-config.ts -- Mode config UI (team size, vehicle presets)
+    dialog-build-roster.ts    -- Player roster display
+    roster-render.ts          -- Roster widget rendering
+    roster-active.ts          -- Active roster state tracking
+    mode-config-schema.ts     -- ModeConfigSchema type and validation
+    mode-config-presets.ts    -- Vehicle preset packages (1v1 through 4v4)
+    mode-config-readout.ts    -- Vehicle selection readout display
+    mode-config-aircraft-ceiling.ts -- Aircraft altitude limit config
+    matchup-summary.ts        -- Match summary panel (team compositions)
+    countdown-flow.ts         -- Pregame countdown orchestration
+    auto-start.ts             -- Auto-start enablement/flow
+    swap-action.ts            -- Team swap action handler
+    takeoff-gating.ts         -- Aircraft takeoff readiness check
+    ready-reset.ts            -- Ready state reset helpers
+    pregame-ui.ts             -- Pregame-phase overlay UI
+    join-prompt-ids.ts        -- Join prompt widget name constants
+    join-prompt-layout.ts     -- Join prompt overlay layout/construction
+    join-prompt-events.ts     -- Join prompt button/lifecycle events
+
+  boundary/
+    enforcement.ts            -- Map boundary enforcement, kill timers, zone checks (342 lines)
+    prompt-ui.ts              -- Boundary violation countdown UI (477 lines)
+
+  clock/
+    state.ts                  -- Match clock runtime state, pause/elapsed/expiry
+    timer-instance.ts         -- Reusable MM:SS timer widget builders (405 lines)
+    ui.ts                     -- Clock widget build, cache, digit rendering (326 lines)
+
+  vehicles/
+    vehicle-classification.ts -- Vehicle type guards (aircraft, jet, tank, heli)
+    registration.ts           -- Vehicle team registry, base team inference
+    ownership.ts              -- Seat-to-player ownership tracking
+    reservations.ts           -- Vehicle spawn reservations
+    timers.ts                 -- Vehicle respawn timer tracking
+    spawner-slots.ts          -- Slot state machine, enablement/reservation
+    spawner-sequence.ts       -- Slot sequencing logic
+    spawner-bind.ts           -- Vehicle-to-slot binding on spawn
+    spawner-bootstrap.ts      -- Spawner system initialization
+    deploy-fulfillment.ts     -- Direct vehicle spawn on deploy (515 lines)
+    deploy-live-menu.ts       -- Live deploy menu UI for spawn selection
+    deploy-timer-ui.ts        -- Vehicle spawn timer HUD display (1,942 lines)
+    array-helpers.ts          -- Vehicle array manipulation helpers
+
+  ui/
+    conquest/
+      top-hud-shell.ts        -- Top HUD container root and lifecycle
+      hud-core/
+        types.ts              -- TwlConquestHud type definitions
+        constants.ts          -- HUD layout, colors, sizing
+        names.ts              -- Widget name generators
+        state.ts              -- HUD state machine (visibility, owner tracking)
+        lifecycle.ts          -- HUD show/hide/reset lifecycle
+        build.ts              -- Widget construction (panels, lanes, entries)
+        validate.ts           -- HUD validity checks
+        render.ts             -- Visual update (tickets, flags, engage markers)
+        pipeline.ts           -- Render queue and dispatch
+        toggle.ts             -- Player HUD visibility toggle
+    dialog/
+      victory.ts              -- Victory dialog update: ticket scoreboard, crown, result line, roster, countdown
+      victory-build.ts        -- Victory dialog widget construction (scoreboard border, crowns, team names, tickets)
+    ready/
+      ready-line.ts           -- Ready status indicator line
+    branding/
+      top-left.ts             -- Title/version branding panel
+    admin/
+      action-counter.ts       -- Admin action event counter display
+
+  utils/
+    main-base.ts              -- Main base detection and team binding
+    multi-click.ts            -- Multi-click detection utility
+
+  strings/
+    ui-ids.ts                 -- String localization key ID constants
+```
+
+### Exported Public API (19 Portal Event Handlers)
+
+All functions exported from `src/index.ts`. Each delegates to an `*Impl` function in the listed file.
+
+| Export | Impl File | Purpose |
+|--------|-----------|---------|
+| `OnGameModeStarted` | `index/game-mode.ts` | Mode startup, main game loop |
+| `OnPlayerJoinGame` | `index/player-join-leave.ts` | Player join lifecycle, loading gate |
+| `OnPlayerLeaveGame` | `index/player-join-leave.ts` | Player leave, state teardown |
+| `OnPlayerDeployed` | `index/player-deploy.ts` | Deploy gate check, HUD reveal |
+| `OnPlayerUndeploy` | `index/player-deploy.ts` | Undeploy cleanup, gate reassert |
+| `OngoingPlayer` | `index/player-loop-inputs.ts` | Per-tick input, gate enforcement |
+| `OnPlayerInteract` | `index/player-loop-inputs.ts` | World interact point activation |
+| `OnPlayerUIButtonEvent` | `interaction/ui-events.ts` | UI button click routing |
+| `OnPlayerEnterVehicle` | `index/vehicle-events.ts` | Vehicle seat ownership |
+| `OnPlayerExitVehicle` | `index/vehicle-events.ts` | Vehicle seat cleanup |
+| `OnVehicleSpawned` | `index/vehicle-events.ts` | Vehicle registration, slot binding |
+| `OnVehicleDestroyed` | `index/vehicle-events.ts` | Slot cleanup, respawn sequencing |
+| `OngoingCapturePoint` | `index/area-triggers.ts` | Capture state sync (suppressed) |
+| `OnCapturePointLost` | `index/area-triggers.ts` | Neutralization edge callback |
+| `OnCapturePointCaptured` | `index/area-triggers.ts` | Capture-complete edge callback |
+| `OnPlayerEnterCapturePoint` | `index/area-triggers.ts` | Engaged objective HUD ownership |
+| `OnPlayerExitCapturePoint` | `index/area-triggers.ts` | Engaged objective cleanup |
+| `OnPlayerEnterAreaTrigger` | `index/area-triggers.ts` | Main-base/boundary enter |
+| `OnPlayerExitAreaTrigger` | `index/area-triggers.ts` | Main-base/boundary exit |
+
+### Key Functions by Module
+
+#### index/game-mode.ts — Main Game Loop
+- `onGameModeStartedImpl()` — entry point: init state, build HUD, start spawner, enter main loop
+- Main loop (0.12s tick): `conquestPhase2ARefreshLiveCaptureStateSubtick()`, `updateConquestCombatHudForAllPlayers()`, `conquestPhase4FlushCaptureSoundQueue()`, `conquestPhase4BFlushCaptureVoiceOverQueue()`
+- Second boundary: `updateVehicleDeployTimerHudForAllPlayers()`, `ensureActiveWorldInteractablesReady()`, `checkTakeoffLimitForAllPlayers()`, `tickBoundaryEnforcement()`
+
+#### index/capture-tickets.ts — Phase 2A Capture + Tickets (2,238 lines)
+- `conquestPhase2ARefreshLiveCaptureStateSubtick()` — sub-tick capture sync from engine
+- `conquestPhase2AOnLiveTick()` — second-boundary bleed + end check + HUD refresh
+- `conquestPhase2AApplyBleedTick()` — ticket bleed math
+- `conquestPhase2ACheckEndCondition()` — ticket-zero / clock-zero win check
+- `updateConquestCombatHudForAllPlayers()` — central combat HUD dispatch
+- 7 view model types: `ConquestHudTicketViewModel`, `ConquestHudFlagSlotViewModel`, `ConquestHudActiveFlagPopoutViewModel`, `ConquestHudFlagsViewModel`, `ConquestHudEngageViewModel`, `ConquestHudStatusViewModel`, `ConquestHudClockViewModel`
+
+#### interaction/actions.ts — Loading Gate (705 lines)
+- `beginLoadingGate(player, pid, reason)` — unified gate entry for join + team-swap
+- `runLoadingGateUntilReady(player, pid)` — polling loop: prebuild -> warm check -> floor wait -> release
+- `releaseLoadingGate(player, pid, token)` — single release owner (idempotent)
+- `isAllUiFamiliesReadyForRelease(player, pid)` — unified readiness check for 6 UI families
+- `prebuildAllUiFamiliesHidden(player, pid)` — consolidated prebuild pass
+- `revealAllUiFamilies(player, pid)` — atomic show pass at gate release
+- `hideAllUiFamiliesForPlayer(player, pid)` — hide all visible UI before warm
+- `runTeamSwapLoadingGate(player, pid, newTeamNum, waitForUndeploy)` — team-swap gate sequence
+
+#### interaction/ammo-resupply-menu.ts — Gadget Menu (1,859 lines)
+- `resetArmState(pid)` / `resetArmTimers(pid)` — clear ammo menu state
+- `armCacheOk(cache)` — validate menu cache completeness
+- `buildTile(...)` — build complete gadget tile with button, icon, cooldown
+- `armRefreshFrame(pid, objId)` — refresh menu frame contents
+- `openArmMenu(player)` / `closeArmMenu(player)` — menu open/close lifecycle
+
+#### vehicles/deploy-timer-ui.ts — Vehicle Timer HUD (1,942 lines)
+- `updateVehicleDeployTimerHudForAllPlayers()` — per-second refresh for all viewers
+- `prebuildVehicleDeployTimerHudHiddenForPlayer(player)` — hidden prebuild for loading gate
+- `revealVehicleDeployTimerHudForPlayer(player)` — reveal on gate release
+- `buildVehicleDeployTimerRenderPlan(...)` — compute render plan with signature
+- `applyVehicleDeployTimerRenderPlanContent(...)` — apply plan to cached widgets
+
+#### state/runtime-types.ts — GameState Shape (446 lines)
+- `VehicleSpawnerSlot` — team, slot#, spawner ref, spawn pos/rot, enabled, timing
+- `ConquestCapturePointRuntimeState` — ObjId, label, order, owner latch, progress
+- `ConquestFlagVisualPhase` — NEUTRAL_IDLE | NEUTRAL_CAPTURING | OWNED_STABLE | OWNED_CONTESTED_* | NEUTRALIZED_LATCH
+- `ConquestSpawnChargeTxnState` — deploy sequence, charge tracking per transaction
+- `ConquestLifecyclePhase` — NOT_READY | COUNTDOWN | PRE_MATCH | LIVE_MATCH | POST_MATCH | RESET
+- `ConquestEndRaceSnapshot` — team1Tickets, team2Tickets, elapsedSeconds, winnerTeam (captured at match end)
+- `ConquestSoundRuntimeState` / `ConquestVoRuntimeState` — queue, throttle, debug stats
+
+#### boundary/enforcement.ts — Boundary System (342 lines)
+- `tickBoundaryEnforcement()` — per-second boundary check for all players
+- `refreshPlayerBoundaryState(player)` — check 3 zone types, manage violation timers
+- `tryKillBoundaryPlayer(player, pid, kind)` — kill after countdown expires
+- `resetPlayerBoundaryStateOnDeploy(player, pid)` / `resetPlayerBoundaryStateOnUndeployOrReset(pid)` — lifecycle resets
+
+### Architectural Patterns
+
+- **Phase-Based Lifecycle**: Functions prefixed `conquestPhase[1-5][A-D]*` indicate phase sequencing
+- **State Projection**: `State` is authoritative; HUD is a view projection updated on mutations
+- **Event Queueing**: Sound/VO events queue and flush on fixed cadence with per-recipient throttling
+- **Safe Accessors**: `safe*()` pattern for guarded engine calls throughout (`safeFind`, `safeGetPlayerId`, `safeSetUITextLabel`)
+- **Per-Player Maps**: State uses PID-keyed `Record<number, T>` maps extensively; `delete` on disconnect
+- **Loading Gate**: Unified single-owner state machine for first-join and team-swap with 30s floor / 60s hard timeout
+- **Widget Caching**: Hot-path widgets cached per-player in `State.hudCache.*`; cold-path uses `safeFind()`
+- **Warm Token Invalidation**: `hudWarmToken` per player prevents stale async passes from writing to current state
+- **ForAllPlayers Pattern**: ~30 functions iterate `mod.AllPlayers()` with validity checks to broadcast state updates
+
+### Largest Files (by source lines)
+
+| File | Lines | Concern |
+|------|-------|---------|
+| `index/capture-tickets.ts` | 2,238 | Capture state, bleed, view models, combat HUD |
+| `vehicles/deploy-timer-ui.ts` | 1,942 | Vehicle spawn timer HUD |
+| `interaction/ammo-resupply-menu.ts` | 1,859 | Gadget/ammo menu |
+| `config/map-runtime.ts` | 754 | Map config application |
+| `Changelog.ts` | 724 | Version history |
+| `interaction/actions.ts` | 705 | Loading gate orchestration |
+| `admin-panel/build.ts` | 647 | Admin panel widgets |
+| `hud/status.ts` | 553 | Status dock, safe setters |
+| `vehicles/deploy-fulfillment.ts` | 515 | Direct vehicle spawn |
+| `boundary/prompt-ui.ts` | 477 | Boundary violation UI |
 
 

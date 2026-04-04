@@ -147,7 +147,7 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     const joinPid = safeGetPlayerId(eventPlayer);
     const wasDisconnected = joinPid !== undefined && State.players.disconnectedByPid[joinPid] === true;
     if (joinPid !== undefined) {
-        beginJoinLoadingGate(eventPlayer, joinPid);
+        beginLoadingGate(eventPlayer, joinPid, "join");
         resetPlayerBoundaryStateOnUndeployOrReset(joinPid, true);
         delete State.players.disconnectedByPid[joinPid];
         State.players.deployedByPid[joinPid] = false;
@@ -171,11 +171,7 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     resetUiForPlayerOnJoin(eventPlayer);
     if (joinPid !== undefined && mod.IsPlayerValid(eventPlayer)) {
         reassertPlayerUiLoadingGateVisuals(eventPlayer, joinPid);
-        if (JOIN_CONSERVATIVE_FIRST_JOIN_GATE_MODE) {
-            await runJoinLoadingGateWithConservativeRelease(eventPlayer, joinPid);
-        } else {
-            await runJoinLoadingGateUntilReady(eventPlayer, joinPid);
-        }
+        await runLoadingGateUntilReady(eventPlayer, joinPid);
     }
 }
 

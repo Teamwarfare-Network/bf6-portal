@@ -35,50 +35,13 @@ async function reassertUiLoadingAfterUndeploy(eventPlayer: mod.Player): Promise<
     reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
 }
 
-// Finalizes deployed-only UI/runtime state while the player is temporarily input-restricted.
-// This path must stay non-visible: it may refresh hidden Ready state after spawn,
-// but it must not re-show the loading overlay or visibly open the Ready dialog.
-async function finalizeUiAfterPlayerDeploy(eventPlayer: mod.Player, pid: number): Promise<void> {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    if (!isUiPostDeployFinalizeActiveForPid(pid)) return;
-
-    pushUiLoadTraceForPid(pid, "FINALIZE_BEGIN");
-
-    try {
-        syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
-        updateHelpTextVisibilityForPid(pid);
-
-        if (!isReadyDialogHotReadyForPid(pid)) {
-            refreshOrEnsureReadyDialogHiddenForPid(eventPlayer, pid);
-            setReadyDialogHotReadyForPid(pid, isReadyDialogUiCacheUsableForPid(pid));
-        }
-
-        await mod.Wait(HUD_POST_DEPLOY_FINALIZE_SECONDS);
-    } finally {
-        setAllInputRestrictionsForPlayer(eventPlayer, false, "finalize_end");
-        hideJoinPromptForPlayerId(pid);
-        setUiLoadOverlayShownForPid(pid, false);
-        setUiPostDeployFinalizeActiveForPid(pid, false);
-        pushUiLoadTraceForPid(pid, "OVERLAY_OFF:finalize");
-        pushUiLoadTraceForPid(pid, "FINALIZE_END");
-    }
-}
-
 async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     if (!State.players.readyDialogData[pid]) initReadyDialogData(eventPlayer);
     pushUiLoadTraceForPid(pid, "DEPLOY_EVT");
-    if (HARD_PLAYER_LOCK_AUDIT_MODE) {
-        State.players.deployedByPid[pid] = false;
-        await handlePlayerDeployedBeforeRelease(eventPlayer, pid);
-        return;
-    }
-    if (
-        State.players.readyDialogData[pid].hudSwapTransitionActive
-        || isUiJoinDeployLockActiveForPid(pid)
-        || !isUiLoadDeployAuthorizedForPid(pid)
-    ) {
+    // Unified gate check: if gate is still active (not yet released), recapture.
+    if (isUiLoadGateActiveForPid(pid) || !isUiLoadGateReleasedForPid(pid)) {
         State.players.deployedByPid[pid] = false;
         await handlePlayerDeployedBeforeRelease(eventPlayer, pid);
         return;
@@ -86,9 +49,6 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     pushUiLoadTraceForPid(pid, "DEPLOY_ACCEPT");
     invalidateHudWarmTokenForPid(pid);
     mod.SetRedeployTime(eventPlayer, 0);
-    if (isUiPostDeployFinalizeActiveForPid(pid)) {
-        setAllInputRestrictionsForPlayer(eventPlayer, true, "deploy_accept_finalize");
-    }
     const deployedTeam = safeGetTeamNumberFromPlayer(eventPlayer, 0);
     if (deployedTeam === TeamID.Team1 || deployedTeam === TeamID.Team2) {
         State.conquest.debug.perspectiveTeamByPid[pid] = deployedTeam;
@@ -120,8 +80,6 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
         ensureTopHudShellForPlayer(eventPlayer);
     }
     renderCriticalHudForReveal(eventPlayer, pid);
-    void prebuildDeferredUiAfterReveal(eventPlayer, pid, getHudWarmTokenForPid(pid));
-    await finalizeUiAfterPlayerDeploy(eventPlayer, pid);
     const directSpawnDeployResult = await conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(eventPlayer);
     if (directSpawnDeployResult.consumedDeploy) {
         return;
@@ -129,7 +87,7 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     await spawnReadyDialogInteractPoint(eventPlayer);
 }
 
-// Cleans up deployed state and must not let undeploy-driven refresh warm steal ownership from an active join loading session.
+// Cleans up deployed state. If a loading gate is active, reasserts overlay + deploy block without starting new warm.
 function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     const pid = safeGetPlayerId(eventPlayer);
@@ -137,8 +95,8 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     if (isPidDisconnected(pid)) return;
     pushUiLoadTraceForPid(pid, "UNDEPLOY_EVT");
     setAllInputRestrictionsForPlayer(eventPlayer, false, "undeploy");
-    setUiPostDeployFinalizeActiveForPid(pid, false);
     State.players.deployedByPid[pid] = false;
+    State.players.inMainBaseByPid[pid] = false;
     State.players.posDebugTransformSourceByPid[pid] = "soldier";
     delete State.players.posDebugVehicleObjIdByPid[pid];
     State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
@@ -154,22 +112,14 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     }
     closeArmMenu(eventPlayer);
     closeVehicleDeployLiveMenuForPlayer(eventPlayer);
-
     removeReadyDialogInteractPoint(pid);
-    if (State.players.readyDialogData[pid]?.hudSwapTransitionActive) {
+
+    // If any loading gate is active (join or team_swap), reassert overlay + deploy block.
+    // The running gate loop owns warm — do not start a new warm pass here.
+    if (isUiLoadGateActiveForPid(pid)) {
         reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
         void reassertUiLoadingAfterUndeploy(eventPlayer);
         return;
-    }
-    // Do not let undeploy-driven refresh warm preempt the join-owned loading session.
-    if (State.players.readyDialogData[pid]?.uiLoadReason === "join" && isUiLoadGateActiveForPid(pid)) {
-        reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
-        return;
-    }
-    if (!State.players.readyDialogData[pid]?.hudWarmCompleted) {
-        void warmCriticalHudForPlayer(eventPlayer, {
-            loadReason: "refresh",
-        });
     }
 }
 

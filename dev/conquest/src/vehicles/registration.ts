@@ -22,8 +22,9 @@ function registerVehicleToTeam(vehicle: mod.Vehicle, teamNum: TeamID): void {
 }
 
 // Clears cached inferred base-team entries for vehicle ObjIds.
+// Uses Object.keys snapshot to avoid for...in mutation during iteration.
 function clearSpawnBaseTeamCache(): void {
-    for (const k in vehicleSpawnBaseTeamByObjId) delete vehicleSpawnBaseTeamByObjId[k as any];
+    for (const k of Object.keys(vehicleSpawnBaseTeamByObjId)) delete vehicleSpawnBaseTeamByObjId[Number(k)];
 }
 
 // Infers a vehicle base team from nearest main-base anchor within bind radius.
