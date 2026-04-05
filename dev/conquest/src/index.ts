@@ -25,7 +25,6 @@ import './ui/branding/top-left';
 import './ui/ready/ready-line';
 import './ui/admin/action-counter';
 import './hud/ui-cache-perf';
-import './hud/ui-load-debug';
 import './ui/conquest/top-hud-shell';
 import './ui/conquest/hud-core/types';
 import './ui/conquest/hud-core/constants';

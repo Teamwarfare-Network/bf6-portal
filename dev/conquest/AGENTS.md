@@ -55,6 +55,23 @@ Prompting examples:
 3. Produce original implementations tailored to current project constraints and validated APIs.
 4. If a request appears to require direct code copying from methodology references, stop and ask the user for explicit approval before copying.
 
+## mod.AddUIIcon is Non-Functional
+
+1. `mod.AddUIIcon()` accepts arguments and completes without error, but produces NO visible output on any parent type (InteractPoint, authored WorldIcon, spawned WorldIcon).
+2. Tested exhaustively in v1.047–v1.059 with multiple parent types, offsets, visibility params, and enum values. Never rendered.
+3. Do NOT use `mod.AddUIIcon` or `mod.RemoveUIIcon` for world-space icons in this project.
+4. Instead, use per-player **spawned WorldIcon clones** via `mod.SpawnObject(RuntimeSpawn_Common.WorldIcon, ...)` with `SetWorldIconOwner(icon, player)` for per-player visibility.
+5. Spawned WorldIcons start with image/text DISABLED — must call `EnableWorldIconImage(icon, true)` and `EnableWorldIconText(icon, true)` after configuration.
+
+## mod.Message String Key Requirement
+
+1. `mod.Message()` does NOT accept arbitrary literal strings. Passing a literal like `mod.Message("hello")` produces "unknown string" at runtime.
+2. All text passed to `mod.Message()` must use registered string keys from `src/strings.json` accessed via `mod.stringkeys.*`.
+3. For dynamic numeric/text values, use a format pattern string in `strings.json` (e.g. `"{0}"`) and pass the value as a format argument: `mod.Message(mod.stringkeys.twl.hud.clock.digit, 4)`.
+4. Format arguments accept `string | number | Player` only. Do not pass nested `mod.Message()` objects as arguments.
+5. This applies everywhere `mod.Message` is used: HUD text labels, AddUIIcon text, world log messages, notifications.
+6. When in doubt, copy the exact pattern from an existing working call site (e.g. clock digit widget).
+
 ## String Change Authorization Policy
 
 1. Any player-facing string edit requires explicit human approval before making the change.

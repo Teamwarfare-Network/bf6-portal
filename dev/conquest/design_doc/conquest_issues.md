@@ -28,7 +28,7 @@ Last Tested Build: `v1.025` (Phase 7 complete; pre-game countdown, victory dialo
 - `CQ_Bug_22`: Resolved
 - `CQ_Bug_23`: Resolved
 - `CQ_Bug_24`: Resolved
-- `CQ_Bug_25`: Open (Phase 10 — needs multi-player testing)
+- `CQ_Bug_25`: Fix shipped v1.046 (needs multi-player confirmation)
 - `CQ_Bug_26`: Likely resolved (believed fixed by vehicle HUD polish passes; needs confirmation)
 - `CQ_Bug_27`: Resolved (fixed in vehicle HUD render passes)
 - `CQ_Bug_28`: Open (Phase 10 — vehicle-specific, only some vehicles affected; needs investigation)
@@ -473,16 +473,22 @@ Expected:
 - World icons should resolve independently per player, including distance gating and visibility state, instead of inheriting the first player's outcome.
 
 Status:
-- Open.
-- Active investigation.
+- Fix shipped in v1.046. Needs multi-player confirmation.
 
-Current Best Read:
-- The current icon ownership path is still not truly per-player.
-- This is likely a world-icon visibility/ownership contract problem, not a simple placement bug.
+Root Cause:
+- `mod.SpawnObject(RuntimeSpawn_Common.WorldIcon, ...)` creates WorldIcons with image and text **disabled by default**.
+- The code called `SetWorldIconImage`, `SetWorldIconText`, `SetWorldIconColor`, and `SetWorldIconOwner` but never called `EnableWorldIconImage(icon, true)` or `EnableWorldIconText(icon, true)`.
+- This was confirmed by cross-referencing the BountyHunter reference implementation which explicitly enables both after spawn.
+- The v1.034 authored-icon approach (pre-CQ_Bug_25 work) worked because authored WorldIcons start enabled by default — only runtime-spawned ones default to disabled.
 
-Recommended Later Investigation:
-- Reproduce with at least two players at different distances and team contexts.
-- Confirm whether the first player to enter the relevant state is effectively becoming the authority for icon visibility.
+Resolution:
+- Added `mod.EnableWorldIconImage(icon, true)` and `mod.EnableWorldIconText(icon, true)` after spawning per-player WorldIcons in `showWorldInteractableRuntimeIconForPlayer`.
+- API reference: `EnableWorldIconImage.md`, `EnableWorldIconText.md` in `reference_bf6_core/mod/functions/`.
+- Per-player visibility via `SetWorldIconOwner(icon, player)` retained for multi-player gating (needs 2-player test).
+
+Remaining:
+- Multi-player test: confirm per-player distance/visibility with 2+ players at different bases.
+- If `SetWorldIconOwner` still fails per-player gating, escalate as a separate engine limitation bug.
 
 ## CQ_Bug_24
 Title: Passive Deployed Vehicle HUD Failed To Refresh After Config Apply

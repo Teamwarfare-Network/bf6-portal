@@ -7,8 +7,8 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
     //Firestorm
     Operation_Firestorm: {
                                    //posX      posY      posZ 
-        team1Base: mod.CreateVector( 570.692,  110.205, -232.341), team1Name: mod.stringkeys.twl.teams.WEST,
-        team2Base: mod.CreateVector(-761.869,  133.091,  223.038), team2Name: mod.stringkeys.twl.teams.EAST,
+        team1Base: mod.CreateVector(-761.869,  133.091,  223.038), team1Name: mod.stringkeys.twl.teams.WEST,
+        team2Base: mod.CreateVector( 570.692,  110.205, -232.341), team2Name: mod.stringkeys.twl.teams.EAST,
         team1MainBaseTriggerId: 501, 
         team2MainBaseTriggerId: 500, 
         team1MainBaseBufferTriggerId: 503,

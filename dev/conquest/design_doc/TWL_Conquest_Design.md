@@ -3070,7 +3070,8 @@ Verified BF6 Portal APIs for spawn control:
 | `GetSpawnPoint` | `(number): SpawnPoint` | Resolve SpawnPoint object from Godot ID |
 | `EnableCapturePointDeploying` | `(capturePoint: CapturePoint, enableDeploying: boolean): void` | Enable/disable deploying on a specific capture point |
 | `EnablePlayerDeploy` | `(player: Player, deployAllowed: boolean): void` | Per-player deploy gate |
-| `OnPlayerDeployed` | event | Fires after player successfully deploys |
+| `SetRedeployTime` | `(player: Player, redeployTime: number): void` | Override redeploy timer per player (0-60s). Useful for script-controlled deploy timing on join |
+| `OnPlayerDeployed` | event | Fires after player successfully deploys — confirmed correct hook for triggering script-driven spawn relocation |
 
 **Critical finding:** There is no `OnPlayerRequestSpawn` or pre-deploy interception event, and no verified hook for "player selected this flag, now override the exact child spawn choice." The engine fires `OnPlayerDeployed` *after* the player has already spawned. Partial override of the engine's per-flag spawn selection is not reliably achievable.
 
@@ -3088,6 +3089,8 @@ Verified BF6 Portal APIs for spawn control:
 | `SpawnPoint` | Lower-level spawn location used by CapturePoint infantry spawn lists; engine manages these internally | **Not used** — engine picks from these non-randomly; we bypass entirely |
 
 **Key insight:** If you attach normal `SpawnPoint` objects to a flag or HQ, the engine uses its own deploy logic (priority-based, not random). This is why default flag spawning does not feel random. The only way to get true randomness is to bypass the engine's selection entirely and call `SpawnPlayerFromSpawnPoint` directly.
+
+**Godot placement notes:** Most placed objects have an Obj Id assignable in the editor. The blue gizmo arrow in the Godot viewport indicates the front/facing direction of the object — orient PlayerSpawner arrows to control which way the player faces on spawn.
 
 ##### Remaining Validation Items
 
@@ -3149,8 +3152,16 @@ Algorithm:
 
 ##### Runtime Flow
 
+**On player join (confirmed pattern):**
+1. `OnPlayerJoinGame` fires
+2. `EnablePlayerDeploy(player, false)` — gate deploy until script is ready
+3. `SetRedeployTime(player, 1)` — fast redeploy for script-controlled flow
+4. Initialize per-player spawn state (default selected flag = main base or first owned flag)
+5. Brief `Wait(0.25)` to let engine settle
+6. `EnablePlayerDeploy(player, true)` — release deploy gate
+
 **On player deploy (clicking a flag):**
-1. `OnPlayerDeployed` fires
+1. `OnPlayerDeployed` fires (confirmed: this is the correct hook for post-deploy relocation)
 2. Determine which flag the player selected (position proximity check against known flag positions from `CapturePointConfig`)
 3. Call `conquestSelectSpawnPoint({ pid, teamId, reason: "deploy", preferredFlagObjId })`
 4. If denied: `UndeployPlayer(player)` (send back to deploy screen)
@@ -3163,6 +3174,13 @@ Algorithm:
 **Match end / post-match:**
 - Deploy is disabled
 - Spawn selection returns denied for all requests
+
+**Confirmed working pattern (from reference implementation):**
+- Store arrays of PlayerSpawner Obj IDs per flag per team in config
+- Track each player's selected flag in runtime state
+- On deploy, look up the flag's spawn IDs for the player's team
+- Pick a random index and call `SpawnPlayerFromSpawnPoint(player, spawnId)`
+- This pattern is validated and matches our existing design architecture
 
 ##### Main Base Spawns
 
@@ -3222,6 +3240,7 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-04-04 | Spawn pattern validation from reference implementation | Added SetRedeployTime to API table, confirmed OnPlayerDeployed as correct hook for spawn relocation, added join-flow pattern (disable deploy → set redeploy time → wait → enable), added Godot blue gizmo orientation note, added confirmed working pattern section to Runtime Flow | Phase 8 | accepted | Updated API Foundation, Godot Object Roles, Runtime Flow sections`
   - `2026-04-04 | Godot spawner role clarification | Confirmed PlayerSpawner is the correct Godot object for script-first control; SpawnPoint is engine-managed and not random; engine flag deploy logic is priority-based not random. Approach confirmed: disable engine flag deploy + script-driven SpawnPlayerFromSpawnPoint. Remaining validation: deploy-screen UX with EnableCapturePointDeploying(false) | Phase 8 | accepted | Updated investigation section to confirmed findings, added Godot object role table`
   - `2026-04-04 | Phase 8 detailed design pass | Added comprehensive spawn system design with API validation, Godot investigation requirements, map config extension spec, byte budget estimate, and implementation flow. Removed fallback chain (own-or-deny model). Main base spawns deferred. Minimap team-switch buttons deferred to Phase 10 | Phase 8, Phase 10, Phase 13 | accepted | Phase 8 section fully rewritten with detailed design`
   - `2026-03-26 | Dedicated spawn-phase split request | Moved spawn behavior/restriction/fallback work out of Phase 6 and into new Phase 8 after Phase 7 so boundaries can finish first, pre/post-match flow can follow second, and spawn behavior can be implemented as a separate system slice after that | Phase 6, Phase 7, Phase 8, Phase 9, Phase 10, Phase 11, Phase 12, Phase 13, Phase 14 | accepted | current status + TOC + Phase 6/7/8 scopes/checklists`
@@ -3319,6 +3338,9 @@ Codex To-Do Checklist:
 - [ ] Validate neutralization edge (owner drained to neutral) never leaves stale enemy border.
 - [ ] Validate neutral capture progression continues without leaving/re-entering radius.
 - [ ] Validate recapture completion switches visuals exactly once with no stale overlays.
+- [ ] Add sound effects to out-of-bounds alerts (boundary violation warning/countdown).
+- [ ] Add music to round start (match-go / LIVE transition).
+- [ ] Add a flourish sound on flag capture completion, and accelerate the flag capture tick sounds the closer the capture is to completing.
 
 Phase Changelog:
 
@@ -3327,6 +3349,7 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-04-04 | Sound/music polish items | Added three audio polish to-dos: boundary alert sounds, round start music, flag capture flourish + accelerating capture tick sounds | Phase 10 | accepted | Phase 10 checklist updated`
   - `2026-03-02 | Repeated neutralization-border regression during Phase 3 implementation/testing | Deferred flag border feature to Phase 10 polish; remove border feature from active implementation until a single authoritative visual-state path is validated | Phase 3B, Phase 10 | accepted | Added Phase 10 to-do + explicit border reintroduction validation criteria`
   - `2026-03-01 | Phase sequence update request | Added open-ended iteration/playtesting/polish phase before bot simulation and bumped downstream phase numbering | Phase 10, Phase 11, Phase 12, Phase 13 | accepted | design_doc phase ordering + numbering updated`
 

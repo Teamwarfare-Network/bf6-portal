@@ -199,6 +199,19 @@ function tryHandleReadyDialogButtonEvent(
     );
     if (adminHandled !== undefined) return adminHandled;
 
+    const hudSwapHandled = tryHandleReadyDialogPrimaryAction(
+        eventPlayer,
+        playerId,
+        widgetName,
+        eventUIButtonEvent,
+        UI_HUD_TEAM_SWAP_BUTTON_ID,
+        () => {
+            if (isMatchLive()) return;
+            swapPlayerTeam(eventPlayer);
+        }
+    );
+    if (hudSwapHandled !== undefined) return hudSwapHandled;
+
     return false;
 }
 

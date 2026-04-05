@@ -17,7 +17,6 @@ function enforceUiLoadingGateWhileDeployed(eventPlayer: mod.Player): boolean {
     const lastAttemptAt = state.uiSlipUndeployLastAttemptAt ?? -1;
     if (lastAttemptAt < 0 || (now - lastAttemptAt) >= UI_LOADING_GATE_UNDEPLOY_RETRY_SECONDS) {
         state.uiSlipUndeployLastAttemptAt = now;
-        pushUiLoadTraceForPid(pid, "UNDEPLOY_TRY:ongoing");
         try {
             mod.UndeployPlayer(eventPlayer);
         } catch {

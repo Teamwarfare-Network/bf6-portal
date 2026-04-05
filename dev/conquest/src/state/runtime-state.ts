@@ -219,7 +219,7 @@ const State: GameState = {
     admin: {
         actionCount: 0,
         debugLoopActive: false,
-        uiCachePerfVisible: true,
+        uiCachePerfVisible: false,
     },
     players: {
         readyDialogData: {},

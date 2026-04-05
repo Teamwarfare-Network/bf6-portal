@@ -3,6 +3,45 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.064: fix: swap team1Base/team2Base positions — team1 (WEST) is at -761 per Godot; revert anchor ownerTeamIds to original
+// v1.063: fix: remove redundant !== 0 check causing TS type error in ownerTeamId filter
+// v1.062: fix: correct swapped ownerTeamId assignments — ObjIds 1000-1007 are Team1 (WEST), 1008-1015 are Team2 (EAST)
+// v1.061: fix: restrict main base world icons to player's own team HQ via ownerTeamId filter
+// v1.060: fix: CQ_Bug_25 — per-player spawned WorldIcon clones with SetWorldIconOwner; abandon AddUIIcon
+// v1.059: debug: hide native WorldIcon before AddUIIcon + 10m offset on authored 1008
+// v1.058: debug: use authored WorldIcon 1008 from v7 spatial as AddUIIcon parent
+// v1.057: debug: spawn WorldIcon at 1008 pos + AddUIIcon on it (all-player Triangle + per-player Flag)
+// v1.056: debug: use clock.digit string key pattern for trace HUD (proven working)
+// v1.055: debug: fix HUD trace to use registered string keys (genericCounter + STR_UI_READY)
+// v1.054: debug: HUD integer trace for AddUIIcon on InteractPoint 1008 — shows step reached (1-4)
+// v1.053: debug: move hardcoded AddUIIcon test to deploy handler so messages are visible post-loading-gate
+// v1.052: debug: remove try/catch on hardcoded AddUIIcon, add world log messages to trace execution
+// v1.051: debug: hardcoded AddUIIcon Triangle on T1 InteractPoint 1008 to prove rendering
+// v1.050: fix: CQ_Bug_25 — ensure EnableInteractPoint called on same reference before AddUIIcon per working pattern
+// v1.049: fix: CQ_Bug_25 — switch world interactable icons to AddUIIcon on authored InteractPoint anchors; remove dead WorldIcon code
+// v1.048: fix: switch AddUIIcon parent from InteractPoint to WorldIcon (WorldIcon has render transform for UI layer attachment)
+// v1.047: refactor: switch world interactable icons from spawned WorldIcons to AddUIIcon on authored InteractPoints for per-player visibility
+// v1.046: fix: enable spawned WorldIcon image/text (were disabled by default); restore 30s gate floor per design doc
+// v1.045: fix: CQ_Bug_25 — restore spawned WorldIcon approach, fix WorldIcon/boolean type mismatch in runtime-types
+// v1.044: fix: restore spawned per-player WorldIcon approach (v1.034 pattern) — AddUIIcon path abandoned after 4 failed attempts; remove per-second polling
+// v1.043: fix: switch AddUIIcon parent from disabled WorldIcon to InteractPoint; remove per-second icon polling (event-driven only)
+// v1.042: fix: world icons not showing — stop re-disabling authored WorldIcon presentation every tick (strips AddUIIcon attachments)
+// v1.041: fix: world icons not showing — remove inverted ownerTeamId check; inMainBaseByPid already gates by own-base trigger
+// v1.040: fix: destroy combat HUD graph on team swap so prebuild creates fresh widgets; clear engageHiddenUntilDeploy and mark dirty on gate release
+// v1.039: fix: clear teamSwapHudResetPendingByPid on gate release so combat HUD (tickets, bars, team names) renders on deploy screen after team swap
+// v1.038: fix: world icons use authored parents for AddUIIcon, restore 5s loading gate floor
+// v1.037: perf: remove 30s loading gate floor — release immediately when all 8 UI families are stable
+// v1.036: ui: hide UI Cache perf panel by default, toggle via admin panel
+// v1.035: fix: CQ_Bug_25 — switch world icons to AddUIIcon per-player visibility on spawned anchors
+// v1.034: ui: team swap button larger (190x32), bigger text (16px), tighter gap (3px) to team label
+// v1.033: fix: rebuild team swap button on gate release so label reflects current team after swap
+// v1.032: fix: hide team swap button during countdown phase, restore on cancel
+// v1.031: fix: hide team swap button when loading gate begins (covers team swap + join transitions)
+// v1.030: ui: team swap button — taller (28px), larger text (14px), pluralize 'Change teams to {TEAM}'
+// v1.029: fix: HUD team swap button — dynamic 'Change team to {TEAM}' label, deploy-screen-only visibility with loading gate
+// v1.028: fix: team swap button uses static CHANGE TEAMS label (mod.Message does not support nested Message args)
+// v1.027: feat: add pre-game HUD team swap button to right of red team name
+// v1.026: optimization: remove UI load trace debug system (ui-load-debug.ts, pushUiLoadTraceForPid, 18 call sites across 7 files); reclaims 9,395 bytes of headroom
 // v1.025: polish: move team names and tickets up (name 197->193, tickets 221->215)
 // v1.024: polish: revert border to original size, pack content tighter inside, tickets up and bigger (54px)
 // v1.023: polish: 1px gap between crown and team name in victory dialog

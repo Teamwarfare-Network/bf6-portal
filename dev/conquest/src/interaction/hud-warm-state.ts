@@ -3,36 +3,9 @@
 
 //#region -------------------- HUD Warm State --------------------
 
-const UI_LOAD_TRACE_MAX_ENTRIES = 24;
-
 // Returns the per-player ready-dialog runtime state bag when it exists.
 function getReadyDialogStateForPid(pid: number): readyDialogData_t | undefined {
     return State.players.readyDialogData[pid];
-}
-
-// Encodes projected loading-trace events as compact numeric IDs so first-join deploy races can be inspected without adding new strings.
-function getUiLoadTraceEventDebugCode(eventCode: string): number {
-    if (eventCode === "JOIN_BEGIN") return 1;
-    if (eventCode === "OVERLAY_ON") return 2;
-    if (eventCode.startsWith("LOAD_BEGIN:")) return 3;
-    if (eventCode.startsWith("DEPLOY_OFF:")) return 4;
-    if (eventCode.startsWith("DEPLOY_ON:")) return 5;
-    if (eventCode === "DEPLOY_EVT") return 6;
-    if (eventCode === "DEPLOY_EARLY") return 7;
-    if (eventCode.startsWith("INPUT_ON:")) return 8;
-    if (eventCode.startsWith("INPUT_OFF:")) return 9;
-    if (eventCode.startsWith("UNDEPLOY_TRY:")) return 10;
-    if (eventCode === "UNDEPLOY_EVT") return 11;
-    if (eventCode === "READY_OK") return 12;
-    if (eventCode === "READY_TIMEOUT") return 13;
-    if (eventCode === "REVEAL_OK") return 14;
-    if (eventCode === "GATE_RELEASE") return 15;
-    if (eventCode === "JOIN_RELEASE") return 16;
-    if (eventCode === "DEPLOY_ACCEPT") return 17;
-    if (eventCode === "JOIN_AUTHORIZE") return 18;
-    if (eventCode === "FLOOR_HOLD") return 19;
-    if (eventCode === "GATE_TIMEOUT_FORCE") return 20;
-    return 0;
 }
 
 // Advances the warm token so any in-flight warm/reveal work is invalidated.
@@ -105,7 +78,6 @@ function beginUiLoadSessionForPid(pid: number, reason: UiLoadReason): number | u
     state.uiLoadDeployEnabled = false;
     state.uiLoadDeployAuthorized = false;
     state.uiLoadInputRestricted = false;
-    state.uiLoadLastEventDebugCode = 0;
     state.readyDialogWarmPrimed = false;
     state.readyDialogHotReady = false;
     state.gadgetMenuHotReady = false;
@@ -115,43 +87,11 @@ function beginUiLoadSessionForPid(pid: number, reason: UiLoadReason): number | u
     return state.uiLoadSessionId;
 }
 
-// Resets the compact first-join loading trace so the next audit starts from a clean per-player history.
-// No-op when UI_LOAD_TRACE_ENABLED is false; trace overhead is skipped entirely.
-function resetUiLoadTraceForPid(pid: number): void {
-    if (!UI_LOAD_TRACE_ENABLED) return;
+// Records one deploy-availability transition for the current loading session.
+function recordUiLoadDeployEnabledForPid(pid: number, enabled: boolean): void {
     const state = getReadyDialogStateForPid(pid);
     if (!state) return;
-    state.uiLoadLastEventDebugCode = 0;
-    state.uiLoadTrace = [];
-    syncUiLoadDebugPanelForPid(pid);
-}
-
-// Appends one compact loading-trace snapshot so first-join deploy races can be inspected without adding player-facing UI strings.
-// No-op when UI_LOAD_TRACE_ENABLED is false; all call sites become zero-cost in production.
-function pushUiLoadTraceForPid(pid: number, eventCode: string): void {
-    if (!UI_LOAD_TRACE_ENABLED) return;
-    const state = getReadyDialogStateForPid(pid);
-    if (!state) return;
-
-    const trace = state.uiLoadTrace ?? [];
-    const reason = state.uiLoadReason ?? "refresh";
-    const stamp = Math.floor(mod.GetMatchTimeElapsed() * 100) / 100;
-    trace.push(
-        `${stamp}|${eventCode}|s${state.uiLoadSessionId}|r${reason}|a${state.uiLoadGateActive ? 1 : 0}|u${state.uiLoadGateReleased ? 1 : 0}|d${state.uiLoadDeployEnabled ? 1 : 0}|z${state.uiLoadDeployAuthorized ? 1 : 0}|o${state.uiLoadOverlayShown ? 1 : 0}|i${state.uiLoadInputRestricted ? 1 : 0}`
-    );
-    while (trace.length > UI_LOAD_TRACE_MAX_ENTRIES) trace.shift();
-    state.uiLoadLastEventDebugCode = getUiLoadTraceEventDebugCode(eventCode);
-    state.uiLoadTrace = trace;
-    syncUiLoadDebugPanelForPid(pid);
-}
-
-// Records one deploy-availability transition for the current loading session so early re-enable paths are visible in traces.
-function recordUiLoadDeployEnabledForPid(pid: number, enabled: boolean, source: string): void {
-    const state = getReadyDialogStateForPid(pid);
-    if (!state) return;
-    if (state.uiLoadDeployEnabled === enabled && source !== "join_begin") return;
     state.uiLoadDeployEnabled = enabled;
-    pushUiLoadTraceForPid(pid, `${enabled ? "DEPLOY_ON" : "DEPLOY_OFF"}:${source}`);
 }
 
 // Returns true only after a specific lifecycle owner has explicitly authorized deploy release for this player.
@@ -159,13 +99,11 @@ function isUiLoadDeployAuthorizedForPid(pid: number): boolean {
     return getReadyDialogStateForPid(pid)?.uiLoadDeployAuthorized === true;
 }
 
-// Records one input-restriction transition for the current loading session so post-deploy freeze ownership is observable.
-function recordUiLoadInputRestrictedForPid(pid: number, restricted: boolean, source: string): void {
+// Records one input-restriction transition for the current loading session.
+function recordUiLoadInputRestrictedForPid(pid: number, restricted: boolean): void {
     const state = getReadyDialogStateForPid(pid);
     if (!state) return;
-    if (state.uiLoadInputRestricted === restricted && source !== "join_begin") return;
     state.uiLoadInputRestricted = restricted;
-    pushUiLoadTraceForPid(pid, `${restricted ? "INPUT_ON" : "INPUT_OFF"}:${source}`);
 }
 
 // Marks whether the current loading session has successfully shown its overlay.

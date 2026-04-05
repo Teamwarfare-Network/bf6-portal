@@ -56,6 +56,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     setMatchStateTextForAllPlayers();
     updateHelpTextVisibilityForAllPlayers();
     updatePlayersReadyHudTextForAllPlayers();
+    updateHudTeamSwapButtonVisibilityForAllPlayers();
     updateReadyDialogModeConfigForAllVisibleViewers();
     updateVehicleDeployTimerHudForAllPlayers();
     refreshBoundaryStateForAllPlayers();
@@ -133,6 +134,7 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     setMatchStateTextForAllPlayers();
     updateHelpTextVisibilityForAllPlayers();
     updatePlayersReadyHudTextForAllPlayers();
+    updateHudTeamSwapButtonVisibilityForAllPlayers();
     updateReadyDialogModeConfigForAllVisibleViewers();
 
     if (State.vehicles && State.vehicles.slots) {

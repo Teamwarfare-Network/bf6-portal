@@ -7,11 +7,11 @@ function setUIInputModeForPlayer(player: mod.Player, enabled: boolean): void {
 }
 
 // Applies full movement/fire/look input restriction for one player during short loading/finalize windows.
-function setAllInputRestrictionsForPlayer(player: mod.Player, restricted: boolean, traceSource: string = "set"): void {
+function setAllInputRestrictionsForPlayer(player: mod.Player, restricted: boolean): void {
     if (!player || !mod.IsPlayerValid(player)) return;
     const pid = safeGetPlayerId(player);
     if (pid !== undefined) {
-        recordUiLoadInputRestrictedForPid(pid, restricted, traceSource);
+        recordUiLoadInputRestrictedForPid(pid, restricted);
     }
     mod.EnableAllInputRestrictions(player, restricted);
 }

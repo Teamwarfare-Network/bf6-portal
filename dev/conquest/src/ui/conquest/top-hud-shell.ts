@@ -31,6 +31,12 @@ const CONQUEST_TOP_HUD_SHELL_LAYOUT: ConquestTopHudShellLayout = {
     readyTextHeight: 18,
 };
 
+// HUD Team Swap Button layout (pre-game only, to right of red team name label).
+const TWL_HUD_TEAM_SWAP_BUTTON_WIDTH = 190;
+const TWL_HUD_TEAM_SWAP_BUTTON_HEIGHT = 32;
+const TWL_HUD_TEAM_SWAP_BUTTON_GAP_X = 3;
+const TWL_HUD_TEAM_SWAP_BUTTON_TEXT_SIZE = 16;
+
 // Deletes all widgets with one specific name so shell rebuilds cannot accumulate duplicate roots.
 function deleteAllTopHudShellWidgetsByName(name: string, maxPasses: number = 128): void {
     for (let i = 0; i < maxPasses; i++) {
@@ -60,7 +66,6 @@ function bindTopHudShellRefsByName(pid: number, refs: TopHudShellRefs): void {
     refs.helpTextContainer = safeFind(`Container_HelpText_${pid}`);
     refs.adminPanelActionCountText = safeFind(`AdminPanelActionCount_${pid}`);
     bindUiCachePerfPanelRefsByName(pid, refs);
-    bindUiLoadDebugPanelRefsByName(pid, refs);
     bindVictoryDialogRefsByName(pid, refs);
 }
 
@@ -92,8 +97,93 @@ function hasCriticalTopHudShellRefs(refs: TopHudShellRefs | undefined): boolean 
 function purgeTopHudShellArtifactsForPid(pid: number): void {
     deleteAllTopHudShellWidgetsByName(`AdminPanelActionCount_${pid}`);
     deleteUiCachePerfWidgetsForPid(pid);
-    deleteUiLoadDebugWidgetsForPid(pid);
     deleteAllTopHudShellWidgetsByName(`VictoryDialogRoot_${pid}`);
+    deleteHudTeamSwapWidgetsForPid(pid);
+}
+
+// Builds the pre-game team swap button to the right of the red team name label.
+function buildHudTeamSwapButton(player: mod.Player, pid: number, refs: TopHudShellRefs): void {
+    const topHudRoot = refs.topHudRoot;
+    if (!topHudRoot) return;
+
+    const buttonId = UI_HUD_TEAM_SWAP_BUTTON_ID + pid;
+    const labelId = UI_HUD_TEAM_SWAP_LABEL_ID + pid;
+
+    deleteAllTopHudShellWidgetsByName(buttonId);
+    deleteAllTopHudShellWidgetsByName(buttonId + "_BORDER");
+    deleteAllTopHudShellWidgetsByName(labelId);
+
+    const ticketLayout = twlConquestHudBuildTicketLayout();
+    const redLabelCenterX = twlConquestHudGetTicketRedTeamLabelRootX(ticketLayout);
+    const posX = redLabelCenterX
+        + (TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_WIDTH / 2)
+        + TWL_HUD_TEAM_SWAP_BUTTON_GAP_X
+        + (TWL_HUD_TEAM_SWAP_BUTTON_WIDTH / 2);
+    const posY = TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_ROOT_Y
+        + (TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_HEIGHT - TWL_HUD_TEAM_SWAP_BUTTON_HEIGHT) / 2;
+
+    const teamNum = safeGetTeamNumberFromPlayer(player, 0);
+    const oppositeTeam = teamNum === TeamID.Team1 ? TeamID.Team2 : TeamID.Team1;
+
+    const border = addOutlinedButton(
+        buttonId,
+        posX,
+        posY,
+        TWL_HUD_TEAM_SWAP_BUTTON_WIDTH,
+        TWL_HUD_TEAM_SWAP_BUTTON_HEIGHT,
+        mod.UIAnchor.TopCenter,
+        topHudRoot,
+        player
+    );
+
+    const label = mod.Message(mod.stringkeys.twl.teamSwitch.changeTeamToFormat, getTeamNameKey(oppositeTeam));
+    addCenteredButtonText(
+        labelId,
+        TWL_HUD_TEAM_SWAP_BUTTON_WIDTH,
+        TWL_HUD_TEAM_SWAP_BUTTON_HEIGHT,
+        label,
+        player,
+        border ?? topHudRoot,
+        TWL_HUD_TEAM_SWAP_BUTTON_TEXT_SIZE
+    );
+
+    refs.teamSwapBorder = border ?? undefined;
+    refs.teamSwapLabel = safeFind(labelId) ?? undefined;
+
+    const visible = !isMatchLive() && State.conquest.lifecyclePhase !== "COUNTDOWN" && !State.players.deployedByPid[pid] && isUiLoadGateReleasedForPid(pid);
+    safeSetUIWidgetVisible(refs.teamSwapBorder, visible);
+}
+
+// Rebinds team swap button refs from authoritative widget names.
+function bindHudTeamSwapRefsByName(pid: number, refs: TopHudShellRefs): void {
+    refs.teamSwapBorder = safeFind(UI_HUD_TEAM_SWAP_BUTTON_ID + pid + "_BORDER") ?? undefined;
+    refs.teamSwapLabel = safeFind(UI_HUD_TEAM_SWAP_LABEL_ID + pid) ?? undefined;
+}
+
+// Deletes team swap button widgets for one player during shell purge.
+function deleteHudTeamSwapWidgetsForPid(pid: number): void {
+    deleteAllTopHudShellWidgetsByName(UI_HUD_TEAM_SWAP_BUTTON_ID + pid);
+    deleteAllTopHudShellWidgetsByName(UI_HUD_TEAM_SWAP_BUTTON_ID + pid + "_BORDER");
+    deleteAllTopHudShellWidgetsByName(UI_HUD_TEAM_SWAP_LABEL_ID + pid);
+}
+
+// Shows or hides the HUD team swap button for one player based on match state.
+function updateHudTeamSwapButtonVisibilityForPid(pid: number): void {
+    const refs = State.hudCache.topHudShellByPid[pid];
+    if (!refs) return;
+    const visible = !isMatchLive() && State.conquest.lifecyclePhase !== "COUNTDOWN" && !State.players.deployedByPid[pid] && isUiLoadGateReleasedForPid(pid);
+    safeSetUIWidgetVisible(refs.teamSwapBorder, visible);
+}
+
+// Updates team swap button visibility for all active players.
+function updateHudTeamSwapButtonVisibilityForAllPlayers(): void {
+    const players = mod.AllPlayers();
+    const count = mod.CountOf(players);
+    for (let i = 0; i < count; i++) {
+        const p = mod.ValueInArray(players, i) as mod.Player;
+        if (!p || !mod.IsPlayerValid(p)) continue;
+        updateHudTeamSwapButtonVisibilityForPid(mod.GetObjId(p));
+    }
 }
 
 // Ensures the non-combat top-HUD shell exists for one player on the active hard-cut shell path.
@@ -105,11 +195,13 @@ function ensureTopHudShellForPlayer(player: mod.Player): TopHudShellRefs | undef
     const cached = State.hudCache.topHudShellByPid[pid];
     if (cached) {
         bindTopHudShellRefsByName(pid, cached);
+        bindHudTeamSwapRefsByName(pid, cached);
         if (hasTopLeftHudShellRefs(cached)) {
             if (!cached.adminPanelActionCountText) buildConquestAdminActionCounterWidget(player, pid, cached);
             if (!cached.uiCachePerfRoot) buildConquestUiCachePerfPanelWidgets(player, pid, cached);
-            if (!cached.uiLoadDebugRoot) buildConquestUiLoadDebugPanelWidgets(player, pid, cached);
+            if (!cached.teamSwapBorder) buildHudTeamSwapButton(player, pid, cached);
             bindTopHudShellRefsByName(pid, cached);
+            bindHudTeamSwapRefsByName(pid, cached);
             State.hudCache.topHudShellByPid[pid] = cached;
             setHudHelpDepthForPid(pid);
             return cached;
@@ -128,16 +220,16 @@ function ensureTopHudShellForPlayer(player: mod.Player): TopHudShellRefs | undef
     buildConquestTopCenterAuxWidgets(player, pid, refs, CONQUEST_TOP_HUD_SHELL_LAYOUT);
     buildConquestAdminActionCounterWidget(player, pid, refs);
     buildConquestUiCachePerfPanelWidgets(player, pid, refs);
-    buildConquestUiLoadDebugPanelWidgets(player, pid, refs);
     buildVictoryDialogWidgets(player, pid, refs);
+    buildHudTeamSwapButton(player, pid, refs);
     bindTopHudShellRefsByName(pid, refs);
+    bindHudTeamSwapRefsByName(pid, refs);
 
     State.conquest.debug.hudGenerationByPid[pid] = (State.conquest.debug.hudGenerationByPid[pid] ?? 0) + 1;
     State.hudCache.topHudShellByPid[pid] = refs;
 
     setAdminPanelActionCountText(refs.adminPanelActionCountText, State.admin.actionCount);
     syncUiCachePerfPanelForPid(pid);
-    syncUiLoadDebugPanelForPid(pid);
     setMatchStateTextForPid(pid);
     updatePlayersReadyHudTextForAllPlayers();
     setHudHelpDepthForPid(pid);

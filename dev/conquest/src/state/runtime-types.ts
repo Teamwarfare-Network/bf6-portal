@@ -372,7 +372,7 @@ interface GameState {
         readyMessageCooldownByPid: Record<number, number>;
         inMainBaseByPid: Record<number, boolean>;
         worldInteractableAreaByPidByObjId: Record<number, Record<number, boolean>>;
-        worldInteractableIconByPidByObjId: Record<number, Record<number, mod.WorldIcon>>;
+        worldInteractableIconByPidByObjId: Record<number, Record<number, any>>;
         armO: Record<number, boolean>;
         armI: Record<number, number>;
         armG: Record<number, {

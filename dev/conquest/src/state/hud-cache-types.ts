@@ -38,11 +38,11 @@ type TopHudShellRefs = {
     uiCachePerfFamilyLabel?: Array<mod.UIWidget | undefined>;
     uiCachePerfBuiltText?: Array<mod.UIWidget | undefined>;
     uiCachePerfColdText?: Array<mod.UIWidget | undefined>;
-    uiLoadDebugRoot?: mod.UIWidget;
-    uiLoadDebugPrimaryText?: mod.UIWidget;
-    uiLoadDebugSecondaryText?: mod.UIWidget;
     helpTextContainer?: mod.UIWidget;
     readyStatusContainer?: mod.UIWidget;
+
+    teamSwapBorder?: mod.UIWidget;
+    teamSwapLabel?: mod.UIWidget;
 
     roots: mod.UIWidget[];
 };

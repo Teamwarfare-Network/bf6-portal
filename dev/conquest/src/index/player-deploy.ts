@@ -5,7 +5,6 @@ async function deferForcedUndeploy(player: mod.Player, reason: string): Promise<
         await mod.Wait(0.1);
         if (!player || !mod.IsPlayerValid(player)) return;
         const pid = safeGetPlayerId(player);
-        if (pid !== undefined) pushUiLoadTraceForPid(pid, `UNDEPLOY_RETRY:${reason}`);
         mod.UndeployPlayer(player);
     } catch {
     }
@@ -14,11 +13,9 @@ async function deferForcedUndeploy(player: mod.Player, reason: string): Promise<
 // Handles the "deployed before release" race by freezing the player immediately and forcing them back to deploy.
 async function handlePlayerDeployedBeforeRelease(eventPlayer: mod.Player, pid: number): Promise<void> {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    pushUiLoadTraceForPid(pid, "DEPLOY_EARLY");
     reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
-    setAllInputRestrictionsForPlayer(eventPlayer, true, "deploy_early");
+    setAllInputRestrictionsForPlayer(eventPlayer, true);
     try {
-        pushUiLoadTraceForPid(pid, "UNDEPLOY_TRY:deploy_early");
         mod.UndeployPlayer(eventPlayer);
     } catch {
     }
@@ -39,14 +36,12 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     if (!State.players.readyDialogData[pid]) initReadyDialogData(eventPlayer);
-    pushUiLoadTraceForPid(pid, "DEPLOY_EVT");
     // Unified gate check: if gate is still active (not yet released), recapture.
     if (isUiLoadGateActiveForPid(pid) || !isUiLoadGateReleasedForPid(pid)) {
         State.players.deployedByPid[pid] = false;
         await handlePlayerDeployedBeforeRelease(eventPlayer, pid);
         return;
     }
-    pushUiLoadTraceForPid(pid, "DEPLOY_ACCEPT");
     invalidateHudWarmTokenForPid(pid);
     mod.SetRedeployTime(eventPlayer, 0);
     const deployedTeam = safeGetTeamNumberFromPlayer(eventPlayer, 0);
@@ -64,6 +59,7 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     const wasAlreadyDeployed = !!State.players.deployedByPid[pid];
     conquestPhase2BOnPlayerDeployed(eventPlayer, wasAlreadyDeployed);
     State.players.deployedByPid[pid] = true;
+    updateHudTeamSwapButtonVisibilityForPid(pid);
     State.players.posDebugTransformSourceByPid[pid] = "soldier";
     delete State.players.posDebugVehicleObjIdByPid[pid];
     State.conquest.debug.teamSwapHudResetPendingByPid[pid] = false;
@@ -93,9 +89,9 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     if (isPidDisconnected(pid)) return;
-    pushUiLoadTraceForPid(pid, "UNDEPLOY_EVT");
-    setAllInputRestrictionsForPlayer(eventPlayer, false, "undeploy");
+    setAllInputRestrictionsForPlayer(eventPlayer, false);
     State.players.deployedByPid[pid] = false;
+    updateHudTeamSwapButtonVisibilityForPid(pid);
     State.players.inMainBaseByPid[pid] = false;
     State.players.posDebugTransformSourceByPid[pid] = "soldier";
     delete State.players.posDebugVehicleObjIdByPid[pid];

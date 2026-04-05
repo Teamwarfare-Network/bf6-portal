@@ -12,9 +12,6 @@ interface ReadyDialogInteractConfig {
 
 type UiLoadReason = "join" | "team_swap";
 
-// When true, enables the UI load trace diagnostic system (pushUiLoadTraceForPid, debug panel).
-// Set to false in production to disable all trace overhead. System is preserved for dev use.
-const UI_LOAD_TRACE_ENABLED = false;
 // Unified loading gate mode (replaces the old conservative/non-conservative split).
 // One gate entry point for both first-join and team-swap; released only after
 // all UI families are warm and the floor window has elapsed.
@@ -49,8 +46,6 @@ interface readyDialogData_t {
     uiLoadDeployEnabled: boolean;
     uiLoadDeployAuthorized: boolean;
     uiLoadInputRestricted: boolean;
-    uiLoadLastEventDebugCode: number;
-    uiLoadTrace: string[];
     readyDialogWarmPrimed: boolean;
     readyDialogHotReady: boolean;
     gadgetMenuHotReady: boolean;

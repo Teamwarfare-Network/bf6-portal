@@ -12,7 +12,7 @@ const TEAM_SWAP_HUD_TEAM_SETTLE_ATTEMPTS = 8;
 function holdPlayerAtDeploy(eventPlayer: mod.Player, pid: number, source: string): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     setUIInputModeForPlayer(eventPlayer, false);
-    recordUiLoadDeployEnabledForPid(pid, false, source);
+    recordUiLoadDeployEnabledForPid(pid, false);
     mod.EnablePlayerDeploy(eventPlayer, false);
     mod.SetRedeployTime(eventPlayer, HUD_WARM_REDEPLOY_BLOCK_SECONDS);
 }
@@ -20,7 +20,7 @@ function holdPlayerAtDeploy(eventPlayer: mod.Player, pid: number, source: string
 // Applies the current deploy-availability decision and records who changed it for the loading-gate audit.
 function applyPlayerDeployAvailability(eventPlayer: mod.Player, pid: number, deployEnabled: boolean, source: string): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    recordUiLoadDeployEnabledForPid(pid, deployEnabled, source);
+    recordUiLoadDeployEnabledForPid(pid, deployEnabled);
     mod.EnablePlayerDeploy(eventPlayer, deployEnabled);
     mod.SetRedeployTime(eventPlayer, deployEnabled ? 0 : (isHudTransitionBlockingForPid(pid) ? HUD_WARM_REDEPLOY_BLOCK_SECONDS : 0));
 }
@@ -29,10 +29,9 @@ function applyPlayerDeployAvailability(eventPlayer: mod.Player, pid: number, dep
 // Immediately shows the loading overlay, blocks deploy, and hides all visible UI families before warm begins.
 function beginLoadingGate(eventPlayer: mod.Player, pid: number, reason: UiLoadReason): void {
     clearJoinPromptForPlayerId(pid);
-    resetUiLoadTraceForPid(pid);
     beginUiLoadSessionForPid(pid, reason);
+    updateHudTeamSwapButtonVisibilityForPid(pid);
     setGateStartTimeForPid(pid, mod.GetMatchTimeElapsed());
-    pushUiLoadTraceForPid(pid, reason === "join" ? "JOIN_BEGIN" : `LOAD_BEGIN:${reason}`);
     hideAllUiFamiliesForPlayer(eventPlayer, pid);
     reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
 }
@@ -122,7 +121,6 @@ function reassertPlayerUiLoadingGateVisuals(eventPlayer: mod.Player, pid: number
     const overlayWasShown = isUiLoadOverlayShownForPid(pid);
     showJoinPromptLoadingForPlayer(eventPlayer);
     setUiLoadOverlayShownForPid(pid, true);
-    if (!overlayWasShown) pushUiLoadTraceForPid(pid, "OVERLAY_ON");
     enforceHudWarmTransitionDeployBlock(eventPlayer);
 }
 
@@ -500,7 +498,6 @@ function revealAllUiFamilies(eventPlayer: mod.Player, pid: number): void {
     armCombatHudFamilyForSchedulerReveal(eventPlayer, pid);
     twlConquestHudPrimePlayerFrame(eventPlayer);
     renderAdminUiFamilyForReveal(eventPlayer, pid);
-    pushUiLoadTraceForPid(pid, "REVEAL_OK");
 }
 
 // Single release owner for the unified loading gate.
@@ -513,8 +510,17 @@ async function releaseLoadingGate(eventPlayer: mod.Player, pid: number, token: n
     // Mark gate inactive before reveal so the ongoing loop stops reasserting the overlay.
     setUiLoadGateActiveForPid(pid, false);
     setUiLoadGateReleasedForPid(pid, true);
+    // Rebuild team swap button so the label reflects the player's current team.
+    const gateRefs = State.hudCache.topHudShellByPid[pid];
+    if (gateRefs) buildHudTeamSwapButton(eventPlayer, pid, gateRefs);
+    updateHudTeamSwapButtonVisibilityForPid(pid);
+    // Clear the team-swap HUD reset flag so the combat HUD (tickets, bars, team names)
+    // is no longer force-hidden by the scheduler pipeline on the deploy screen.
+    State.conquest.debug.teamSwapHudResetPendingByPid[pid] = false;
+    delete State.conquest.debug.engageHiddenUntilDeployByPid[pid];
     // Reveal all families at once.
     revealAllUiFamilies(eventPlayer, pid);
+    conquestPhase3MarkHudDirty();
     // Hide and clear the loading overlay.
     hideJoinPromptForPlayerId(pid);
     await mod.Wait(0);
@@ -522,15 +528,13 @@ async function releaseLoadingGate(eventPlayer: mod.Player, pid: number, token: n
     clearJoinPromptForPlayerId(pid);
     setUiLoadOverlayShownForPid(pid, false);
     // Clear any residual input restrictions applied during the gate.
-    setAllInputRestrictionsForPlayer(eventPlayer, false, "gate_release");
+    setAllInputRestrictionsForPlayer(eventPlayer, false);
     // Enable deploy.
     applyPlayerDeployAvailability(eventPlayer, pid, true, "gate_release");
-    pushUiLoadTraceForPid(pid, "GATE_RELEASE");
-    pushUiLoadTraceForPid(pid, "JOIN_RELEASE");
 }
 
 // Main unified loading gate loop for both first-join and team-swap.
-// Polls until all UI families are warm and stable, then waits for the 30s safety floor, then releases.
+// Polls until all UI families are warm and stable, then enforces a minimum floor before releasing.
 // A 60s hard timeout force-releases even if not all families are warm.
 async function runLoadingGateUntilReady(eventPlayer: mod.Player, pid: number): Promise<void> {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
@@ -553,7 +557,6 @@ async function runLoadingGateUntilReady(eventPlayer: mod.Player, pid: number): P
     if (!isHudWarmTokenCurrent(pid, token)) return;
 
     let stableCount = 0;
-    let floorHoldLogged = false;
     while (true) {
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
         if (!isHudWarmTokenCurrent(pid, token)) return;
@@ -565,8 +568,6 @@ async function runLoadingGateUntilReady(eventPlayer: mod.Player, pid: number): P
         // Hard timeout: force-release if max wait exceeded, even if UI not fully warm.
         if (elapsed >= GATE_TIMEOUT_SECONDS) {
             setSafetyTimeoutTriggeredForPid(pid, true);
-            pushUiLoadTraceForPid(pid, "GATE_TIMEOUT_FORCE");
-            pushUiLoadTraceForPid(pid, "READY_TIMEOUT");
             sendHighlightedWorldLogMessage(
                 mod.Message(mod.stringkeys.twl.system.uiLoadHardTimeout, Math.floor(elapsed), pid),
                 true
@@ -588,18 +589,11 @@ async function runLoadingGateUntilReady(eventPlayer: mod.Player, pid: number): P
             continue;
         }
 
-        // Stable for required polls — now check floor.
+        // Stable for required polls — enforce minimum floor then release.
         if (stableCount >= HUD_WARM_READY_STABLE_POLLS) {
             if (elapsed < GATE_FLOOR_SECONDS) {
-                // Floor is holding. Log once for debugging.
-                if (!floorHoldLogged) {
-                    floorHoldLogged = true;
-                    setSafetyFloorTriggeredForPid(pid, true);
-                    pushUiLoadTraceForPid(pid, "FLOOR_HOLD");
-                }
+                // Floor still holding — keep polling.
             } else {
-                // Ready and floor elapsed — release.
-                pushUiLoadTraceForPid(pid, "READY_OK");
                 setHudWarmCompletedForPid(pid, true);
                 refreshBuiltReadyDialogCachesForAllPlayers();
                 replayActiveMapValidationWarningsToPlayer(eventPlayer);
@@ -614,7 +608,10 @@ async function runLoadingGateUntilReady(eventPlayer: mod.Player, pid: number): P
 }
 
 function cleanupConquestHudForTeamSwap(pid: number): void {
-    twlConquestHudHidePlayer(pid);
+    // Destroy (not just hide) the combat HUD entry so the prebuild phase during the
+    // loading gate creates a completely fresh widget graph for the new team context.
+    // Hide-only left stale widget handles that could silently fail visibility calls.
+    twlConquestHudDestroyPlayer(pid);
     delete State.conquest.capture.engagedObjIdByPid[pid];
     conquestPhase4OnPlayerLeaveOrResetPid(pid);
     conquestPhase4BOnPlayerLeaveOrResetPid(pid);

@@ -12,6 +12,7 @@ function cancelPregameCountdown(): void {
     // Restore pre-countdown state so players can ready up again.
     State.conquest.lifecyclePhase = "NOT_READY";
     mod.EnableAllPlayerDeploy(true);
+    updateHudTeamSwapButtonVisibilityForAllPlayers();
     updateVehicleDeployTimerHudForAllPlayers();
 }
 
@@ -35,6 +36,7 @@ function startPregameCountdown(triggerPlayer?: mod.Player, force?: boolean): voi
 
     closeReadyDialogForAllPlayers();
     State.conquest.lifecyclePhase = "COUNTDOWN";
+    updateHudTeamSwapButtonVisibilityForAllPlayers();
     undeployAllDeployedPlayers();
     mod.EnableAllPlayerDeploy(false);
     invalidateCountdownWidgetCacheForAllPlayers();

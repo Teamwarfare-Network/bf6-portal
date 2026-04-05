@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.025)",
+        "title": "teamwarfare . net | TWL Conquest (v1.064)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -259,6 +259,7 @@
       "buttons": {
         "cancel": "CLOSE"
       },
+      "changeTeamToFormat": "CHANGE TEAMS TO {0}",
       "debugTimeLimit": "{0}"
     },
     "ui": {

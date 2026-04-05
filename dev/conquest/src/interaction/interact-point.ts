@@ -175,8 +175,6 @@ function initReadyDialogData(eventPlayer: mod.Player) {
         uiLoadDeployEnabled: false,
         uiLoadDeployAuthorized: false,
         uiLoadInputRestricted: false,
-        uiLoadLastEventDebugCode: 0,
-        uiLoadTrace: [],
         readyDialogWarmPrimed: false,
         readyDialogHotReady: false,
         gadgetMenuHotReady: false,
