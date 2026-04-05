@@ -17,12 +17,12 @@ function updateHelpTextVisibilityForPid(pid: number): void {
     const visibility = getHudVisibilitySnapshotForPid(pid);
     const showHelp = warmReady && visibility.showHelp;
 
-    const helpContainer = refs?.helpTextContainer ?? safeFind(`Container_HelpText_${pid}`);
+    const helpContainer = refs?.helpTextContainer ?? safeFind(wn("Container_HelpText", pid));
     if (helpContainer) {
         safeSetUIWidgetVisible(helpContainer, showHelp);
     }
 
-    const helpText = safeFind(`HelpText_${pid}`);
+    const helpText = safeFind(wn("HelpText", pid));
     if (helpText) {
         safeSetUIWidgetVisible(helpText, showHelp);
         safeSetUITextLabel(helpText, mod.Message(mod.stringkeys.twl.hud.helpText));

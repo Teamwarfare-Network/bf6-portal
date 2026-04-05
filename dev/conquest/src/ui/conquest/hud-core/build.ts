@@ -213,7 +213,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
     ) {
         return entry;
     }
-    const topHudRoot = ensureTopHudRootForPid(pid, player) ?? safeFind(`TopHudRoot_${pid}`);
+    const topHudRoot = ensureTopHudRootForPid(pid, player) ?? safeFind(wn("TopHudRoot", pid));
     if (!topHudRoot) return undefined;
     const root = twlConquestHudEnsureContainer(
         player,

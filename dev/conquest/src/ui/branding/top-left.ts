@@ -40,11 +40,11 @@ function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, re
     const topLeftBaseY = TOP_LEFT_BASE_Y_OFFSET + TOP_HUD_OFFSET_Y + CONQUEST_HUD_NON_CLOCK_SHIFT_Y;
 
     // Build-path cleanup for branding only (plus legacy settings root removal).
-    deleteAllBrandingWidgetsByName(`Upper_Left_Container_${pid}`);
-    deleteAllBrandingWidgetsByName(`Upper_Left_Settings_${pid}`);
+    deleteAllBrandingWidgetsByName(wn("Upper_Left_Container", pid));
+    deleteAllBrandingWidgetsByName(wn("Upper_Left_Settings", pid));
 
     const upperLeft = safeParseUI({
-        name: `Upper_Left_Container_${pid}`,
+        name: wn("Upper_Left_Container", pid),
         type: "Container",
         playerId: player,
         position: [TOP_LEFT_BASE_X, topLeftBaseY],
@@ -57,7 +57,7 @@ function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, re
         bgFill: mod.UIBgFill.Blur,
         children: [
             {
-                name: `Upper_Left_Text_${pid}`,
+                name: wn("Upper_Left_Text", pid),
                 type: "Text",
                 position: [5, -5.5],
                 size: [200, 17],
@@ -74,7 +74,7 @@ function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, re
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                name: `Upper_Left_Text_2_${pid}`,
+                name: wn("Upper_Left_Text_2", pid),
                 type: "Text",
                 position: [7.25, 12.5],
                 size: [200, 16.5],
@@ -102,36 +102,36 @@ function buildConquestBrandingTopLeftWidgets(player: mod.Player, pid: number, re
 // Builds one static top-left status lane using fixed absolute placement for box + state/ready text lines.
 function buildConquestStaticStatusLaneWidgets(player: mod.Player, pid: number, refs: TopHudShellRefs): void {
     const topLeftBaseY = TOP_LEFT_BASE_Y_OFFSET + TOP_HUD_OFFSET_Y + CONQUEST_HUD_NON_CLOCK_SHIFT_Y;
-    const statusRootName = `TwlConquestStatusDockRoot_${pid}`;
-    const statusPrimaryTextName = `TwlConquestStatusDockState_${pid}`;
-    const statusSecondaryTextName = `TwlConquestStatusDockReady_${pid}`;
+    const statusRootName = wn("TwlConquestStatusDockRoot", pid);
+    const statusPrimaryTextName = wn("TwlConquestStatusDockState", pid);
+    const statusSecondaryTextName = wn("TwlConquestStatusDockReady", pid);
 
     // Hard-cut cleanup: remove all current + prior status lane names before creating one authoritative static lane.
     deleteAllBrandingWidgetsByName(statusRootName);
     deleteAllBrandingWidgetsByName(statusPrimaryTextName);
     deleteAllBrandingWidgetsByName(statusSecondaryTextName);
-    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusPanelRoot_${pid}`);
-    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusPanelStateText_${pid}`);
-    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusPanelReadyText_${pid}`);
-    deleteAllBrandingWidgetsByName(`TwlConquestStatusStaticBox_${pid}`);
-    deleteAllBrandingWidgetsByName(`TwlConquestStatusStaticText_${pid}`);
-    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusLaneRoot_${pid}`);
-    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusLanePrimaryText_${pid}`);
-    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusLaneSecondaryText_${pid}`);
-    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusContainer_${pid}`);
-    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusStateText_${pid}`);
-    deleteAllBrandingWidgetsByName(`TwlConquestHudStatusReadyText_${pid}`);
-    deleteAllBrandingWidgetsByName(`TwlConquestStatusPanel_${pid}`);
-    deleteAllBrandingWidgetsByName(`TwlConquestStatusStateLine_${pid}`);
-    deleteAllBrandingWidgetsByName(`TwlConquestStatusReadyLine_${pid}`);
-    deleteAllBrandingWidgetsByName(`Upper_Left_Status_${pid}`);
-    deleteAllBrandingWidgetsByName(`Upper_Left_Status_StateText_${pid}`);
-    deleteAllBrandingWidgetsByName(`Upper_Left_Status_ReadyText_${pid}`);
-    deleteAllBrandingWidgetsByName(`RoundStateRoot_${pid}`);
-    deleteAllBrandingWidgetsByName(`RoundStateText_${pid}`);
-    deleteAllBrandingWidgetsByName(`PlayersReadyText_${pid}`);
-    deleteAllBrandingWidgetsByName(`Container_ReadyStatus_${pid}`);
-    deleteAllBrandingWidgetsByName(`ReadyStatusText_${pid}`);
+    deleteAllBrandingWidgetsByName(wn("TwlConquestHudStatusPanelRoot", pid));
+    deleteAllBrandingWidgetsByName(wn("TwlConquestHudStatusPanelStateText", pid));
+    deleteAllBrandingWidgetsByName(wn("TwlConquestHudStatusPanelReadyText", pid));
+    deleteAllBrandingWidgetsByName(wn("TwlConquestStatusStaticBox", pid));
+    deleteAllBrandingWidgetsByName(wn("TwlConquestStatusStaticText", pid));
+    deleteAllBrandingWidgetsByName(wn("TwlConquestHudStatusLaneRoot", pid));
+    deleteAllBrandingWidgetsByName(wn("TwlConquestHudStatusLanePrimaryText", pid));
+    deleteAllBrandingWidgetsByName(wn("TwlConquestHudStatusLaneSecondaryText", pid));
+    deleteAllBrandingWidgetsByName(wn("TwlConquestHudStatusContainer", pid));
+    deleteAllBrandingWidgetsByName(wn("TwlConquestHudStatusStateText", pid));
+    deleteAllBrandingWidgetsByName(wn("TwlConquestHudStatusReadyText", pid));
+    deleteAllBrandingWidgetsByName(wn("TwlConquestStatusPanel", pid));
+    deleteAllBrandingWidgetsByName(wn("TwlConquestStatusStateLine", pid));
+    deleteAllBrandingWidgetsByName(wn("TwlConquestStatusReadyLine", pid));
+    deleteAllBrandingWidgetsByName(wn("Upper_Left_Status", pid));
+    deleteAllBrandingWidgetsByName(wn("Upper_Left_Status_StateText", pid));
+    deleteAllBrandingWidgetsByName(wn("Upper_Left_Status_ReadyText", pid));
+    deleteAllBrandingWidgetsByName(wn("RoundStateRoot", pid));
+    deleteAllBrandingWidgetsByName(wn("RoundStateText", pid));
+    deleteAllBrandingWidgetsByName(wn("PlayersReadyText", pid));
+    deleteAllBrandingWidgetsByName(wn("Container_ReadyStatus", pid));
+    deleteAllBrandingWidgetsByName(wn("ReadyStatusText", pid));
 
     const statusX = TOP_LEFT_BASE_X + TOP_LEFT_BRANDING_WIDTH + TOP_LEFT_STATUS_GAP_X;
     const statusY = topLeftBaseY;

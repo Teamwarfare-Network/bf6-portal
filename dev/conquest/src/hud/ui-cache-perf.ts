@@ -35,11 +35,9 @@ function isUiCachePerfPanelEnabled(): boolean {
     return State.admin.uiCachePerfVisible !== false;
 }
 
-// Returns the admin-panel toggle label key for the global UI cache panel visibility state.
+// Returns the admin-panel toggle label key for the UI cache panel button.
 function getUiCachePerfAdminToggleLabelKey(): number {
-    return isUiCachePerfPanelEnabled()
-        ? mod.stringkeys.twl.adminPanel.tester.buttons.uiCachePerfOn
-        : mod.stringkeys.twl.adminPanel.tester.buttons.uiCachePerfOff;
+    return mod.stringkeys.twl.adminPanel.tester.buttons.uiCachePerfOn;
 }
 
 // Syncs one admin-panel toggle label so the button reflects the current global UI cache panel state.
@@ -69,27 +67,27 @@ function incrementUiCachePerfCounter(
 
 // Returns the widget name for the per-player UI cache panel root.
 function getUiCachePerfRootName(pid: number): string {
-    return `UiCachePerfRoot_${pid}`;
+    return wn("UiCachePerfRoot", pid);
 }
 
 // Returns the widget name for the per-player UI cache panel header label.
 function getUiCachePerfHeaderName(pid: number): string {
-    return `UiCachePerfHeader_${pid}`;
+    return wn("UiCachePerfHeader", pid);
 }
 
 // Returns the widget name for one per-family static label row.
 function getUiCachePerfFamilyLabelName(pid: number, familyIndex: number): string {
-    return `UiCachePerfFamilyLabel_${pid}_${familyIndex}`;
+    return wn("UiCachePerfFamilyLabel", pid, familyIndex);
 }
 
 // Returns the widget name for one per-family built/rebuilt value row.
 function getUiCachePerfBuiltName(pid: number, familyIndex: number): string {
-    return `UiCachePerfBuilt_${pid}_${familyIndex}`;
+    return wn("UiCachePerfBuilt", pid, familyIndex);
 }
 
 // Returns the widget name for one per-family cold/invalid value row.
 function getUiCachePerfColdName(pid: number, familyIndex: number): string {
-    return `UiCachePerfCold_${pid}_${familyIndex}`;
+    return wn("UiCachePerfCold", pid, familyIndex);
 }
 
 // Deletes all widgets for one player's lightweight UI cache panel before deterministic rebuild.

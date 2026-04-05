@@ -3737,18 +3737,18 @@ None
 
 ## Codebase Reference Map
 
-Last updated: v1.025 (2026-04-04)
+Last updated: v1.064 (2026-04-04)
 
 ### Project Stats
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.025 |
-| Source files | 114 .ts files |
-| Source lines | ~23,900 |
-| Bundle size | 1,029,260 bytes |
+| Version | 1.064 |
+| Source files | 113 .ts files |
+| Source lines | ~28,600 |
+| Bundle size | 1,024,269 bytes |
 | Bundle limit | 1,048,576 bytes (1 MiB) |
-| Headroom | 19,316 bytes (1.8%) |
+| Headroom | 24,307 bytes (2.3%) |
 | Entry point | `src/index.ts` -> 19 Portal event handlers |
 | Build tool | `bf6-portal-bundler` -> `dist/bundle.ts` + `dist/bundle.strings.json` |
 
@@ -3760,7 +3760,7 @@ src/
   types.ts                    -- Foundation type shim (imports foundation/*)
   header-file.ts              -- Version, license (MIT), attribution
   footer-file.ts              -- EOF version marker
-  Changelog.ts                -- Version history (724 lines)
+  Changelog.ts                -- Version history (763 lines)
   conquest-flow.ts            -- Continuous-live flow: start/end match (with winner inference), clock binding, match length config
   strings.json                -- All player-facing localized string keys
 
@@ -3793,7 +3793,7 @@ src/
   index/
     game-mode.ts              -- Mode start, main game loop (0.12s tick), clock/boundary/victory
     conquest-scaffold.ts      -- Phase 1 state initialization scaffold
-    capture-tickets.ts        -- Phase 2A capture routing, ticket bleed, combat HUD dispatch (2,238 lines)
+    capture-tickets.ts        -- Phase 2A capture routing, ticket bleed, combat HUD dispatch (2,158 lines)
     capture-sound.ts          -- Phase 4 capture-tick sound queue and dispatch
     capture-vo.ts             -- Phase 4B objective voice-over queue and dispatch
     player-join-leave.ts      -- Join/leave lifecycle, HUD cleanup, loading gate entry
@@ -3804,10 +3804,10 @@ src/
 
   interaction/
     types.ts                  -- readyDialogData_t (30+ fields), UiLoadReason, HARD_PLAYER_LOCK_AUDIT_MODE
-    actions.ts                -- Loading gate orchestration, HUD warm/reveal, deploy control (705 lines)
+    actions.ts                -- Loading gate orchestration, HUD warm/reveal, deploy control (698 lines)
     hud-warm-state.ts         -- Per-player gate state accessors (40+ getters/setters, 344 lines)
     interact-point.ts         -- Ready-dialog interact point spawn/despawn lifecycle
-    world-interactables.ts    -- Authored interact-point routing, per-player world icons
+    world-interactables.ts    -- Per-player spawned WorldIcon clones with SetWorldIconOwner visibility, team filtering (320 lines)
     ammo-resupply-menu.ts     -- Gadget/ammo menu UI, cooldowns, click handling (1,859 lines)
     spawn-selector.ts         -- Custom spawn selection stub (Phase 8 placeholder)
     ui-events.ts              -- Button event dispatcher
@@ -3939,7 +3939,7 @@ All functions exported from `src/index.ts`. Each delegates to an `*Impl` functio
 - Main loop (0.12s tick): `conquestPhase2ARefreshLiveCaptureStateSubtick()`, `updateConquestCombatHudForAllPlayers()`, `conquestPhase4FlushCaptureSoundQueue()`, `conquestPhase4BFlushCaptureVoiceOverQueue()`
 - Second boundary: `updateVehicleDeployTimerHudForAllPlayers()`, `ensureActiveWorldInteractablesReady()`, `checkTakeoffLimitForAllPlayers()`, `tickBoundaryEnforcement()`
 
-#### index/capture-tickets.ts — Phase 2A Capture + Tickets (2,238 lines)
+#### index/capture-tickets.ts — Phase 2A Capture + Tickets (2,158 lines)
 - `conquestPhase2ARefreshLiveCaptureStateSubtick()` — sub-tick capture sync from engine
 - `conquestPhase2AOnLiveTick()` — second-boundary bleed + end check + HUD refresh
 - `conquestPhase2AApplyBleedTick()` — ticket bleed math
@@ -3947,7 +3947,7 @@ All functions exported from `src/index.ts`. Each delegates to an `*Impl` functio
 - `updateConquestCombatHudForAllPlayers()` — central combat HUD dispatch
 - 7 view model types: `ConquestHudTicketViewModel`, `ConquestHudFlagSlotViewModel`, `ConquestHudActiveFlagPopoutViewModel`, `ConquestHudFlagsViewModel`, `ConquestHudEngageViewModel`, `ConquestHudStatusViewModel`, `ConquestHudClockViewModel`
 
-#### interaction/actions.ts — Loading Gate (705 lines)
+#### interaction/actions.ts — Loading Gate (698 lines)
 - `beginLoadingGate(player, pid, reason)` — unified gate entry for join + team-swap
 - `runLoadingGateUntilReady(player, pid)` — polling loop: prebuild -> warm check -> floor wait -> release
 - `releaseLoadingGate(player, pid, token)` — single release owner (idempotent)
@@ -4002,12 +4002,12 @@ All functions exported from `src/index.ts`. Each delegates to an `*Impl` functio
 
 | File | Lines | Concern |
 |------|-------|---------|
-| `index/capture-tickets.ts` | 2,238 | Capture state, bleed, view models, combat HUD |
-| `vehicles/deploy-timer-ui.ts` | 1,942 | Vehicle spawn timer HUD |
+| `index/capture-tickets.ts` | 2,158 | Capture state, bleed, view models, combat HUD |
+| `vehicles/deploy-timer-ui.ts` | 1,944 | Vehicle spawn timer HUD |
 | `interaction/ammo-resupply-menu.ts` | 1,859 | Gadget/ammo menu |
+| `Changelog.ts` | 763 | Version history |
 | `config/map-runtime.ts` | 754 | Map config application |
-| `Changelog.ts` | 724 | Version history |
-| `interaction/actions.ts` | 705 | Loading gate orchestration |
+| `interaction/actions.ts` | 698 | Loading gate orchestration |
 | `admin-panel/build.ts` | 647 | Admin panel widgets |
 | `hud/status.ts` | 553 | Status dock, safe setters |
 | `vehicles/deploy-fulfillment.ts` | 515 | Direct vehicle spawn |

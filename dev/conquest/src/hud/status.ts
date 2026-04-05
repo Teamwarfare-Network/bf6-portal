@@ -287,7 +287,7 @@ function setWidgetVisible(widget: mod.UIWidget | undefined, visible: boolean): v
 
 // Ensures one shared top-HUD root exists for this player and reparents core top-HUD lanes under it.
 function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget | undefined {
-    const rootName = `TopHudRoot_${pid}`;
+    const rootName = wn("TopHudRoot", pid);
     const uiRoot = mod.GetUIRoot();
     const visible = true;
     if (topHudRootInitializedByPid[pid] !== true) {
@@ -357,17 +357,17 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
 function setHudHelpDepthForPid(pid: number): void {
     // Top-left status lane must remain above its own blur container after reparenting.
     const statusLaneIds = [
-        `TwlConquestStatusDockRoot_${pid}`,
-        `TwlConquestStatusDockState_${pid}`,
-        `TwlConquestStatusDockReady_${pid}`,
-        `TwlConquestHudStatusPanelRoot_${pid}`,
-        `TwlConquestHudStatusPanelStateText_${pid}`,
-        `TwlConquestHudStatusPanelReadyText_${pid}`,
-        `TwlConquestStatusStaticBox_${pid}`,
-        `TwlConquestStatusStaticText_${pid}`,
-        `TwlConquestHudStatusLaneRoot_${pid}`,
-        `TwlConquestHudStatusLanePrimaryText_${pid}`,
-        `TwlConquestHudStatusLaneSecondaryText_${pid}`,
+        wn("TwlConquestStatusDockRoot", pid),
+        wn("TwlConquestStatusDockState", pid),
+        wn("TwlConquestStatusDockReady", pid),
+        wn("TwlConquestHudStatusPanelRoot", pid),
+        wn("TwlConquestHudStatusPanelStateText", pid),
+        wn("TwlConquestHudStatusPanelReadyText", pid),
+        wn("TwlConquestStatusStaticBox", pid),
+        wn("TwlConquestStatusStaticText", pid),
+        wn("TwlConquestHudStatusLaneRoot", pid),
+        wn("TwlConquestHudStatusLanePrimaryText", pid),
+        wn("TwlConquestHudStatusLaneSecondaryText", pid),
     ];
     for (const name of statusLaneIds) {
         const widget = safeFind(name);
@@ -375,8 +375,8 @@ function setHudHelpDepthForPid(pid: number): void {
     }
     // Legacy top-center help/ready prompt lanes stay below gameplay to avoid occluding combat HUD.
     const helpIds = [
-        `Container_HelpText_${pid}`,
-        `HelpText_${pid}`,
+        wn("Container_HelpText", pid),
+        wn("HelpText", pid),
     ];
     for (const name of helpIds) {
         const widget = safeFind(name);

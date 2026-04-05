@@ -1,7 +1,7 @@
 # Conquest Issues
 
-Last Updated: 2026-04-04  
-Last Tested Build: `v1.025` (Phase 7 complete; pre-game countdown, victory dialog with ticket scoreboard/crown/result, endMatch winner fix)
+Last Updated: 2026-04-05  
+Last Tested Build: `v1.077` (CQ_Bug_35/36/37/38/42 fixes confirmed; vehicle deploy regression fixed)
 
 ## Current Snapshot
 - `CQ_Bug_1`: Resolved
@@ -28,7 +28,7 @@ Last Tested Build: `v1.025` (Phase 7 complete; pre-game countdown, victory dialo
 - `CQ_Bug_22`: Resolved
 - `CQ_Bug_23`: Resolved
 - `CQ_Bug_24`: Resolved
-- `CQ_Bug_25`: Fix shipped v1.046 (needs multi-player confirmation)
+- `CQ_Bug_25`: Resolved (single-player confirmed v1.064; needs multi-player confirmation)
 - `CQ_Bug_26`: Likely resolved (believed fixed by vehicle HUD polish passes; needs confirmation)
 - `CQ_Bug_27`: Resolved (fixed in vehicle HUD render passes)
 - `CQ_Bug_28`: Open (Phase 10 — vehicle-specific, only some vehicles affected; needs investigation)
@@ -38,6 +38,224 @@ Last Tested Build: `v1.025` (Phase 7 complete; pre-game countdown, victory dialo
 - `CQ_Bug_32`: Open (Phase 10 polish)
 - `CQ_Bug_33`: Open (Phase 10 polish)
 - `CQ_Bug_34`: Open (Phase 10 tuning — vehicle ground spawner orientations and positions need per-map pass)
+- `CQ_Bug_35`: Resolved (v1.075 — all call sites on undeployed players eliminated; error logs confirmed clean in SP testing)
+- `CQ_Bug_36`: Resolved (v1.071 — guarded behind isPlayerDeployed; confirmed clean in SP testing)
+- `CQ_Bug_37`: Resolved (v1.074+v1.076 — vehicle occupancy cache guard + proactive cache set before ForcePlayerToSeat)
+- `CQ_Bug_38`: Resolved (v1.074+v1.076 — same vehicle occupancy cache guard; confirmed clean in SP testing)
+- `CQ_Bug_39`: Open (investigation needed — cosmetic engine log noise from UnspawnObject on possibly-destroyed objects; root cause needs confirmation)
+- `CQ_Bug_40`: Likely resolved (v1.075 — primary cause was CQ_Bug_35 spam; needs MP confirmation)
+- `CQ_Bug_41`: Open (Phase 10 architecture — central tick loop drives all timers; should use event-driven self-terminating loops)
+- `CQ_Bug_42`: Guarded (v1.073 — defensive null checks on array helpers and capture-tickets; needs MP confirmation)
+
+## CQ_Bug_42
+Title: CountOf Called With Invalid/Undefined Array Argument During Gameplay
+
+Observed:
+- Engine reports `ERROR REPORTED BY COUNTOF WHILE RUNNING JS SCRIPT` / `Provided parameters () do not match any overload. Function supports the following overloads: [Array].`
+- Appeared twice in v1.072 SP test during: deploy, ready dialog, gadget dialog, grab artillery, drop artillery.
+- Player did NOT enter any capture point when the errors appeared.
+- `CountOf` expects a Portal `Array` but received undefined or a non-array value.
+
+Candidate Sources (ranked by likelihood):
+1. `modlib.IsTrueForAny` / `modlib.FilteredArray` in `vehicles/array-helpers.ts` — internally call `CountOf` on their array argument. If `mod.GetVariable(regVehiclesTeam1/2)` returns a non-array (e.g. during transient registry state), two CountOf errors would fire (once per team). Matches the observed count of 2.
+2. `capture-tickets.ts:1776` — `mod.GetPlayersOnPoint(eventCapturePoint)` could return undefined for a capture point in transient state; the `CountOf` call is inside a try-catch so the error is cosmetic but still logged by the engine.
+3. Any `mod.AllPlayers()` call returning undefined — unlikely but possible during engine state transitions.
+
+Expected:
+- All `CountOf` calls should receive a valid Portal Array.
+- Defensive guards should prevent undefined from reaching `CountOf`.
+
+Fix:
+1. Guard `arrayContainsVehicle` and `arrayRemoveVehicle` in `vehicles/array-helpers.ts` against undefined/non-array input.
+2. Guard `GetPlayersOnPoint` result in `capture-tickets.ts` before passing to `CountOf`.
+
+Status:
+- Guarded (v1.073). Defensive null checks added to `arrayContainsVehicle`, `arrayRemoveVehicle`, and `GetPlayersOnPoint` call site.
+- First observed in v1.072 SP test. May have been previously hidden by CQ_Bug_35 error log spam.
+- Needs MP confirmation.
+
+Related:
+- CQ_Bug_37/38 (same cosmetic engine-log-before-throw pattern)
+
+Evidence:
+- Screenshot: `reference_design_documentation/testing_images/20260405142543_1.jpg`
+
+## CQ_Bug_41
+Title: Central Tick Loop Drives All Periodic UI Updates — Should Use Event-Driven Self-Terminating Loops
+
+Observed:
+- The main game loop (`game-mode.ts`) runs at 0.12s subtick (~8 ticks/sec). Every second boundary it calls `updateVehicleDeployTimerHudForAllPlayers()`, boundary enforcement, clock updates, and world interactable checks for ALL players.
+- The `OngoingPlayer` rule fires `ongoingPlayerImpl` per-player per-engine-tick, calling `enforceUiLoadingGateWhileDeployed` and `maintainUiLoadingGateWhileUnreleased` unconditionally.
+- Vehicle deploy timer refresh iterates all players and recomputes render plans every second even when nothing changed (signature early-out mitigates wasted widget work but not iteration + plan computation cost).
+- This architecture scales poorly with player count and contributes to frame budget pressure (CQ_Bug_40).
+
+Expected:
+- Only run something in OngoingPlayer or persistent tick loops when it is literally the only methodology available.
+- Protect tick size and tick contents — ensure every-tick or every-second work doesn't run expensively unless truly justified.
+- Vehicle timers, boundary enforcement, and similar periodic checks should spawn their own event-driven loops that self-terminate when no longer needed (e.g., a respawn countdown loop starts when a slot enters cooldown and exits when cooldown hits 0).
+- The central game loop should only drive global state mutation (bleed, capture sync, end conditions) — not per-player UI refresh.
+
+Status:
+- Open.
+- Deferred optimization pass — not blocking gameplay but degrades frame budget headroom under MP load.
+- Reference projects may provide patterns for event-driven timer architecture in this engine.
+
+Related:
+- CQ_Bug_40 (frame time budget — this is a contributing structural cause)
+- CQ_Bug_35 (OngoingPlayer spam — symptom of unconditional per-tick work)
+
+## CQ_Bug_40
+Title: Mod Evaluator Frame Time Exceeds 1,000ms Budget During Multiplayer Loading Gate
+
+Observed:
+- Engine reports `Mod has been running for X ms this frame which exceeds max evaluation time of 1,000ms` with times ranging from 1,003ms to 1,317ms.
+- Occurs during multiplayer when a player is in the loading gate while another player is active.
+- Directly correlated with CQ_Bug_35 spam: hundreds of rejected `EnableAllInputRestrictions` calls per frame burn the frame budget.
+
+Expected:
+- Script should never exceed the 1,000ms per-frame evaluation budget.
+
+Status:
+- Likely resolved (v1.075).
+- Primary cause was CQ_Bug_35 spam (hundreds of rejected EnableAllInputRestrictions calls per frame). That spam is now eliminated.
+- Needs MP confirmation to verify frame budget stays under 1,000ms during loading gate with multiple players.
+
+Related:
+- CQ_Bug_35 (primary contributor — now resolved)
+- CQ_Bug_41 (structural cause — unconditional per-tick work in OngoingPlayer and gate loop)
+
+Evidence:
+- Screenshots from v1.070 MP testing session (2026-04-05): `reference_design_documentation/testing_images/20260405115204_1.jpg` through `20260405123302_1.jpg`
+
+## CQ_Bug_39
+Title: UnspawnObject Error on Already-Destroyed Runtime Object During Cleanup
+
+Observed:
+- Engine reports `ERROR REPORTED BY UNSPAWNOBJECT WHILE RUNNING JS SCRIPT` during world interactable or runtime object cleanup.
+- The try/catch in cleanup code swallows the JS exception, but the engine logs the error before the catch runs.
+- Occurs during gate reset or round transitions when runtime-spawned WorldIcons may already have been destroyed by the engine.
+
+Expected:
+- Cleanup should not attempt to unspawn objects that no longer exist, or the error should be fully suppressed.
+
+Status:
+- Open (investigation needed).
+- Cosmetic log noise only, no gameplay impact. Already wrapped in try/catch so no script failure.
+- Current hypothesis: BF6 Portal API does not expose `IsObjectValid` or equivalent, so no way to pre-check if a runtime-spawned object still exists before calling UnspawnObject. The engine logs the error before the JS catch runs (same pattern as CQ_Bug_37/38).
+- Root cause needs further confirmation before determining fix approach.
+
+Evidence:
+- Screenshots from v1.070 MP testing: `20260405121157_1.jpg`, `20260405122108_1.jpg`
+
+## CQ_Bug_38
+Title: GetVehicleFromPlayer Invalid Value Error During Deploy/Vehicle Transitions
+
+Observed:
+- Engine reports `ERROR REPORTED BY GETVEHICLEFROMPLAYER WHILE RUNNING JS SCRIPT` / `Failed to perform operation as invalid value encountered.`
+- Always paired with CQ_Bug_37 (GetPlayerVehicleSeat).
+- The safe wrapper `safeGetVehicleFromPlayer` checks `isPlayerDeployed()` (script-side state) and uses try/catch, but the engine logs the error before the JS catch runs.
+- Occurs during windows where script-side `deployedByPid` is true but the engine considers the player not in a valid vehicle state (death, respawn, vehicle destruction).
+
+Expected:
+- Vehicle queries should not produce engine error log entries during normal gameplay transitions.
+
+Status:
+- Resolved (v1.074+v1.076).
+- v1.074: Added vehicle occupancy cache guard — `safeGetVehicleFromPlayer` checks `State.players.posDebugVehicleObjIdByPid[pid]` before querying the engine. Cache set on `OnPlayerEnterVehicle`, cleared on exit/undeploy.
+- v1.076: Proactive cache set before `ForcePlayerToSeat` in deploy-fulfillment.ts prevents verification loop from failing due to missing cache entry.
+- Residual edge case: in-vehicle death has a brief window where cache shows a vehicle but engine rejects the query. Try-catch handles this gracefully.
+- Error logs confirmed clean in SP testing.
+
+Related:
+- CQ_Bug_37 (same root cause — engine/script deploy state divergence; fixed by same guard)
+
+Evidence:
+- Screenshots from v1.070 MP testing: `20260405115204_1.jpg`, `20260405115933_1.jpg`
+
+## CQ_Bug_37
+Title: GetPlayerVehicleSeat Invalid Value Error During Deploy/Vehicle Transitions
+
+Observed:
+- Engine reports `ERROR REPORTED BY GETPLAYERVEHICLESEAT WHILE RUNNING JS SCRIPT` / `Failed to perform operation as invalid value encountered.`
+- The safe wrapper `safeGetPlayerVehicleSeat` checks `isPlayerDeployed()` and uses try/catch, but the engine logs before throwing.
+- Called from `safeGetVehicleFromPlayer` (which calls seat check first) and from vehicle enter event handler.
+- Occurs during transition windows: player death, between respawns, vehicle destruction, or seat changes.
+
+Expected:
+- Vehicle seat queries should not produce engine error log entries during normal gameplay transitions.
+
+Status:
+- Resolved (v1.074+v1.076).
+- v1.074: Added vehicle occupancy cache guard — `safeGetPlayerVehicleSeat` checks `State.players.posDebugVehicleObjIdByPid[pid]` before calling `mod.GetPlayerVehicleSeat`. Skips the engine call entirely when the player has no cached vehicle.
+- v1.076: Proactive cache set before `ForcePlayerToSeat` in deploy-fulfillment.ts prevents verification loop from failing due to missing cache entry.
+- Error logs confirmed clean in SP testing.
+
+Related:
+- CQ_Bug_38 (paired — GetVehicleFromPlayer uses same guard chain)
+
+Evidence:
+- Screenshots from v1.070 MP testing: `20260405115204_1.jpg`, `20260405115933_1.jpg`
+
+## CQ_Bug_36
+Title: UndeployPlayer Called on Already-Undeployed Player During Loading Gate
+
+Observed:
+- Engine reports `ERROR REPORTED BY UNDEPLOYPLAYER WHILE RUNNING JS SCRIPT` / `Failed to apply action to player due to player not being deployed.`
+- Two sources:
+  1. `enforceUiLoadingGateWhileDeployed` (`player-loop-inputs.ts:21`) retries `mod.UndeployPlayer` every 0.2s while the gate is active, even if the player is already on the deploy screen.
+  2. Gate loop belt-and-suspenders (`actions.ts:577`) fires `mod.UndeployPlayer` when `deployedByPid[pid]` is true but the engine considers the player undeployed.
+
+Expected:
+- UndeployPlayer should only be called when the engine actually considers the player deployed.
+
+Fix:
+- Guard both undeploy calls behind `isPlayerDeployed(player)` check (engine state, not just script state).
+
+Status:
+- Resolved (v1.071).
+- Guarded both undeploy call sites behind `isPlayerDeployed(player)` check.
+- Error logs confirmed clean in SP testing.
+
+Related:
+- CQ_Bug_35 (same loading gate spam pattern)
+- CQ_Bug_40 (contributes to frame budget pressure)
+
+Evidence:
+- Screenshots from v1.070 MP testing: `20260405120805_1.jpg`, `20260405121157_1.jpg`, `20260405121803_1.jpg`, `20260405122108_1.jpg`, `20260405123302_1.jpg`
+
+## CQ_Bug_35
+Title: EnableAllInputRestrictions Spam on Undeployed Player During Loading Gate
+
+Observed:
+- Engine reports `ERROR REPORTED BY ENABLEALLINPUTRESTRICTIONS WHILE RUNNING JS SCRIPT` / `Failed to apply action to player due to player not being deployed.`
+- Fills the entire error log — appears in all 8 MP test screenshots, heavily repeated (dozens of lines per screenshot).
+- Source: `enforceUiLoadingGateWhileDeployed` (`player-loop-inputs.ts:14`) calls `setAllInputRestrictionsForPlayer(eventPlayer, true)` every OngoingPlayer engine tick while the gate is active. The engine rejects `EnableAllInputRestrictions` on undeployed players.
+- Since the gate is active precisely because the player hasn't deployed yet, this fires every engine tick for the full 30s floor duration.
+- Additionally, `maintainPlayerLoadingGateAuthority` in the gate loop calls `reassertPlayerUiLoadingGateVisuals` every 50ms iteration, which calls `holdPlayerAtDeploy` — redundant when the overlay and deploy block are already set.
+
+Expected:
+- Input restrictions should only be applied to deployed players.
+- Gate authority reassertion should be set-and-forget, not hammered every tick.
+
+Fix:
+1. Guard `setAllInputRestrictionsForPlayer` call in `enforceUiLoadingGateWhileDeployed` behind `isPlayerDeployed(player)`.
+2. Reduce `maintainPlayerLoadingGateAuthority` to only reassert on state changes, not every iteration.
+
+Status:
+- Resolved (v1.075).
+- v1.071 added `isPlayerDeployed` guard in `enforceUiLoadingGateWhileDeployed` and throttled `maintainPlayerLoadingGateAuthority` via `GATE_REASSERT_INTERVAL = 20` (~1s at 50ms poll).
+- v1.072 fixed non-ASCII em dash in inline comment that crashed the script on boot (prevented v1.071 from running).
+- v1.075 eliminated remaining call sites: `onPlayerUndeployImpl` and `releaseLoadingGate` now use `recordUiLoadInputRestrictedForPid` instead of `setAllInputRestrictionsForPlayer` when player is undeployed.
+- Error logs confirmed clean in SP testing.
+
+Related:
+- CQ_Bug_40 (frame budget — this spam was the primary cause; expected resolved)
+- CQ_Bug_36 (same loading gate, same deploy-state mismatch; guarded in v1.071)
+- CQ_Bug_41 (structural — OngoingPlayer does unconditional per-tick work)
+
+Evidence:
+- Screenshots from v1.070 MP testing: all 8 screenshots (`20260405115204_1.jpg` through `20260405123302_1.jpg`)
+- v1.072 SP test: single occurrence visible in `20260405142543_1.jpg`
 
 ## CQ_Bug_34
 Title: Vehicle Ground Spawner Rotation and Position Tuning Needed Across Maps
@@ -473,22 +691,35 @@ Expected:
 - World icons should resolve independently per player, including distance gating and visibility state, instead of inheriting the first player's outcome.
 
 Status:
-- Fix shipped in v1.046. Needs multi-player confirmation.
+- Resolved (single-player confirmed v1.064). Needs multi-player confirmation.
+
+Investigation History (v1.047–v1.064):
+- v1.047–v1.059: Exhaustive attempts to use `mod.AddUIIcon` on InteractPoints, authored WorldIcons, and spawned WorldIcons. All calls completed without error but **never rendered visible output**. Tested with multiple parent types, offsets, visibility params, and enum values across 12+ iterations.
+- v1.060: Abandoned `AddUIIcon` entirely. Switched to per-player **spawned WorldIcon clones** via `mod.SpawnObject(RuntimeSpawn_Common.WorldIcon, pos, rot)` with `mod.SetWorldIconOwner(icon, player)` for per-player visibility. Single-player confirmed working: all main base and gadget icons render correctly.
+- v1.061: Added `ownerTeamId` filter to restrict main base icons by team. Had a TS type error (`TeamID` vs `0` comparison) in bundle output.
+- v1.062–v1.063: Fixed swapped anchor `ownerTeamId` assignments (reverted — anchors were correct), fixed TS type error.
+- v1.064: Corrected the root data error — `team1Base`/`team2Base` position vectors were swapped in `operation-firestorm.ts`. Team1 (WEST) is at negative X (-761), Team2 (EAST) is at positive X (570). Anchors and all other ObjId assignments were already correct.
 
 Root Cause:
-- `mod.SpawnObject(RuntimeSpawn_Common.WorldIcon, ...)` creates WorldIcons with image and text **disabled by default**.
-- The code called `SetWorldIconImage`, `SetWorldIconText`, `SetWorldIconColor`, and `SetWorldIconOwner` but never called `EnableWorldIconImage(icon, true)` or `EnableWorldIconText(icon, true)`.
-- This was confirmed by cross-referencing the BountyHunter reference implementation which explicitly enables both after spawn.
-- The v1.034 authored-icon approach (pre-CQ_Bug_25 work) worked because authored WorldIcons start enabled by default — only runtime-spawned ones default to disabled.
+- `mod.AddUIIcon` is non-functional in the Santiago engine build — completes without error but never renders.
+- The original spawned-WorldIcon approach (pre-v1.047) failed because `mod.SpawnObject(RuntimeSpawn_Common.WorldIcon, ...)` creates icons with image/text **disabled by default**. The code never called `EnableWorldIconImage(icon, true)` or `EnableWorldIconText(icon, true)`.
+- The `team1Base`/`team2Base` position vectors were swapped in the map config, causing the team ownership filter to compare against the wrong base.
 
 Resolution:
-- Added `mod.EnableWorldIconImage(icon, true)` and `mod.EnableWorldIconText(icon, true)` after spawning per-player WorldIcons in `showWorldInteractableRuntimeIconForPlayer`.
-- API reference: `EnableWorldIconImage.md`, `EnableWorldIconText.md` in `reference_bf6_core/mod/functions/`.
-- Per-player visibility via `SetWorldIconOwner(icon, player)` retained for multi-player gating (needs 2-player test).
+- `src/interaction/world-interactables.ts`: Complete rewrite to per-player spawned WorldIcon clone pattern. Each player gets their own WorldIcon per config, tracked in `worldInteractableIconByPidByObjId[pid][objId]`. Icons are spawned at `config.iconAnchorPos`, configured with image/color/text, restricted via `SetWorldIconOwner(icon, player)`, and explicitly enabled.
+- `src/config/maps/operation-firestorm.ts`: Corrected `team1Base`/`team2Base` position swap.
+- Team filter in `shouldShowWorldInteractableRuntimeIconForPlayer` gates main base icons by `config.ownerTeamId` vs player team.
+- Sync triggers: deploy, enter/exit main base area trigger, enter/exit gadget area trigger, undeploy/disconnect.
+- Cleanup: `cleanupWorldInteractableRuntimeIconsForPid` unspawns all icons and clears state on undeploy/disconnect.
+
+Key Lessons:
+- `mod.AddUIIcon` is non-functional — documented in AGENTS.md. Do not use.
+- Spawned WorldIcons start disabled — must call `EnableWorldIconImage(icon, true)` and `EnableWorldIconText(icon, true)`.
+- `mod.Message()` requires registered string keys from `strings.json` via `mod.stringkeys.*` — literal strings produce "unknown string".
 
 Remaining:
-- Multi-player test: confirm per-player distance/visibility with 2+ players at different bases.
-- If `SetWorldIconOwner` still fails per-player gating, escalate as a separate engine limitation bug.
+- Multi-player test: confirm per-player visibility isolation with 2+ players at different team bases.
+- Confirm `SetWorldIconOwner` correctly restricts icons per-player in multiplayer.
 
 ## CQ_Bug_24
 Title: Passive Deployed Vehicle HUD Failed To Refresh After Config Apply

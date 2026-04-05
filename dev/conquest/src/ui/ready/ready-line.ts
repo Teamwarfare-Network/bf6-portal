@@ -40,14 +40,14 @@ function buildConquestTopCenterAuxWidgets(
     const PANEL_HEIGHT = 28.11;
 
     // Build-path cleanup: ensure stale aux roots from failed/partial rebuilds cannot shadow the active widgets.
-    deleteAllTopCenterAuxWidgetsByName(`ConquestTopCenterAuxRoot_${pid}`);
-    deleteAllTopCenterAuxWidgetsByName(`Container_HelpText_${pid}`);
-    deleteAllTopCenterAuxWidgetsByName(`HelpText_${pid}`);
-    deleteAllTopCenterAuxWidgetsByName(`Container_ReadyStatus_${pid}`);
-    deleteAllTopCenterAuxWidgetsByName(`ReadyStatusText_${pid}`);
+    deleteAllTopCenterAuxWidgetsByName(wn("ConquestTopCenterAuxRoot", pid));
+    deleteAllTopCenterAuxWidgetsByName(wn("Container_HelpText", pid));
+    deleteAllTopCenterAuxWidgetsByName(wn("HelpText", pid));
+    deleteAllTopCenterAuxWidgetsByName(wn("Container_ReadyStatus", pid));
+    deleteAllTopCenterAuxWidgetsByName(wn("ReadyStatusText", pid));
 
     const mid = safeParseUI({
-        name: `ConquestTopCenterAuxRoot_${pid}`,
+        name: wn("ConquestTopCenterAuxRoot", pid),
         type: "Container",
         playerId: player,
         position: [0, TOP_PANEL_Y],
@@ -59,7 +59,7 @@ function buildConquestTopCenterAuxWidgets(
         bgFill: mod.UIBgFill.None,
         children: [
             {
-                name: `Container_HelpText_${pid}`,
+                name: wn("Container_HelpText", pid),
                 type: "Container",
                 position: [layout.helpContainerX, layout.helpContainerY],
                 size: [layout.helpContainerWidth, layout.helpContainerHeight],
@@ -72,7 +72,7 @@ function buildConquestTopCenterAuxWidgets(
                 bgFill: mod.UIBgFill.Solid,
                 children: [
                     {
-                        name: `HelpText_${pid}`,
+                        name: wn("HelpText", pid),
                         type: "Text",
                         position: [0, layout.helpTextOffsetY],
                         size: [layout.helpContainerWidth, layout.helpTextHeight],

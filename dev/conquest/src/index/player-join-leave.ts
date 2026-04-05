@@ -28,31 +28,31 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
             }
         }
     };
-    deleteAllByName(`TwlConquestHudStatusLaneRoot_${pid}`);
-    deleteAllByName(`TwlConquestHudStatusLanePrimaryText_${pid}`);
-    deleteAllByName(`TwlConquestHudStatusLaneSecondaryText_${pid}`);
-    deleteAllByName(`TwlConquestStatusDockRoot_${pid}`);
-    deleteAllByName(`TwlConquestStatusDockState_${pid}`);
-    deleteAllByName(`TwlConquestStatusDockReady_${pid}`);
-    deleteAllByName(`TwlConquestHudStatusPanelRoot_${pid}`);
-    deleteAllByName(`TwlConquestHudStatusPanelStateText_${pid}`);
-    deleteAllByName(`TwlConquestHudStatusPanelReadyText_${pid}`);
-    deleteAllByName(`TwlConquestStatusStaticBox_${pid}`);
-    deleteAllByName(`TwlConquestStatusStaticText_${pid}`);
-    deleteAllByName(`TwlConquestHudStatusContainer_${pid}`);
-    deleteAllByName(`TwlConquestHudStatusStateText_${pid}`);
-    deleteAllByName(`TwlConquestHudStatusReadyText_${pid}`);
-    deleteAllByName(`TwlConquestStatusPanel_${pid}`);
-    deleteAllByName(`TwlConquestStatusStateLine_${pid}`);
-    deleteAllByName(`TwlConquestStatusReadyLine_${pid}`);
-    deleteAllByName(`Upper_Left_Status_${pid}`);
-    deleteAllByName(`Upper_Left_Status_StateText_${pid}`);
-    deleteAllByName(`Upper_Left_Status_ReadyText_${pid}`);
-    deleteAllByName(`RoundStateRoot_${pid}`);
-    deleteAllByName(`RoundStateText_${pid}`);
-    deleteAllByName(`PlayersReadyText_${pid}`);
-    deleteAllByName(`Container_ReadyStatus_${pid}`);
-    deleteAllByName(`ReadyStatusText_${pid}`);
+    deleteAllByName(wn("TwlConquestHudStatusLaneRoot", pid));
+    deleteAllByName(wn("TwlConquestHudStatusLanePrimaryText", pid));
+    deleteAllByName(wn("TwlConquestHudStatusLaneSecondaryText", pid));
+    deleteAllByName(wn("TwlConquestStatusDockRoot", pid));
+    deleteAllByName(wn("TwlConquestStatusDockState", pid));
+    deleteAllByName(wn("TwlConquestStatusDockReady", pid));
+    deleteAllByName(wn("TwlConquestHudStatusPanelRoot", pid));
+    deleteAllByName(wn("TwlConquestHudStatusPanelStateText", pid));
+    deleteAllByName(wn("TwlConquestHudStatusPanelReadyText", pid));
+    deleteAllByName(wn("TwlConquestStatusStaticBox", pid));
+    deleteAllByName(wn("TwlConquestStatusStaticText", pid));
+    deleteAllByName(wn("TwlConquestHudStatusContainer", pid));
+    deleteAllByName(wn("TwlConquestHudStatusStateText", pid));
+    deleteAllByName(wn("TwlConquestHudStatusReadyText", pid));
+    deleteAllByName(wn("TwlConquestStatusPanel", pid));
+    deleteAllByName(wn("TwlConquestStatusStateLine", pid));
+    deleteAllByName(wn("TwlConquestStatusReadyLine", pid));
+    deleteAllByName(wn("Upper_Left_Status", pid));
+    deleteAllByName(wn("Upper_Left_Status_StateText", pid));
+    deleteAllByName(wn("Upper_Left_Status_ReadyText", pid));
+    deleteAllByName(wn("RoundStateRoot", pid));
+    deleteAllByName(wn("RoundStateText", pid));
+    deleteAllByName(wn("PlayersReadyText", pid));
+    deleteAllByName(wn("Container_ReadyStatus", pid));
+    deleteAllByName(wn("ReadyStatusText", pid));
     deleteVehicleDeployTimerHudArtifactsForPid(pid);
     delete State.hudCache.vehicleDeployTimerCache[pid];
     destroyArmMenu(pid);
@@ -75,49 +75,49 @@ function cleanupHudForPid(pid: number): void {
     twlConquestHudDestroyPlayer(pid);
 
     const rootNames = [
-        `TopHudRoot_${pid}`,
-        `ConquestHudRoot_${pid}`,
-        `ConquestCombatHudRoot_${pid}`,
-        `ConquestTicketsLaneRoot_${pid}`,
-        `ConquestFlagsLaneRoot_${pid}`,
-        `Container_TopMiddle_CoreUI_${pid}`,
-        `Container_TopLeft_CoreUI_${pid}`,
-        `Container_TopRight_CoreUI_${pid}`,
-        `ConquestTopCenterAuxRoot_${pid}`,
-        `Container_HelpText_${pid}`,
-        `HelpText_${pid}`,
-        `Upper_Left_Container_${pid}`,
-        `TwlConquestHudStatusLaneRoot_${pid}`,
-        `TwlConquestHudStatusLanePrimaryText_${pid}`,
-        `TwlConquestHudStatusLaneSecondaryText_${pid}`,
-        `TwlConquestStatusDockRoot_${pid}`,
-        `TwlConquestStatusDockState_${pid}`,
-        `TwlConquestStatusDockReady_${pid}`,
-        `TwlConquestHudStatusPanelRoot_${pid}`,
-        `TwlConquestHudStatusPanelStateText_${pid}`,
-        `TwlConquestHudStatusPanelReadyText_${pid}`,
-        `TwlConquestStatusStaticBox_${pid}`,
-        `TwlConquestStatusStaticText_${pid}`,
-        `TwlConquestHudStatusContainer_${pid}`,
-        `TwlConquestHudStatusStateText_${pid}`,
-        `TwlConquestHudStatusReadyText_${pid}`,
-        `TwlConquestStatusPanel_${pid}`,
-        `TwlConquestStatusStateLine_${pid}`,
-        `TwlConquestStatusReadyLine_${pid}`,
-        `Upper_Left_Status_${pid}`,
-        `Upper_Left_Status_StateText_${pid}`,
-        `Upper_Left_Status_ReadyText_${pid}`,
-        `Upper_Left_Settings_${pid}`,
-        `Container_ReadyStatus_${pid}`,
-        `ReadyStatusText_${pid}`,
-        `AdminPanelActionCount_${pid}`,
-        `VictoryDialogRoot_${pid}`,
-        `MatchTimerRoot_${pid}`,
-        `VehicleDeployTimerHudRoot_${pid}`,
-        `RoundStateRoot_${pid}`,
-        `RoundStateText_${pid}`,
-        `PlayersReadyText_${pid}`,
-        `PregameCountdownText_${pid}`,
+        wn("TopHudRoot", pid),
+        wn("ConquestHudRoot", pid),
+        wn("ConquestCombatHudRoot", pid),
+        wn("ConquestTicketsLaneRoot", pid),
+        wn("ConquestFlagsLaneRoot", pid),
+        wn("Container_TopMiddle_CoreUI", pid),
+        wn("Container_TopLeft_CoreUI", pid),
+        wn("Container_TopRight_CoreUI", pid),
+        wn("ConquestTopCenterAuxRoot", pid),
+        wn("Container_HelpText", pid),
+        wn("HelpText", pid),
+        wn("Upper_Left_Container", pid),
+        wn("TwlConquestHudStatusLaneRoot", pid),
+        wn("TwlConquestHudStatusLanePrimaryText", pid),
+        wn("TwlConquestHudStatusLaneSecondaryText", pid),
+        wn("TwlConquestStatusDockRoot", pid),
+        wn("TwlConquestStatusDockState", pid),
+        wn("TwlConquestStatusDockReady", pid),
+        wn("TwlConquestHudStatusPanelRoot", pid),
+        wn("TwlConquestHudStatusPanelStateText", pid),
+        wn("TwlConquestHudStatusPanelReadyText", pid),
+        wn("TwlConquestStatusStaticBox", pid),
+        wn("TwlConquestStatusStaticText", pid),
+        wn("TwlConquestHudStatusContainer", pid),
+        wn("TwlConquestHudStatusStateText", pid),
+        wn("TwlConquestHudStatusReadyText", pid),
+        wn("TwlConquestStatusPanel", pid),
+        wn("TwlConquestStatusStateLine", pid),
+        wn("TwlConquestStatusReadyLine", pid),
+        wn("Upper_Left_Status", pid),
+        wn("Upper_Left_Status_StateText", pid),
+        wn("Upper_Left_Status_ReadyText", pid),
+        wn("Upper_Left_Settings", pid),
+        wn("Container_ReadyStatus", pid),
+        wn("ReadyStatusText", pid),
+        wn("AdminPanelActionCount", pid),
+        wn("VictoryDialogRoot", pid),
+        wn("MatchTimerRoot", pid),
+        wn("VehicleDeployTimerHudRoot", pid),
+        wn("RoundStateRoot", pid),
+        wn("RoundStateText", pid),
+        wn("PlayersReadyText", pid),
+        wn("PregameCountdownText", pid),
     ];
     for (const name of rootNames) {
         deleteAllByName(name);

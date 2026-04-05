@@ -1,6 +1,15 @@
 ﻿// @ts-nocheck
 // Module: state/ui-helpers -- shared widget builder helpers and ready-dialog label refresh
 
+// Compact widget name factory. Joins prefix, pid, and optional parts with underscores.
+function wn(prefix: string, pid: number, ...parts: (number | string)[]): string {
+    let name = prefix + "_" + pid;
+    for (let i = 0; i < parts.length; i++) {
+        name += "_" + parts[i];
+    }
+    return name;
+}
+
 function addOutlinedButton(
     buttonId: string,
     posX: number,

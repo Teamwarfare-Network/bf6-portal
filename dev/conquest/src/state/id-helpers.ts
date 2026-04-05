@@ -29,9 +29,14 @@ function safeGetPlayerId(player: mod.Player | null | undefined): number | undefi
 }
 
 // Guarded vehicle lookup for players during seat/undeploy transition windows.
+// Uses vehicle occupancy cache (set on enter, cleared on exit/undeploy) to avoid engine
+// calls during death/transition windows where the engine rejects the query (CQ_Bug_37/38).
 function safeGetVehicleFromPlayer(player: mod.Player | null | undefined): mod.Vehicle | undefined {
     if (!player || !mod.IsPlayerValid(player)) return undefined;
     if (!isPlayerDeployed(player)) return undefined;
+    const pid = safeGetPlayerId(player);
+    if (pid === undefined) return undefined;
+    if (State.players.posDebugVehicleObjIdByPid[pid] === undefined) return undefined;
     const seatIndex = safeGetPlayerVehicleSeat(player, -1);
     if (seatIndex < 0) return undefined;
     try {
@@ -42,9 +47,13 @@ function safeGetVehicleFromPlayer(player: mod.Player | null | undefined): mod.Ve
 }
 
 // Guarded player seat lookup for transition windows where the engine briefly rejects the query.
+// Skips the engine call entirely when the player has no cached vehicle (CQ_Bug_37).
 function safeGetPlayerVehicleSeat(player: mod.Player | null | undefined, fallback: number = -1): number {
     if (!player || !mod.IsPlayerValid(player)) return fallback;
     if (!isPlayerDeployed(player)) return fallback;
+    const pid = safeGetPlayerId(player);
+    if (pid === undefined) return fallback;
+    if (State.players.posDebugVehicleObjIdByPid[pid] === undefined) return fallback;
     try {
         return mod.GetPlayerVehicleSeat(player);
     } catch {

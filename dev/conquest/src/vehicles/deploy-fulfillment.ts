@@ -478,6 +478,15 @@ async function tryFulfillPendingVehicleDirectSpawnSeatForPlayer(
         }
     }
 
+    // Pre-set vehicle occupancy cache so safeGetVehicleFromPlayer/safeGetPlayerVehicleSeat
+    // don't skip the engine query during verification. OnPlayerEnterVehicle may not have
+    // fired yet after ForcePlayerToSeat, but the cache guard (CQ_Bug_37/38) needs it set.
+    const preSeatPid = safeGetPlayerId(player);
+    if (preSeatPid !== undefined) {
+        State.players.posDebugVehicleObjIdByPid[preSeatPid] = getObjId(vehicle);
+        State.players.posDebugTransformSourceByPid[preSeatPid] = "vehicle";
+    }
+
     mod.ForcePlayerToSeat(player, vehicle, VEHICLE_DIRECT_SPAWN_FULFILLMENT_SEAT_NUMBER);
 
     let fulfilled = await verifyPlayerForcedIntoDirectSpawnSeat(player, vehicle);

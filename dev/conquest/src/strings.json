@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.064)",
+        "title": "teamwarfare . net | TWL Conquest (v1.077)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -246,8 +246,8 @@
           "resetGadgetTimers": "Reset Gadget Timers",
           "deployTimersVisibleOn": "Timers Visible Deployed ON",
           "deployTimersVisibleOff": "Timers Visible Deployed OFF",
-          "uiCachePerfOn": "UI Cache Panel ON",
-          "uiCachePerfOff": "UI Cache Panel OFF"
+          "uiCachePerfOn": "Toggle UI Cache",
+          "uiCachePerfOff": "Toggle UI Cache"
         },
         "labels": {
           "clockTime": "Clock Time -/+ 1m",

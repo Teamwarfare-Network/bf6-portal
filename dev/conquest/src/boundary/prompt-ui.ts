@@ -23,18 +23,18 @@ const BOUNDARY_PROMPT_TEXT_ALPHA = 1.0;
 const BOUNDARY_PROMPT_ICON_ALPHA = 1.0;
 const BOUNDARY_PROMPT_ICON_TEXT = mod.Message(STR_BOUNDARY_WARNING_ICON);
 
-function boundaryPromptRootName(pid: number): string { return `BoundaryPromptRoot_${pid}`; }
-function boundaryPromptBorderName(pid: number): string { return `BoundaryPromptBorder_${pid}`; }
-function boundaryPromptTitle1Name(pid: number): string { return `BoundaryPromptTitle1_${pid}`; }
-function boundaryPromptTitle1ShadowName(pid: number): string { return `BoundaryPromptTitle1Shadow_${pid}`; }
-function boundaryPromptTitle2Name(pid: number): string { return `BoundaryPromptTitle2_${pid}`; }
-function boundaryPromptTitle2ShadowName(pid: number): string { return `BoundaryPromptTitle2Shadow_${pid}`; }
-function boundaryPromptSubtitleName(pid: number): string { return `BoundaryPromptSubtitle_${pid}`; }
-function boundaryPromptSubtitleShadowName(pid: number): string { return `BoundaryPromptSubtitleShadow_${pid}`; }
-function boundaryPromptLeftIconName(pid: number): string { return `BoundaryPromptLeftIcon_${pid}`; }
-function boundaryPromptLeftIconShadowName(pid: number): string { return `BoundaryPromptLeftIconShadow_${pid}`; }
-function boundaryPromptRightIconName(pid: number): string { return `BoundaryPromptRightIcon_${pid}`; }
-function boundaryPromptRightIconShadowName(pid: number): string { return `BoundaryPromptRightIconShadow_${pid}`; }
+function boundaryPromptRootName(pid: number): string { return wn("BoundaryPromptRoot", pid); }
+function boundaryPromptBorderName(pid: number): string { return wn("BoundaryPromptBorder", pid); }
+function boundaryPromptTitle1Name(pid: number): string { return wn("BoundaryPromptTitle1", pid); }
+function boundaryPromptTitle1ShadowName(pid: number): string { return wn("BoundaryPromptTitle1Shadow", pid); }
+function boundaryPromptTitle2Name(pid: number): string { return wn("BoundaryPromptTitle2", pid); }
+function boundaryPromptTitle2ShadowName(pid: number): string { return wn("BoundaryPromptTitle2Shadow", pid); }
+function boundaryPromptSubtitleName(pid: number): string { return wn("BoundaryPromptSubtitle", pid); }
+function boundaryPromptSubtitleShadowName(pid: number): string { return wn("BoundaryPromptSubtitleShadow", pid); }
+function boundaryPromptLeftIconName(pid: number): string { return wn("BoundaryPromptLeftIcon", pid); }
+function boundaryPromptLeftIconShadowName(pid: number): string { return wn("BoundaryPromptLeftIconShadow", pid); }
+function boundaryPromptRightIconName(pid: number): string { return wn("BoundaryPromptRightIcon", pid); }
+function boundaryPromptRightIconShadowName(pid: number): string { return wn("BoundaryPromptRightIconShadow", pid); }
 
 function getBoundaryPromptTitle1Message(kind: BoundaryPromptKind): mod.Message {
     switch (kind) {

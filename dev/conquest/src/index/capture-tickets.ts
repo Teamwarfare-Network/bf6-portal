@@ -1773,6 +1773,7 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
     let onPointTeam2 = 0;
     try {
         const playersOnPoint = mod.GetPlayersOnPoint(eventCapturePoint);
+        if (!playersOnPoint) throw new Error("no players array");
         const playerCount = mod.CountOf(playersOnPoint);
         for (let i = 0; i < playerCount; i++) {
             const pointPlayer = mod.ValueInArray(playersOnPoint, i) as mod.Player;

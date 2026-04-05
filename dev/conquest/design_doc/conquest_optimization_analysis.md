@@ -1,22 +1,22 @@
 # TWL Conquest Optimization Analysis
 
-Last updated: v1.025 (2026-04-04)
+Last updated: v1.064 (2026-04-04)
 Companion to: `TWL_Conquest_Design.md` (see "Codebase Reference Map" section for file/function index)
 
 ## Baseline
 
 | Metric | Value |
 |--------|-------|
-| Bundle size | 1,029,260 bytes |
+| Bundle size | 1,024,269 bytes |
 | Bundle limit | 1,048,576 bytes |
-| Headroom | 19,316 bytes (1.8%) |
-| Source files | 114 .ts |
-| Source lines | ~23,900 |
-| `mod.AllPlayers()` calls | 35 across 26 files |
-| `*ForAllPlayers()` functions | 30+ |
-| `safeFind()` calls | ~298 across 35 files |
+| Headroom | 24,307 bytes (2.3%) |
+| Source files | 113 .ts |
+| Source lines | ~28,600 |
+| `mod.AllPlayers()` calls | 37 across 28 files |
+| `*ForAllPlayers()` functions | 33+ |
+| `safeFind()` calls | ~308 across 34 files |
 
-## Size Progression (v1.010 → v1.025)
+## Size Progression (v1.010 → v1.064)
 
 | Version | Bundle Size | Headroom | Delta | Phase/Feature |
 |---------|-------------|----------|-------|---------------|
@@ -25,12 +25,14 @@ Companion to: `TWL_Conquest_Design.md` (see "Codebase Reference Map" section for
 | v1.019 | 1,020,363 | 28,213 (2.7%) | +1,386 | Phase 7 countdown rework (20s, COUNTDOWN phase, vehicle reset) |
 | v1.020 | ~1,026,000 | ~22,576 (2.2%) | +~5,637 | Victory dialog ticket scoreboard, crowns, result line |
 | v1.025 | 1,029,260 | 19,316 (1.8%) | +~3,260 | Victory dialog polish iterations, endMatch winner fix |
+| v1.064 | 1,024,269 | 24,307 (2.3%) | -4,991 | CQ_Bug_25 world icon fix, AddUIIcon removal, code cleanup |
 
 **Key observations:**
 - Phase 7 pre-game cleanup (v1.015) reclaimed ~6,700 bytes through dead code removal
 - Victory dialog scoreboard feature (v1.020-v1.025) added ~10,300 bytes net — new widgets, layout constants, string keys, crown images, result computation
-- Net change v1.010→v1.025: +3,550 bytes (headroom lost: 22,866 → 19,316)
-- Headroom is now at 1.8% — approaching the cautionary threshold for major new features
+- v1.025→v1.064: reclaimed ~5,000 bytes through debug code removal (12+ AddUIIcon debug iterations stripped) and world interactable rewrite
+- Net change v1.010→v1.064: -1,441 bytes (headroom gained: 22,866 → 24,307)
+- Headroom is now at 2.3% — comfortable for feature work but still warrants monitoring
 
 ---
 

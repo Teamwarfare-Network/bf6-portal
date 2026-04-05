@@ -3,6 +3,19 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.077: data: sync object 1052 world icon position to match updated spatial coordinates
+// v1.076: fix: pre-set vehicle occupancy cache before ForcePlayerToSeat to prevent verification failure regression from CQ_Bug_37/38 guard
+// v1.075: fix: CQ_Bug_35 -- skip EnableAllInputRestrictions on undeploy and gate release where player is undeployed
+// v1.074: fix: CQ_Bug_37/38 -- vehicle occupancy cache guard prevents engine error log spam during transitions
+// v1.073: fix: CQ_Bug_42 -- guard CountOf calls against undefined array args in vehicle helpers and capture-tickets
+// v1.072: fix: remove non-ASCII em dash from inline comment causing script boot crash
+// v1.071: fix: CQ_Bug_35/36/40 — guard gate loop spam, throttle reassert, eliminate frame budget overflow
+// v1.070: fix: gate-guard vehicle timer refresh + invalidate cache on deploy for MP late-join
+// v1.069: fix: admin panel backplate height, simplify UI cache toggle label
+// v1.068: feat: hide vehicle deploy timer list when admin panel is open
+// v1.067: fix: gate loop deploy-race guard — force undeploy if player deployed while gate active
+// v1.066: fix: TS7015 errors in bundle — Number() cast for Object.keys indexing on Record<number> maps
+// v1.065: optimization: wn() widget name compression, for-in iteration safety, loading gate iteration cap
 // v1.064: fix: swap team1Base/team2Base positions — team1 (WEST) is at -761 per Godot; revert anchor ownerTeamIds to original
 // v1.063: fix: remove redundant !== 0 check causing TS type error in ownerTeamId filter
 // v1.062: fix: correct swapped ownerTeamId assignments — ObjIds 1000-1007 are Team1 (WEST), 1008-1015 are Team2 (EAST)

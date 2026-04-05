@@ -3,40 +3,40 @@
 
 // Rebinds all victory dialog widget refs from authoritative per-player names after build or recovery.
 function bindVictoryDialogRefsByName(pid: number, refs: TopHudShellRefs): void {
-    refs.victoryRoot = safeFind(`VictoryDialogRoot_${pid}`);
-    refs.victoryRestartText = safeFind(`VictoryDialog_Restart_${pid}`);
+    refs.victoryRoot = safeFind(wn("VictoryDialogRoot", pid));
+    refs.victoryRestartText = safeFind(wn("VictoryDialog_Restart", pid));
 
-    refs.victoryTimeHoursTens = safeFind(`VictoryDialog_TimeHT_${pid}`);
-    refs.victoryTimeHoursOnes = safeFind(`VictoryDialog_TimeHO_${pid}`);
-    refs.victoryTimeMinutesTens = safeFind(`VictoryDialog_TimeMT_${pid}`);
-    refs.victoryTimeMinutesOnes = safeFind(`VictoryDialog_TimeMO_${pid}`);
-    refs.victoryTimeSecondsTens = safeFind(`VictoryDialog_TimeST_${pid}`);
-    refs.victoryTimeSecondsOnes = safeFind(`VictoryDialog_TimeSO_${pid}`);
+    refs.victoryTimeHoursTens = safeFind(wn("VictoryDialog_TimeHT", pid));
+    refs.victoryTimeHoursOnes = safeFind(wn("VictoryDialog_TimeHO", pid));
+    refs.victoryTimeMinutesTens = safeFind(wn("VictoryDialog_TimeMT", pid));
+    refs.victoryTimeMinutesOnes = safeFind(wn("VictoryDialog_TimeMO", pid));
+    refs.victoryTimeSecondsTens = safeFind(wn("VictoryDialog_TimeST", pid));
+    refs.victoryTimeSecondsOnes = safeFind(wn("VictoryDialog_TimeSO", pid));
 
-    refs.victoryAdminActionsText = safeFind(`VictoryDialog_AdminActions_${pid}`);
-    refs.victoryResultText = safeFind(`VictoryDialog_Result_${pid}`);
-    refs.victoryLeftCrown = safeFind(`VictoryDialog_LeftCrown_${pid}`);
-    refs.victoryRightCrown = safeFind(`VictoryDialog_RightCrown_${pid}`);
-    refs.victoryLeftTeamNameText = safeFind(`VictoryDialog_LeftTeamName_${pid}`);
-    refs.victoryRightTeamNameText = safeFind(`VictoryDialog_RightTeamName_${pid}`);
-    refs.victoryLeftTicketText = safeFind(`VictoryDialog_LeftTickets_${pid}`);
-    refs.victoryRightTicketText = safeFind(`VictoryDialog_RightTickets_${pid}`);
-    refs.victoryRosterRow = safeFind(`VictoryDialog_RosterRow_${pid}`);
-    refs.victoryRosterLeftContainer = safeFind(`VictoryDialog_RosterLeft_${pid}`);
-    refs.victoryRosterRightContainer = safeFind(`VictoryDialog_RosterRight_${pid}`);
+    refs.victoryAdminActionsText = safeFind(wn("VictoryDialog_AdminActions", pid));
+    refs.victoryResultText = safeFind(wn("VictoryDialog_Result", pid));
+    refs.victoryLeftCrown = safeFind(wn("VictoryDialog_LeftCrown", pid));
+    refs.victoryRightCrown = safeFind(wn("VictoryDialog_RightCrown", pid));
+    refs.victoryLeftTeamNameText = safeFind(wn("VictoryDialog_LeftTeamName", pid));
+    refs.victoryRightTeamNameText = safeFind(wn("VictoryDialog_RightTeamName", pid));
+    refs.victoryLeftTicketText = safeFind(wn("VictoryDialog_LeftTickets", pid));
+    refs.victoryRightTicketText = safeFind(wn("VictoryDialog_RightTickets", pid));
+    refs.victoryRosterRow = safeFind(wn("VictoryDialog_RosterRow", pid));
+    refs.victoryRosterLeftContainer = safeFind(wn("VictoryDialog_RosterLeft", pid));
+    refs.victoryRosterRightContainer = safeFind(wn("VictoryDialog_RosterRight", pid));
 
     refs.victoryLeftRosterText = [];
     refs.victoryRightRosterText = [];
     for (let i = 0; i < TEAM_ROSTER_MAX_ROWS; i++) {
-        refs.victoryLeftRosterText.push(safeFind(`VictoryDialog_LeftRoster_${pid}_${i}`));
-        refs.victoryRightRosterText.push(safeFind(`VictoryDialog_RightRoster_${pid}_${i}`));
+        refs.victoryLeftRosterText.push(safeFind(wn("VictoryDialog_LeftRoster", pid, i)));
+        refs.victoryRightRosterText.push(safeFind(wn("VictoryDialog_RightRoster", pid, i)));
     }
 }
 
 // Builds the cached victory dialog widget tree for one player and binds all dialog refs.
 function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHudShellRefs): void {
     const modal = safeParseUI({
-        name: `VictoryDialogRoot_${pid}`,
+        name: wn("VictoryDialogRoot", pid),
         type: "Container",
         playerId: player,
         position: [0, 135],
@@ -49,7 +49,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
         bgFill: mod.UIBgFill.Solid,
         children: [
             {
-                name: `VictoryDialog_Header1_${pid}`,
+                name: wn("VictoryDialog_Header1", pid),
                 type: "Text",
                 position: [0, 14],
                 size: [340, 22],
@@ -65,7 +65,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                name: `VictoryDialog_Header2_${pid}`,
+                name: wn("VictoryDialog_Header2", pid),
                 type: "Text",
                 position: [0, 36],
                 size: [340, 22],
@@ -81,7 +81,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                name: `VictoryDialog_Screenshot_${pid}`,
+                name: wn("VictoryDialog_Screenshot", pid),
                 type: "Text",
                 position: [0, 62],
                 size: [340, 16],
@@ -97,7 +97,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                name: `VictoryDialog_Restart_${pid}`,
+                name: wn("VictoryDialog_Restart", pid),
                 type: "Text",
                 position: [0, 82],
                 size: [340, 16],
@@ -113,7 +113,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                name: `VictoryDialog_TotalTimeRow_${pid}`,
+                name: wn("VictoryDialog_TotalTimeRow", pid),
                 type: "Container",
                 position: [0, 102],
                 size: [340, 16],
@@ -124,7 +124,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 bgFill: mod.UIBgFill.None,
                 children: [
                     {
-                        name: `VictoryDialog_TotalTimeLabel_${pid}`,
+                        name: wn("VictoryDialog_TotalTimeLabel", pid),
                         type: "Text",
                         position: [-45, 0],
                         size: [130, 16],
@@ -140,7 +140,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                         textAnchor: mod.UIAnchor.Center,
                     },
                     {
-                        name: `VictoryDialog_TotalTimeDigits_${pid}`,
+                        name: wn("VictoryDialog_TotalTimeDigits", pid),
                         type: "Container",
                         position: [55, 0],
                         size: [120, 16],
@@ -151,7 +151,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                         bgFill: mod.UIBgFill.None,
                         children: [
                             {
-                                name: `VictoryDialog_TimeHT_${pid}`,
+                                name: wn("VictoryDialog_TimeHT", pid),
                                 type: "Text",
                                 position: [-45, 0],
                                 size: [10, 16],
@@ -167,7 +167,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                name: `VictoryDialog_TimeHO_${pid}`,
+                                name: wn("VictoryDialog_TimeHO", pid),
                                 type: "Text",
                                 position: [-35, 0],
                                 size: [10, 16],
@@ -183,7 +183,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                name: `VictoryDialog_TimeC1_${pid}`,
+                                name: wn("VictoryDialog_TimeC1", pid),
                                 type: "Text",
                                 position: [-25, 0],
                                 size: [10, 16],
@@ -199,7 +199,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                name: `VictoryDialog_TimeMT_${pid}`,
+                                name: wn("VictoryDialog_TimeMT", pid),
                                 type: "Text",
                                 position: [-15, 0],
                                 size: [10, 16],
@@ -215,7 +215,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                name: `VictoryDialog_TimeMO_${pid}`,
+                                name: wn("VictoryDialog_TimeMO", pid),
                                 type: "Text",
                                 position: [-5, 0],
                                 size: [10, 16],
@@ -231,7 +231,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                name: `VictoryDialog_TimeC2_${pid}`,
+                                name: wn("VictoryDialog_TimeC2", pid),
                                 type: "Text",
                                 position: [5, 0],
                                 size: [10, 16],
@@ -247,7 +247,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                name: `VictoryDialog_TimeST_${pid}`,
+                                name: wn("VictoryDialog_TimeST", pid),
                                 type: "Text",
                                 position: [15, 0],
                                 size: [10, 16],
@@ -263,7 +263,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                name: `VictoryDialog_TimeSO_${pid}`,
+                                name: wn("VictoryDialog_TimeSO", pid),
                                 type: "Text",
                                 position: [25, 0],
                                 size: [10, 16],
@@ -283,7 +283,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 ],
             },
             {
-                name: `VictoryDialog_AdminActions_${pid}`,
+                name: wn("VictoryDialog_AdminActions", pid),
                 type: "Text",
                 position: [0, 122],
                 size: [340, 16],
@@ -299,7 +299,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                name: `VictoryDialog_ResultBorder_${pid}`,
+                name: wn("VictoryDialog_ResultBorder", pid),
                 type: "Container",
                 position: [0, VICTORY_RESULT_BORDER_Y],
                 size: [VICTORY_RESULT_BORDER_WIDTH, VICTORY_RESULT_BORDER_HEIGHT],
@@ -311,7 +311,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 bgFill: mod.UIBgFill.OutlineThin,
             },
             {
-                name: `VictoryDialog_Result_${pid}`,
+                name: wn("VictoryDialog_Result", pid),
                 type: "Text",
                 position: [0, VICTORY_RESULT_Y],
                 size: [340, 22],
@@ -327,7 +327,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                name: `VictoryDialog_LeftTeamName_${pid}`,
+                name: wn("VictoryDialog_LeftTeamName", pid),
                 type: "Text",
                 position: [-85, VICTORY_TEAM_NAME_Y],
                 size: [160, 24],
@@ -343,7 +343,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                name: `VictoryDialog_RightTeamName_${pid}`,
+                name: wn("VictoryDialog_RightTeamName", pid),
                 type: "Text",
                 position: [85, VICTORY_TEAM_NAME_Y],
                 size: [160, 24],
@@ -359,7 +359,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                name: `VictoryDialog_LeftTickets_${pid}`,
+                name: wn("VictoryDialog_LeftTickets", pid),
                 type: "Text",
                 position: [-85, VICTORY_TICKET_Y],
                 size: [160, 58],
@@ -375,7 +375,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                name: `VictoryDialog_RightTickets_${pid}`,
+                name: wn("VictoryDialog_RightTickets", pid),
                 type: "Text",
                 position: [85, VICTORY_TICKET_Y],
                 size: [160, 58],
@@ -391,7 +391,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                name: `VictoryDialog_RosterRow_${pid}`,
+                name: wn("VictoryDialog_RosterRow", pid),
                 type: "Container",
                 position: [0, VICTORY_DIALOG_ROSTER_ROW_Y],
                 size: [VICTORY_DIALOG_ROSTER_ROW_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT_MAX],
@@ -402,7 +402,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                 bgFill: mod.UIBgFill.None,
                 children: [
                     {
-                        name: `VictoryDialog_RosterLeft_${pid}`,
+                        name: wn("VictoryDialog_RosterLeft", pid),
                         type: "Container",
                         position: [-85, 0],
                         size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT_MAX],
@@ -416,7 +416,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                             const rows: any[] = [];
                             for (let i = 0; i < TEAM_ROSTER_MAX_ROWS; i++) {
                                 rows.push({
-                                    name: `VictoryDialog_LeftRoster_${pid}_${i}`,
+                                    name: wn("VictoryDialog_LeftRoster", pid, i),
                                     type: "Text",
                                     position: [0, VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP + i * VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
                                     size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
@@ -436,7 +436,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                         })(),
                     },
                     {
-                        name: `VictoryDialog_RosterRight_${pid}`,
+                        name: wn("VictoryDialog_RosterRight", pid),
                         type: "Container",
                         position: [85, 0],
                         size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT_MAX],
@@ -450,7 +450,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
                             const rows: any[] = [];
                             for (let i = 0; i < TEAM_ROSTER_MAX_ROWS; i++) {
                                 rows.push({
-                                    name: `VictoryDialog_RightRoster_${pid}_${i}`,
+                                    name: wn("VictoryDialog_RightRoster", pid, i),
                                     type: "Text",
                                     position: [0, VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP + i * VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
                                     size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
@@ -478,10 +478,10 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
 
     // Crown images created as standalone widgets and parented to dialog root.
     // ParseUI nested children only support Container and Text types.
-    const dialogRoot = safeFind(`VictoryDialogRoot_${pid}`);
+    const dialogRoot = safeFind(wn("VictoryDialogRoot", pid));
     if (dialogRoot) {
         safeParseUI({
-            name: `VictoryDialog_LeftCrown_${pid}`,
+            name: wn("VictoryDialog_LeftCrown", pid),
             type: "Image",
             playerId: player,
             position: [-85, VICTORY_CROWN_Y],
@@ -495,12 +495,12 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
             imageColor: [VICTORY_CROWN_RGB[0], VICTORY_CROWN_RGB[1], VICTORY_CROWN_RGB[2]],
             imageAlpha: 1,
         });
-        const leftCrown = safeFind(`VictoryDialog_LeftCrown_${pid}`);
+        const leftCrown = safeFind(wn("VictoryDialog_LeftCrown", pid));
         if (leftCrown) {
             try { mod.SetUIWidgetParent(leftCrown, dialogRoot); } catch {}
         }
         safeParseUI({
-            name: `VictoryDialog_RightCrown_${pid}`,
+            name: wn("VictoryDialog_RightCrown", pid),
             type: "Image",
             playerId: player,
             position: [85, VICTORY_CROWN_Y],
@@ -514,7 +514,7 @@ function buildVictoryDialogWidgets(player: mod.Player, pid: number, refs: TopHud
             imageColor: [VICTORY_CROWN_RGB[0], VICTORY_CROWN_RGB[1], VICTORY_CROWN_RGB[2]],
             imageAlpha: 1,
         });
-        const rightCrown = safeFind(`VictoryDialog_RightCrown_${pid}`);
+        const rightCrown = safeFind(wn("VictoryDialog_RightCrown", pid));
         if (rightCrown) {
             try { mod.SetUIWidgetParent(rightCrown, dialogRoot); } catch {}
         }

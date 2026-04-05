@@ -75,7 +75,7 @@ function getVehicleDeployGroundButtonName(pid: number, rowIndex: number): string
 
 // Returns the widget name for the modal close button used by the live terminal variant.
 function getVehicleDeployCloseButtonName(pid: number): string {
-    return `VehicleDeployTimerCloseButton_${pid}`;
+    return wn("VehicleDeployTimerCloseButton", pid);
 }
 
 // Returns true when the viewer is using the in-world live terminal variant instead of the undeployed deploy screen.
@@ -144,9 +144,10 @@ function buildVehicleDeployTimerRenderPlan(player: mod.Player, pid: number): Veh
     const shouldShowRows = shouldShowVehicleDeployTimersForPid(pid)
         && slots.length > 0
         && !hasPendingDirectSpawnClaim;
-    const visible = shouldShowRows && warmReady;
+    const adminPanelOpen = State.players.readyDialogData[pid]?.adminPanelVisible === true;
+    const visible = shouldShowRows && warmReady && !adminPanelOpen;
 
-    let signature = `${warmReady ? 1 : 0}|${shouldShowRows ? 1 : 0}|${visible ? 1 : 0}|${State.players.deployedByPid[pid] ? 1 : 0}|${hasPendingDirectSpawnClaim ? 1 : 0}|${liveTerminalOpen ? 1 : 0}|${State.conquest.lifecyclePhase}`;
+    let signature = `${warmReady ? 1 : 0}|${shouldShowRows ? 1 : 0}|${visible ? 1 : 0}|${State.players.deployedByPid[pid] ? 1 : 0}|${hasPendingDirectSpawnClaim ? 1 : 0}|${liveTerminalOpen ? 1 : 0}|${adminPanelOpen ? 1 : 0}|${State.conquest.lifecyclePhase}`;
     for (let i = 0; i < slots.length; i++) {
         const slot = slots[i];
         signature += `#${i}:${slot.slotNumber},${slot.vehicleType},${slot.vehicleId},${slot.activeOwnerPid ?? -1},${slot.pendingSpawnOwnerPid ?? -1},${slot.pendingSpawnMode ?? "none"},${getVehicleSlotRespawnRemainingSeconds(slot)},${isVehicleDeploySlotReadyForSpawnButton(slot) ? 1 : 0}`;
@@ -196,43 +197,43 @@ function doesVehicleTypeSupportGroundDeploy(vehicleType: mod.VehicleList): boole
 }
 
 function deleteVehicleDeployTimerHudArtifactsForPid(pid: number): void {
-    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerHudRoot_${pid}`);
-    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerLivePanelBorder_${pid}`);
-    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerLivePanelBlur_${pid}`);
-    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerLivePanelFill_${pid}`);
-    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCloseButtonBorder_${pid}`);
-    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCloseButtonBlur_${pid}`);
-    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCloseButtonFill_${pid}`);
-    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCloseButtonText_${pid}`);
-    deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCloseButtonTextShadow_${pid}`);
+    deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerHudRoot", pid));
+    deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerLivePanelBorder", pid));
+    deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerLivePanelBlur", pid));
+    deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerLivePanelFill", pid));
+    deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCloseButtonBorder", pid));
+    deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCloseButtonBlur", pid));
+    deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCloseButtonFill", pid));
+    deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCloseButtonText", pid));
+    deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCloseButtonTextShadow", pid));
     deleteAllReusableTimerWidgetsByName(getVehicleDeployCloseButtonName(pid));
     for (let i = 0; i < VEHICLE_DEPLOY_TIMER_MAX_ROWS; i++) {
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerPlayerPlate_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerPlayerText_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerPlayerTextShadow_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerVehiclePlate_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerVehicleText_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerVehicleTextShadow_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerSpawnButtonBorder_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerSpawnButtonBlur_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerSpawnButtonFill_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerSpawnButtonText_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerSpawnButtonTextShadow_${pid}_${i}`);
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerPlayerPlate", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerPlayerText", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerPlayerTextShadow", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerVehiclePlate", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerVehicleText", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerVehicleTextShadow", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerSpawnButtonBorder", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerSpawnButtonBlur", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerSpawnButtonFill", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerSpawnButtonText", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerSpawnButtonTextShadow", pid, i));
         deleteAllReusableTimerWidgetsByName(getVehicleDeploySpawnButtonName(pid, i));
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerGroundButtonBorder_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerGroundButtonBlur_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerGroundButtonFill_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerGroundButtonText_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerGroundButtonTextShadow_${pid}_${i}`);
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerGroundButtonBorder", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerGroundButtonBlur", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerGroundButtonFill", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerGroundButtonText", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerGroundButtonTextShadow", pid, i));
         deleteAllReusableTimerWidgetsByName(getVehicleDeployGroundButtonName(pid, i));
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCheckboxPlate_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCheckboxHighlight_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCheckboxBorderTop_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCheckboxBorderBottom_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCheckboxBorderLeft_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCheckboxBorderRight_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCheckboxMarkShadow_${pid}_${i}`);
-        deleteAllReusableTimerWidgetsByName(`VehicleDeployTimerCheckboxMark_${pid}_${i}`);
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCheckboxPlate", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCheckboxHighlight", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCheckboxBorderTop", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCheckboxBorderBottom", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCheckboxBorderLeft", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCheckboxBorderRight", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCheckboxMarkShadow", pid, i));
+        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCheckboxMark", pid, i));
         purgeReusableTimerInstance(`VehicleDeployTimerSlot${i}`, pid);
     }
 }
@@ -446,11 +447,11 @@ function ensureVehicleDeployActionButtonWidgets(
         ? getVehicleDeployGroundButtonName(pid, rowIndex)
         : getVehicleDeploySpawnButtonName(pid, rowIndex);
     const stem = kind === "ground" ? "VehicleDeployTimerGroundButton" : "VehicleDeployTimerSpawnButton";
-    const borderName = `${stem}Border_${pid}_${rowIndex}`;
-    const blurName = `${stem}Blur_${pid}_${rowIndex}`;
-    const fillName = `${stem}Fill_${pid}_${rowIndex}`;
-    const textShadowName = `${stem}TextShadow_${pid}_${rowIndex}`;
-    const textName = `${stem}Text_${pid}_${rowIndex}`;
+    const borderName = wn(stem + "Border", pid, rowIndex);
+    const blurName = wn(stem + "Blur", pid, rowIndex);
+    const fillName = wn(stem + "Fill", pid, rowIndex);
+    const textShadowName = wn(stem + "TextShadow", pid, rowIndex);
+    const textName = wn(stem + "Text", pid, rowIndex);
     const buttonPadding = VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_BORDER_PADDING;
     const buttonInnerWidth = Math.max(1, width - (buttonPadding * 2));
     const buttonInnerHeight = Math.max(1, height - (buttonPadding * 2));
@@ -585,7 +586,7 @@ function ensureVehicleDeployLivePanelWidgets(
     pid: number
 ): { border?: mod.UIWidget; blur?: mod.UIWidget; fill?: mod.UIWidget } {
     const border = ensureVehicleDeployInfoPlate(
-        `VehicleDeployTimerLivePanelBorder_${pid}`,
+        wn("VehicleDeployTimerLivePanelBorder", pid),
         player,
         parent,
         VEHICLE_DEPLOY_TIMER_ROOT_OFFSET_X,
@@ -601,7 +602,7 @@ function ensureVehicleDeployLivePanelWidgets(
 
     const blur = border
         ? ensureVehicleDeployInfoPlate(
-            `VehicleDeployTimerLivePanelBlur_${pid}`,
+            wn("VehicleDeployTimerLivePanelBlur", pid),
             player,
             border,
             1,
@@ -617,7 +618,7 @@ function ensureVehicleDeployLivePanelWidgets(
 
     const fill = border
         ? ensureVehicleDeployInfoPlate(
-            `VehicleDeployTimerLivePanelFill_${pid}`,
+            wn("VehicleDeployTimerLivePanelFill", pid),
             player,
             border,
             1,
@@ -643,11 +644,11 @@ function ensureVehicleDeployCloseButtonWidgets(
     parent: mod.UIWidget,
     pid: number
 ): VehicleDeployActionButtonWidgets {
-    const borderName = `VehicleDeployTimerCloseButtonBorder_${pid}`;
-    const blurName = `VehicleDeployTimerCloseButtonBlur_${pid}`;
-    const fillName = `VehicleDeployTimerCloseButtonFill_${pid}`;
-    const textShadowName = `VehicleDeployTimerCloseButtonTextShadow_${pid}`;
-    const textName = `VehicleDeployTimerCloseButtonText_${pid}`;
+    const borderName = wn("VehicleDeployTimerCloseButtonBorder", pid);
+    const blurName = wn("VehicleDeployTimerCloseButtonBlur", pid);
+    const fillName = wn("VehicleDeployTimerCloseButtonFill", pid);
+    const textShadowName = wn("VehicleDeployTimerCloseButtonTextShadow", pid);
+    const textName = wn("VehicleDeployTimerCloseButtonText", pid);
     const buttonName = getVehicleDeployCloseButtonName(pid);
     const width = VEHICLE_DEPLOY_TIMER_CLOSE_BUTTON_WIDTH;
     const height = VEHICLE_DEPLOY_TIMER_CLOSE_BUTTON_HEIGHT;
@@ -1108,7 +1109,7 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
 
     deleteVehicleDeployTimerHudArtifactsForPid(pid);
     safeParseUI({
-        name: `VehicleDeployTimerHudRoot_${pid}`,
+        name: wn("VehicleDeployTimerHudRoot", pid),
         type: "Container",
         playerId: player,
         position: [VEHICLE_DEPLOY_TIMER_ROOT_OFFSET_X, VEHICLE_DEPLOY_TIMER_ROOT_OFFSET_Y],
@@ -1120,8 +1121,8 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
         bgFill: mod.UIBgFill.None,
     });
     cache = {
-        rootName: `VehicleDeployTimerHudRoot_${pid}`,
-        root: safeFind(`VehicleDeployTimerHudRoot_${pid}`),
+        rootName: wn("VehicleDeployTimerHudRoot", pid),
+        root: safeFind(wn("VehicleDeployTimerHudRoot", pid)),
         livePanelBorder: priorCache?.livePanelBorder,
         livePanelBlur: priorCache?.livePanelBlur,
         livePanelFill: priorCache?.livePanelFill,
@@ -1181,7 +1182,7 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
     for (let i = 0; i < VEHICLE_DEPLOY_TIMER_MAX_ROWS; i++) {
         const baseY = getVehicleDeployTimerRowBaseY(i);
         const playerPlate = ensureVehicleDeployInfoPlate(
-            `VehicleDeployTimerPlayerPlate_${pid}_${i}`,
+            wn("VehicleDeployTimerPlayerPlate", pid, i),
             player,
             cache.root,
             VEHICLE_DEPLOY_TIMER_PLAYER_PLATE_X,
@@ -1194,7 +1195,7 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
         );
         const playerShadow = playerPlate
             ? ensureVehicleDeployCenteredText(
-                `VehicleDeployTimerPlayerTextShadow_${pid}_${i}`,
+                wn("VehicleDeployTimerPlayerTextShadow", pid, i),
                 player,
                 playerPlate,
                 VEHICLE_DEPLOY_TIMER_PLAYER_PLATE_WIDTH,
@@ -1204,7 +1205,7 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
             : undefined;
         const playerText = playerPlate
             ? ensureVehicleDeployCenteredText(
-                `VehicleDeployTimerPlayerText_${pid}_${i}`,
+                wn("VehicleDeployTimerPlayerText", pid, i),
                 player,
                 playerPlate,
                 VEHICLE_DEPLOY_TIMER_PLAYER_PLATE_WIDTH,
@@ -1214,7 +1215,7 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
             : undefined;
 
         const vehiclePlate = ensureVehicleDeployInfoPlate(
-            `VehicleDeployTimerVehiclePlate_${pid}_${i}`,
+            wn("VehicleDeployTimerVehiclePlate", pid, i),
             player,
             cache.root,
             VEHICLE_DEPLOY_TIMER_VEHICLE_PLATE_X,
@@ -1227,7 +1228,7 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
         );
         const vehicleShadow = vehiclePlate
             ? ensureVehicleDeployCenteredText(
-                `VehicleDeployTimerVehicleTextShadow_${pid}_${i}`,
+                wn("VehicleDeployTimerVehicleTextShadow", pid, i),
                 player,
                 vehiclePlate,
                 VEHICLE_DEPLOY_TIMER_VEHICLE_PLATE_WIDTH,
@@ -1237,7 +1238,7 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
             : undefined;
         const vehicleText = vehiclePlate
             ? ensureVehicleDeployCenteredText(
-                `VehicleDeployTimerVehicleText_${pid}_${i}`,
+                wn("VehicleDeployTimerVehicleText", pid, i),
                 player,
                 vehiclePlate,
                 VEHICLE_DEPLOY_TIMER_VEHICLE_PLATE_WIDTH,
@@ -1836,6 +1837,8 @@ function refreshVehicleDeployTimersForPlayerPreservingVisibility(player: mod.Pla
     if (!player || !mod.IsPlayerValid(player)) return false;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return false;
+    // Fix A: Skip refresh while loading gate owns this player's UI state.
+    if (isUiLoadGateActiveForPid(pid)) return false;
     const cache = ensureVehicleDeployTimerHudForPlayer(player);
     if (!cache || !cache.root) return false;
     const renderPlan = buildVehicleDeployTimerRenderPlan(player, pid);

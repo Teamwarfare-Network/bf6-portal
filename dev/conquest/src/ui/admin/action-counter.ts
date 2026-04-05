@@ -3,7 +3,7 @@
 
 function buildConquestAdminActionCounterWidget(player: mod.Player, pid: number, refs: TopHudShellRefs): void {
     const auditCounter = safeParseUI({
-        name: `AdminPanelActionCount_${pid}`,
+        name: wn("AdminPanelActionCount", pid),
         type: "Text",
         playerId: player,
         position: [20, 22 + CONQUEST_HUD_NON_CLOCK_SHIFT_Y],
@@ -20,7 +20,7 @@ function buildConquestAdminActionCounterWidget(player: mod.Player, pid: number, 
         textAnchor: mod.UIAnchor.CenterRight,
     });
     if (auditCounter) refs.roots.push(auditCounter);
-    refs.adminPanelActionCountText = safeFind(`AdminPanelActionCount_${pid}`);
+    refs.adminPanelActionCountText = safeFind(wn("AdminPanelActionCount", pid));
 }
 
 

@@ -39,7 +39,7 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
         gadgetInteractableAnchors: [
             { objId: 1050, ownerTeamId: 0, pos: mod.CreateVector(-305.456, 135.272, -42.2898) },
             { objId: 1051, ownerTeamId: 0, pos: mod.CreateVector(-275.772, 135.311, -108.527) },
-            { objId: 1052, ownerTeamId: 0, pos: mod.CreateVector(-107.042, 126.269, -117.805) },
+            { objId: 1052, ownerTeamId: 0, pos: mod.CreateVector(-110.027, 126.246, -148.078) },
             { objId: 1053, ownerTeamId: 0, pos: mod.CreateVector(-99.6367, 124.729, -2.18033) },
             { objId: 1054, ownerTeamId: 0, pos: mod.CreateVector(85.3952, 123.083, -152.513) },
             { objId: 1055, ownerTeamId: 0, pos: mod.CreateVector(68.7635, 122.277, -72.5763) },

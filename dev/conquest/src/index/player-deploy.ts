@@ -59,6 +59,7 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     const wasAlreadyDeployed = !!State.players.deployedByPid[pid];
     conquestPhase2BOnPlayerDeployed(eventPlayer, wasAlreadyDeployed);
     State.players.deployedByPid[pid] = true;
+    invalidateVehicleDeployTimerHudViewerCache(pid);
     updateHudTeamSwapButtonVisibilityForPid(pid);
     State.players.posDebugTransformSourceByPid[pid] = "soldier";
     delete State.players.posDebugVehicleObjIdByPid[pid];
@@ -89,7 +90,9 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     if (isPidDisconnected(pid)) return;
-    setAllInputRestrictionsForPlayer(eventPlayer, false);
+    // Clear script-side restriction tracking without calling engine — player is already undeployed
+    // and the engine rejects EnableAllInputRestrictions on undeployed players (CQ_Bug_35).
+    recordUiLoadInputRestrictedForPid(pid, false);
     State.players.deployedByPid[pid] = false;
     updateHudTeamSwapButtonVisibilityForPid(pid);
     State.players.inMainBaseByPid[pid] = false;

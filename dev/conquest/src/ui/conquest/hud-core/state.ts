@@ -84,13 +84,13 @@ function twlConquestHudResetBootstrapPurge(pid: number): void {
 }
 
 function twlConquestHudClearAllEntries(): void {
-    for (const pidKey in twlConquestHudEntriesByPid) {
-        if (!Object.prototype.hasOwnProperty.call(twlConquestHudEntriesByPid, pidKey)) continue;
-        delete twlConquestHudEntriesByPid[Number(pidKey)];
+    const entryKeys = Object.keys(twlConquestHudEntriesByPid);
+    for (let i = 0; i < entryKeys.length; i++) {
+        delete twlConquestHudEntriesByPid[Number(entryKeys[i])];
     }
-    for (const pidKey in twlConquestHudBootstrapPurgeDoneByPid) {
-        if (!Object.prototype.hasOwnProperty.call(twlConquestHudBootstrapPurgeDoneByPid, pidKey)) continue;
-        delete twlConquestHudBootstrapPurgeDoneByPid[Number(pidKey)];
+    const purgeKeys = Object.keys(twlConquestHudBootstrapPurgeDoneByPid);
+    for (let i = 0; i < purgeKeys.length; i++) {
+        delete twlConquestHudBootstrapPurgeDoneByPid[Number(purgeKeys[i])];
     }
     twlConquestHudResetSchedulerState();
 }

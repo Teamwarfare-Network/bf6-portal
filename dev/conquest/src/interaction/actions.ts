@@ -72,7 +72,7 @@ function isCriticalTopHudReadyForPid(pid: number): boolean {
     return !!(
         refs
         && hasTopLeftHudShellRefs(refs)
-        && safeFind(`HelpText_${pid}`)
+        && safeFind(wn("HelpText", pid))
         && clockCache?.root
         && clockCache?.plate
     );
@@ -484,8 +484,8 @@ function hideCriticalHudForWarmTransition(pid: number): void {
     setPositionDebugWidgetsVisibleForPid(pid, false);
     hideVehicleSpawnerUiFamilyForPid(pid);
 
-    safeSetUIWidgetVisible(safeFind(`Container_HelpText_${pid}`), false);
-    safeSetUIWidgetVisible(safeFind(`HelpText_${pid}`), false);
+    safeSetUIWidgetVisible(safeFind(wn("Container_HelpText", pid)), false);
+    safeSetUIWidgetVisible(safeFind(wn("HelpText", pid)), false);
 }
 
 // Reveals all critical UI families atomically once the gate releases.
@@ -527,8 +527,9 @@ async function releaseLoadingGate(eventPlayer: mod.Player, pid: number, token: n
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     clearJoinPromptForPlayerId(pid);
     setUiLoadOverlayShownForPid(pid, false);
-    // Clear any residual input restrictions applied during the gate.
-    setAllInputRestrictionsForPlayer(eventPlayer, false);
+    // Clear script-side restriction tracking without calling engine — player is on deploy screen
+    // (undeployed) when the gate releases, so EnableAllInputRestrictions would be rejected (CQ_Bug_35).
+    recordUiLoadInputRestrictedForPid(pid, false);
     // Enable deploy.
     applyPlayerDeployAvailability(eventPlayer, pid, true, "gate_release");
 }
@@ -557,11 +558,33 @@ async function runLoadingGateUntilReady(eventPlayer: mod.Player, pid: number): P
     if (!isHudWarmTokenCurrent(pid, token)) return;
 
     let stableCount = 0;
+    let iterations = 0;
+    const GATE_MAX_ITERATIONS = 1500;
+    const GATE_REASSERT_INTERVAL = 20; // ~1s at 50ms poll -- throttle redundant engine calls
     while (true) {
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
         if (!isHudWarmTokenCurrent(pid, token)) return;
+        if (++iterations > GATE_MAX_ITERATIONS) {
+            setSafetyTimeoutTriggeredForPid(pid, true);
+            setHudWarmCompletedForPid(pid, true);
+            await releaseLoadingGate(eventPlayer, pid, token);
+            return;
+        }
 
-        maintainPlayerLoadingGateAuthority(eventPlayer, pid);
+        // Throttle gate authority reassertion: first iteration + periodic safety net (~1s).
+        // beginLoadingGate already set overlay + deploy block; redundant calls waste frame budget (CQ_Bug_35/40).
+        if (iterations === 1 || iterations % GATE_REASSERT_INTERVAL === 0) {
+            maintainPlayerLoadingGateAuthority(eventPlayer, pid);
+        }
+
+        // Belt-and-suspenders: if player is somehow deployed while gate is active, force undeploy.
+        // Guard with isPlayerDeployed to avoid CQ_Bug_36 (UndeployPlayer on undeployed player).
+        if (State.players.deployedByPid[pid]) {
+            State.players.deployedByPid[pid] = false;
+            if (isPlayerDeployed(eventPlayer)) {
+                try { mod.UndeployPlayer(eventPlayer); } catch {}
+            }
+        }
 
         const elapsed = mod.GetMatchTimeElapsed() - getGateStartTimeForPid(pid);
 

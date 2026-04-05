@@ -57,14 +57,14 @@ function getTopHudShellRefsForPid(pid: number): TopHudShellRefs | undefined {
 
 // Rebinds the shell-owned widget refs from authoritative widget names so cached handles stay current after cleanup/rejoin.
 function bindTopHudShellRefsByName(pid: number, refs: TopHudShellRefs): void {
-    refs.topHudRoot = safeFind(`TopHudRoot_${pid}`);
-    refs.upperLeftContainer = safeFind(`Upper_Left_Container_${pid}`);
-    refs.upperLeftStatusContainer = safeFind(`TwlConquestStatusDockRoot_${pid}`);
-    refs.upperLeftStatusStateText = safeFind(`TwlConquestStatusDockState_${pid}`);
-    refs.upperLeftStatusReadyText = safeFind(`TwlConquestStatusDockReady_${pid}`);
-    refs.topCenterAuxRoot = safeFind(`ConquestTopCenterAuxRoot_${pid}`);
-    refs.helpTextContainer = safeFind(`Container_HelpText_${pid}`);
-    refs.adminPanelActionCountText = safeFind(`AdminPanelActionCount_${pid}`);
+    refs.topHudRoot = safeFind(wn("TopHudRoot", pid));
+    refs.upperLeftContainer = safeFind(wn("Upper_Left_Container", pid));
+    refs.upperLeftStatusContainer = safeFind(wn("TwlConquestStatusDockRoot", pid));
+    refs.upperLeftStatusStateText = safeFind(wn("TwlConquestStatusDockState", pid));
+    refs.upperLeftStatusReadyText = safeFind(wn("TwlConquestStatusDockReady", pid));
+    refs.topCenterAuxRoot = safeFind(wn("ConquestTopCenterAuxRoot", pid));
+    refs.helpTextContainer = safeFind(wn("Container_HelpText", pid));
+    refs.adminPanelActionCountText = safeFind(wn("AdminPanelActionCount", pid));
     bindUiCachePerfPanelRefsByName(pid, refs);
     bindVictoryDialogRefsByName(pid, refs);
 }
@@ -95,9 +95,9 @@ function hasCriticalTopHudShellRefs(refs: TopHudShellRefs | undefined): boolean 
 
 // Removes shell-only widgets before a deterministic shell rebuild without touching combat HUD ownership.
 function purgeTopHudShellArtifactsForPid(pid: number): void {
-    deleteAllTopHudShellWidgetsByName(`AdminPanelActionCount_${pid}`);
+    deleteAllTopHudShellWidgetsByName(wn("AdminPanelActionCount", pid));
     deleteUiCachePerfWidgetsForPid(pid);
-    deleteAllTopHudShellWidgetsByName(`VictoryDialogRoot_${pid}`);
+    deleteAllTopHudShellWidgetsByName(wn("VictoryDialogRoot", pid));
     deleteHudTeamSwapWidgetsForPid(pid);
 }
 

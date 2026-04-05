@@ -254,11 +254,14 @@ function cleanupWorldInteractableRuntimeIconsForPid(pid: number): void {
 // Destroys all spawned WorldIcon clones for all players and resets presentation guard.
 function cleanupActiveWorldInteractableRuntimeIconsForAllPlayers(): void {
     const iconsByPid = State.players.worldInteractableIconByPidByObjId;
-    for (const pidKey in iconsByPid) {
+    const iconPidKeys = Object.keys(iconsByPid);
+    for (let i = 0; i < iconPidKeys.length; i++) {
+        const pidKey = Number(iconPidKeys[i]);
         const byObjId = iconsByPid[pidKey];
         if (!byObjId) continue;
-        for (const objIdKey in byObjId) {
-            const handle = byObjId[objIdKey];
+        const objIdKeys = Object.keys(byObjId);
+        for (let j = 0; j < objIdKeys.length; j++) {
+            const handle = byObjId[Number(objIdKeys[j])];
             if (!handle) continue;
             try {
                 mod.UnspawnObject(handle);
@@ -267,8 +270,9 @@ function cleanupActiveWorldInteractableRuntimeIconsForAllPlayers(): void {
         delete iconsByPid[pidKey];
     }
     const areasByPid = State.players.worldInteractableAreaByPidByObjId;
-    for (const pidKey in areasByPid) {
-        delete areasByPid[pidKey];
+    const areaPidKeys = Object.keys(areasByPid);
+    for (let i = 0; i < areaPidKeys.length; i++) {
+        delete areasByPid[Number(areaPidKeys[i])];
     }
     worldInteractablePresentationConfigured = false;
 }
