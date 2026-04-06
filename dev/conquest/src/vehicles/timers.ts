@@ -105,13 +105,35 @@ function clearVehicleSlotRespawnTimer(slot: VehicleSpawnerSlot): void {
     refreshVehicleSlotAuthoritativeState(slot);
 }
 
-// Schedules the authoritative respawn countdown for a slot.
+// Schedules the authoritative respawn countdown for a slot and launches a self-terminating HUD loop.
 function scheduleVehicleSlotRespawnTimer(slot: VehicleSpawnerSlot, delaySeconds: number): void {
     const now = mod.GetMatchTimeElapsed();
     slot.respawnDelaySeconds = delaySeconds;
     slot.respawnQueuedAtSeconds = now;
     slot.respawnReadyAtSeconds = now + delaySeconds;
     refreshVehicleSlotAuthoritativeState(slot);
+    void runVehicleSlotCooldownHudLoop(slot);
+}
+
+// Self-terminating async loop that drives HUD countdown updates for one slot's cooldown.
+// Ticks once per second, updating only players who have the deploy timer HUD visible.
+// Terminates when the slot is disabled, timer is cleared, or countdown reaches 0.
+async function runVehicleSlotCooldownHudLoop(slot: VehicleSpawnerSlot): Promise<void> {
+    const token = slot.enableToken;
+    const readyAt = slot.respawnReadyAtSeconds;
+    if (readyAt < 0) return;
+
+    while (true) {
+        await mod.Wait(1.0);
+        if (!slot.enabled || slot.enableToken !== token) return;
+        if (slot.respawnReadyAtSeconds !== readyAt) return;
+        const remaining = getVehicleSlotRespawnRemainingSeconds(slot);
+        if (remaining <= 0) {
+            updateVehicleDeployTimerHudForAllPlayers();
+            return;
+        }
+        updateVehicleDeployTimerHudForViewers();
+    }
 }
 
 // Records a successful bind/spawn and clears any prior respawn countdown for the slot.

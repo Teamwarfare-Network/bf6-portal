@@ -190,6 +190,7 @@ function resetArmState(pid: number): void {
     if (!Number.isInteger(pid)) return;
     delete State.players.armO[pid];
     delete State.players.armI[pid];
+    delete State.players.armT[pid];
 }
 function ensArmG(pid: number): {
     n: number;
@@ -883,6 +884,22 @@ function updateArmMenu(eventPlayer: mod.Player): void {
     const cache = State.hudCache.ammoResupplyMenuCache[pid];
     if (!cache) return;
     refreshArmMenu(eventPlayer, objId, cache);
+}
+// Self-terminating 1Hz loop that drives gadget cooldown timer display while the arm menu is open.
+// Launched once on openArmMenu(); terminates when the menu closes, player becomes invalid, or token is superseded.
+async function runArmMenuRefreshLoop(pid: number, token: number): Promise<void> {
+    while (true) {
+        await mod.Wait(1.0);
+        if (State.players.armT[pid] !== token) return;
+        if (!isArmOpen(pid)) return;
+        const player = safeFindPlayer(pid);
+        if (!player || !mod.IsPlayerValid(player)) return;
+        const objId = getArmObj(pid);
+        if (objId === undefined) return;
+        const cache = State.hudCache.ammoResupplyMenuCache[pid];
+        if (!cache) return;
+        refreshArmMenu(player, objId, cache);
+    }
 }
 function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry | undefined {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return undefined;
@@ -1705,6 +1722,10 @@ function openArmMenu(eventPlayer: mod.Player, objId: number): boolean {
     showArmMenu(cache, true);
     setArmOpen(pid, true);
     setUIInputModeForPlayer(eventPlayer, true);
+    // Launch self-terminating 1Hz loop to drive cooldown timer display; supersedes any prior loop for this player.
+    const armToken = (State.players.armT[pid] ?? 0) + 1;
+    State.players.armT[pid] = armToken;
+    void runArmMenuRefreshLoop(pid, armToken);
     return true;
 }
 function prebuildArmMenu(eventPlayer: mod.Player): void {

@@ -44,7 +44,7 @@ Last Tested Build: `v1.077` (CQ_Bug_35/36/37/38/42 fixes confirmed; vehicle depl
 - `CQ_Bug_38`: Resolved (v1.074+v1.076 — same vehicle occupancy cache guard; confirmed clean in SP testing)
 - `CQ_Bug_39`: Open (investigation needed — cosmetic engine log noise from UnspawnObject on possibly-destroyed objects; root cause needs confirmation)
 - `CQ_Bug_40`: Likely resolved (v1.075 — primary cause was CQ_Bug_35 spam; needs MP confirmation)
-- `CQ_Bug_41`: Open (Phase 10 architecture — central tick loop drives all timers; should use event-driven self-terminating loops)
+- `CQ_Bug_41`: Implemented (v1.078-v1.081 — self-terminating loops for boundary enforcement, vehicle timers, and gadget menu refresh; removed all-player per-second/per-tick polls; needs MP confirmation)
 - `CQ_Bug_42`: Guarded (v1.073 — defensive null checks on array helpers and capture-tickets; needs MP confirmation)
 
 ## CQ_Bug_42
@@ -96,13 +96,16 @@ Expected:
 - The central game loop should only drive global state mutation (bleed, capture sync, end conditions) — not per-player UI refresh.
 
 Status:
-- Open.
-- Deferred optimization pass — not blocking gameplay but degrades frame budget headroom under MP load.
-- Reference projects may provide patterns for event-driven timer architecture in this engine.
+- Implemented (v1.078-v1.081). Four-phase optimization:
+  - v1.078: Increased vehicle spawner poll interval from 1s to 5s (safety-net only; normal destruction is event-driven).
+  - v1.079: Replaced all-player per-second boundary enforcement poll with per-violation self-terminating async loops. Enter/exit area triggers already maintained boundary state; the poll only ticked kill countdowns. Now each violation spawns its own token-guarded loop that ticks once/second and self-terminates when cleared.
+  - v1.080: Replaced all-player per-second vehicle deploy timer poll with per-slot self-terminating countdown loops. Each cooldown spawns a loop that updates only players with visible deploy timer HUD. 12+ existing event-driven call sites for state transitions preserved.
+  - v1.081: Removed `updateArmMenu` from `ongoingPlayerImpl` (ran every engine tick per player). Gadget menu cooldown display now driven by a token-guarded 1Hz self-terminating loop launched on `openArmMenu()`, terminating when menu closes or player leaves.
+- Needs MP confirmation to verify frame budget improvement and correct behavior.
 
 Related:
-- CQ_Bug_40 (frame time budget — this is a contributing structural cause)
-- CQ_Bug_35 (OngoingPlayer spam — symptom of unconditional per-tick work)
+- CQ_Bug_40 (frame time budget — this optimization reduces per-second work significantly)
+- CQ_Bug_35 (OngoingPlayer spam — separate fix, now resolved)
 
 ## CQ_Bug_40
 Title: Mod Evaluator Frame Time Exceeds 1,000ms Budget During Multiplayer Loading Gate
@@ -118,7 +121,8 @@ Expected:
 Status:
 - Likely resolved (v1.075).
 - Primary cause was CQ_Bug_35 spam (hundreds of rejected EnableAllInputRestrictions calls per frame). That spam is now eliminated.
-- Needs MP confirmation to verify frame budget stays under 1,000ms during loading gate with multiple players.
+- v1.082: Performance diagnostic system added (admin-toggleable) to help attribute any remaining lag spikes. Tick rate monitor via OngoingGlobal + per-section timing profiler in the game loop (9 instrumented sections). Output to world log.
+- Needs MP confirmation to verify frame budget stays under 1,000ms during loading gate with multiple players. Use perf diag toggle to investigate if spikes persist.
 
 Related:
 - CQ_Bug_35 (primary contributor — now resolved)

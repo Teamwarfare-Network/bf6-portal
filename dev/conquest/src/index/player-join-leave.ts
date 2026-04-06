@@ -202,8 +202,10 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.liveVehicleDeployMenuVisibleByPid[pid];
     delete State.players.armO[pid];
     delete State.players.armI[pid];
+    delete State.players.armT[pid];
     delete State.players.armS[pid];
     delete State.players.uiCachePerfByPid[pid];
+    cleanupPerfDiagWidgetsForPid(pid);
     cleanupWorldInteractableRuntimeIconsForPid(pid);
     delete State.players.posDebugTransformSourceByPid[pid];
     delete State.players.posDebugVehicleObjIdByPid[pid];

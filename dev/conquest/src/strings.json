@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.077)",
+        "title": "teamwarfare . net | TWL Conquest (v1.094)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -19,8 +19,8 @@
       "uiCacheVehicle": "Vehicle",
       "uiCacheReady": "Ready",
       "uiCacheGadget": "Gadget",
-      "uiCacheBuiltRebuiltFormat": "Built/Rebuilt {0}/{1}",
-      "uiCacheColdInvalidFormat": "Cold/Invalid {0}/{1}",
+      "uiCacheBuiltRebuiltFormat": "UI Caches Built: {0} Avg; Rebuilt: {1} Avg ({2} High)",
+      "uiCacheColdInvalidFormat": "UI Caches Cold: {0} Avg; Invalid: {1} Avg ({2} High)",
       "clock": {
         "digit": "{0}",
         "colon": ":"
@@ -227,6 +227,7 @@
         "deployTimersVisibleToggle": "Toggle Deploy Timers Visible While Deployed",
         "resetGadgetTimers": "Reset Gadget Timers",
         "uiCachePerfToggle": "Toggle UI Cache Panel",
+        "perfDiagToggle": "Toggle Perf Diag",
         "roundLengthDec": "Match Length -",
         "roundLengthInc": "Match Length +"
       },
@@ -247,7 +248,8 @@
           "deployTimersVisibleOn": "Timers Visible Deployed ON",
           "deployTimersVisibleOff": "Timers Visible Deployed OFF",
           "uiCachePerfOn": "Toggle UI Cache",
-          "uiCachePerfOff": "Toggle UI Cache"
+          "uiCachePerfOff": "Toggle UI Cache",
+          "perfDiag": "Toggle Perf Diag"
         },
         "labels": {
           "clockTime": "Clock Time -/+ 1m",
@@ -338,6 +340,8 @@
     "debug": {
       "adminPos": "ADMIN POS X:{0} Y:{1} Z:{2}",
       "adminFacing": "ADMIN FACING X:{0} Y:{1} Z:{2}",
+      "perfHeader": "Script Rate: {0} tick per sec | Worst tick/s: {1} | {2}p",
+      "perfSection": " S{0} max:{1}ms x{2}",
       "posX": "posX:",
       "posY": "posY:",
       "posZ": "posZ:",

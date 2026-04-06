@@ -61,7 +61,7 @@ const VEHICLE_SPAWNER_START_DELAY_SECONDS = 1;
 // Startup cleanup radius is intentionally larger than bind radius to catch default spawns
 // that appear offset from the configured spawn points (Defense Nexus/Golf Course/Blackwell slot 1).
 const VEHICLE_SPAWNER_STARTUP_CLEANUP_RADIUS_METERS = 50.0;
-const VEHICLE_SPAWNER_POLL_INTERVAL_SECONDS = 1.0;
+const VEHICLE_SPAWNER_POLL_INTERVAL_SECONDS = 5.0;
 const VEHICLE_SPAWNER_BIND_DISTANCE_METERS = 7.0;
 const VEHICLE_SPAWNER_BIND_TIMEOUT_SECONDS = 2.0; // This should not be smaller than VEHICLE_SPAWNER_KEEP_ALIVE_SPAWNER_RADIUS
 
@@ -136,6 +136,7 @@ type BoundaryViolationState = {
     startedAtSeconds: number;
     expiresAtSeconds: number;
     alarmPlayed: boolean;
+    enforcementToken: number;
 };
 
 // Matchup presets drive slot enablement/readouts; auto-start minimums are independent.

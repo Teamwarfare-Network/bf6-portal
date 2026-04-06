@@ -33,11 +33,6 @@ type TopHudShellRefs = {
     victoryRightTicketText?: mod.UIWidget;
 
     adminPanelActionCountText?: mod.UIWidget;
-    uiCachePerfRoot?: mod.UIWidget;
-    uiCachePerfHeader?: mod.UIWidget;
-    uiCachePerfFamilyLabel?: Array<mod.UIWidget | undefined>;
-    uiCachePerfBuiltText?: Array<mod.UIWidget | undefined>;
-    uiCachePerfColdText?: Array<mod.UIWidget | undefined>;
     helpTextContainer?: mod.UIWidget;
     readyStatusContainer?: mod.UIWidget;
 

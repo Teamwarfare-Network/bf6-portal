@@ -25,6 +25,7 @@ import './ui/branding/top-left';
 import './ui/ready/ready-line';
 import './ui/admin/action-counter';
 import './hud/ui-cache-perf';
+import './hud/perf-diag';
 import './ui/conquest/top-hud-shell';
 import './ui/conquest/hud-core/types';
 import './ui/conquest/hud-core/constants';
@@ -132,6 +133,11 @@ export function OnPlayerUndeploy(eventPlayer: mod.Player): void {
 // Forwards per-player ongoing tick processing.
 export function OngoingPlayer(eventPlayer: mod.Player): void {
     ongoingPlayerImpl(eventPlayer);
+}
+
+// Reserved. Engine calls OngoingGlobal at ~1Hz (too slow for perf diag).
+// Tick measurement moved to game-mode loop (~120ms cadence) in v1.087.
+export function OngoingGlobal(): void {
 }
 
 // Forwards world-interact input events.

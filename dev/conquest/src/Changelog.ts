@@ -3,6 +3,23 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.094: docs: update codebase reference map with byte sizes, perf diag usage guide, current stats
+// v1.093: perf-diag: fix first-window min bug, restore 216px width, shorten player count
+// v1.092: perf-diag: avg/max per-player cache stats, wider panel, improved string labels
+// v1.091: fix: remove stale UI cache panel references from top-hud-shell
+// v1.090: diag: update perf panel string labels for readability
+// v1.089: diag: merge UI cache aggregate into perf diag panel; deprecate standalone UI cache panel and admin toggle; readable header format
+// v1.088: diag: remove broken gap detection (GetMatchTimeElapsed has 1s granularity); tick rate from game loop is primary spike signal; add persistent min tick rate
+// v1.087: diag: move tick measurement from OngoingGlobal (~1Hz) to game-mode loop (~120ms); fix false-positive 1000ms gap
+// v1.086: diag: add inter-tick gap detection to perf diagnostic — measures time between OngoingGlobal calls to catch frame stalls that section profiling misses due to frame-clock tied GetMatchTimeElapsed
+// v1.085: diag: perf panel layout -- match pos debug width, dynamic height, compact text
+// v1.084: diag: perf diagnostic output as persistent HUD panel instead of world log
+// v1.083: diag: readable perf diagnostic output with dedicated string keys
+// v1.082: diag: add performance diagnostic system with tick rate monitor and section profiler (admin-toggleable)
+// v1.081: perf: CQ_Bug_41 phase 4 -- self-terminating gadget menu refresh loop, remove updateArmMenu from ongoingPlayerImpl
+// v1.080: perf: CQ_Bug_41 phase 3 -- self-terminating vehicle timer HUD countdown loops, remove all-player per-second poll
+// v1.079: perf: CQ_Bug_41 phase 2 -- self-terminating boundary enforcement loops, remove all-player per-second poll
+// v1.078: perf: CQ_Bug_41 phase 1 -- increase vehicle spawner poll interval from 1s to 5s
 // v1.077: data: sync object 1052 world icon position to match updated spatial coordinates
 // v1.076: fix: pre-set vehicle occupancy cache before ForcePlayerToSeat to prevent verification failure regression from CQ_Bug_37/38 guard
 // v1.075: fix: CQ_Bug_35 -- skip EnableAllInputRestrictions on undeploy and gate release where player is undeployed

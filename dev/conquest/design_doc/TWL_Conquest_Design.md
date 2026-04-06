@@ -3737,164 +3737,166 @@ None
 
 ## Codebase Reference Map
 
-Last updated: v1.064 (2026-04-04)
+Last updated: v1.093 (2026-04-06)
 
 ### Project Stats
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.064 |
-| Source files | 113 .ts files |
-| Source lines | ~28,600 |
-| Bundle size | 1,024,269 bytes |
+| Version | 1.093 |
+| Source files | 113 .ts files + 1 .json |
+| Source lines | ~28,900 |
+| Bundle size | 1,032,996 bytes |
 | Bundle limit | 1,048,576 bytes (1 MiB) |
-| Headroom | 24,307 bytes (2.3%) |
-| Entry point | `src/index.ts` -> 19 Portal event handlers |
+| Headroom | 15,580 bytes (1.5%) |
+| Entry point | `src/index.ts` -> 20 Portal event handlers |
 | Build tool | `bf6-portal-bundler` -> `dist/bundle.ts` + `dist/bundle.strings.json` |
 
 ### Directory Tree
 
+Bytes shown are source file size (approximate bundle contribution). Lines and bytes shown for files >2K.
+
 ```
 src/
-  index.ts                    -- Entry point: imports all modules, exports 19 Portal event handlers
+  index.ts                    -- Entry point: imports all modules, exports 20 Portal event handlers (211 lines | 8.2K)
   types.ts                    -- Foundation type shim (imports foundation/*)
-  header-file.ts              -- Version, license (MIT), attribution
+  header-file.ts              -- Version, license (MIT), attribution (66 lines | 3.6K)
   footer-file.ts              -- EOF version marker
-  Changelog.ts                -- Version history (763 lines)
-  conquest-flow.ts            -- Continuous-live flow: start/end match (with winner inference), clock binding, match length config
-  strings.json                -- All player-facing localized string keys
+  Changelog.ts                -- Version history (792 lines | 123.9K)
+  conquest-flow.ts            -- Continuous-live flow: start/end match, clock binding, match length config (182 lines | 7.2K)
+  strings.json                -- All player-facing localized string keys (367 lines | 18.6K)
 
   foundation/
     modlib.ts                 -- Portal scripting API import wrapper
-    gameplay.ts               -- Core constants (TeamID, MatchPhase, colors, vehicle lists, presets)
-    ui-layout.ts              -- All HUD/dialog pixel dimensions, colors, timing constants (349 lines)
-    string-keys.ts            -- String key constant mappings (STR_* -> mod.stringkeys.twl.*)
+    gameplay.ts               -- Core constants (TeamID, MatchPhase, colors, vehicle lists, presets) (297 lines | 15.4K)
+    ui-layout.ts              -- All HUD/dialog pixel dimensions, colors, timing constants (349 lines | 21.9K)
+    string-keys.ts            -- String key constant mappings (STR_* -> mod.stringkeys.twl.*) (80 lines | 6.1K)
 
   state/
-    core.ts                   -- Shared state accessors (isMatchLive, setUIInputMode, sendWorldLog)
-    runtime-types.ts          -- GameState shape: all type definitions incl. ConquestLifecyclePhase (446 lines)
-    runtime-state.ts          -- State singleton initialization (277 lines)
+    core.ts                   -- Shared state accessors (isMatchLive, setUIInputMode, sendWorldLog) (59 lines | 2.2K)
+    runtime-types.ts          -- GameState shape: all type definitions incl. ConquestLifecyclePhase (456 lines | 15.3K)
+    runtime-state.ts          -- State singleton initialization (277 lines | 9.7K)
     runtime.ts                -- Composition shim
-    id-helpers.ts             -- Safe ID/object/team accessors (safeGetPlayerId, safeFind, etc.)
+    id-helpers.ts             -- Safe ID/object/team accessors (safeGetPlayerId, safeFind, etc.) (159 lines | 6.4K)
     player-lookup.ts          -- Player lookup by PID
-    ui-helpers.ts             -- Widget builder helpers (safeParseUI, addOutlinedButton)
-    hud-cache-types.ts        -- HUD widget cache type definitions incl. victory dialog refs (226 lines)
-    lifecycle-guardrails.ts   -- Phase transition guards (NotReady/Live/GameOver)
-    spawn-charge.ts           -- Phase 2B spawn-charge reason matrix and deploy charging
+    ui-helpers.ts             -- Widget builder helpers (safeParseUI, addOutlinedButton) (412 lines | 13.5K)
+    hud-cache-types.ts        -- HUD widget cache type definitions incl. victory dialog refs (221 lines | 6.9K)
+    lifecycle-guardrails.ts   -- Phase transition guards (NotReady/Live/GameOver) (66 lines | 2.1K)
+    spawn-charge.ts           -- Phase 2B spawn-charge reason matrix and deploy charging (248 lines | 10.5K)
 
   config/
-    conquest-constants.ts     -- Gameplay tuning (tickets: 350, capture time: 10s, bleed: 1/3/s)
-    types.ts                  -- Map config types (MapConfig, CapturePointConfig, VehicleSpawnSpec)
+    conquest-constants.ts     -- Gameplay tuning (tickets: 350, capture time: 10s, bleed: 1/3/s) (53 lines | 2.4K)
+    types.ts                  -- Map config types (MapConfig, CapturePointConfig, VehicleSpawnSpec) (81 lines | 4.4K)
     maps.ts                   -- Map registry loader
-    maps/operation-firestorm.ts -- Firestorm map-specific spawn/capture/ceiling config
-    map-runtime.ts            -- Map detection and config application (754 lines)
-    runtime.ts                -- Runtime config initialization
+    maps/operation-firestorm.ts -- Firestorm map-specific spawn/capture/ceiling config (371 lines | 20.4K)
+    map-runtime.ts            -- Map detection and config application (754 lines | 32.1K)
+    runtime.ts                -- Runtime config initialization (89 lines | 4.9K)
 
   index/
-    game-mode.ts              -- Mode start, main game loop (0.12s tick), clock/boundary/victory
-    conquest-scaffold.ts      -- Phase 1 state initialization scaffold
-    capture-tickets.ts        -- Phase 2A capture routing, ticket bleed, combat HUD dispatch (2,158 lines)
-    capture-sound.ts          -- Phase 4 capture-tick sound queue and dispatch
-    capture-vo.ts             -- Phase 4B objective voice-over queue and dispatch
-    player-join-leave.ts      -- Join/leave lifecycle, HUD cleanup, loading gate entry
-    player-deploy.ts          -- Deploy/undeploy handlers, loading gate enforcement
-    player-loop-inputs.ts     -- Per-tick player input: gate enforcement, interact routing
-    vehicle-events.ts         -- Vehicle enter/exit/spawn/destroy, slot binding
-    area-triggers.ts          -- Capture-point and main-base area trigger handlers
+    game-mode.ts              -- Mode start, main game loop (0.12s tick), clock/boundary/victory (181 lines | 7.9K)
+    conquest-scaffold.ts      -- Phase 1 state initialization scaffold (129 lines | 6.5K)
+    capture-tickets.ts        -- Phase 2A capture routing, ticket bleed, combat HUD dispatch (2,159 lines | 87.5K)
+    capture-sound.ts          -- Phase 4 capture-tick sound queue and dispatch (266 lines | 11.6K)
+    capture-vo.ts             -- Phase 4B objective voice-over queue and dispatch (436 lines | 18.4K)
+    player-join-leave.ts      -- Join/leave lifecycle, HUD cleanup, loading gate entry (228 lines | 10.1K)
+    player-deploy.ts          -- Deploy/undeploy handlers, loading gate enforcement (125 lines | 5.6K)
+    player-loop-inputs.ts     -- Per-tick player input: gate enforcement, interact routing (64 lines | 3.2K)
+    vehicle-events.ts         -- Vehicle enter/exit/spawn/destroy, slot binding (201 lines | 9.1K)
+    area-triggers.ts          -- Capture-point and main-base area trigger handlers (133 lines | 6.0K)
 
   interaction/
-    types.ts                  -- readyDialogData_t (30+ fields), UiLoadReason, HARD_PLAYER_LOCK_AUDIT_MODE
-    actions.ts                -- Loading gate orchestration, HUD warm/reveal, deploy control (698 lines)
-    hud-warm-state.ts         -- Per-player gate state accessors (40+ getters/setters, 344 lines)
-    interact-point.ts         -- Ready-dialog interact point spawn/despawn lifecycle
-    world-interactables.ts    -- Per-player spawned WorldIcon clones with SetWorldIconOwner visibility, team filtering (320 lines)
-    ammo-resupply-menu.ts     -- Gadget/ammo menu UI, cooldowns, click handling (1,859 lines)
+    types.ts                  -- readyDialogData_t (30+ fields), UiLoadReason, HARD_PLAYER_LOCK_AUDIT_MODE (68 lines | 2.5K)
+    actions.ts                -- Loading gate orchestration, HUD warm/reveal, deploy control (719 lines | 31.9K)
+    hud-warm-state.ts         -- Per-player gate state accessors (40+ getters/setters) (280 lines | 12.4K)
+    interact-point.ts         -- Ready-dialog interact point spawn/despawn lifecycle (192 lines | 8.0K)
+    world-interactables.ts    -- Per-player spawned WorldIcon clones with SetWorldIconOwner visibility (324 lines | 12.6K)
+    ammo-resupply-menu.ts     -- Gadget/ammo menu UI, cooldowns, click handling (1,880 lines | 69.5K)
     spawn-selector.ts         -- Custom spawn selection stub (Phase 8 placeholder)
     ui-events.ts              -- Button event dispatcher
-    ui-events-ready.ts        -- Ready dialog + admin panel click handlers
-    ui-primary-click.ts       -- Primary-click debounce helpers
+    ui-events-ready.ts        -- Ready dialog + admin panel click handlers (217 lines | 7.7K)
+    ui-primary-click.ts       -- Primary-click debounce helpers (72 lines | 2.2K)
 
   hud/
-    status.ts                 -- Top-left status dock, safe widget setters, clock formatting (553 lines)
-    help-visibility.ts        -- Help/ready text visibility control
+    status.ts                 -- Top-left status dock, safe widget setters, clock formatting (553 lines | 21.3K)
+    help-visibility.ts        -- Help/ready text visibility control (51 lines | 2.2K)
     conquest-scaffold.ts      -- Phase 1 HUD setup seam (no-op placeholder)
-    ui-cache-perf.ts          -- Per-player UI cache instrumentation panel (295 lines, dev diagnostics)
-    ui-load-debug.ts          -- Loading gate audit debug panel (153 lines, dev diagnostics)
+    ui-cache-perf.ts          -- Per-player UI cache counter infrastructure only (35 lines | 1.5K)
+    perf-diag.ts              -- Performance diagnostic HUD panel: tick rate, UI cache aggregate, section profiler (351 lines | 15.1K)
     update-helpers.ts         -- Admin action counter management
 
   admin-panel/
-    build.ts                  -- Admin panel widget construction (647 lines)
-    events.ts                 -- Admin button click handlers
-    visibility.ts             -- Admin panel show/hide/toggle lifecycle
+    build.ts                  -- Admin panel widget construction incl. position debug (647 lines | 27.2K)
+    events.ts                 -- Admin button click handlers (213 lines | 8.1K)
+    visibility.ts             -- Admin panel show/hide/toggle lifecycle (172 lines | 6.9K)
 
   ready-dialog/
-    lifecycle.ts              -- Ready dialog lifecycle (init, prebuild hidden, open, close)
-    dialog-build.ts           -- Main dialog widget construction
-    dialog-build-sections.ts  -- Section headers, dividers, layout
-    dialog-build-mode-config.ts -- Mode config UI (team size, vehicle presets)
-    dialog-build-roster.ts    -- Player roster display
-    roster-render.ts          -- Roster widget rendering
-    roster-active.ts          -- Active roster state tracking
-    mode-config-schema.ts     -- ModeConfigSchema type and validation
-    mode-config-presets.ts    -- Vehicle preset packages (1v1 through 4v4)
-    mode-config-readout.ts    -- Vehicle selection readout display
-    mode-config-aircraft-ceiling.ts -- Aircraft altitude limit config
-    matchup-summary.ts        -- Match summary panel (team compositions)
-    countdown-flow.ts         -- Pregame countdown orchestration
+    lifecycle.ts              -- Ready dialog lifecycle (init, prebuild hidden, open, close) (204 lines | 8.7K)
+    dialog-build.ts           -- Main dialog widget construction (321 lines | 14.3K)
+    dialog-build-sections.ts  -- Section headers, dividers, layout (265 lines | 8.0K)
+    dialog-build-mode-config.ts -- Mode config UI (team size, vehicle presets) (321 lines | 10.5K)
+    dialog-build-roster.ts    -- Player roster display (226 lines | 7.1K)
+    roster-render.ts          -- Roster widget rendering (270 lines | 13.2K)
+    roster-active.ts          -- Active roster state tracking (138 lines | 5.5K)
+    mode-config-schema.ts     -- ModeConfigSchema type and validation (146 lines | 6.6K)
+    mode-config-presets.ts    -- Vehicle preset packages (1v1 through 4v4) (220 lines | 9.5K)
+    mode-config-readout.ts    -- Vehicle selection readout display (359 lines | 16.1K)
+    mode-config-aircraft-ceiling.ts -- Aircraft altitude limit config (61 lines | 3.5K)
+    matchup-summary.ts        -- Match summary panel (team compositions) (115 lines | 5.1K)
+    countdown-flow.ts         -- Pregame countdown orchestration (150 lines | 5.7K)
     auto-start.ts             -- Auto-start enablement/flow
     swap-action.ts            -- Team swap action handler
     takeoff-gating.ts         -- Aircraft takeoff readiness check
     ready-reset.ts            -- Ready state reset helpers
-    pregame-ui.ts             -- Pregame-phase overlay UI
-    join-prompt-ids.ts        -- Join prompt widget name constants
-    join-prompt-layout.ts     -- Join prompt overlay layout/construction
+    pregame-ui.ts             -- Pregame-phase overlay UI (117 lines | 4.1K)
+    join-prompt-ids.ts        -- Join prompt widget name constants (68 lines | 3.6K)
+    join-prompt-layout.ts     -- Join prompt overlay layout/construction (150 lines | 4.7K)
     join-prompt-events.ts     -- Join prompt button/lifecycle events
 
   boundary/
-    enforcement.ts            -- Map boundary enforcement, kill timers, zone checks (342 lines)
-    prompt-ui.ts              -- Boundary violation countdown UI (477 lines)
+    enforcement.ts            -- Map boundary enforcement, kill timers, zone checks (362 lines | 13.5K)
+    prompt-ui.ts              -- Boundary violation countdown UI (477 lines | 19.2K)
 
   clock/
-    state.ts                  -- Match clock runtime state, pause/elapsed/expiry
-    timer-instance.ts         -- Reusable MM:SS timer widget builders (405 lines)
-    ui.ts                     -- Clock widget build, cache, digit rendering (326 lines)
+    state.ts                  -- Match clock runtime state, pause/elapsed/expiry (192 lines | 8.2K)
+    timer-instance.ts         -- Reusable MM:SS timer widget builders (404 lines | 18.0K)
+    ui.ts                     -- Clock widget build, cache, digit rendering (325 lines | 14.2K)
 
   vehicles/
-    vehicle-classification.ts -- Vehicle type guards (aircraft, jet, tank, heli)
-    registration.ts           -- Vehicle team registry, base team inference
-    ownership.ts              -- Seat-to-player ownership tracking
-    reservations.ts           -- Vehicle spawn reservations
-    timers.ts                 -- Vehicle respawn timer tracking
-    spawner-slots.ts          -- Slot state machine, enablement/reservation
-    spawner-sequence.ts       -- Slot sequencing logic
-    spawner-bind.ts           -- Vehicle-to-slot binding on spawn
-    spawner-bootstrap.ts      -- Spawner system initialization
-    deploy-fulfillment.ts     -- Direct vehicle spawn on deploy (515 lines)
-    deploy-live-menu.ts       -- Live deploy menu UI for spawn selection
-    deploy-timer-ui.ts        -- Vehicle spawn timer HUD display (1,942 lines)
+    vehicle-classification.ts -- Vehicle type guards (aircraft, jet, tank, heli) (61 lines | 2.0K)
+    registration.ts           -- Vehicle team registry, base team inference (45 lines | 2.3K)
+    ownership.ts              -- Seat-to-player ownership tracking (69 lines | 2.7K)
+    reservations.ts           -- Vehicle spawn reservations (79 lines | 3.3K)
+    timers.ts                 -- Vehicle respawn timer tracking (164 lines | 6.6K)
+    spawner-slots.ts          -- Slot state machine, enablement/reservation (203 lines | 9.2K)
+    spawner-sequence.ts       -- Slot sequencing logic (199 lines | 7.8K)
+    spawner-bind.ts           -- Vehicle-to-slot binding on spawn (268 lines | 12.0K)
+    spawner-bootstrap.ts      -- Spawner system initialization (100 lines | 4.8K)
+    deploy-fulfillment.ts     -- Direct vehicle spawn on deploy (524 lines | 22.7K)
+    deploy-live-menu.ts       -- Live deploy menu UI for spawn selection (87 lines | 3.3K)
+    deploy-timer-ui.ts        -- Vehicle spawn timer HUD display (1,961 lines | 85.3K)
     array-helpers.ts          -- Vehicle array manipulation helpers
 
   ui/
     conquest/
-      top-hud-shell.ts        -- Top HUD container root and lifecycle
+      top-hud-shell.ts        -- Top HUD container root, shell ensure/rebuild, team swap button (235 lines | 9.9K)
       hud-core/
-        types.ts              -- TwlConquestHud type definitions
-        constants.ts          -- HUD layout, colors, sizing
-        names.ts              -- Widget name generators
-        state.ts              -- HUD state machine (visibility, owner tracking)
-        lifecycle.ts          -- HUD show/hide/reset lifecycle
-        build.ts              -- Widget construction (panels, lanes, entries)
-        validate.ts           -- HUD validity checks
-        render.ts             -- Visual update (tickets, flags, engage markers)
-        pipeline.ts           -- Render queue and dispatch
+        types.ts              -- TwlConquestHud type definitions (139 lines | 4.8K)
+        constants.ts          -- HUD layout, colors, sizing (402 lines | 21.1K)
+        names.ts              -- Widget name generators (180 lines | 5.9K)
+        state.ts              -- HUD state machine (visibility, owner tracking) (97 lines | 3.6K)
+        lifecycle.ts          -- HUD show/hide/reset lifecycle (289 lines | 15.6K)
+        build.ts              -- Widget construction (panels, lanes, entries) (1,115 lines | 44.8K)
+        validate.ts           -- HUD validity checks (156 lines | 8.5K)
+        render.ts             -- Visual update (tickets, flags, engage markers) (667 lines | 31.7K)
+        pipeline.ts           -- Render queue and dispatch (168 lines | 6.5K)
         toggle.ts             -- Player HUD visibility toggle
     dialog/
-      victory.ts              -- Victory dialog update: ticket scoreboard, crown, result line, roster, countdown
-      victory-build.ts        -- Victory dialog widget construction (scoreboard border, crowns, team names, tickets)
+      victory.ts              -- Victory dialog update: ticket scoreboard, crown, result, roster, countdown (177 lines | 9.1K)
+      victory-build.ts        -- Victory dialog widget construction (scoreboard, crowns, team names, tickets) (527 lines | 25.1K)
     ready/
-      ready-line.ts           -- Ready status indicator line
+      ready-line.ts           -- Ready status indicator line (101 lines | 3.7K)
     branding/
-      top-left.ts             -- Title/version branding panel
+      top-left.ts             -- Title/version branding panel (217 lines | 9.2K)
     admin/
       action-counter.ts       -- Admin action event counter display
 
@@ -3903,12 +3905,12 @@ src/
     multi-click.ts            -- Multi-click detection utility
 
   strings/
-    ui-ids.ts                 -- String localization key ID constants
+    ui-ids.ts                 -- Widget ID and string key constants (129 lines | 8.4K)
 ```
 
-### Exported Public API (19 Portal Event Handlers)
+### Exported Public API (20 Portal Event Handlers)
 
-All functions exported from `src/index.ts`. Each delegates to an `*Impl` function in the listed file.
+All functions exported from `src/index.ts`. Each delegates to an `*Impl` function in the listed file (except `OngoingGlobal` which is a reserved no-op).
 
 | Export | Impl File | Purpose |
 |--------|-----------|---------|
@@ -3918,6 +3920,7 @@ All functions exported from `src/index.ts`. Each delegates to an `*Impl` functio
 | `OnPlayerDeployed` | `index/player-deploy.ts` | Deploy gate check, HUD reveal |
 | `OnPlayerUndeploy` | `index/player-deploy.ts` | Undeploy cleanup, gate reassert |
 | `OngoingPlayer` | `index/player-loop-inputs.ts` | Per-tick input, gate enforcement |
+| `OngoingGlobal` | `index.ts` (no-op) | Reserved; engine fires at ~1Hz, too slow for diagnostics |
 | `OnPlayerInteract` | `index/player-loop-inputs.ts` | World interact point activation |
 | `OnPlayerUIButtonEvent` | `interaction/ui-events.ts` | UI button click routing |
 | `OnPlayerEnterVehicle` | `index/vehicle-events.ts` | Vehicle seat ownership |
@@ -3939,7 +3942,7 @@ All functions exported from `src/index.ts`. Each delegates to an `*Impl` functio
 - Main loop (0.12s tick): `conquestPhase2ARefreshLiveCaptureStateSubtick()`, `updateConquestCombatHudForAllPlayers()`, `conquestPhase4FlushCaptureSoundQueue()`, `conquestPhase4BFlushCaptureVoiceOverQueue()`
 - Second boundary: `updateVehicleDeployTimerHudForAllPlayers()`, `ensureActiveWorldInteractablesReady()`, `checkTakeoffLimitForAllPlayers()`, `tickBoundaryEnforcement()`
 
-#### index/capture-tickets.ts — Phase 2A Capture + Tickets (2,158 lines)
+#### index/capture-tickets.ts — Phase 2A Capture + Tickets (2,159 lines)
 - `conquestPhase2ARefreshLiveCaptureStateSubtick()` — sub-tick capture sync from engine
 - `conquestPhase2AOnLiveTick()` — second-boundary bleed + end check + HUD refresh
 - `conquestPhase2AApplyBleedTick()` — ticket bleed math
@@ -3947,7 +3950,7 @@ All functions exported from `src/index.ts`. Each delegates to an `*Impl` functio
 - `updateConquestCombatHudForAllPlayers()` — central combat HUD dispatch
 - 7 view model types: `ConquestHudTicketViewModel`, `ConquestHudFlagSlotViewModel`, `ConquestHudActiveFlagPopoutViewModel`, `ConquestHudFlagsViewModel`, `ConquestHudEngageViewModel`, `ConquestHudStatusViewModel`, `ConquestHudClockViewModel`
 
-#### interaction/actions.ts — Loading Gate (698 lines)
+#### interaction/actions.ts — Loading Gate (721 lines)
 - `beginLoadingGate(player, pid, reason)` — unified gate entry for join + team-swap
 - `runLoadingGateUntilReady(player, pid)` — polling loop: prebuild -> warm check -> floor wait -> release
 - `releaseLoadingGate(player, pid, token)` — single release owner (idempotent)
@@ -3957,21 +3960,21 @@ All functions exported from `src/index.ts`. Each delegates to an `*Impl` functio
 - `hideAllUiFamiliesForPlayer(player, pid)` — hide all visible UI before warm
 - `runTeamSwapLoadingGate(player, pid, newTeamNum, waitForUndeploy)` — team-swap gate sequence
 
-#### interaction/ammo-resupply-menu.ts — Gadget Menu (1,859 lines)
+#### interaction/ammo-resupply-menu.ts — Gadget Menu (1,880 lines)
 - `resetArmState(pid)` / `resetArmTimers(pid)` — clear ammo menu state
 - `armCacheOk(cache)` — validate menu cache completeness
 - `buildTile(...)` — build complete gadget tile with button, icon, cooldown
 - `armRefreshFrame(pid, objId)` — refresh menu frame contents
 - `openArmMenu(player)` / `closeArmMenu(player)` — menu open/close lifecycle
 
-#### vehicles/deploy-timer-ui.ts — Vehicle Timer HUD (1,942 lines)
+#### vehicles/deploy-timer-ui.ts — Vehicle Timer HUD (1,961 lines)
 - `updateVehicleDeployTimerHudForAllPlayers()` — per-second refresh for all viewers
 - `prebuildVehicleDeployTimerHudHiddenForPlayer(player)` — hidden prebuild for loading gate
 - `revealVehicleDeployTimerHudForPlayer(player)` — reveal on gate release
 - `buildVehicleDeployTimerRenderPlan(...)` — compute render plan with signature
 - `applyVehicleDeployTimerRenderPlanContent(...)` — apply plan to cached widgets
 
-#### state/runtime-types.ts — GameState Shape (446 lines)
+#### state/runtime-types.ts — GameState Shape (456 lines)
 - `VehicleSpawnerSlot` — team, slot#, spawner ref, spawn pos/rot, enabled, timing
 - `ConquestCapturePointRuntimeState` — ObjId, label, order, owner latch, progress
 - `ConquestFlagVisualPhase` — NEUTRAL_IDLE | NEUTRAL_CAPTURING | OWNED_STABLE | OWNED_CONTESTED_* | NEUTRALIZED_LATCH
@@ -3980,11 +3983,83 @@ All functions exported from `src/index.ts`. Each delegates to an `*Impl` functio
 - `ConquestEndRaceSnapshot` — team1Tickets, team2Tickets, elapsedSeconds, winnerTeam (captured at match end)
 - `ConquestSoundRuntimeState` / `ConquestVoRuntimeState` — queue, throttle, debug stats
 
-#### boundary/enforcement.ts — Boundary System (342 lines)
+#### boundary/enforcement.ts — Boundary System (362 lines)
 - `tickBoundaryEnforcement()` — per-second boundary check for all players
 - `refreshPlayerBoundaryState(player)` — check 3 zone types, manage violation timers
 - `tryKillBoundaryPlayer(player, pid, kind)` — kill after countdown expires
 - `resetPlayerBoundaryStateOnDeploy(player, pid)` / `resetPlayerBoundaryStateOnUndeployOrReset(pid)` — lifecycle resets
+
+### Performance Diagnostic Panel
+
+Admin-toggleable HUD panel for real-time script performance monitoring during multiplayer testing. Enabled via the Admin Panel "Toggle Perf Diag" button.
+
+#### What it shows
+
+The panel is a small overlay anchored TopRight (below the position debug panel when both are active). It has a header line plus two always-visible cache lines, with optional spike detail lines below.
+
+**Header line:**
+```
+Script Rate: 8 tick per sec | Worst tick/s: 8 | 1p
+```
+- **Script Rate** — current game-loop iterations per second. Normal is ~8 (the loop runs every 0.12s). A lag spike reduces this number proportionally.
+- **Worst tick/s** — lowest tick rate observed since the panel was enabled. Resets only when toggled off and back on. Lower = worse.
+- **Color coding** — green >= 7 tps, yellow 5-6 tps, red < 5 tps.
+
+**Cache lines (always visible):**
+```
+UI Caches Built: 0 Avg; Rebuilt: 12 Avg (0 High)
+UI Caches Cold: 0 Avg; Invalid: 0 Avg (0 High)
+```
+- Aggregated across all connected players and all 3 UI families (vehicle, ready, gadget).
+- **Avg** — average per player. **High** — maximum any single player has seen (outlier detection).
+- Rebuilt/Invalid > 0 turns the line yellow; otherwise green.
+
+**Spike lines (conditional, appear only when section profiler triggers):**
+```
+ S2 max:520ms x2
+```
+- Section ID, max delta in ms, and spike count for the current 1-second window.
+- Only appears when `GetMatchTimeElapsed()` reports a delta > 5ms across a section boundary. Due to the engine's 1-second timer granularity, this only fires when a section spans a second tick — it detects multi-second stalls, not sub-frame jitter.
+
+#### How to use it
+
+1. Open the Admin Panel and press "Toggle Perf Diag" to enable.
+2. The panel appears for all players. Current tick rate updates every 1 second.
+3. Play normally. If lag occurs, the "Worst tick/s" value drops and stays low.
+4. Check cache lines: high Rebuilt or Invalid counts indicate UI churn for specific players.
+5. If spike lines appear, the section ID tells you which game-loop function stalled (see section ID table in `perf-diag.ts` header comment).
+6. Toggle off and back on to reset the "Worst tick/s" baseline.
+
+#### Engine timing limitations
+
+- `mod.GetMatchTimeElapsed()` has **1-second granularity** — it only changes value at integer-second boundaries. This makes sub-second gap detection impossible.
+- `OngoingGlobal` fires at **~1Hz** (not 30Hz as Portal documentation suggests). Too slow for monitoring; the export is a reserved no-op.
+- The game-mode loop (`while(true) { ... await mod.Wait(0.12); }`) at ~8 iterations/sec is the reliable timing source. Counting iterations per 1-second window is the primary lag signal.
+- The first completed window after enabling is always partial (you enable mid-second). The panel discards this window's tick rate to avoid a false low "Worst tick/s" value.
+
+#### Section ID reference
+
+| ID | Function | Cadence |
+|----|----------|---------|
+| 1 | `conquestPhase2ARefreshLiveCaptureStateSubtick` | Every 0.12s subtick |
+| 2 | `conquestPhase2AOnLiveTick` | Second boundary |
+| 3 | `updateConquestCombatHudForAllPlayers` | Non-second subtick |
+| 4 | `conquestPhase4FlushCaptureSoundQueue` | Every subtick |
+| 5 | `conquestPhase4BFlushCaptureVoiceOverQueue` | Every subtick |
+| 6 | `updateAllPlayersClock` | Second boundary or critical flash |
+| 7 | `ensureActiveWorldInteractablesReady` | Second boundary |
+| 8 | `checkTakeoffLimitForAllPlayers` | Second boundary |
+| 9 | Victory dialog update | Second boundary |
+
+#### Files involved
+
+- `hud/perf-diag.ts` — Core module: constants, tick counter, section profiler, UI cache aggregation, HUD panel build/update/delete, toggle
+- `hud/ui-cache-perf.ts` — Counter infrastructure only (increment/reset); panel display lives in perf-diag
+- `index/game-mode.ts` — 9 sections wrapped with `perfDiagBeginSection()`/`perfDiagEndSection()` guarded by `perfDiagEnabled`
+- `admin-panel/build.ts` — Toggle button widget
+- `admin-panel/events.ts` — Toggle button handler
+- `state/runtime-types.ts` — `State.admin.perfDiag*` fields
+- `state/runtime-state.ts` — Initial values for perf diag state
 
 ### Architectural Patterns
 
@@ -3998,19 +4073,26 @@ All functions exported from `src/index.ts`. Each delegates to an `*Impl` functio
 - **Warm Token Invalidation**: `hudWarmToken` per player prevents stale async passes from writing to current state
 - **ForAllPlayers Pattern**: ~30 functions iterate `mod.AllPlayers()` with validity checks to broadcast state updates
 
-### Largest Files (by source lines)
+### Largest Files (by bytes — bundle size impact)
 
-| File | Lines | Concern |
-|------|-------|---------|
-| `index/capture-tickets.ts` | 2,158 | Capture state, bleed, view models, combat HUD |
-| `vehicles/deploy-timer-ui.ts` | 1,944 | Vehicle spawn timer HUD |
-| `interaction/ammo-resupply-menu.ts` | 1,859 | Gadget/ammo menu |
-| `Changelog.ts` | 763 | Version history |
-| `config/map-runtime.ts` | 754 | Map config application |
-| `interaction/actions.ts` | 698 | Loading gate orchestration |
-| `admin-panel/build.ts` | 647 | Admin panel widgets |
-| `hud/status.ts` | 553 | Status dock, safe setters |
-| `vehicles/deploy-fulfillment.ts` | 515 | Direct vehicle spawn |
-| `boundary/prompt-ui.ts` | 477 | Boundary violation UI |
+| File | Bytes | Lines | Concern |
+|------|-------|-------|---------|
+| `Changelog.ts` | 123.9K | 792 | Version history (largest single file in bundle) |
+| `index/capture-tickets.ts` | 87.5K | 2,159 | Capture state, bleed, view models, combat HUD |
+| `vehicles/deploy-timer-ui.ts` | 85.3K | 1,961 | Vehicle spawn timer HUD |
+| `interaction/ammo-resupply-menu.ts` | 69.5K | 1,880 | Gadget/ammo menu |
+| `ui/conquest/hud-core/build.ts` | 44.8K | 1,115 | Combat HUD widget construction |
+| `config/map-runtime.ts` | 32.1K | 754 | Map config application |
+| `interaction/actions.ts` | 31.9K | 719 | Loading gate orchestration |
+| `ui/conquest/hud-core/render.ts` | 31.7K | 667 | Combat HUD visual update |
+| `admin-panel/build.ts` | 27.2K | 647 | Admin panel widgets |
+| `ui/dialog/victory-build.ts` | 25.1K | 527 | Victory dialog widget construction |
+| `vehicles/deploy-fulfillment.ts` | 22.7K | 524 | Direct vehicle spawn |
+| `foundation/ui-layout.ts` | 21.9K | 349 | HUD dimensions, colors, timing constants |
+| `hud/status.ts` | 21.3K | 553 | Status dock, safe setters |
+| `ui/conquest/hud-core/constants.ts` | 21.1K | 402 | HUD layout, colors, sizing |
+| `config/maps/operation-firestorm.ts` | 20.4K | 371 | Map-specific spawn/capture/ceiling config |
+
+Top 15 files total **~646K** of ~1,033K bundle (62.5%). Changelog alone is 12%.
 
 

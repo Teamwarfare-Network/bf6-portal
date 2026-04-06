@@ -330,8 +330,7 @@ function renderAdminUiFamilyForReveal(eventPlayer: mod.Player, pid: number): voi
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     const refs = ensureTopHudShellForPlayer(eventPlayer);
     safeSetUIWidgetVisible(refs?.adminPanelActionCountText, true);
-    syncUiCachePerfPanelForPid(pid);
-    setUiCachePerfPanelVisibleForPid(pid, true);
+    ensurePerfDiagWidgetsForPlayer(eventPlayer);
     try {
         if (State.players.readyDialogData[pid]?.posDebugVisible) {
             setPositionDebugVisibleForPlayer(eventPlayer, true);
@@ -401,7 +400,6 @@ function hideTopHudFamilyForWarmTransition(pid: number): void {
     safeSetUIWidgetVisible(refs?.topCenterAuxRoot, false);
     safeSetUIWidgetVisible(refs?.helpTextContainer, false);
     safeSetUIWidgetVisible(refs?.adminPanelActionCountText, false);
-    setUiCachePerfPanelVisibleForPid(pid, false);
     safeSetUIWidgetVisible(refs?.victoryRoot, false);
 
     setClockWidgetCacheVisible(State.hudCache.clockWidgetCache[pid], false);

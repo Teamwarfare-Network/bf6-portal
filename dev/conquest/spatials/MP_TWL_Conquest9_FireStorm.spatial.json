@@ -1399,7 +1399,7 @@
             "name": "CapC PolygonVolume",
             "type": "PolygonVolume",
             "id": "CapturePoint C/CapC PolygonVolume",
-            "height": 20,
+            "height": 15,
             "points": [
                 {
                     "x": 47.82838,
@@ -2062,7 +2062,7 @@
             "name": "CapB PolygonVolume",
             "type": "PolygonVolume",
             "id": "CapturePoint B/CapB PolygonVolume",
-            "height": 25,
+            "height": 18,
             "points": [
                 {
                     "x": -49.7335,
@@ -2743,7 +2743,7 @@
             "name": "CapA PolygonVolume",
             "type": "PolygonVolume",
             "id": "CapturePoint A/CapA PolygonVolume",
-            "height": 35,
+            "height": 17,
             "points": [
                 {
                     "x": -309.78276,
@@ -6763,7 +6763,7 @@
             "position": {
                 "x": -333.843,
                 "y": 134.024,
-                "z": -18.9242
+                "z": -19.3858
             },
             "id": "StationaryEmplacementSpawner2"
         },
@@ -6776,24 +6776,24 @@
             "P_AbandonVehiclesOutOfCombatArea": false,
             "type": "StationaryEmplacementSpawner",
             "right": {
-                "x": 0.98757,
-                "y": -0.156757,
-                "z": 0.0115444
+                "x": -0.0547585,
+                "y": 0,
+                "z": -0.9985
             },
             "up": {
-                "x": 0.157103,
-                "y": 0.986738,
-                "z": -0.040824
+                "x": 0,
+                "y": 1,
+                "z": 0
             },
             "front": {
-                "x": -0.00499182,
-                "y": 0.0421302,
-                "z": 0.9991
+                "x": 0.9985,
+                "y": 0,
+                "z": -0.0547585
             },
             "position": {
-                "x": 135.47,
-                "y": 119.525,
-                "z": -158.223
+                "x": 130.828,
+                "y": 115.966,
+                "z": -175.107
             },
             "id": "StationaryEmplacementSpawner3"
         },
@@ -6805,24 +6805,24 @@
             "P_AbandonVehiclesOutOfCombatArea": false,
             "type": "StationaryEmplacementSpawner",
             "right": {
-                "x": 0.0220484,
-                "y": 0.00257956,
-                "z": 0.999754
+                "x": 0.999733,
+                "y": -0.0231061,
+                "z": 0
             },
             "up": {
-                "x": -0.116203,
-                "y": 0.993226,
-                "z": 2.17001e-10
+                "x": 0.0231011,
+                "y": 0.999515,
+                "z": -0.0209075
             },
             "front": {
-                "x": -0.992981,
-                "y": -0.116174,
-                "z": 0.0221988
+                "x": 0.000483091,
+                "y": 0.0209019,
+                "z": 0.999782
             },
             "position": {
-                "x": 172.751,
-                "y": 121.264,
-                "z": -126.864
+                "x": 158.245,
+                "y": 120.313,
+                "z": -125.201
             },
             "id": "StationaryEmplacementSpawner5"
         },

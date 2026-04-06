@@ -103,23 +103,39 @@ async function onGameModeStartedImpl(): Promise<void> {
             const nowElapsed = mod.GetMatchTimeElapsed();
             const nowSecondBoundary = Math.floor(nowElapsed);
             let clockUpdatedThisLoop = false;
+            const _pd = State.admin.perfDiagEnabled;
+            let _t = 0;
+
+            if (_pd) perfDiagOngoingGlobalTick();
 
             if (isMatchLive() && !State.match.victoryDialogActive) {
+                if (_pd) _t = perfDiagBeginSection();
                 conquestPhase2ARefreshLiveCaptureStateSubtick();
+                if (_pd) perfDiagEndSection(1, _t);
                 if (nowSecondBoundary !== lastLiveCoreTickSecond) {
                     lastLiveCoreTickSecond = nowSecondBoundary;
+                    if (_pd) _t = perfDiagBeginSection();
                     conquestPhase2AOnLiveTick();
+                    if (_pd) perfDiagEndSection(2, _t);
                 } else {
+                    if (_pd) _t = perfDiagBeginSection();
                     updateConquestCombatHudForAllPlayers();
+                    if (_pd) perfDiagEndSection(3, _t);
                 }
+                if (_pd) _t = perfDiagBeginSection();
                 conquestPhase4FlushCaptureSoundQueue();
+                if (_pd) perfDiagEndSection(4, _t);
+                if (_pd) _t = perfDiagBeginSection();
                 conquestPhase4BFlushCaptureVoiceOverQueue();
+                if (_pd) perfDiagEndSection(5, _t);
             } else {
                 lastLiveCoreTickSecond = -1;
             }
 
             if (shouldClockUseCriticalFlashSubtick()) {
+                if (_pd) _t = perfDiagBeginSection();
                 updateAllPlayersClock();
+                if (_pd) perfDiagEndSection(6, _t);
                 clockUpdatedThisLoop = true;
             }
 
@@ -128,16 +144,25 @@ async function onGameModeStartedImpl(): Promise<void> {
 
                 // Push the initial clock display so every HUD shows the same starting time.
                 if (!clockUpdatedThisLoop) {
+                    if (_pd) _t = perfDiagBeginSection();
                     updateAllPlayersClock();
+                    if (_pd) perfDiagEndSection(6, _t);
                 }
-                updateVehicleDeployTimerHudForAllPlayers();
+                if (_pd) _t = perfDiagBeginSection();
                 ensureActiveWorldInteractablesReady();
+                if (_pd) perfDiagEndSection(7, _t);
+                if (_pd) _t = perfDiagBeginSection();
                 checkTakeoffLimitForAllPlayers();
-                tickBoundaryEnforcement();
+                if (_pd) perfDiagEndSection(8, _t);
+                if (State.match.isEnded) {
+                    clearActiveBoundaryViolationsForAllPlayers();
+                }
                 if (State.match.victoryDialogActive) {
+                    if (_pd) _t = perfDiagBeginSection();
                     const elapsedSinceVictory = nowSecondBoundary - Math.floor(State.match.victoryStartElapsedSecondsSnapshot);
                     const remaining = MATCH_END_DELAY_SECONDS - elapsedSinceVictory;
                     updateVictoryDialogForAllPlayers(Math.max(0, Math.floor(remaining)));
+                    if (_pd) perfDiagEndSection(9, _t);
                     if (remaining <= 0) {
                         endGameModeForTeamNum(State.match.winnerTeam ?? 0);
                         return;

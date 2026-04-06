@@ -202,12 +202,15 @@ function refreshPlayerBoundaryState(player: mod.Player): void {
         if (nextKind === "prelive_main_base") {
             notePreliveMainBaseViolation(player, pid);
         }
+        const token = ++State.round.boundary.nextEnforcementToken;
         State.round.boundary.activeViolationByPid[pid] = {
             kind: nextKind,
             startedAtSeconds: now,
             expiresAtSeconds: now + getBoundaryDurationSeconds(nextKind),
             alarmPlayed: false,
+            enforcementToken: token,
         };
+        void runBoundaryViolationEnforcementLoop(pid, token);
     }
 
     const violation = State.round.boundary.activeViolationByPid[pid];
@@ -232,6 +235,25 @@ function refreshPlayerBoundaryState(player: mod.Player): void {
     }
 
     showBoundaryPromptForPlayer(player, violation.kind, remainingSeconds);
+}
+
+// Self-terminating async loop that enforces a boundary violation countdown for one player.
+// Ticks once per second, re-evaluating via refreshPlayerBoundaryState (which handles warning,
+// alarm, and kill). Terminates when the violation is cleared, replaced, or the player is invalid.
+async function runBoundaryViolationEnforcementLoop(pid: number, token: number): Promise<void> {
+    while (true) {
+        await mod.Wait(1.0);
+        const violation = State.round.boundary.activeViolationByPid[pid];
+        if (!violation || violation.enforcementToken !== token) return;
+        const player = safeFindPlayer(pid);
+        if (!player || !mod.IsPlayerValid(player)) {
+            clearBoundaryViolationForPid(pid);
+            return;
+        }
+        refreshPlayerBoundaryState(player);
+        const post = State.round.boundary.activeViolationByPid[pid];
+        if (!post || post.enforcementToken !== token) return;
+    }
 }
 
 function refreshBoundaryStateForAllPlayers(): void {

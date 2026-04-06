@@ -111,9 +111,9 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         row0Y + (buttonSizeY + rowSpacingY) * 8,
         (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX),
         36,
-        UI_TEST_BUTTON_UI_CACHE_PERF_TOGGLE_ID,
-        UI_TEST_UI_CACHE_PERF_TOGGLE_TEXT_ID,
-        getUiCachePerfAdminToggleLabelKey()
+        UI_TEST_BUTTON_PERF_DIAG_TOGGLE_ID,
+        UI_TEST_PERF_DIAG_TOGGLE_TEXT_ID,
+        mod.stringkeys.twl.adminPanel.tester.buttons.perfDiag
     );
 
     syncAdminMatchLengthLabelForAllPlayers();

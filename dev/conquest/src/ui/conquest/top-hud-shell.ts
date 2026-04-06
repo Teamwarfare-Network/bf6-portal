@@ -65,7 +65,6 @@ function bindTopHudShellRefsByName(pid: number, refs: TopHudShellRefs): void {
     refs.topCenterAuxRoot = safeFind(wn("ConquestTopCenterAuxRoot", pid));
     refs.helpTextContainer = safeFind(wn("Container_HelpText", pid));
     refs.adminPanelActionCountText = safeFind(wn("AdminPanelActionCount", pid));
-    bindUiCachePerfPanelRefsByName(pid, refs);
     bindVictoryDialogRefsByName(pid, refs);
 }
 
@@ -96,7 +95,6 @@ function hasCriticalTopHudShellRefs(refs: TopHudShellRefs | undefined): boolean 
 // Removes shell-only widgets before a deterministic shell rebuild without touching combat HUD ownership.
 function purgeTopHudShellArtifactsForPid(pid: number): void {
     deleteAllTopHudShellWidgetsByName(wn("AdminPanelActionCount", pid));
-    deleteUiCachePerfWidgetsForPid(pid);
     deleteAllTopHudShellWidgetsByName(wn("VictoryDialogRoot", pid));
     deleteHudTeamSwapWidgetsForPid(pid);
 }
@@ -198,7 +196,6 @@ function ensureTopHudShellForPlayer(player: mod.Player): TopHudShellRefs | undef
         bindHudTeamSwapRefsByName(pid, cached);
         if (hasTopLeftHudShellRefs(cached)) {
             if (!cached.adminPanelActionCountText) buildConquestAdminActionCounterWidget(player, pid, cached);
-            if (!cached.uiCachePerfRoot) buildConquestUiCachePerfPanelWidgets(player, pid, cached);
             if (!cached.teamSwapBorder) buildHudTeamSwapButton(player, pid, cached);
             bindTopHudShellRefsByName(pid, cached);
             bindHudTeamSwapRefsByName(pid, cached);
@@ -219,7 +216,6 @@ function ensureTopHudShellForPlayer(player: mod.Player): TopHudShellRefs | undef
     buildConquestStaticStatusLaneWidgets(player, pid, refs);
     buildConquestTopCenterAuxWidgets(player, pid, refs, CONQUEST_TOP_HUD_SHELL_LAYOUT);
     buildConquestAdminActionCounterWidget(player, pid, refs);
-    buildConquestUiCachePerfPanelWidgets(player, pid, refs);
     buildVictoryDialogWidgets(player, pid, refs);
     buildHudTeamSwapButton(player, pid, refs);
     bindTopHudShellRefsByName(pid, refs);
@@ -229,7 +225,6 @@ function ensureTopHudShellForPlayer(player: mod.Player): TopHudShellRefs | undef
     State.hudCache.topHudShellByPid[pid] = refs;
 
     setAdminPanelActionCountText(refs.adminPanelActionCountText, State.admin.actionCount);
-    syncUiCachePerfPanelForPid(pid);
     setMatchStateTextForPid(pid);
     updatePlayersReadyHudTextForAllPlayers();
     setHudHelpDepthForPid(pid);

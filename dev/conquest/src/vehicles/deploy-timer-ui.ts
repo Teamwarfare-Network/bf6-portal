@@ -1877,6 +1877,20 @@ function updateVehicleDeployTimerHudForAllPlayers(): void {
     }
 }
 
+// Targeted update for players who currently have the deploy timer HUD visible.
+// Used by self-terminating cooldown loops to avoid iterating all players via mod.AllPlayers().
+function updateVehicleDeployTimerHudForViewers(): void {
+    const caches = State.hudCache.vehicleDeployTimerCache;
+    for (const pidKey in caches) {
+        const cache = caches[pidKey];
+        if (!cache || cache.lastVisibleState !== true) continue;
+        const pid = Number(pidKey);
+        const player = safeFindPlayer(pid);
+        if (!player || !mod.IsPlayerValid(player)) continue;
+        refreshVehicleDeployTimersForPlayerPreservingVisibility(player);
+    }
+}
+
 // Invalidates cached render signatures so the next refresh repaints visible passive viewers without rebuilding the tree.
 function invalidateVehicleDeployTimerHudRenderSignaturesForAllPlayers(): void {
     const caches = State.hudCache.vehicleDeployTimerCache;

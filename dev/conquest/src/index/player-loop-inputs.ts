@@ -50,7 +50,6 @@ function ongoingPlayerImpl(eventPlayer: mod.Player): void {
     if (enforceUiLoadingGateWhileDeployed(eventPlayer)) return;
     if (!isPlayerDeployed(eventPlayer)) return;
     checkReadyDialogInteractPointRemoval(eventPlayer);
-    updateArmMenu(eventPlayer);
     if (InteractMultiClickDetector.checkMultiClick(eventPlayer)) spawnReadyDialogInteractPoint(eventPlayer);
 }
 

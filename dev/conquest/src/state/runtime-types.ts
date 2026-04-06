@@ -334,6 +334,7 @@ interface GameState {
             alarmHandle?: any;
             alarmReady: boolean;
             validationWarnings: string[];
+            nextEnforcementToken: number;
         };
         smk: Record<number, {
             c: number;
@@ -362,7 +363,15 @@ interface GameState {
     admin: {
         actionCount: number;
         debugLoopActive: boolean;
-        uiCachePerfVisible: boolean;
+        perfDiagEnabled: boolean;
+        perfDiagTickCount: number;
+        perfDiagWindowStart: number;
+        perfDiagLastTickRate: number;
+        perfDiagLastEmitAt: number;
+        perfDiagSpikeTotal: number;
+        perfDiagMinTickRate: number;
+        perfDiagSectionMax: number[];
+        perfDiagSectionHits: number[];
     };
     players: {
         // Property name is retained because existing UI/interaction modules still use it.
@@ -375,6 +384,7 @@ interface GameState {
         worldInteractableIconByPidByObjId: Record<number, Record<number, any>>;
         armO: Record<number, boolean>;
         armI: Record<number, number>;
+        armT: Record<number, number>;
         armG: Record<number, {
             n: number;
             s: number;
