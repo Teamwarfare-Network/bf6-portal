@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.094)",
+        "title": "teamwarfare . net | TWL Conquest (v1.110)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -271,14 +271,14 @@
       "right": ">",
       "loading": "SCRIPT LOADING",
       "customScriptsLoading": "Custom Experience Engaging...",
-      "assault": "ASSAULT\nONLY",
+      "assault": "ASSAULT",
       "artilleryStrike": "ARTILLERY\nCALL-IN",
       "airStrike": "AIR STRIKE",
       "ammo": "AMMO",
       "gadgets": "GADGETS",
-      "engineer": "ENGINEER\nONLY",
-      "medic": "MEDIC\nONLY",
-      "recon": "RECON\nONLY",
+      "engineer": "ENGINEER",
+      "medic": "MEDIC",
+      "recon": "RECON",
       "rocketAmmo": "LAUNCHER\nAMMO",
       "drone": "DRONE",
       "c4": "C4 EXPLOSIVES",
@@ -322,7 +322,21 @@
       "groundDeploy": "GROUND DEPLOY",
       "ready": "READY",
       "idle": "IDLE",
-      "active": "ACTIVE"
+      "active": "ACTIVE",
+      "helpEmpty": " ",
+      "helpArtilleryStrike": "Call in an artillery barrage on a targeted location",
+      "helpSpawnBeacon": "Deploy a spawn beacon for your team to use",
+      "helpAssaultLadder": "Place a climbable assault ladder on surfaces",
+      "helpSmokeScreen": "Call in a smoke artillery screen for concealment",
+      "helpGrenadeIntercept": "Deploy a system that intercepts incoming grenades",
+      "helpMissileIntercept": "Deploy a system that intercepts incoming missiles",
+      "helpRpg": "Equip an unguided RPG rocket launcher",
+      "helpAt4": "Equip an AT4 aim-guided rocket launcher",
+      "helpStinger": "Equip a Stinger anti-air launcher",
+      "helpLauncherAmmo": "Add a rocket to your current launcher reserves",
+      "helpDrone": "Deploy a recon drone for aerial surveillance",
+      "helpC4": "Equip C4 demolition charges",
+      "helpAntiVehicleGrenade": "Equip anti-vehicle grenades"
     },
     "victory": {
       "restartInFormat": "Map will restart/rotate in {0}s",

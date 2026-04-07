@@ -253,43 +253,80 @@ function prebuildReadyDialogUiFamilyWhileHidden(eventPlayer: mod.Player, pid: nu
     } catch {}
 }
 
+// Serialization lock: only one player prebuilds heavy UI at a time to stay under
+// the engine's 1,000ms per-frame evaluation budget (CQ_Bug_40).
+let _prebuildBusy = false;
+let _prebuildStaggerIndex = 0;
+
 // Consolidated hidden prebuild for all six UI families. Called at gate start and on each poll retry.
 // Each family is best-effort; failures are swallowed so one cold family does not block others.
+// Serialized via _prebuildBusy lock so concurrent player joins don't stack heavy sync work in one frame.
 async function prebuildAllUiFamiliesHidden(eventPlayer: mod.Player, pid: number): Promise<void> {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    // Critical families (synchronous)
-    prebuildTopLeftUiFamilyWhileHidden(eventPlayer, pid);
-    prebuildVehicleSpawnerUiFamilyWhileHidden(eventPlayer, pid);
-    prebuildCombatHudFamilyWhileHidden(eventPlayer, pid);
-    // Production menus (may involve async priming)
-    prebuildReadyDialogUiFamilyWhileHidden(eventPlayer, pid);
+    // Acquire serialization lock — yield until free.
+    while (_prebuildBusy) {
+        await mod.Wait(0.05);
+        if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+        if (!isUiLoadGateActiveForPid(pid)) return;
+    }
+    _prebuildBusy = true;
     try {
-        if (!armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])) {
-            prebuildArmMenu(eventPlayer);
-        }
-    } catch {}
-    // Ready dialog hot-prime: show/hide pass so first open is pure reveal not a cold build.
-    // The prime makes the dialog briefly visible behind the loading overlay. Reassert the overlay
-    // and yield one frame before starting so the overlay is fully rendered and occludes the prime.
-    if (isReadyDialogUiCacheUsableForPid(pid)
-        && State.players.readyDialogData[pid]?.readyDialogWarmPrimed !== true) {
-        reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
+        // Critical families — yield between each to spread work across frames.
+        prebuildTopLeftUiFamilyWhileHidden(eventPlayer, pid);
         await mod.Wait(0);
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
         if (!isUiLoadGateActiveForPid(pid)) return;
-        await primeReadyDialogRevealWhileBlocked(eventPlayer);
+
+        prebuildVehicleSpawnerUiFamilyWhileHidden(eventPlayer, pid);
+        await mod.Wait(0);
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-        reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
+        if (!isUiLoadGateActiveForPid(pid)) return;
+
+        prebuildCombatHudFamilyWhileHidden(eventPlayer, pid);
+        await mod.Wait(0);
+        if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+        if (!isUiLoadGateActiveForPid(pid)) return;
+
+        // Production menus (may involve async priming)
+        prebuildReadyDialogUiFamilyWhileHidden(eventPlayer, pid);
+        await mod.Wait(0);
+        if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+        if (!isUiLoadGateActiveForPid(pid)) return;
+
+        try {
+            if (!armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])) {
+                prebuildArmMenu(eventPlayer);
+            }
+        } catch {}
+        await mod.Wait(0);
+        if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+        if (!isUiLoadGateActiveForPid(pid)) return;
+
+        // Ready dialog hot-prime: show/hide pass so first open is pure reveal not a cold build.
+        // The prime makes the dialog briefly visible behind the loading overlay. Reassert the overlay
+        // and yield one frame before starting so the overlay is fully rendered and occludes the prime.
+        if (isReadyDialogUiCacheUsableForPid(pid)
+            && State.players.readyDialogData[pid]?.readyDialogWarmPrimed !== true) {
+            reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
+            await mod.Wait(0);
+            if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+            if (!isUiLoadGateActiveForPid(pid)) return;
+            await primeReadyDialogRevealWhileBlocked(eventPlayer);
+            if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+            reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
+        }
+        if (isReadyDialogUiCacheUsableForPid(pid)
+            && State.players.readyDialogData[pid]?.readyDialogWarmPrimed === true) {
+            setReadyDialogHotReadyForPid(pid, true);
+        }
+        if (armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])) {
+            setGadgetMenuHotReadyForPid(pid, true);
+        }
+        // Admin panel (hidden prebuild for all players)
+        prebuildAdminPanelWhileHidden(eventPlayer, pid);
+    } finally {
+        _prebuildBusy = false;
     }
-    if (isReadyDialogUiCacheUsableForPid(pid)
-        && State.players.readyDialogData[pid]?.readyDialogWarmPrimed === true) {
-        setReadyDialogHotReadyForPid(pid, true);
-    }
-    if (armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])) {
-        setGadgetMenuHotReadyForPid(pid, true);
-    }
-    // Admin panel (hidden prebuild for all players)
-    prebuildAdminPanelWhileHidden(eventPlayer, pid);
 }
 
 function renderTopLeftUiFamilyImmediate(eventPlayer: mod.Player, pid: number): void {
@@ -546,8 +583,9 @@ async function runLoadingGateUntilReady(eventPlayer: mod.Player, pid: number): P
     setReadyDialogHotReadyForPid(pid, false);
     setGadgetMenuHotReadyForPid(pid, false);
 
-    // Initial prebuild attempt (non-awaited — quick synchronous pass).
-    await mod.Wait(HUD_WARM_PREBUILD_DELAY_SECONDS);
+    // Stagger initial prebuild per player so concurrent joins don't all resume in the same frame (CQ_Bug_40).
+    const staggerDelay = HUD_WARM_PREBUILD_DELAY_SECONDS + (_prebuildStaggerIndex++ * 0.25);
+    await mod.Wait(staggerDelay);
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     if (!isHudWarmTokenCurrent(pid, token)) return;
 

@@ -3,6 +3,22 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.110: Guard all unprotected UnspawnObject calls with try/catch to suppress CQ_Bug_39 engine errors
+// v1.109: Strip pre-seat teleport from vehicle deploy fulfillment to isolate prebuild serialization fix for MP testing
+// v1.108: fix: teleport player 15m behind + 10m above vehicle using slot yaw to avoid physics collision
+// v1.107: revert: restore map gate on deploy flow tracking; remove settle frame between teleport and seat
+// v1.106: fix: teleport player above vehicle before ForcePlayerToSeat to reduce seating failures
+// v1.105: fix: remove Operation_Firestorm map gate on vehicle deploy flow tracking — enable on all maps
+// v1.104: fix CQ_Bug_40: serialize UI prebuild with global lock, add yield points between families, stagger initial delay per player
+// v1.103: move medic/recon choose-only-one groups to top of column; shift smoke/drone to bottom; help text up 15
+// v1.102: fix: extract local for tsc narrowing on engineer row FocusIn enable
+// v1.101: gadget locker: switch help text from ButtonDown to FocusIn (shows on navigate/hover before press)
+// v1.100: gadget locker: swap medic and engineer columns (Assault-Engineer-Medic-Recon)
+// v1.099: gadget locker: switch help text to ButtonDown trigger (works on console + PC)
+// v1.098: gadget locker: fix button labels gray when cooling (not headers), move help text above close, use FocusIn for console compat
+// v1.097: gadget locker: add hover help text, selection SFX, 13 help string keys
+// v1.096: gadget locker: gray class headers when all buttons cooling down
+// v1.095: gadget locker: flatten armS to per-player, remove IGLA, remove ONLY from headers, equalize column gutters
 // v1.094: docs: update codebase reference map with byte sizes, perf diag usage guide, current stats
 // v1.093: perf-diag: fix first-window min bug, restore 216px width, shorten player count
 // v1.092: perf-diag: avg/max per-player cache stats, wider panel, improved string labels

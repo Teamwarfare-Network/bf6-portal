@@ -4,14 +4,14 @@ const AMMO_RESUPPLY_MENU_BORDER_THICKNESS = 2;
 const AMMO_RESUPPLY_MENU_BORDER_PADDING = 1;
 const AMMO_RESUPPLY_MENU_BORDER_OVERLAP = 2;
 const AMMO_RESUPPLY_ROOT_Y = 50;
-const AMMO_RESUPPLY_CLASS_HEADER_Y = -380;
+const AMMO_RESUPPLY_CLASS_HEADER_Y = -366;
 const AMMO_RESUPPLY_CLASS_HEADER_WIDTH = 170;
-const HDR_X = [-250, -84, 96, 276];
-const HDR_KEYS = [STR_UI_ASSAULT, STR_UI_MEDIC, STR_UI_ENGINEER, STR_UI_RECON];
-const AX = -250;
-const MX = -84;
-const EX = 96;
-const RX = 276;
+const HDR_X = [-264, -88, 88, 264];
+const HDR_KEYS = [STR_UI_ASSAULT, STR_UI_ENGINEER, STR_UI_MEDIC, STR_UI_RECON];
+const AX = -264;
+const EX = -88;
+const MX = 88;
+const RX = 264;
 const AMMO_RESUPPLY_TILE_SIZE = 120;
 const AMMO_RESUPPLY_TILE_LABEL_WIDTH = 220;
 const AMMO_RESUPPLY_TILE_TIMER_WIDTH = 220;
@@ -49,7 +49,7 @@ const LAUNCH_AMMO_ICON_Y = IY;
 const AMMO_RESUPPLY_CLOSE_BUTTON_Y = 396;
 const AMMO_RESUPPLY_CLOSE_BUTTON_WIDTH = 260;
 const AMMO_RESUPPLY_CLOSE_BUTTON_HEIGHT = 50;
-const ARM_SCHEMA = 4;
+const ARM_SCHEMA = 5;
 const L_CD = 180;
 const ASSAULT_ART_CD = 360;
 const ASSAULT_BEA_CD = 600;
@@ -71,7 +71,6 @@ const ENG_ROWS = [
     [STR_UI_RPG, mod.Gadgets.Launcher_Unguided_Rocket, mod.Gadgets.Launcher_Unguided_Rocket],
     [STR_UI_AT4, mod.Gadgets.Launcher_Aim_Guided, mod.Gadgets.Launcher_Aim_Guided],
     [STR_UI_STINGER, mod.Gadgets.Launcher_Air_Defense, mod.Gadgets.Launcher_Air_Defense],
-    [STR_UI_IGLA_MARKED, mod.Gadgets.Launcher_Air_Defense, mod.Gadgets.Launcher_Air_Defense],
 ] as const;
 const RCT = [
     ["ReconDrone", STR_UI_DRONE, mod.Gadgets.Deployable_Recon_Drone, mod.InventorySlots.GadgetTwo, RECON_DRONE_CD, false, 30, IY],
@@ -89,6 +88,41 @@ const MAN_L = [
 ] as const;
 const SM_G = mod.Gadgets.CallIn_Smoke_Screen;
 const DIS_A = 0.45;
+const HELP_TEXT_Y = 345;
+const HELP_TEXT_WIDTH = 800;
+// Maps tile name prefix to its help text string key for the hover-driven help line.
+const HELP_KEY_MAP: Record<string, number> = {
+    Artillery: STR_UI_HELP_ARTILLERY_STRIKE,
+    SpawnBeacon: STR_UI_HELP_SPAWN_BEACON,
+    AssaultLadder: STR_UI_HELP_ASSAULT_LADDER,
+    MedicSmoke: STR_UI_HELP_SMOKE_SCREEN,
+    MedicGrenadeIntercept: STR_UI_HELP_GRENADE_INTERCEPT,
+    MedicMissileIntercept: STR_UI_HELP_MISSILE_INTERCEPT,
+    AmmoCharge: STR_UI_HELP_LAUNCHER_AMMO,
+    ReconDrone: STR_UI_HELP_DRONE,
+    ReconC4: STR_UI_HELP_C4,
+    ReconAV: STR_UI_HELP_ANTI_VEHICLE_GRENADE,
+};
+// Maps engineer action row index to its help text string key.
+const ENG_HELP_KEYS = [STR_UI_HELP_RPG, STR_UI_HELP_AT4, STR_UI_HELP_STINGER];
+const ARM_SFX_PREFAB = mod.RuntimeSpawn_Common.SFX_UI_MenuNavigation_Default_PrimarySelect_OneShot2D;
+const ARM_SFX_AMPLITUDE = 50;
+// Lazy-spawns the gadget selection sound handle on first use.
+function primeArmSfx(): void {
+    if (State.round.armSfx.ready) return;
+    const zero = mod.CreateVector(0, 0, 0);
+    try {
+        State.round.armSfx.handle = mod.SpawnObject(ARM_SFX_PREFAB, zero, zero);
+    } catch { State.round.armSfx.handle = undefined; }
+    State.round.armSfx.ready = State.round.armSfx.handle !== undefined && State.round.armSfx.handle !== null;
+}
+// Plays the gadget selection SFX for a specific player.
+function playArmSfx(player: mod.Player): void {
+    if (!player || !mod.IsPlayerValid(player)) return;
+    primeArmSfx();
+    if (!State.round.armSfx.ready) return;
+    try { mod.PlaySound(State.round.armSfx.handle, ARM_SFX_AMPLITUDE, player); } catch {}
+}
 function armScope(isTeamShared: boolean): mod.Message {
     return mod.Message(isTeamShared ? STR_UI_ONE_PER_TEAM : STR_UI_ONE_PER_PLAYER);
 }
@@ -179,7 +213,7 @@ function mkArmCache(pid: number): AmmoResupplyMenuCacheEntry {
         sv: ARM_SCHEMA,
         h: [],
         a: [{}, {}, {}],
-        rows: [{}, {}, {}, {}],
+        rows: [{}, {}, {}],
         m: {},
         x: [{}, {}],
         e: {},
@@ -204,7 +238,8 @@ function ensArmG(pid: number): {
     }
     return State.players.armG[pid];
 }
-function ensArm(pid: number, objId: number): {
+// Returns (or initializes) the per-player medic/recon cooldown state. Cooldowns are player-scoped, not per-crate.
+function ensArm(pid: number): {
     mN: number;
     mS: number;
     rdN: number;
@@ -212,10 +247,7 @@ function ensArm(pid: number, objId: number): {
     rgS: number;
 } {
     if (!State.players.armS[pid]) {
-        State.players.armS[pid] = {};
-    }
-    if (!State.players.armS[pid][objId]) {
-        State.players.armS[pid][objId] = {
+        State.players.armS[pid] = {
             mN: 0,
             mS: -1,
             rdN: 0,
@@ -223,7 +255,7 @@ function ensArm(pid: number, objId: number): {
             rgS: -1,
         };
     }
-    return State.players.armS[pid][objId];
+    return State.players.armS[pid];
 }
 function ensArmL(pid: number): {
     lN: number;
@@ -463,7 +495,6 @@ const TH = {
     [STR_UI_RPG]: [STR_UI_RPG],
     [STR_UI_AT4]: [STR_UI_AT4],
     [STR_UI_STINGER]: [STR_UI_STINGER],
-    [STR_UI_IGLA_MARKED]: [STR_UI_IGLA_MARKED],
 } as const;
 function getTileHeaderLineKeys(labelKey: number): number[] {
     return (TH[labelKey as keyof typeof TH] as unknown as number[]) ?? (EH as unknown as number[]);
@@ -542,6 +573,7 @@ function buildTile(
         1
     );
     cacheEntry.button = safeFind(buttonId);
+    if (cacheEntry.button) mod.EnableUIButtonEvent(cacheEntry.button, mod.UIButtonEvent.FocusIn, true);
     const parent = buildTileContentRoot(
         ammoResupplyMenuName(`${namePrefix}Content`, pid),
         posX,
@@ -642,6 +674,7 @@ function buildTile(
 }
 function armCacheOk(cache: AmmoResupplyMenuCacheEntry | undefined): boolean {
     if (!cache?.root) return false;
+    if (!cache.helpText) return false;
     if (!cache.closeButton || !cache.closeButtonText) return false;
     if (!cache.ag || !cache.ah || !cache.at || !cache.mg || !cache.mh || !cache.mt || !cache.eg || !cache.eh || !cache.et || !cache.rg || !cache.rh || !cache.rt) return false;
     if (!cache.a || cache.a.length !== AST.length) return false;
@@ -677,6 +710,7 @@ function showArmMenu(cache: AmmoResupplyMenuCacheEntry | undefined, visible: boo
 function armInitVisible(cache: AmmoResupplyMenuCacheEntry): void {
     const widgets: Array<mod.UIWidget | undefined> = [
         cache.borderTop, cache.borderBottom, cache.borderLeft, cache.borderRight, cache.title,
+        cache.helpText,
         cache.ag, cache.ah, cache.mg, cache.mh, cache.eg, cache.eh, cache.rg, cache.rh,
         cache.closeButtonBorder, cache.closeButton, cache.closeButtonText,
     ];
@@ -959,28 +993,44 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
     const assaultGroupHeight = armGH(AST.length);
     const assaultGroupCenterY = armGCY(assaultStartY, AST.length);
     const assaultHintY = armGHY(assaultGroupCenterY, assaultGroupHeight);
-    const medicY = SY;
-    const medicInterceptStartY = SY + DY + 28;
+    const medicInterceptStartY = SY;
     const medicGroupHeight = armGH(MDT.length);
     const medicGroupCenterY = armGCY(medicInterceptStartY, MDT.length);
     const medicHintY = armGHY(medicGroupCenterY, medicGroupHeight);
+    const medicY = medicHintY + 34 + (AMMO_RESUPPLY_TILE_SIZE / 2);
     const engineerStartY = SY;
     const engineerGroupHeight = armGH(ENG_ROWS.length);
     const engineerGroupCenterY = armGCY(engineerStartY, ENG_ROWS.length);
     const engineerHintY = armGHY(engineerGroupCenterY, engineerGroupHeight);
     const ammoY = engineerHintY + 34 + (AMMO_RESUPPLY_TILE_SIZE / 2);
-    const reconDroneY = SY;
-    const reconSharedStartY = SY + DY + 28;
+    const reconSharedStartY = SY;
     const reconGroupHeight = armGH(2);
     const reconGroupCenterY = armGCY(reconSharedStartY, 2);
     const reconHintY = armGHY(reconGroupCenterY, reconGroupHeight);
+    const reconDroneY = reconHintY + 34 + (AMMO_RESUPPLY_TILE_SIZE / 2);
+    // Help text line at the top, showing a description of the hovered button.
+    cache.helpText = addReadyDialogText(
+        ammoResupplyMenuName("HelpText", pid),
+        0,
+        HELP_TEXT_Y,
+        HELP_TEXT_WIDTH,
+        28,
+        mod.UIAnchor.Center,
+        mod.UIAnchor.Center,
+        mod.Message(STR_UI_HELP_EMPTY),
+        eventPlayer,
+        root,
+        22,
+        false,
+        COLOR_WHITE
+    );
     for (let i = 0; i < HDR_KEYS.length; i++) {
         cache.h![i] = addReadyDialogText(
             ammoResupplyMenuName("ClassHeader", pid, i),
             HDR_X[i],
             AMMO_RESUPPLY_CLASS_HEADER_Y,
             AMMO_RESUPPLY_CLASS_HEADER_WIDTH,
-            56,
+            32,
             mod.UIAnchor.Center,
             mod.UIAnchor.Center,
             mod.Message(HDR_KEYS[i]),
@@ -1060,6 +1110,8 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
             1
         );
         cache.rows[i].button = safeFind(buttonId);
+        const rowBtn = cache.rows[i].button;
+        if (rowBtn) mod.EnableUIButtonEvent(rowBtn, mod.UIButtonEvent.FocusIn, true);
         const rowParent = buildTileContentRoot(
             ammoResupplyMenuName("ActionContent", pid, i),
             EX,
@@ -1390,7 +1442,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     const assaultGroup = ensArmG(pid);
-    const state = ensArm(pid, objId);
+    const state = ensArm(pid);
     const launch = ensArmL(pid);
     const now = mod.GetMatchTimeElapsed();
     const nowSecond = Math.max(0, Math.floor(now));
@@ -1436,7 +1488,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     const reconSharedRemaining = Math.max(0, state.rgN - now);
     if (cache.h) {
         for (let i = 0; i < cache.h.length; i++) {
-            const active = (i === 0 && isAssaultClass) || (i === 1 && isMedicClass) || (i === 2 && isEngineerClass) || (i === 3 && isReconClass);
+            const active = (i === 0 && isAssaultClass) || (i === 1 && isEngineerClass) || (i === 2 && isMedicClass) || (i === 3 && isReconClass);
             safeSetUITextColor(cache.h[i], active ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
         }
     }
@@ -1496,7 +1548,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         ].join("|");
         if (tile.sig !== sig) {
             const overlayMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, count);
-            setTileHeaderWidgets(tile, tileConfig[1], enabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
+            setTileHeaderWidgets(tile, tileConfig[1], enabled ? COLOR_READY_GREEN : isAssaultClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
             safeSetUITextLabel(
                 tile.cd,
                 showSelectedAssaultTimer
@@ -1534,7 +1586,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             smokeReady ? 1 : 0,
         ].join("|");
         if (cache.m.sig !== sig) {
-            setTileHeaderWidgets(cache.m, STR_UI_SMOKE_SCREEN, smokeEnabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
+            setTileHeaderWidgets(cache.m, STR_UI_SMOKE_SCREEN, smokeEnabled ? COLOR_READY_GREEN : isMedicClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
             safeSetUITextLabel(cache.m.cd, smokeMessage);
             safeSetUITextColor(cache.m.cd, isMedicClass ? (smokeReady ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW) : COLOR_GRAY);
             safeSetUITextLabel(cache.m.cs, smokeOverlayMessage);
@@ -1563,7 +1615,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             isMedicClass ? 1 : 0,
         ].join("|");
         if (tile.sig !== sig) {
-            setTileHeaderWidgets(tile, tileConfig[1], enabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
+            setTileHeaderWidgets(tile, tileConfig[1], enabled ? COLOR_READY_GREEN : isMedicClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
             safeSetUITextLabel(tile.cd, medicRemaining > 0 ? fmtClock(medicRemaining) : mod.Message(STR_UI_READY));
             safeSetUITextColor(tile.cd, isMedicClass ? (showSelectedMedicTimer ? COLOR_GRAY : (medicReady ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW)) : COLOR_GRAY);
             safeSetUIWidgetVisible(tile.cd, !isMedicClass || medicRemaining <= 0 || showSelectedMedicTimer);
@@ -1590,7 +1642,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             isEngineerClass ? 1 : 0,
         ].join("|");
         if (row.sig !== sig) {
-            setTileHeaderWidgets(row, ENG_ROWS[i][0], launcherEnabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
+            setTileHeaderWidgets(row, ENG_ROWS[i][0], launcherEnabled ? COLOR_READY_GREEN : isEngineerClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
             safeSetUITextLabel(row.cd, launcherRemaining > 0 ? launcherMessage : mod.Message(STR_UI_READY));
             safeSetUITextColor(row.cd, isEngineerClass ? (showSelectedLauncherTimer ? COLOR_GRAY : launcherColor) : COLOR_GRAY);
             safeSetUIWidgetVisible(row.cd, !isEngineerClass || launcherRemaining <= 0 || showSelectedLauncherTimer);
@@ -1620,7 +1672,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             hasLauncher ? 1 : 0,
         ].join("|");
         if (cache.e.sig !== sig) {
-            setTileHeaderWidgets(cache.e, STR_UI_LAUNCHER_AMMO, ammoEnabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
+            setTileHeaderWidgets(cache.e, STR_UI_LAUNCHER_AMMO, ammoEnabled ? COLOR_READY_GREEN : isEngineerClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
             safeSetUITextLabel(
                 cache.e.cd,
                 !isEngineerClass || !hasLauncher
@@ -1660,7 +1712,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             i,
         ].join("|");
         if (tile.sig !== sig) {
-            setTileHeaderWidgets(tile, tileConfig[1], enabled ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
+            setTileHeaderWidgets(tile, tileConfig[1], enabled ? COLOR_READY_GREEN : isReconClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
             safeSetUITextLabel(tile.cd, remaining > 0 ? fmtClock(remaining) : mod.Message(STR_UI_READY));
             safeSetUITextColor(tile.cd, isReconClass ? (showSelectedReconTimer ? COLOR_GRAY : (ready ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW)) : COLOR_GRAY);
             safeSetUIWidgetVisible(tile.cd, !isReconClass || i === 0 || reconSharedRemaining <= 0 || showSelectedReconTimer);
@@ -1774,6 +1826,21 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         if (widgetName === buttonName || widgetName === `${buttonName}_BORDER`) { actionIndex = i; break; }
     }
     if (!isCloseWidget && !isMedicWidget && !isChargeWidget && medicTileIndex < 0 && assaultTileIndex < 0 && reconTileIndex < 0 && actionIndex < 0) return false;
+    // FocusIn fires when a button is navigated-to (controller/keyboard) or hovered (mouse) — update help text before press.
+    if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.FocusIn)) {
+        const cache = State.hudCache.ammoResupplyMenuCache[pid];
+        if (cache?.helpText) {
+            let helpKey: number | undefined;
+            if (assaultTileIndex >= 0) helpKey = HELP_KEY_MAP[AST[assaultTileIndex][0]];
+            else if (isMedicWidget) helpKey = STR_UI_HELP_SMOKE_SCREEN;
+            else if (medicTileIndex >= 0) helpKey = HELP_KEY_MAP[MDT[medicTileIndex][0]];
+            else if (actionIndex >= 0) helpKey = ENG_HELP_KEYS[actionIndex];
+            else if (isChargeWidget) helpKey = STR_UI_HELP_LAUNCHER_AMMO;
+            else if (reconTileIndex >= 0) helpKey = HELP_KEY_MAP[RCT[reconTileIndex][0]];
+            if (helpKey) safeSetUITextLabel(cache.helpText, mod.Message(helpKey));
+        }
+        return true;
+    }
     if (!mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.ButtonDown)) {
         if (isCloseWidget && mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.ButtonUp)) closeArmMenu(eventPlayer);
         return true;
@@ -1785,7 +1852,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
     const objId = getArmObj(pid);
     const cache = State.hudCache.ammoResupplyMenuCache[pid];
     if (objId === undefined || !cache) return true;
-    const state = ensArm(pid, objId);
+    const state = ensArm(pid);
     const launch = ensArmL(pid);
     const assaultGroup = ensArmG(pid);
     const now = mod.GetMatchTimeElapsed();
@@ -1819,6 +1886,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
                 assaultState.ladC = 0;
                 assaultState.ladN = next;
             }
+            playArmSfx(eventPlayer);
             refreshOpenArm(teamId, true);
         }
         return true;
@@ -1828,6 +1896,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         if (giveMedicSmoke(eventPlayer)) {
             smokeState.c = 0;
             smokeState.n = now + SM_CD;
+            playArmSfx(eventPlayer);
             refreshOpenArm(teamId, true);
         }
         return true;
@@ -1838,6 +1907,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         if (giveAssaultItem(eventPlayer, tile[2], mod.InventorySlots.GadgetTwo, false)) {
             state.mN = now + MI_CD;
             state.mS = medicTileIndex;
+            playArmSfx(eventPlayer);
             refreshArmMenu(eventPlayer, objId, cache, true);
         }
         return true;
@@ -1847,6 +1917,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         if (giveLauncher(eventPlayer, ENG_ROWS[actionIndex][2])) {
             launch.lN = now + L_CD;
             launch.s = actionIndex;
+            playArmSfx(eventPlayer);
             refreshArmMenu(eventPlayer, objId, cache, true);
         }
         return true;
@@ -1862,6 +1933,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
                 state.rgN = now + tile[4];
                 state.rgS = reconTileIndex;
             }
+            playArmSfx(eventPlayer);
             refreshArmMenu(eventPlayer, objId, cache, true);
         }
         return true;
@@ -1871,6 +1943,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         if (giveRocketCharge(eventPlayer)) {
             launch.aC = Math.max(0, launch.aC - 1);
             if (launch.aC < CH_MAX && launch.aN <= now) launch.aN = now + CH_CD;
+            playArmSfx(eventPlayer);
             refreshArmMenu(eventPlayer, objId, cache, true);
         }
         return true;

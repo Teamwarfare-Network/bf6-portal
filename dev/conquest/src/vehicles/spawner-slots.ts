@@ -104,7 +104,7 @@ function setSpawnerSlotEnabled(slotIndex: number, enabled: boolean): boolean {
             const priorVehicleId = slot.vehicleId;
             const priorVehicle = findVehicleById(priorVehicleId);
             if (priorVehicle) {
-                mod.UnspawnObject(priorVehicle);
+                try { mod.UnspawnObject(priorVehicle); } catch {}
             }
             delete State.vehicles.vehicleToSlot[priorVehicleId];
             slot.vehicleId = -1;

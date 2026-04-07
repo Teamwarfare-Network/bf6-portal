@@ -76,7 +76,7 @@ async function onVehicleSpawnedImpl(eventVehicle: mod.Vehicle): Promise<void> {
     if (slotIndex >= 0) {
         const slot = State.vehicles.slots[slotIndex];
         if (!slot.enabled) {
-            mod.UnspawnObject(eventVehicle);
+            try { mod.UnspawnObject(eventVehicle); } catch {}
             return;
         }
         if (!doesVehicleMatchConfiguredSlotType(eventVehicle, slot)) {
@@ -88,7 +88,7 @@ async function onVehicleSpawnedImpl(eventVehicle: mod.Vehicle): Promise<void> {
                 State.vehicles.activeSpawnToken = undefined;
                 State.vehicles.activeSpawnRequestedAtSeconds = undefined;
             }
-            mod.UnspawnObject(eventVehicle);
+            try { mod.UnspawnObject(eventVehicle); } catch {}
             await mod.Wait(0.1);
             configureVehicleSpawner(slot.spawner, slot.vehicleType);
             const success = await forceSpawnWithRetry(slotIndex);
@@ -99,7 +99,7 @@ async function onVehicleSpawnedImpl(eventVehicle: mod.Vehicle): Promise<void> {
         }
         if (!slot.expectingSpawn && slot.vehicleId === -1) {
             // Replace the spawner's initial default spawn with a forced spawn using the configured type.
-            mod.UnspawnObject(eventVehicle);
+            try { mod.UnspawnObject(eventVehicle); } catch {}
             await mod.Wait(0.1); // Give the engine a moment to clear the spawn before forcing again.
             configureVehicleSpawner(slot.spawner, slot.vehicleType);
             const success = await forceSpawnWithRetry(slotIndex);

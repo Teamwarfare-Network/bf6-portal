@@ -63,6 +63,10 @@ const State: GameState = {
             validationWarnings: [],
             nextEnforcementToken: 0,
         },
+        armSfx: {
+            handle: undefined,
+            ready: false,
+        },
         smk: {},
         asg: {},
     },

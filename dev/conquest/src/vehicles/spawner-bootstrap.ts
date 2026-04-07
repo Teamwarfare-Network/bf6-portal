@@ -67,7 +67,7 @@ async function startVehicleSpawnerSystem(): Promise<void> {
                 }
             }
             if (nearSpawn) {
-                mod.UnspawnObject(vehicle);
+                try { mod.UnspawnObject(vehicle); } catch {}
             }
         }
         State.vehicles.startupCleanupDone = true;

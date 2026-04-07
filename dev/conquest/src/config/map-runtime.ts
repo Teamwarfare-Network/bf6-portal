@@ -570,7 +570,7 @@ function applyVehicleSpawnSpecsToExistingSlots(): void {
             if (!isMatchLive() && priorVehicleId !== -1) {
                 const priorVehicle = findVehicleById(priorVehicleId);
                 if (priorVehicle) {
-                    mod.UnspawnObject(priorVehicle);
+                    try { mod.UnspawnObject(priorVehicle); } catch {}
                 }
                 delete State.vehicles.vehicleToSlot[priorVehicleId];
                 slot.vehicleId = -1;

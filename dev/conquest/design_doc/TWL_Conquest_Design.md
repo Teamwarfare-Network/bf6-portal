@@ -3737,18 +3737,18 @@ None
 
 ## Codebase Reference Map
 
-Last updated: v1.093 (2026-04-06)
+Last updated: v1.110 (2026-04-06)
 
 ### Project Stats
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.093 |
+| Version | 1.110 |
 | Source files | 113 .ts files + 1 .json |
-| Source lines | ~28,900 |
-| Bundle size | 1,032,996 bytes |
+| Source lines | ~28,728 |
+| Bundle size | 1,038,559 bytes |
 | Bundle limit | 1,048,576 bytes (1 MiB) |
-| Headroom | 15,580 bytes (1.5%) |
+| Headroom | 10,017 bytes (1.0%) |
 | Entry point | `src/index.ts` -> 20 Portal event handlers |
 | Build tool | `bf6-portal-bundler` -> `dist/bundle.ts` + `dist/bundle.strings.json` |
 
@@ -3762,7 +3762,7 @@ src/
   types.ts                    -- Foundation type shim (imports foundation/*)
   header-file.ts              -- Version, license (MIT), attribution (66 lines | 3.6K)
   footer-file.ts              -- EOF version marker
-  Changelog.ts                -- Version history (792 lines | 123.9K)
+  Changelog.ts                -- Version history (809 lines | 125.7K)
   conquest-flow.ts            -- Continuous-live flow: start/end match, clock binding, match length config (182 lines | 7.2K)
   strings.json                -- All player-facing localized string keys (367 lines | 18.6K)
 
@@ -3770,17 +3770,17 @@ src/
     modlib.ts                 -- Portal scripting API import wrapper
     gameplay.ts               -- Core constants (TeamID, MatchPhase, colors, vehicle lists, presets) (297 lines | 15.4K)
     ui-layout.ts              -- All HUD/dialog pixel dimensions, colors, timing constants (349 lines | 21.9K)
-    string-keys.ts            -- String key constant mappings (STR_* -> mod.stringkeys.twl.*) (80 lines | 6.1K)
+    string-keys.ts            -- String key constant mappings (STR_* -> mod.stringkeys.twl.*) (94 lines | 7.1K)
 
   state/
     core.ts                   -- Shared state accessors (isMatchLive, setUIInputMode, sendWorldLog) (59 lines | 2.2K)
-    runtime-types.ts          -- GameState shape: all type definitions incl. ConquestLifecyclePhase (456 lines | 15.3K)
-    runtime-state.ts          -- State singleton initialization (277 lines | 9.7K)
+    runtime-types.ts          -- GameState shape: all type definitions incl. ConquestLifecyclePhase (460 lines | 15.4K)
+    runtime-state.ts          -- State singleton initialization (281 lines | 9.8K)
     runtime.ts                -- Composition shim
     id-helpers.ts             -- Safe ID/object/team accessors (safeGetPlayerId, safeFind, etc.) (159 lines | 6.4K)
     player-lookup.ts          -- Player lookup by PID
     ui-helpers.ts             -- Widget builder helpers (safeParseUI, addOutlinedButton) (412 lines | 13.5K)
-    hud-cache-types.ts        -- HUD widget cache type definitions incl. victory dialog refs (221 lines | 6.9K)
+    hud-cache-types.ts        -- HUD widget cache type definitions incl. victory dialog refs (222 lines | 6.9K)
     lifecycle-guardrails.ts   -- Phase transition guards (NotReady/Live/GameOver) (66 lines | 2.1K)
     spawn-charge.ts           -- Phase 2B spawn-charge reason matrix and deploy charging (248 lines | 10.5K)
 
@@ -3789,7 +3789,7 @@ src/
     types.ts                  -- Map config types (MapConfig, CapturePointConfig, VehicleSpawnSpec) (81 lines | 4.4K)
     maps.ts                   -- Map registry loader
     maps/operation-firestorm.ts -- Firestorm map-specific spawn/capture/ceiling config (371 lines | 20.4K)
-    map-runtime.ts            -- Map detection and config application (754 lines | 32.1K)
+    map-runtime.ts            -- Map detection and config application; UnspawnObject guarded (754 lines | 32.6K)
     runtime.ts                -- Runtime config initialization (89 lines | 4.9K)
 
   index/
@@ -3801,16 +3801,16 @@ src/
     player-join-leave.ts      -- Join/leave lifecycle, HUD cleanup, loading gate entry (228 lines | 10.1K)
     player-deploy.ts          -- Deploy/undeploy handlers, loading gate enforcement (125 lines | 5.6K)
     player-loop-inputs.ts     -- Per-tick player input: gate enforcement, interact routing (64 lines | 3.2K)
-    vehicle-events.ts         -- Vehicle enter/exit/spawn/destroy, slot binding (201 lines | 9.1K)
+    vehicle-events.ts         -- Vehicle enter/exit/spawn/destroy, slot binding; all UnspawnObject calls guarded (201 lines | 9.2K)
     area-triggers.ts          -- Capture-point and main-base area trigger handlers (133 lines | 6.0K)
 
   interaction/
     types.ts                  -- readyDialogData_t (30+ fields), UiLoadReason, HARD_PLAYER_LOCK_AUDIT_MODE (68 lines | 2.5K)
-    actions.ts                -- Loading gate orchestration, HUD warm/reveal, deploy control (719 lines | 31.9K)
+    actions.ts                -- Loading gate orchestration, HUD warm/reveal, deploy control; prebuild serialization lock + yield points + stagger (757 lines | 33.5K)
     hud-warm-state.ts         -- Per-player gate state accessors (40+ getters/setters) (280 lines | 12.4K)
     interact-point.ts         -- Ready-dialog interact point spawn/despawn lifecycle (192 lines | 8.0K)
     world-interactables.ts    -- Per-player spawned WorldIcon clones with SetWorldIconOwner visibility (324 lines | 12.6K)
-    ammo-resupply-menu.ts     -- Gadget/ammo menu UI, cooldowns, click handling (1,880 lines | 69.5K)
+    ammo-resupply-menu.ts     -- Gadget/ammo menu UI, cooldowns, click handling (1,953 lines | 73.1K)
     spawn-selector.ts         -- Custom spawn selection stub (Phase 8 placeholder)
     ui-events.ts              -- Button event dispatcher
     ui-events-ready.ts        -- Ready dialog + admin panel click handlers (217 lines | 7.7K)
@@ -3867,11 +3867,11 @@ src/
     ownership.ts              -- Seat-to-player ownership tracking (69 lines | 2.7K)
     reservations.ts           -- Vehicle spawn reservations (79 lines | 3.3K)
     timers.ts                 -- Vehicle respawn timer tracking (164 lines | 6.6K)
-    spawner-slots.ts          -- Slot state machine, enablement/reservation (203 lines | 9.2K)
+    spawner-slots.ts          -- Slot state machine, enablement/reservation; UnspawnObject guarded (203 lines | 9.2K)
     spawner-sequence.ts       -- Slot sequencing logic (199 lines | 7.8K)
     spawner-bind.ts           -- Vehicle-to-slot binding on spawn (268 lines | 12.0K)
-    spawner-bootstrap.ts      -- Spawner system initialization (100 lines | 4.8K)
-    deploy-fulfillment.ts     -- Direct vehicle spawn on deploy (524 lines | 22.7K)
+    spawner-bootstrap.ts      -- Spawner system initialization; startup cleanup UnspawnObject guarded (100 lines | 4.8K)
+    deploy-fulfillment.ts     -- Direct vehicle spawn on deploy; pre-seat teleport removed (524 lines | 22.7K)
     deploy-live-menu.ts       -- Live deploy menu UI for spawn selection (87 lines | 3.3K)
     deploy-timer-ui.ts        -- Vehicle spawn timer HUD display (1,961 lines | 85.3K)
     array-helpers.ts          -- Vehicle array manipulation helpers
@@ -3950,17 +3950,18 @@ All functions exported from `src/index.ts`. Each delegates to an `*Impl` functio
 - `updateConquestCombatHudForAllPlayers()` — central combat HUD dispatch
 - 7 view model types: `ConquestHudTicketViewModel`, `ConquestHudFlagSlotViewModel`, `ConquestHudActiveFlagPopoutViewModel`, `ConquestHudFlagsViewModel`, `ConquestHudEngageViewModel`, `ConquestHudStatusViewModel`, `ConquestHudClockViewModel`
 
-#### interaction/actions.ts — Loading Gate (721 lines)
+#### interaction/actions.ts — Loading Gate (757 lines)
 - `beginLoadingGate(player, pid, reason)` — unified gate entry for join + team-swap
 - `runLoadingGateUntilReady(player, pid)` — polling loop: prebuild -> warm check -> floor wait -> release
 - `releaseLoadingGate(player, pid, token)` — single release owner (idempotent)
 - `isAllUiFamiliesReadyForRelease(player, pid)` — unified readiness check for 6 UI families
-- `prebuildAllUiFamiliesHidden(player, pid)` — consolidated prebuild pass
+- `prebuildAllUiFamiliesHidden(player, pid)` — consolidated prebuild pass; serialized with `_prebuildBusy` lock + yield points between families to prevent >1,000ms frame overruns with concurrent players (CQ_Bug_40 fix, v1.104)
 - `revealAllUiFamilies(player, pid)` — atomic show pass at gate release
 - `hideAllUiFamiliesForPlayer(player, pid)` — hide all visible UI before warm
 - `runTeamSwapLoadingGate(player, pid, newTeamNum, waitForUndeploy)` — team-swap gate sequence
+- Stagger: `_prebuildStaggerIndex * 0.25s` offsets concurrent joins so players don't contend for the lock
 
-#### interaction/ammo-resupply-menu.ts — Gadget Menu (1,880 lines)
+#### interaction/ammo-resupply-menu.ts — Gadget Menu (1,953 lines)
 - `resetArmState(pid)` / `resetArmTimers(pid)` — clear ammo menu state
 - `armCacheOk(cache)` — validate menu cache completeness
 - `buildTile(...)` — build complete gadget tile with button, icon, cooldown
@@ -3974,7 +3975,7 @@ All functions exported from `src/index.ts`. Each delegates to an `*Impl` functio
 - `buildVehicleDeployTimerRenderPlan(...)` — compute render plan with signature
 - `applyVehicleDeployTimerRenderPlanContent(...)` — apply plan to cached widgets
 
-#### state/runtime-types.ts — GameState Shape (456 lines)
+#### state/runtime-types.ts — GameState Shape (460 lines)
 - `VehicleSpawnerSlot` — team, slot#, spawner ref, spawn pos/rot, enabled, timing
 - `ConquestCapturePointRuntimeState` — ObjId, label, order, owner latch, progress
 - `ConquestFlagVisualPhase` — NEUTRAL_IDLE | NEUTRAL_CAPTURING | OWNED_STABLE | OWNED_CONTESTED_* | NEUTRALIZED_LATCH

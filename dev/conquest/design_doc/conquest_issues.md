@@ -1,7 +1,7 @@
 # Conquest Issues
 
-Last Updated: 2026-04-05  
-Last Tested Build: `v1.077` (CQ_Bug_35/36/37/38/42 fixes confirmed; vehicle deploy regression fixed)
+Last Updated: 2026-04-06  
+Last Tested Build: `v1.110` (CQ_Bug_40 fix: prebuild serialization + yield + stagger; CQ_Bug_39 hardening: all UnspawnObject calls guarded; pre-seat teleport removed; map gate restored)
 
 ## Current Snapshot
 - `CQ_Bug_1`: Resolved
@@ -42,8 +42,8 @@ Last Tested Build: `v1.077` (CQ_Bug_35/36/37/38/42 fixes confirmed; vehicle depl
 - `CQ_Bug_36`: Resolved (v1.071 — guarded behind isPlayerDeployed; confirmed clean in SP testing)
 - `CQ_Bug_37`: Resolved (v1.074+v1.076 — vehicle occupancy cache guard + proactive cache set before ForcePlayerToSeat)
 - `CQ_Bug_38`: Resolved (v1.074+v1.076 — same vehicle occupancy cache guard; confirmed clean in SP testing)
-- `CQ_Bug_39`: Open (investigation needed — cosmetic engine log noise from UnspawnObject on possibly-destroyed objects; root cause needs confirmation)
-- `CQ_Bug_40`: Likely resolved (v1.075 — primary cause was CQ_Bug_35 spam; needs MP confirmation)
+- `CQ_Bug_39`: Hardened (v1.110 — all 6 previously unguarded UnspawnObject calls now wrapped in try/catch; cosmetic engine log may still appear but cannot crash script; needs MP confirmation of reduced frequency)
+- `CQ_Bug_40`: Fix applied (v1.104 — root cause was concurrent `prebuildAllUiFamiliesHidden` execution across simultaneous player joins; fix: serialization lock + yield points + stagger delay; needs MP confirmation)
 - `CQ_Bug_41`: Implemented (v1.078-v1.081 — self-terminating loops for boundary enforcement, vehicle timers, and gadget menu refresh; removed all-player per-second/per-tick polls; needs MP confirmation)
 - `CQ_Bug_42`: Guarded (v1.073 — defensive null checks on array helpers and capture-tickets; needs MP confirmation)
 
@@ -111,25 +111,32 @@ Related:
 Title: Mod Evaluator Frame Time Exceeds 1,000ms Budget During Multiplayer Loading Gate
 
 Observed:
-- Engine reports `Mod has been running for X ms this frame which exceeds max evaluation time of 1,000ms` with times ranging from 1,003ms to 1,317ms.
-- Occurs during multiplayer when a player is in the loading gate while another player is active.
-- Directly correlated with CQ_Bug_35 spam: hundreds of rejected `EnableAllInputRestrictions` calls per frame burn the frame budget.
+- Engine reports `Mod has been running for X ms this frame which exceeds max evaluation time of 1,000ms` with times ranging from 1,003ms to 1,347ms.
+- Occurs during multiplayer when multiple players join simultaneously.
+- Original hypothesis (CQ_Bug_35 spam) was partially correct for v1.070 but the bug recurred at v1.103 with 3 players despite CQ_Bug_35 being resolved.
+
+Root Cause (confirmed v1.103):
+- `prebuildAllUiFamiliesHidden()` builds 6 full UI families synchronously per player (ready dialog ~100 widgets, gadget locker ~50+ widgets, combat HUD, deploy timer, admin panel, top-left shell).
+- When 3 players join simultaneously, all resume from `await mod.Wait(0.01)` in the same frame. Three concurrent synchronous prebuilds stack in one frame, exceeding 1,000ms total.
 
 Expected:
 - Script should never exceed the 1,000ms per-frame evaluation budget.
 
 Status:
-- Likely resolved (v1.075).
-- Primary cause was CQ_Bug_35 spam (hundreds of rejected EnableAllInputRestrictions calls per frame). That spam is now eliminated.
-- v1.082: Performance diagnostic system added (admin-toggleable) to help attribute any remaining lag spikes. Tick rate monitor via OngoingGlobal + per-section timing profiler in the game loop (9 instrumented sections). Output to world log.
-- Needs MP confirmation to verify frame budget stays under 1,000ms during loading gate with multiple players. Use perf diag toggle to investigate if spikes persist.
+- Fix applied (v1.104). Three-part mitigation:
+  1. Global serialization lock (`_prebuildBusy`) so only one player's heavy UI prebuild runs at a time.
+  2. Yield points (`await mod.Wait(0)`) between each major UI family build to spread a single player's work across ~6 frames.
+  3. Staggered initial delay per player (`_prebuildStaggerIndex * 0.25s`) so concurrent joins don't all resume in the same frame.
+- v1.082: Performance diagnostic system added (admin-toggleable) to help attribute any remaining lag spikes.
+- Needs MP confirmation to verify frame budget stays under 1,000ms with 3+ simultaneous players.
 
 Related:
-- CQ_Bug_35 (primary contributor — now resolved)
-- CQ_Bug_41 (structural cause — unconditional per-tick work in OngoingPlayer and gate loop)
+- CQ_Bug_35 (original contributor at v1.070 — now resolved)
+- CQ_Bug_41 (structural cause — unconditional per-tick work, partially addressed v1.078-v1.081)
 
 Evidence:
-- Screenshots from v1.070 MP testing session (2026-04-05): `reference_design_documentation/testing_images/20260405115204_1.jpg` through `20260405123302_1.jpg`
+- v1.070 MP (2026-04-05): `reference_design_documentation/testing_images/20260405115204_1.jpg` through `20260405123302_1.jpg`
+- v1.103 MP (2026-04-06): `reference_design_documentation/testing_images/20260406191016_1.jpg` (1,347ms frame time), `20260406191235_1.jpg`, `20260406191330_1.jpg`
 
 ## CQ_Bug_39
 Title: UnspawnObject Error on Already-Destroyed Runtime Object During Cleanup
@@ -143,13 +150,20 @@ Expected:
 - Cleanup should not attempt to unspawn objects that no longer exist, or the error should be fully suppressed.
 
 Status:
-- Open (investigation needed).
-- Cosmetic log noise only, no gameplay impact. Already wrapped in try/catch so no script failure.
-- Current hypothesis: BF6 Portal API does not expose `IsObjectValid` or equivalent, so no way to pre-check if a runtime-spawned object still exists before calling UnspawnObject. The engine logs the error before the JS catch runs (same pattern as CQ_Bug_37/38).
-- Root cause needs further confirmation before determining fix approach.
+- Hardened (v1.110). All 14 UnspawnObject call sites across the codebase are now wrapped in try/catch.
+- v1.110 guarded 6 previously unprotected calls in:
+  - `index/vehicle-events.ts` (3 calls: disabled-slot rejection, type-mismatch respawn, initial-default replace)
+  - `vehicles/spawner-bootstrap.ts` (1 call: startup pad cleanup)
+  - `config/map-runtime.ts` (1 call: vehicle type swap during config apply)
+  - `vehicles/spawner-slots.ts` (1 call: slot disable cleanup)
+- BF6 Portal API does not expose `IsObjectValid` or equivalent, so no way to pre-check if a runtime-spawned object still exists before calling UnspawnObject. The engine logs the error before the JS catch runs (same pattern as CQ_Bug_37/38).
+- The engine-side log noise ("ERROR REPORTED BY UNSPAWNOBJECT") is cosmetic — it fires before JS catch runs and cannot be suppressed from script. But all 6 unguarded calls could previously propagate as unhandled exceptions; this is no longer possible.
+- Still occurring at v1.103 during MP testing with 3 players. Frequency may be exacerbated by CQ_Bug_40 frame overruns — when the script takes >1,000ms, the engine may destroy objects before the script's cleanup paths execute.
+- Expect frequency to decrease after CQ_Bug_40 fix (v1.104) + this hardening (v1.110). Monitor during next MP test.
 
 Evidence:
-- Screenshots from v1.070 MP testing: `20260405121157_1.jpg`, `20260405122108_1.jpg`
+- v1.070 MP: `20260405121157_1.jpg`, `20260405122108_1.jpg`
+- v1.103 MP: `20260406191016_1.jpg`, `20260406191330_1.jpg`
 
 ## CQ_Bug_38
 Title: GetVehicleFromPlayer Invalid Value Error During Deploy/Vehicle Transitions

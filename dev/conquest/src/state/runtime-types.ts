@@ -336,6 +336,10 @@ interface GameState {
             validationWarnings: string[];
             nextEnforcementToken: number;
         };
+        armSfx: {
+            handle?: any;
+            ready: boolean;
+        };
         smk: Record<number, {
             c: number;
             n: number;
@@ -395,13 +399,13 @@ interface GameState {
             aN: number;
             s: number;
         }>;
-        armS: Record<number, Record<number, {
+        armS: Record<number, {
             mN: number;
             mS: number;
             rdN: number;
             rgN: number;
             rgS: number;
-        }>>;
+        }>;
         uiCachePerfByPid: Record<number, {
             vehicle: {
                 built: number;

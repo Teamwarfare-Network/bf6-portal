@@ -214,6 +214,7 @@ type AmmoResupplyMenuCacheEntry = {
     rg?: mod.UIWidget;
     rh?: mod.UIWidget;
     rt?: mod.UIWidget;
+    helpText?: mod.UIWidget;
     closeButtonBorder?: mod.UIWidget;
     closeButton?: mod.UIWidget;
     closeButtonText?: mod.UIWidget;
