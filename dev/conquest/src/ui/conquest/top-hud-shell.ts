@@ -226,7 +226,7 @@ function ensureTopHudShellForPlayer(player: mod.Player): TopHudShellRefs | undef
 
     setAdminPanelActionCountText(refs.adminPanelActionCountText, State.admin.actionCount);
     setMatchStateTextForPid(pid);
-    updatePlayersReadyHudTextForAllPlayers();
+    markPregameReadyHudDirty();
     setHudHelpDepthForPid(pid);
     updateVictoryDialogForPlayer(player, getRemainingSeconds());
 

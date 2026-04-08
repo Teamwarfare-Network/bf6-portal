@@ -3,6 +3,9 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.113: deploy/undeploy perf: guard help text update during undeploy dialog hide, update analysis doc with test results and optimization summary
+// v1.112: deploy/undeploy perf phase 2: defer world icon sync past await, skip HUD restore on undeploy, guard admin panel cleanup
+// v1.111: deploy handler perf: dirty-flag debounce for ForAllPlayers broadcasts + per-pid immediate updates + remove redundant broadcast calls
 // v1.110: Guard all unprotected UnspawnObject calls with try/catch to suppress CQ_Bug_39 engine errors
 // v1.109: Strip pre-seat teleport from vehicle deploy fulfillment to isolate prebuild serialization fix for MP testing
 // v1.108: fix: teleport player 15m behind + 10m above vehicle using slot yaw to avoid physics collision

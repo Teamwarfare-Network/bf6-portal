@@ -264,6 +264,9 @@ type ConquestRuntimeScaffold = {
         hudModeOverride?: TwlConquestHudMode;
         hudLastUpdatedAtSeconds: number;
         hudDirty: boolean;
+        pregameReadyHudDirty: boolean;
+        pregameDialogDirty: boolean;
+        pregameHelpDirty: boolean;
         ticketLeaderTeam: TeamID | 0;
         hudGenerationByPid: Record<number, number>;
         teamSwapRefreshTokenByPid: Record<number, number>;

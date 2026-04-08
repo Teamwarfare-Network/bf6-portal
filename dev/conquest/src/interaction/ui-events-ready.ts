@@ -77,7 +77,6 @@ function handleReadyDialogReadyButtonClick(eventPlayer: mod.Player, playerId: nu
         }
         State.players.readyByPid[pid] = true;
         delete State.players.readyNeedsReconfirmByPid[pid];
-        updatePlayersReadyHudTextForAllPlayers();
 
         const lastReadyAt = State.players.readyMessageCooldownByPid[pid] ?? -9999;
         if (nowSeconds - lastReadyAt >= READY_UP_MESSAGE_COOLDOWN_SECONDS) {
@@ -93,7 +92,6 @@ function handleReadyDialogReadyButtonClick(eventPlayer: mod.Player, playerId: nu
     } else {
         State.players.readyByPid[pid] = false;
         delete State.players.readyNeedsReconfirmByPid[pid];
-        updatePlayersReadyHudTextForAllPlayers();
     }
 
     updateHelpTextVisibilityForPid(pid);

@@ -67,17 +67,20 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     State.players.readyByPid[pid] = false;
     delete State.players.readyNeedsReconfirmByPid[pid];
     State.players.inMainBaseByPid[pid] = true;
-    syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
     resetPlayerBoundaryStateOnDeploy(eventPlayer, pid);
-    updatePlayersReadyHudTextForAllPlayers();
-    renderReadyDialogForAllVisibleViewers();
-    updateHelpTextVisibilityForAllPlayers();
+    setMatchStateTextForPid(pid);
+    updateHelpTextVisibilityForPid(pid);
+    markPregameReadyHudDirty();
+    markPregameDialogDirty();
+    markPregameHelpDirty();
 
     if (!State.hudCache.topHudShellByPid[pid]) {
         ensureTopHudShellForPlayer(eventPlayer);
     }
     renderCriticalHudForReveal(eventPlayer, pid);
     const directSpawnDeployResult = await conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(eventPlayer);
+    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
     if (directSpawnDeployResult.consumedDeploy) {
         return;
     }

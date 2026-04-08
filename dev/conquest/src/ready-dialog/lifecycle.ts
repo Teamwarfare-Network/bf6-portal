@@ -57,8 +57,10 @@ function deleteReadyDialogChromeWidgets(playerId: number): void {
 
 // Resets the lazy admin-panel body and toggle state while preserving the cached ready-dialog shell.
 function resetReadyDialogAdminFamily(playerId: number): void {
-    deleteAdminPanelUI(playerId, false);
-    setAdminPanelChildWidgetsVisible(playerId, false);
+    if (State.players.readyDialogData[playerId]?.adminPanelBuilt) {
+        deleteAdminPanelUI(playerId, false);
+        setAdminPanelChildWidgetsVisible(playerId, false);
+    }
     setReadyDialogAdminToggleVisible(playerId, false);
 }
 
@@ -84,8 +86,10 @@ function hideReadyDialogUI(eventPlayer: mod.Player | number) {
         State.players.readyDialogData[playerId].dialogVisible = false;
     }
 
-    updateHelpTextVisibilityForPid(playerId);
-    if (player && mod.IsPlayerValid(player)) {
+    if (State.players.deployedByPid[playerId]) {
+        updateHelpTextVisibilityForPid(playerId);
+    }
+    if (player && mod.IsPlayerValid(player) && State.players.deployedByPid[playerId]) {
         const shouldRestoreCriticalHud = !isVehicleDeployLiveMenuOpenForPid(playerId);
         if (shouldRestoreCriticalHud) {
             prebuildVehicleDeployTimerHudHiddenForPlayer(player);

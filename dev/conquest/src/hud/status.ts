@@ -539,6 +539,28 @@ function updatePlayersReadyHudTextForAllPlayers(): void {
     }
 }
 
+// Dirty-flag helpers: mark pregame UI as needing a broadcast on the next game loop tick.
+// Deploy/undeploy handlers set these instead of calling the expensive ForAllPlayers broadcasts
+// synchronously — the game loop's non-live branch calls flushPregameDirtyFlags() to coalesce.
+function markPregameReadyHudDirty(): void { State.conquest.debug.pregameReadyHudDirty = true; }
+function markPregameDialogDirty(): void { State.conquest.debug.pregameDialogDirty = true; }
+function markPregameHelpDirty(): void { State.conquest.debug.pregameHelpDirty = true; }
+
+function flushPregameDirtyFlags(): void {
+    if (State.conquest.debug.pregameReadyHudDirty) {
+        State.conquest.debug.pregameReadyHudDirty = false;
+        updatePlayersReadyHudTextForAllPlayers();
+    }
+    if (State.conquest.debug.pregameDialogDirty) {
+        State.conquest.debug.pregameDialogDirty = false;
+        renderReadyDialogForAllVisibleViewers();
+    }
+    if (State.conquest.debug.pregameHelpDirty) {
+        State.conquest.debug.pregameHelpDirty = false;
+        updateHelpTextVisibilityForAllPlayers();
+    }
+}
+
 // Lightweight helper for ready-up broadcasts (avoids recomputing counts in UI handlers).
 function getReadyCountsForMessage(): { readyCount: number; totalCount: number } {
     const statusCounts = getReadyCountsForStatusHud();

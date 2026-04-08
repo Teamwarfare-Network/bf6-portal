@@ -130,6 +130,7 @@ async function onGameModeStartedImpl(): Promise<void> {
                 if (_pd) perfDiagEndSection(5, _t);
             } else {
                 lastLiveCoreTickSecond = -1;
+                flushPregameDirtyFlags();
             }
 
             if (shouldClockUseCriticalFlashSubtick()) {
