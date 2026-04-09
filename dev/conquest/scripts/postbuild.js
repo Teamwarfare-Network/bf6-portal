@@ -113,6 +113,116 @@ if (eofFooter) {
 // 10. Strip full-line comments from the emitted bundle to preserve headroom.
 src = src.replace(/^[ \t]*\/\/.*\n/gm, "");
 src = src.replace(/\n{3,}/g, "\n\n");
+
+// 10b. Dead-code strip: remove code guarded by false compile-time flags.
+// The Portal compiler does not evaluate const-false branches, so references inside
+// `if (false) foo()` still produce "Cannot find name" errors. Strip them here.
+//
+// Strategy: two passes. Pass 1 collects FEATURE_* false flags and does inline replacements
+// (which may create new `const x = false` values like _pd). Pass 2 re-scans for any
+// newly-false consts and strips their `if` blocks too.
+{
+  function collectFalseFeatureConsts(code) {
+    const consts = new Set();
+    const regex = /\bconst\s+(FEATURE_\w+)\s*=\s*false\s*;/g;
+    let m;
+    while ((m = regex.exec(code)) !== null) consts.add(m[1]);
+    return consts;
+  }
+
+  function collectAllFalseConsts(code, seeds) {
+    const consts = new Set(seeds);
+    // After inline replacements, scan for any `const <id> = false;` that match known patterns
+    const regex = /\bconst\s+(_pd)\s*=\s*false\s*;/gm;
+    let m;
+    while ((m = regex.exec(code)) !== null) consts.add(m[1]);
+    return consts;
+  }
+
+  function inlineReplace(code, falsyConsts) {
+    const lines = code.split("\n");
+    const out = [];
+    for (const line of lines) {
+      let edited = line;
+      for (const flag of falsyConsts) {
+        const F = flag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        // Ternary: (FLAG ? expr : fallback) → (fallback)
+        edited = edited.replace(new RegExp("\\(" + F + " \\? [^:]+:\\s*([^)]+)\\)", "g"), "($1)");
+        // Compound: FLAG && expr → false (stop before ; , and newline)
+        edited = edited.replace(new RegExp("\\b" + F + " &&\\s*[^;,\\n]+", "g"), "false");
+        // Negated compound: !(FLAG && expr) → true
+        edited = edited.replace(new RegExp("!\\(" + F + " &&[^)]+\\)", "g"), "true");
+      }
+      out.push(edited);
+    }
+    return out.join("\n");
+  }
+
+  function stripDeadBlocks(code, falsyConsts) {
+    const lines = code.split("\n");
+    const out = [];
+    let skipDepth = 0;
+    let skipBraced = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const trimmed = lines[i].trim();
+
+      if (skipDepth > 0 && skipBraced) {
+        for (const ch of trimmed) {
+          if (ch === "{") skipDepth++;
+          else if (ch === "}") skipDepth--;
+        }
+        if (skipDepth <= 0) { skipDepth = 0; skipBraced = false; }
+        continue;
+      }
+      if (skipDepth > 0 && !skipBraced) {
+        skipDepth = 0;
+        continue;
+      }
+
+      const ifMatch = trimmed.match(/^if\s*\((\w+)\b/);
+      if (ifMatch && falsyConsts.has(ifMatch[1])) {
+        if (trimmed.includes("{")) {
+          skipDepth = 0;
+          for (const ch of trimmed) {
+            if (ch === "{") skipDepth++;
+            else if (ch === "}") skipDepth--;
+          }
+          skipBraced = true;
+          if (skipDepth <= 0) { skipDepth = 0; skipBraced = false; }
+        } else if (trimmed.endsWith(";")) {
+          // Complete single-line `if (FLAG) body;` — body is on same line, skip only this line.
+        } else {
+          // Body is on the next line: `if (FLAG)\n    body;`
+          skipDepth = 1;
+          skipBraced = false;
+        }
+        continue;
+      }
+      out.push(lines[i]);
+    }
+    return out.join("\n");
+  }
+
+  // Pass 1: FEATURE_* flags — block stripping first (handles `if (FLAG && expr) {` cleanly),
+  // then inline replacements for non-block usages (assignments, ternaries).
+  const featureFlags = collectFalseFeatureConsts(src);
+  if (featureFlags.size > 0) {
+    src = stripDeadBlocks(src, featureFlags);
+    src = inlineReplace(src, featureFlags);
+
+    // Pass 2: pick up derived consts that became false (e.g. _pd) and strip their blocks.
+    // Also strip literal `if (false)` blocks produced by inline replacement.
+    const allFalsy = collectAllFalseConsts(src, featureFlags);
+    allFalsy.add("false");
+    // Fix broken double-parens from inline replacement: `if (false))` → `if (false)`
+    src = src.replace(/\bif\s*\(false\)\)/g, "if (false)");
+    src = stripDeadBlocks(src, allFalsy);
+
+    console.log("postbuild: stripping dead code for false consts: " + [...allFalsy].filter(c => c !== "false").join(", "));
+    src = src.replace(/\n{3,}/g, "\n\n");
+  }
+}
 let headerVersionLine = "";
 if (fs.existsSync(headerSourcePath)) {
   const headerSource = fs.readFileSync(headerSourcePath, "utf8").replace(/\r\n/g, "\n");

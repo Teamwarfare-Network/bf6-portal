@@ -187,15 +187,17 @@ function tryHandleReadyDialogButtonEvent(
     );
     if (resetHandled !== undefined) return resetHandled;
 
-    const adminHandled = tryHandleReadyDialogPrimaryAction(
-        eventPlayer,
-        playerId,
-        widgetName,
-        eventUIButtonEvent,
-        UI_ADMIN_PANEL_BUTTON_ID,
-        () => toggleReadyDialogAdminPanel(eventPlayer, playerId)
-    );
-    if (adminHandled !== undefined) return adminHandled;
+    if (FEATURE_ADMIN_PANEL) {
+        const adminHandled = tryHandleReadyDialogPrimaryAction(
+            eventPlayer,
+            playerId,
+            widgetName,
+            eventUIButtonEvent,
+            UI_ADMIN_PANEL_BUTTON_ID,
+            () => toggleReadyDialogAdminPanel(eventPlayer, playerId)
+        );
+        if (adminHandled !== undefined) return adminHandled;
+    }
 
     const hudSwapHandled = tryHandleReadyDialogPrimaryAction(
         eventPlayer,

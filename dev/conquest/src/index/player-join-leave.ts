@@ -8,12 +8,12 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return;
 
-    resetUiCachePerfCountersForPid(pid);
+    if (FEATURE_PERF_DIAG) resetUiCachePerfCountersForPid(pid);
     setUIInputModeForPlayer(player, false);
     resetVehicleDeployLiveMenuStateForPid(pid);
     resetArmState(pid);
     cleanupWorldInteractableRuntimeIconsForPid(pid);
-    clearJoinPromptForPlayerId(pid);
+    clearLoadingOverlayForPlayerId(pid);
     hideReadyDialogUI(pid);
     destroyArmMenu(pid);
 
@@ -205,7 +205,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.armT[pid];
     delete State.players.armS[pid];
     delete State.players.uiCachePerfByPid[pid];
-    cleanupPerfDiagWidgetsForPid(pid);
+    if (FEATURE_PERF_DIAG) cleanupPerfDiagWidgetsForPid(pid);
     cleanupWorldInteractableRuntimeIconsForPid(pid);
     delete State.players.posDebugTransformSourceByPid[pid];
     delete State.players.posDebugVehicleObjIdByPid[pid];
@@ -214,7 +214,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     conquestPhase2BOnPlayerLeave(pid);
     delete State.players.readyDialogData[pid];
     refreshBuiltReadyDialogCachesForAllPlayers();
-    clearJoinPromptForPlayerId(pid);
+    clearLoadingOverlayForPlayerId(pid);
 
     if (!isMatchLive()) {
         renderReadyDialogForAllVisibleViewers();

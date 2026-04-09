@@ -195,7 +195,7 @@ function ensureTopHudShellForPlayer(player: mod.Player): TopHudShellRefs | undef
         bindTopHudShellRefsByName(pid, cached);
         bindHudTeamSwapRefsByName(pid, cached);
         if (hasTopLeftHudShellRefs(cached)) {
-            if (!cached.adminPanelActionCountText) buildConquestAdminActionCounterWidget(player, pid, cached);
+            if (FEATURE_ADMIN_PANEL && !cached.adminPanelActionCountText) buildConquestAdminActionCounterWidget(player, pid, cached);
             if (!cached.teamSwapBorder) buildHudTeamSwapButton(player, pid, cached);
             bindTopHudShellRefsByName(pid, cached);
             bindHudTeamSwapRefsByName(pid, cached);
@@ -215,7 +215,7 @@ function ensureTopHudShellForPlayer(player: mod.Player): TopHudShellRefs | undef
     buildConquestBrandingTopLeftWidgets(player, pid, refs);
     buildConquestStaticStatusLaneWidgets(player, pid, refs);
     buildConquestTopCenterAuxWidgets(player, pid, refs, CONQUEST_TOP_HUD_SHELL_LAYOUT);
-    buildConquestAdminActionCounterWidget(player, pid, refs);
+    if (FEATURE_ADMIN_PANEL) buildConquestAdminActionCounterWidget(player, pid, refs);
     buildVictoryDialogWidgets(player, pid, refs);
     buildHudTeamSwapButton(player, pid, refs);
     bindTopHudShellRefsByName(pid, refs);
@@ -224,7 +224,7 @@ function ensureTopHudShellForPlayer(player: mod.Player): TopHudShellRefs | undef
     State.conquest.debug.hudGenerationByPid[pid] = (State.conquest.debug.hudGenerationByPid[pid] ?? 0) + 1;
     State.hudCache.topHudShellByPid[pid] = refs;
 
-    setAdminPanelActionCountText(refs.adminPanelActionCountText, State.admin.actionCount);
+    if (FEATURE_ADMIN_PANEL) setAdminPanelActionCountText(refs.adminPanelActionCountText, State.admin.actionCount);
     setMatchStateTextForPid(pid);
     markPregameReadyHudDirty();
     setHudHelpDepthForPid(pid);

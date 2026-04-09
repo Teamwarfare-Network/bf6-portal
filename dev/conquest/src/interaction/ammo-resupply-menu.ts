@@ -942,11 +942,13 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
     let cache = State.hudCache.ammoResupplyMenuCache[pid];
     if (!cache || cache.sv !== ARM_SCHEMA) {
         if (cache) {
-            incrementUiCachePerfCounter(pid, "gadget", "invalid");
-            incrementUiCachePerfCounter(pid, "gadget", "rebuilt");
+            if (FEATURE_PERF_DIAG) {
+                incrementUiCachePerfCounter(pid, "gadget", "invalid");
+                incrementUiCachePerfCounter(pid, "gadget", "rebuilt");
+            }
             destroyArmMenu(pid);
         } else {
-            incrementUiCachePerfCounter(pid, "gadget", "built");
+            if (FEATURE_PERF_DIAG) incrementUiCachePerfCounter(pid, "gadget", "built");
         }
         cache = mkArmCache(pid);
         State.hudCache.ammoResupplyMenuCache[pid] = cache;
@@ -954,8 +956,10 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
     cache.root = cache.root ?? safeFind(cache.rootName);
     if (cache.root) {
         if (!armCacheOk(cache)) {
-            incrementUiCachePerfCounter(pid, "gadget", "invalid");
-            incrementUiCachePerfCounter(pid, "gadget", "rebuilt");
+            if (FEATURE_PERF_DIAG) {
+                incrementUiCachePerfCounter(pid, "gadget", "invalid");
+                incrementUiCachePerfCounter(pid, "gadget", "rebuilt");
+            }
             destroyArmMenu(pid);
             cache = mkArmCache(pid);
             State.hudCache.ammoResupplyMenuCache[pid] = cache;
@@ -1764,7 +1768,7 @@ function openArmMenu(eventPlayer: mod.Player, objId: number): boolean {
     if (isVehicleDeployLiveMenuOpenForPid(pid)) {
         closeVehicleDeployLiveMenuForPlayer(eventPlayer);
     }
-    if (!armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])) {
+    if (FEATURE_PERF_DIAG && !armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])) {
         incrementUiCachePerfCounter(pid, "gadget", "cold");
     }
     const cache = buildArmMenuHidden(eventPlayer);

@@ -3,6 +3,13 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.120: extract loading overlay from join-prompt into always-included loading-overlay.ts; FEATURE_JOIN_PROMPT now controls only future tips
+// v1.119: restore loading overlay: set FEATURE_JOIN_PROMPT=true (loading screen is essential UX during warm gate)
+// v1.118: fix postbuild dead-code strip: reorder block-strip before inline-replace, fix single-line if handling, fix joinPromptRootName ternary
+// v1.117: fix postbuild dead-code strip: two-pass with derived consts, literal false blocks, double-paren fix; guard missed ensureAdminPanelWidgets and joinPromptRootName call sites
+// v1.116: postbuild dead-code strip for false feature flags; guard missed call sites
+// v1.115: prebuild script auto-syncs feature flag imports from constants
+// v1.114: compile-time feature flags: exclude perf-diag, admin-panel, join-prompt from bundle
 // v1.113: deploy/undeploy perf: guard help text update during undeploy dialog hide, update analysis doc with test results and optimization summary
 // v1.112: deploy/undeploy perf phase 2: defer world icon sync past await, skip HUD restore on undeploy, guard admin panel cleanup
 // v1.111: deploy handler perf: dirty-flag debounce for ForAllPlayers broadcasts + per-pid immediate updates + remove redundant broadcast calls

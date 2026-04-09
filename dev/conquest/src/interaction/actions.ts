@@ -28,7 +28,7 @@ function applyPlayerDeployAvailability(eventPlayer: mod.Player, pid: number, dep
 // Single gate entry for both first-join and team-swap.
 // Immediately shows the loading overlay, blocks deploy, and hides all visible UI families before warm begins.
 function beginLoadingGate(eventPlayer: mod.Player, pid: number, reason: UiLoadReason): void {
-    clearJoinPromptForPlayerId(pid);
+    clearLoadingOverlayForPlayerId(pid);
     beginUiLoadSessionForPid(pid, reason);
     updateHudTeamSwapButtonVisibilityForPid(pid);
     setGateStartTimeForPid(pid, mod.GetMatchTimeElapsed());
@@ -112,14 +112,14 @@ function isAllUiFamiliesReadyForRelease(eventPlayer: mod.Player, pid: number): b
         && isReadyDialogHotReadyForPid(pid)
         && armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])
         && isGadgetMenuHotReadyForPid(pid)
-        && isAdminPanelWarmForPid(pid);
+        && (FEATURE_ADMIN_PANEL ? isAdminPanelWarmForPid(pid) : true);
 }
 
 // Reasserts the player loading overlay + deploy block together so all gate paths share the same visible/blocking ownership.
 function reassertPlayerUiLoadingGateVisuals(eventPlayer: mod.Player, pid: number): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     const overlayWasShown = isUiLoadOverlayShownForPid(pid);
-    showJoinPromptLoadingForPlayer(eventPlayer);
+    showLoadingOverlayForPlayer(eventPlayer);
     setUiLoadOverlayShownForPid(pid, true);
     enforceHudWarmTransitionDeployBlock(eventPlayer);
 }
@@ -323,7 +323,7 @@ async function prebuildAllUiFamiliesHidden(eventPlayer: mod.Player, pid: number)
             setGadgetMenuHotReadyForPid(pid, true);
         }
         // Admin panel (hidden prebuild for all players)
-        prebuildAdminPanelWhileHidden(eventPlayer, pid);
+        if (FEATURE_ADMIN_PANEL) prebuildAdminPanelWhileHidden(eventPlayer, pid);
     } finally {
         _prebuildBusy = false;
     }
@@ -365,14 +365,16 @@ function armCombatHudFamilyForSchedulerReveal(eventPlayer: mod.Player, pid: numb
 
 function renderAdminUiFamilyForReveal(eventPlayer: mod.Player, pid: number): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    const refs = ensureTopHudShellForPlayer(eventPlayer);
-    safeSetUIWidgetVisible(refs?.adminPanelActionCountText, true);
-    ensurePerfDiagWidgetsForPlayer(eventPlayer);
-    try {
-        if (State.players.readyDialogData[pid]?.posDebugVisible) {
-            setPositionDebugVisibleForPlayer(eventPlayer, true);
-        }
-    } catch {}
+    if (FEATURE_ADMIN_PANEL) {
+        const refs = ensureTopHudShellForPlayer(eventPlayer);
+        safeSetUIWidgetVisible(refs?.adminPanelActionCountText, true);
+        try {
+            if (State.players.readyDialogData[pid]?.posDebugVisible) {
+                setPositionDebugVisibleForPlayer(eventPlayer, true);
+            }
+        } catch {}
+    }
+    if (FEATURE_PERF_DIAG) ensurePerfDiagWidgetsForPlayer(eventPlayer);
 }
 
 function setPositionDebugWidgetsVisibleForPid(pid: number, visible: boolean): void {
@@ -557,10 +559,10 @@ async function releaseLoadingGate(eventPlayer: mod.Player, pid: number, token: n
     revealAllUiFamilies(eventPlayer, pid);
     conquestPhase3MarkHudDirty();
     // Hide and clear the loading overlay.
-    hideJoinPromptForPlayerId(pid);
+    hideLoadingOverlayForPlayerId(pid);
     await mod.Wait(0);
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    clearJoinPromptForPlayerId(pid);
+    clearLoadingOverlayForPlayerId(pid);
     setUiLoadOverlayShownForPid(pid, false);
     // Clear script-side restriction tracking without calling engine — player is on deploy screen
     // (undeployed) when the gate releases, so EnableAllInputRestrictions would be rejected (CQ_Bug_35).

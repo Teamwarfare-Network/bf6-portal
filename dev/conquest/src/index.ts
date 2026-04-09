@@ -23,9 +23,9 @@ import './ui/dialog/victory';
 import './ui/dialog/victory-build';
 import './ui/branding/top-left';
 import './ui/ready/ready-line';
-import './ui/admin/action-counter';
-import './hud/ui-cache-perf';
-import './hud/perf-diag';
+// import './ui/admin/action-counter'; // @feature FEATURE_ADMIN_PANEL
+// import './hud/ui-cache-perf'; // @feature FEATURE_PERF_DIAG
+// import './hud/perf-diag'; // @feature FEATURE_PERF_DIAG
 import './ui/conquest/top-hud-shell';
 import './ui/conquest/hud-core/types';
 import './ui/conquest/hud-core/constants';
@@ -65,10 +65,10 @@ import './interaction/ammo-resupply-menu';
 import './interaction/actions';
 import './interaction/spawn-selector';
 import './interaction/ui-events-ready';
-import './admin-panel/events';
+// import './admin-panel/events'; // @feature FEATURE_ADMIN_PANEL
 import './interaction/ui-events';
-import './admin-panel/build';
-import './admin-panel/visibility';
+// import './admin-panel/build'; // @feature FEATURE_ADMIN_PANEL
+// import './admin-panel/visibility'; // @feature FEATURE_ADMIN_PANEL
 import './ready-dialog/dialog-build-sections';
 import './ready-dialog/dialog-build-mode-config';
 import './ready-dialog/dialog-build-roster';
@@ -79,9 +79,10 @@ import './ready-dialog/mode-config-readout';
 import './ready-dialog/mode-config-aircraft-ceiling';
 import './ready-dialog/mode-config-presets';
 import './ready-dialog/matchup-summary';
-import './ready-dialog/join-prompt-ids';
-import './ready-dialog/join-prompt-layout';
-import './ready-dialog/join-prompt-events';
+import './ready-dialog/loading-overlay';
+// import './ready-dialog/join-prompt-ids'; // @feature FEATURE_JOIN_PROMPT
+// import './ready-dialog/join-prompt-layout'; // @feature FEATURE_JOIN_PROMPT
+// import './ready-dialog/join-prompt-events'; // @feature FEATURE_JOIN_PROMPT
 import './ready-dialog/ready-reset';
 import './ready-dialog/takeoff-gating';
 import './ready-dialog/roster-active';

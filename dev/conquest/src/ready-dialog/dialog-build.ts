@@ -13,7 +13,7 @@ function refreshReadyDialogSectionsForReveal(
     containerBase: mod.UIWidget,
     reveal: boolean
 ): void {
-    ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, false);
+    if (FEATURE_ADMIN_PANEL) ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, false);
     if (!reveal) return;
     // CQ_Bug_18: cached ready-dialog reveal should be a pure visibility flip.
     // The hidden prebuild path already owns section construction and initial labels.
@@ -44,7 +44,7 @@ function finalizeReadyDialogVisibility(
     const toggleButton = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId);
     const toggleLabel = safeFind(UI_ADMIN_PANEL_BUTTON_LABEL_ID + playerId);
     const toggleBorder = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId + "_BORDER");
-    if (!toggleButton || !toggleLabel || !toggleBorder) {
+    if (FEATURE_ADMIN_PANEL && (!toggleButton || !toggleLabel || !toggleBorder)) {
         ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, reveal);
         return;
     }
@@ -66,7 +66,7 @@ function refreshReadyDialogSectionsWhileHidden(
     playerId: number,
     containerBase: mod.UIWidget
 ): void {
-    ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, false);
+    if (FEATURE_ADMIN_PANEL) ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, false);
     // CQ_Bug_18: cached ready-dialog open must remain a pure reveal path.
     // Hidden dialog caches are invalidated when roster/map state changes underneath them,
     // so next open rebuilds fresh instead of relabeling a stale cached tree here.
@@ -94,8 +94,10 @@ function ensureReadyDialogUiBuiltHidden(eventPlayer: mod.Player): mod.UIWidget |
             || existingBase
             || (readyCounters && ((readyCounters.built > 0) || (readyCounters.rebuilt > 0)))
         );
-        if (hadPriorReadyBuild) incrementUiCachePerfCounter(playerId, "ready", "rebuilt");
-        else incrementUiCachePerfCounter(playerId, "ready", "built");
+        if (FEATURE_PERF_DIAG) {
+            if (hadPriorReadyBuild) incrementUiCachePerfCounter(playerId, "ready", "rebuilt");
+            else incrementUiCachePerfCounter(playerId, "ready", "built");
+        }
         createReadyDialogUI(eventPlayer, false);
     }
     return safeFind(UI_READY_DIALOG_CONTAINER_BASE_ID + playerId) as mod.UIWidget | undefined;
@@ -104,7 +106,7 @@ function ensureReadyDialogUiBuiltHidden(eventPlayer: mod.Player): mod.UIWidget |
 // Shows the ready dialog from the builder-owned lifecycle path after ensuring the hidden tree already exists.
 function showReadyDialogUI(eventPlayer: mod.Player): mod.UIWidget | undefined {
     const playerId = mod.GetObjId(eventPlayer);
-    if (!isReadyDialogUiCacheUsableForPid(playerId)) {
+    if (FEATURE_PERF_DIAG && !isReadyDialogUiCacheUsableForPid(playerId)) {
         incrementUiCachePerfCounter(playerId, "ready", "cold");
     }
     const dialogRoot = ensureReadyDialogUiBuiltHidden(eventPlayer);

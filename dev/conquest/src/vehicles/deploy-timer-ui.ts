@@ -1098,11 +1098,13 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
     if (isVehicleDeployTimerHudCacheUsable(priorCache)) {
         return priorCache;
     }
-    if (priorCache) {
-        incrementUiCachePerfCounter(pid, "vehicle", "invalid");
-        incrementUiCachePerfCounter(pid, "vehicle", "rebuilt");
-    } else {
-        incrementUiCachePerfCounter(pid, "vehicle", "built");
+    if (FEATURE_PERF_DIAG) {
+        if (priorCache) {
+            incrementUiCachePerfCounter(pid, "vehicle", "invalid");
+            incrementUiCachePerfCounter(pid, "vehicle", "rebuilt");
+        } else {
+            incrementUiCachePerfCounter(pid, "vehicle", "built");
+        }
     }
     let cache = priorCache;
     const uiRoot = mod.GetUIRoot();
@@ -1592,10 +1594,11 @@ function setVehicleDeployTimerHudFamilyVisible(
 // Restores UI input mode when the vehicle HUD is the active undeployed interaction surface.
 function syncVehicleDeployHudViewerInputMode(player: mod.Player, pid: number): void {
     const liveTerminalOpen = isVehicleDeployLiveTerminalModeForPid(pid);
+    const joinPromptVisible = !!safeFind(joinPromptRootName(pid));
     if (
         (!State.players.deployedByPid[pid] || liveTerminalOpen)
         && !State.players.readyDialogData[pid]?.dialogVisible
-        && !safeFind(joinPromptRootName(pid))
+        && !joinPromptVisible
         && !State.players.uiInputEnabledByPid[pid]
     ) {
         setUIInputModeForPlayer(player, true);
@@ -1815,7 +1818,7 @@ function revealVehicleDeployTimerHudForPlayer(player: mod.Player): boolean {
     if (!player || !mod.IsPlayerValid(player)) return false;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return false;
-    if (!isVehicleDeployTimerHudCacheUsable(State.hudCache.vehicleDeployTimerCache[pid])) {
+    if (FEATURE_PERF_DIAG && !isVehicleDeployTimerHudCacheUsable(State.hudCache.vehicleDeployTimerCache[pid])) {
         incrementUiCachePerfCounter(pid, "vehicle", "cold");
     }
 

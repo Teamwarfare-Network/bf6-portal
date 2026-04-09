@@ -3737,24 +3737,46 @@ None
 
 ## Codebase Reference Map
 
-Last updated: v1.110 (2026-04-06)
+Last updated: v1.120 (2026-04-08)
 
 ### Project Stats
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.110 |
-| Source files | 113 .ts files + 1 .json |
-| Source lines | ~28,728 |
-| Bundle size | 1,038,559 bytes |
-| Bundle limit | 1,048,576 bytes (1 MiB) |
-| Headroom | 10,017 bytes (1.0%) |
+| Version | 1.120 |
+| Source files | 114 .ts files + 1 .json |
+| Total source bytes | 1,308,675 (includes Changelog + excluded stubs) |
+| Bundle size (script) | 981,088 bytes |
+| Bundle size (strings) | 19,504 bytes |
+| Bundle limit | 1,048,576 bytes (1 MiB) — applies to script only |
+| Headroom | 67,488 bytes (6.4%) |
 | Entry point | `src/index.ts` -> 20 Portal event handlers |
-| Build tool | `bf6-portal-bundler` -> `dist/bundle.ts` + `dist/bundle.strings.json` |
+| Build pipeline | `prebuild.js` -> `bf6-portal-bundler` -> `postbuild.js` -> `verify.js` |
+| Build output | `dist/bundle.ts` + `dist/bundle.strings.json` |
+
+#### Compile-Time Feature Flags
+
+Feature flags in `src/config/conquest-constants.ts` control file-level bundle exclusion. When FALSE, associated source files are not imported and all call-site references are stripped by `postbuild.js` dead-code elimination. The `prebuild.js` script auto-syncs `// @feature`-tagged imports in `index.ts` with the flag values.
+
+| Flag | Default | Excluded source | Approx. bundle savings | Purpose |
+|------|---------|----------------|----------------------|---------|
+| `FEATURE_PERF_DIAG` | `false` | 16,676 bytes (2 files) | ~8-10K | Debug performance HUD |
+| `FEATURE_ADMIN_PANEL` | `false` | 43,174 bytes (4 files) | ~20-25K | Admin panel UI + position debug |
+| `FEATURE_JOIN_PROMPT` | `false` | 313 bytes (3 stubs) | ~0 | Future tip/prompt features |
+| `FEATURE_POSITION_DEBUG` | `true` | (interleaved in admin-panel/build.ts) | — | Coordinate display |
+
+Note: The loading overlay shown during the player UI warm gate (`src/ready-dialog/loading-overlay.ts`) is always included and not controlled by any feature flag. `FEATURE_JOIN_PROMPT` controls only future tip/prompt extensions.
+
+#### Bundle Size Notes
+
+- `Changelog.ts` (126,918 bytes) is the largest source file but contributes ~0 bundle bytes — postbuild strips all full-line comments.
+- `header-file.ts` and `footer-file.ts` contribute only their version lines (postbuild re-injects these).
+- Postbuild dead-code strip removes `if (FLAG)` blocks for false feature consts plus derived consts (e.g., `_pd`).
+- Source file sizes shown in the directory tree below are raw source bytes, not bundle contribution. Comment-heavy files contribute far less than their source size suggests.
 
 ### Directory Tree
 
-Bytes shown are source file size (approximate bundle contribution). Lines and bytes shown for files >2K.
+Bytes shown are raw source file size. Lines and bytes shown for files >2K. Files excluded by feature flags are marked.
 
 ```
 src/
@@ -3762,7 +3784,7 @@ src/
   types.ts                    -- Foundation type shim (imports foundation/*)
   header-file.ts              -- Version, license (MIT), attribution (66 lines | 3.6K)
   footer-file.ts              -- EOF version marker
-  Changelog.ts                -- Version history (809 lines | 125.7K)
+  Changelog.ts                -- Version history; stripped to ~0 bundle bytes by postbuild (819 lines | 126.9K)
   conquest-flow.ts            -- Continuous-live flow: start/end match, clock binding, match length config (182 lines | 7.2K)
   strings.json                -- All player-facing localized string keys (367 lines | 18.6K)
 
@@ -3785,7 +3807,7 @@ src/
     spawn-charge.ts           -- Phase 2B spawn-charge reason matrix and deploy charging (248 lines | 10.5K)
 
   config/
-    conquest-constants.ts     -- Gameplay tuning (tickets: 350, capture time: 10s, bleed: 1/3/s) (53 lines | 2.4K)
+    conquest-constants.ts     -- Gameplay tuning + compile-time feature flags (60 lines | 2.8K)
     types.ts                  -- Map config types (MapConfig, CapturePointConfig, VehicleSpawnSpec) (81 lines | 4.4K)
     maps.ts                   -- Map registry loader
     maps/operation-firestorm.ts -- Firestorm map-specific spawn/capture/ceiling config (371 lines | 20.4K)
@@ -3800,13 +3822,13 @@ src/
     capture-vo.ts             -- Phase 4B objective voice-over queue and dispatch (436 lines | 18.4K)
     player-join-leave.ts      -- Join/leave lifecycle, HUD cleanup, loading gate entry (228 lines | 10.1K)
     player-deploy.ts          -- Deploy/undeploy handlers, loading gate enforcement (125 lines | 5.6K)
-    player-loop-inputs.ts     -- Per-tick player input: gate enforcement, interact routing (64 lines | 3.2K)
+    player-loop-inputs.ts     -- Per-tick player input: gate enforcement, interact routing (63 lines | 3.1K)
     vehicle-events.ts         -- Vehicle enter/exit/spawn/destroy, slot binding; all UnspawnObject calls guarded (201 lines | 9.2K)
     area-triggers.ts          -- Capture-point and main-base area trigger handlers (133 lines | 6.0K)
 
   interaction/
     types.ts                  -- readyDialogData_t (30+ fields), UiLoadReason, HARD_PLAYER_LOCK_AUDIT_MODE (68 lines | 2.5K)
-    actions.ts                -- Loading gate orchestration, HUD warm/reveal, deploy control; prebuild serialization lock + yield points + stagger (757 lines | 33.5K)
+    actions.ts                -- Loading gate orchestration, HUD warm/reveal, deploy control; prebuild serialization lock + yield points + stagger (759 lines | 33.7K)
     hud-warm-state.ts         -- Per-player gate state accessors (40+ getters/setters) (280 lines | 12.4K)
     interact-point.ts         -- Ready-dialog interact point spawn/despawn lifecycle (192 lines | 8.0K)
     world-interactables.ts    -- Per-player spawned WorldIcon clones with SetWorldIconOwner visibility (324 lines | 12.6K)
@@ -3820,11 +3842,11 @@ src/
     status.ts                 -- Top-left status dock, safe widget setters, clock formatting (553 lines | 21.3K)
     help-visibility.ts        -- Help/ready text visibility control (51 lines | 2.2K)
     conquest-scaffold.ts      -- Phase 1 HUD setup seam (no-op placeholder)
-    ui-cache-perf.ts          -- Per-player UI cache counter infrastructure only (35 lines | 1.5K)
-    perf-diag.ts              -- Performance diagnostic HUD panel: tick rate, UI cache aggregate, section profiler (351 lines | 15.1K)
+    ui-cache-perf.ts          -- [EXCLUDED: FEATURE_PERF_DIAG] Per-player UI cache counter infrastructure (35 lines | 1.5K)
+    perf-diag.ts              -- [EXCLUDED: FEATURE_PERF_DIAG] Performance diagnostic HUD panel (351 lines | 15.1K)
     update-helpers.ts         -- Admin action counter management
 
-  admin-panel/
+  admin-panel/                  [ALL EXCLUDED: FEATURE_ADMIN_PANEL]
     build.ts                  -- Admin panel widget construction incl. position debug (647 lines | 27.2K)
     events.ts                 -- Admin button click handlers (213 lines | 8.1K)
     visibility.ts             -- Admin panel show/hide/toggle lifecycle (172 lines | 6.9K)
@@ -3848,9 +3870,10 @@ src/
     takeoff-gating.ts         -- Aircraft takeoff readiness check
     ready-reset.ts            -- Ready state reset helpers
     pregame-ui.ts             -- Pregame-phase overlay UI (117 lines | 4.1K)
-    join-prompt-ids.ts        -- Join prompt widget name constants (68 lines | 3.6K)
-    join-prompt-layout.ts     -- Join prompt overlay layout/construction (150 lines | 4.7K)
-    join-prompt-events.ts     -- Join prompt button/lifecycle events
+    loading-overlay.ts        -- Loading overlay shown during UI warm gate (always included) (199 lines | 6.7K)
+    join-prompt-ids.ts        -- [EXCLUDED: FEATURE_JOIN_PROMPT] Stub for future tip/button IDs
+    join-prompt-layout.ts     -- [EXCLUDED: FEATURE_JOIN_PROMPT] Stub for future tip layout
+    join-prompt-events.ts     -- [EXCLUDED: FEATURE_JOIN_PROMPT] Stub for future tip events
 
   boundary/
     enforcement.ts            -- Map boundary enforcement, kill timers, zone checks (362 lines | 13.5K)
@@ -3898,7 +3921,7 @@ src/
     branding/
       top-left.ts             -- Title/version branding panel (217 lines | 9.2K)
     admin/
-      action-counter.ts       -- Admin action event counter display
+      action-counter.ts       -- [EXCLUDED: FEATURE_ADMIN_PANEL] Admin action event counter display
 
   utils/
     main-base.ts              -- Main base detection and team binding
@@ -4078,8 +4101,7 @@ UI Caches Cold: 0 Avg; Invalid: 0 Avg (0 High)
 
 | File | Bytes | Lines | Concern |
 |------|-------|-------|---------|
-| `Changelog.ts` | 123.9K | 792 | Version history (largest single file in bundle) |
-| `index/capture-tickets.ts` | 87.5K | 2,159 | Capture state, bleed, view models, combat HUD |
+| `index/capture-tickets.ts` | 87.5K | 2,159 | Capture state, bleed, view models, combat HUD (largest file in bundle) |
 | `vehicles/deploy-timer-ui.ts` | 85.3K | 1,961 | Vehicle spawn timer HUD |
 | `interaction/ammo-resupply-menu.ts` | 69.5K | 1,880 | Gadget/ammo menu |
 | `ui/conquest/hud-core/build.ts` | 44.8K | 1,115 | Combat HUD widget construction |

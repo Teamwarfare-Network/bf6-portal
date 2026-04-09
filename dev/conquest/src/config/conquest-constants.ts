@@ -1,6 +1,13 @@
 ﻿// @ts-nocheck
 // Module: config/conquest-constants -- Phase 1 conquest scaffold constants (no gameplay activation yet)
 
+// Compile-time feature flags: when FALSE, associated source files are excluded from the bundle
+// and all external call sites are guarded to no-op. Toggle the matching imports in index.ts.
+const FEATURE_PERF_DIAG = false;
+const FEATURE_POSITION_DEBUG = true;
+const FEATURE_ADMIN_PANEL = false;
+const FEATURE_JOIN_PROMPT = false;
+
 const CONQUEST_STARTING_TICKETS = 350;
 const CONQUEST_CAPTURE_TIME_SECONDS = 10;
 const CONQUEST_NEUTRALIZATION_TIME_SECONDS = 15;

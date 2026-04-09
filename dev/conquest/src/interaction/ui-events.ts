@@ -12,6 +12,6 @@ function teamSwitchButtonEvent(
     if (handleArmMenuEvt(eventPlayer, eventUIWidget, eventUIButtonEvent)) return;
     if (tryHandleVehicleDeployTimerButtonEvent(eventPlayer, eventUIWidget, eventUIButtonEvent)) return;
     if (tryHandleReadyDialogButtonEvent(eventPlayer, playerId, widgetName, eventUIButtonEvent)) return;
-    if (tryHandleAdminTesterButtonEvent(eventPlayer, playerId, widgetName, eventUIButtonEvent)) return;
+    if (FEATURE_ADMIN_PANEL && tryHandleAdminTesterButtonEvent(eventPlayer, playerId, widgetName, eventUIButtonEvent)) return;
 }
 

@@ -85,7 +85,7 @@ async function onGameModeStartedImpl(): Promise<void> {
     // Reset HUD state through the lifecycle mutator owner.
     lifecycleSetNotReadyBaseline("game-mode-start");
     State.admin.actionCount = 0;
-    updateAdminPanelActionCountForAllPlayers();
+    if (FEATURE_ADMIN_PANEL) updateAdminPanelActionCountForAllPlayers();
     // Broadcast the initial phase label (e.g., NOT READY) to all HUDs.
     setMatchStateTextForAllPlayers();
     refreshConquestScaffoldHudForAllPlayers();
@@ -103,7 +103,7 @@ async function onGameModeStartedImpl(): Promise<void> {
             const nowElapsed = mod.GetMatchTimeElapsed();
             const nowSecondBoundary = Math.floor(nowElapsed);
             let clockUpdatedThisLoop = false;
-            const _pd = State.admin.perfDiagEnabled;
+            const _pd = FEATURE_PERF_DIAG && State.admin.perfDiagEnabled;
             let _t = 0;
 
             if (_pd) perfDiagOngoingGlobalTick();

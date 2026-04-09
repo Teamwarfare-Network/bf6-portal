@@ -57,7 +57,7 @@ function deleteReadyDialogChromeWidgets(playerId: number): void {
 
 // Resets the lazy admin-panel body and toggle state while preserving the cached ready-dialog shell.
 function resetReadyDialogAdminFamily(playerId: number): void {
-    if (State.players.readyDialogData[playerId]?.adminPanelBuilt) {
+    if (FEATURE_ADMIN_PANEL && State.players.readyDialogData[playerId]?.adminPanelBuilt) {
         deleteAdminPanelUI(playerId, false);
         setAdminPanelChildWidgetsVisible(playerId, false);
     }
@@ -117,8 +117,10 @@ function closeReadyDialogForAllPlayers(): void {
 // Hard delete used only for cleanup such as player leave or layout invalidation.
 function destroyReadyDialogUI(playerId: number): void {
     deleteReadyDialogChromeWidgets(playerId);
-    deleteAdminPanelUI(playerId, true);
-    deletePositionDebugWidgetsForPid(playerId);
+    if (FEATURE_ADMIN_PANEL) {
+        deleteAdminPanelUI(playerId, true);
+        deletePositionDebugWidgetsForPid(playerId);
+    }
     const state = State.players.readyDialogData[playerId];
     if (state) {
         state.uiBuilt = false;
@@ -142,7 +144,7 @@ function invalidateHiddenReadyDialogCacheForPid(playerId: number): void {
         resetReadyDialogSectionSignaturesForPid(playerId);
         return;
     }
-    incrementUiCachePerfCounter(playerId, "ready", "invalid");
+    if (FEATURE_PERF_DIAG) incrementUiCachePerfCounter(playerId, "ready", "invalid");
     destroyReadyDialogUI(playerId);
 }
 
