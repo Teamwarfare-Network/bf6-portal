@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.120)",
+        "title": "teamwarfare . net | TWL Conquest (v1.150)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -180,6 +180,8 @@
       "vehicleShortQuadbike": "Quad Bike",
       "vehicleShortGolfCart": "Golf Cart",
       "vehicleShortFlyer60": "Flyer 60",
+      "vehicleShortVector": "Vector",
+      "vehicleShortRhib": "RHIB",
       "vehicleShortApache": "Apache",
       "vehicleShortLittleBird": "AH-6M",
       "vehicleShortEuro": "Euro Tiger",
@@ -229,10 +231,12 @@
         "uiCachePerfToggle": "Toggle UI Cache Panel",
         "perfDiagToggle": "Toggle Perf Diag",
         "roundLengthDec": "Match Length -",
-        "roundLengthInc": "Match Length +"
+        "roundLengthInc": "Match Length +",
+        "groundDeployAll": "Ground Deploy All"
       },
       "labels": {
-        "roundLengthFormat": "Match Length: {0}:{1}{2}"
+        "roundLengthFormat": "Match Length: {0}:{1}{2}",
+        "cq52CounterFormat": "CQ52: {0}"
       },
       "buttons": {
         "panel": "Admin Panel"
@@ -249,7 +253,8 @@
           "deployTimersVisibleOff": "Timers Visible Deployed OFF",
           "uiCachePerfOn": "Toggle UI Cache",
           "uiCachePerfOff": "Toggle UI Cache",
-          "perfDiag": "Toggle Perf Diag"
+          "perfDiag": "Toggle Perf Diag",
+          "groundDeployAll": "Ground Deploy All"
         },
         "labels": {
           "clockTime": "Clock Time -/+ 1m",
@@ -361,7 +366,9 @@
       "posZ": "posZ:",
       "rotX": "rotX:",
       "rotY": "rotY:",
-      "rotZ": "rotZ:"
+      "rotZ": "rotZ:",
+      "srcVehicle": "in Vehicle",
+      "srcSoldier": "as Soldier"
     },
     "messages": {
       "init": "Conquest systems initialized.",

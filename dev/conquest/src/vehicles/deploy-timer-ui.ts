@@ -43,9 +43,9 @@ function getVehicleDeployTimerLabelKey(vehicleType: mod.VehicleList): number {
         case mod.VehicleList.CV90:
             return mod.stringkeys.twl.readyDialog.vehicleShortCv90;
         case mod.VehicleList.Cheetah:
-            return mod.stringkeys.twl.readyDialog.vehicleShortCheetah;
+            return mod.stringkeys.twl.readyDialog.vehicleShortGepard;    // Engine "Cheetah" = actual GE-26 PAX (Gepard)
         case mod.VehicleList.Gepard:
-            return mod.stringkeys.twl.readyDialog.vehicleShortGepard;
+            return mod.stringkeys.twl.readyDialog.vehicleShortCheetah;   // Engine "Gepard" = actual Cheetah 1A2
         case mod.VehicleList.Marauder:
             return mod.stringkeys.twl.readyDialog.vehicleShortMarauder;
         case mod.VehicleList.Marauder_Pax:
@@ -56,6 +56,10 @@ function getVehicleDeployTimerLabelKey(vehicleType: mod.VehicleList): number {
             return mod.stringkeys.twl.readyDialog.vehicleShortGolfCart;
         case mod.VehicleList.Flyer60:
             return mod.stringkeys.twl.readyDialog.vehicleShortFlyer60;
+        case mod.VehicleList.Vector:
+            return mod.stringkeys.twl.readyDialog.vehicleShortVector;
+        case mod.VehicleList.RHIB:
+            return mod.stringkeys.twl.readyDialog.vehicleShortRhib;
         default:
             return mod.stringkeys.twl.system.unknownPlayer;
     }
@@ -140,7 +144,9 @@ function buildVehicleDeployTimerRenderPlan(player: mod.Player, pid: number): Veh
     const slots = getVehicleDeployRenderSlotsForPlayer(player);
     const liveTerminalOpen = isVehicleDeployLiveTerminalModeForPid(pid);
     const hasPendingDirectSpawnClaim = !State.players.deployedByPid[pid] && !!findVehicleSlotByPendingSpawnOwnerPid(pid);
-    const warmReady = isHudWarmReadyForPid(pid) && !isHudSwapTransitionActiveForPid(pid);
+    // Harden: during live match, ignore swap-transition flag (can get stuck), but always respect
+    // hudWarmCompleted so late joiners still wait for UI families to build.
+    const warmReady = isHudWarmReadyForPid(pid) && (isMatchLive() || !isHudSwapTransitionActiveForPid(pid));
     const shouldShowRows = shouldShowVehicleDeployTimersForPid(pid)
         && slots.length > 0
         && !hasPendingDirectSpawnClaim;
@@ -1841,7 +1847,14 @@ function refreshVehicleDeployTimersForPlayerPreservingVisibility(player: mod.Pla
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return false;
     // Fix A: Skip refresh while loading gate owns this player's UI state.
-    if (isUiLoadGateActiveForPid(pid)) return false;
+    // Harden: if match is live and player is deployed, the gate should have cleared — force-release it.
+    if (isUiLoadGateActiveForPid(pid)) {
+        if (isMatchLive() && !!State.players.deployedByPid[pid]) {
+            setUiLoadGateActiveForPid(pid, false);
+        } else {
+            return false;
+        }
+    }
     const cache = ensureVehicleDeployTimerHudForPlayer(player);
     if (!cache || !cache.root) return false;
     const renderPlan = buildVehicleDeployTimerRenderPlan(player, pid);

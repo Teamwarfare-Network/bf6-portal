@@ -551,6 +551,22 @@ function refreshVehicleSpawnSpecsFromModeConfig(): void {
     ];
 }
 
+// Recreates the physical spawner object at a new position when the spawn anchor changes.
+// The engine's abandonment system tracks distance from the spawner, so the spawner must
+// stay co-located with the vehicle's intended spawn/teleport position.
+function relocateSlotSpawner(slot: VehicleSpawnerSlot, newPos: mod.Vector, newRot: mod.Vector): void {
+    try { mod.UnspawnObject(slot.spawner); } catch {}
+    const spawner = mod.SpawnObject(
+        mod.RuntimeSpawn_Common.VehicleSpawner,
+        newPos,
+        newRot
+    ) as mod.VehicleSpawner;
+    mod.SetVehicleSpawnerAutoSpawn(spawner, false);
+    configureVehicleSpawner(spawner, slot.vehicleType);
+    slot.spawner = spawner;
+    slot.spawnerObjId = getObjId(spawner);
+}
+
 // Applies updated runtime spawn specs to already-registered spawner slots.
 function applyVehicleSpawnSpecsToExistingSlots(): void {
     if (State.vehicles.slots.length === 0) return;
@@ -579,8 +595,15 @@ function applyVehicleSpawnSpecsToExistingSlots(): void {
             slot.vehicleType = spec.vehicle;
             configureVehicleSpawner(slot.spawner, slot.vehicleType);
         }
+        // Relocate the physical spawner when the anchor position changes (e.g. transport
+        // slot switching between fast mover pad and heli pad). Without this, the engine's
+        // abandonment system tracks from the old spawner position and kills teleported vehicles.
+        const posChanged = mod.DistanceBetween(slot.spawnPos, spec.pos) > 1.0;
         slot.spawnPos = spec.pos;
         slot.spawnRot = spec.rot;
+        if (posChanged) {
+            relocateSlotSpawner(slot, spec.pos, spec.rot);
+        }
         refreshVehicleSlotAuthoritativeState(slot);
     }
 }

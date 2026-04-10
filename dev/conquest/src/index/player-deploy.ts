@@ -123,6 +123,12 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
         void reassertUiLoadingAfterUndeploy(eventPlayer);
         return;
     }
+
+    // CQ_Bug_44: proactively refresh the deploy timer HUD on undeploy so the Ground/Air
+    // deploy rows appear immediately on the deploy screen. Without this, the HUD cache is
+    // still in its "alive + hidden" state and only heals on the next discrete vehicle event
+    // (respawn timer, etc) or the 1s live-tick re-assertion (which is live-only).
+    updateVehicleDeployTimerHudForPlayer(eventPlayer);
 }
 
 

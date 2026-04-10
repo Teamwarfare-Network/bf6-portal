@@ -52,6 +52,7 @@ function addVehicleSpawnerSlot(teamId: TeamID, slotNumber: number, spawnPos: mod
         spawnRequestToken: 0,
         spawnRequestAtSeconds: -1,
         expectingSpawn: false,
+        expectingSpawnStartedAtSeconds: -1,
         vehicleId: -1,
         respawnDelaySeconds: VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS,
         respawnQueuedAtSeconds: -1,

@@ -36,6 +36,7 @@ function startPregameCountdown(triggerPlayer?: mod.Player, force?: boolean): voi
 
     closeReadyDialogForAllPlayers();
     State.conquest.lifecyclePhase = "COUNTDOWN";
+    updateVehicleDeployTimerHudForAllPlayers();
     updateHudTeamSwapButtonVisibilityForAllPlayers();
     undeployAllDeployedPlayers();
     mod.EnableAllPlayerDeploy(false);

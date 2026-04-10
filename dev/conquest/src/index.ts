@@ -23,7 +23,7 @@ import './ui/dialog/victory';
 import './ui/dialog/victory-build';
 import './ui/branding/top-left';
 import './ui/ready/ready-line';
-// import './ui/admin/action-counter'; // @feature FEATURE_ADMIN_PANEL
+import './ui/admin/action-counter'; // @feature FEATURE_ADMIN_PANEL
 // import './hud/ui-cache-perf'; // @feature FEATURE_PERF_DIAG
 // import './hud/perf-diag'; // @feature FEATURE_PERF_DIAG
 import './ui/conquest/top-hud-shell';
@@ -38,6 +38,7 @@ import './ui/conquest/hud-core/render';
 import './ui/conquest/hud-core/pipeline';
 import './ui/conquest/hud-core/toggle';
 import './hud/update-helpers';
+import './hud/position-debug'; // @feature FEATURE_POSITION_DEBUG
 import './vehicles/array-helpers';
 import './vehicles/vehicle-classification';
 import './vehicles/ownership';
@@ -65,10 +66,10 @@ import './interaction/ammo-resupply-menu';
 import './interaction/actions';
 import './interaction/spawn-selector';
 import './interaction/ui-events-ready';
-// import './admin-panel/events'; // @feature FEATURE_ADMIN_PANEL
+import './admin-panel/events'; // @feature FEATURE_ADMIN_PANEL
 import './interaction/ui-events';
-// import './admin-panel/build'; // @feature FEATURE_ADMIN_PANEL
-// import './admin-panel/visibility'; // @feature FEATURE_ADMIN_PANEL
+import './admin-panel/build'; // @feature FEATURE_ADMIN_PANEL
+import './admin-panel/visibility'; // @feature FEATURE_ADMIN_PANEL
 import './ready-dialog/dialog-build-sections';
 import './ready-dialog/dialog-build-mode-config';
 import './ready-dialog/dialog-build-roster';

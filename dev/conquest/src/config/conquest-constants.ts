@@ -5,7 +5,7 @@
 // and all external call sites are guarded to no-op. Toggle the matching imports in index.ts.
 const FEATURE_PERF_DIAG = false;
 const FEATURE_POSITION_DEBUG = true;
-const FEATURE_ADMIN_PANEL = false;
+const FEATURE_ADMIN_PANEL = true;
 const FEATURE_JOIN_PROMPT = false;
 
 const CONQUEST_STARTING_TICKETS = 350;

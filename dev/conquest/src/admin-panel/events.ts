@@ -115,6 +115,9 @@ function tryHandleAdminTesterButtonEvent(
             if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
             const state = State.players.readyDialogData[playerId];
             state.posDebugVisible = !state.posDebugVisible;
+            // CQ_Bug_51: lock in the admin's choice so later reveal paths (respawn, team-swap
+            // re-warm, ready-dialog close) stop re-asserting posDebugVisible=true via autoStart.
+            state.posDebugAdminOverride = true;
             setPositionDebugVisibleForPlayer(eventPlayer, state.posDebugVisible);
             handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.positionDebug);
         }
@@ -155,7 +158,7 @@ function tryHandleAdminTesterButtonEvent(
         eventUIButtonEvent,
         UI_TEST_BUTTON_PERF_DIAG_TOGGLE_ID,
         () => {
-            setPerfDiagEnabled(!State.admin.perfDiagEnabled);
+            if (FEATURE_PERF_DIAG) setPerfDiagEnabled(!State.admin.perfDiagEnabled);
             handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.perfDiagToggle);
         }
     );
@@ -193,6 +196,18 @@ function tryHandleAdminTesterButtonEvent(
     );
     if (matchLengthIncHandled !== undefined) return matchLengthIncHandled;
 
+    const groundDeployAllHandled = tryHandleAdminPanelPrimaryAction(
+        playerId,
+        widgetName,
+        eventUIButtonEvent,
+        UI_TEST_BUTTON_GROUND_DEPLOY_ALL_ID,
+        () => {
+            forceSpawnAllReadyVehicleSlots();
+            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.groundDeployAll);
+        }
+    );
+    if (groundDeployAllHandled !== undefined) return groundDeployAllHandled;
+
     switch (widgetName) {
         case UI_TEST_BUTTON_CLOCK_TIME_DEC_ID + playerId:
         case UI_TEST_BUTTON_CLOCK_TIME_INC_ID + playerId:
@@ -205,6 +220,7 @@ function tryHandleAdminTesterButtonEvent(
         case UI_TEST_BUTTON_PERF_DIAG_TOGGLE_ID + playerId:
         case UI_ADMIN_MATCH_LENGTH_DEC_ID + playerId:
         case UI_ADMIN_MATCH_LENGTH_INC_ID + playerId:
+        case UI_TEST_BUTTON_GROUND_DEPLOY_ALL_ID + playerId:
             return true;
     }
 

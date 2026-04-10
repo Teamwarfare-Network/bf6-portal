@@ -13,17 +13,6 @@ function isTankSpawnVolumeVehicleType(vehicleType: mod.VehicleList): boolean {
     return isTankVehicleType(vehicleType);
 }
 
-function doesVehicleMatchConfiguredSlotType(vehicle: mod.Vehicle | undefined, slot: VehicleSpawnerSlot | undefined): boolean {
-    if (!vehicle || !slot) return false;
-    try {
-        // BF6 only exposes CompareVehicleName here, and the local docs note it can accept "same type"
-        // matches as well as exact-name matches. Treat this as a best-effort guard, not strict model identity.
-        return mod.CompareVehicleName(vehicle, slot.vehicleType);
-    } catch {
-        return false;
-    }
-}
-
 function getSpawnVolumeClassForSlot(slot: VehicleSpawnerSlot): VehicleSlotSpawnCategory | "tank" | undefined {
     if (isAircraftSpawnVolumeVehicleType(slot.vehicleType)) return "attack_chopper";
     if (isTankSpawnVolumeVehicleType(slot.vehicleType)) return "tank";
@@ -194,6 +183,18 @@ async function maybeApplySpawnTransformCorrectionToVehicle(eventVehicle: mod.Veh
     await applySpawnYawToVehicle(eventVehicle, slot);
 }
 
+// CQ_Bug_49: Rejects a spawned vehicle that is positively identified as a tank when the slot is
+// configured for an aircraft. Used to block the engine-default Abrams from `RuntimeSpawn_Common.VehicleSpawner`
+// from binding to a heli/jet slot via active tracking or position fallback. Does NOT unspawn the
+// rejected vehicle — the bind-retry path in `onVehicleSpawnedImpl` may still reference it, and the
+// fresh-aircraft caller runs a post-spawn sweep at the birth-spawn position to reap the orphan
+// once binding of the real aircraft has completed.
+function rejectWrongCategoryBindForAircraftSlot(slot: VehicleSpawnerSlot, eventVehicle: mod.Vehicle): boolean {
+    if (!isAircraftSpawnVolumeVehicleType(slot.vehicleType)) return false;
+    if (!isTankVehicleInstance(eventVehicle)) return false;
+    return true;
+}
+
 // Binding uses object position (not vehicle state) because it is stable at spawn time.
 // Fallback binding can mis-assign on tight maps if a spawn arrives outside the token window.
 function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vector): TeamID | 0 {
@@ -208,7 +209,10 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
         if (!expired) {
             const activeSlot = State.vehicles.slots[activeIndex];
             if (activeSlot && activeSlot.enabled && activeSlot.expectingSpawn && activeSlot.spawnRequestToken === activeToken) {
-                if (!doesVehicleMatchConfiguredSlotType(eventVehicle, activeSlot)) {
+                // CQ_Bug_49: reject wrong-category bind but leave active tracking armed so the real
+                // aircraft spawn (forced by ForceVehicleSpawnerSpawn with the configured type) can
+                // bind on its own OnVehicleSpawned event.
+                if (rejectWrongCategoryBindForAircraftSlot(activeSlot, eventVehicle)) {
                     return 0;
                 }
                 activeSlot.expectingSpawn = false;
@@ -221,9 +225,19 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
                 return activeSlot.teamId;
             }
         } else {
+            // CQ_Bug_52: release global tracking AND the tracked slot's expectingSpawn flag.
+            // Without this, an aircraft birth-spawn landing more than VEHICLE_SPAWNER_BIND_TIMEOUT_SECONDS
+            // after the click (fresh-air fallback path is far from slot.spawner and fails the distance
+            // bind) leaves expectingSpawn latched and every subsequent click is silently rejected.
             State.vehicles.activeSpawnSlotIndex = undefined;
             State.vehicles.activeSpawnToken = undefined;
             State.vehicles.activeSpawnRequestedAtSeconds = undefined;
+            const expiredSlot = State.vehicles.slots[activeIndex];
+            if (expiredSlot && expiredSlot.expectingSpawn) {
+                expiredSlot.expectingSpawn = false;
+                refreshVehicleSlotAuthoritativeState(expiredSlot);
+                updateVehicleDeployTimerHudForAllPlayers();
+            }
         }
     }
 
@@ -234,8 +248,9 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
         const spawnerPos = mod.GetObjectPosition(slot.spawner);
         const d = mod.DistanceBetween(vehiclePos, spawnerPos);
         if (d <= VEHICLE_SPAWNER_BIND_DISTANCE_METERS) {
-            if (!doesVehicleMatchConfiguredSlotType(eventVehicle, slot)) {
-                continue;
+            // CQ_Bug_49: same reject rule applies to the distance fallback path.
+            if (rejectWrongCategoryBindForAircraftSlot(slot, eventVehicle)) {
+                return 0;
             }
             slot.expectingSpawn = false;
             bindVehicleToSpawnerSlot(slot, vehicleObjId);

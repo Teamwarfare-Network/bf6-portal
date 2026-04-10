@@ -27,6 +27,7 @@ async function forceSpawnWithRetry(slotIndex: number): Promise<boolean> {
     if (!slot.enabled) return false;
     const token = slot.enableToken;
     slot.expectingSpawn = true;
+    slot.expectingSpawnStartedAtSeconds = mod.GetMatchTimeElapsed();
     slot.spawnRequestToken += 1;
     slot.spawnRequestAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
     refreshVehicleSlotAuthoritativeState(slot);
@@ -179,6 +180,22 @@ async function pollVehicleSpawnerSlots(): Promise<void> {
 
             for (let i = 0; i < State.vehicles.slots.length; i++) {
                 const slot = State.vehicles.slots[i];
+
+                // CQ_Bug_52: belt-and-suspenders watchdog for latched expectingSpawn flags.
+                // If expectingSpawn has been true longer than the stuck threshold and the global
+                // active tracker is not still pointing at this slot, clear the flag + refresh HUD
+                // so the deploy button can re-gate correctly. Catches any future leak in any writer.
+                if (slot.expectingSpawn && slot.expectingSpawnStartedAtSeconds >= 0) {
+                    const stuckFor = mod.GetMatchTimeElapsed() - slot.expectingSpawnStartedAtSeconds;
+                    if (stuckFor > VEHICLE_SPAWNER_STUCK_EXPECTING_SPAWN_THRESHOLD_SECONDS
+                        && State.vehicles.activeSpawnSlotIndex !== i) {
+                        slot.expectingSpawn = false;
+                        slot.expectingSpawnStartedAtSeconds = -1;
+                        refreshVehicleSlotAuthoritativeState(slot);
+                        updateVehicleDeployTimerHudForAllPlayers();
+                    }
+                }
+
                 if (slot.vehicleId === -1) continue;
 
                 const vehicle = findVehicleById(slot.vehicleId);

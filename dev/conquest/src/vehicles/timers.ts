@@ -27,6 +27,8 @@ function resolveVehicleSlotSpawnCategory(vehicleType: mod.VehicleList): VehicleS
         case mod.VehicleList.Quadbike:
         case mod.VehicleList.GolfCart:
         case mod.VehicleList.Flyer60:
+        case mod.VehicleList.Vector:
+        case mod.VehicleList.RHIB:
             return "fast_mover";
         default:
             return "other";
@@ -137,13 +139,17 @@ async function runVehicleSlotCooldownHudLoop(slot: VehicleSpawnerSlot): Promise<
 }
 
 // Records a successful bind/spawn and clears any prior respawn countdown for the slot.
+// CQ_Bug_52: refresh the deploy-timer HUD for all players so the "ready" button state never
+// lingers after a bind (the HUD gate re-evaluates against the new vehicleId synchronously).
 function bindVehicleToSpawnerSlot(slot: VehicleSpawnerSlot, vehicleObjId: number): void {
     slot.vehicleId = vehicleObjId;
+    slot.expectingSpawnStartedAtSeconds = -1;
     slot.respawnRunning = false;
     slot.spawnRetryScheduled = false;
     slot.lastSpawnedAtSeconds = mod.GetMatchTimeElapsed();
     clearVehicleSlotRespawnTimer(slot);
     refreshVehicleSlotAuthoritativeState(slot);
+    updateVehicleDeployTimerHudForAllPlayers();
 }
 
 function markVehicleSlotDestroyed(slot: VehicleSpawnerSlot): void {

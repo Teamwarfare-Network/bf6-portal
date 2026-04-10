@@ -80,7 +80,7 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
                 jetSpawnFloor: 1000.0 - 250,
                 jetSpawnCeiling: 800.0 - 250,
                 rotHeli: mod.CreateVector(0.0, 90, 0.0),
-                rotPlane: mod.CreateVector(-75.0, 90.0, 0.0),
+                rotPlane: mod.CreateVector(-45.0, 90.0, 0.0),
             },
         ],
         team2AircraftSpawnVolumes: [ // Add "Aircraft Box 2", "Aircraft Box 3", etc. as more entries in this array.
@@ -112,7 +112,7 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
                 jetSpawnFloor: 1000.0 - 250,
                 jetSpawnCeiling: 800.0 - 250,
                 rotHeli: mod.CreateVector(0.0, -90, 0.0),
-                rotPlane: mod.CreateVector(-75.0, -90.0, 0.0),
+                rotPlane: mod.CreateVector(-45.0, -90.0, 0.0),
             },
         ],
         team1TankSpawnVolumes: [
@@ -208,28 +208,28 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
         team2HeliSpawns: [                        //posX      posY      posZ                             posX      posY      posZ
             { slotNumber: 1, pos: mod.CreateVector( 553.976,  111.283, -256.070), rot: mod.CreateVector( 0.0,     -49.401,   0.0)},
             { slotNumber: 2, pos: mod.CreateVector( 571.639,  111.174, -202.065), rot: mod.CreateVector( 0.0,     -46.728,   0.0)},
-            { slotNumber: 3, pos: mod.CreateVector( 647.500,  110.562, -276.828), rot: mod.CreateVector( 0.0,     -126.059,  0.0)},
+            { slotNumber: 3, pos: mod.CreateVector( 647.500,  110.562, -276.828), rot: mod.CreateVector( 0.0,     -126.0,    0.0)},
             { slotNumber: 4, pos: mod.CreateVector( 636.239,  110.580, -258.841), rot: mod.CreateVector( 0.0,     -129.259,  0.0)},
         ],
         team1JetSpawns: [
-            { slotNumber: 1, pos: mod.CreateVector(-703.347, 132.686,  259.311), rot: mod.CreateVector(0.0,      0.914,  0.0)},
-            { slotNumber: 2, pos: mod.CreateVector(-698.153, 132.564,  291.282), rot: mod.CreateVector(0.0,      0.898,  0.0)},
+            { slotNumber: 1, pos: mod.CreateVector(-703.347, 132.686,  259.311), rot: mod.CreateVector(0.0,      52.372,  0.0)},
+            { slotNumber: 2, pos: mod.CreateVector(-698.153, 132.564,  291.282), rot: mod.CreateVector(0.0,      51.454,  0.0)},
         ],
         team2JetSpawns: [
-            { slotNumber: 1, pos: mod.CreateVector( 612.576, 110.580, -316.309), rot: mod.CreateVector(3.142,   -0.929,  3.142)},
-            { slotNumber: 2, pos: mod.CreateVector( 583.212, 110.595, -309.980), rot: mod.CreateVector(3.142,   -0.946,  3.142)},
+            { slotNumber: 1, pos: mod.CreateVector( 612.576, 110.580, -316.309), rot: mod.CreateVector(180.0,   -126.0,   180.0)},
+            { slotNumber: 2, pos: mod.CreateVector( 583.212, 110.595, -309.980), rot: mod.CreateVector(180.0,   -126.0,   180.0)},
         ],
         team1FastMoverSpawns: [
-            { slotNumber: 1, pos: mod.CreateVector(-716.127, 132.847,  183.024), rot: mod.CreateVector(0.0,  0.756, 0.0)},
-            { slotNumber: 2, pos: mod.CreateVector(-734.492, 132.866,  176.553), rot: mod.CreateVector(0.0,  1.565, 0.0)},
-            { slotNumber: 3, pos: mod.CreateVector(-797.653, 132.861,  211.358), rot: mod.CreateVector(0.0,  1.250, 0.0)},
-            { slotNumber: 4, pos: mod.CreateVector(-776.271, 132.861,  187.308), rot: mod.CreateVector(0.0,  1.166, 0.0)},
+            { slotNumber: 1, pos: mod.CreateVector(-716.127, 132.847,  183.024), rot: mod.CreateVector(0.0,  134.0,  0.0)},
+            { slotNumber: 2, pos: mod.CreateVector(-734.492, 132.866,  176.553), rot: mod.CreateVector(0.0,  89.668, 0.0)},
+            { slotNumber: 3, pos: mod.CreateVector(-797.653, 132.861,  211.358), rot: mod.CreateVector(0.0,  71.620, 0.0)},
+            { slotNumber: 4, pos: mod.CreateVector(-776.271, 132.861,  187.308), rot: mod.CreateVector(0.0,  66.811, 0.0)},
         ],
         team2FastMoverSpawns: [
-            { slotNumber: 1, pos: mod.CreateVector( 549.641, 111.434, -239.906), rot: mod.CreateVector(0.0,  0.245, 0.0)},
-            { slotNumber: 2, pos: mod.CreateVector( 571.273, 110.356, -222.866), rot: mod.CreateVector(0.0, -1.127, 0.0)},
-            { slotNumber: 3, pos: mod.CreateVector( 582.318, 110.925, -267.865), rot: mod.CreateVector(0.0, -0.237, 0.0)},
-            { slotNumber: 4, pos: mod.CreateVector( 596.913, 110.252, -221.642), rot: mod.CreateVector(0.0, -0.679, 0.0)},
+            { slotNumber: 1, pos: mod.CreateVector( 549.641, 111.434, -239.906), rot: mod.CreateVector(0.0,  14.037, 0.0)},
+            { slotNumber: 2, pos: mod.CreateVector( 571.273, 110.356, -222.866), rot: mod.CreateVector(0.0, -64.556, 0.0)},
+            { slotNumber: 3, pos: mod.CreateVector( 582.318, 110.925, -267.865), rot: mod.CreateVector(0.0, -13.579, 0.0)},
+            { slotNumber: 4, pos: mod.CreateVector( 596.913, 110.252, -221.642), rot: mod.CreateVector(0.0, -90.0,   0.0)},
         ],
         readyDialogPresetPackages: {
             [mod.stringkeys.twl.readyDialog.gameModeConquest8v8]: {
@@ -278,11 +278,11 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
                     team2Heli2: undefined,
 
                     team1Ground1: VEHICLE_ABRAMS,
-                    team1Ground2: VEHICLE_CHEETAH,
+                    team1Ground2: VEHICLE_GEPARD,    // Engine "Gepard" = actual Cheetah 1A2
                     team1Ground3: undefined,
                     team1Ground4: undefined,
                     team2Ground1: VEHICLE_LEOPARD,
-                    team2Ground2: VEHICLE_GEPARD,
+                    team2Ground2: VEHICLE_CHEETAH,  // Engine "Cheetah" = actual GE-26 PAX (Gepard)
                     team2Ground3: undefined,
                     team2Ground4: undefined,
 
@@ -310,11 +310,11 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
                     team2Heli2: VEHICLE_AH6M,
 
                     team1Ground1: VEHICLE_ABRAMS,
-                    team1Ground2: VEHICLE_CHEETAH,
+                    team1Ground2: VEHICLE_GEPARD,    // Engine "Gepard" = actual Cheetah 1A2
                     team1Ground3: undefined,
                     team1Ground4: undefined,
                     team2Ground1: VEHICLE_LEOPARD,
-                    team2Ground2: VEHICLE_GEPARD,
+                    team2Ground2: VEHICLE_CHEETAH,  // Engine "Cheetah" = actual GE-26 PAX (Gepard)
                     team2Ground3: undefined,
                     team2Ground4: undefined,
 
@@ -342,11 +342,11 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
                     team2Heli2: VEHICLE_AH6M,
 
                     team1Ground1: VEHICLE_ABRAMS,
-                    team1Ground2: VEHICLE_CHEETAH,
+                    team1Ground2: VEHICLE_GEPARD,    // Engine "Gepard" = actual Cheetah 1A2
                     team1Ground3: VEHICLE_M2BRADLEY,
                     team1Ground4: undefined,
                     team2Ground1: VEHICLE_LEOPARD,
-                    team2Ground2: VEHICLE_GEPARD,
+                    team2Ground2: VEHICLE_CHEETAH,  // Engine "Cheetah" = actual GE-26 PAX (Gepard)
                     team2Ground3: VEHICLE_CV90,
                     team2Ground4: undefined,
 

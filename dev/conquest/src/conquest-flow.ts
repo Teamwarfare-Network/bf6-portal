@@ -16,13 +16,20 @@ function destroyAllTrackedVehicles(): void {
 }
 
 // Force-spawns all enabled vehicle slots that currently have no live vehicle.
+// Uses the same sequential spawn pipeline as the normal deploy flow so that
+// each vehicle is bound, token-tracked, and teleported to its correct orientation.
 function forceSpawnAllReadyVehicleSlots(): void {
     if (!State.vehicles?.slots) return;
+    const indices: number[] = [];
     for (let i = 0; i < State.vehicles.slots.length; i++) {
         const slot = State.vehicles.slots[i];
         if (!slot.enabled || slot.vehicleId !== -1) continue;
-        try { mod.ForceVehicleSpawnerSpawn(slot.spawner); } catch {}
+        indices.push(i);
     }
+    if (indices.length === 0) return;
+    State.vehicles.spawnSequenceToken = (State.vehicles.spawnSequenceToken ?? 0) + 1;
+    State.vehicles.spawnSequenceInProgress = true;
+    void runSequentialSpawns(indices, State.vehicles.spawnSequenceToken);
 }
 
 // Binds clock expiry to Conquest end-condition checks for continuous live flow.
@@ -176,6 +183,28 @@ function syncAdminMatchLengthLabelForAllPlayers(): void {
         const pid = safeGetPlayerId(player);
         if (pid === undefined || isPidDisconnected(pid)) continue;
         const widget = safeFind(UI_ADMIN_MATCH_LENGTH_LABEL_ID + pid);
+        safeSetUITextLabel(widget, label);
+    }
+}
+
+// CQ_Bug_52 temporary diagnostic: paints "CQ52: <count>" into the admin-panel counter widget for
+// every viewer. Called only when the HUD-ready-but-claim-rejected anomaly trips, so per-frame cost
+// is zero. Remove together with the rest of the CQ52 counter telemetry once the live bake confirms
+// the fix holds.
+function syncCq52GateDesyncCounterForAllPlayers(): void {
+    const players = mod.AllPlayers();
+    const count = mod.CountOf(players);
+    const label = mod.Message(
+        mod.stringkeys.twl.adminPanel.labels.cq52CounterFormat,
+        State.vehicles.gateDesyncCount || 0
+    );
+
+    for (let i = 0; i < count; i++) {
+        const player = mod.ValueInArray(players, i) as mod.Player;
+        if (!player || !mod.IsPlayerValid(player)) continue;
+        const pid = safeGetPlayerId(player);
+        if (pid === undefined || isPidDisconnected(pid)) continue;
+        const widget = safeFind(UI_ADMIN_CQ52_COUNTER_ID + pid);
         safeSetUITextLabel(widget, label);
     }
 }

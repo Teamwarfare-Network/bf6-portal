@@ -2155,5 +2155,7 @@ function conquestPhase2AOnLiveTick(): void {
     conquestPhase2AApplyBleedTick();
     conquestPhase2ACheckEndCondition();
     updateConquestCombatHudForAllPlayers();
+    // Re-assert deploy timer HUD visibility every second so transient suppression self-heals.
+    updateVehicleDeployTimerHudForAllPlayers();
 }
 

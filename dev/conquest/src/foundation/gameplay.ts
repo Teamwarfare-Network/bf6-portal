@@ -51,10 +51,10 @@ const vehIds: number[] = [];
 const vehOwners: mod.Player[] = [];
 
 // Basic Vehicle Spawner constants, can be tuned for balance.
-const VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS = 15;
-const VEHICLE_SPAWNER_TIME_UNTIL_ABANDON_SECONDS = 2;
-const VEHICLE_SPAWNER_KEEP_ALIVE_ABANDON_RADIUS = 5;
-const VEHICLE_SPAWNER_KEEP_ALIVE_SPAWNER_RADIUS = 25;
+const VEHICLE_SPAWNER_RESPAWN_DELAY_SECONDS = 120;
+const VEHICLE_SPAWNER_TIME_UNTIL_ABANDON_SECONDS = 30;
+const VEHICLE_SPAWNER_KEEP_ALIVE_ABANDON_RADIUS = 100;
+const VEHICLE_SPAWNER_KEEP_ALIVE_SPAWNER_RADIUS = 50;
 
 // Vehicle spawner backend logic. These are quite particular, changing can cause bugs
 const VEHICLE_SPAWNER_START_DELAY_SECONDS = 1;
@@ -64,6 +64,9 @@ const VEHICLE_SPAWNER_STARTUP_CLEANUP_RADIUS_METERS = 50.0;
 const VEHICLE_SPAWNER_POLL_INTERVAL_SECONDS = 5.0;
 const VEHICLE_SPAWNER_BIND_DISTANCE_METERS = 7.0;
 const VEHICLE_SPAWNER_BIND_TIMEOUT_SECONDS = 2.0; // This should not be smaller than VEHICLE_SPAWNER_KEEP_ALIVE_SPAWNER_RADIUS
+// CQ_Bug_52: watchdog reap threshold. Any slot whose expectingSpawn has been true longer than this
+// without the global active tracker still pointing at it is considered latched and reaped.
+const VEHICLE_SPAWNER_STUCK_EXPECTING_SPAWN_THRESHOLD_SECONDS = 10.0;
 
 // Main base trigger fallback ids.
   // These remain only as compatibility defaults until every map owns its main-base trigger ids in MapConfig.
@@ -182,6 +185,8 @@ const VEHICLE_MARAUDER_PAX = mod.VehicleList.Marauder_Pax;
 const VEHICLE_QUADBIKE = mod.VehicleList.Quadbike;
 const VEHICLE_GOLFCART = mod.VehicleList.GolfCart;
 const VEHICLE_FLYER60 = mod.VehicleList.Flyer60;
+const VEHICLE_VECTOR = mod.VehicleList.Vector;
+const VEHICLE_RHIB = mod.VehicleList.RHIB;
 // AH6M is used here from the current runtime despite being absent from the local core reference snapshot.
 const VEHICLE_AH6M = (mod.VehicleList as any).AH6M as mod.VehicleList;
 const READY_DIALOG_AIRCRAFT_CEILING_DEFAULT = 550;
@@ -236,8 +241,8 @@ const READY_DIALOG_GROUND_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortLeopard, vehicle: VEHICLE_LEOPARD },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortBradley, vehicle: VEHICLE_M2BRADLEY },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortCv90, vehicle: VEHICLE_CV90 },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortCheetah, vehicle: VEHICLE_CHEETAH },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortGepard, vehicle: VEHICLE_GEPARD },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortCheetah, vehicle: VEHICLE_GEPARD },   // Engine enum "Gepard" actually spawns the Cheetah 1A2
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortGepard, vehicle: VEHICLE_CHEETAH },  // Engine enum "Cheetah" actually spawns the GE-26 PAX (Gepard)
 ];
 
 const READY_DIALOG_FAST_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
@@ -247,6 +252,7 @@ const READY_DIALOG_FAST_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortQuadbike, vehicle: VEHICLE_QUADBIKE },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortGolfCart, vehicle: VEHICLE_GOLFCART },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortFlyer60, vehicle: VEHICLE_FLYER60 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortVector, vehicle: VEHICLE_VECTOR },
 ];
 
 const READY_DIALOG_TEAM1_TRANSPORT_SLOT_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [

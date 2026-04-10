@@ -79,24 +79,6 @@ async function onVehicleSpawnedImpl(eventVehicle: mod.Vehicle): Promise<void> {
             try { mod.UnspawnObject(eventVehicle); } catch {}
             return;
         }
-        if (!doesVehicleMatchConfiguredSlotType(eventVehicle, slot)) {
-            slot.expectingSpawn = false;
-            slot.activeOwnerPid = undefined;
-            refreshVehicleSlotAuthoritativeState(slot);
-            if (State.vehicles.activeSpawnSlotIndex === slotIndex && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
-                State.vehicles.activeSpawnSlotIndex = undefined;
-                State.vehicles.activeSpawnToken = undefined;
-                State.vehicles.activeSpawnRequestedAtSeconds = undefined;
-            }
-            try { mod.UnspawnObject(eventVehicle); } catch {}
-            await mod.Wait(0.1);
-            configureVehicleSpawner(slot.spawner, slot.vehicleType);
-            const success = await forceSpawnWithRetry(slotIndex);
-            if (!success) {
-                void scheduleBlockedSpawnRetry(slotIndex);
-            }
-            return;
-        }
         if (!slot.expectingSpawn && slot.vehicleId === -1) {
             // Replace the spawner's initial default spawn with a forced spawn using the configured type.
             try { mod.UnspawnObject(eventVehicle); } catch {}
@@ -106,6 +88,20 @@ async function onVehicleSpawnedImpl(eventVehicle: mod.Vehicle): Promise<void> {
             if (!success) {
                 void scheduleBlockedSpawnRetry(slotIndex);
             }
+            return;
+        }
+        // CQ_Bug_49: when the fresh-aircraft air direct-spawn path creates a runtime VehicleSpawner
+        // prefab at a birth-spawn volume point, the prefab's baked-in AutoSpawn fires before we can
+        // call SetVehicleSpawnerAutoSpawn(false), producing a mid-air Abrams at the slot's aerial
+        // spawn position. Despawn that wrong-category vehicle here and return WITHOUT clearing
+        // active tracking or slot.expectingSpawn, so the real aircraft from ForceVehicleSpawnerSpawn
+        // (configured with the correct VehicleType) can bind on its subsequent OnVehicleSpawned.
+        // This intercept must happen BEFORE the bind attempt on line ~96 and the failed-bind
+        // fallback on lines ~113-120, because that fallback otherwise force-binds the tank to the
+        // aircraft slot (ignoring the reject guard in bindSpawnedVehicleToSlot) when the bind
+        // retry at line ~100 leaves inferredTeam === 0 and slot.vehicleId is still -1.
+        if (isAircraftSpawnVolumeVehicleType(slot.vehicleType) && isTankVehicleInstance(eventVehicle)) {
+            try { mod.UnspawnObject(eventVehicle); } catch {}
             return;
         }
     }

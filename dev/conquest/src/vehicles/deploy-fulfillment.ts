@@ -218,8 +218,9 @@ function isVehicleUnoccupied(vehicle: mod.Vehicle | undefined): boolean {
     return true;
 }
 
-// Removes unbound, unoccupied vehicles lingering on a spawn pad before a fresh forced spawn.
-function cleanupStaleVehiclesNearDirectSpawnSlot(slot: VehicleSpawnerSlot): void {
+// Removes unbound, unoccupied vehicles lingering within the cleanup radius of an arbitrary position.
+// Shared helper used by both the ground-slot pad sweep and the CQ_Bug_49 fresh-aircraft birth-pos sweep.
+function cleanupStaleVehiclesNearPosition(pos: mod.Vector): void {
     const vehicles = mod.AllVehicles();
     const count = mod.CountOf(vehicles);
     for (let i = 0; i < count; i++) {
@@ -235,13 +236,18 @@ function cleanupStaleVehiclesNearDirectSpawnSlot(slot: VehicleSpawnerSlot): void
             vehiclePos = undefined;
         }
         if (!vehiclePos) continue;
-        if (mod.DistanceBetween(vehiclePos, slot.spawnPos) > VEHICLE_DIRECT_SPAWN_STALE_PAD_CLEANUP_RADIUS_METERS) continue;
+        if (mod.DistanceBetween(vehiclePos, pos) > VEHICLE_DIRECT_SPAWN_STALE_PAD_CLEANUP_RADIUS_METERS) continue;
         try {
             mod.UnspawnObject(vehicle);
         } catch {
             // Best-effort cleanup: stale clutter should not block the main spawn path.
         }
     }
+}
+
+// Removes unbound, unoccupied vehicles lingering on a ground spawn pad before a fresh forced spawn.
+function cleanupStaleVehiclesNearDirectSpawnSlot(slot: VehicleSpawnerSlot): void {
+    cleanupStaleVehiclesNearPosition(slot.spawnPos);
 }
 
 async function spawnDirectSpawnVehicleIfReady(slot: VehicleSpawnerSlot): Promise<mod.Vehicle | undefined> {
@@ -285,6 +291,9 @@ function tryFindVehicleNearDirectSpawnAirPoint(pos: mod.Vector): mod.Vehicle | u
 
     for (let i = 0; i < count; i++) {
         const vehicle = mod.ValueInArray(vehicles, i) as mod.Vehicle;
+        // CQ_Bug_49: exclude positively-identified tanks — the engine default Abrams from the runtime
+        // spawner prefab must never be picked up by the aircraft-spawn fallback path.
+        if (isTankVehicleInstance(vehicle)) continue;
         let vehiclePos: mod.Vector | undefined = undefined;
         try {
             vehiclePos = mod.GetObjectPosition(vehicle);
@@ -303,6 +312,12 @@ function tryFindVehicleNearDirectSpawnAirPoint(pos: mod.Vector): mod.Vehicle | u
     return closestVehicle;
 }
 
+// CQ_Bug_49: Forces a runtime aircraft spawner at the slot's birth-spawn volume and binds the
+// resulting vehicle to the slot. The ordering matters: tracking is armed BEFORE SpawnObject so
+// that the synchronous configure + force-spawn block pre-empts the engine's baked-in default
+// auto-spawn from `RuntimeSpawn_Common.VehicleSpawner` (which would otherwise spawn an Abrams).
+// A wrong-category bind (engine default slipping through) is caught downstream by the tank-instance
+// reject guard in `bindSpawnedVehicleToSlot`.
 async function spawnFreshAircraftDirectSpawnVehicleForSlot(slot: VehicleSpawnerSlot): Promise<mod.Vehicle | undefined> {
     if (!shouldUseFreshAircraftAirDirectSpawn(slot)) return undefined;
     if (!isVehicleSlotReadyForReservationDeploy(slot)) return undefined;
@@ -318,6 +333,7 @@ async function spawnFreshAircraftDirectSpawnVehicleForSlot(slot: VehicleSpawnerS
     if (slotIndex === -1) return undefined;
 
     slot.expectingSpawn = true;
+    slot.expectingSpawnStartedAtSeconds = mod.GetMatchTimeElapsed();
     slot.spawnRequestToken += 1;
     slot.spawnRequestAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
     slot.suppressNextBindSpawnTransformCorrection = true;
@@ -466,16 +482,6 @@ async function tryFulfillPendingVehicleDirectSpawnSeatForPlayer(
 
     if (!isDirectSpawnDriverSeatAvailable(vehicle)) {
         return handlePendingVehicleSpawnSeatFailure(player, slot, failureMode);
-    }
-
-    if (!doesVehicleMatchConfiguredSlotType(vehicle, slot)) {
-        resetRejectedDirectSpawnVehicleForSlot(slot, vehicle);
-        vehicle = useFreshAircraftAirDirectSpawn
-            ? await spawnFreshAircraftDirectSpawnVehicleForSlot(slot)
-            : await spawnDirectSpawnVehicleIfReady(slot);
-        if (!vehicle || !doesVehicleMatchConfiguredSlotType(vehicle, slot) || !isDirectSpawnDriverSeatAvailable(vehicle)) {
-            return handlePendingVehicleSpawnSeatFailure(player, slot, failureMode);
-        }
     }
 
     // Pre-set vehicle occupancy cache so safeGetVehicleFromPlayer/safeGetPlayerVehicleSeat

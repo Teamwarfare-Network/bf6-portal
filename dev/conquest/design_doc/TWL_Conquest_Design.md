@@ -3743,13 +3743,13 @@ Last updated: v1.120 (2026-04-08)
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.120 |
-| Source files | 114 .ts files + 1 .json |
-| Total source bytes | 1,308,675 (includes Changelog + excluded stubs) |
-| Bundle size (script) | 981,088 bytes |
-| Bundle size (strings) | 19,504 bytes |
+| Version | 1.150 |
+| Source files | 115 .ts files + 1 .json |
+| Total source bytes | 1,334,810 (includes Changelog + excluded stubs) |
+| Bundle size (script) | 1,030,237 bytes |
+| Bundle size (strings) | 19,742 bytes |
 | Bundle limit | 1,048,576 bytes (1 MiB) — applies to script only |
-| Headroom | 67,488 bytes (6.4%) |
+| Headroom | 18,339 bytes (1.7%) |
 | Entry point | `src/index.ts` -> 20 Portal event handlers |
 | Build pipeline | `prebuild.js` -> `bf6-portal-bundler` -> `postbuild.js` -> `verify.js` |
 | Build output | `dist/bundle.ts` + `dist/bundle.strings.json` |
@@ -3761,9 +3761,9 @@ Feature flags in `src/config/conquest-constants.ts` control file-level bundle ex
 | Flag | Default | Excluded source | Approx. bundle savings | Purpose |
 |------|---------|----------------|----------------------|---------|
 | `FEATURE_PERF_DIAG` | `false` | 16,676 bytes (2 files) | ~8-10K | Debug performance HUD |
-| `FEATURE_ADMIN_PANEL` | `false` | 43,174 bytes (4 files) | ~20-25K | Admin panel UI + position debug |
+| `FEATURE_ADMIN_PANEL` | `true` | 43,174 bytes (4 files) | ~20-25K | Admin panel UI + action buttons |
 | `FEATURE_JOIN_PROMPT` | `false` | 313 bytes (3 stubs) | ~0 | Future tip/prompt features |
-| `FEATURE_POSITION_DEBUG` | `true` | (interleaved in admin-panel/build.ts) | — | Coordinate display |
+| `FEATURE_POSITION_DEBUG` | `true` | hud/position-debug.ts | — | Coordinate display (standalone file) |
 
 Note: The loading overlay shown during the player UI warm gate (`src/ready-dialog/loading-overlay.ts`) is always included and not controlled by any feature flag. `FEATURE_JOIN_PROMPT` controls only future tip/prompt extensions.
 
@@ -3784,9 +3784,9 @@ src/
   types.ts                    -- Foundation type shim (imports foundation/*)
   header-file.ts              -- Version, license (MIT), attribution (66 lines | 3.6K)
   footer-file.ts              -- EOF version marker
-  Changelog.ts                -- Version history; stripped to ~0 bundle bytes by postbuild (819 lines | 126.9K)
-  conquest-flow.ts            -- Continuous-live flow: start/end match, clock binding, match length config (182 lines | 7.2K)
-  strings.json                -- All player-facing localized string keys (367 lines | 18.6K)
+  Changelog.ts                -- Version history; stripped to ~0 bundle bytes by postbuild (840 lines | 129.9K)
+  conquest-flow.ts            -- Continuous-live flow: start/end match, clock binding, match length config (189 lines | 7.6K)
+  strings.json                -- All player-facing localized string keys (387 lines | 19.7K)
 
   foundation/
     modlib.ts                 -- Portal scripting API import wrapper
@@ -3811,7 +3811,7 @@ src/
     types.ts                  -- Map config types (MapConfig, CapturePointConfig, VehicleSpawnSpec) (81 lines | 4.4K)
     maps.ts                   -- Map registry loader
     maps/operation-firestorm.ts -- Firestorm map-specific spawn/capture/ceiling config (371 lines | 20.4K)
-    map-runtime.ts            -- Map detection and config application; UnspawnObject guarded (754 lines | 32.6K)
+    map-runtime.ts            -- Map detection and config application; spawner relocation on knob change (777 lines | 33.8K)
     runtime.ts                -- Runtime config initialization (89 lines | 4.9K)
 
   index/
@@ -3846,9 +3846,9 @@ src/
     perf-diag.ts              -- [EXCLUDED: FEATURE_PERF_DIAG] Performance diagnostic HUD panel (351 lines | 15.1K)
     update-helpers.ts         -- Admin action counter management
 
-  admin-panel/                  [ALL EXCLUDED: FEATURE_ADMIN_PANEL]
-    build.ts                  -- Admin panel widget construction incl. position debug (647 lines | 27.2K)
-    events.ts                 -- Admin button click handlers (213 lines | 8.1K)
+  admin-panel/                  [EXCLUDED when FEATURE_ADMIN_PANEL = false; currently INCLUDED]
+    build.ts                  -- Admin panel widget construction (348 lines | 11.5K)
+    events.ts                 -- Admin button click handlers; perf-diag guarded behind feature flag (226 lines | 8.7K)
     visibility.ts             -- Admin panel show/hide/toggle lifecycle (172 lines | 6.9K)
 
   ready-dialog/
@@ -4105,10 +4105,10 @@ UI Caches Cold: 0 Avg; Invalid: 0 Avg (0 High)
 | `vehicles/deploy-timer-ui.ts` | 85.3K | 1,961 | Vehicle spawn timer HUD |
 | `interaction/ammo-resupply-menu.ts` | 69.5K | 1,880 | Gadget/ammo menu |
 | `ui/conquest/hud-core/build.ts` | 44.8K | 1,115 | Combat HUD widget construction |
-| `config/map-runtime.ts` | 32.1K | 754 | Map config application |
+| `config/map-runtime.ts` | 33.8K | 777 | Map config application, spawner relocation |
 | `interaction/actions.ts` | 31.9K | 719 | Loading gate orchestration |
 | `ui/conquest/hud-core/render.ts` | 31.7K | 667 | Combat HUD visual update |
-| `admin-panel/build.ts` | 27.2K | 647 | Admin panel widgets |
+| `admin-panel/build.ts` | 11.5K | 348 | Admin panel widgets (position debug moved to hud/position-debug.ts) |
 | `ui/dialog/victory-build.ts` | 25.1K | 527 | Victory dialog widget construction |
 | `vehicles/deploy-fulfillment.ts` | 22.7K | 524 | Direct vehicle spawn |
 | `foundation/ui-layout.ts` | 21.9K | 349 | HUD dimensions, colors, timing constants |

@@ -271,6 +271,7 @@ const State: GameState = {
         activeSpawnRequestedAtSeconds: undefined,
         configReady: false,
         startupCleanupDone: false,
+        gateDesyncCount: 0,
     },
     hudCache: {
         topHudShellByPid: {},

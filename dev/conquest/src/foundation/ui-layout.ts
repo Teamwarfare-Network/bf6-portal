@@ -232,7 +232,9 @@ const GATE_FLOOR_SECONDS = 30;
 const GATE_TIMEOUT_SECONDS = 60;
 
 // Admin Panel
-const ADMIN_PANEL_HEIGHT = 355;
+// Height bumped to 412 to accommodate the CQ_Bug_52 temporary counter row (row 10). Reduce back to
+// 390 when the CQ52 telemetry is removed.
+const ADMIN_PANEL_HEIGHT = 412;
 const ADMIN_PANEL_PADDING = 5;
 const ADMIN_PANEL_BASE_X = -5;
 const ADMIN_PANEL_BASE_Y = 15;

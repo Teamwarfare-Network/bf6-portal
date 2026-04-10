@@ -59,3 +59,18 @@ function isAircraftVehicleInstance(vehicle: mod.Vehicle): boolean {
     );
 }
 
+// Positive-identification tank detector used only to REJECT engine-default Abrams from binding to
+// aircraft slots (CQ_Bug_49). Cheetah/Gepard are intentionally excluded: `CompareVehicleName` returns
+// false for them due to the engine enum swap (CQ_Bug_43), so listing them here would risk false
+// negatives rather than false positives — but the engine default from `RuntimeSpawn_Common.VehicleSpawner`
+// is always Abrams, so catching the main tank models is sufficient for the documented bug.
+function isTankVehicleInstance(vehicle: mod.Vehicle): boolean {
+    if (!vehicle) return false;
+    return (
+        mod.CompareVehicleName(vehicle, mod.VehicleList.Abrams)
+        || mod.CompareVehicleName(vehicle, mod.VehicleList.Leopard)
+        || mod.CompareVehicleName(vehicle, mod.VehicleList.CV90)
+        || mod.CompareVehicleName(vehicle, mod.VehicleList.M2Bradley)
+    );
+}
+

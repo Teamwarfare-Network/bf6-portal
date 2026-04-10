@@ -28,6 +28,9 @@ interface readyDialogData_t {
     uiLayoutVersion: number;
     posDebugVisible: boolean;
     posDebugToken: number;
+    // Sticks after the admin-panel position-debug toggle is pressed so subsequent reveal
+    // paths (respawn, team-swap re-warm, ready-dialog close) stop re-asserting posDebugVisible=true.
+    posDebugAdminOverride: boolean;
     vehicleTimersVisibleWhileDeployed: boolean;
     hudWarmToken: number;
     hudWarmCompleted: boolean;

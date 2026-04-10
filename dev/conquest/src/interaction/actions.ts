@@ -368,10 +368,11 @@ function renderAdminUiFamilyForReveal(eventPlayer: mod.Player, pid: number): voi
     if (FEATURE_ADMIN_PANEL) {
         const refs = ensureTopHudShellForPlayer(eventPlayer);
         safeSetUIWidgetVisible(refs?.adminPanelActionCountText, true);
+    }
+    // Position debug is independent of admin panel; auto-start on reveal if flag is on.
+    if (FEATURE_POSITION_DEBUG) {
         try {
-            if (State.players.readyDialogData[pid]?.posDebugVisible) {
-                setPositionDebugVisibleForPlayer(eventPlayer, true);
-            }
+            autoStartPositionDebugOnDeploy(eventPlayer);
         } catch {}
     }
     if (FEATURE_PERF_DIAG) ensurePerfDiagWidgetsForPlayer(eventPlayer);

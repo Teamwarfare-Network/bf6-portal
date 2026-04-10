@@ -157,6 +157,7 @@ function initReadyDialogData(eventPlayer: mod.Player) {
         uiLayoutVersion: 0,
         posDebugVisible: false,
         posDebugToken: 0,
+        posDebugAdminOverride: false,
         vehicleTimersVisibleWhileDeployed: false,
         hudWarmToken: 0,
         hudWarmCompleted: false,

@@ -3,6 +3,36 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.150: CQ_Bug_52 air deploy silent-failure hardening: close expectingSpawn leak in bind-tracker expired branch, add 10s watchdog reap, force HUD refresh on bind, add temporary CQ52 desync counter widget
+// v1.149: admin position-debug toggle sticks across reveal paths (CQ_Bug_51)
+// v1.148: fix pre-deploy GetSoldierState error from reveal-path position-debug sync sample (CQ_Bug_50)
+// v1.147: remove redundant v1.145 deferred orphan-tank sweep (CQ_Bug_39 noise reduction); v1.146 inline intercept already reaps rejected wrong-category vehicles synchronously
+// v1.146: CQ_Bug_49: intercept wrong-category default-auto-spawn at top of onVehicleSpawnedImpl before the failed-bind fallback force-binds the Abrams to the aircraft slot
+// v1.145: fix CQ_Bug_49 v2: reject tank-instance binds on aircraft slots via bindSpawnedVehicleToSlot guard + deferred orphan sweep - revert v1.144 layout change which made the race guaranteed
+// v1.144: fix CQ_Bug_49: tank-in-air on heli/jet direct spawn - defer active tracking and sweep default Abrams at birth-spawn position before forcing real aircraft spawn
+// v1.143: fix CQ_Bug_44: refresh deploy timer HUD on undeploy so ground/air deploy menu appears immediately on deploy screen instead of waiting for next vehicle event or live-tick heartbeat
+// v1.142: abandonment tuning for conquest: grace 2s->30s, radius 5m->100m, spawner radius 25m->50m, respawn 15s->120s
+// v1.141: plane air deploy rotX -75 to -45 (less steep pitch)
+// v1.140: relocate spawner when transport slot anchor changes between fast mover and heli pad positions
+// v1.139: revert team1 fast mover slots 2-4 to original rotY; only slot 1 = 134
+// v1.138: team1 fast mover rotY=134 all slots; team2 fast mover revert slot1, slot4 rotY=-90
+// v1.137: ground deploy all: use runSequentialSpawns for proper bind/teleport orientation correction
+// v1.136: ground deploy all: configure spawner vehicle type from knob selection before forcing spawn
+// v1.135: remove stale position debug duplicates from admin-panel/build; guard setPerfDiagEnabled behind FEATURE_PERF_DIAG
+// v1.134: restore admin panel; add Ground Deploy All button
+// v1.133: remove CompareVehicleName binding guards; fixes Gepard spawn loop (CQ_Bug_43)
+// v1.132: fix team2 jet/heli3/transport1 rotY orientations; investigate Gepard binding failure
+// v1.131: fix Vector/RHIB missing from fast_mover spawn category; deploy timer now tracks them
+// v1.130: fix Cheetah/Gepard label swap in deploy timer UI; add Vector/RHIB to deploy timer labels
+// v1.129: add Vector to transport vehicle options; add RHIB constant for future water maps
+// v1.128: fix Cheetah/Gepard engine enum swap: labels and default presets now match actual in-game vehicles
+// v1.127: fix jet and transport spawn rotations on Firestorm: convert radians to degrees
+// v1.126: position debug: remove broken rotZ, replace with Vehicle/Soldier source indicator
+// v1.125: Fix position debug vehicle rotation: always use FacingDirection for rotX (pitch) and rotY (yaw) as proven source, GetObjectRotation only for rotZ (roll). GetObjectRotation returns unreliable near-zero floats for many vehicle types causing stale display
+// v1.124: Fix position debug vehicle rotation not updating: GetObjectRotation returns zeros for some vehicle types (AH6 confirmed). Now tries GetObjectRotation first, falls back to FacingDirection-derived pitch/yaw if it throws or returns all zeros. Position always displays regardless of rotation source
+// v1.123: Fix position debug vehicle rotation: use GetObjectRotation for all 3 axes instead of mixing FacingDirection-derived pitch/yaw with GetObjectRotation roll. Now displays degrees matching authored map config values (X=pitch, Y=yaw, Z=roll). Soldier mode unchanged (FacingDirection is the only source)
+// v1.122: Extract position debug overlay from admin-panel into standalone hud/position-debug.ts, gated by FEATURE_POSITION_DEBUG independently of FEATURE_ADMIN_PANEL. Auto-starts on deploy when flag is true, defaulted ON for vehicle spawn position tuning
+// v1.121: CQ_Bug_19 hardening: add 1s deploy timer HUD re-assertion to live tick, harden loading gate escape for stuck gates during live deploy, ignore swap-transition flag for warmReady during live match while still respecting hudWarmCompleted for late joiners, add deploy timer update call to COUNTDOWN phase transition
 // v1.120: extract loading overlay from join-prompt into always-included loading-overlay.ts; FEATURE_JOIN_PROMPT now controls only future tips
 // v1.119: restore loading overlay: set FEATURE_JOIN_PROMPT=true (loading screen is essential UX during warm gate)
 // v1.118: fix postbuild dead-code strip: reorder block-strip before inline-replace, fix single-line if handling, fix joinPromptRootName ternary

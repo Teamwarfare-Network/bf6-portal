@@ -16,6 +16,9 @@ type VehicleSpawnerSlot = {
     spawnRequestToken: number;
     spawnRequestAtSeconds: number;
     expectingSpawn: boolean;
+    // CQ_Bug_52: seconds at which expectingSpawn was most recently flipped to true.
+    // Used by the watchdog reap in pollVehicleSpawnerSlots to detect latched flags.
+    expectingSpawnStartedAtSeconds: number;
     vehicleId: number;
     respawnDelaySeconds: number;
     respawnQueuedAtSeconds: number;
@@ -448,6 +451,10 @@ interface GameState {
         activeSpawnRequestedAtSeconds?: number;
         configReady: boolean;
         startupCleanupDone: boolean;
+        // CQ_Bug_52 temporary diagnostic counter: bumps when a deploy-button click lands on a slot
+        // the HUD still paints as ready but the claim gate rejects. Surfaces a hidden desync so the
+        // live bake can validate the fix. Remove after a few rounds confirm it stays at 0.
+        gateDesyncCount: number;
     };
     hudCache: {
         topHudShellByPid: Record<number, TopHudShellRefs>;

@@ -1,7 +1,7 @@
 # Conquest Issues
 
-Last Updated: 2026-04-06  
-Last Tested Build: `v1.110` (CQ_Bug_40 fix: prebuild serialization + yield + stagger; CQ_Bug_39 hardening: all UnspawnObject calls guarded; pre-seat teleport removed; map gate restored)
+Last Updated: 2026-04-10  
+Last Tested Build: `v1.150` (CQ_Bug_49 behavioral fix confirmed at v1.146; v1.147 removed the redundant v1.145 deferred orphan-tank sweep; v1.148 eliminated the pre-deploy GetSoldierState error — CQ_Bug_50; v1.149 makes the admin position-debug toggle sticky across deaths, team-swap re-warm, and ready-dialog reopens — CQ_Bug_51; v1.150 closes the silent air-deploy failure by reaping latched `expectingSpawn` flags after the 2s bind-tracker timeout, adding a watchdog reap, forcing HUD refresh on bind, and temporarily surfacing a `CQ52:` desync counter on the admin panel — CQ_Bug_52)
 
 ## Current Snapshot
 - `CQ_Bug_1`: Resolved
@@ -37,15 +37,25 @@ Last Tested Build: `v1.110` (CQ_Bug_40 fix: prebuild serialization + yield + sta
 - `CQ_Bug_31`: Open (Phase 10 investigation)
 - `CQ_Bug_32`: Open (Phase 10 polish)
 - `CQ_Bug_33`: Open (Phase 10 polish)
-- `CQ_Bug_34`: Open (Phase 10 tuning — vehicle ground spawner orientations and positions need per-map pass)
+- `CQ_Bug_34`: Partially resolved (Firestorm ground + air spawn orientations tuned v1.132-v1.141; other maps still need pass)
 - `CQ_Bug_35`: Resolved (v1.075 — all call sites on undeployed players eliminated; error logs confirmed clean in SP testing)
 - `CQ_Bug_36`: Resolved (v1.071 — guarded behind isPlayerDeployed; confirmed clean in SP testing)
 - `CQ_Bug_37`: Resolved (v1.074+v1.076 — vehicle occupancy cache guard + proactive cache set before ForcePlayerToSeat)
 - `CQ_Bug_38`: Resolved (v1.074+v1.076 — same vehicle occupancy cache guard; confirmed clean in SP testing)
-- `CQ_Bug_39`: Hardened (v1.110 — all 6 previously unguarded UnspawnObject calls now wrapped in try/catch; cosmetic engine log may still appear but cannot crash script; needs MP confirmation of reduced frequency)
+- `CQ_Bug_39`: Hardened further (v1.147 — removed v1.145 deferred orphan-tank sweep since v1.146 inline intercept already reaps rejected vehicles synchronously; per-spawn cosmetic log source eliminated. Underlying engine-logs-before-JS-catch pattern remains for call sites that unavoidably touch DICE-authored or already-destroyed objects)
 - `CQ_Bug_40`: Fix applied (v1.104 — root cause was concurrent `prebuildAllUiFamiliesHidden` execution across simultaneous player joins; fix: serialization lock + yield points + stagger delay; needs MP confirmation)
 - `CQ_Bug_41`: Implemented (v1.078-v1.081 — self-terminating loops for boundary enforcement, vehicle timers, and gadget menu refresh; removed all-player per-second/per-tick polls; needs MP confirmation)
 - `CQ_Bug_42`: Guarded (v1.073 — defensive null checks on array helpers and capture-tickets; needs MP confirmation)
+- `CQ_Bug_43`: Resolved (v1.133 — root cause: `doesVehicleMatchConfiguredSlotType` used `CompareVehicleName` which fails for Cheetah/Gepard engine enum swap; removed all 4 guards; helis mode never had them)
+- `CQ_Bug_44`: Resolved (v1.143 — `onPlayerUndeployImpl` never refreshed the deploy timer HUD after death/undeploy; now calls `updateVehicleDeployTimerHudForPlayer` at the end of the undeploy handler so the menu appears immediately on the deploy screen)
+- `CQ_Bug_45`: Partially resolved (v1.138 — slot 4 root cause: spawner not relocated when knob changed vehicle type; slot 3 works; other maps untested)
+- `CQ_Bug_46`: Resolved (v1.127 — jet and transport spawn rotations on Firestorm were authored in radians instead of degrees)
+- `CQ_Bug_47`: Resolved (v1.137 — Ground Deploy All admin button spawned wrong vehicle types and bypassed orientation pipeline)
+- `CQ_Bug_48`: Resolved (v1.135 — duplicate position debug functions and missing setPerfDiagEnabled when FEATURE_PERF_DIAG=false)
+- `CQ_Bug_49`: Behavioral fix confirmed (v1.146 SP — user tested multiple deploys with no tank-in-the-air regression on heli or jet slots; ground deploys unchanged). v1.147 cleanup: deferred orphan-tank sweep removed (now redundant with inline intercept)
+- `CQ_Bug_50`: Fixed (v1.148 — root cause was NOT death races; it was the `releaseLoadingGate` → `revealAllUiFamilies` → `renderAdminUiFamilyForReveal` → `autoStartPositionDebugOnDeploy` reveal chain firing a sync initial sample against `mod.GetSoldierState` on a player still sitting on the deploy screen. Fixed by gating `autoStartPositionDebugOnDeploy` on `isPlayerDeployed` and routing the position-debug soldier sampler through `safeGetSoldierStateVector`)
+- `CQ_Bug_51`: Fixed (v1.149 — admin position-debug toggle would un-stick after death/respawn or any reveal path because `autoStartPositionDebugOnDeploy` unconditionally reset `posDebugVisible=true`. Added `posDebugAdminOverride` sticky flag set by the admin handler; autoStart now only force-enables on the first reveal of a session and otherwise reattaches the loop to whatever state the admin left behind)
+- `CQ_Bug_52`: Fixed (v1.150 — silent air-deploy failure on specific aircraft slots when the fresh-air birth-spawn landed after the 2s bind-tracker timeout. Closed `expectingSpawn` leak in `bindSpawnedVehicleToSlot` expired branch, added watchdog reap in `pollVehicleSpawnerSlots` after 10s, forced HUD refresh on bind. Temporary `CQ52:` diagnostic counter on the admin panel validates the fix across a few live rounds; remove when it stays at 0)
 
 ## CQ_Bug_42
 Title: CountOf Called With Invalid/Undefined Array Argument During Gameplay
@@ -287,10 +297,16 @@ Expected:
 - All vehicle ground spawners should place vehicles facing a sensible direction (toward the map/exit, not into walls or backward).
 - Positions should avoid clipping or awkward placement.
 
+Progress (v1.132-v1.141, Operation Firestorm):
+- v1.132: Fixed team 2 jet, heli3, and transport1 rotY orientations (radians-to-degrees conversion).
+- v1.138: Team 1 fast mover slot 1 rotY tuned to 134.0°. Team 2 fast mover slot 4 rotY tuned to -90.0°.
+- v1.139: Reverted accidental all-slot changes; only slot 1 per team was intended to be adjusted.
+- v1.141: Plane air deploy pitch (rotX) reduced from -75.0° to -45.0° for both teams (less steep nose-down angle).
+- All ground vehicle spawn orientations on Firestorm confirmed correct by user testing.
+
 Status:
-- Open.
-- Phase 10 tuning pass.
-- Requires a per-map review of all `spawnPos` / `spawnRot` values in `src/config/maps/*.ts` and the corresponding Godot spawner transforms.
+- Partially resolved (Firestorm ground spawns and air deploy tuned).
+- Other maps still need a per-map review of `spawnPos` / `spawnRot` values in `src/config/maps/*.ts`.
 
 ## CQ_Bug_33
 Title: Loading Overlay Briefly Disappears During Team Swap
@@ -1570,3 +1586,302 @@ Resolution Used:
 - Changed top-center help container default creation visibility to hidden.
 - Removed early return in pid visibility refresh when HUD refs are temporarily missing; fallback name lookup now still applies authoritative visibility.
 - Added post-ensure visibility reapply on deploy so newly rebuilt widgets cannot keep default state after swap.
+
+## CQ_Bug_43
+Title: Cheetah (AA Vehicle) Spawn Binding Failure — Untracked Vehicles and Respawn Loop
+
+Observed (v1.127, Operation Firestorm, SP):
+- Cheetah spawns physically at the authored tank slot position but is never bound to the spawner slot.
+- The spawner system thinks the slot is empty and keeps attempting to spawn additional Cheetahs (respawn loop).
+- On match start, `destroyAllTrackedVehicles()` does not destroy the unbound Cheetahs — they persist into the live match.
+- Reproducible in ALL 4 team 1 tank slots when filled with Cheetahs.
+- An Abrams spawned in the same slot (slot 2) binds correctly — confirms the position/config is valid for other vehicle types.
+- The Cheetah also has a ~36° model forward-axis offset compared to the Abrams: authored rotY=140.047° produces debug rotY=~104° for the Cheetah, while the Abrams at authored rotY=143.849° faces correctly.
+
+Candidate Causes:
+1. **Spawn displacement**: The Cheetah's ~36° model offset or larger collision box may cause it to spawn displaced from the VehicleSpawner origin, causing the spawner-to-vehicle matching in `OnVehicleSpawned` to fail.
+2. **Vehicle type classification**: The Cheetah may not be recognized during vehicle registration, causing the bind step to silently skip.
+3. **Engine-side spawn failure**: The Cheetah may fail to fully initialize at these positions (collision with nearby structures), firing `OnVehicleDestroyed` before `OnVehicleSpawned` binding completes.
+
+Expected:
+- Cheetah should bind to slot like any other vehicle type.
+- Unbound vehicles should not persist through match lifecycle transitions.
+
+Root Cause (v1.133):
+- `doesVehicleMatchConfiguredSlotType()` in `spawner-bind.ts` called `mod.CompareVehicleName(vehicle, slot.vehicleType)`.
+- For `mod.VehicleList.Cheetah` (engine enum for actual Gepard), `CompareVehicleName` returned false — likely because the engine's internal vehicle name doesn't match the enum label.
+- This guard existed at 4 call sites: `vehicle-events.ts:82` (actively destroyed vehicle + retried → respawn loop), `spawner-bind.ts:211` (token path), `spawner-bind.ts:237` (distance fallback), and `deploy-fulfillment.ts:471` (deploy flow).
+- The original helis mode had NO equivalent guard — this was added speculatively for Conquest's dynamic vehicle selection.
+- Fix: removed all 4 guards and the `doesVehicleMatchConfiguredSlotType` function entirely. Token/distance matching is sufficient identity proof.
+
+Status:
+- Resolved (v1.133). The ~36° model forward-axis offset may still exist visually but binding and orientation correction now fire correctly.
+
+Related:
+- CQ_Bug_34 (vehicle ground spawner orientations need per-map pass)
+- CQ_Bug_28 (vehicle-specific issues, only some vehicles affected)
+
+## CQ_Bug_44
+Title: Deploy Menu Not Refreshing After Undeploy From Vehicle
+
+Observed (v1.127–v1.142, Operation Firestorm, SP):
+- During pre-game (not live), repeatedly ground deploying, redeploying, and returning to the deploy menu causes the deploy buttons and vehicle list to not reappear reliably.
+- Re-repro'd in v1.142: got in a chopper, undeployed, and the deploy menu stayed hidden on the deploy screen until a respawn timer started for some vehicle (which forced a `updateVehicleDeployTimerHudForAllPlayers` call via the slot cooldown loop).
+
+Root Cause:
+- `onPlayerUndeployImpl` (src/index/player-deploy.ts) flipped `State.players.deployedByPid[pid] = false` and cleaned up state, but it never called the deploy timer HUD refresh. The only refresh in the undeploy path was inside `closeVehicleDeployLiveMenuForPlayer` (src/vehicles/deploy-live-menu.ts), which early-returned when the live terminal was never open (the common "alive in vehicle" case).
+- Result: the HUD cache kept its "alive + hidden" `lastVisibleState` until some other event forced a refresh:
+  - A discrete vehicle event calling `updateVehicleDeployTimerHudForAllPlayers` (e.g. `scheduleVehicleSlotRespawnTimer` → `runVehicleSlotCooldownHudLoop` in src/vehicles/timers.ts).
+  - The v1.121 1-second live-tick re-assertion at `conquestPhase2AOnLiveTick` (capture-tickets.ts), which only runs during `isMatchLive() && !victoryDialogActive` — pre-live was completely uncovered.
+
+Fix (v1.143):
+- Added a direct `updateVehicleDeployTimerHudForPlayer(eventPlayer)` call at the end of `onPlayerUndeployImpl` (after the loading-gate early-return block).
+- Relies on `refreshVehicleDeployTimersForPlayerPreservingVisibility`'s `autoOwnsVisibility` branch: with `deployedByPid[pid] = false` now set, the refresh computes `nextVisibleState = renderPlan.visible && true` and reveals the family immediately.
+- Safe during both pre-live and live; the refresh function internally short-circuits when the loading gate is active.
+
+Status:
+- Resolved (v1.143). Needs SP repro verification: die in a vehicle → confirm deploy menu appears immediately on deploy screen without waiting for any vehicle respawn event.
+
+## CQ_Bug_45
+Title: Transport Slots 3 and 4 Not Spawning Vehicles
+
+Observed (v1.127, Operation Firestorm, SP):
+- Transport slots 3 and 4 (10v10 preset: Black Hawk + Quad Bike) are not functional — vehicles do not appear.
+- Slot 3 (Black Hawk) worked correctly because its 10v10 default was already UH60, so the physical spawner was created at the heli anchor at bootstrap.
+- Slot 4 (Quad Bike default, knob-changed to Black Hawk) failed: the physical spawner stayed at the fast mover anchor from bootstrap, but `slot.spawnPos` was updated to the heli anchor. The vehicle spawned at the old position and was teleported ~43-54m to the heli position, triggering engine abandonment (`SetVehicleSpawnerKeepAliveSpawnerRadius`) which destroyed the vehicle.
+
+Root Cause:
+- `applyVehicleSpawnSpecsToExistingSlots` updated `slot.spawnPos` and `slot.spawnRot` when the knob changed vehicle type (and thus the anchor changed from fastMoverSpawns to heliSpawns), but did not relocate the physical `VehicleSpawner` object. The spawner remained at the original bootstrap position.
+
+Fix (v1.138):
+- Added `relocateSlotSpawner(slot, newPos, newRot)` function in `map-runtime.ts` that destroys the old spawner and creates a new one at the updated position.
+- `applyVehicleSpawnSpecsToExistingSlots` now detects position changes (>1m via `mod.DistanceBetween`) and calls `relocateSlotSpawner` when the anchor changes.
+- New spawner gets `SetVehicleSpawnerAutoSpawn(false)` and `configureVehicleSpawner` with the correct vehicle type.
+
+Status:
+- Partially resolved (v1.138). Slot 4 knob-change scenario confirmed working on Firestorm SP. Slot 3 was never broken. Other maps untested.
+
+## CQ_Bug_46
+Title: Jet and Transport Spawn Rotations Authored in Radians Instead of Degrees (Firestorm)
+
+Observed (v1.125, Operation Firestorm):
+- F-16 jet (team 1, slot 1) spawned facing ~1° instead of ~52° — authored rotY was 0.914 (radians) but the spawner pipeline expects degrees.
+- All jet spawns (team 1 and team 2) and all transport spawns (team 1 and team 2) had the same radians-as-degrees authoring error.
+- Tank and heli spawns were correctly authored in degrees.
+
+Fix:
+- Converted all affected rotY values from radians to degrees: `value * 180 / π`.
+- Team 2 jet rotX/rotZ values (3.142 = π radians) also converted to 180.0°.
+
+Status:
+- Resolved (v1.127). No other maps affected — Firestorm is the only map with jet/transport spawns.
+
+## CQ_Bug_47
+Title: Admin Panel "Ground Deploy All" Spawns Wrong Vehicle Types and Orientations
+
+Observed (v1.134, Operation Firestorm, SP):
+- The "Ground Deploy All" admin button forced Abrams tanks into every slot regardless of knob-selected vehicle types.
+- Even after fixing vehicle type selection, spawned vehicles did not respect spawn orientations — they faced default direction instead of the tuned rotY values.
+
+Root Cause:
+- The original `forceSpawnAllReadyVehicleSlots` implementation called `ForceVehicleSpawnerSpawn` directly without first calling `configureVehicleSpawner` (so the spawner retained its last type — typically Abrams from bootstrap defaults).
+- The function also bypassed the entire bind/teleport pipeline: no token tracking, no `OnVehicleSpawned` binding, no `maybeApplySpawnTransformCorrectionToVehicle` teleport correction.
+
+Fix (v1.136-v1.137):
+- v1.136: Added `configureVehicleSpawner(slot.spawner, slot.vehicleType)` before spawning so the correct vehicle type is used.
+- v1.137: Replaced the entire function body with a call to `runSequentialSpawns(indices, token)` — the same sequential spawn pipeline used by normal player deploy. This ensures each vehicle is token-tracked, bound, and teleported to its correct orientation.
+
+Status:
+- Resolved (v1.137).
+
+## CQ_Bug_48
+Title: Admin Panel Feature Flag Interactions — Duplicate Functions and Missing References
+
+Observed (v1.134, build errors):
+- Restoring `FEATURE_ADMIN_PANEL = true` caused 14 duplicate function errors in the bundle.
+- Root cause: `admin-panel/build.ts` contained stale copies of position debug functions (12-widget rotZ-based signatures) that conflicted with the canonical versions in `hud/position-debug.ts` (11-widget isVehicle-based signatures). The old copies predated the position debug extraction.
+- Separately, `admin-panel/events.ts` called `setPerfDiagEnabled()` unconditionally, but that function lives in `hud/perf-diag.ts` which is excluded when `FEATURE_PERF_DIAG = false`, causing a "Cannot find name" build error.
+
+Fix (v1.135):
+- Removed the stale position debug function copies from `admin-panel/build.ts`.
+- Added `if (FEATURE_PERF_DIAG)` guard around the `setPerfDiagEnabled` call in `admin-panel/events.ts`.
+
+Status:
+- Resolved (v1.135).
+
+## CQ_Bug_49
+Title: Fresh Aircraft Direct Spawn Binds Engine-Default Abrams To Heli/Jet Slot ("Tank In The Air")
+
+Observed (v1.143, Operation Firestorm, SP, live match):
+- Deployed into team 1 Heli/Transport 3 slot configured for Black Hawk. Player was force-seated into an M1 Abrams at the heli birth-spawn altitude (mid-air tank).
+- Rare in v1.143 — one occurrence out of many deploys.
+- Re-observed consistently in v1.144 (both deploys returned a tank) for the Apache slot and the Little Bird slot on team 1 Heli slot 1.
+- Only affected the fresh-aircraft air direct-spawn path (`spawnFreshAircraftDirectSpawnVehicleForSlot`). Persistent ground spawners were never affected because they are pre-configured at bootstrap and the startup sweep in `spawner-bootstrap.ts` deletes any default Abrams that leaked during boot.
+
+Root Cause:
+- `mod.RuntimeSpawn_Common.VehicleSpawner` is a DICE-authored prefab with baked-in defaults: `AutoSpawn=true` and `VehicleType=Abrams`. The comments at `vehicles/spawner-slots.ts:37` and `vehicles/spawner-bootstrap.ts:51` already confirm this race exists for the bootstrap path.
+- `spawnFreshAircraftDirectSpawnVehicleForSlot` armed `slot.expectingSpawn = true`, bumped `slot.spawnRequestToken`, and wrote `State.vehicles.activeSpawnSlotIndex` / `activeSpawnToken` before calling `mod.SpawnObject(RuntimeSpawn_Common.VehicleSpawner, ...)`.
+- Under rare timing, the engine auto-spawned a default Abrams from the fresh runtime spawner before `SetVehicleSpawnerAutoSpawn(false)` and `configureVehicleSpawner(...)` took effect.
+- `OnVehicleSpawned` fired for the Abrams. `bindSpawnedVehicleToSlot` token-based primary path matched (active token + slot index + `expectingSpawn=true`) and bound the Abrams to the aircraft slot.
+- v1.133 had removed `doesVehicleMatchConfiguredSlotType` (the `CompareVehicleName` guard) to fix CQ_Bug_43 Cheetah/Gepard enum swap — so nothing rejected the wrong-type bind.
+- `ForceVehicleSpawnerSpawn(runtimeSpawner)` then ran after reconfiguration. The real aircraft spawned but active tracking was already consumed, token no longer matched, and position-based fallback in `spawner-bind.ts` had no type check — the real aircraft became an orphan (and was later abandonment-cleaned).
+- `waitForSpawnedVehicleForSlot` returned the bound Abrams. `ForcePlayerToSeat` dropped the player into the Abrams driver seat at the heli birth-spawn altitude → "tank in the air".
+
+Scope:
+- Air deploy only. Ground deploy uses the persistent `slot.spawner` which was created and configured at bootstrap, with the bootstrap startup sweep already eliminating any default-Abrams leakage.
+
+v1.144 Attempt (FAILED, reverted in v1.145):
+- Reordered `spawnFreshAircraftDirectSpawnVehicleForSlot` to create/configure the runtime spawner FIRST, wait 0.1s, sweep unbound vehicles near the birth position, then arm tracking, then force spawn.
+- Hypothesis: give the default Abrams time to spawn so the sweep could reap it before tracking was armed.
+- Actual result: the 0.1s wait made the race GUARANTEED. In the original layout, the synchronous `Wait(0) → ForceVehicleSpawnerSpawn → Wait(0.1)` block was pre-empting the engine's default auto-spawn in most cases (the force spawn fired before the auto-spawn could dispatch). By inserting a 0.1s yield before the force spawn, the default Abrams reliably fired first, and the 0.2s bind-retry window inside `onVehicleSpawnedImpl` (line 100) picked up the rejected position after tracking was re-armed — binding a dead Abrams objid to the slot every time.
+- v1.145 reverts to the original ordering.
+
+v1.145 Attempt (PARTIAL — helis worked most of the time, jets still failed):
+- Added `isTankVehicleInstance(vehicle)` (`vehicles/vehicle-classification.ts`) + `rejectWrongCategoryBindForAircraftSlot(slot, vehicle)` helper in `vehicles/spawner-bind.ts`.
+- `bindSpawnedVehicleToSlot` consulted the helper on both the active-tracking path and the position-distance fallback, returning 0 without clearing `slot.expectingSpawn` or active tracking.
+- User-observed result after SP repro: Apache and Little Bird deploys worked; jet deploys still produced a mid-air Abrams at the jet birth-spawn position/orientation, every time on the first deploy of the slot.
+
+True Root Cause (identified v1.146 via re-tracing):
+- The v1.145 guard WAS working inside `bindSpawnedVehicleToSlot` — the tank's bind attempt correctly returned 0, and the 0.2s retry inside `onVehicleSpawnedImpl` also returned 0. But the code path immediately after the retry, at `index/vehicle-events.ts:108-121`, contains a failed-bind fallback that force-binds the event vehicle to the slot when `inferredTeam === 0`, `slotIndex >= 0`, `slot.enabled`, and `slot.vehicleId === -1`.
+- That fallback was written to recover position-based bind matches for vehicles the reject guard was not consulted on, but it trusts the `slotIndex` that was resolved at the top of `onVehicleSpawnedImpl` from active tracking — including the one the reject guard deliberately refused to bind. It calls `bindVehicleToSpawnerSlot(slot, vehicleObjId)` and writes `State.vehicles.vehicleToSlot[vehicleObjId] = slotIndex` without any type check, completely bypassing the reject guard.
+- After the fallback force-bound the Abrams, `waitForSpawnedVehicleForSlot` in `spawnFreshAircraftDirectSpawnVehicleForSlot` returned the Abrams by objid, and `tryFulfillPendingVehicleDirectSpawnSeatForPlayer` force-seated the player into it.
+- Why helis usually worked and jets usually did not: pure race between the engine default auto-spawn (Abrams) and `ForceVehicleSpawnerSpawn` (real aircraft). For helis the real aircraft frequently won — its `OnVehicleSpawned` fired first, bound via active tracking (guard passes: aircraft type), set `slot.vehicleId`. When the tank's event then arrived, the bind path returned 0 AND the fallback's `slot.vehicleId === -1` check now failed, so the fallback was inert. For jets the higher-altitude volume sampling (`sampleRandomPointInSpawnVolume` with `jetSpawnFloor`/`jetSpawnCeiling`) and/or jet physics init let the tank's event arrive first every time, so the fallback always hit with `slot.vehicleId === -1`.
+
+Fix (v1.146):
+- `index/vehicle-events.ts`: Intercept wrong-category events at the top of `onVehicleSpawnedImpl`, immediately after the `slotIndex` is resolved (from active tracking or position) and after the existing `!slot.enabled` and replace-default branches.
+  - New check: `if (isAircraftSpawnVolumeVehicleType(slot.vehicleType) && isTankVehicleInstance(eventVehicle)) { mod.UnspawnObject(eventVehicle); return; }`.
+  - The immediate `mod.UnspawnObject` prevents the 0.2s retry, the failed-bind fallback, and the deferred sweep from ever seeing the rejected vehicle.
+  - Active tracking and `slot.expectingSpawn` are intentionally LEFT armed so the real aircraft from `ForceVehicleSpawnerSpawn` (configured with the correct `VehicleType`) can bind on its subsequent `OnVehicleSpawned`.
+- Retained from v1.145:
+  - `isTankVehicleInstance` classifier (`vehicles/vehicle-classification.ts`).
+  - `rejectWrongCategoryBindForAircraftSlot` guard in `bindSpawnedVehicleToSlot` (now defense-in-depth for the position-distance branch when active tracking is not armed).
+  - Tank-instance filter in `tryFindVehicleNearDirectSpawnAirPoint` (prevents the fallback path in the fresh-air spawn from picking up a rejected Abrams if `waitForSpawnedVehicleForSlot` times out).
+- Removed in v1.147:
+  - Deferred orphan sweep (`scheduleOrphanTankSweepAfterFreshAircraftSpawn`) and its 0.35s delay constant. The v1.146 inline intercept in `onVehicleSpawnedImpl` already reaps rejected wrong-category vehicles synchronously on the spawn event, so running an additional 12m radius sweep 0.35s after every fresh aircraft force-spawn was redundant belt-and-suspenders and could produce CQ_Bug_39 cosmetic UnspawnObject logs when iterating clutter that cannot be unspawned from script.
+- The v1.145 code in `bindSpawnedVehicleToSlot` was NOT the live bug — the bug was in `onVehicleSpawnedImpl`'s failed-bind fallback path. The guards in both places remain as layered defense.
+
+Status:
+- Behavioral fix confirmed (v1.146 SP, 2026-04-10). User tested multiple heli and jet deploys from the undeployed screen without observing any tank-in-the-air regression; ground deploys also verified correct. v1.147 cleanup removes the now-redundant deferred orphan sweep.
+
+Related:
+- CQ_Bug_43 (removal of `doesVehicleMatchConfiguredSlotType` exposed this race; the v1.145/v1.146 guards use positive tank-instance identification instead, avoiding the CompareVehicleName-on-Cheetah failure mode)
+- CQ_Bug_45 (same "relocate + race" family for transport slots 3/4 ground anchor swap — already addressed via `relocateSlotSpawner`)
+
+Side-Effect Investigation (re-scoped v1.147):
+- The original v1.145 hypothesis (that `GetSoldierState` errors were downstream of the mid-air Abrams force-seat) was wrong. Two such errors persisted during v1.146 SP testing even though v1.146 prevents the player from ever reaching the Abrams. The actual source is unrelated to CQ_Bug_49 and is now tracked as CQ_Bug_50.
+
+## CQ_Bug_50
+Title: Pre-Deploy GetSoldierState Cosmetic Error From Reveal-Path Position Debug Sync Sample
+
+Observed (v1.146 / v1.147 SP, 2026-04-10):
+- Engine reports `ERROR REPORTED BY GETSOLDIERSTATE WHILE RUNNING JS SCRIPT / Failed to apply action to player due to player not being deployed`.
+- User-reported key clue: "the getsoldier state errors are triggered before even spawning in the first time upon load". Reproducible on every first-join, which rules out death/respawn races and rules out CQ_Bug_49's mid-air Abrams path entirely.
+
+Investigation History (prior hypothesis discarded):
+- Initial triage (v1.147) pointed at death → respawn races against the stale `deployedByPid` cache, noting the missing `OnPlayerDied` handler. That hypothesis was wrong: the error fires before the player has ever deployed, so no death transition can be involved.
+- The stale-cache concern is real in theory but is not the observed error source. Leaving it as background context for any future audit of `isPlayerDeployed()` semantics.
+
+Actual Root Cause:
+- `interaction/actions.ts:544 releaseLoadingGate` runs on first-join once the unified loading gate warms, while the player is still on the deploy screen (undeployed).
+- `releaseLoadingGate` calls `revealAllUiFamilies(eventPlayer, pid)` at line 560.
+- `revealAllUiFamilies` calls `renderAdminUiFamilyForReveal(eventPlayer, pid)` at line 538.
+- `renderAdminUiFamilyForReveal` (line 366) calls `autoStartPositionDebugOnDeploy(eventPlayer)` at line 375 when `FEATURE_POSITION_DEBUG === true` (currently always on).
+- `autoStartPositionDebugOnDeploy` (`hud/position-debug.ts:337`) calls `setPositionDebugVisibleForPlayer(player, true)`.
+- `setPositionDebugVisibleForPlayer` runs a synchronous initial sample at line 325: `trySamplePositionDebugSnapshot(player, pid)`.
+- `trySamplePositionDebugSnapshot` defaults `transformSource` to `"soldier"` at line 185 (since the player has never been in a vehicle yet) and calls `sampleSoldierVector(mod.SoldierStateVector.GetPosition)` at line 212.
+- The `sampleSoldierVector` helper (pre-fix: `position-debug.ts:177-183`) called `mod.GetSoldierState(player, stateKey)` DIRECTLY inside a local try/catch, bypassing the `safeGetSoldierStateVector` wrapper and therefore bypassing the `isPlayerDeployed` pre-check. The engine logs the error before throwing; the local catch silently swallows the thrown exception but the log is already out.
+
+Why the position-debug loop itself is not the culprit:
+- `positionDebugLoop` at line 258 pre-checks `isPlayerDeployed(player)` and exits. So the error is one-shot per reveal, not a 0.5s-cadence repeater.
+- The one reproducer is the unguarded sync sample at line 325, which runs once on the first-join reveal and once on any subsequent reveal path that bypasses the deploy gate (the admin panel position-debug toggle pressed from the ready dialog, etc.).
+
+Expected:
+- Engine error log should stay clean during the first-join warm → reveal → deploy flow.
+
+Fix Applied (v1.148):
+1. `hud/position-debug.ts autoStartPositionDebugOnDeploy` — added early return `if (!isPlayerDeployed(player)) return;` so the function matches its name. Pre-deploy reveal-path callers become no-ops; the real `OnPlayerDeployed` handler (`player-deploy.ts:80 renderCriticalHudForReveal` → `renderAdminUiFamilyForReveal` → `autoStartPositionDebugOnDeploy`) still fires autostart once `deployedByPid[pid] = true` is set at `player-deploy.ts:61`, earlier in the same handler.
+2. `hud/position-debug.ts trySamplePositionDebugSnapshot` — replaced the direct `mod.GetSoldierState` call inside `sampleSoldierVector` with `safeGetSoldierStateVector(player, stateKey)`. The wrapper pre-checks `isPlayerDeployed` and self-corrects `deployedByPid` on any residual engine failure, so any future caller that lands in this sampler pre-deploy or during a death race is also protected.
+
+Status:
+- Fixed (v1.148). Expected error log delta: two GetSoldierState entries per fresh first-join should drop to zero. Admin-panel position-debug toggle pressed pre-deploy no longer logs either. No functional regression: on deploy the player's `onPlayerDeployedImpl` path still starts position debug as before; the admin toggle's pre-deploy behavior becomes "state flag set, widgets visibly start on next deploy" which is semantically fine (and already the expectation during ready-up).
+
+Related:
+- CQ_Bug_37 / CQ_Bug_38 / CQ_Bug_39 (same family: engine-logs-before-JS-catch cosmetic noise from stale script-side state or unguarded engine calls)
+- Stale `deployedByPid` during death window remains a theoretical concern; if it ever does reproduce in practice, the v1.148 `safeGetSoldierStateVector` routing in `trySamplePositionDebugSnapshot` already makes the position-debug loop self-correcting on the first tick after death, leaving only the polling loops in `capture-tickets.ts` / `boundary/enforcement.ts` as potential sources — those already route through `safeGetSoldierStateBool` with its own self-correction.
+
+## CQ_Bug_51
+Title: Admin Position-Debug Toggle Un-Sticks After Respawn / Reveal
+
+Observed (v1.148 SP, 2026-04-10):
+- Admin presses the position-debug toggle from the ready-dialog admin panel. Widgets hide correctly at the moment of the press.
+- Shortly after (on next respawn, or any ready-dialog close-while-deployed, or team-swap re-warm) the widgets come back on their own, overriding the admin's choice.
+
+Root Cause:
+- `interact-point.ts:158 initReadyDialogData` seeds `posDebugVisible: false`.
+- `hud/position-debug.ts autoStartPositionDebugOnDeploy` unconditionally did `state.posDebugVisible = true` and called `setPositionDebugVisibleForPlayer(player, true)`. This was intentional as the "on by default" behavior for first-join.
+- However, `autoStartPositionDebugOnDeploy` is invoked from EVERY path that enters `renderAdminUiFamilyForReveal`, not just first-join. The other reveal paths in a session:
+  - `index/player-deploy.ts:80 onPlayerDeployedImpl` → every respawn after death fires autoStart again.
+  - `interaction/actions.ts:544 releaseLoadingGate` → team-swap re-warm triggers a fresh gate release and therefore another reveal.
+  - `ready-dialog/lifecycle.ts:96 closeReadyDialogUI` → closing the ready dialog while deployed re-enters `renderCriticalHudForReveal`.
+- Each of those subsequent autoStart calls overwrote the admin's `posDebugVisible=false` back to `true` and restarted the position-debug loop. From the admin's point of view the toggle "stopped working after a few seconds".
+
+Fix Applied (v1.149):
+- Added `posDebugAdminOverride: boolean` to the ready-dialog state shape (`interaction/types.ts`) and initialized it to `false` in `initReadyDialogData` (`interact-point.ts`).
+- `admin-panel/events.ts` position-debug handler now sets `posDebugAdminOverride = true` alongside the `posDebugVisible` flip, so pressing the toggle at any time (before or after first deploy) locks in the admin's choice for the rest of the session.
+- `hud/position-debug.ts autoStartPositionDebugOnDeploy` now only force-enables `posDebugVisible` when `posDebugAdminOverride` is still false. It always calls `setPositionDebugVisibleForPlayer(player, state.posDebugVisible)` so the loop reattaches correctly on respawn regardless of the current visibility state — this handles the "admin has it ON, player just respawned" case where the old loop exited at the `isPlayerDeployed` check inside `positionDebugLoop` and needs to restart with a fresh token.
+
+Behavior Matrix After Fix:
+- First deploy of a fresh session, admin has not touched the button → autoStart enables (posDebugVisible=true), loop starts. Unchanged from prior behavior.
+- Admin presses toggle OFF at any time → posDebugVisible=false, posDebugAdminOverride=true, widgets hide, loop exits on next tick via token bump. Subsequent deploys leave posDebugVisible=false because autoStart respects the override flag.
+- Admin presses toggle ON after having pressed it off → posDebugVisible=true, override stays true, setPositionDebugVisibleForPlayer restarts the loop. Subsequent deploys keep it on because the override flag stays true and autoStart re-attaches the loop to `posDebugVisible=true`.
+- Player leaves and rejoins the server → `readyDialogData` is deleted in `player-join-leave.ts:215` and re-created on rejoin with `posDebugAdminOverride=false`, so behavior resets to "on by default". This matches the intent and also isolates per-player state from other admins.
+
+Non-Regression Reasoning:
+- First-join behavior is unchanged because `posDebugAdminOverride` defaults to false and the first autoStart still sets `posDebugVisible=true`.
+- The respawn loop-reattach path still works because `setPositionDebugVisibleForPlayer` is always called with the current `posDebugVisible`, and the token bump inside that function exits any stale loop cleanly before starting a new one.
+- No other caller of `setPositionDebugVisibleForPlayer` needs to be aware of the override flag — the admin button is the only path that flips `posDebugAdminOverride` to true.
+
+Status:
+- Fixed (v1.149). Bundle delta: +189 bytes (one new boolean field on the per-player state plus a small amount of guard logic).
+
+Related:
+- CQ_Bug_50 (same subsystem: both were ways `autoStartPositionDebugOnDeploy` misbehaved; CQ_Bug_50 fixed the pre-deploy sync-sample engine error, CQ_Bug_51 fixes the admin-toggle reassertion).
+
+## CQ_Bug_52
+Title: Silent Air Deploy Failure — `expectingSpawn` Latched After 2s Bind-Tracker Timeout
+
+Observed (v1.149 live MP, 2026-04-10):
+- Pressing an Air Deploy button on specific slots (UH60 slot 3 on both teams and Apache slot 2) occasionally produced no vehicle spawn and no deploy. Completely silent from the player's perspective — the button still appeared available but the click did nothing.
+- No lag spikes witnessed. Failure was sporadic and not correlated with player count or match phase.
+- Game-breaking in a competitive environment: a failed air deploy distorts the remainder of the round's balance because one team loses a planned rotation.
+
+Root Cause:
+- `tryClaimVehicleDirectSpawnForPlayer` (`src/vehicles/reservations.ts`) gates on `slot.expectingSpawn || slot.respawnRunning || slot.spawnRetryScheduled`. If any of those three flags is latched `true` while the HUD still paints the button as ready (`isVehicleDeploySlotReadyForSpawnButton` reads the same flags), the click is silently rejected.
+- `bindSpawnedVehicleToSlot` (`src/vehicles/spawner-bind.ts:200-242`) used the 2s `VEHICLE_SPAWNER_BIND_TIMEOUT_SECONDS` window to correlate an inbound `OnVehicleSpawned` event with the most recent forced spawn. When the window expired, the `else` branch only released the global tracker (`activeSpawnSlotIndex`/`activeSpawnToken`/`activeSpawnRequestedAtSeconds`) and did **not** clear `slot.expectingSpawn` on the tracked slot.
+- The fresh-aircraft air direct-spawn path (`spawnFreshAircraftDirectSpawnVehicleForSlot` in `src/vehicles/deploy-fulfillment.ts`) uses a `RuntimeSpawn_Common.VehicleSpawner` prefab at the team birth-spawn volume, which is typically meters away from `slot.spawner`. When the real aircraft spawn landed **after** the 2s window, it failed the 7m distance fallback in `bindSpawnedVehicleToSlot` too, so nothing ever cleared `expectingSpawn` on that slot — latched until round reset. Every subsequent click on that slot's Air Deploy button silently rejected.
+- Secondary HUD-vs-truth window: `bindVehicleToSpawnerSlot` (`src/vehicles/timers.ts`) wrote `vehicleId` but did not force a `updateVehicleDeployTimerHudForAllPlayers()` call. Between the bind and the next periodic HUD refresh, the HUD continued to paint the slot as "ready" while the claim path would reject because `vehicleId !== -1`.
+
+Fix Applied (v1.150):
+1. **Close the primary leak:** `bindSpawnedVehicleToSlot` expired `else` branch now also clears `slot.expectingSpawn` on the tracked slot, calls `refreshVehicleSlotAuthoritativeState`, and `updateVehicleDeployTimerHudForAllPlayers` (`src/vehicles/spawner-bind.ts:227-241`).
+2. **Watchdog reap:** `pollVehicleSpawnerSlots` now sweeps any slot whose `expectingSpawn` has been true longer than `VEHICLE_SPAWNER_STUCK_EXPECTING_SPAWN_THRESHOLD_SECONDS = 10.0` and is not currently the active global-tracker target. Clears the flag, refreshes authoritative state, refreshes the HUD. This catches any future leak in any writer. Added `expectingSpawnStartedAtSeconds: number` to `VehicleSpawnerSlot` and stamped it at the three writers (`forceSpawnWithRetry`, `spawnFreshAircraftDirectSpawnVehicleForSlot`, and reset to `-1` inside `bindVehicleToSpawnerSlot`).
+3. **HUD refresh on bind:** `bindVehicleToSpawnerSlot` now calls `updateVehicleDeployTimerHudForAllPlayers()` at the end so the HUD can never paint "ready" for a slot that has just bound a live vehicle.
+4. **Temporary validation counter:** added `State.vehicles.gateDesyncCount` (initialized 0) and a `"CQ52: <n>"` text widget on the admin panel below the Ground Deploy All button. `tryClaimVehicleDirectSpawnForPlayer` bumps the counter only when the combined gate rejects a click (the specific anomaly we are hunting) — not for wrong team, already deployed, wrong category, etc. The widget is refreshed only when the number changes via `syncCq52GateDesyncCounterForAllPlayers()`, so per-frame cost is zero. **This is diagnostic telemetry to validate the fix over a few live rounds; remove it once the counter stays at 0 across several rounds.**
+
+Behavior Matrix After Fix:
+- Air deploy click where the bind arrives inside the 2s window → same as before; slot binds successfully on the active-tracker path.
+- Air deploy click where the bind arrives **after** the 2s window via the fresh-air path → the 2s-expired else branch clears `expectingSpawn`, then the later `OnVehicleSpawned` event falls through to the distance fallback or the ObjectDestroyed path without leaving the slot latched. The next click on the same slot is eligible again.
+- Bind lands on the wrong slot entirely → the tracked slot's `expectingSpawn` is still eventually reaped by the watchdog after 10s if nothing else clears it.
+- A slot binds a vehicle → HUD refreshes synchronously, eliminating the stale "ready" window entirely.
+
+Non-Regression Reasoning:
+- Step 1 only runs in the expired branch that was already clearing global tracker fields; we're adding three more field writes to the same branch. No new control flow.
+- Step 2 runs inside the existing `pollVehicleSpawnerSlots` loop with a generous 10s threshold — far beyond the 2s tracker window — so it cannot reap a slot while a legitimate spawn is in flight.
+- Step 3 only adds one HUD refresh call inside an already-expensive state mutation function; the HUD refresh path is throttled per-player on its own.
+- Step 4 never fires in normal operation; the counter bump is guarded by the exact same condition the bug creates, so its presence is load-bearing only when the bug (or a residual variant) actually reproduces.
+
+Status:
+- Fixed (v1.150). Live MP bake in progress to validate the counter stays at 0 across several rounds.
+
+Related:
+- CQ_Bug_49 (same binding surface: CQ_Bug_49 rejected wrong-category binds so the real aircraft spawn could later correlate; CQ_Bug_52 closes the case where the real aircraft spawn arrived too late for that correlation).
+- When the live bake confirms 0 desync bumps, the next version can rip out the `gateDesyncCount` state field, the `UI_ADMIN_CQ52_COUNTER_ID` widget, `syncCq52GateDesyncCounterForAllPlayers`, the `cq52CounterFormat` string, and restore `ADMIN_PANEL_HEIGHT` to 390.
