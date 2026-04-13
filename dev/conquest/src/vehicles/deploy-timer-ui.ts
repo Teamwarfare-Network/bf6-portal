@@ -153,7 +153,7 @@ function buildVehicleDeployTimerRenderPlan(player: mod.Player, pid: number): Veh
     const adminPanelOpen = State.players.readyDialogData[pid]?.adminPanelVisible === true;
     const visible = shouldShowRows && warmReady && !adminPanelOpen;
 
-    let signature = `${warmReady ? 1 : 0}|${shouldShowRows ? 1 : 0}|${visible ? 1 : 0}|${State.players.deployedByPid[pid] ? 1 : 0}|${hasPendingDirectSpawnClaim ? 1 : 0}|${liveTerminalOpen ? 1 : 0}|${adminPanelOpen ? 1 : 0}|${State.conquest.lifecyclePhase}`;
+    let signature = `${warmReady ? 1 : 0}|${shouldShowRows ? 1 : 0}|${visible ? 1 : 0}|${State.players.deployedByPid[pid] ? 1 : 0}|${hasPendingDirectSpawnClaim ? 1 : 0}|${liveTerminalOpen ? 1 : 0}|${adminPanelOpen ? 1 : 0}|${State.conquest.lifecyclePhase}|${getRoundStartAirDelayRemainingSeconds()}|${isRoundStartAirDeployDelayActive() ? 1 : 0}|${isRoundStartForwardDeployDelayActive() ? 1 : 0}`;
     for (let i = 0; i < slots.length; i++) {
         const slot = slots[i];
         signature += `#${i}:${slot.slotNumber},${slot.vehicleType},${slot.vehicleId},${slot.activeOwnerPid ?? -1},${slot.pendingSpawnOwnerPid ?? -1},${slot.pendingSpawnMode ?? "none"},${getVehicleSlotRespawnRemainingSeconds(slot)},${isVehicleDeploySlotReadyForSpawnButton(slot) ? 1 : 0}`;
@@ -200,6 +200,16 @@ function doesVehicleTypeSupportAirDeploy(vehicleType: mod.VehicleList): boolean 
 
 function doesVehicleTypeSupportGroundDeploy(vehicleType: mod.VehicleList): boolean {
     return true;
+}
+
+// Forward deploy is available for all non-aircraft ground vehicles (tanks, transports, etc).
+function doesVehicleTypeSupportForwardDeploy(vehicleType: mod.VehicleList): boolean {
+    return !isAircraftVehicleType(vehicleType);
+}
+
+function hasEnabledTankSpawnVolumesForTeam(teamId: TeamID): boolean {
+    const volumes = getVehicleSpawnVolumesForTeam(teamId, "tank");
+    return volumes.length > 0;
 }
 
 function deleteVehicleDeployTimerHudArtifactsForPid(pid: number): void {
@@ -931,8 +941,8 @@ function layoutVehicleDeployRowForState(
             ? totalButtonWidth
             : 0;
     const leftX = vehicleX - (leftWidth > 0 ? (VEHICLE_DEPLOY_TIMER_ROW_GAP_X + leftWidth) : 0);
-    const groundButtonX = leftX;
-    const airButtonX = showGroundButton
+    const airButtonX = leftX;
+    const groundButtonX = showSpawnButton
         ? leftX + VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_WIDTH + VEHICLE_DEPLOY_TIMER_ROW_GAP_X
         : leftX;
     try {
@@ -1261,7 +1271,7 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
             pid,
             i,
             "ground",
-            mod.stringkeys.twl.ui.groundDeploy,
+            mod.stringkeys.twl.ui.hqDeploy,
             VEHICLE_DEPLOY_TIMER_GROUND_BUTTON_X,
             baseY + VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_OFFSET_Y,
             VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_WIDTH,
@@ -1484,20 +1494,35 @@ function renderVehicleDeployTimerRow(
     const activeOwnerMessage = getVehicleDeployActiveOwnerNameMessage(slot);
     const showPlayerName = slot.vehicleId !== -1;
     const slotReadyForButtons = (!deployed || liveTerminalOpen) && isVehicleDeploySlotReadyForSpawnButton(slot);
-    // Air deploy hidden until live; ground deploy hidden during countdown; both visible when live.
+    // Air/forward deploy hidden until live; ground (HQ) deploy hidden during countdown; both visible when live.
     const isCountdown = State.conquest.lifecyclePhase === "COUNTDOWN";
-    const showSpawnButton = slotReadyForButtons && doesVehicleTypeSupportAirDeploy(slot.vehicleType) && isMatchLive();
-    const showGroundButton = slotReadyForButtons && doesVehicleTypeSupportGroundDeploy(slot.vehicleType) && !isCountdown;
+    const slotTeamId = slot.teamId;
+    const isAirType = doesVehicleTypeSupportAirDeploy(slot.vehicleType);
+    const isForwardType = !isAirType && doesVehicleTypeSupportForwardDeploy(slot.vehicleType);
+    const airDelayActive = isRoundStartAirDelayActive();
+    const airDeployDelayActive = isRoundStartAirDeployDelayActive();
+    const forwardDelayActive = isRoundStartForwardDeployDelayActive();
+    // Spawn button (air/forward): blocked during all applicable round-start delays.
+    const showSpawnButton = slotReadyForButtons && isMatchLive() && (
+        (isAirType && !airDelayActive && !airDeployDelayActive)
+        || (isForwardType && hasEnabledTankSpawnVolumesForTeam(slotTeamId) && !forwardDelayActive)
+    );
+    // Ground/HQ button: aircraft blocked during full airDelay; always blocked during countdown.
+    const showGroundButton = slotReadyForButtons && doesVehicleTypeSupportGroundDeploy(slot.vehicleType) && !isCountdown
+        && !(isAirType && airDelayActive);
     let showTimer = true;
     layoutVehicleDeployRowForState(row, showPlayerName, showSpawnButton, showGroundButton);
 
+    const spawnLabel = isAirType
+        ? mod.stringkeys.twl.ui.airDeploy
+        : mod.stringkeys.twl.ui.forwardDeploy;
     safeSetUITextLabel(row.vehicleShadow, mod.Message(getVehicleDeployTimerLabelKey(slot.vehicleType)));
     safeSetUITextLabel(row.vehicleText, mod.Message(getVehicleDeployTimerLabelKey(slot.vehicleType)));
     safeSetUITextColor(row.vehicleText, COLOR_WHITE);
-    safeSetUITextLabel(row.spawnButtonTextShadow, mod.Message(mod.stringkeys.twl.ui.airDeploy));
-    safeSetUITextLabel(row.spawnButtonText, mod.Message(mod.stringkeys.twl.ui.airDeploy));
-    safeSetUITextLabel(row.groundButtonTextShadow, mod.Message(mod.stringkeys.twl.ui.groundDeploy));
-    safeSetUITextLabel(row.groundButtonText, mod.Message(mod.stringkeys.twl.ui.groundDeploy));
+    safeSetUITextLabel(row.spawnButtonTextShadow, mod.Message(spawnLabel));
+    safeSetUITextLabel(row.spawnButtonText, mod.Message(spawnLabel));
+    safeSetUITextLabel(row.groundButtonTextShadow, mod.Message(mod.stringkeys.twl.ui.hqDeploy));
+    safeSetUITextLabel(row.groundButtonText, mod.Message(mod.stringkeys.twl.ui.hqDeploy));
     safeSetUITextColor(row.spawnButtonText, COLOR_WHITE);
     safeSetUITextColor(row.spawnButtonTextShadow, COLOR_DARK_BLACK);
     safeSetUITextColor(row.groundButtonText, COLOR_WHITE);
@@ -1520,6 +1545,10 @@ function renderVehicleDeployTimerRow(
         setReusableTimerStatus(row.timer, "active", mod.Message(mod.stringkeys.twl.ui.active), COLOR_LOW_TIME);
     } else if (showSpawnButton || showGroundButton) {
         setReusableTimerStatus(row.timer, "ready", mod.Message(mod.stringkeys.twl.ui.ready), COLOR_READY_GREEN);
+    } else if (isAirType && airDelayActive) {
+        // Round-start air delay: show countdown until aircraft deployment unlocks.
+        setReusableTimerColor(row.timer, COLOR_WHITE);
+        setReusableTimerSeconds(row.timer, getRoundStartAirDelayRemainingSeconds());
     } else if (getVehicleSlotRespawnRemainingSeconds(slot) <= 0) {
         setReusableTimerStatus(row.timer, "ready", mod.Message(mod.stringkeys.twl.ui.ready), COLOR_READY_GREEN);
     } else {
@@ -1684,10 +1713,12 @@ function tryHandleVehicleDeployTimerButtonEvent(
     const rowIndex = Number(rowIndexToken);
     if (!Number.isInteger(rowIndex) || rowIndex < 0 || rowIndex >= VEHICLE_DEPLOY_TIMER_MAX_ROWS) return true;
     if (!isHudWarmReadyForPid(pid)) return true;
+    if (!mode) return true;
+    const closureMode: VehicleDirectSpawnMode = mode;
 
     const row = cache?.rows[rowIndex];
     const setVisual = (active: boolean, pressed: boolean): void => {
-        applyVehicleDeployActionButtonVisualStateForMode(row, mode, active, pressed);
+        applyVehicleDeployActionButtonVisualStateForMode(row, closureMode, active, pressed);
     };
     if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.FocusIn)) {
         clearVehicleDeployActionButtonStateForAllRows(cache, rowIndex, mode);
@@ -1783,6 +1814,9 @@ function tryHandleVehicleDeployTimerButtonEvent(
     const slot = slots[rowIndex];
     if (!slot) return true;
 
+    if (mode === "air" && doesVehicleTypeSupportForwardDeploy(slot.vehicleType)) {
+        mode = "forward";
+    }
     const claimed = tryClaimVehicleDirectSpawnForPlayer(eventPlayer, slot, mode);
     if (!claimed) {
         updateVehicleDeployTimerHudForPlayer(eventPlayer);
@@ -1873,6 +1907,26 @@ function refreshVehicleDeployTimersForPlayerPreservingVisibility(player: mod.Pla
     setVehicleDeployTimerHudFamilyVisible(cache, nextVisibleState);
     syncVehicleDeployHudViewerInputMode(player, pid);
     return nextVisibleState;
+}
+
+// Self-terminating async loop that drives HUD countdown updates for round-start deploy delays.
+// Ticks once per second until all three delay windows have expired, then does a final refresh.
+async function runRoundStartDelayHudLoop(): Promise<void> {
+    const liveAt = State.round.liveStartedAtSeconds;
+    if (liveAt === undefined) return;
+    const maxDelay = Math.max(
+        ACTIVE_MAP_CONFIG.roundStartAirDelay ?? 0,
+        ACTIVE_MAP_CONFIG.roundStartAirDeployDelay ?? 0,
+        ACTIVE_MAP_CONFIG.roundStartForwardDeployDelay ?? 0
+    );
+    if (maxDelay <= 0) return;
+    while (isMatchLive() && getSecondsSinceLive() < maxDelay) {
+        await mod.Wait(1.0);
+        if (!isMatchLive()) return;
+        updateVehicleDeployTimerHudForViewers();
+    }
+    // Final refresh to flip buttons from countdown to ready/available.
+    updateVehicleDeployTimerHudForAllPlayers();
 }
 
 // Public non-owner refresh path for one viewer.

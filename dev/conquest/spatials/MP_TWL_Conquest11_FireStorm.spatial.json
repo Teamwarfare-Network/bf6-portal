@@ -5935,6 +5935,206 @@
             "id": "StationaryEmplacementSpawner10"
         },
         {
+            "name": "T2A WorldIcon",
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 408.68103,
+                "y": 113.47166,
+                "z": -128.96959
+            },
+            "id": "GroundForwardSpawn/T2A/T2A WorldIcon"
+        },
+        {
+            "name": "T2B WorldIcon2",
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 408.68103,
+                "y": 113.47166,
+                "z": -117.21859
+            },
+            "id": "GroundForwardSpawn/T2B/T2B WorldIcon2"
+        },
+        {
+            "name": "T2C WorldIcon3",
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 349.91403,
+                "y": 113.47166,
+                "z": -102.59159
+            },
+            "id": "GroundForwardSpawn/T2C/T2C WorldIcon3"
+        },
+        {
+            "name": "T2D WorldIcon4",
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": 349.91403,
+                "y": 113.47166,
+                "z": -123.83359
+            },
+            "id": "GroundForwardSpawn/T2D/T2D WorldIcon4"
+        },
+        {
+            "name": "T1A WorldIcon5",
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -527.43097,
+                "y": 138.14866,
+                "z": 70.59581
+            },
+            "id": "GroundForwardSpawn/T1A/T1A WorldIcon5"
+        },
+        {
+            "name": "T1B WorldIcon6",
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -527.43097,
+                "y": 137.75266,
+                "z": 50.44691
+            },
+            "id": "GroundForwardSpawn/T1B/T1B WorldIcon6"
+        },
+        {
+            "name": "T1C WorldIcon7",
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -479.44597,
+                "y": 137.95266,
+                "z": 38.98201
+            },
+            "id": "GroundForwardSpawn/T1C/T1C WorldIcon7"
+        },
+        {
+            "name": "T1D WorldIcon8",
+            "type": "WorldIcon",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -479.44597,
+                "y": 138.04766,
+                "z": 69.33871
+            },
+            "id": "GroundForwardSpawn/T1D/T1D WorldIcon8"
+        },
+        {
             "name": "WalkwayLadder_1024",
             "type": "WalkwayLadder_1024",
             "right": {

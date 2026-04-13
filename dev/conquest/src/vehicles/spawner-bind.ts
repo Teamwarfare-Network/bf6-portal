@@ -9,8 +9,9 @@ function isJetSpawnVolumeVehicleType(vehicleType: mod.VehicleList): boolean {
     return isJetVehicleType(vehicleType);
 }
 
+// Returns true for any ground vehicle that uses tank-class forward spawn volumes (all non-aircraft).
 function isTankSpawnVolumeVehicleType(vehicleType: mod.VehicleList): boolean {
-    return isTankVehicleType(vehicleType);
+    return !isAircraftVehicleType(vehicleType);
 }
 
 function getSpawnVolumeClassForSlot(slot: VehicleSpawnerSlot): VehicleSlotSpawnCategory | "tank" | undefined {
@@ -45,10 +46,10 @@ function getSpawnVolumeSelectionWeight(volume: VehicleSpawnVolumeSpec, vehicleTy
     if (!Number.isFinite(footprintArea) || footprintArea <= 0) return 0;
     if (isTankSpawnVolumeVehicleType(vehicleType)) return footprintArea;
     if (isJetSpawnVolumeVehicleType(vehicleType)) {
-        const jetBand = Math.max(0, volume.jetSpawnCeiling - Math.max(0, volume.jetSpawnFloor));
+        const jetBand = Math.max(0, (volume.jetSpawnCeiling ?? 0) - Math.max(0, volume.jetSpawnFloor ?? 0));
         return footprintArea * Math.max(1, jetBand);
     }
-    return footprintArea * Math.max(1, Math.max(0, volume.heliSpawnCeiling));
+    return footprintArea * Math.max(1, Math.max(0, volume.heliSpawnCeiling ?? 0));
 }
 
 function chooseSpawnVolumeForVehicleType(
@@ -103,11 +104,11 @@ function sampleRandomPointInSpawnVolume(volume: VehicleSpawnVolumeSpec, vehicleT
         ? sampleRandomPointInTriangle(a, b, c)
         : sampleRandomPointInTriangle(a, c, d);
     const minHeight = isJetSpawnVolumeVehicleType(vehicleType)
-        ? Math.max(0, volume.jetSpawnFloor)
+        ? Math.max(0, volume.jetSpawnFloor ?? 0)
         : 0;
     const maxHeight = isJetSpawnVolumeVehicleType(vehicleType)
-        ? Math.max(minHeight, volume.jetSpawnCeiling)
-        : Math.max(0, volume.heliSpawnCeiling);
+        ? Math.max(minHeight, volume.jetSpawnCeiling ?? 0)
+        : Math.max(0, volume.heliSpawnCeiling ?? 0);
     const randomHeight = minHeight + (Math.random() * Math.max(0, maxHeight - minHeight));
     return createVectorAdd(floorPoint, mod.CreateVector(0, randomHeight, 0));
 }
@@ -122,7 +123,11 @@ function tryResolveBoundedSpawnTransformForSlot(slot: VehicleSpawnerSlot): { pos
     if (!volume) return undefined;
     return {
         pos: sampleRandomPointInSpawnVolume(volume, slot.vehicleType),
-        rot: isJetSpawnVolumeVehicleType(slot.vehicleType) ? volume.rotPlane : volume.rotHeli,
+        rot: isJetSpawnVolumeVehicleType(slot.vehicleType)
+            ? (volume.rotPlane ?? mod.CreateVector(0, 0, 0))
+            : isTankSpawnVolumeVehicleType(slot.vehicleType) && volume.rotTank
+                ? volume.rotTank
+                : (volume.rotHeli ?? mod.CreateVector(0, 0, 0)),
     };
 }
 

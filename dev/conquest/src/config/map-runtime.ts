@@ -657,6 +657,7 @@ function applyMapConfig(mapKey: MapKey): void {
     VEHICLE_SPAWN_YAW_OFFSET_DEG = ACTIVE_MAP_CONFIG.vehicleSpawnYawOffsetDeg;
     // Apply the map's default aircraft ceiling, unless a custom override is active.
     syncAircraftCeilingFromMapConfig();
+    syncActiveGadgetLockerConfig(ACTIVE_MAP_CONFIG.gadgetLockerConfig);
 
     invalidateHiddenReadyDialogCacheForAllPlayers();
     updateReadyDialogMapLabelForAllPlayers();

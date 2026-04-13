@@ -59,7 +59,11 @@ function validateVehicleSlotReservationState(slot: VehicleSpawnerSlot): void {
 
 function tryClaimVehicleDirectSpawnForPlayer(eventPlayer: mod.Player, slot: VehicleSpawnerSlot | undefined, mode: VehicleDirectSpawnMode): boolean {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer) || !slot) return false;
-    if (!isMatchLive() && mode === "air") return false;
+    if (!isMatchLive() && (mode === "air" || mode === "forward")) return false;
+    // Round-start delay gates: reject claims while timed delays are active.
+    if (mode === "air" && (isRoundStartAirDelayActive() || isRoundStartAirDeployDelayActive())) return false;
+    if (mode === "ground" && slot && isAircraftVehicleType(slot.vehicleType) && isRoundStartAirDelayActive()) return false;
+    if (mode === "forward" && isRoundStartForwardDeployDelayActive()) return false;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return false;
     const playerTeam = safeGetTeamNumberFromPlayer(eventPlayer, 0);

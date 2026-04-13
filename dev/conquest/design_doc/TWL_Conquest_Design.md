@@ -3748,12 +3748,12 @@ Last updated: v1.187 (2026-04-12)
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.187 |
-| Source files | 118 .ts files + 1 .json |
-| Total source bytes | ~1,378,000 (includes Changelog + excluded stubs) |
-| Total source lines | 29,556 |
-| Bundle size (script) | 1,044,501 bytes |
-| Bundle size (strings) | 19,936 bytes |
+| Version | 1.196 |
+| Source files | 116 .ts files + 1 .json |
+| Total source bytes | ~1,350,000 (includes Changelog + excluded stubs) |
+| Total source lines | 24,444 |
+| Bundle size (script) | 988,193 bytes |
+| Bundle size (strings) | 19,908 bytes |
 | Bundle limit | 1,048,576 bytes (1 MiB) — applies to script only |
 | Headroom | 4,075 bytes (0.39%) — CRITICAL |
 | Entry point | `src/index.ts` -> 22 Portal event handlers |

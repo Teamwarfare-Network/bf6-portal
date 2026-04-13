@@ -15,11 +15,12 @@ type VehicleSpawnVolumeSpec = {
     label: string;
     enabled?: boolean;
     floorCorners: [mod.Vector, mod.Vector, mod.Vector, mod.Vector];
-    heliSpawnCeiling: number;
-    jetSpawnFloor: number;
-    jetSpawnCeiling: number;
-    rotHeli: mod.Vector;
-    rotPlane: mod.Vector;
+    heliSpawnCeiling?: number;
+    jetSpawnFloor?: number;
+    jetSpawnCeiling?: number;
+    rotHeli?: mod.Vector;
+    rotPlane?: mod.Vector;
+    rotTank?: mod.Vector;
 };
 type CapturePointConfig = { objId: number; label: string; order: number };
 type WorldInteractableScope = "main_base" | "point";
@@ -43,6 +44,38 @@ type WorldInteractableConfig = {
 type ReadyDialogPresetPackage = {
     playersPerSide: number;
     vehicleSelectionByKey: Record<string, mod.VehicleList | undefined>;
+};
+
+// Describes one gadget slot in the locker menu (assault items, medic items, recon items).
+type GadgetItemConfig = {
+    name: string;            // Stable key for widget naming + help text lookup
+    labelKey: number;        // mod.stringkeys.twl.ui.* for tile header
+    gadget: number;          // mod.Gadgets enum
+    slot: number;            // mod.InventorySlots enum (Callins, GadgetTwo, Throwable)
+    cooldownSeconds: number;
+    teamShared: boolean;     // true = team-scoped cooldown, false = player-scoped
+    maxCount: number;        // Pool size per cooldown scope (usually 1)
+    iconSize?: number;       // Tile icon size override (default 52)
+    iconY?: number;          // Tile icon Y override (default 44)
+};
+
+// Describes one engineer launcher row.
+type GadgetLockerLauncherConfig = {
+    labelKey: number;        // Display name string key
+    gadget: number;          // mod.Gadgets launcher enum
+};
+
+// Per-map gadget locker layout. Omit from MapConfig to use defaults.
+type GadgetLockerConfig = {
+    assault: GadgetItemConfig[];             // Column 0: team-shared gadgets (max ~4)
+    launchers: GadgetLockerLauncherConfig[]; // Column 1: launcher selection rows (max ~4)
+    launcherCooldownSeconds: number;         // Per-player launcher swap cooldown
+    ammoCooldownSeconds: number;             // Per-charge recharge time (default 60)
+    ammoMaxCharges: number;                  // Max ammo charges (default 3)
+    medicItems: GadgetItemConfig[];          // Column 2: player-scoped items (intercepts); share one cooldown
+    medicSmoke: GadgetItemConfig;            // Column 2: team-shared smoke (always 1 item)
+    recon: GadgetItemConfig[];               // Column 3: [0] = independent CD, [1+] = shared CD
+    reconSharedCooldownSeconds: number;      // Shared cooldown for recon[1..] items
 };
 
 // Per-map runtime configuration: team anchors, labels, and spawn lists used by map-detect/apply logic.
@@ -82,5 +115,9 @@ type MapConfig = {
     team2FastMoverSpawns?: VehicleSpawnAnchorSpec[];
     readyDialogPresetPackages?: Record<number, ReadyDialogPresetPackage>; // Authored by knob key; runtime still maps knob order onto this map's spawn-anchor order.
     vehicleSpawnYawOffsetDeg: number; // Reserved for future spawn orientation tuning.
+    gadgetLockerConfig?: GadgetLockerConfig; // Per-map gadget locker layout override; omit to use defaults.
+    roundStartAirDelay?: number; // Seconds after live before ANY aircraft deployment (HQ or air) is allowed.
+    roundStartAirDeployDelay?: number; // Seconds after live before the air-deploy button unlocks (aircraft HQ allowed after airDelay).
+    roundStartForwardDeployDelay?: number; // Seconds after live before the forward-deploy button unlocks (ground HQ always available).
 };
 

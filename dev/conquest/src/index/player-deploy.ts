@@ -12,7 +12,7 @@ function classifyDeployInOwnMainBase(
     consumedDirectSpawn: boolean
 ): boolean {
     if (consumedDirectSpawn && pendingDirectSpawnMode === "ground") return true;
-    if (consumedDirectSpawn && pendingDirectSpawnMode === "air") return false;
+    if (consumedDirectSpawn && (pendingDirectSpawnMode === "air" || pendingDirectSpawnMode === "forward")) return false;
 
     const teamId = safeGetTeamNumberFromPlayer(player, 0);
     const anchor = teamId === TeamID.Team1

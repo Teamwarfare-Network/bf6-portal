@@ -52,6 +52,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     kpiResetAll();
     kpiSnapshotDeathBaselines();
     lifecycleSetLiveBaseline("pregame-start-match");
+    State.round.liveStartedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
     cleanupMainBaseTeamWorldIconsForLiveTransition();
     clearActiveBoundaryViolationsForAllPlayers();
     updateReadyDialogModeConfigForAllHiddenBuiltCaches();
@@ -69,6 +70,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     updateHudTeamSwapButtonVisibilityForAllPlayers();
     updateReadyDialogModeConfigForAllVisibleViewers();
     updateVehicleDeployTimerHudForAllPlayers();
+    void runRoundStartDelayHudLoop();
     refreshBoundaryStateForAllPlayers();
 
     resetMatchClock(getConfiguredMatchLengthSeconds());
@@ -84,6 +86,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
 
 // Ends the current round using one authoritative post-match transition and winner snapshot.
 function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number, overrideWinnerTeamNum?: TeamID | 0): void {
+    State.round.liveStartedAtSeconds = undefined;
     clearAllVehicleReservations();
     // Determine winner: use explicit override if provided, otherwise infer from ticket counts.
     let winner: TeamID | 0;
@@ -131,6 +134,7 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     resetReadyStateForAllPlayers();
 
     lifecycleSetNotReadyBaseline("fresh-setup");
+    State.round.liveStartedAtSeconds = undefined;
     kpiResetAll();
     kpiSnapshotDeathBaselines();
     clearActiveBoundaryViolationsForAllPlayers();

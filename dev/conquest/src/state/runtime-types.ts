@@ -46,7 +46,7 @@ type VehicleSlotSpawnCategory =
     | "fast_mover"
     | "other";
 
-type VehicleDirectSpawnMode = "air" | "ground";
+type VehicleDirectSpawnMode = "air" | "ground" | "forward";
 
 type VehicleSlotAvailabilityPhase =
     | "DISABLED"
@@ -277,6 +277,7 @@ interface GameState {
             cleanupActive: boolean;
             cleanupAllowDeploy: boolean;
         };
+        liveStartedAtSeconds: number | undefined;
         countdown: {
             isActive: boolean;
             isRequested: boolean;
@@ -308,14 +309,7 @@ interface GameState {
             c: number;
             n: number;
         }>;
-        asg: Record<number, {
-            artC: number;
-            artN: number;
-            beaC: number;
-            beaN: number;
-            ladC: number;
-            ladN: number;
-        }>;
+        asg: Record<number, Array<{ c: number; n: number }>>;
     };
     conquest: ConquestRuntimeScaffold;
     match: {

@@ -3,6 +3,15 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.207: v1.206: fix frozen round-start delay countdown - include delay state in render signature so cache invalidates every tick
+// v1.206: v1.205: round-start delay countdown ticks every second via self-terminating HUD loop
+// v1.204: v1.204: forward deploy free-space check + round-start deploy delay constants (airDelay, airDeployDelay, forwardDeployDelay)
+// v1.203: fix forward deploy: add suppressNextBindSpawnTransformCorrection to prevent vehicle teleport back to HQ pad
+// v1.202: forward deploy: expand to all ground vehicles, fix existing pad vehicle blocking forward spawn
+// v1.201: strip aircraft-only fields from tank spawn volumes, make VehicleSpawnVolumeSpec aircraft fields optional
+// v1.200: fix: capture mode as const for portal TS closure narrowing
+// v1.198: fix: narrow mode type for portal TS compiler
+// v1.196: Gadget locker config: replace hardcoded items/cooldowns with per-map GadgetLockerConfig; asg state uses indexed array; all menu functions read from ACTIVE_GADGET_CONFIG
 // v1.195: Fix stale player name in vehicle deploy menu after undeploy/death — clear activeOwnerPid on undeploy since OnPlayerExitVehicle does not fire
 // v1.194: Fix B1 residue: remove 48 stale sound/vo debug resets from conquest-scaffold, dead nextQueueDepth vars and orphaned braces from queue functions, empty if/else from flush dispatch
 // v1.193: B2: consolidate duplicate hasValidHandle, safeUnspawn, and throttle-map-rebuild helpers from capture-sound/vo into shared capture-shared.ts

@@ -20,6 +20,41 @@ function isMatchLive(): boolean {
     return State.round.phase === MatchPhase.Live;
 }
 
+// Returns seconds elapsed since the match went live (0 if not live or timestamp missing).
+function getSecondsSinceLive(): number {
+    if (!isMatchLive()) return 0;
+    const liveAt = State.round.liveStartedAtSeconds;
+    if (liveAt === undefined) return 0;
+    return Math.max(0, Math.floor(mod.GetMatchTimeElapsed()) - liveAt);
+}
+
+// True while all aircraft deployment (HQ + air) is blocked at round start.
+function isRoundStartAirDelayActive(): boolean {
+    if (!isMatchLive()) return false;
+    const delay = ACTIVE_MAP_CONFIG.roundStartAirDelay ?? 0;
+    return delay > 0 && getSecondsSinceLive() < delay;
+}
+
+// True while the air-deploy button is blocked (aircraft HQ may already be available after airDelay).
+function isRoundStartAirDeployDelayActive(): boolean {
+    if (!isMatchLive()) return false;
+    const delay = ACTIVE_MAP_CONFIG.roundStartAirDeployDelay ?? 0;
+    return delay > 0 && getSecondsSinceLive() < delay;
+}
+
+// True while the forward-deploy button is blocked at round start.
+function isRoundStartForwardDeployDelayActive(): boolean {
+    if (!isMatchLive()) return false;
+    const delay = ACTIVE_MAP_CONFIG.roundStartForwardDeployDelay ?? 0;
+    return delay > 0 && getSecondsSinceLive() < delay;
+}
+
+// Remaining seconds until the air delay expires (for countdown display).
+function getRoundStartAirDelayRemainingSeconds(): number {
+    const delay = ACTIVE_MAP_CONFIG.roundStartAirDelay ?? 0;
+    return Math.max(0, delay - getSecondsSinceLive());
+}
+
 function hasPlayersOnTeam(team: mod.Team): boolean {
     if (mod.Equals(team, mod.GetTeam(0))) return false;
     const players = mod.AllPlayers();

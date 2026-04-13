@@ -40,6 +40,7 @@ const State: GameState = {
             cleanupActive: false,
             cleanupAllowDeploy: false,
         },
+        liveStartedAtSeconds: undefined as number | undefined,
         countdown: {
             isActive: false,
             isRequested: false,

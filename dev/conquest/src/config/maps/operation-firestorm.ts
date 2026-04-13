@@ -13,10 +13,10 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
         team2MainBaseTriggerId: 500, 
         team1MainBaseBufferTriggerId: 503,
         team2MainBaseBufferTriggerId: 502, 
-        groundCombatZoneTriggerId: 666,
-        groundCombatZoneCeilingY: 200, // GroundCombatVolume: points y=100 (floor) + height=100 = ceiling y=200; from MP_TWL_Conquest11_FireStorm.spatial.json
-        team1VehicleDeploySpawnPointId: 551, //tied to Godot Spawner
-        team2VehicleDeploySpawnPointId: 550, //tied to Godot Spawner
+        groundCombatZoneTriggerId: 666, 
+        groundCombatZoneCeilingY: 200, // GroundCombatVolume: points y=100 (floor) + height=100
+        team1VehicleDeploySpawnPointId: 551, 
+        team2VehicleDeploySpawnPointId: 550,
         mainBaseInteractableObjIds: [1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015],
         mainBaseInteractableAnchors: [
             { objId: 1000, ownerTeamId: TeamID.Team2, pos: mod.CreateVector(543.660, 114.503, -222.605), vfx: VFX_GREEN_SMOKE, rot: mod.CreateVector(-90, 0, 0) },
@@ -52,25 +52,13 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
         hudFloorY: 132,
         useCustomCeiling: false,
         vehicleSpawnYawOffsetDeg: 0,
-        team1AircraftSpawnVolumes: [ // Add "Aircraft Box 2", "Aircraft Box 3", etc. as more entries in this array.
+        roundStartAirDelay: 10,
+        roundStartAirDeployDelay: 20,
+        roundStartForwardDeployDelay: 20,
+        team1AircraftSpawnVolumes: [
             {
                 label: "Team 1 Aircraft Box 1",
-                enabled: false, //old box just outside main base
-                floorCorners: [
-                    mod.CreateVector(-449.608, 250.000, 614.305),
-                    mod.CreateVector(-610.555, 250.000, 792.820),
-                    mod.CreateVector(-1165.077, 250.000, 506.148),
-                    mod.CreateVector(-1006.251, 250.000, 364.662),
-                ] as [mod.Vector, mod.Vector, mod.Vector, mod.Vector],
-                heliSpawnCeiling: 200.0,
-                jetSpawnFloor: 1000.0 - 250,
-                jetSpawnCeiling: 800.0 - 250,
-                rotHeli: mod.CreateVector(0.0, 125, 0.0),
-                rotPlane: mod.CreateVector(-75.0, 125.0, 0.0),
-            },
-            {
-                label: "Team 1 Aircraft Box 2",
-                enabled: true, 
+                enabled: true,
                 floorCorners: [
                     mod.CreateVector(-1700.0, 250.0, -1450.0),
                     mod.CreateVector(-1950.0, 250.0, -1450.0),
@@ -84,24 +72,9 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
                 rotPlane: mod.CreateVector(-45.0, 90.0, 0.0),
             },
         ],
-        team2AircraftSpawnVolumes: [ // Add "Aircraft Box 2", "Aircraft Box 3", etc. as more entries in this array.
+        team2AircraftSpawnVolumes: [
             {
                 label: "Team 2 Aircraft Box 1",
-                enabled: false,  //old box just outside main base
-                floorCorners: [
-                    mod.CreateVector(289.297, 250.000, -820.513),
-                    mod.CreateVector(465.372, 250.000, -984.494),
-                    mod.CreateVector(1034.105, 250.000, -196.395),
-                    mod.CreateVector(855.555, 250.000, -139.933),
-                ] as [mod.Vector, mod.Vector, mod.Vector, mod.Vector],
-                heliSpawnCeiling: 200.0,
-                jetSpawnFloor: 1000.0 - 250,
-                jetSpawnCeiling: 800.0 - 250,
-                rotHeli: mod.CreateVector(0.0, -55.0, 0.0),
-                rotPlane: mod.CreateVector(-75.0, -55.0, 0.0),
-            },
-            {
-                label: "Team 2 Aircraft Box 2",
                 enabled: true,
                 floorCorners: [
                     mod.CreateVector(1700.0, 250.0, 1300.0),
@@ -119,65 +92,27 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
         team1TankSpawnVolumes: [
             {
                 label: "Team 1 Tank Box 1",
-                enabled: false, //before setting true, needs user definition and setup and button code added for "forward spawner"
+                enabled: true, 
                 floorCorners: [
-                    mod.CreateVector(0.0, 0.0, 0.0),
-                    mod.CreateVector(0.0, 0.0, 0.0),
-                    mod.CreateVector(0.0, 0.0, 0.0),
-                    mod.CreateVector(0.0, 0.0, 0.0),
+                    mod.CreateVector(-527.431, 138.149,  70.596),  // T1A
+                    mod.CreateVector(-527.431, 137.753,  50.447),  // T1B
+                    mod.CreateVector(-479.446, 137.953,  38.982),  // T1C
+                    mod.CreateVector(-479.446, 138.048,  69.339),  // T1D
                 ] as [mod.Vector, mod.Vector, mod.Vector, mod.Vector],
-                heliSpawnCeiling: 0.0,
-                jetSpawnFloor: 0.0,
-                jetSpawnCeiling: 0.0,
-                rotHeli: mod.CreateVector(0.0, 0.0, 0.0),
-                rotPlane: mod.CreateVector(0.0, 0.0, 0.0),
-            },
-            {
-                label: "Team 1 Tank Box 2",
-                enabled: false, //before setting true, needs user definition and setup and button code added?
-                floorCorners: [
-                    mod.CreateVector(0.0, 0.0, 0.0),
-                    mod.CreateVector(0.0, 0.0, 0.0),
-                    mod.CreateVector(0.0, 0.0, 0.0),
-                    mod.CreateVector(0.0, 0.0, 0.0),
-                ] as [mod.Vector, mod.Vector, mod.Vector, mod.Vector],
-                heliSpawnCeiling: 0.0,
-                jetSpawnFloor: 0.0,
-                jetSpawnCeiling: 0.0,
-                rotHeli: mod.CreateVector(0.0, 0.0, 0.0),
-                rotPlane: mod.CreateVector(0.0, 0.0, 0.0),
+                rotTank: mod.CreateVector(0.0, 90, 0.0),
             },
         ],
         team2TankSpawnVolumes: [
             {
                 label: "Team 2 Tank Box 1",
-                enabled: false, //before setting true, needs user definition and setup and button code added for "forward spawner"
+                enabled: true,
                 floorCorners: [
-                    mod.CreateVector(0.0, 0.0, 0.0),
-                    mod.CreateVector(0.0, 0.0, 0.0),
-                    mod.CreateVector(0.0, 0.0, 0.0),
-                    mod.CreateVector(0.0, 0.0, 0.0),
+                    mod.CreateVector( 408.681, 113.472, -128.970),  // T2A
+                    mod.CreateVector( 408.681, 113.472, -117.219),  // T2B
+                    mod.CreateVector( 349.914, 113.472, -102.592),  // T2C
+                    mod.CreateVector( 349.914, 113.472, -123.834),  // T2D
                 ] as [mod.Vector, mod.Vector, mod.Vector, mod.Vector],
-                heliSpawnCeiling: 0.0,
-                jetSpawnFloor: 0.0,
-                jetSpawnCeiling: 0.0,
-                rotHeli: mod.CreateVector(0.0, 0.0, 0.0),
-                rotPlane: mod.CreateVector(0.0, 0.0, 0.0),
-            },
-            {
-                label: "Team 2 Tank Box 2",
-                enabled: false, //before setting true, needs user definition and setup and button code added?
-                floorCorners: [
-                    mod.CreateVector(0.0, 0.0, 0.0),
-                    mod.CreateVector(0.0, 0.0, 0.0),
-                    mod.CreateVector(0.0, 0.0, 0.0),
-                    mod.CreateVector(0.0, 0.0, 0.0),
-                ] as [mod.Vector, mod.Vector, mod.Vector, mod.Vector],
-                heliSpawnCeiling: 0.0,
-                jetSpawnFloor: 0.0,
-                jetSpawnCeiling: 0.0,
-                rotHeli: mod.CreateVector(0.0, 0.0, 0.0),
-                rotPlane: mod.CreateVector(0.0, 0.0, 0.0),
+                rotTank: mod.CreateVector(0.0, -90, 0.0),
             },
         ],
         capturePoints: [ //600-606 reserved for Maximum 7 flags, must be in spatial data and in order for Engine HUD display logic
