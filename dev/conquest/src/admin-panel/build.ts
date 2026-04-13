@@ -129,9 +129,10 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         mod.stringkeys.twl.adminPanel.tester.buttons.groundDeployAll
     );
 
-    // CQ_Bug_52 temporary diagnostic counter: "CQ52: <n>" on a single row below the last tester
-    // button. Refreshed only when the counter changes via syncCq52GateDesyncCounterForAllPlayers(),
-    // so per-frame HUD cost is zero. Remove together with the rest of CQ52 telemetry.
+    // Persistent diagnostic counter row below the last tester button. Reads three numbers from
+    // State.conquest.debug.worldIconDiagP0/P1/P2 and is refreshed only when something bumps the
+    // state + calls syncDiagCounterForAllPlayers(), so per-frame HUD cost is zero. Currently wired
+    // to FEATURE_WORLD_ICON_DIAG for World Icon spawn/destroy telemetry in MP playtests.
     const cq52CounterId = UI_ADMIN_CQ52_COUNTER_ID + playerId;
     const cq52CounterWidth = (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX);
     const cq52CounterY = row0Y + (buttonSizeY + rowSpacingY) * 10;
@@ -140,7 +141,12 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         mod.CreateVector(testerBaseX, cq52CounterY + 2, 0),
         mod.CreateVector(cq52CounterWidth, 18, 0),
         mod.UIAnchor.TopLeft,
-        mod.Message(mod.stringkeys.twl.adminPanel.labels.cq52CounterFormat, State.vehicles.gateDesyncCount || 0),
+        mod.Message(
+            mod.stringkeys.twl.adminPanel.labels.cq52CounterFormat,
+            State.conquest.debug.worldIconDiagP0 || 0,
+            State.conquest.debug.worldIconDiagP1 || 0,
+            State.conquest.debug.worldIconDiagP2 || 0
+        ),
         eventPlayer
     );
     const CQ52_COUNTER = safeFind(cq52CounterId);
@@ -152,7 +158,7 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
     }
 
     syncAdminMatchLengthLabelForAllPlayers();
-    syncCq52GateDesyncCounterForAllPlayers();
+    syncDiagCounterForAllPlayers();
 }
 
 

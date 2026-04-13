@@ -66,15 +66,7 @@ function tryClaimVehicleDirectSpawnForPlayer(eventPlayer: mod.Player, slot: Vehi
     if (playerTeam !== slot.teamId) return false;
     if (!slot.enabled || !slot.deployFlowTracked) return false;
     if (slot.vehicleId !== -1) return false;
-    if (slot.expectingSpawn || slot.respawnRunning || slot.spawnRetryScheduled) {
-        // CQ_Bug_52 diagnostic: HUD gate (isVehicleDeploySlotReadyForSpawnButton) also reads these
-        // three flags, so reaching here means the HUD painted the button as ready BUT a concurrent
-        // writer has flipped one of the gate flags since the last HUD refresh. Bump the temporary
-        // admin-panel counter so a live bake can detect any residual desync.
-        State.vehicles.gateDesyncCount = (State.vehicles.gateDesyncCount || 0) + 1;
-        syncCq52GateDesyncCounterForAllPlayers();
-        return false;
-    }
+    if (slot.expectingSpawn || slot.respawnRunning || slot.spawnRetryScheduled) return false;
     if (getVehicleSlotRespawnRemainingSeconds(slot) > 0) return false;
     if (slot.pendingSpawnOwnerPid !== undefined && slot.pendingSpawnOwnerPid !== pid) return false;
 

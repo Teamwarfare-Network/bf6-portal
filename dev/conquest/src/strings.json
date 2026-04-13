@@ -2,11 +2,10 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.150)",
+        "title": "teamwarfare . net | TWL Conquest (v1.195)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
-      "statusProbeCodex": "I'm Codex and I'm stupid",
       "readyText": "YOU ARE READY",
       "labels": {},
       "roundStateLive": "LIVE",
@@ -236,7 +235,7 @@
       },
       "labels": {
         "roundLengthFormat": "Match Length: {0}:{1}{2}",
-        "cq52CounterFormat": "CQ52: {0}"
+        "cq52CounterFormat": "WI {0} {1} {2}"
       },
       "buttons": {
         "panel": "Admin Panel"
@@ -374,6 +373,13 @@
       "init": "Conquest systems initialized.",
       "vehicleSpawned": "Vehicle spawned for {0} at X:{1}/Z:{2}",
       "vehicleSpawnRetry": "Vehicle spawn blocked for {0}. Retrying in {1}s."
+    },
+    "scoreboard": {
+      "colScore": "Score",
+      "colKills": "Kills",
+      "colDeaths": "Deaths",
+      "colAssists": "Assists",
+      "colCaptures": "Captures"
     },
     "system": {
       "genericCounter": "{0}",

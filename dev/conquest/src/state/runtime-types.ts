@@ -130,32 +130,6 @@ type ConquestSoundRuntimeState = {
     queue: ConquestQueuedSoundEvent[];
     lastFlushAtSeconds: number;
     lastEventAtByThrottleKey: Record<string, number>;
-    debug: {
-        queuedCount: number;
-        coalescedCount: number;
-        dispatchedCount: number;
-        dispatchedFriendlyCount: number;
-        dispatchedEnemyCount: number;
-        suppressedCount: number;
-        suppressedThrottleCount: number;
-        droppedNoHandleCount: number;
-        droppedNoRecipientCount: number;
-        droppedInvalidEventCount: number;
-        spawnFailureCount: number;
-        lastQueueDepth: number;
-        maxQueueDepth: number;
-        lastRecipientCount: number;
-        lastFlushQueuedCount: number;
-        lastFlushDispatchedCount: number;
-        lastFlushSuppressedCount: number;
-        lastFlushDroppedCount: number;
-        lastEventObjId: number;
-        lastEventSourceTeamId: TeamID | 0;
-        lastEventQueuedAtSeconds: number;
-        lastDispatchedAtSeconds: number;
-        playerCleanupCount: number;
-        lastCleanupPid: number;
-    };
 };
 
 type ConquestVoEventKey =
@@ -189,31 +163,6 @@ type ConquestVoRuntimeState = {
     objectiveStateByObjId: Record<number, ConquestObjectiveVoState>;
     recentActiveObjIdByPid: Record<number, number>;
     recentActiveAtSecondsByPid: Record<number, number>;
-    debug: {
-        queuedCount: number;
-        coalescedCount: number;
-        dispatchedCount: number;
-        suppressedCount: number;
-        droppedNoHandleCount: number;
-        droppedNoRecipientCount: number;
-        droppedInvalidEventCount: number;
-        droppedNoFlagCount: number;
-        spawnFailureCount: number;
-        lastQueueDepth: number;
-        maxQueueDepth: number;
-        lastRecipientCount: number;
-        lastFlushQueuedCount: number;
-        lastFlushDispatchedCount: number;
-        lastFlushSuppressedCount: number;
-        lastFlushDroppedCount: number;
-        lastEventKey: ConquestVoEventKey | "none";
-        lastEventObjId: number;
-        lastEventSourceTeamId: TeamID | 0;
-        lastEventQueuedAtSeconds: number;
-        lastDispatchedAtSeconds: number;
-        playerCleanupCount: number;
-        lastCleanupPid: number;
-    };
 };
 
 type ConquestRuntimeScaffold = {
@@ -237,6 +186,12 @@ type ConquestRuntimeScaffold = {
         visualByObjId: Record<number, ConquestFlagVisualRuntimeState>;
         engagedObjIdByPid: Record<number, number>;
     };
+    worldInteractableIconByTeamByObjId: Record<number, Record<number, any>>;
+    // Runtime-spawned VFX handles keyed by interactable config objId, populated from
+    // `spawnWorldInteractableVfxForActiveConfigs` and torn down on map config reset.
+    worldInteractableVfxHandleByObjId: Record<number, any>;
+    // Cooldown gate for VFX refresh — seconds timestamp of last destroy-and-respawn cycle.
+    worldInteractableVfxLastRefreshAtSeconds: number;
     sound: ConquestSoundRuntimeState;
     vo: ConquestVoRuntimeState;
     spawnCharge: {
@@ -277,6 +232,9 @@ type ConquestRuntimeScaffold = {
         perspectiveTeamByPid: Record<number, TeamID | 0>;
         teamSwapPerspectiveLockUntilByPid: Record<number, number>;
         engageHiddenUntilDeployByPid: Record<number, boolean>;
+        worldIconDiagP0: number;
+        worldIconDiagP1: number;
+        worldIconDiagP2: number;
         hudStatusVmByPid: Record<number, {
             isLive: boolean;
             isGameOver: boolean;
@@ -390,7 +348,6 @@ interface GameState {
         readyNeedsReconfirmByPid: Record<number, boolean>;
         readyMessageCooldownByPid: Record<number, number>;
         inMainBaseByPid: Record<number, boolean>;
-        worldInteractableAreaByPidByObjId: Record<number, Record<number, boolean>>;
         worldInteractableIconByPidByObjId: Record<number, Record<number, any>>;
         armO: Record<number, boolean>;
         armI: Record<number, number>;
@@ -438,6 +395,15 @@ interface GameState {
         liveVehicleDeployMenuVisibleByPid: Record<number, boolean>;
         posDebugTransformSourceByPid: Record<number, PositionDebugTransformSource>;
         posDebugVehicleObjIdByPid: Record<number, number>;
+        kpiByPid: Record<number, {
+            kills: number;
+            deaths: number;
+            assists: number;
+            captures: number;
+            score: number;
+            dirty: boolean;
+            deathsBaseline: number;
+        }>;
     };
     vehicles: {
         slots: VehicleSpawnerSlot[];
@@ -451,10 +417,6 @@ interface GameState {
         activeSpawnRequestedAtSeconds?: number;
         configReady: boolean;
         startupCleanupDone: boolean;
-        // CQ_Bug_52 temporary diagnostic counter: bumps when a deploy-button click lands on a slot
-        // the HUD still paints as ready but the claim gate rejects. Surfaces a hidden desync so the
-        // live bake can validate the fix. Remove after a few rounds confirm it stays at 0.
-        gateDesyncCount: number;
     };
     hudCache: {
         topHudShellByPid: Record<number, TopHudShellRefs>;

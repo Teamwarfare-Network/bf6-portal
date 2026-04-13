@@ -17,7 +17,7 @@ Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
   - Phase 7: completed (pre-game 20s countdown with undeploy/vehicle reset/deploy gating, victory dialog with ticket scoreboard/crown/result line, endMatch winner inference; remaining polish deferred to Phase 10)
 - Current next implementation target:
   - Phase 8: Spawn behavior and restrictions
-  - Phase 9: Custom scoreboard + KPI tracking
+  - Phase 9: Custom scoreboard + KPI tracking (in progress — prototype v1.178)
   - Phase 10: Iteration, playtesting, and polish — collects all deferred work from earlier phases including:
     - UI/menu lifecycle hardening and first-use performance stabilization (from Phase 5/6 era)
     - All open bugs tracked in `design_doc/conquest_issues.md`
@@ -3289,10 +3289,11 @@ Codex To-Do Checklist:
 Phase Changelog:
 
 - `Log policy`: append-only; newest entry first.
-- `Current status`: `not_started`
+- `Current status`: `in_progress`
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
-- `Entries`: `None yet`
+- `Entries`:
+  - `2026-04-12 | Phase 9 prototype: custom tab scoreboard with KPI tracking | Added kpi/kpi-state.ts, kpi/scoreboard-tab.ts, index/player-kpi-events.ts; wired OnPlayerEarnedKill + OnPlayerEarnedKillAssist exports; capture KPI attribution via GetPlayersOnPoint + GetCurrentOwnerTeam; scoreboard sync in live-tick (1s) + re-assert (60s); KPI reset on startMatch + triggerFreshMatchSetup; state: kpiByPid; strings: twl.scoreboard.col* | v1.178, bundle 1,042,443 bytes, tsc clean`
 
 <a id="phase-10"></a>
 ### Phase 10: Iteration, Playtesting, and Polish (Open-Ended)
@@ -3341,6 +3342,9 @@ Codex To-Do Checklist:
 - [ ] Add sound effects to out-of-bounds alerts (boundary violation warning/countdown).
 - [ ] Add music to round start (match-go / LIVE transition).
 - [ ] Add a flourish sound on flag capture completion, and accelerate the flag capture tick sounds the closer the capture is to completing.
+- [ ] Add KDR (Kill/Death Ratio) column to the tab scoreboard. Formula: `kills / deaths`, floor 0, 1-decimal precision (CF-47). Deaths=0 edge case: display infinity-style, internal sort value = kills (CF-79, CF-83). Deferred from Phase 9 due to 5-column Portal API limit; requires displacing an existing column or reworking layout.
+- [ ] Add SPM (Score Per Minute) column to the tab scoreboard. Formula TBD. Deferred from Phase 9 due to 5-column Portal API limit.
+- [ ] Re-evaluate scoreboard column layout once KDR and SPM are ready: preferred order is SPM | Score | Captures | KDR | Kills | Deaths (6 columns needed, only 5 available — decide which to drop or combine).
 
 Phase Changelog:
 
@@ -3349,6 +3353,7 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-04-12 | Scoreboard column layout deferral | KDR and SPM columns deferred to Phase 10 polish due to Portal 5-column API limit; documented preferred future layout (SPM/Score/Captures/KDR/Kills/Deaths) and noted 6-vs-5 resolution needed | Phase 9, Phase 10, CF-39, CF-79, CF-83 | accepted | Phase 10 checklist updated with 3 new to-dos`
   - `2026-04-04 | Sound/music polish items | Added three audio polish to-dos: boundary alert sounds, round start music, flag capture flourish + accelerating capture tick sounds | Phase 10 | accepted | Phase 10 checklist updated`
   - `2026-03-02 | Repeated neutralization-border regression during Phase 3 implementation/testing | Deferred flag border feature to Phase 10 polish; remove border feature from active implementation until a single authoritative visual-state path is validated | Phase 3B, Phase 10 | accepted | Added Phase 10 to-do + explicit border reintroduction validation criteria`
   - `2026-03-01 | Phase sequence update request | Added open-ended iteration/playtesting/polish phase before bot simulation and bumped downstream phase numbering | Phase 10, Phase 11, Phase 12, Phase 13 | accepted | design_doc phase ordering + numbering updated`
@@ -3737,20 +3742,21 @@ None
 
 ## Codebase Reference Map
 
-Last updated: v1.120 (2026-04-08)
+Last updated: v1.187 (2026-04-12)
 
 ### Project Stats
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.150 |
-| Source files | 115 .ts files + 1 .json |
-| Total source bytes | 1,334,810 (includes Changelog + excluded stubs) |
-| Bundle size (script) | 1,030,237 bytes |
-| Bundle size (strings) | 19,742 bytes |
+| Version | 1.187 |
+| Source files | 118 .ts files + 1 .json |
+| Total source bytes | ~1,378,000 (includes Changelog + excluded stubs) |
+| Total source lines | 29,556 |
+| Bundle size (script) | 1,044,501 bytes |
+| Bundle size (strings) | 19,936 bytes |
 | Bundle limit | 1,048,576 bytes (1 MiB) — applies to script only |
-| Headroom | 18,339 bytes (1.7%) |
-| Entry point | `src/index.ts` -> 20 Portal event handlers |
+| Headroom | 4,075 bytes (0.39%) — CRITICAL |
+| Entry point | `src/index.ts` -> 22 Portal event handlers |
 | Build pipeline | `prebuild.js` -> `bf6-portal-bundler` -> `postbuild.js` -> `verify.js` |
 | Build output | `dist/bundle.ts` + `dist/bundle.strings.json` |
 
@@ -3763,7 +3769,8 @@ Feature flags in `src/config/conquest-constants.ts` control file-level bundle ex
 | `FEATURE_PERF_DIAG` | `false` | 16,676 bytes (2 files) | ~8-10K | Debug performance HUD |
 | `FEATURE_ADMIN_PANEL` | `true` | 43,174 bytes (4 files) | ~20-25K | Admin panel UI + action buttons |
 | `FEATURE_JOIN_PROMPT` | `false` | 313 bytes (3 stubs) | ~0 | Future tip/prompt features |
-| `FEATURE_POSITION_DEBUG` | `true` | hud/position-debug.ts | — | Coordinate display (standalone file) |
+| `FEATURE_POSITION_DEBUG` | `true` | hud/position-debug.ts | ~18.6K source | Coordinate display (standalone file) |
+| `FEATURE_WORLD_ICON_DIAG` | `true` | inline guards | ~200-400 bytes | **Temporary** MP World Icon diagnostic — should be `false` for production |
 
 Note: The loading overlay shown during the player UI warm gate (`src/ready-dialog/loading-overlay.ts`) is always included and not controlled by any feature flag. `FEATURE_JOIN_PROMPT` controls only future tip/prompt extensions.
 
@@ -3823,8 +3830,13 @@ src/
     player-join-leave.ts      -- Join/leave lifecycle, HUD cleanup, loading gate entry (228 lines | 10.1K)
     player-deploy.ts          -- Deploy/undeploy handlers, loading gate enforcement (125 lines | 5.6K)
     player-loop-inputs.ts     -- Per-tick player input: gate enforcement, interact routing (63 lines | 3.1K)
-    vehicle-events.ts         -- Vehicle enter/exit/spawn/destroy, slot binding; all UnspawnObject calls guarded (201 lines | 9.2K)
+    vehicle-events.ts         -- Vehicle enter/exit/spawn/destroy, slot binding, boundary recheck on aircraft exit (225 lines | 11.0K)
     area-triggers.ts          -- Capture-point and main-base area trigger handlers (133 lines | 6.0K)
+    player-kpi-events.ts      -- KPI event handler impls: kill, assist, capture attribution (Phase 9) (79 lines | 2.7K)
+
+  kpi/
+    kpi-state.ts              -- Per-player KPI state mutations and score formula (CF-38) (Phase 9) (112 lines | 4.0K)
+    scoreboard-tab.ts         -- Custom two-team scoreboard config, per-player sync (Phase 9) (113 lines | 4.4K)
 
   interaction/
     types.ts                  -- readyDialogData_t (30+ fields), UiLoadReason, HARD_PLAYER_LOCK_AUDIT_MODE (68 lines | 2.5K)

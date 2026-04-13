@@ -4,9 +4,10 @@
 // Compile-time feature flags: when FALSE, associated source files are excluded from the bundle
 // and all external call sites are guarded to no-op. Toggle the matching imports in index.ts.
 const FEATURE_PERF_DIAG = false;
-const FEATURE_POSITION_DEBUG = true;
-const FEATURE_ADMIN_PANEL = true;
+const FEATURE_POSITION_DEBUG = false;
+const FEATURE_ADMIN_PANEL = false;
 const FEATURE_JOIN_PROMPT = false;
+const FEATURE_WORLD_ICON_DIAG = false;
 
 const CONQUEST_STARTING_TICKETS = 350;
 const CONQUEST_CAPTURE_TIME_SECONDS = 10;

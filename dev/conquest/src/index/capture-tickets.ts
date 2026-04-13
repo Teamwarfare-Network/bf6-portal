@@ -1779,24 +1779,10 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
             const pointPlayer = mod.ValueInArray(playersOnPoint, i) as mod.Player;
             if (!pointPlayer || !mod.IsPlayerValid(pointPlayer)) continue;
             const pointPid = safeGetPlayerId(pointPlayer);
-            let countablePlayer = pointPlayer;
-            const pointTeam = safeGetTeamNumberFromPlayer(pointPlayer, 0);
-            let resolvedPointTeam = pointTeam;
-            if (pointPid !== undefined) {
-                const livePlayer = safeFindPlayer(pointPid);
-                const liveTeam = livePlayer && mod.IsPlayerValid(livePlayer)
-                    ? safeGetTeamNumberFromPlayer(livePlayer, 0)
-                    : 0;
-                if (livePlayer && mod.IsPlayerValid(livePlayer)) {
-                    countablePlayer = livePlayer;
-                }
-                // Count on-point players by authoritative live team when available.
-                // This avoids first-post-swap engage suppression caused by transient team mismatch
-                // between on-point sample snapshots and live player team state.
-                if (liveTeam !== 0) {
-                    resolvedPointTeam = liveTeam;
-                }
-            }
+            // pointPlayer from GetPlayersOnPoint is the live engine reference — no need
+            // to re-lookup via safeFindPlayer(pid) + AllPlayers() iteration (BUG-A8 perf fix).
+            const countablePlayer = pointPlayer;
+            const resolvedPointTeam = safeGetTeamNumberFromPlayer(pointPlayer, 0);
             if (!conquestPhase2AShouldCountPlayerAsActiveOnPoint(countablePlayer)) continue;
             if (resolvedPointTeam === TeamID.Team1) onPointTeam1 += 1;
             if (resolvedPointTeam === TeamID.Team2) onPointTeam2 += 1;

@@ -26,6 +26,7 @@ async function onGameModeStartedImpl(): Promise<void> {
     if (detectedMapKey) {
         applyMapConfig(detectedMapKey);
     }
+    spawnWorldInteractableVfxForActiveConfigs();
     State.vehicles.configReady = true;
     initializeConquestPhase1Scaffold();
     conquestPhase2AResetNotLiveState();
@@ -39,6 +40,9 @@ async function onGameModeStartedImpl(): Promise<void> {
     if (hudMode === "off") {
         twlConquestHudResetSchedulerState();
     }
+
+    // Configure the custom two-team tab scoreboard (columns, widths, sorting, header).
+    configureScoreboard();
 
     // Apply initial engine variables/settings used by the mode (authoritative baseline).
     mod.SetGameModeTargetScore(GAMEMODE_TARGET_SCORE_SAFETY_CAP);
@@ -142,6 +146,9 @@ async function onGameModeStartedImpl(): Promise<void> {
 
             if (nowSecondBoundary !== lastSecondBoundary) {
                 lastSecondBoundary = nowSecondBoundary;
+
+                // Scoreboard sync runs once per second, not per-subtick.
+                scoreboardSyncTick();
 
                 // Push the initial clock display so every HUD shows the same starting time.
                 if (!clockUpdatedThisLoop) {

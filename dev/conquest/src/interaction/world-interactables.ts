@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Module: interaction/world-interactables -- per-player spawned WorldIcon clones with SetWorldIconOwner visibility
+// Module: interaction/world-interactables -- per-team HQ WorldIcons (pre-game only) and runtime-spawned smoke markers
 
 //#region -------------------- World Interactables --------------------
 
@@ -43,7 +43,8 @@ function getWorldInteractableRuntimeIconStyle(
     };
 }
 
-// Hides the authored WorldIcon's native rendering so only spawned per-player clones are visible.
+// Hides the authored WorldIcon so only runtime-spawned team icons (and smoke markers) render.
+// Gadget interactables rely on this alone — they have no runtime icon at all.
 function hideAuthoredWorldInteractableIconPresentation(config: WorldInteractableConfig): void {
     try {
         const worldIcon = mod.GetWorldIcon(config.objId);
@@ -66,27 +67,8 @@ function applyWorldInteractableAuthoredInteractPointState(config: WorldInteracta
     }
 }
 
-function isPlayerInsideWorldInteractableArea(pid: number, objId: number): boolean {
-    return State.players.worldInteractableAreaByPidByObjId[pid]?.[objId] === true;
-}
-
-function setPlayerWorldInteractableAreaMembership(pid: number, objId: number, inside: boolean): void {
-    if (inside) {
-        if (!State.players.worldInteractableAreaByPidByObjId[pid]) {
-            State.players.worldInteractableAreaByPidByObjId[pid] = {};
-        }
-        State.players.worldInteractableAreaByPidByObjId[pid][objId] = true;
-        return;
-    }
-
-    const byObjId = State.players.worldInteractableAreaByPidByObjId[pid];
-    if (!byObjId) return;
-    delete byObjId[objId];
-    if (Object.keys(byObjId).length <= 0) {
-        delete State.players.worldInteractableAreaByPidByObjId[pid];
-    }
-}
-
+// Gate used both for presentation (pre-game HQ icons) and for activation eligibility. Returns true
+// only for main-base-scope configs when the player is currently in their own team's main base.
 function shouldShowWorldInteractableRuntimeIconForPlayer(player: mod.Player, config: WorldInteractableConfig): boolean {
     if (!player || !mod.IsPlayerValid(player)) return false;
     if (!isPlayerDeployed(player)) return false;
@@ -94,14 +76,9 @@ function shouldShowWorldInteractableRuntimeIconForPlayer(player: mod.Player, con
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return false;
 
-    if (config.scope === "point") {
-        return isPlayerInsideWorldInteractableArea(pid, config.objId);
-    }
-
     if (config.scope !== "main_base") return false;
     if (State.players.inMainBaseByPid[pid] !== true) return false;
 
-    // Only show icons belonging to the player's own team HQ.
     if (config.ownerTeamId) {
         const playerTeam = safeGetTeamNumberFromPlayer(player);
         if (playerTeam !== config.ownerTeamId) return false;
@@ -110,6 +87,8 @@ function shouldShowWorldInteractableRuntimeIconForPlayer(player: mod.Player, con
     return true;
 }
 
+// Allows ammo resupply from anywhere the authored InteractPoint radius covers. Main-base activation
+// (ready dialog, vehicle spawn menu) still requires the player to be inside their own main base.
 function shouldAllowWorldInteractableActivationForPlayer(player: mod.Player, config: WorldInteractableConfig): boolean {
     if (config.action === "open_ammo_resupply_menu") {
         return true;
@@ -117,42 +96,48 @@ function shouldAllowWorldInteractableActivationForPlayer(player: mod.Player, con
     return shouldShowWorldInteractableRuntimeIconForPlayer(player, config);
 }
 
-// Returns the spawned WorldIcon handle for this player+config, or undefined if none active.
-function getWorldInteractableIconHandleForPid(pid: number, objId: number): any {
-    return State.players.worldInteractableIconByPidByObjId[pid]?.[objId] ?? undefined;
+// Returns the spawned WorldIcon handle for this team+objId, or undefined if none active.
+function getWorldInteractableIconHandleForTeam(teamId: number, objId: number): any {
+    return State.conquest.worldInteractableIconByTeamByObjId[teamId]?.[objId] ?? undefined;
 }
 
-// Stores or clears the spawned WorldIcon handle for this player+config.
-function setWorldInteractableIconHandleForPid(pid: number, objId: number, handle: any): void {
+// Stores or clears the spawned WorldIcon handle for this team+objId.
+function setWorldInteractableIconHandleForTeam(teamId: number, objId: number, handle: any): void {
     if (handle) {
-        if (!State.players.worldInteractableIconByPidByObjId[pid]) {
-            State.players.worldInteractableIconByPidByObjId[pid] = {};
+        if (!State.conquest.worldInteractableIconByTeamByObjId[teamId]) {
+            State.conquest.worldInteractableIconByTeamByObjId[teamId] = {};
         }
-        State.players.worldInteractableIconByPidByObjId[pid][objId] = handle;
+        State.conquest.worldInteractableIconByTeamByObjId[teamId][objId] = handle;
         return;
     }
-    const byObjId = State.players.worldInteractableIconByPidByObjId[pid];
+    const byObjId = State.conquest.worldInteractableIconByTeamByObjId[teamId];
     if (!byObjId) return;
     delete byObjId[objId];
     if (Object.keys(byObjId).length <= 0) {
-        delete State.players.worldInteractableIconByPidByObjId[pid];
+        delete State.conquest.worldInteractableIconByTeamByObjId[teamId];
     }
 }
 
-// Resolves the world position for a config's icon. Uses explicit iconAnchorPos if authored, otherwise
-// reads the authored WorldIcon's position as a fallback reference.
+// Resolves the world position for a config's icon from the authored anchor.
 function resolveWorldInteractableIconPosition(config: WorldInteractableConfig): mod.Vector | undefined {
     if (config.iconAnchorPos) return config.iconAnchorPos;
     return undefined;
 }
 
-// Spawns a per-player WorldIcon clone at the config position, configures its style, and restricts
-// visibility to the given player via SetWorldIconOwner. Spawned icons start disabled — image and text
-// are explicitly enabled after configuration.
-function showWorldInteractableRuntimeIconForPlayer(player: mod.Player, config: WorldInteractableConfig): void {
-    const pid = safeGetPlayerId(player);
-    if (pid === undefined) return;
-    if (getWorldInteractableIconHandleForPid(pid, config.objId)) return;
+// Spawns a single WorldIcon clone owned by the player's team for a main-base config. Cached by
+// (team, objId) so multiple teammates hitting the sync path produce at most one clone per team.
+// Pre-game only: blocks after the live transition via `isMatchLive()` so HQ icons cannot respawn
+// once the round has started.
+function ensureMainBaseTeamIconForPlayer(player: mod.Player, config: WorldInteractableConfig): void {
+    if (isMatchLive()) return;
+    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isPlayerDeployed(player)) return;
+    if (!config.ownerTeamId) return;
+
+    const playerTeam = safeGetTeamNumberFromPlayer(player);
+    if (playerTeam !== config.ownerTeamId) return;
+
+    if (getWorldInteractableIconHandleForTeam(config.ownerTeamId, config.objId)) return;
 
     const textKey = getWorldInteractableRuntimeIconTextKey(config);
     if (textKey === undefined) return;
@@ -165,52 +150,24 @@ function showWorldInteractableRuntimeIconForPlayer(player: mod.Player, config: W
         mod.SetWorldIconImage(icon, style.image);
         mod.SetWorldIconColor(icon, style.color);
         mod.SetWorldIconText(icon, mod.Message(textKey));
-        mod.SetWorldIconOwner(icon, player);
+        mod.SetWorldIconOwner(icon, mod.GetTeam(config.ownerTeamId));
         mod.EnableWorldIconImage(icon, true);
         mod.EnableWorldIconText(icon, true);
-        setWorldInteractableIconHandleForPid(pid, config.objId, icon);
+        setWorldInteractableIconHandleForTeam(config.ownerTeamId, config.objId, icon);
+        if (FEATURE_WORLD_ICON_DIAG) {
+            const total = Object.keys(State.conquest.worldInteractableIconByTeamByObjId[config.ownerTeamId] ?? {}).length;
+            State.conquest.debug.worldIconDiagP0 = config.ownerTeamId;
+            State.conquest.debug.worldIconDiagP1 = config.objId;
+            State.conquest.debug.worldIconDiagP2 = total;
+            syncDiagCounterForAllPlayers();
+        }
     } catch {
-        setWorldInteractableIconHandleForPid(pid, config.objId, undefined);
     }
-}
-
-// Destroys the per-player spawned WorldIcon clone for this player+config.
-function hideWorldInteractableRuntimeIconForPlayer(player: mod.Player, config: WorldInteractableConfig): void {
-    const pid = safeGetPlayerId(player);
-    if (pid === undefined) return;
-    const handle = getWorldInteractableIconHandleForPid(pid, config.objId);
-    if (!handle) return;
-
-    try {
-        mod.UnspawnObject(handle);
-    } catch {}
-    setWorldInteractableIconHandleForPid(pid, config.objId, undefined);
-}
-
-function updateWorldInteractableAreaTriggerMembershipForPlayer(
-    player: mod.Player,
-    areaTrigger: mod.AreaTrigger,
-    inside: boolean
-): boolean {
-    if (!player || !mod.IsPlayerValid(player) || !areaTrigger) return false;
-    const pid = safeGetPlayerId(player);
-    if (pid === undefined) return false;
-
-    const config = getActiveWorldInteractableConfigByObjId(mod.GetObjId(areaTrigger));
-    if (!config || config.scope !== "point") return false;
-
-    setPlayerWorldInteractableAreaMembership(pid, config.objId, inside);
-    syncWorldInteractableRuntimeIconForPlayer(player, config);
-    return true;
 }
 
 function syncWorldInteractableRuntimeIconForPlayer(player: mod.Player, config: WorldInteractableConfig): void {
-    if (shouldShowWorldInteractableRuntimeIconForPlayer(player, config)) {
-        showWorldInteractableRuntimeIconForPlayer(player, config);
-        return;
-    }
-
-    hideWorldInteractableRuntimeIconForPlayer(player, config);
+    if (config.scope !== "main_base") return;
+    ensureMainBaseTeamIconForPlayer(player, config);
 }
 
 function syncWorldInteractableRuntimeIconsForPlayer(player: mod.Player): void {
@@ -230,28 +187,107 @@ function syncWorldInteractableRuntimeIconsForAllPlayers(): void {
     }
 }
 
-// Destroys all spawned WorldIcon clones for one player and clears associated state.
+// Destroys all team HQ WorldIcons at the live transition. Called from `startMatch`. Combined with
+// the `isMatchLive()` guard inside `ensureMainBaseTeamIconForPlayer`, this ensures HQ icons exist
+// only pre-game and never reappear once the round has started.
+function cleanupMainBaseTeamWorldIconsForLiveTransition(): void {
+    const iconsByTeam = State.conquest.worldInteractableIconByTeamByObjId;
+    const teamKeys = Object.keys(iconsByTeam);
+    for (let i = 0; i < teamKeys.length; i++) {
+        const teamKey = Number(teamKeys[i]);
+        const byObjId = iconsByTeam[teamKey];
+        if (!byObjId) continue;
+        const objIdKeys = Object.keys(byObjId);
+        for (let j = 0; j < objIdKeys.length; j++) {
+            const handle = byObjId[Number(objIdKeys[j])];
+            if (!handle) continue;
+            try {
+                mod.UnspawnObject(handle);
+            } catch {}
+        }
+        delete iconsByTeam[teamKey];
+    }
+    if (FEATURE_WORLD_ICON_DIAG) {
+        State.conquest.debug.worldIconDiagP0 = -1;
+        State.conquest.debug.worldIconDiagP1 = 0;
+        State.conquest.debug.worldIconDiagP2 = 0;
+        syncDiagCounterForAllPlayers();
+    }
+}
+
+// Runtime-spawns a persistent VFX at every active world interactable whose config carries both a
+// position and a vfx prefab enum. Cached by interactable objId so a second call is a no-op.
+// SpawnObject returns VFX handles in the DISABLED state for FX_ prefabs — EnableVFX(true) is the
+// mandatory step to make them render (proven in v1.166 / fx-showcase reference pattern).
+function spawnWorldInteractableVfxForActiveConfigs(): void {
+    const cache = State.conquest.worldInteractableVfxHandleByObjId;
+    for (let i = 0; i < ACTIVE_WORLD_INTERACTABLE_CONFIGS.length; i++) {
+        const config = ACTIVE_WORLD_INTERACTABLE_CONFIGS[i];
+        if (!config.vfx || !config.iconAnchorPos) continue;
+        if (cache[config.objId]) continue;
+        try {
+            const spawned = mod.SpawnObject(
+                config.vfx,
+                config.iconAnchorPos,
+                config.vfxRot ?? WORLD_INTERACTABLE_ZERO_ROT
+            );
+            if (mod.IsType(spawned, mod.Types.VFX)) {
+                const vfx = spawned as mod.VFX;
+                mod.EnableVFX(vfx, true);
+                mod.SetVFXScale(vfx, 1);
+                cache[config.objId] = vfx;
+            }
+        } catch {}
+    }
+}
+
+// Destroys and drops every cached VFX handle. Called from round-reset cleanup and from
+// the deploy-triggered refresh cycle so a re-spawn replicates VFX to all connected clients.
+function cleanupWorldInteractableVfx(): void {
+    const cache = State.conquest.worldInteractableVfxHandleByObjId;
+    const keys = Object.keys(cache);
+    for (let i = 0; i < keys.length; i++) {
+        const key = Number(keys[i]);
+        const vfx = cache[key];
+        if (vfx) {
+            try { mod.UnspawnObject(vfx); } catch {}
+        }
+        delete cache[key];
+    }
+}
+
+const WORLD_INTERACTABLE_VFX_REFRESH_COOLDOWN_SECONDS = 2;
+
+// Destroy-and-respawn cycle for world interactable VFX. Ensures late joiners see the effects
+// by forcing a fresh SpawnObject replication to all connected clients. Throttled by a cooldown
+// so rapid deploys don't spam destroy/spawn cycles.
+function refreshWorldInteractableVfx(): void {
+    const now = mod.GetMatchTimeElapsed();
+    if (now - State.conquest.worldInteractableVfxLastRefreshAtSeconds < WORLD_INTERACTABLE_VFX_REFRESH_COOLDOWN_SECONDS) return;
+    State.conquest.worldInteractableVfxLastRefreshAtSeconds = now;
+    cleanupWorldInteractableVfx();
+    spawnWorldInteractableVfxForActiveConfigs();
+}
+
+// Destroys all cached WorldIcon handles owned by one pid.
 function cleanupWorldInteractableRuntimeIconsForPid(pid: number): void {
     if (!Number.isInteger(pid)) return;
     const byObjId = State.players.worldInteractableIconByPidByObjId[pid];
-    if (!byObjId) {
-        delete State.players.worldInteractableAreaByPidByObjId[pid];
-        return;
+    if (byObjId) {
+        for (const objIdKey in byObjId) {
+            const handle = byObjId[objIdKey];
+            if (!handle) continue;
+            try {
+                mod.UnspawnObject(handle);
+            } catch {}
+        }
     }
-
-    for (const objIdKey in byObjId) {
-        const handle = byObjId[objIdKey];
-        if (!handle) continue;
-        try {
-            mod.UnspawnObject(handle);
-        } catch {}
-    }
-
     delete State.players.worldInteractableIconByPidByObjId[pid];
-    delete State.players.worldInteractableAreaByPidByObjId[pid];
 }
 
-// Destroys all spawned WorldIcon clones for all players and resets presentation guard.
+// Round-reset teardown: destroys every per-pid and per-team WorldIcon handle, disables every
+// cached smoke VFX, and resets the configure-once guard so the next `configureActiveWorldInteractables`
+// pass hides authored icons and enables interact points again.
 function cleanupActiveWorldInteractableRuntimeIconsForAllPlayers(): void {
     const iconsByPid = State.players.worldInteractableIconByPidByObjId;
     const iconPidKeys = Object.keys(iconsByPid);
@@ -269,15 +305,31 @@ function cleanupActiveWorldInteractableRuntimeIconsForAllPlayers(): void {
         }
         delete iconsByPid[pidKey];
     }
-    const areasByPid = State.players.worldInteractableAreaByPidByObjId;
-    const areaPidKeys = Object.keys(areasByPid);
-    for (let i = 0; i < areaPidKeys.length; i++) {
-        delete areasByPid[Number(areaPidKeys[i])];
+
+    const iconsByTeam = State.conquest.worldInteractableIconByTeamByObjId;
+    const iconTeamKeys = Object.keys(iconsByTeam);
+    for (let i = 0; i < iconTeamKeys.length; i++) {
+        const teamKey = Number(iconTeamKeys[i]);
+        const byObjId = iconsByTeam[teamKey];
+        if (!byObjId) continue;
+        const objIdKeys = Object.keys(byObjId);
+        for (let j = 0; j < objIdKeys.length; j++) {
+            const handle = byObjId[Number(objIdKeys[j])];
+            if (!handle) continue;
+            try {
+                mod.UnspawnObject(handle);
+            } catch {}
+        }
+        delete iconsByTeam[teamKey];
     }
+
+    cleanupWorldInteractableVfx();
+
     worldInteractablePresentationConfigured = false;
 }
 
 // Hides native authored WorldIcon rendering and enables the InteractPoint for interaction.
+// Gadget interactables have no runtime icon at all — only the hidden authored icon and smoke.
 function configureWorldInteractablePresentation(config: WorldInteractableConfig): void {
     hideAuthoredWorldInteractableIconPresentation(config);
     applyWorldInteractableAuthoredInteractPointState(config);
@@ -294,7 +346,7 @@ function configureActiveWorldInteractables(): void {
 }
 
 // Retries presentation configuration if authored objects were not queryable at init.
-// Icon sync is event-driven (deploy, enter/exit area triggers); no polling.
+// Icon sync is event-driven (deploy, main-base enter/exit); no polling.
 function ensureActiveWorldInteractablesReady(): void {
     if (worldInteractablePresentationConfigured) return;
     configureActiveWorldInteractables();
@@ -321,4 +373,3 @@ function tryHandleWorldInteractableActivation(eventPlayer: mod.Player, eventInte
 }
 
 //#endregion ----------------- World Interactables --------------------
-

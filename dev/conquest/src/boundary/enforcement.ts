@@ -2,7 +2,7 @@
 // Module: boundary/enforcement -- boundary occupancy, prompt, and kill-timer enforcement
 
 const PRELIVE_MAIN_BASE_KILL_SECONDS = 10;
-const ENEMY_MAIN_BASE_BUFFER_KILL_SECONDS = 3;
+const ENEMY_MAIN_BASE_BUFFER_KILL_SECONDS = 6;
 const GROUND_COMBAT_ZONE_KILL_SECONDS = 10;
 const PRELIVE_MAIN_BASE_WARNING_DELAY_SECONDS = 0.35;
 const LIVE_BOUNDARY_WARNING_DELAY_SECONDS = 0.2;

@@ -13,9 +13,10 @@ function onCapturePointLostImpl(eventCapturePoint: mod.CapturePoint): void {
     conquestPhase2AOnCapturePointLost(eventCapturePoint);
 }
 
-// CapturePoint captured edge: a team has fully acquired ownership.
+// CapturePoint captured edge: a team has fully acquired ownership. Awards KPI capture credit.
 function onCapturePointCapturedImpl(eventCapturePoint: mod.CapturePoint): void {
     conquestPhase2AOnCapturePointCaptured(eventCapturePoint);
+    onCapturePointCapturedKpiImpl(eventCapturePoint);
 }
 
 // Returns true when an objective ObjId is part of the active mapped conquest point set.
@@ -85,7 +86,6 @@ function onPlayerEnterAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger:
             syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
         }
 
-        updateWorldInteractableAreaTriggerMembershipForPlayer(eventPlayer, eventAreaTrigger, true);
         onPlayerEnterBoundaryAreaTrigger(eventPlayer, eventAreaTrigger);
     } catch {
         return;
@@ -122,7 +122,6 @@ function onPlayerExitAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: 
             renderReadyDialogForAllVisibleViewers();
         }
 
-        updateWorldInteractableAreaTriggerMembershipForPlayer(eventPlayer, eventAreaTrigger, false);
         onPlayerExitBoundaryAreaTrigger(eventPlayer, eventAreaTrigger);
     } catch {
         return;

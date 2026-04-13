@@ -189,6 +189,11 @@ const VEHICLE_VECTOR = mod.VehicleList.Vector;
 const VEHICLE_RHIB = mod.VehicleList.RHIB;
 // AH6M is used here from the current runtime despite being absent from the local core reference snapshot.
 const VEHICLE_AH6M = (mod.VehicleList as any).AH6M as mod.VehicleList;
+// VFX prefab constants — referenced by map config anchor `vfx:` fields. Add new entries here.
+const VFX_GREEN_SMOKE  = mod.RuntimeSpawn_Common.FX_Granite_Strike_Smoke_Marker_Green;
+const VFX_RED_SMOKE    = mod.RuntimeSpawn_Common.FX_Granite_Strike_Smoke_Marker_Red;
+const VFX_VIOLET_SMOKE = mod.RuntimeSpawn_Common.FX_Granite_Strike_Smoke_Marker_Violet;
+const VFX_YELLOW_SMOKE = mod.RuntimeSpawn_Common.FX_Granite_Strike_Smoke_Marker_Yellow;
 const READY_DIALOG_AIRCRAFT_CEILING_DEFAULT = 550;
 const READY_DIALOG_AIRCRAFT_CEILING_MIN = -200;
 const READY_DIALOG_AIRCRAFT_CEILING_MAX = 5000;

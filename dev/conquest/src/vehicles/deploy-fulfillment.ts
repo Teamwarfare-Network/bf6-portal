@@ -399,11 +399,14 @@ async function preparePendingVehicleDirectSpawnVehicleForPlayer(player: mod.Play
         return isVehicleSlotReadyForReservationDeploy(slot);
     }
 
+    const prepToken = slot.enableToken;
     let vehicle = tryGetSpawnedVehicleForSlot(slot);
     if (!vehicle) {
         if (!isVehicleSlotReadyForReservationDeploy(slot)) return false;
         vehicle = await spawnDirectSpawnVehicleIfReady(slot);
         if (!vehicle) return false;
+        // Guard: slot may have been disabled or retuned during the async spawn.
+        if (!slot.enabled || slot.enableToken !== prepToken) return false;
     }
     if (!isDirectSpawnDriverSeatAvailable(vehicle)) return false;
     return true;
@@ -463,6 +466,7 @@ async function tryFulfillPendingVehicleDirectSpawnSeatForPlayer(
     }
 
     const useFreshAircraftAirDirectSpawn = shouldUseFreshAircraftAirDirectSpawn(slot);
+    const fulfillToken = slot.enableToken;
     let vehicle = tryGetSpawnedVehicleForSlot(slot);
     if (!vehicle) {
         if (!isVehicleSlotReadyForReservationDeploy(slot)) {
@@ -475,6 +479,11 @@ async function tryFulfillPendingVehicleDirectSpawnSeatForPlayer(
         if (!vehicle) {
             return handlePendingVehicleSpawnSeatFailure(player, slot, failureMode);
         }
+        // Guard: slot may have been disabled or retuned during the async spawn above.
+        if (!slot.enabled || slot.enableToken !== fulfillToken) {
+            clearVehiclePendingSpawnRequestForSlot(slot);
+            return { consumedDeploy: false, fulfilled: false };
+        }
     } else if (!isDirectSpawnDriverSeatAvailable(vehicle)) {
         clearVehiclePendingSpawnRequestForSlot(slot);
         return { consumedDeploy: false, fulfilled: false };
@@ -482,6 +491,12 @@ async function tryFulfillPendingVehicleDirectSpawnSeatForPlayer(
 
     if (!isDirectSpawnDriverSeatAvailable(vehicle)) {
         return handlePendingVehicleSpawnSeatFailure(player, slot, failureMode);
+    }
+
+    // Guard: validate player is still valid and deployed before seating.
+    if (!player || !mod.IsPlayerValid(player) || !State.players.deployedByPid[safeGetPlayerId(player)!]) {
+        clearVehiclePendingSpawnRequestForSlot(slot);
+        return { consumedDeploy: false, fulfilled: false };
     }
 
     // Pre-set vehicle occupancy cache so safeGetVehicleFromPlayer/safeGetPlayerVehicleSeat

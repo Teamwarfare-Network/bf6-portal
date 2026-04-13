@@ -28,6 +28,8 @@ type WorldInteractableAnchorConfig = {
     objId: number;
     pos: mod.Vector;
     ownerTeamId: TeamID | 0;
+    vfx?: any;
+    rot?: mod.Vector;
 };
 type WorldInteractableConfig = {
     objId: number;
@@ -35,6 +37,8 @@ type WorldInteractableConfig = {
     action: WorldInteractableAction;
     ownerTeamId?: TeamID | 0;
     iconAnchorPos?: mod.Vector;
+    vfx?: any;
+    vfxRot?: mod.Vector;
 };
 type ReadyDialogPresetPackage = {
     playersPerSide: number;
@@ -50,6 +54,7 @@ type MapConfig = {
     team1MainBaseBufferTriggerId?: number;
     team2MainBaseBufferTriggerId?: number;
     groundCombatZoneTriggerId?: number;
+    groundCombatZoneCeilingY?: number; // Y ceiling of the GroundCombatVolume polygon (from spatial); used for vehicle-exit boundary recheck.
     team1VehicleDeploySpawnPointId?: number;
     team2VehicleDeploySpawnPointId?: number;
     mainBaseInteractableObjIds?: number[]; // Phase 7 main-base interactables; even ids map to ready dialog, odd ids map to vehicle menu.

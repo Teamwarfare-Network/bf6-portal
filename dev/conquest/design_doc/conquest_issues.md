@@ -1,7 +1,7 @@
 # Conquest Issues
 
-Last Updated: 2026-04-10  
-Last Tested Build: `v1.150` (CQ_Bug_49 behavioral fix confirmed at v1.146; v1.147 removed the redundant v1.145 deferred orphan-tank sweep; v1.148 eliminated the pre-deploy GetSoldierState error — CQ_Bug_50; v1.149 makes the admin position-debug toggle sticky across deaths, team-swap re-warm, and ready-dialog reopens — CQ_Bug_51; v1.150 closes the silent air-deploy failure by reaping latched `expectingSpawn` flags after the 2s bind-tracker timeout, adding a watchdog reap, forcing HUD refresh on bind, and temporarily surfacing a `CQ52:` desync counter on the admin panel — CQ_Bug_52)
+Last Updated: 2026-04-11  
+Last Tested Build: `v1.158` (v1.155 stripped the Phase A pre-seat player teleport entirely after git archaeology showed the whole "three-phase regression" narrative was a phantom — `deploy-fulfillment.ts` now byte-equals `b228efc`, matching the v1.109 known-good shape that predates the v1.106-v1.108 teleport-before-`ForcePlayerToSeat` incident; v1.158 ships two isolated World Icon fixes — the air-deploy HQ suppression fix for CQ_Bug_55 that clears `inMainBaseByPid[pid]` when a consumed deploy was air-mode so the existing sync at the end of `onPlayerDeployedImpl` hides the HQ icons automatically, and a `FEATURE_WORLD_ICON_DIAG` dev-only telemetry flag (defaulting false, stripped from shipping builds by postbuild dead-code elimination) that emits one `DisplayHighlightedWorldLogMessage` per spawned-WorldIcon spawn/destroy event to the owning player, encoded as `pid*10000000 + objId*1000 + action*100 + total`, so the next MP playtest can answer whether `SetWorldIconOwner` actually filters per-player visibility in multiplayer — CQ_Bug_25 multi-player confirmation. CQ_Bug_54 remains open for the fresh-aircraft runtime-spawner race that still leaks a tank when the prefab default fires before `SetVehicleSpawnerAutoSpawn(false)` can stop it)
 
 ## Current Snapshot
 - `CQ_Bug_1`: Resolved
@@ -28,7 +28,7 @@ Last Tested Build: `v1.150` (CQ_Bug_49 behavioral fix confirmed at v1.146; v1.14
 - `CQ_Bug_22`: Resolved
 - `CQ_Bug_23`: Resolved
 - `CQ_Bug_24`: Resolved
-- `CQ_Bug_25`: Resolved (single-player confirmed v1.064; needs multi-player confirmation)
+- `CQ_Bug_25`: Resolved (single-player confirmed v1.064; v1.158 ships `FEATURE_WORLD_ICON_DIAG` MP telemetry — next MP playtest will disambiguate `SetWorldIconOwner` filtering vs sync-loop bug vs cleanup leak)
 - `CQ_Bug_26`: Likely resolved (believed fixed by vehicle HUD polish passes; needs confirmation)
 - `CQ_Bug_27`: Resolved (fixed in vehicle HUD render passes)
 - `CQ_Bug_28`: Open (Phase 10 — vehicle-specific, only some vehicles affected; needs investigation)
@@ -56,6 +56,9 @@ Last Tested Build: `v1.150` (CQ_Bug_49 behavioral fix confirmed at v1.146; v1.14
 - `CQ_Bug_50`: Fixed (v1.148 — root cause was NOT death races; it was the `releaseLoadingGate` → `revealAllUiFamilies` → `renderAdminUiFamilyForReveal` → `autoStartPositionDebugOnDeploy` reveal chain firing a sync initial sample against `mod.GetSoldierState` on a player still sitting on the deploy screen. Fixed by gating `autoStartPositionDebugOnDeploy` on `isPlayerDeployed` and routing the position-debug soldier sampler through `safeGetSoldierStateVector`)
 - `CQ_Bug_51`: Fixed (v1.149 — admin position-debug toggle would un-stick after death/respawn or any reveal path because `autoStartPositionDebugOnDeploy` unconditionally reset `posDebugVisible=true`. Added `posDebugAdminOverride` sticky flag set by the admin handler; autoStart now only force-enables on the first reveal of a session and otherwise reattaches the loop to whatever state the admin left behind)
 - `CQ_Bug_52`: Fixed (v1.150 — silent air-deploy failure on specific aircraft slots when the fresh-air birth-spawn landed after the 2s bind-tracker timeout. Closed `expectingSpawn` leak in `bindSpawnedVehicleToSlot` expired branch, added watchdog reap in `pollVehicleSpawnerSlots` after 10s, forced HUD refresh on bind. Temporary `CQ52:` diagnostic counter on the admin panel validates the fix across a few live rounds; remove when it stays at 0)
+- `CQ_Bug_53`: Reverted to known-good v1.151 shape in v1.154 while root-cause investigation continues. Phase A teleport (v1.151) + HQ `SpawnPlayerFromSpawnPoint` pre-step work together cleanly; Phase B (v1.152) stripped the pre-step and regressed into an engine-native AirCombatVolume OOB latch (10s counter → player+vehicle kill); Phase C (v1.153) one-shot 150ms settle dropped the rate from ~100% to ~85% but did not resolve. v1.154 restores the v1.151 shape: HQ spawn-point pre-step, helper chain, map-config fields, validation entries, and runtime constant assignments all reinstated from the `b228efc` checkpoint. The Phase A teleport block stays in `tryFulfillPendingVehicleDirectSpawnSeatForPlayer`, but the Phase C `AIR_DEPLOY_FRESH_AIRCRAFT_SETTLE_SECONDS` wait is removed — it was not load-bearing and carrying it forward would muddy the follow-up investigation. The original CQ_Bug_53 design goal (spawn-point-independent air deploy for flag-A / squad-mate cases) is deferred pending results from the SP-only instrumentation build planned for v1.155. Three live hypotheses for the Phase B regression: (H1) player transform not committed when `DeployPlayer` returns, teleport silently no-ops; (H2) engine combat-area sampler reads a separate stale position cache; (H3) `mod.Teleport` silently fails on a freshly-deployed player without a prior committed transform. v1.155 will instrument T0/T1/T2 sample points via the existing `position-debug.ts` HUD infrastructure to distinguish them.
+- `CQ_Bug_54`: Open — fresh-aircraft runtime-spawner race. When the direct-spawn fresh-aircraft path instantiates a `RuntimeSpawn_Common.VehicleSpawner` prefab at a birth-spawn volume point, the prefab's baked-in AutoSpawn sometimes fires a default Abrams before `SetVehicleSpawnerAutoSpawn(false)` + `configureVehicleSpawner` can apply. The CQ_Bug_49 guard in `onVehicleSpawnedImpl` unspawns the tank without clearing `expectingSpawn` (by design, so the real aircraft can bind on its own `OnVehicleSpawned`), but in the failure mode the real aircraft from `ForceVehicleSpawnerSpawn` never arrives. Observed as: tank flashes, `ForcePlayerToSeat` has no aircraft to seat into, graceful undeploy. Not reproducing every click — timing-dependent. Three candidate fixes identified; all three are blocked on verifying that `mod.Teleport` operates on `mod.VehicleSpawner` instances, not just `mod.Vehicle`. This blocks all redesign paths that avoid per-deploy runtime prefab instantiation.
+- `CQ_Bug_55`: Resolved (v1.158 — air deploy no longer leaves HQ World Icons visible after the player spawns directly into an aircraft kilometers away from main base; `onPlayerDeployedImpl` now clears `inMainBaseByPid[pid]` when the fulfillment path consumed an air-mode direct spawn, so the subsequent `syncWorldInteractableRuntimeIconsForPlayer` call hides the HQ icons)
 
 ## CQ_Bug_42
 Title: CountOf Called With Invalid/Undefined Array Argument During Gameplay
@@ -1885,3 +1888,106 @@ Status:
 Related:
 - CQ_Bug_49 (same binding surface: CQ_Bug_49 rejected wrong-category binds so the real aircraft spawn could later correlate; CQ_Bug_52 closes the case where the real aircraft spawn arrived too late for that correlation).
 - When the live bake confirms 0 desync bumps, the next version can rip out the `gateDesyncCount` state field, the `UI_ADMIN_CQ52_COUNTER_ID` widget, `syncCq52GateDesyncCounterForAllPlayers`, the `cq52CounterFormat` string, and restore `ADMIN_PANEL_HEIGHT` to 390.
+
+## CQ_Bug_53
+Title: Air Deploy Silent Failure When Player Has A Captured Flag Or Squad-Mate Selected
+
+Observed (v1.150 SP, 2026-04-10):
+- As Team 2 after capturing flag A, clicking an Air Deploy button with "HQ" selected in the deploy screen produced no aircraft and left the player stuck — or sometimes placed them in a tank that should not have existed.
+- Reported as reproducing consistently whenever the engine had a non-HQ spawn option available (captured flag, squad-mate). Pure HQ-only situations kept working.
+- User-framed design principle: _"if a Player selects Air Deploy from the deploy screen, their chosen flag or HQ should not meaningfully matter to the player."_
+
+Original Hypothesized Root Cause:
+- `tryBeginVehicleDirectSpawnDeployFromSpawnPoint` calls `mod.SpawnPlayerFromSpawnPoint(player, hqSpawnPoint)` expecting to force the player onto Team HQ regardless of their deploy-screen selection. Hypothesis was that `SpawnPlayerFromSpawnPoint` is not an unconditional override and the engine silently honors the deploy-screen selection (flag, squad-mate) instead, leaving the player 300-500m from the aircraft and failing the `ForcePlayerToSeat` handoff.
+
+### Status (2026-04-11): Provisionally resolved, cause unverified.
+
+After a day-long investigation and a failed in-place fix (see the 2026-04-11 fix-attempt record below), `deploy-fulfillment.ts` was reverted byte-for-byte to its `b228efc` shape on v1.155. Against that baseline, the user can no longer reproduce the original symptom — Team 2 owning flag A or C no longer interrupts air deploy in SP testing.
+
+Since no runtime code changed between `b228efc` and v1.155, the improvement must come from outside today's work. Most likely explanations, in order:
+
+1. **The original symptom was mostly the CQ_Bug_49 tank race, not an `SpawnPlayerFromSpawnPoint` override issue.** The original report already noted a secondary "placed in a tank" symptom, which is the CQ_Bug_49/54 race. That race is defended in the current codebase at four layers, all added in v1.144-v1.147: inline intercept in `onVehicleSpawnedImpl` at [src/index/vehicle-events.ts:103](../src/index/vehicle-events.ts), active-token reject in `bindSpawnedVehicleToSlot` at [src/vehicles/spawner-bind.ts:215](../src/vehicles/spawner-bind.ts), distance-fallback reject in the same file around line 252, and the tank-exclusion filter in `tryFindVehicleNearDirectSpawnAirPoint` at [src/vehicles/deploy-fulfillment.ts:296](../src/vehicles/deploy-fulfillment.ts). If the original failures were timing-dependent tank-race manifestations, these guards explain the current apparent resolution.
+2. **`SpawnPlayerFromSpawnPoint` may honor the HQ override more reliably than the original report assumed.** The hypothesized root cause was based on a day of debugging under time pressure and was never verified against instrumented telemetry.
+3. **External state changed** (BF6 engine patch, portal runtime update) between 2026-04-10 and today.
+4. **The original "reproduces consistently" label was incomplete.** The bug may have always been intermittent and today's testing happened not to hit it.
+
+Do not treat CQ_Bug_53 as closed until MP bake testing has confirmed no regression over multiple rounds and the squad-mate-explicitly-highlighted scenario has been tested deliberately. If the failure does recur, the first diagnostic step is to determine whether the symptom is "no aircraft at all" or "landed in a tank" — the former would point back at the original hypothesis, the latter would point at CQ_Bug_54 and the four existing guards.
+
+### Fix Attempt Record (2026-04-11)
+
+A day-long attempt to fix CQ_Bug_53 in-place introduced a regression worse than the original bug and was fully reverted in v1.155. Retained here so future investigation does not re-walk the same path:
+
+- Attempted fix added a pre-seat player teleport (`mod.Teleport(player, vehiclePos + 10m, 0)` immediately before `mod.ForcePlayerToSeat`) inside `tryFulfillPendingVehicleDirectSpawnSeatForPlayer`'s fresh-aircraft branch. Intent was to bridge the 300-500m gap from a flag-A / squad-mate deploy to the aircraft so the seat handoff would succeed regardless of where the engine placed the player.
+- The teleport was the only net source-code change from `b228efc` through v1.154 (verified via `git diff b228efc`). A layered narrative of "Phase B removed the HQ spawn-point pre-step" turned out to be fictional — the HQ pre-step was never actually removed in any state, committed or working-directory, that could be diffed against `b228efc`.
+- Pre-seat player teleport is a known-broken pattern in this codebase. Memory note `project_teleport_vehicle_spawn_mystery.md` records that the same pattern in v1.106-v1.108 caused vehicles to spawn at map center and choppers to spawn underground, and was "stripped entirely in v1.109." Re-introducing it against the fresh-aircraft runtime-spawner path (which didn't exist in the v1.106 era) produced an engine-native AirCombatVolume OOB latch with a 10-second timer that killed player + vehicle, plus a secondary sound-system break that required a full game restart. Reproduction rate was roughly 100% on v1.152 and did not improve with a 150ms settle inserted in v1.153.
+- v1.155 deleted the teleport block and restored `deploy-fulfillment.ts` to `b228efc` byte-for-byte. SP tested clean.
+
+Rules for any future fix attempt at CQ_Bug_53:
+1. Do not use `mod.Teleport(player, ...)` before `mod.ForcePlayerToSeat` on the fresh-aircraft path. This codebase has now burned on that pattern twice.
+2. Test in isolation on a single aircraft type before touching the fulfillment hot path.
+3. Commit each incremental change so subsequent investigation can diff against a real git history instead of reconstructing uncommitted working-directory state from memory.
+4. Before designing a new fix, reproduce the original failure deliberately on a current build so the starting assumption is verified, not inherited.
+
+Related:
+- CQ_Bug_49 (tank-rejection guards; four layers currently active and the most likely explanation for the current apparent resolution).
+- CQ_Bug_54 (fresh-aircraft runtime-spawner prefab-default Abrams race; unaffected by today's work and remains open).
+
+## CQ_Bug_54
+Title: Fresh-Aircraft Runtime Spawner Race — Prefab Default Abrams Fires Before Override, Real Aircraft Never Arrives
+
+Observed (v1.151 SP, 2026-04-10):
+- Intermittent Air Deploy failures where a tank briefly appears at the aircraft spawn volume, the CQ_Bug_49 guard unspawns it, and the real aircraft from `ForceVehicleSpawnerSpawn` never arrives. Fulfillment then fails the seat check and triggers a graceful undeploy.
+- Not every click. Timing-dependent. Phase A testing showed the failure rate is independent of the player's origin spawn (the bug reproduces from HQ as well as from a captured flag), which rules out CQ_Bug_53's spawn-point dependency as the cause.
+
+Current Hypothesis:
+- `spawnFreshAircraftDirectSpawnVehicleForSlot` instantiates a `RuntimeSpawn_Common.VehicleSpawner` prefab at a birth-spawn volume point. The prefab ships with AutoSpawn baked in and its default `VehicleType` is the engine-default Abrams. The sequence is: spawn prefab → `SetVehicleSpawnerAutoSpawn(false)` → `configureVehicleSpawner(spawner, slot.vehicleType)` → `await Wait(0)` → `ForceVehicleSpawnerSpawn(spawner, ...)`.
+- When the prefab's AutoSpawn fires **before** the JS engine processes `SetVehicleSpawnerAutoSpawn(false)`, the tank lands in the air-spawn volume. `onVehicleSpawnedImpl` recognizes the category mismatch (slot is aircraft, instance is tank) via the CQ_Bug_49 guard at `src/index/vehicle-events.ts:103-106` and `mod.UnspawnObject`s the tank **without** clearing `slot.expectingSpawn`, by design, so the real aircraft from `ForceVehicleSpawnerSpawn` can bind on its subsequent `OnVehicleSpawned`.
+- In the failure mode the real aircraft does not subsequently spawn. Possible reasons:
+  1. The engine treats a runtime VehicleSpawner that has already spawned once (even if the spawn was unspawned) differently from a fresh one, and `ForceVehicleSpawnerSpawn` is a no-op in that state.
+  2. The `configureVehicleSpawner` override arrived after `ForceVehicleSpawnerSpawn` was already dispatched on the still-default prefab.
+  3. A hidden engine cooldown on `ForceVehicleSpawnerSpawn` after a `SetVehicleSpawnerAutoSpawn(false)` toggle.
+
+Candidate Fixes (ranked by the user's priorities and blocked on the primitive verification below):
+1. **Despawn-and-retry kludge** — after the guard unspawns the tank, reschedule `configureVehicleSpawner` + `ForceVehicleSpawnerSpawn` with a small delay. User explicitly rejected: _"cludge if we get stuck, not now while we're still diagnosing root cause."_ Fallback only.
+2. **Dummy spawn + teleport the spawner** — instantiate the `RuntimeSpawn_Common.VehicleSpawner` prefab once at a throwaway location, let its AutoSpawn race expire, configure + suppress it, then `mod.Teleport` the spawner itself to the birth-spawn volume point per deploy and `ForceVehicleSpawnerSpawn`. Isolates the race to one-off init; per-deploy path is clean.
+3. **Pre-spawned pool** — at match start (or lazily on the first air deploy per team), pre-spawn one runtime VehicleSpawner per air slot, let its AutoSpawn race + configure + suppress happen once, and `mod.Teleport` it to a freshly-sampled birth-spawn volume point per deploy before `ForceVehicleSpawnerSpawn`. Preserves the existing randomization within the air spawn box. User's preferred option: _"this feels like a more authentic approach for a fix ... as long as this enables us to continue randomizing within the air spawn box boundaries."_
+
+All three options (even option 1 on retry) are blocked on a primitive verification question: **does `mod.Teleport` operate on `mod.VehicleSpawner` instances**, or only on `mod.Vehicle`/`mod.Player`/`mod.Object`? If `mod.Teleport` is Vehicle-only, options 2 and 3 are non-starters and the fix has to either (a) reuse the prefab at its original world location and randomize the vehicle spawn direction via `configureVehicleSpawner`-level knobs, or (b) accept option 1 as a kludge.
+
+Secondary Open Questions:
+- Is `configureVehicleSpawner`'s VehicleType override racing against `ForceVehicleSpawnerSpawn`, or is the race only between the prefab's baked AutoSpawn and `SetVehicleSpawnerAutoSpawn(false)`? Adding a diagnostic counter for "real aircraft spawn never arrived" vs "real aircraft spawn was wrong type" would separate these.
+- Does `UnspawnObject` on the tank implicitly reset the spawner to an "unused" state that re-arms `ForceVehicleSpawnerSpawn`? If so, option 1 becomes a one-retry fix rather than a kludge.
+
+Status:
+- Open. Remains an independent race condition in the fresh-aircraft runtime-spawner path. Priority is driven by whether MP bake testing surfaces "landed in a tank" or "no aircraft" symptoms — either would point here. The CQ_Bug_49 guards (inline intercept in `onVehicleSpawnedImpl`, reject-wrong-category in `bindSpawnedVehicleToSlot`, tank-exclusion in `tryFindVehicleNearDirectSpawnAirPoint`) catch the immediate tank-in-air symptom, but do not fix the underlying question of why the real aircraft sometimes fails to arrive after the reject.
+
+Related:
+- CQ_Bug_49 (the tank rejection guard is the immediate symptom's handler; CQ_Bug_54 is the question of why the follow-up real aircraft spawn fails to arrive).
+- CQ_Bug_52 (not the same issue, but shares the fresh-aircraft runtime-spawner subsystem — the CQ52 counter will stay live across CQ_Bug_54 investigation to confirm no regression).
+
+## CQ_Bug_55
+Title: Air Deploy Does Not Suppress Main-Base HQ World Icons
+
+Observed (SP, prior to v1.158):
+- Player selects an air vehicle slot on the deploy screen and clicks Deploy. The fresh-aircraft runtime-spawner path birth-spawns the aircraft kilometers away from HQ and seats the player into it via `ForcePlayerToSeat`. The player is now flying over or near a captured flag, not at main base.
+- The HQ World Icons (Ready terminal, Vehicle Spawn terminal) remain visible to that player for the remainder of the flight. They only disappear when the player physically lands and walks inside the main-base area trigger — at which point the enter-then-exit cycle finally clears `inMainBaseByPid[pid]`.
+- Root cause: `onPlayerDeployedImpl` unconditionally set `State.players.inMainBaseByPid[pid] = true` on every deploy before the direct-spawn fulfillment had a chance to run. The subsequent `syncWorldInteractableRuntimeIconsForPlayer` call at the end of the handler then spawned the HQ icons for the air-deployed player because the gate in `shouldShowWorldInteractableRuntimeIconForPlayer` checks `inMainBaseByPid[pid] === true` plus an own-team filter, and the flag was true.
+
+Expected:
+- Air-deploy should leave the player with zero HQ World Icons visible (since they are not physically at their main base).
+- Ground deploy at HQ should still show the icons (unchanged behavior).
+- When the air-deployed player later lands and walks into the main-base area trigger, `onMainBaseEnter` should set `inMainBaseByPid[pid] = true` and re-sync, restoring the icons. When they leave again, `onMainBaseExit` should clear them.
+
+Resolution (v1.158):
+- `src/index/player-deploy.ts` `onPlayerDeployedImpl`: snapshot `pendingDirectSpawnMode` from `getPendingVehicleDirectSpawnModeForPlayer(eventPlayer)` before calling `conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy` (the fulfillment path clears the slot's `pendingSpawnMode` as a side effect, so the snapshot has to be taken first). After fulfillment returns, if `directSpawnDeployResult.consumedDeploy && pendingDirectSpawnMode === "air"`, set `State.players.inMainBaseByPid[pid] = false`. The existing `syncWorldInteractableRuntimeIconsForPlayer` call at the end of the handler then observes the cleared flag and hides the HQ icons.
+- Four new lines in one function, no new helpers, no new state fields, no changes to the sync path or the fulfillment path. `getPendingVehicleDirectSpawnModeForPlayer` already existed at `src/vehicles/deploy-fulfillment.ts:124` and is the authoritative source for whether the slot's `pendingSpawnMode` is `"air"` or `"ground"` at deploy time.
+- Main-base re-entry continues to work via `onMainBaseEnter` at `src/index/area-triggers.ts:80`, which sets `inMainBaseByPid[pid] = true` and calls sync — unchanged.
+
+Verification (SP on Operation Firestorm):
+1. Ground deploy at HQ: HQ icons visible, walk out they disappear, walk back in they reappear. Expected: unchanged from v1.155.
+2. Air deploy at HQ: player spawns in aircraft away from HQ, zero HQ icons visible. Fly to main base and land inside the area trigger: HQ icons appear. Leave: disappear.
+3. Air deploy then undeploy then ground deploy: HQ icons should appear on the ground-deploy step since the consumed-deploy check is false for ground.
+4. Gadget locker point icon: walking into a gadget locker area trigger spawns the ammo icon. Air deploy does not affect point icons (they are gated by area trigger membership, not the main-base flag).
+
+Related:
+- CQ_Bug_25 (per-player World Icon visibility). The v1.158 build also adds a `FEATURE_WORLD_ICON_DIAG` dev-only telemetry flag to `src/interaction/world-interactables.ts` that emits a `DisplayHighlightedWorldLogMessage` on every WorldIcon spawn/destroy with an encoded `pid*10000000 + objId*1000 + action*100 + total` payload so the next MP playtest can disambiguate whether `SetWorldIconOwner` actually filters per-player visibility in multiplayer. The flag defaults `false` and is stripped from shipping builds by postbuild dead-code elimination.

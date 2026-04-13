@@ -154,6 +154,7 @@ async function scheduleRespawn(slotIndex: number, lastVehicleId: number): Promis
 
         if (shouldGateVehicleSlotSpawnUntilReservationDeploy(slot)) {
             refreshVehicleSlotAuthoritativeState(slot);
+            slot.respawnRunning = false;
             return;
         }
 

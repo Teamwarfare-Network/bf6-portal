@@ -1,23 +1,10 @@
 ﻿// @ts-nocheck
 // Module: index/capture-vo -- Phase 4B isolated objective VO exploration path
 
-function conquestPhase4BHasValidHandle(handle: any): boolean {
-    if (handle === undefined || handle === null) return false;
-    if (typeof handle === "number") return handle > 0;
-    return true;
-}
-
-function conquestPhase4BSafeUnspawnVoiceOverRuntimeHandle(handle: any): void {
-    if (!conquestPhase4BHasValidHandle(handle)) return;
-    try {
-        mod.UnspawnObject(handle);
-    } catch {}
-}
-
 function conquestPhase4BCleanupAllVoiceOverRuntimeHandles(): void {
     const runtimeHandles = State.conquest.vo.runtimeHandleByPid;
     for (const pidKey in runtimeHandles) {
-        conquestPhase4BSafeUnspawnVoiceOverRuntimeHandle(runtimeHandles[pidKey]);
+        conquestCaptureSafeUnspawnHandle(runtimeHandles[pidKey]);
     }
     State.conquest.vo.runtimeHandleByPid = {};
     State.conquest.vo.handlesReadyByPid = {};
@@ -76,12 +63,6 @@ function conquestPhase4BResetQueueAndThrottleState(): void {
     State.conquest.vo.objectiveStateByObjId = {};
     State.conquest.vo.recentActiveObjIdByPid = {};
     State.conquest.vo.recentActiveAtSecondsByPid = {};
-    State.conquest.vo.debug.lastQueueDepth = 0;
-    State.conquest.vo.debug.lastFlushQueuedCount = 0;
-    State.conquest.vo.debug.lastFlushDispatchedCount = 0;
-    State.conquest.vo.debug.lastFlushSuppressedCount = 0;
-    State.conquest.vo.debug.lastFlushDroppedCount = 0;
-    State.conquest.vo.debug.lastRecipientCount = 0;
 }
 
 function conquestPhase4BOnNotLiveReset(): void {
@@ -94,27 +75,20 @@ function conquestPhase4BOnMatchLiveStart(): void {
 
 function conquestPhase4BOnPlayerLeaveOrResetPid(pid: number): void {
     if (!pid) return;
-    const nextThrottleMap: Record<string, number> = {};
-    const needle = `:${pid}:`;
-    for (const key in State.conquest.vo.lastEventAtByThrottleKey) {
-        if (!key) continue;
-        if (key.indexOf(needle) >= 0) continue;
-        nextThrottleMap[key] = State.conquest.vo.lastEventAtByThrottleKey[key];
-    }
-    State.conquest.vo.lastEventAtByThrottleKey = nextThrottleMap;
-    conquestPhase4BSafeUnspawnVoiceOverRuntimeHandle(State.conquest.vo.runtimeHandleByPid[pid]);
+    State.conquest.vo.lastEventAtByThrottleKey = conquestCaptureFilterThrottleMapByPid(
+        State.conquest.vo.lastEventAtByThrottleKey, pid
+    );
+    conquestCaptureSafeUnspawnHandle(State.conquest.vo.runtimeHandleByPid[pid]);
     delete State.conquest.vo.runtimeHandleByPid[pid];
     delete State.conquest.vo.handlesReadyByPid[pid];
     delete State.conquest.vo.recentActiveObjIdByPid[pid];
     delete State.conquest.vo.recentActiveAtSecondsByPid[pid];
-    State.conquest.vo.debug.playerCleanupCount += 1;
-    State.conquest.vo.debug.lastCleanupPid = pid;
 }
 
 function conquestPhase4BEnsureVoiceOverRuntimeForPid(pid: number): any {
     if (!State.conquest.vo.enabled) return;
     const existing = State.conquest.vo.runtimeHandleByPid[pid];
-    if (conquestPhase4BHasValidHandle(existing)) {
+    if (conquestCaptureHasValidHandle(existing)) {
         State.conquest.vo.handlesReadyByPid[pid] = true;
         return existing;
     }
@@ -127,10 +101,9 @@ function conquestPhase4BEnsureVoiceOverRuntimeForPid(pid: number): any {
         );
     } catch {
         State.conquest.vo.runtimeHandleByPid[pid] = undefined;
-        State.conquest.vo.debug.spawnFailureCount += 1;
     }
     const nextHandle = State.conquest.vo.runtimeHandleByPid[pid];
-    State.conquest.vo.handlesReadyByPid[pid] = conquestPhase4BHasValidHandle(nextHandle);
+    State.conquest.vo.handlesReadyByPid[pid] = conquestCaptureHasValidHandle(nextHandle);
     return nextHandle;
 }
 
@@ -142,20 +115,9 @@ function conquestPhase4BQueueEvent(event: ConquestQueuedVoEvent): void {
         if (queued.eventKey !== event.eventKey) continue;
         if (queued.objId !== event.objId) continue;
         if (queued.sourceTeamId !== event.sourceTeamId) continue;
-        State.conquest.vo.debug.coalescedCount += 1;
         return;
     }
     State.conquest.vo.queue.push(event);
-    State.conquest.vo.debug.queuedCount += 1;
-    State.conquest.vo.debug.lastEventKey = event.eventKey;
-    State.conquest.vo.debug.lastEventObjId = event.objId;
-    State.conquest.vo.debug.lastEventSourceTeamId = event.sourceTeamId;
-    State.conquest.vo.debug.lastEventQueuedAtSeconds = event.queuedAtSeconds;
-    const nextQueueDepth = State.conquest.vo.queue.length;
-    State.conquest.vo.debug.lastQueueDepth = nextQueueDepth;
-    if (nextQueueDepth > State.conquest.vo.debug.maxQueueDepth) {
-        State.conquest.vo.debug.maxQueueDepth = nextQueueDepth;
-    }
 }
 
 function conquestPhase4BResolveVoiceOverFlagForObjective(objId: number): any {
@@ -361,32 +323,20 @@ function conquestPhase4BFlushCaptureVoiceOverQueue(): void {
     conquestPhase4BRefreshRecentPresence(now);
 
     const queued = State.conquest.vo.queue.splice(0, State.conquest.vo.queue.length);
-    State.conquest.vo.debug.lastQueueDepth = queued.length;
-    State.conquest.vo.debug.lastFlushQueuedCount = queued.length;
-    State.conquest.vo.debug.lastFlushDispatchedCount = 0;
-    State.conquest.vo.debug.lastFlushSuppressedCount = 0;
-    State.conquest.vo.debug.lastFlushDroppedCount = 0;
-    State.conquest.vo.debug.lastRecipientCount = 0;
 
     for (let i = 0; i < queued.length; i++) {
         const event = queued[i];
         if (!event) {
-            State.conquest.vo.debug.droppedInvalidEventCount += 1;
-            State.conquest.vo.debug.lastFlushDroppedCount += 1;
             continue;
         }
 
         const flag = conquestPhase4BResolveVoiceOverFlagForObjective(event.objId);
         if (flag === undefined) {
-            State.conquest.vo.debug.droppedNoFlagCount += 1;
-            State.conquest.vo.debug.lastFlushDroppedCount += 1;
             continue;
         }
 
         const recipients = conquestPhase4BGetRecipientsForEvent(event, now);
         if (recipients.length <= 0) {
-            State.conquest.vo.debug.droppedNoRecipientCount += 1;
-            State.conquest.vo.debug.lastFlushDroppedCount += 1;
             continue;
         }
 
@@ -399,8 +349,6 @@ function conquestPhase4BFlushCaptureVoiceOverQueue(): void {
                 const throttleKey = conquestPhase4BGetRecipientThrottleKey(event, recipientPid);
                 const lastEventAt = State.conquest.vo.lastEventAtByThrottleKey[throttleKey] ?? -999;
                 if ((now - lastEventAt) < CONQUEST_CAPTURE_VO_MIN_COOLDOWN_SECONDS) {
-                    State.conquest.vo.debug.suppressedCount += 1;
-                    State.conquest.vo.debug.lastFlushSuppressedCount += 1;
                     continue;
                 }
                 State.conquest.vo.lastEventAtByThrottleKey[throttleKey] = now;
@@ -408,15 +356,11 @@ function conquestPhase4BFlushCaptureVoiceOverQueue(): void {
 
             const voEvent = conquestPhase4BResolveVoiceOverEventForRecipient(event, recipient);
             if (voEvent === undefined) {
-                State.conquest.vo.debug.droppedInvalidEventCount += 1;
-                State.conquest.vo.debug.lastFlushDroppedCount += 1;
                 continue;
             }
 
             const runtimeHandle = conquestPhase4BEnsureVoiceOverRuntimeForPid(recipientPid);
-            if (!conquestPhase4BHasValidHandle(runtimeHandle)) {
-                State.conquest.vo.debug.droppedNoHandleCount += 1;
-                State.conquest.vo.debug.lastFlushDroppedCount += 1;
+            if (!conquestCaptureHasValidHandle(runtimeHandle)) {
                 continue;
             }
 
@@ -426,10 +370,6 @@ function conquestPhase4BFlushCaptureVoiceOverQueue(): void {
                 continue;
             }
 
-            State.conquest.vo.debug.dispatchedCount += 1;
-            State.conquest.vo.debug.lastDispatchedAtSeconds = now;
-            State.conquest.vo.debug.lastFlushDispatchedCount += 1;
-            State.conquest.vo.debug.lastRecipientCount += 1;
         }
     }
 }

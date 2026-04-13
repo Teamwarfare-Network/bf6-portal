@@ -245,24 +245,26 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
         const slot = State.vehicles.slots[i];
         if (!slot.expectingSpawn) continue;
 
-        const spawnerPos = mod.GetObjectPosition(slot.spawner);
-        const d = mod.DistanceBetween(vehiclePos, spawnerPos);
-        if (d <= VEHICLE_SPAWNER_BIND_DISTANCE_METERS) {
-            // CQ_Bug_49: same reject rule applies to the distance fallback path.
-            if (rejectWrongCategoryBindForAircraftSlot(slot, eventVehicle)) {
-                return 0;
+        try {
+            const spawnerPos = mod.GetObjectPosition(slot.spawner);
+            const d = mod.DistanceBetween(vehiclePos, spawnerPos);
+            if (d <= VEHICLE_SPAWNER_BIND_DISTANCE_METERS) {
+                // CQ_Bug_49: same reject rule applies to the distance fallback path.
+                if (rejectWrongCategoryBindForAircraftSlot(slot, eventVehicle)) {
+                    return 0;
+                }
+                slot.expectingSpawn = false;
+                bindVehicleToSpawnerSlot(slot, vehicleObjId);
+                State.vehicles.vehicleToSlot[vehicleObjId] = i;
+                if (State.vehicles.activeSpawnSlotIndex === i && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
+                    State.vehicles.activeSpawnSlotIndex = undefined;
+                    State.vehicles.activeSpawnToken = undefined;
+                    State.vehicles.activeSpawnRequestedAtSeconds = undefined;
+                }
+                void maybeApplySpawnTransformCorrectionToVehicle(eventVehicle, slot);
+                return slot.teamId;
             }
-            slot.expectingSpawn = false;
-            bindVehicleToSpawnerSlot(slot, vehicleObjId);
-            State.vehicles.vehicleToSlot[vehicleObjId] = i;
-            if (State.vehicles.activeSpawnSlotIndex === i && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
-                State.vehicles.activeSpawnSlotIndex = undefined;
-                State.vehicles.activeSpawnToken = undefined;
-                State.vehicles.activeSpawnRequestedAtSeconds = undefined;
-            }
-            void maybeApplySpawnTransformCorrectionToVehicle(eventVehicle, slot);
-            return slot.teamId;
-        }
+        } catch { continue; }
     }
 
     return 0;
@@ -272,10 +274,12 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
 function findSpawnerSlotByPosition(spawnPos: mod.Vector): number {
     for (let i = 0; i < State.vehicles.slots.length; i++) {
         const slot = State.vehicles.slots[i];
-        const spawnerPos = mod.GetObjectPosition(slot.spawner);
-        if (mod.DistanceBetween(spawnPos, spawnerPos) <= VEHICLE_SPAWNER_BIND_DISTANCE_METERS) {
-            return i;
-        }
+        try {
+            const spawnerPos = mod.GetObjectPosition(slot.spawner);
+            if (mod.DistanceBetween(spawnPos, spawnerPos) <= VEHICLE_SPAWNER_BIND_DISTANCE_METERS) {
+                return i;
+            }
+        } catch { continue; }
     }
     return -1;
 }

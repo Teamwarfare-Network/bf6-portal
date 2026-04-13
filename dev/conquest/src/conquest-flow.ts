@@ -49,7 +49,10 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     bindClockExpiryForContinuousMode();
 
     State.round.countdown.isRequested = false;
+    kpiResetAll();
+    kpiSnapshotDeathBaselines();
     lifecycleSetLiveBaseline("pregame-start-match");
+    cleanupMainBaseTeamWorldIconsForLiveTransition();
     clearActiveBoundaryViolationsForAllPlayers();
     updateReadyDialogModeConfigForAllHiddenBuiltCaches();
     updateReadyToggleButtonsForAllBuiltReadyDialogs();
@@ -128,6 +131,8 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     resetReadyStateForAllPlayers();
 
     lifecycleSetNotReadyBaseline("fresh-setup");
+    kpiResetAll();
+    kpiSnapshotDeathBaselines();
     clearActiveBoundaryViolationsForAllPlayers();
     updateReadyDialogModeConfigForAllHiddenBuiltCaches();
     updateReadyToggleButtonsForAllBuiltReadyDialogs();
@@ -187,16 +192,18 @@ function syncAdminMatchLengthLabelForAllPlayers(): void {
     }
 }
 
-// CQ_Bug_52 temporary diagnostic: paints "CQ52: <count>" into the admin-panel counter widget for
-// every viewer. Called only when the HUD-ready-but-claim-rejected anomaly trips, so per-frame cost
-// is zero. Remove together with the rest of the CQ52 counter telemetry once the live bake confirms
-// the fix holds.
-function syncCq52GateDesyncCounterForAllPlayers(): void {
+// Persistent diagnostic counter widget in the admin panel. Reads the latest three numbers stored in
+// State.conquest.debug.worldIconDiagP0/P1/P2 and pushes them to every viewer's widget. Current use:
+// FEATURE_WORLD_ICON_DIAG surfaces (pid, objId, +total/-total) on each World Icon spawn/destroy so
+// MP playtests can see per-player counts without transient messages.
+function syncDiagCounterForAllPlayers(): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
     const label = mod.Message(
         mod.stringkeys.twl.adminPanel.labels.cq52CounterFormat,
-        State.vehicles.gateDesyncCount || 0
+        State.conquest.debug.worldIconDiagP0 || 0,
+        State.conquest.debug.worldIconDiagP1 || 0,
+        State.conquest.debug.worldIconDiagP2 || 0
     );
 
     for (let i = 0; i < count; i++) {

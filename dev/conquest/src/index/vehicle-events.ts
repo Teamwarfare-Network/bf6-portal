@@ -29,6 +29,28 @@ function onPlayerEnterVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Veh
     }
 }
 
+// Boundary re-evaluation after exiting an aircraft. Checks the soldier's Y against the
+// GroundCombatVolume ceiling from the map config. Above ceiling → player is outside the zone
+// volume (set false + enforce). Below ceiling → player is inside the volume vertically
+// (leave boolean unchanged, no false positive).
+// When the player parachutes through the ceiling, OnPlayerEnterAreaTrigger fires on boundary
+// crossing and corrects the boolean back to true — so in-zone landings self-heal.
+// OnPlayerEnterAreaTrigger does NOT fire on soldier materialization inside a volume (only on
+// boundary crossing), which is why we cannot blanket-set false for all exits.
+function recheckBoundaryAfterAircraftExit(player: mod.Player, pid: number): void {
+    const ceilingY = getGroundCombatZoneCeilingY();
+    if (ceilingY === undefined) return;
+    try {
+        const pos = safeGetSoldierStateVector(player, mod.SoldierStateVector.GetPosition);
+        if (!pos) return;
+        const soldierY = mod.YComponentOf(pos);
+        if (soldierY > ceilingY) {
+            State.round.boundary.inGroundCombatZoneByPid[pid] = false;
+            refreshPlayerBoundaryState(player);
+        }
+    } catch {}
+}
+
 // Exit hook: direct-spawn ownership is established on fulfillment, not on seat exit.
 function onPlayerExitVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Vehicle) {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
@@ -38,6 +60,11 @@ function onPlayerExitVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Vehi
     if (pid !== undefined) {
         State.players.posDebugTransformSourceByPid[pid] = "soldier";
         delete State.players.posDebugVehicleObjIdByPid[pid];
+        // For aircraft exits, check if the soldier is above the ground combat zone ceiling.
+        // Ground vehicles (tanks, transports) rarely leave the combat zone — skip recheck.
+        if (isAircraftVehicleInstance(eventVehicle)) {
+            recheckBoundaryAfterAircraftExit(eventPlayer, pid);
+        }
     }
     if (slotIndex === undefined) return;
     const slot = State.vehicles.slots[slotIndex];

@@ -1,5 +1,33 @@
 ﻿// @ts-nocheck
 
+// Classifies whether a freshly-deployed player should start with HQ World Icons visible.
+// Explicit short-circuits for the direct-spawn deploy buttons are preserved so per-map tuning
+// can override the spatial rule in the future (some maps may need a wider air-deploy exclusion
+// or a ground-deploy that lands outside the HQ radius). Everything else falls back to a spatial
+// radius check against the player's own-team HQ anchor — covers spawn-point clicks, squad
+// spawns, and flag spawns without needing to distinguish which path the engine used.
+function classifyDeployInOwnMainBase(
+    player: mod.Player,
+    pendingDirectSpawnMode: VehicleDirectSpawnMode | undefined,
+    consumedDirectSpawn: boolean
+): boolean {
+    if (consumedDirectSpawn && pendingDirectSpawnMode === "ground") return true;
+    if (consumedDirectSpawn && pendingDirectSpawnMode === "air") return false;
+
+    const teamId = safeGetTeamNumberFromPlayer(player, 0);
+    const anchor = teamId === TeamID.Team1
+        ? MAIN_BASE_TEAM1_POS
+        : teamId === TeamID.Team2
+            ? MAIN_BASE_TEAM2_POS
+            : undefined;
+    if (!anchor) return false;
+
+    const pos = safeGetSoldierStateVector(player, mod.SoldierStateVector.GetPosition);
+    if (!pos) return false;
+
+    return mod.DistanceBetween(pos, anchor) <= DEPLOY_MAIN_BASE_RADIUS_METERS;
+}
+
 async function deferForcedUndeploy(player: mod.Player, reason: string): Promise<void> {
     try {
         await mod.Wait(0.1);
@@ -78,9 +106,24 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
         ensureTopHudShellForPlayer(eventPlayer);
     }
     renderCriticalHudForReveal(eventPlayer, pid);
+    const pendingDirectSpawnMode = getPendingVehicleDirectSpawnModeForPlayer(eventPlayer);
     const directSpawnDeployResult = await conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(eventPlayer);
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    // Overwrite the optimistic inMainBaseByPid=true seed (line 69) with the real classifier
+    // result now that fulfillment has finalized the player's world position. The optimistic
+    // seed preserved v1.015's boundary-enforcement protection during the fulfillment await;
+    // here we replace it with ground-truth so HQ icons reflect where the player actually is.
+    State.players.inMainBaseByPid[pid] = classifyDeployInOwnMainBase(
+        eventPlayer,
+        pendingDirectSpawnMode,
+        directSpawnDeployResult.consumedDeploy
+    );
     syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
+    refreshWorldInteractableVfx();
+    if (!State.players.kpiByPid[pid]) {
+        kpiInitWithBaselineForPlayer(eventPlayer, pid);
+    }
+    updateScoreboardForPlayer(eventPlayer);
     if (directSpawnDeployResult.consumedDeploy) {
         return;
     }
@@ -97,6 +140,14 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     // and the engine rejects EnableAllInputRestrictions on undeployed players (CQ_Bug_35).
     recordUiLoadInputRestrictedForPid(pid, false);
     State.players.deployedByPid[pid] = false;
+    // Clear vehicle slot ownership — OnPlayerExitVehicle does not fire on undeploy/death.
+    for (let i = 0; i < State.vehicles.slots.length; i++) {
+        if (State.vehicles.slots[i].activeOwnerPid === pid) {
+            State.vehicles.slots[i].activeOwnerPid = undefined;
+            updateVehicleDeployTimerHudForAllPlayers();
+            break;
+        }
+    }
     updateHudTeamSwapButtonVisibilityForPid(pid);
     State.players.inMainBaseByPid[pid] = false;
     State.players.posDebugTransformSourceByPid[pid] = "soldier";

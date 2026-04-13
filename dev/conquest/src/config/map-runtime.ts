@@ -305,6 +305,8 @@ function buildWorldInteractableConfigsFromMapConfig(cfg: MapConfig): WorldIntera
             action,
             ownerTeamId: anchor?.ownerTeamId ?? 0,
             iconAnchorPos: anchor?.pos,
+            vfx: anchor?.vfx,
+            vfxRot: anchor?.rot,
         });
     }
 
@@ -317,6 +319,8 @@ function buildWorldInteractableConfigsFromMapConfig(cfg: MapConfig): WorldIntera
             scope: "point",
             action: "open_ammo_resupply_menu",
             iconAnchorPos: anchor?.pos,
+            vfx: anchor?.vfx,
+            vfxRot: anchor?.rot,
         });
     }
 
@@ -624,6 +628,7 @@ function applyMapConfig(mapKey: MapKey): void {
     MAIN_BASE_BUFFER_TRIGGER_ID_TEAM1 = ACTIVE_MAP_CONFIG.team1MainBaseBufferTriggerId;
     MAIN_BASE_BUFFER_TRIGGER_ID_TEAM2 = ACTIVE_MAP_CONFIG.team2MainBaseBufferTriggerId;
     GROUND_COMBAT_ZONE_TRIGGER_ID = ACTIVE_MAP_CONFIG.groundCombatZoneTriggerId;
+    GROUND_COMBAT_ZONE_CEILING_Y = ACTIVE_MAP_CONFIG.groundCombatZoneCeilingY;
     VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM1 = ACTIVE_MAP_CONFIG.team1VehicleDeploySpawnPointId;
     VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM2 = ACTIVE_MAP_CONFIG.team2VehicleDeploySpawnPointId;
     TEAM1_AIRCRAFT_SPAWN_VOLUMES = resolveVehicleSpawnVolumes(ACTIVE_MAP_CONFIG.team1AircraftSpawnVolumes);
@@ -700,6 +705,12 @@ function getGroundCombatZoneTriggerId(): number | undefined {
     if (!Number.isFinite(GROUND_COMBAT_ZONE_TRIGGER_ID)) return undefined;
     if (GROUND_COMBAT_ZONE_TRIGGER_ID <= 0) return undefined;
     return Math.floor(GROUND_COMBAT_ZONE_TRIGGER_ID);
+}
+
+function getGroundCombatZoneCeilingY(): number | undefined {
+    if (GROUND_COMBAT_ZONE_CEILING_Y === undefined) return undefined;
+    if (!Number.isFinite(GROUND_COMBAT_ZONE_CEILING_Y)) return undefined;
+    return GROUND_COMBAT_ZONE_CEILING_Y;
 }
 
 function getVehicleSpawnVolumesForTeam(teamId: TeamID, volumeClass: VehicleSpawnVolumeClass): VehicleSpawnVolumeSpec[] {

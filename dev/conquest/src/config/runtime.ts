@@ -57,6 +57,7 @@ let MAIN_BASE_TRIGGER_ID_TEAM2 = ACTIVE_MAP_CONFIG.team2MainBaseTriggerId;
 let MAIN_BASE_BUFFER_TRIGGER_ID_TEAM1 = ACTIVE_MAP_CONFIG.team1MainBaseBufferTriggerId;
 let MAIN_BASE_BUFFER_TRIGGER_ID_TEAM2 = ACTIVE_MAP_CONFIG.team2MainBaseBufferTriggerId;
 let GROUND_COMBAT_ZONE_TRIGGER_ID = ACTIVE_MAP_CONFIG.groundCombatZoneTriggerId;
+let GROUND_COMBAT_ZONE_CEILING_Y = ACTIVE_MAP_CONFIG.groundCombatZoneCeilingY;
 let VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM1 = ACTIVE_MAP_CONFIG.team1VehicleDeploySpawnPointId;
 let VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM2 = ACTIVE_MAP_CONFIG.team2VehicleDeploySpawnPointId;
 let TEAM1_AIRCRAFT_SPAWN_VOLUMES = ACTIVE_MAP_CONFIG.team1AircraftSpawnVolumes ?? [];
@@ -74,6 +75,12 @@ let TEAM2_FAST_SELECTED_SPAWN_SPECS: VehicleSpawnSpec[] = [];
 let TEAM1_VEHICLE_SLOT_INVENTORY_SPECS: VehicleSpawnSpec[] = [];
 let TEAM2_VEHICLE_SLOT_INVENTORY_SPECS: VehicleSpawnSpec[] = [];
 const MAIN_BASE_BIND_RADIUS_METERS = 150.0;
+// Radius (meters) around a team's authored main-base anchor used to decide whether a fresh
+// deploy landed "inside the main base" for HQ icon visibility. Calibrated against the
+// MP_TWL_Conquest9_FireStorm spatial: max HQ spawn is ~69m from anchor, nearest flag spawn
+// is ~169m from anchor, so 100m sits safely between them with headroom on both sides. Tune
+// per-map if a future map's HQ spawns spread wider or flags sit closer.
+const DEPLOY_MAIN_BASE_RADIUS_METERS = 100.0;
 
 // Cached per-vehicle spawn inference for later reconciliation on seat entry (best-effort, can go stale).
 const vehicleSpawnBaseTeamByObjId: Record<number, TeamID> = {};
