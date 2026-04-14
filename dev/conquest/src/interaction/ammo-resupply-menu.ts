@@ -1046,6 +1046,24 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
         false,
         COLOR_WHITE
     );
+    // Gadget round-start delay status line (above class headers). Hidden by default; refreshArmMenu
+    // toggles it during pre-LIVE and while roundStartGadgetDelay is active.
+    cache.gadgetDelayStatus = addReadyDialogText(
+        ammoResupplyMenuName("GadgetDelayStatus", pid),
+        0,
+        -410,
+        HELP_TEXT_WIDTH,
+        30,
+        mod.UIAnchor.Center,
+        mod.UIAnchor.Center,
+        mod.Message(mod.stringkeys.twl.countdown.delayGadgets, 0),
+        eventPlayer,
+        root,
+        22,
+        false,
+        COLOR_WARNING_YELLOW
+    );
+    if (cache.gadgetDelayStatus) safeSetUIWidgetVisible(cache.gadgetDelayStatus, false);
     for (let i = 0; i < HDR_KEYS.length; i++) {
         cache.h![i] = addReadyDialogText(
             ammoResupplyMenuName("ClassHeader", pid, i),
@@ -1472,6 +1490,29 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     const nowSecond = Math.max(0, Math.floor(now));
     if (!force && cache.lastRefreshSecond === nowSecond) return;
     cache.lastRefreshSecond = nowSecond;
+    // Round-start gadget delay: locks all tiles pre-LIVE and for N seconds after match goes LIVE.
+    // Status widget at the top of the menu shows remaining time whenever this gate is active.
+    const gadgetBlocked = !isMatchLive() || isRoundStartGadgetDelayActive();
+    const gadgetRemaining = getRoundStartGadgetDelayRemainingSeconds();
+    const gadgetStatusVisible = gadgetBlocked && gadgetRemaining > 0;
+    if (cache.gadgetDelayStatus) {
+        // Pre-LIVE shows the descriptive "after match is Live" string; post-LIVE shows a counting
+        // "will be available in {0}s" variant that reads correctly while the delay is ticking.
+        const gadgetLive = isMatchLive();
+        const gSig = (gadgetStatusVisible ? 1 : 0) + "|" + (gadgetLive ? 1 : 0) + "|" + Math.ceil(gadgetRemaining);
+        if (cache.gadgetDelayStatusSig !== gSig) {
+            if (gadgetStatusVisible) {
+                const key = gadgetLive
+                    ? mod.stringkeys.twl.countdown.delayGadgetsLive
+                    : mod.stringkeys.twl.countdown.delayGadgets;
+                safeSetUITextLabel(cache.gadgetDelayStatus, mod.Message(key, Math.ceil(gadgetRemaining)));
+                safeSetUIWidgetVisible(cache.gadgetDelayStatus, true);
+            } else {
+                safeSetUIWidgetVisible(cache.gadgetDelayStatus, false);
+            }
+            cache.gadgetDelayStatusSig = gSig;
+        }
+    }
     const teamId = safeGetTeamNumberFromPlayer(eventPlayer, 0);
     const isAssaultClass = isCls(eventPlayer, mod.SoldierClass.Assault);
     const isMedicClass = isCls(eventPlayer, mod.SoldierClass.Support);
@@ -1503,7 +1544,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     const smokeCount = Math.max(0, Math.min(cfg.medicSmoke.maxCount, smokeState?.c ?? 0));
     const smokeRemaining = Math.max(0, (smokeState?.n ?? 0) - now);
     const smokeReady = smokeRemaining <= 0;
-    const smokeEnabled = isMedicClass && smokeCount > 0 && smokeReady;
+    const smokeEnabled = isMedicClass && smokeCount > 0 && smokeReady && !gadgetBlocked;
     const smokeMessage = smokeRemaining > 0 ? fmtClock(smokeRemaining) : mod.Message(STR_UI_READY);
     const smokeOverlayMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, smokeCount);
     const medicRemaining = Math.max(0, (state.mN ?? 0) - now);
@@ -1551,7 +1592,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         const count = Math.max(0, Math.min(item.maxCount, asgEntry?.c ?? 0));
         const remaining = Math.max(0, (asgEntry?.n ?? 0) - now);
         const ready = count > 0 && remaining <= 0;
-        const enabled = isAssaultClass && assaultGroupRemaining <= 0 && ready;
+        const enabled = isAssaultClass && assaultGroupRemaining <= 0 && ready && !gadgetBlocked;
         const showSelectedAssaultTimer = isAssaultClass && assaultGroupRemaining > 0 && assaultGroup.s === i;
         const hideAssaultTimer = isAssaultClass && assaultGroupRemaining > 0 && assaultGroup.s !== i;
         const sig = [
@@ -1621,7 +1662,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     for (let i = 0; i < cache.x.length; i++) {
         const tile = cache.x[i];
         const medicItem = cfg.medicItems[i];
-        const enabled = isMedicClass && medicReady;
+        const enabled = isMedicClass && medicReady && !gadgetBlocked;
         const count = medicReady ? medicItem.maxCount : 0;
         const showSelectedMedicTimer = isMedicClass && medicRemaining > 0 && state.mS === i;
         const sig = [
@@ -1648,7 +1689,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     }
     for (let i = 0; i < cache.rows.length; i++) {
         const row = cache.rows[i];
-        const launcherEnabled = isEngineerClass && launcherReady;
+        const launcherEnabled = isEngineerClass && launcherReady && !gadgetBlocked;
         const launcherCount = launcherReady ? 1 : 0;
         const showSelectedLauncherTimer = isEngineerClass && launcherRemaining > 0 && launch.s === i;
         const sig = [
@@ -1678,7 +1719,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     }
     const ammoCount = Math.max(0, Math.min(cfg.ammoMaxCharges, launch.aC));
     const ammoRemaining = Math.max(0, launch.aN - now);
-    const ammoEnabled = isEngineerClass && ammoCount > 0 && hasLauncher;
+    const ammoEnabled = isEngineerClass && ammoCount > 0 && hasLauncher && !gadgetBlocked;
     const ammoOverlayMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, ammoCount);
     {
         const sig = [
@@ -1717,7 +1758,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         const reconItem = cfg.recon[i];
         const remaining = i === 0 ? reconDroneRemaining : reconSharedRemaining;
         const ready = remaining <= 0;
-        const enabled = isReconClass && ready;
+        const enabled = isReconClass && ready && !gadgetBlocked;
         const count = ready ? reconItem.maxCount : 0;
         const showSelectedReconTimer = i > 0 && isReconClass && reconSharedRemaining > 0 && state.rgS === i;
         const sig = [
@@ -1867,6 +1908,8 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         closeArmMenu(eventPlayer);
         return true;
     }
+    // Round-start gadget delay blocks all tile grants. Menu stays open, previews/help still work.
+    if (!isMatchLive() || isRoundStartGadgetDelayActive()) return true;
     const objId = getArmObj(pid);
     const cache = State.hudCache.ammoResupplyMenuCache[pid];
     if (objId === undefined || !cache) return true;

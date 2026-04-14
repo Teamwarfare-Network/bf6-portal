@@ -462,14 +462,9 @@ function setMatchStateTextForPid(pid: number): void {
 
 function setMatchStateTextForAllPlayers(): void {
     const counts = getReadyCountsForStatusHud();
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        const pid = mod.GetObjId(p);
+    forEachValidPlayer((_player, pid) => {
         renderTopLeftStatusDockForPid(pid, counts.readyCount, counts.totalCount, counts.activeCount);
-    }
+    });
 }
 
 //#endregion ----------------- HUD Phase State + Help Text --------------------
@@ -528,15 +523,9 @@ function getReadyCountsForStatusHud(): { readyCount: number; totalCount: number;
 function updatePlayersReadyHudTextForAllPlayers(): void {
     // Compute counts once, then broadcast the same label to all viewers.
     const readyCounts = getReadyCountsForStatusHud();
-
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        const pid = mod.GetObjId(p);
+    forEachValidPlayer((_player, pid) => {
         renderTopLeftStatusDockForPid(pid, readyCounts.readyCount, readyCounts.totalCount, readyCounts.activeCount);
-    }
+    });
 }
 
 // Dirty-flag helpers: mark pregame UI as needing a broadcast on the next game loop tick.

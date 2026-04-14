@@ -3,6 +3,20 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.222: Revert GATE_INV_1/2/3 world-log asserts (v1.214): world-log channel is transient and unreliable for invariant verification. Dual-guard in code closes the race. Diagnostic recipe documented in conquest_issues.md for future reintroduction as persistent HUD plate if a concrete bug repro surfaces.
+// v1.221: Combat HUD dirty-flag gate: skip expensive per-player TickFrame when hudDirty=false and not forced; keep derived-slice + animation ticks unconditional (clock/anim are time-variant). AGENTS.md documents the dirty-flag contract (state fields that must call conquestPhase3MarkHudDirty).
+// v1.220: fix: tick-context ActiveTickContext.players typed as any (mod.Array is not generic in Portal types)
+// v1.219: TickContext for per-tick mod.AllPlayers() caching in hot subtick loop — adds beginTickContext/endTickContext wrapping the main subtick body so every forEachValidPlayer call inside a subtick reuses one cached AllPlayers snapshot. Event handlers and one-shot lifecycle transitions fall back to a fresh AllPlayers call (no behavior change).
+// v1.217: forEachValidPlayer helper + 23 wrapper conversions — dedupes the mod.AllPlayers + IsPlayerValid + safeGetPlayerId loop that was being repeated across ForAllPlayers wrappers. No behavior change; sets up TickContext in the next commit.
+// v1.216: Combat HUD widget generation counter — invalidate cached widget refs on destroy so team swap + reconnect cycles cannot render through stale handles. Adds combatHudGenerationByPid to State.conquest.debug, stamps each entry on build, and bails + recovers in the render path on stamp mismatch.
+// v1.215: Cache loading-overlay exists flag; drop redundant safeFind in vehicle deploy timer cache build
+// v1.214: Add loading gate invariant asserts (GATE_INV_1/2/3) for SP-testable verification
+// v1.213: remove FEATURE_WORLD_ICON_DIAG telemetry: drop flag const, diag state fields, CQ52 admin counter widget + string + sync fn; HQ/gadget WorldIcon spawn/render code unchanged
+// v1.212: KPI: exclude team kills from kills counter (portal OnPlayerEarnedKill fires on friendly fire)
+// v1.211: gadget locker: post-LIVE status line uses 'will be available in Xs' variant while counting; pre-LIVE keeps 'after match is Live'
+// v1.210: round-start gadget delay: gate locker tiles + 4th countdown line (gadgets) + menu status message
+// v1.209: stagger pregame countdown delay-info lines (0s/+3s/+6s), raise above countdown digit, fix hide-on-LIVE by preserving delay widget refs across cache ensure
+// v1.208: pregame countdown: display 3 delay-info lines above countdown digits showing map-config air/airDeploy/forwardDeploy delays; hidden when value is 0
 // v1.207: v1.206: fix frozen round-start delay countdown - include delay state in render signature so cache invalidates every tick
 // v1.206: v1.205: round-start delay countdown ticks every second via self-terminating HUD loop
 // v1.204: v1.204: forward deploy free-space check + round-start deploy delay constants (airDelay, airDeployDelay, forwardDeployDelay)

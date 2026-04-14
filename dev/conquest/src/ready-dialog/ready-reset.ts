@@ -5,15 +5,10 @@
 
 // Resets all players to NOT READY. Used by mode reset/start-end paths so each live start requires a fresh ready cycle.
 function resetReadyStateForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        const pid = mod.GetObjId(p);
+    forEachValidPlayer((_player, pid) => {
         State.players.readyByPid[pid] = false;
         delete State.players.readyNeedsReconfirmByPid[pid];
-    }
+    });
     // If any dialogs are open, reflect the reset immediately.
     renderReadyDialogForAllVisibleViewers();
     updatePlayersReadyHudTextForAllPlayers();

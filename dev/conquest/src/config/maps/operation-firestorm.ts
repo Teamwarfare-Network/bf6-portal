@@ -53,8 +53,9 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
         useCustomCeiling: false,
         vehicleSpawnYawOffsetDeg: 0,
         roundStartAirDelay: 10,
-        roundStartAirDeployDelay: 20,
-        roundStartForwardDeployDelay: 20,
+        roundStartAirDeployDelay: 30,
+        roundStartForwardDeployDelay: 60,
+        roundStartGadgetDelay: 60,
         team1AircraftSpawnVolumes: [
             {
                 label: "Team 1 Aircraft Box 1",

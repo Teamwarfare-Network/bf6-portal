@@ -92,7 +92,16 @@ async function runPregameCountdown(expectedToken: number, triggerPlayer?: mod.Pl
         return;
     }
 
+    // Staggered delay-info lines: first shows immediately, second at +3s, third & fourth at +6s.
+    // Assumes PREGAME_COUNTDOWN_START_NUMBER >= 10 so all four lines get meaningful display time.
+    showPregameCountdownDelayLineForAllPlayers(0);
+
     for (let value = PREGAME_COUNTDOWN_START_NUMBER; value >= 1; value--) {
+        if (value === PREGAME_COUNTDOWN_START_NUMBER - 3) showPregameCountdownDelayLineForAllPlayers(1);
+        if (value === PREGAME_COUNTDOWN_START_NUMBER - 6) {
+            showPregameCountdownDelayLineForAllPlayers(2);
+            showPregameCountdownDelayLineForAllPlayers(3);
+        }
         if (!isPregameCountdownStillValid(expectedToken, force)) {
             State.round.countdown.isActive = false;
             hidePregameCountdownForAllPlayers();

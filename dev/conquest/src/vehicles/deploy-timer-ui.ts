@@ -1162,7 +1162,7 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
     };
     State.hudCache.vehicleDeployTimerCache[pid] = cache;
 
-    cache.root = safeFind(cache.rootName) as mod.UIWidget;
+    // cache.root already populated at construction (line above); the prior redundant safeFind was removed.
     if (!cache.root) return undefined;
 
     try {
@@ -1629,7 +1629,8 @@ function setVehicleDeployTimerHudFamilyVisible(
 // Restores UI input mode when the vehicle HUD is the active undeployed interaction surface.
 function syncVehicleDeployHudViewerInputMode(player: mod.Player, pid: number): void {
     const liveTerminalOpen = isVehicleDeployLiveTerminalModeForPid(pid);
-    const joinPromptVisible = !!safeFind(joinPromptRootName(pid));
+    // Per-tick safeFind replaced by state flag maintained by loading-overlay.ts lifecycle.
+    const joinPromptVisible = !!State.players.readyDialogData[pid]?.loadingOverlayExists;
     if (
         (!State.players.deployedByPid[pid] || liveTerminalOpen)
         && !State.players.readyDialogData[pid]?.dialogVisible
@@ -1938,13 +1939,7 @@ function updateVehicleDeployTimerHudForPlayer(player: mod.Player): boolean {
 // Public non-owner refresh path for all viewers.
 // Use this for gameplay state changes that should not alter family visibility ownership.
 function updateVehicleDeployTimerHudForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
-        refreshVehicleDeployTimersForPlayerPreservingVisibility(player);
-    }
+    forEachValidPlayer((player) => refreshVehicleDeployTimersForPlayerPreservingVisibility(player));
 }
 
 // Targeted update for players who currently have the deploy timer HUD visible.
@@ -2001,31 +1996,20 @@ function invalidateVehicleDeployTimerHudViewerCache(pid: number): void {
 
 // Rebuilds vehicle HUD content while hidden, then reveals it only for viewers that currently own that surface.
 function prebuildAndRevealVehicleDeployTimerHudForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
-        const pid = safeGetPlayerId(player);
-        if (pid === undefined) continue;
-
+    forEachValidPlayer((player, pid) => {
         prebuildVehicleDeployTimerHudHiddenForPlayer(player);
 
-        if (State.players.readyDialogData[pid]?.dialogVisible) {
-            continue;
-        }
+        if (State.players.readyDialogData[pid]?.dialogVisible) return;
 
         const shouldReveal = (
             !State.players.deployedByPid[pid]
             || isVehicleDeployTimerAdminOverrideEnabledForPid(pid)
             || isVehicleDeployLiveTerminalModeForPid(pid)
         );
-        if (!shouldReveal) {
-            continue;
-        }
+        if (!shouldReveal) return;
 
         revealVehicleDeployTimerHudForPlayer(player);
-    }
+    });
 }
 
 

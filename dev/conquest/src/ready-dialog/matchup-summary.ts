@@ -18,13 +18,7 @@ function updateTeamNameWidgetsForPid(pid: number): void {
 
 // Refreshes team-name labels for every connected player.
 function updateTeamNameWidgetsForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        updateTeamNameWidgetsForPid(mod.GetObjId(p));
-    }
+    forEachValidPlayer((_player, pid) => updateTeamNameWidgetsForPid(pid));
 }
 
 // Refreshes ready-dialog matchup/config readouts for all visible viewers.

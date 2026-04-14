@@ -29,13 +29,7 @@ function updateReadyDialogMapLabelForPid(pid: number): void {
 
 // Refreshes the map label/value pair for all connected players.
 function updateReadyDialogMapLabelForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        updateReadyDialogMapLabelForPid(mod.GetObjId(p));
-    }
+    forEachValidPlayer((_player, pid) => updateReadyDialogMapLabelForPid(pid));
 }
 
 function updateReadyDialogGridColumnHeaderForPid(pid: number, columnKey: string, label: mod.Message): void {

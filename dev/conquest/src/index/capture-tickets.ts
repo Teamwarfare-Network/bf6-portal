@@ -178,18 +178,12 @@ function conquestPhase3ShouldRunCombatHud(): boolean {
 
 // Refreshes top-HUD derived slices for all viewers without touching combat lane refs.
 function conquestPhase3RefreshTopHudDerivedSlicesForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
-        const pid = safeGetPlayerId(player);
-        if (pid === undefined) continue;
+    forEachValidPlayer((_player, pid) => {
         const topHelpReadyVm = deriveConquestHudHelpReadyViewModel(pid);
         const topStatusVm = deriveConquestHudStatusViewModel(topHelpReadyVm);
         const topClockVm = deriveConquestHudClockViewModel();
         conquestPhase3PublishTopHudDerivedSlicesForPid(pid, topStatusVm, topHelpReadyVm, topClockVm);
-    }
+    });
 }
 
 // Publishes derived top-HUD slices shared by status/help/clock owners.
@@ -2109,6 +2103,8 @@ function hasOwnerTeamForProgressReset(ownerTeam: TeamID | 0, progress01: number)
 // Legacy/off branches remain here temporarily as cleanup-bridge compatibility until deletion phase.
 function updateConquestCombatHudForAllPlayers(force?: boolean): void {
     const hudMode = getConquestHudMode();
+    // Clock VM + derived top-HUD slices are time-variant; they must refresh every tick
+    // regardless of combat-HUD dirtiness so the clock color flip / countdown never freezes.
     conquestPhase3RefreshTopHudDerivedSlicesForAllPlayers();
     if (hudMode === "off") {
         twlConquestHudHideAllPlayers();
@@ -2116,8 +2112,16 @@ function updateConquestCombatHudForAllPlayers(force?: boolean): void {
         return;
     }
     try {
-        // Hard-cut mode: new TwlConquestHud pipeline is the only combat HUD owner.
-        twlConquestHudTickFrame(force);
+        // Gate the expensive per-player combat-HUD write-through on hudDirty||force.
+        // Dirty flag is set by conquestPhase3MarkHudDirty() from every state mutation
+        // that affects the combat HUD projection. See AGENTS.md "Combat HUD Dirty-Flag
+        // Contract" for the complete list of fields that must mark dirty on mutation.
+        const shouldRunFrame = !!force || State.conquest.debug.hudDirty;
+        if (shouldRunFrame) {
+            twlConquestHudTickFrame(force);
+            State.conquest.debug.hudDirty = false;
+        }
+        // Animation cadence is time-variant (lerps/fades over real time) — never gate.
         twlConquestHudTickAnimation(force);
     } catch {
         // HUD core is optional for gameplay; reset cadence and let next tick recover without global hide flash.
@@ -2126,7 +2130,6 @@ function updateConquestCombatHudForAllPlayers(force?: boolean): void {
     if (force) {
         State.conquest.debug.hudLastUpdatedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
     }
-    State.conquest.debug.hudDirty = false;
 }
 
 // Runs sub-second live capture synchronization so dynamic HUD elements do not strobe on second boundaries.

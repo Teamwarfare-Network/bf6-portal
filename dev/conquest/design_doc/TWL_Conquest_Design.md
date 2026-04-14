@@ -3293,6 +3293,7 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-04-13 | Phase 9 follow-up: friendly-kill guard on Kills counter | onPlayerEarnedKillImpl now compares killer/victim team via safeGetTeamNumberFromPlayer(..., 0) and skips increment on team match; fails open on unassigned team (0); addresses CQ_Bug_56; src/index/player-kpi-events.ts | v1.212, bundle 1,002,150 bytes, tsc clean`
   - `2026-04-12 | Phase 9 prototype: custom tab scoreboard with KPI tracking | Added kpi/kpi-state.ts, kpi/scoreboard-tab.ts, index/player-kpi-events.ts; wired OnPlayerEarnedKill + OnPlayerEarnedKillAssist exports; capture KPI attribution via GetPlayersOnPoint + GetCurrentOwnerTeam; scoreboard sync in live-tick (1s) + re-assert (60s); KPI reset on startMatch + triggerFreshMatchSetup; state: kpiByPid; strings: twl.scoreboard.col* | v1.178, bundle 1,042,443 bytes, tsc clean`
 
 <a id="phase-10"></a>
@@ -3353,6 +3354,8 @@ Phase Changelog:
 - `Implementation entry format`: `YYYY-MM-DD | summary | files changed | verification`
 - `Design modification entry format`: `YYYY-MM-DD | trigger | proposed change | impacted CF/PD/Phase | decision status | required doc updates`
 - `Entries`:
+  - `2026-04-13 | Remove FEATURE_WORLD_ICON_DIAG telemetry | Dropped flag const + inline guard blocks in world-interactables.ts spawn/cleanup paths, removed syncDiagCounterForAllPlayers() from conquest-flow.ts, removed CQ52_COUNTER admin-panel widget + cq52CounterFormat string + UI_ADMIN_CQ52_COUNTER_ID, removed debug.worldIconDiagP0/P1/P2 state fields; HQ/gadget WorldIcon spawn/render code unchanged; user moved past world-icon debugging to smoke-based signalling | v1.213, bundle 1,001,081 bytes (-1,069), tsc clean`
+  - `2026-04-13 | Round-start gadget delay + pregame delay-line polish | Added roundStartGadgetDelay MapConfig (Firestorm=60); 4th staggered pregame countdown line at Y=-300 co-revealed with forward-deploy line at -6s; gadget locker menu opens pre-LIVE/during-delay with preview+stats visible but all tiles forced disabled via gadgetBlocked and a yellow status header (two string variants delayGadgets/delayGadgetsLive); cache-preservation fix in ensureCountdownUIAndGetWidget so delay lines hide with LIVE! text; files: src/config/types.ts + src/config/maps/operation-firestorm.ts + src/state/core.ts + src/state/hud-cache-types.ts + src/ready-dialog/pregame-ui.ts + src/ready-dialog/countdown-flow.ts + src/interaction/ammo-resupply-menu.ts + src/strings.json | v1.208-v1.211, bundle 1,001,946 bytes, tsc clean`
   - `2026-04-12 | Scoreboard column layout deferral | KDR and SPM columns deferred to Phase 10 polish due to Portal 5-column API limit; documented preferred future layout (SPM/Score/Captures/KDR/Kills/Deaths) and noted 6-vs-5 resolution needed | Phase 9, Phase 10, CF-39, CF-79, CF-83 | accepted | Phase 10 checklist updated with 3 new to-dos`
   - `2026-04-04 | Sound/music polish items | Added three audio polish to-dos: boundary alert sounds, round start music, flag capture flourish + accelerating capture tick sounds | Phase 10 | accepted | Phase 10 checklist updated`
   - `2026-03-02 | Repeated neutralization-border regression during Phase 3 implementation/testing | Deferred flag border feature to Phase 10 polish; remove border feature from active implementation until a single authoritative visual-state path is validated | Phase 3B, Phase 10 | accepted | Added Phase 10 to-do + explicit border reintroduction validation criteria`
@@ -3742,20 +3745,20 @@ None
 
 ## Codebase Reference Map
 
-Last updated: v1.187 (2026-04-12)
+Last updated: v1.221 (2026-04-13)
 
 ### Project Stats
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.196 |
+| Version | 1.221 |
 | Source files | 116 .ts files + 1 .json |
 | Total source bytes | ~1,350,000 (includes Changelog + excluded stubs) |
 | Total source lines | 24,444 |
-| Bundle size (script) | 988,193 bytes |
+| Bundle size (script) | 998,868 bytes |
 | Bundle size (strings) | 19,908 bytes |
 | Bundle limit | 1,048,576 bytes (1 MiB) — applies to script only |
-| Headroom | 4,075 bytes (0.39%) — CRITICAL |
+| Headroom | 49,708 bytes (4.74%) |
 | Entry point | `src/index.ts` -> 22 Portal event handlers |
 | Build pipeline | `prebuild.js` -> `bf6-portal-bundler` -> `postbuild.js` -> `verify.js` |
 | Build output | `dist/bundle.ts` + `dist/bundle.strings.json` |
@@ -3770,7 +3773,6 @@ Feature flags in `src/config/conquest-constants.ts` control file-level bundle ex
 | `FEATURE_ADMIN_PANEL` | `true` | 43,174 bytes (4 files) | ~20-25K | Admin panel UI + action buttons |
 | `FEATURE_JOIN_PROMPT` | `false` | 313 bytes (3 stubs) | ~0 | Future tip/prompt features |
 | `FEATURE_POSITION_DEBUG` | `true` | hud/position-debug.ts | ~18.6K source | Coordinate display (standalone file) |
-| `FEATURE_WORLD_ICON_DIAG` | `true` | inline guards | ~200-400 bytes | **Temporary** MP World Icon diagnostic — should be `false` for production |
 
 Note: The loading overlay shown during the player UI warm gate (`src/ready-dialog/loading-overlay.ts`) is always included and not controlled by any feature flag. `FEATURE_JOIN_PROMPT` controls only future tip/prompt extensions.
 
@@ -3802,22 +3804,22 @@ src/
     string-keys.ts            -- String key constant mappings (STR_* -> mod.stringkeys.twl.*) (94 lines | 7.1K)
 
   state/
-    core.ts                   -- Shared state accessors (isMatchLive, setUIInputMode, sendWorldLog) (59 lines | 2.2K)
+    core.ts                   -- Shared state accessors (isMatchLive, round-start deploy delay helpers incl. roundStartGadgetDelay, setUIInputMode, sendWorldLog)
     runtime-types.ts          -- GameState shape: all type definitions incl. ConquestLifecyclePhase (460 lines | 15.4K)
     runtime-state.ts          -- State singleton initialization (281 lines | 9.8K)
     runtime.ts                -- Composition shim
     id-helpers.ts             -- Safe ID/object/team accessors (safeGetPlayerId, safeFind, etc.) (159 lines | 6.4K)
     player-lookup.ts          -- Player lookup by PID
     ui-helpers.ts             -- Widget builder helpers (safeParseUI, addOutlinedButton) (412 lines | 13.5K)
-    hud-cache-types.ts        -- HUD widget cache type definitions incl. victory dialog refs (222 lines | 6.9K)
+    hud-cache-types.ts        -- HUD widget cache type definitions incl. victory dialog refs + AmmoResupplyMenu gadgetDelayStatus
     lifecycle-guardrails.ts   -- Phase transition guards (NotReady/Live/GameOver) (66 lines | 2.1K)
     spawn-charge.ts           -- Phase 2B spawn-charge reason matrix and deploy charging (248 lines | 10.5K)
 
   config/
     conquest-constants.ts     -- Gameplay tuning + compile-time feature flags (60 lines | 2.8K)
-    types.ts                  -- Map config types (MapConfig, CapturePointConfig, VehicleSpawnSpec) (81 lines | 4.4K)
+    types.ts                  -- Map config types (MapConfig incl. roundStartAirDelay/roundStartAirDeployDelay/roundStartForwardDeployDelay/roundStartGadgetDelay, CapturePointConfig, VehicleSpawnSpec)
     maps.ts                   -- Map registry loader
-    maps/operation-firestorm.ts -- Firestorm map-specific spawn/capture/ceiling config (371 lines | 20.4K)
+    maps/operation-firestorm.ts -- Firestorm map-specific spawn/capture/ceiling config incl. roundStartGadgetDelay=60
     map-runtime.ts            -- Map detection and config application; spawner relocation on knob change (777 lines | 33.8K)
     runtime.ts                -- Runtime config initialization (89 lines | 4.9K)
 
@@ -3832,7 +3834,7 @@ src/
     player-loop-inputs.ts     -- Per-tick player input: gate enforcement, interact routing (63 lines | 3.1K)
     vehicle-events.ts         -- Vehicle enter/exit/spawn/destroy, slot binding, boundary recheck on aircraft exit (225 lines | 11.0K)
     area-triggers.ts          -- Capture-point and main-base area trigger handlers (133 lines | 6.0K)
-    player-kpi-events.ts      -- KPI event handler impls: kill, assist, capture attribution (Phase 9) (79 lines | 2.7K)
+    player-kpi-events.ts      -- KPI event handler impls: kill (with friendly-fire team-equality guard), assist, capture attribution (Phase 9)
 
   kpi/
     kpi-state.ts              -- Per-player KPI state mutations and score formula (CF-38) (Phase 9) (112 lines | 4.0K)
@@ -3844,7 +3846,7 @@ src/
     hud-warm-state.ts         -- Per-player gate state accessors (40+ getters/setters) (280 lines | 12.4K)
     interact-point.ts         -- Ready-dialog interact point spawn/despawn lifecycle (192 lines | 8.0K)
     world-interactables.ts    -- Per-player spawned WorldIcon clones with SetWorldIconOwner visibility (324 lines | 12.6K)
-    ammo-resupply-menu.ts     -- Gadget/ammo menu UI, cooldowns, click handling (1,953 lines | 73.1K)
+    ammo-resupply-menu.ts     -- Gadget/ammo menu UI, cooldowns, click handling; roundStartGadgetDelay tile lockout + yellow status header (delayGadgets/delayGadgetsLive)
     spawn-selector.ts         -- Custom spawn selection stub (Phase 8 placeholder)
     ui-events.ts              -- Button event dispatcher
     ui-events-ready.ts        -- Ready dialog + admin panel click handlers (217 lines | 7.7K)
@@ -3876,12 +3878,12 @@ src/
     mode-config-readout.ts    -- Vehicle selection readout display (359 lines | 16.1K)
     mode-config-aircraft-ceiling.ts -- Aircraft altitude limit config (61 lines | 3.5K)
     matchup-summary.ts        -- Match summary panel (team compositions) (115 lines | 5.1K)
-    countdown-flow.ts         -- Pregame countdown orchestration (150 lines | 5.7K)
+    countdown-flow.ts         -- Pregame countdown orchestration; staggered delay-line reveal at 0/+3s/+6s (idx 2 + idx 3 co-reveal for gadget delay)
     auto-start.ts             -- Auto-start enablement/flow
     swap-action.ts            -- Team swap action handler
     takeoff-gating.ts         -- Aircraft takeoff readiness check
     ready-reset.ts            -- Ready state reset helpers
-    pregame-ui.ts             -- Pregame-phase overlay UI (117 lines | 4.1K)
+    pregame-ui.ts             -- Pregame-phase overlay UI; 4 staggered delay-info lines at Y=-420/-380/-340/-300 with cache-preservation for hide-on-LIVE
     loading-overlay.ts        -- Loading overlay shown during UI warm gate (always included) (199 lines | 6.7K)
     join-prompt-ids.ts        -- [EXCLUDED: FEATURE_JOIN_PROMPT] Stub for future tip/button IDs
     join-prompt-layout.ts     -- [EXCLUDED: FEATURE_JOIN_PROMPT] Stub for future tip layout
@@ -3906,9 +3908,9 @@ src/
     spawner-sequence.ts       -- Slot sequencing logic (199 lines | 7.8K)
     spawner-bind.ts           -- Vehicle-to-slot binding on spawn (268 lines | 12.0K)
     spawner-bootstrap.ts      -- Spawner system initialization; startup cleanup UnspawnObject guarded (100 lines | 4.8K)
-    deploy-fulfillment.ts     -- Direct vehicle spawn on deploy; pre-seat teleport removed (524 lines | 22.7K)
+    deploy-fulfillment.ts     -- Direct vehicle spawn on deploy (air/ground/forward); forward-deploy free-space guard @10m; pre-seat teleport removed (524 lines | 22.7K)
     deploy-live-menu.ts       -- Live deploy menu UI for spawn selection (87 lines | 3.3K)
-    deploy-timer-ui.ts        -- Vehicle spawn timer HUD display (1,961 lines | 85.3K)
+    deploy-timer-ui.ts        -- Vehicle spawn timer HUD display; round-start delay HUD loop; render signature includes delay state (1,961 lines | 85.3K)
     array-helpers.ts          -- Vehicle array manipulation helpers
 
   ui/

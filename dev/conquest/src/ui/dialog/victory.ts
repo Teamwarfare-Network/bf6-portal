@@ -162,15 +162,10 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
 
 // Applies victory dialog updates for every valid connected player.
 function updateVictoryDialogForAllPlayers(remainingSeconds: number): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        const pid = safeGetPlayerId(p);
-        if (pid === undefined || isPidDisconnected(pid)) continue;
-        updateVictoryDialogForPlayer(p, remainingSeconds);
-    }
+    forEachValidPlayer((player, pid) => {
+        if (isPidDisconnected(pid)) return;
+        updateVictoryDialogForPlayer(player, remainingSeconds);
+    });
 }
 
 //#endregion ----------------- HUD Victory Dialog Updates --------------------

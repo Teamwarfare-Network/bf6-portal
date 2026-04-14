@@ -121,6 +121,23 @@ Prompting examples:
 8. Also report whether the bundle size went up, went down, or stayed flat versus the previous reported implementation checkpoint.
 9. Use the size data from the post-`bumpVersion` build/verify output as the source of truth; do not estimate or omit it.
 
+## Combat HUD Dirty-Flag Contract
+
+1. `updateConquestCombatHudForAllPlayers` gates the per-player combat-HUD write-through on `State.conquest.debug.hudDirty || force`. If nothing marked the HUD dirty since the last tick, the expensive render is skipped.
+2. Any mutation to the following state fields MUST call `conquestPhase3MarkHudDirty()` in the same function body as the mutation, otherwise the HUD will stop reflecting the new state until some other unrelated change marks it dirty:
+   - `State.conquest.tickets.*`
+   - `State.conquest.capture.byObjId[*].ownerTeam`, `.ownerProgressTeam`, `.progress01`, `.onPointTeam1`, `.onPointTeam2`
+   - `State.conquest.capture.visualByObjId[*]`
+   - `State.conquest.capture.engagedObjIdByPid[*]`
+   - `State.conquest.bleed.enabled`
+   - `State.conquest.lifecyclePhase`
+   - `State.match.isEnded`, `State.match.victoryDialogActive`
+   - `State.conquest.debug.perspectiveTeamByPid[*]`
+   - `State.players.deployedByPid[*]` (on transition between deployed ↔ not-deployed)
+3. PR review must reject any diff mutating these fields without a `conquestPhase3MarkHudDirty()` call in the same function body (exception: cleanup paths that immediately call `twlConquestHudHideAllPlayers()` or `twlConquestHudDestroyPlayer(pid)`).
+4. The top-HUD derived-slice refresh (`conquestPhase3RefreshTopHudDerivedSlicesForAllPlayers`) and animation tick (`twlConquestHudTickAnimation`) are NOT gated — clock VM and animation lerps are time-variant and must run every subtick.
+5. Force-render callers (`updateConquestCombatHudForAllPlayers(true)` at line 1998, 2048, area-triggers, spawn-charge, etc.) bypass the gate — leave those force-true wherever an event handler needs a guaranteed immediate render.
+
 ## UI Layout Change Protocol
 
 1. For any HUD positioning request, first identify and verify the exact widget names actually rendering on screen.

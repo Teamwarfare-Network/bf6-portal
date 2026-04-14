@@ -168,6 +168,7 @@ function initReadyDialogData(eventPlayer: mod.Player) {
         uiLoadSessionId: 0,
         uiLoadReason: "join",
         uiLoadOverlayShown: false,
+        loadingOverlayExists: false,
         uiCriticalRevealCompleted: false,
         uiProductionMenusWarm: false,
         uiPostDeployFinalizeActive: false,

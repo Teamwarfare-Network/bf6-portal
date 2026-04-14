@@ -48,6 +48,8 @@ function setUiLoadGateActiveForPid(pid: number, active: boolean): void {
 }
 
 // Marks whether the player's loading gate has released gameplay and menu interaction.
+// Release-transition ordering invariant: set active=false BEFORE released=true so the gate
+// loop cannot still be reasserting the overlay after deploy is authorized.
 function setUiLoadGateReleasedForPid(pid: number, released: boolean): void {
     const state = getReadyDialogStateForPid(pid);
     if (!state) return;

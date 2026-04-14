@@ -46,6 +46,8 @@ function clearLoadingOverlayForPlayerId(playerId: number): void {
             }
         }
     }
+    const state = getReadyDialogStateForPid(playerId);
+    if (state) state.loadingOverlayExists = false;
 }
 
 //#endregion ----------------- Loading Overlay - Lifecycle --------------------
@@ -74,6 +76,8 @@ function ensureLoadingOverlayForPlayer(eventPlayer: mod.Player): mod.UIWidget | 
         && safeFind(joinPromptBodyName(pid))
         && safeFind(joinPromptDetailName(pid))
     ) {
+        const cachedState = getReadyDialogStateForPid(pid);
+        if (cachedState) cachedState.loadingOverlayExists = true;
         return root;
     }
     if (root) {
@@ -97,6 +101,8 @@ function ensureLoadingOverlayForPlayer(eventPlayer: mod.Player): mod.UIWidget | 
     );
     root = safeFind(joinPromptRootName(pid)) as mod.UIWidget | undefined;
     if (!root) return undefined;
+    const state = getReadyDialogStateForPid(pid);
+    if (state) state.loadingOverlayExists = true;
 
     mod.AddUIContainer(
         joinPromptPanelName(pid),

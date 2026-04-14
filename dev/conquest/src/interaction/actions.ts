@@ -618,6 +618,7 @@ async function runLoadingGateUntilReady(eventPlayer: mod.Player, pid: number): P
 
         // Belt-and-suspenders: if player is somehow deployed while gate is active, force undeploy.
         // Guard with isPlayerDeployed to avoid CQ_Bug_36 (UndeployPlayer on undeployed player).
+        // Gate-loop force-undeploy invariant: deployedByPid must be clear before next iteration.
         if (State.players.deployedByPid[pid]) {
             State.players.deployedByPid[pid] = false;
             if (isPlayerDeployed(eventPlayer)) {

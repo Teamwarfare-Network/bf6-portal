@@ -257,13 +257,7 @@ async function runBoundaryViolationEnforcementLoop(pid: number, token: number): 
 }
 
 function refreshBoundaryStateForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
-        refreshPlayerBoundaryState(player);
-    }
+    forEachValidPlayer((player) => refreshPlayerBoundaryState(player));
 }
 
 function tickBoundaryEnforcement(): void {
@@ -340,16 +334,10 @@ function resetPlayerBoundaryStateOnUndeployOrReset(pid: number, destroyUi: boole
 
 function clearActiveBoundaryViolationsForAllPlayers(): void {
     const seen: Record<number, boolean> = {};
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
-        const pid = safeGetPlayerId(player);
-        if (pid === undefined) continue;
+    forEachValidPlayer((_player, pid) => {
         seen[pid] = true;
         clearBoundaryViolationForPid(pid);
-    }
+    });
 
     for (const key in State.hudCache.boundaryPromptCache) {
         const pid = Number(key);

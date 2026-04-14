@@ -175,8 +175,6 @@ function getConfiguredMatchLengthSeconds(): number {
 
 // Refreshes admin match-length labels for all connected players.
 function syncAdminMatchLengthLabelForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
     const totalSeconds = getConfiguredMatchLengthSeconds();
     const time = getClockTimeParts(totalSeconds);
     const label = mod.Message(
@@ -185,38 +183,10 @@ function syncAdminMatchLengthLabelForAllPlayers(): void {
         time.secTens,
         time.secOnes
     );
-
-    for (let i = 0; i < count; i++) {
-        const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
-        const pid = safeGetPlayerId(player);
-        if (pid === undefined || isPidDisconnected(pid)) continue;
+    forEachValidPlayer((_player, pid) => {
+        if (isPidDisconnected(pid)) return;
         const widget = safeFind(UI_ADMIN_MATCH_LENGTH_LABEL_ID + pid);
         safeSetUITextLabel(widget, label);
-    }
-}
-
-// Persistent diagnostic counter widget in the admin panel. Reads the latest three numbers stored in
-// State.conquest.debug.worldIconDiagP0/P1/P2 and pushes them to every viewer's widget. Current use:
-// FEATURE_WORLD_ICON_DIAG surfaces (pid, objId, +total/-total) on each World Icon spawn/destroy so
-// MP playtests can see per-player counts without transient messages.
-function syncDiagCounterForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    const label = mod.Message(
-        mod.stringkeys.twl.adminPanel.labels.cq52CounterFormat,
-        State.conquest.debug.worldIconDiagP0 || 0,
-        State.conquest.debug.worldIconDiagP1 || 0,
-        State.conquest.debug.worldIconDiagP2 || 0
-    );
-
-    for (let i = 0; i < count; i++) {
-        const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
-        const pid = safeGetPlayerId(player);
-        if (pid === undefined || isPidDisconnected(pid)) continue;
-        const widget = safeFind(UI_ADMIN_CQ52_COUNTER_ID + pid);
-        safeSetUITextLabel(widget, label);
-    }
+    });
 }
 

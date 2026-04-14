@@ -19,7 +19,6 @@ function setAdminPanelChildWidgetsVisible(playerId: number, visible: boolean): v
         UI_TEST_BUTTON_DEPLOY_TIMERS_TOGGLE_ID, UI_TEST_DEPLOY_TIMERS_TOGGLE_TEXT_ID,
         UI_TEST_BUTTON_RESET_GADGET_TIMERS_ID, UI_TEST_RESET_GADGET_TIMERS_TEXT_ID,
         UI_TEST_BUTTON_PERF_DIAG_TOGGLE_ID, UI_TEST_PERF_DIAG_TOGGLE_TEXT_ID,
-        UI_ADMIN_CQ52_COUNTER_ID,
     ];
 
     for (const baseId of ids) {

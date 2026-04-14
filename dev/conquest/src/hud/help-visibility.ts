@@ -38,13 +38,7 @@ function updateHelpTextVisibilityForPlayer(player: mod.Player): void {
 
 // Broadcast refresh for help/ready visibility across all currently valid players.
 function updateHelpTextVisibilityForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        updateHelpTextVisibilityForPid(mod.GetObjId(p));
-    }
+    forEachValidPlayer((_player, pid) => updateHelpTextVisibilityForPid(pid));
 }
 
 //#endregion ----------------- HUD Build/Ensure - Dialog Open + Help Text Visibility --------------------

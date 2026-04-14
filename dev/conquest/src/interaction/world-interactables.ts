@@ -154,13 +154,6 @@ function ensureMainBaseTeamIconForPlayer(player: mod.Player, config: WorldIntera
         mod.EnableWorldIconImage(icon, true);
         mod.EnableWorldIconText(icon, true);
         setWorldInteractableIconHandleForTeam(config.ownerTeamId, config.objId, icon);
-        if (FEATURE_WORLD_ICON_DIAG) {
-            const total = Object.keys(State.conquest.worldInteractableIconByTeamByObjId[config.ownerTeamId] ?? {}).length;
-            State.conquest.debug.worldIconDiagP0 = config.ownerTeamId;
-            State.conquest.debug.worldIconDiagP1 = config.objId;
-            State.conquest.debug.worldIconDiagP2 = total;
-            syncDiagCounterForAllPlayers();
-        }
     } catch {
     }
 }
@@ -178,13 +171,7 @@ function syncWorldInteractableRuntimeIconsForPlayer(player: mod.Player): void {
 }
 
 function syncWorldInteractableRuntimeIconsForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
-        syncWorldInteractableRuntimeIconsForPlayer(player);
-    }
+    forEachValidPlayer((player) => syncWorldInteractableRuntimeIconsForPlayer(player));
 }
 
 // Destroys all team HQ WorldIcons at the live transition. Called from `startMatch`. Combined with
@@ -206,12 +193,6 @@ function cleanupMainBaseTeamWorldIconsForLiveTransition(): void {
             } catch {}
         }
         delete iconsByTeam[teamKey];
-    }
-    if (FEATURE_WORLD_ICON_DIAG) {
-        State.conquest.debug.worldIconDiagP0 = -1;
-        State.conquest.debug.worldIconDiagP1 = 0;
-        State.conquest.debug.worldIconDiagP2 = 0;
-        syncDiagCounterForAllPlayers();
     }
 }
 

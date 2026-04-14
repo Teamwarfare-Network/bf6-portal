@@ -1,6 +1,6 @@
 # Conquest Issues
 
-Last Updated: 2026-04-11  
+Last Updated: 2026-04-13 (v1.221)  
 Last Tested Build: `v1.158` (v1.155 stripped the Phase A pre-seat player teleport entirely after git archaeology showed the whole "three-phase regression" narrative was a phantom — `deploy-fulfillment.ts` now byte-equals `b228efc`, matching the v1.109 known-good shape that predates the v1.106-v1.108 teleport-before-`ForcePlayerToSeat` incident; v1.158 ships two isolated World Icon fixes — the air-deploy HQ suppression fix for CQ_Bug_55 that clears `inMainBaseByPid[pid]` when a consumed deploy was air-mode so the existing sync at the end of `onPlayerDeployedImpl` hides the HQ icons automatically, and a `FEATURE_WORLD_ICON_DIAG` dev-only telemetry flag (defaulting false, stripped from shipping builds by postbuild dead-code elimination) that emits one `DisplayHighlightedWorldLogMessage` per spawned-WorldIcon spawn/destroy event to the owning player, encoded as `pid*10000000 + objId*1000 + action*100 + total`, so the next MP playtest can answer whether `SetWorldIconOwner` actually filters per-player visibility in multiplayer — CQ_Bug_25 multi-player confirmation. CQ_Bug_54 remains open for the fresh-aircraft runtime-spawner race that still leaks a tank when the prefab default fires before `SetVehicleSpawnerAutoSpawn(false)` can stop it)
 
 ## Current Snapshot
@@ -28,7 +28,7 @@ Last Tested Build: `v1.158` (v1.155 stripped the Phase A pre-seat player telepor
 - `CQ_Bug_22`: Resolved
 - `CQ_Bug_23`: Resolved
 - `CQ_Bug_24`: Resolved
-- `CQ_Bug_25`: Resolved (single-player confirmed v1.064; v1.158 ships `FEATURE_WORLD_ICON_DIAG` MP telemetry — next MP playtest will disambiguate `SetWorldIconOwner` filtering vs sync-loop bug vs cleanup leak)
+- `CQ_Bug_25`: Resolved (single-player confirmed v1.064. v1.158 shipped a temporary `FEATURE_WORLD_ICON_DIAG` MP telemetry counter; removed v1.213 after user moved past the world-icon debugging path to smoke-based signalling. Pre-game HQ World Icons continue to render normally — only the diagnostic counter + state fields were removed)
 - `CQ_Bug_26`: Likely resolved (believed fixed by vehicle HUD polish passes; needs confirmation)
 - `CQ_Bug_27`: Resolved (fixed in vehicle HUD render passes)
 - `CQ_Bug_28`: Open (Phase 10 — vehicle-specific, only some vehicles affected; needs investigation)
@@ -59,6 +59,16 @@ Last Tested Build: `v1.158` (v1.155 stripped the Phase A pre-seat player telepor
 - `CQ_Bug_53`: Reverted to known-good v1.151 shape in v1.154 while root-cause investigation continues. Phase A teleport (v1.151) + HQ `SpawnPlayerFromSpawnPoint` pre-step work together cleanly; Phase B (v1.152) stripped the pre-step and regressed into an engine-native AirCombatVolume OOB latch (10s counter → player+vehicle kill); Phase C (v1.153) one-shot 150ms settle dropped the rate from ~100% to ~85% but did not resolve. v1.154 restores the v1.151 shape: HQ spawn-point pre-step, helper chain, map-config fields, validation entries, and runtime constant assignments all reinstated from the `b228efc` checkpoint. The Phase A teleport block stays in `tryFulfillPendingVehicleDirectSpawnSeatForPlayer`, but the Phase C `AIR_DEPLOY_FRESH_AIRCRAFT_SETTLE_SECONDS` wait is removed — it was not load-bearing and carrying it forward would muddy the follow-up investigation. The original CQ_Bug_53 design goal (spawn-point-independent air deploy for flag-A / squad-mate cases) is deferred pending results from the SP-only instrumentation build planned for v1.155. Three live hypotheses for the Phase B regression: (H1) player transform not committed when `DeployPlayer` returns, teleport silently no-ops; (H2) engine combat-area sampler reads a separate stale position cache; (H3) `mod.Teleport` silently fails on a freshly-deployed player without a prior committed transform. v1.155 will instrument T0/T1/T2 sample points via the existing `position-debug.ts` HUD infrastructure to distinguish them.
 - `CQ_Bug_54`: Open — fresh-aircraft runtime-spawner race. When the direct-spawn fresh-aircraft path instantiates a `RuntimeSpawn_Common.VehicleSpawner` prefab at a birth-spawn volume point, the prefab's baked-in AutoSpawn sometimes fires a default Abrams before `SetVehicleSpawnerAutoSpawn(false)` + `configureVehicleSpawner` can apply. The CQ_Bug_49 guard in `onVehicleSpawnedImpl` unspawns the tank without clearing `expectingSpawn` (by design, so the real aircraft can bind on its own `OnVehicleSpawned`), but in the failure mode the real aircraft from `ForceVehicleSpawnerSpawn` never arrives. Observed as: tank flashes, `ForcePlayerToSeat` has no aircraft to seat into, graceful undeploy. Not reproducing every click — timing-dependent. Three candidate fixes identified; all three are blocked on verifying that `mod.Teleport` operates on `mod.VehicleSpawner` instances, not just `mod.Vehicle`. This blocks all redesign paths that avoid per-deploy runtime prefab instantiation.
 - `CQ_Bug_55`: Resolved (v1.158 — air deploy no longer leaves HQ World Icons visible after the player spawns directly into an aircraft kilometers away from main base; `onPlayerDeployedImpl` now clears `inMainBaseByPid[pid]` when the fulfillment path consumed an air-mode direct spawn, so the subsequent `syncWorldInteractableRuntimeIconsForPlayer` call hides the HQ icons)
+- `CQ_Bug_56`: Resolved (v1.212 — Kills counter incremented on friendly kills when team damage was on. `onPlayerEarnedKillImpl` now compares killer/victim team via `safeGetTeamNumberFromPlayer(..., 0)` and skips the increment when teams match; fails open on unassigned team (team 0) rather than silently dropping)
+- `CQ_Feat_Pregame_Countdown_Delay_Lines`: Resolved (v1.208–v1.209 — staggered 3-line reveal of the round-start delay info at 0/+3s/+6s above the pregame countdown, Y raised to -420/-380/-340. Cache-preservation fix in `ensureCountdownUIAndGetWidget` so `delayLineWidgets` survives per-tick recreation and the lines actually hide on LIVE!)
+- `CQ_Feat_Round_Start_Gadget_Delay`: Resolved (v1.210–v1.211 — new `roundStartGadgetDelay` MapConfig (Firestorm default 60). 4th pregame countdown line at Y=-300 staggered in with the forward-deploy line at -6s. Gadget locker menu opens pre-LIVE + during delay with preview/stats visible, all tiles forced disabled via `gadgetBlocked`, yellow status header counts down. Two string variants: `twl.countdown.delayGadgets` pre-LIVE, `twl.countdown.delayGadgetsLive` post-LIVE)
+- `CQ_Bug_Loading_Gate_Invariants`: Closed-by-audit (v1.214 shipped GATE_INV_1/2/3 asserts, v1.222 reverted them — world-log channel is transient/unreliable for verification; dual-guard in code closes the race. Diagnostic recipe documented for future reintroduction as persistent HUD plate if needed)
+- `CQ_Perf_Deploy_Timer_HotPath_SafeFind`: Resolved (v1.215 — cached loading-overlay exists flag + removed redundant safeFind in deploy-timer hot path)
+- `CQ_Bug_Combat_HUD_Stale_Widget_Refs`: Resolved (v1.216 — `combatHudGenerationByPid` counter; render path stamps + bails + recovers on mismatch)
+- `CQ_Refactor_forEachValidPlayer_Helper`: Resolved (v1.217 — `src/state/player-iteration.ts`; 23 wrappers converted)
+- `CQ_Perf_TickContext_AllPlayers_Cache`: Resolved (v1.219 — `src/state/tick-context.ts`; per-subtick AllPlayers snapshot shared across all forEachValidPlayer callers)
+- `CQ_Perf_Combat_HUD_Dirty_Gate`: Resolved (v1.221 — `twlConquestHudTickFrame` gated on `hudDirty || force`; AGENTS.md dirty-flag contract added)
+- `CQ_Polish_MP_Validation_v1.214_to_v1.221`: Pending next playtest (MP-only scenarios from the stability/perf pass)
 
 ## CQ_Bug_42
 Title: CountOf Called With Invalid/Undefined Array Argument During Gameplay
@@ -1991,3 +2001,266 @@ Verification (SP on Operation Firestorm):
 
 Related:
 - CQ_Bug_25 (per-player World Icon visibility). The v1.158 build also adds a `FEATURE_WORLD_ICON_DIAG` dev-only telemetry flag to `src/interaction/world-interactables.ts` that emits a `DisplayHighlightedWorldLogMessage` on every WorldIcon spawn/destroy with an encoded `pid*10000000 + objId*1000 + action*100 + total` payload so the next MP playtest can disambiguate whether `SetWorldIconOwner` actually filters per-player visibility in multiplayer. The flag defaults `false` and is stripped from shipping builds by postbuild dead-code elimination.
+
+## CQ_Feat_Forward_Deploy_FreeSpace (v1.203-v1.207)
+Title: Forward-Deploy Free-Space Guard + Round-Start Deploy Delay Gates
+
+Context:
+- Forward deploy (spawn-near-captured-flag) shipped in v1.203 using tank volume positions. Two gaps remained: (a) nothing prevented stacking vehicles at the same forward-deploy position when multiple players deployed in quick succession; (b) the deploy menu had no way to pace aircraft vs forward vs HQ deploy at round start, so high-mobility options were available instantly on live transition and ground-vehicle rallies felt unbalanced.
+
+Resolution (v1.207):
+
+1. **Free-space guard (`src/vehicles/deploy-fulfillment.ts`)**
+   - Added `VEHICLE_DIRECT_SPAWN_FORWARD_BLOCKED_RADIUS_METERS = 10` and `isForwardDeployPositionOccupied(pos)` which iterates `mod.AllVehicles()` and returns `true` if any vehicle is within range of the candidate forward-deploy point.
+   - `spawnForwardDeployVehicleForSlot` now short-circuits and returns `undefined` when the position is occupied, which routes through the existing `handlePendingVehicleSpawnSeatFailure` path to undeploy the player cleanly rather than stacking vehicles.
+
+2. **Round-start deploy delay constants (new MapConfig fields)**
+   - `src/config/types.ts`: added three optional `MapConfig` fields — `roundStartAirDelay` (blocks all aircraft deployment, including HQ), `roundStartAirDeployDelay` (blocks air-deploy button only; aircraft HQ unlocks after `airDelay`), `roundStartForwardDeployDelay` (blocks forward-deploy button).
+   - `src/config/maps/operation-firestorm.ts`: set `airDelay: 10, airDeployDelay: 20, forwardDeployDelay: 20` as the initial tuning pass.
+   - `src/state/runtime-state.ts` + `src/state/runtime-types.ts`: added `liveStartedAtSeconds: number | undefined` on `State.round`. (Note: the `runtime-types.ts` type had to be updated alongside `runtime-state.ts` or the `bundle.ts` post-process would emit TS errors, because `bundle.ts` is type-checked even though all `src/*.ts` files use `@ts-nocheck`.)
+   - `src/conquest-flow.ts`: `startMatch()` stamps `State.round.liveStartedAtSeconds = Math.floor(mod.GetMatchTimeElapsed())` right after `lifecycleSetLiveBaseline` and kicks `void runRoundStartDelayHudLoop();`. `endMatch` and `triggerFreshMatchSetup` clear the stamp.
+   - `src/state/core.ts`: added `getSecondsSinceLive`, `isRoundStartAirDelayActive`, `isRoundStartAirDeployDelayActive`, `isRoundStartForwardDeployDelayActive`, `getRoundStartAirDelayRemainingSeconds` next to `isMatchLive`. Placed here (rather than in `deploy-timer-ui.ts`) so the `reservations.ts` claim gates can read them without a cross-file bundle order concern.
+   - `src/vehicles/reservations.ts`: `tryClaimVehicleDirectSpawnForPlayer` now rejects claims when the corresponding delay is active — aircraft under `airDelay` or `airDeployDelay`, ground claims into aircraft slots under `airDelay` (HQ-into-aircraft is still gated by `airDelay`), and forward claims under `forwardDeployDelay`. Uses `isAircraftVehicleType` (earlier in bundle load order) rather than `doesVehicleTypeSupportAirDeploy` to avoid a forward reference.
+   - `src/vehicles/deploy-timer-ui.ts`: `renderVehicleDeployTimerRow` toggles `showSpawnButton`/`showGroundButton` against the delay flags and adds a countdown display branch that shows `getRoundStartAirDelayRemainingSeconds()` when the aircraft row is in `airDelayActive` with no vehicle present.
+
+3. **Countdown freeze bug (fixed in same cutline)**
+   - Observed: with delays configured, the aircraft-row countdown numbers froze on the first sample and never ticked down, even though the HUD loop was calling `updateVehicleDeployTimerHudForViewers()` every second.
+   - Root cause: the deploy-timer render had a signature-based short-circuit cache (`deploy-timer-ui.ts` around line 156 / 1902) that hashed "vehicle state + slot state + lifecycle phase" but did NOT include any of the round-start delay timers. Every repaint landed on the same signature as the first paint, so the render was skipped before it reached the timer branch.
+   - Fix: extended the signature string to include `getRoundStartAirDelayRemainingSeconds()`, `isRoundStartAirDeployDelayActive() ? 1 : 0`, and `isRoundStartForwardDeployDelayActive() ? 1 : 0`. The countdown now ticks at the same cadence as a respawn timer.
+   - Feedback preserved: first attempt (adding a HUD loop call) looked plausible but did not address the real gate — user correctly pushed back with "do real investigations, don't just jump at the first thing you think is wrong." The signature-cache angle was only found on the second pass by tracing the render short-circuit.
+
+Status:
+- Resolved v1.207. Bundle 994,811 / 1,048,576 bytes (53,765 headroom, 5.13%).
+- Verification: with all delays at 0, behavior matches v1.203. With firestorm's `airDelay=10, airDeployDelay=20, forwardDeployDelay=20`: aircraft rows show countdown at live, aircraft HQ unlocks at +10s, forward unlocks at +20s, air deploy unlocks at +20s. Forward-deploy into a position already occupied by a vehicle undeploys the player cleanly instead of stacking.
+
+Related:
+- CQ_Bug_52, CQ_Bug_54 (fresh-aircraft runtime-spawner subsystem is untouched by this change).
+
+## CQ_Feat_Pregame_Countdown_Delay_Lines (v1.208-v1.209)
+Title: Staggered Pregame Countdown Delay-Info Lines + Cache Preservation Fix
+
+Context:
+- v1.207 shipped three `roundStart*Delay` MapConfig fields that gate deploy availability after LIVE. A single static delay-info line was shown above the pregame countdown digits but had two problems: (a) it rendered on top of or adjacent to the countdown digit at its original Y, crowding the visual center; (b) all lines appeared simultaneously, giving players no time to read them before the countdown moved.
+- A third bug surfaced after the stagger work landed in v1.208: the delay-info lines never hid when the LIVE! text hid, so they lingered into the match.
+
+Resolution (v1.209):
+
+1. **Staggered reveal (`src/ready-dialog/pregame-ui.ts` + `src/ready-dialog/countdown-flow.ts`)**
+   - `PREGAME_COUNTDOWN_DELAY_LINE_KEYS` and `PREGAME_COUNTDOWN_DELAY_LINE_Y` extended to 3 entries; Y values `[-420, -380, -340]` raise the lines well above the countdown digit (which renders at size 620 near screen center).
+   - `showPregameCountdownDelayLineForAllPlayers(idx)` is a per-index helper so the countdown loop in `runPregameCountdown` can reveal lines at specific tick points: idx 0 immediately, idx 1 at `PREGAME_COUNTDOWN_START_NUMBER - 3`, idx 2 at `PREGAME_COUNTDOWN_START_NUMBER - 6`.
+   - `PREGAME_COUNTDOWN_START_NUMBER = 20` in `foundation/gameplay.ts` now carries an inline comment noting that a minimum of 10s is required for all three staggered lines to get meaningful screen time.
+
+2. **Cache-preservation fix (`ensureCountdownUIAndGetWidget` in `pregame-ui.ts`)**
+   - Bug: `ensureCountdownUIAndGetWidget` overwrote the entire `countdownWidgetCache[pid]` entry every tick (`State.hudCache.countdownWidgetCache[pid] = { rootName, widget }`), wiping out the `delayLineWidgets` array that `ensurePregameCountdownDelayLineWidgetsForPlayer` had populated. `hidePregameCountdownForAllPlayers` then iterated an empty array and skipped the hide, leaving the lines visible into LIVE.
+   - Fix: the ensure path now checks for an existing entry and mutates `rootName`/`widget` in place, preserving `delayLineWidgets`/`delayLineNames` so hide-on-LIVE actually runs.
+   - Extended `CountdownWidgetCacheEntry` with `delayLineNames?` + `delayLineWidgets?` so the type matches runtime usage.
+
+Status:
+- Resolved v1.209. Extended further in v1.210–v1.211 (4th line for gadget delay — see `CQ_Feat_Round_Start_Gadget_Delay`).
+- Verification: all delay lines appear in sequence with ~3s spacing, sit above the countdown digits without overlap, and disappear together with the LIVE! text when the pop-in hold expires.
+
+Related:
+- CQ_Feat_Forward_Deploy_FreeSpace (v1.207 shipped the config fields these lines describe).
+- CQ_Feat_Round_Start_Gadget_Delay (v1.210-v1.211 adds a 4th line on top of this plumbing).
+
+## CQ_Feat_Round_Start_Gadget_Delay (v1.210-v1.211)
+Title: Gadget Locker Round-Start Delay + Dual-String Status Header
+
+Context:
+- v1.207 gated aircraft and forward-deploy under `roundStart*Delay` fields but the gadget locker was still the only system that unlocked instantly on LIVE (and was even fully usable pre-LIVE), breaking the pacing the other delays established. Requirement: gate gadget lockers with the same pattern and also lock them pre-LIVE so round openings are about vehicle positioning rather than stockpiling supplies — but keep the menu openable with preview/stats visible so players can plan.
+
+Resolution (v1.211):
+
+1. **New MapConfig field + state helpers**
+   - `src/config/types.ts`: added optional `roundStartGadgetDelay?: number` on `MapConfig` alongside the other three round-start delays.
+   - `src/config/maps/operation-firestorm.ts`: `roundStartGadgetDelay: 60` as the initial tuning pass (matches `roundStartForwardDeployDelay`).
+   - `src/state/core.ts`: added `isRoundStartGadgetDelayActive()` and `getRoundStartGadgetDelayRemainingSeconds()` next to the three existing pairs. Intentional asymmetry: `getRoundStartGadgetDelayRemainingSeconds` returns the raw configured delay pre-LIVE (not 0) so the menu header can display the configured value before the match clock starts; mirrors how pregame-ui reads `ACTIVE_MAP_CONFIG` directly.
+
+2. **4th pregame countdown line**
+   - `src/ready-dialog/pregame-ui.ts`: `PREGAME_COUNTDOWN_DELAY_LINE_KEYS` extended with `mod.stringkeys.twl.countdown.delayGadgets` (new idx 3). Y array extended to `[-420, -380, -340, -300]`. `getPregameCountdownDelayValueForIndex` returns `ACTIVE_MAP_CONFIG.roundStartGadgetDelay ?? 0` for idx 3. `ensurePregameCountdownDelayLineWidgetsForPlayer` now builds 4 widgets via `PREGAME_COUNTDOWN_DELAY_LINE_COUNT`.
+   - `src/ready-dialog/countdown-flow.ts`: stagger reveal — idx 2 + idx 3 both fire at `PREGAME_COUNTDOWN_START_NUMBER - 6` so gadget info appears alongside the forward-deploy line.
+
+3. **Gadget locker menu — status header + tile lockout (`src/interaction/ammo-resupply-menu.ts`)**
+   - Added `gadgetDelayStatus?: mod.UIWidget` + `gadgetDelayStatusSig?: string` to `AmmoResupplyMenuCacheEntry` (`state/hud-cache-types.ts`).
+   - Build: new yellow text widget at Y=-410 (above the class header at -366), full `HELP_TEXT_WIDTH`, size 22, hidden initially.
+   - `refreshArmMenu` early block computes `gadgetBlocked = !isMatchLive() || isRoundStartGadgetDelayActive()` and `gadgetRemaining`; sig-cached label/visibility update picks `delayGadgets` pre-LIVE (“Gadgets at the Supply Boxes (Yellow Smoke) are available {0}s after match is Live”) vs `delayGadgetsLive` post-LIVE (“Gadgets at the Supply Boxes (Yellow Smoke) will be available in {0}s”). Two string variants approved by user this session.
+   - Tile lockout: every `const enabled = ...` branch is gated with `&& !gadgetBlocked` across the 6 tile types (assault smoke, assault class, medic smoke, engineer launcher, ammo, recon). Each tile's `sig` includes `gadgetBlocked ? 1 : 0` so cached renders refresh when the gate flips.
+   - Defensive click guard in the button activation handler: early return if `!isMatchLive() || isRoundStartGadgetDelayActive()`.
+
+4. **New strings (explicitly approved)**
+   - `twl.countdown.delayGadgets`: "Gadgets at the Supply Boxes (Yellow Smoke) are available {0}s after match is Live"
+   - `twl.countdown.delayGadgetsLive`: "Gadgets at the Supply Boxes (Yellow Smoke) will be available in {0}s"
+
+Status:
+- Resolved v1.211. Bundle 1,001,946 / 1,048,576 bytes (46,630 headroom, 4.45%).
+- Verification: pre-LIVE menu opens with stats visible, all tiles disabled, yellow header reads 60s. Countdown 4th line reveals at the -6s stagger and hides with LIVE. LIVE+0..59s: header counts down, tiles remain locked. LIVE+60s: header hides, tiles follow existing class/readiness rules. With `roundStartGadgetDelay: 0` behavior matches v1.208.
+
+Related:
+- CQ_Feat_Forward_Deploy_FreeSpace (v1.207 established the `roundStart*Delay` pattern this extends).
+- CQ_Feat_Pregame_Countdown_Delay_Lines (v1.208-v1.209 plumbing this builds on).
+
+## CQ_Bug_56
+Title: Kills Counter Increments On Friendly Kills When Team Damage Is On
+
+Observed:
+- With team damage enabled, killing a teammate incremented the Kills column on the custom tab scoreboard. Portal's `OnPlayerEarnedKill` fires for every death including team kills and self-inflicted deaths; the Phase 9 KPI wiring only guarded against self-kills, not team kills.
+
+Expected:
+- The Kills counter should only increment on confirmed enemy kills. Team kills should be ignored; if team numbers are unknown the system should fail open rather than silently drop valid kills.
+
+Root cause:
+- `onPlayerEarnedKillImpl` in `src/index/player-kpi-events.ts` checked only `mod.Equals(eventPlayer, eventOtherPlayer)` for self-kill rejection. No killer/victim team comparison.
+
+Fix (v1.212):
+- Added team-equality guard using `safeGetTeamNumberFromPlayer(player, 0)` fallback helper (already in `id-helpers.ts`).
+- Guard reads: `if (killerTeam !== 0 && killerTeam === victimTeam) return;` — the `!== 0` check ensures the function fails open on unassigned-team state rather than silently dropping the kill.
+- `_eventDeathType` and `_eventWeaponUnlock` remain unread; this is purely a team-equality check.
+
+Status:
+- Fixed v1.212. Bundle 1,002,150 / 1,048,576 bytes (46,426 headroom, 4.43%).
+- Needs MP confirmation: verify on a 2-player session that friendly kills no longer increment the Kills column, enemy kills still do, and suicides still register as 0 kills.
+
+Related:
+- Phase 9 scoreboard KPI wiring (v1.178) — this closes a gap in the original event handler that was only tested in friendly-fire-off environments.
+
+## CQ_Bug_Loading_Gate_Invariants (v1.214 shipped, v1.222 reverted)
+Title: Loading Gate Dual-Guard Invariant Unverified at Runtime
+
+Context:
+- The v1.104 serialization lock established a dual-guard pattern around the loading gate and deploy event, but no runtime assertion verified the invariant held. Category 3 Item 5 in `conquest_optimization_analysis.md` identified this as a medium-high crash risk.
+
+Resolution history:
+- v1.214: shipped GATE_INV_1/2/3 asserts that emitted via `sendHighlightedWorldLogMessage`.
+- v1.222: **reverted** the asserts. The world-log channel is transient/unreliable (messages scroll off and may be filtered), so the asserts could not be used to confirm the invariant held or violated. Pre-implementation audit had already concluded the dual-guard closes the race; the asserts were belt-and-suspenders documentation, not bug detection. Net: reclaim bundle bytes, keep the actual dual-guard code that closes the race (`active || !released` in `onPlayerDeployedImpl`, per-iteration `deployedByPid` check in `runLoadingGateUntilReady`), drop the unobservable instrumentation.
+
+Status:
+- Closed via code audit, not runtime verification. The dual-guard in `onPlayerDeployedImpl` ([index/player-deploy.ts](../src/index/player-deploy.ts)) + gate-loop force-undeploy in `runLoadingGateUntilReady` ([interaction/actions.ts](../src/interaction/actions.ts)) together close the race.
+
+Future diagnostic recipe (if this path ever becomes suspect):
+If we see symptoms like a player deploying while the UI loading overlay is still visible, or the force-undeploy loop thrashing, reintroduce observability via a **persistent HUD plate** (not world-log). Pattern:
+1. Add `State.conquest.debug.gateInvariantCountersByInvId: Record<1|2|3, number>` to runtime state; initialize to 0.
+2. Bump counter in three spots:
+   - GATE_INV_1: [interaction/actions.ts](../src/interaction/actions.ts) in the gate-loop force-undeploy branch — fire when `State.players.deployedByPid[pid] && isUiLoadGateReleasedForPid(pid)` (deployed while gate already released → ordering drift).
+   - GATE_INV_2: [index/player-deploy.ts](../src/index/player-deploy.ts) at top of `onPlayerDeployedImpl` — fire when `isUiLoadGateActiveForPid(pid) && isUiLoadGateReleasedForPid(pid)` (both flags simultaneously true → release wasn't atomic).
+   - GATE_INV_3: [interaction/hud-warm-state.ts](../src/interaction/hud-warm-state.ts) in `setUiLoadGateReleasedForPid` — fire when `released && state.uiLoadGateActive` (releasing before active was cleared → caller flipped order).
+3. Render via a small always-on HUD text widget (3 counters, "INV: 0/0/0") using the same widget pattern as the perf-diag plate. Hide when all three are 0 so it stays invisible in clean runs.
+
+Bundle cost of the diag plate (estimated): ~400-800 bytes for state + 3 counter bumps + widget build/update. Only worth paying when a concrete bug repro exists.
+
+Related:
+- CQ_Bug_40 (v1.104 serialization lock — the mechanism these checks would protect).
+- conquest_optimization_analysis.md Category 3 Item 5.
+
+## CQ_Perf_Deploy_Timer_HotPath_SafeFind (v1.215)
+Title: Redundant safeFind Calls on Every Deploy-Timer HUD Tick
+
+Context:
+- `vehicles/deploy-timer-ui.ts` was calling `safeFind` to check for the loading overlay and performing at least one redundant lookup on every timer tick. With the timer running per deployed player, this added measurable safeFind volume to the hot path.
+
+Resolution (v1.215):
+- Cached the loading-overlay exists flag to avoid re-querying on every tick.
+- Removed the redundant `safeFind` call identified in the deploy-timer hot path.
+- Companion to the v1.190 `safeFindPlayer` hot-path fix (BUG-A8 at `capture-tickets.ts:1783`).
+
+Status:
+- Resolved v1.215.
+
+Related:
+- conquest_optimization_analysis.md Category 4 Item 4 (safeFind caching).
+- CQ_Bug_Loading_Gate_Invariants (same pass — v1.214-v1.221).
+
+## CQ_Bug_Combat_HUD_Stale_Widget_Refs (v1.216)
+Title: Combat HUD Renders Into Stale Widget References After Team Swap or Reconnect
+
+Context:
+- v1.190 removed 52 orphaned widget-name strings but the underlying pattern remained: the combat HUD could hold cached widget refs that were destroyed and recreated (e.g., after a team swap or mid-round reconnect). Revalidation happened only every 40 updates, leaving a window where writes targeted already-destroyed widgets.
+
+Resolution (v1.216):
+- Added `State.conquest.debug.combatHudGenerationByPid` — a per-player counter incremented every time combat HUD widgets are destroyed.
+- The render path stamps the generation at build time. On each render it compares the stamp to the current counter; on mismatch it bails and triggers a rebuild before continuing.
+- Closes the stale-ref race without lowering the revalidation interval.
+
+Status:
+- Resolved v1.216. SP testing confirmed stamp/bail/recover cycle fires correctly after simulated destroy.
+- Team-swap and reconnect paths need MP confirmation — see `CQ_Polish_MP_Validation_v1.214_to_v1.221`.
+
+Related:
+- conquest_optimization_analysis.md Category 3 Item 2.
+- CQ_Bug_40 / CQ_Bug_42 (related widget-lifecycle hardening history).
+
+## CQ_Refactor_forEachValidPlayer_Helper (v1.217)
+Title: 23 ForAllPlayers Wrappers Repeat the Same Validity-Check Loop
+
+Context:
+- 44 `mod.AllPlayers()` call sites across 31 files each repeated an inline validity-check pattern. 23 of those were thin `*ForAllPlayers` wrapper functions with no substantive logic beyond the loop.
+
+Resolution (v1.217):
+- New file `src/state/player-iteration.ts` introduces `forEachValidPlayer(cb)`.
+- 23 `*ForAllPlayers` wrappers converted to delegate to the helper.
+- Enables the Category 4 Item 1 per-tick cache (implemented in v1.219 via `TickContext`).
+- Net bundle savings absorbed into the overall pass delta.
+
+Status:
+- Resolved v1.217.
+
+Related:
+- conquest_optimization_analysis.md Category 2 Item 2 + Category 1 Item 3.
+- CQ_Perf_TickContext_AllPlayers_Cache (v1.219 — builds on this helper).
+
+## CQ_Perf_TickContext_AllPlayers_Cache (v1.219)
+Title: mod.AllPlayers() Called Multiple Times Per Subtick Across Independent Callers
+
+Context:
+- Even after the `forEachValidPlayer` refactor (v1.217), independent callers within a single subtick each triggered their own `mod.AllPlayers()` engine call. With 6-8 redundant invocations per tick cycle the cumulative engine overhead was measurable.
+
+Resolution (v1.219):
+- New file `src/state/tick-context.ts` introduces `TickContext` with `beginTickContext()` / `endTickContext()`.
+- `beginTickContext()` / `endTickContext()` wrap the main game-mode subtick body in `src/index/game-mode.ts`.
+- `forEachValidPlayer` consults the ambient context so all per-subtick callers share one `mod.AllPlayers()` snapshot.
+- Event handlers and one-shot lifecycle transitions fall back to a fresh `mod.AllPlayers()` call when no context is active.
+- v1.218 was a duplicate version bump, collapsed into v1.219. v1.220 was a type-fix follow-up (`mod.Array` is not generic so `players` is typed `any`).
+
+Status:
+- Resolved v1.219 / v1.220.
+
+Related:
+- conquest_optimization_analysis.md Category 4 Item 1.
+- CQ_Refactor_forEachValidPlayer_Helper (v1.217 — prerequisite).
+
+## CQ_Perf_Combat_HUD_Dirty_Gate (v1.221)
+Title: Combat HUD twlConquestHudTickFrame Runs Every Tick Regardless of State Changes
+
+Context:
+- `conquestPhase3MarkHudDirty()` set a `hudDirty` flag but `twlConquestHudTickFrame` ignored it entirely, re-rendering the full combat HUD on every tick. This was the single largest per-tick CPU regression item identified in the optimization analysis (Category 4 Item 2), estimated to waste 70-80% of HUD render work.
+
+Resolution (v1.221):
+- `updateConquestCombatHudForAllPlayers` is now gated on `State.conquest.debug.hudDirty || force`.
+- Derived top-HUD slices (clock view model) and `twlConquestHudTickAnimation` remain unconditional because they are time-variant.
+- AGENTS.md gained a "Combat HUD Dirty-Flag Contract" section enumerating 9 state fields that must call `conquestPhase3MarkHudDirty()` on mutation; this is the enforcement mechanism to prevent silent regressions where a state change skips the dirty mark.
+
+Status:
+- Resolved v1.221. Bundle 998,868 / 1,048,576 bytes (49,708 headroom, 4.74%).
+- SP verified: HUD updates when dirty-marked state changes; no spurious skips observed.
+- Simultaneous team-swap dirty-mark from two clients needs MP confirmation — see `CQ_Polish_MP_Validation_v1.214_to_v1.221`.
+
+Related:
+- conquest_optimization_analysis.md Category 4 Item 2.
+- CQ_Bug_Combat_HUD_Stale_Widget_Refs (v1.216 — companion hardening in the same pass).
+- AGENTS.md "Combat HUD Dirty-Flag Contract" (review rule).
+
+## CQ_Polish_MP_Validation_v1.214_to_v1.221
+Title: MP-Only Scenarios From the v1.214-v1.221 Stability/Perf Pass — Pending Playtest
+
+Context:
+- The v1.214-v1.221 pass was developed and smoke-tested in SP. Several correctness scenarios require two or more real clients and cannot be confirmed in a single-player session.
+
+Pending scenarios (next MP playtest):
+
+- **Two clients deploying within 50ms of loading-gate release** — verifies the dual-guard holds under real concurrent join pressure (CQ_Bug_Loading_Gate_Invariants). No runtime instrumentation is shipped in this bundle; if this scenario turns up a bug, reintroduce the GATE_INV counters as a persistent HUD plate per the diagnostic recipe in that issue entry.
+- **Client reconnects mid-prebuild** — verifies the generation counter in `combatHudGenerationByPid` rebuilds cleanly and the stamp/bail/recover cycle fires correctly for the reconnecting player without corrupting the other client's HUD (CQ_Bug_Combat_HUD_Stale_Widget_Refs).
+- **Simultaneous team swaps (both clients swap teams within the same tick)** — verifies generation counter increments and dirty-flag marks land correctly for both PIDs; no stale-ref writes, no missed HUD refresh (CQ_Bug_Combat_HUD_Stale_Widget_Refs + CQ_Perf_Combat_HUD_Dirty_Gate).
+- **Two clients on opposing teams watching the same flag capture** — verifies `TickContext` snapshot is consistent across both players' HUD paths within the same subtick; no split-brain from one player seeing a stale snapshot (CQ_Perf_TickContext_AllPlayers_Cache).
+- **Deploy-timer hot path under concurrent load** — two players each deploying vehicles at the same time; confirms the cached loading-overlay flag is per-player and does not leak across PIDs (CQ_Perf_Deploy_Timer_HotPath_SafeFind).
+
+Status:
+- Pending next playtest. All SP smoke checks passed. No new blocking issues observed.

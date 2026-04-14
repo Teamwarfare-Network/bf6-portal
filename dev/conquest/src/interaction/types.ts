@@ -41,6 +41,10 @@ interface readyDialogData_t {
     uiLoadSessionId: number;
     uiLoadReason: UiLoadReason;
     uiLoadOverlayShown: boolean;
+    // Tracks loading-overlay widget tree existence (NOT visibility). Set true when
+    // ensureLoadingOverlayForPlayer creates the tree; cleared in clearLoadingOverlayForPlayerId.
+    // Replaces a per-tick safeFind in syncVehicleDeployHudViewerInputMode.
+    loadingOverlayExists: boolean;
     uiCriticalRevealCompleted: boolean;
     uiProductionMenusWarm: boolean;
     uiPostDeployFinalizeActive: boolean;

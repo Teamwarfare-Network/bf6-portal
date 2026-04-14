@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.207)",
+        "title": "teamwarfare . net | TWL Conquest (v1.222)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -234,8 +234,7 @@
         "groundDeployAll": "Ground Deploy All"
       },
       "labels": {
-        "roundLengthFormat": "Match Length: {0}:{1}{2}",
-        "cq52CounterFormat": "WI {0} {1} {2}"
+        "roundLengthFormat": "Match Length: {0}:{1}{2}"
       },
       "buttons": {
         "panel": "Admin Panel"
@@ -355,7 +354,12 @@
       "format": "{0}",
       "clockFormat": "{0}:{1}{2}",
       "go": "GO!",
-      "live": "LIVE!"
+      "live": "LIVE!",
+      "delayAircraftHq": "Aircraft can HQ Ground Deploy {0}s after match is Live",
+      "delayAircraftAir": "Aircraft can Air Deploy {0}s after match is Live",
+      "delayForward": "Vehicles can Forward Deploy {0}s after match is Live",
+      "delayGadgets": "Gadgets at the Supply Boxes (Yellow Smoke) are available {0}s after match is Live",
+      "delayGadgetsLive": "Gadgets at the Supply Boxes (Yellow Smoke) will be available in {0}s"
     },
     "debug": {
       "adminPos": "ADMIN POS X:{0} Y:{1} Z:{2}",

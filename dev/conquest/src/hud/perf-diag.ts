@@ -148,15 +148,9 @@ function perfDiagUpdateHudForAllPlayers(tickRate: number): void {
     }
     spikeSections.sort((x, y) => (a.perfDiagSectionMax[y] ?? 0) - (a.perfDiagSectionMax[x] ?? 0));
 
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let p = 0; p < count; p++) {
-        const player = mod.ValueInArray(players, p) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
-        const pid = safeGetPlayerId(player);
-        if (pid === undefined) continue;
+    forEachValidPlayer((_player, pid) => {
         perfDiagUpdateHudForPid(pid, tickRate, playerCount, cache, spikeSections, a);
-    }
+    });
 }
 
 // Updates one player's perf diag HUD text widgets.

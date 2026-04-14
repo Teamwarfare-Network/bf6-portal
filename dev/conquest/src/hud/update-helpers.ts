@@ -4,16 +4,11 @@
 //#region -------------------- HUD Update Helpers --------------------
 
 function updateAdminPanelActionCountForAllPlayers(): void {
-    // Pushes the admin action count to every player's HUD widget.
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        const refs = ensureTopHudShellForPlayer(p);
-        if (!refs) continue;
+    forEachValidPlayer((player) => {
+        const refs = ensureTopHudShellForPlayer(player);
+        if (!refs) return;
         setAdminPanelActionCountText(refs.adminPanelActionCountText, State.admin.actionCount);
-    }
+    });
 }
 
 // Records one admin action press, updates HUD counters, and emits world-log telemetry.

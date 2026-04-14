@@ -102,16 +102,11 @@ function hideReadyDialogUI(eventPlayer: mod.Player | number) {
 
 // Closes Ready Dialog UI for every viewer that currently has the dialog open.
 function closeReadyDialogForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        const pid = mod.GetObjId(p);
+    forEachValidPlayer((player, pid) => {
         if (State.players.readyDialogData[pid]?.dialogVisible) {
-            hideReadyDialogUI(p);
+            hideReadyDialogUI(player);
         }
-    }
+    });
 }
 
 // Hard delete used only for cleanup such as player leave or layout invalidation.

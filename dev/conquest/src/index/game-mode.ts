@@ -104,6 +104,7 @@ async function onGameModeStartedImpl(): Promise<void> {
     let lastLiveCoreTickSecond = -1;
     while (true) {
         try {
+            beginTickContext();
             const nowElapsed = mod.GetMatchTimeElapsed();
             const nowSecondBoundary = Math.floor(nowElapsed);
             let clockUpdatedThisLoop = false;
@@ -179,6 +180,8 @@ async function onGameModeStartedImpl(): Promise<void> {
             }
         } catch {
             lastLiveCoreTickSecond = -1;
+        } finally {
+            endTickContext();
         }
 
         await mod.Wait(CONQUEST_LIVE_STATE_SUBTICK_SECONDS);

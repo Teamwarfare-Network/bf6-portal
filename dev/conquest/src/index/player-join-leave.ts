@@ -78,6 +78,7 @@ function cleanupHudForPid(pid: number): void {
     delete State.hudCache.vehicleDeployTimerCache[pid];
     delete State.hudCache.topHudShellByPid[pid];
     delete State.conquest.debug.hudGenerationByPid[pid];
+    delete State.conquest.debug.combatHudGenerationByPid[pid];
     delete State.conquest.debug.teamSwapRefreshTokenByPid[pid];
     delete State.conquest.debug.teamSwapHudResetPendingByPid[pid];
     delete State.conquest.debug.perspectiveTeamByPid[pid];

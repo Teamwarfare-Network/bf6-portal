@@ -55,6 +55,21 @@ function getRoundStartAirDelayRemainingSeconds(): number {
     return Math.max(0, delay - getSecondsSinceLive());
 }
 
+// True while gadget locker tiles are blocked at round start.
+function isRoundStartGadgetDelayActive(): boolean {
+    if (!isMatchLive()) return false;
+    const delay = ACTIVE_MAP_CONFIG.roundStartGadgetDelay ?? 0;
+    return delay > 0 && getSecondsSinceLive() < delay;
+}
+
+// Remaining seconds until gadget lockers unlock. Pre-LIVE, returns the raw configured delay so
+// the locker menu can display the full value before the match clock starts.
+function getRoundStartGadgetDelayRemainingSeconds(): number {
+    const delay = ACTIVE_MAP_CONFIG.roundStartGadgetDelay ?? 0;
+    if (!isMatchLive()) return delay;
+    return Math.max(0, delay - getSecondsSinceLive());
+}
+
 function hasPlayersOnTeam(team: mod.Team): boolean {
     if (mod.Equals(team, mod.GetTeam(0))) return false;
     const players = mod.AllPlayers();

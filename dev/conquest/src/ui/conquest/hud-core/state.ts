@@ -37,6 +37,7 @@ function twlConquestHudEnsureEntry(pid: number): TwlConquestHudPlayerEntry {
             },
             layoutFlagCount: 0,
             buildGeneration: 0,
+            generationStamp: 0,
             mainUpdates: 0,
             animationUpdates: 0,
             lastMainUpdateAtSeconds: -1,

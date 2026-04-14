@@ -65,6 +65,7 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     if (pid === undefined) return;
     if (!State.players.readyDialogData[pid]) initReadyDialogData(eventPlayer);
     // Unified gate check: if gate is still active (not yet released), recapture.
+    // Dual-guard invariant: active || !released covers both pre-release and released-but-not-authorized windows.
     if (isUiLoadGateActiveForPid(pid) || !isUiLoadGateReleasedForPid(pid)) {
         State.players.deployedByPid[pid] = false;
         await handlePlayerDeployedBeforeRelease(eventPlayer, pid);

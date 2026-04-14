@@ -5,7 +5,10 @@
 //#region -------------------- KPI Event Handlers --------------------
 
 // Records a kill for the killer. Called from OnPlayerEarnedKill export.
-// Self-kills (same killer and victim) are excluded — only enemy kills count.
+// Excludes self-kills and team kills — only confirmed enemy kills increment the counter.
+// Portal's OnPlayerEarnedKill fires on every death including team damage; friendly fire must be
+// filtered here. Team 0 is treated as "unassigned" — if either side is unknown we fall through
+// to record the kill rather than silently dropping it.
 function onPlayerEarnedKillImpl(
     eventPlayer: mod.Player,
     eventOtherPlayer: mod.Player,
@@ -15,6 +18,9 @@ function onPlayerEarnedKillImpl(
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     if (!eventOtherPlayer || !mod.IsPlayerValid(eventOtherPlayer)) return;
     if (mod.Equals(eventPlayer, eventOtherPlayer)) return;
+    const killerTeam = safeGetTeamNumberFromPlayer(eventPlayer, 0);
+    const victimTeam = safeGetTeamNumberFromPlayer(eventOtherPlayer, 0);
+    if (killerTeam !== 0 && killerTeam === victimTeam) return;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     kpiInitForPid(pid);

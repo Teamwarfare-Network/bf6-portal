@@ -282,6 +282,8 @@ const READY_DIALOG_TEAM2_TRANSPORT_SLOT_VEHICLE_OPTIONS: ReadyDialogVehicleOptio
 // Units: seconds and UI scale units.
 const PREGAME_COUNTDOWN_INITIAL_DELAY_SECONDS = 0.5;
 const PREGAME_COUNTDOWN_STEP_SECONDS = 1.0;
+// Expected minimum: 10 seconds. The staggered delay-info lines (immediate, +3s, +6s) assume at
+// least ~10s of countdown runway so all three lines are visible for a meaningful window before LIVE.
 const PREGAME_COUNTDOWN_START_NUMBER = 20;
 const PREGAME_COUNTDOWN_SIZE_DIGIT_START = 620;
 const PREGAME_COUNTDOWN_SIZE_DIGIT_END = 360;

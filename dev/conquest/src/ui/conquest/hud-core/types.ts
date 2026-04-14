@@ -129,6 +129,9 @@ type TwlConquestHudPlayerEntry = {
     widgets: TwlConquestHudWidgetRefs;
     layoutFlagCount: number;
     buildGeneration: number;
+    // Stamped from State.conquest.debug.combatHudGenerationByPid[pid] at build time.
+    // Render path bails + forces rebuild when stamp != current counter (destroy invalidates cached refs).
+    generationStamp: number;
     mainUpdates: number;
     animationUpdates: number;
     lastMainUpdateAtSeconds: number;

@@ -1109,6 +1109,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
     entry.layoutFlagCount = ticketLayout.layoutFlagCount;
     entry.initialized = true;
     entry.buildGeneration = entry.buildGeneration + 1;
+    entry.generationStamp = State.conquest.debug.combatHudGenerationByPid[entry.pid] ?? 0;
     return entry;
 }
 

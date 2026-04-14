@@ -119,5 +119,6 @@ type MapConfig = {
     roundStartAirDelay?: number; // Seconds after live before ANY aircraft deployment (HQ or air) is allowed.
     roundStartAirDeployDelay?: number; // Seconds after live before the air-deploy button unlocks (aircraft HQ allowed after airDelay).
     roundStartForwardDeployDelay?: number; // Seconds after live before the forward-deploy button unlocks (ground HQ always available).
+    roundStartGadgetDelay?: number; // Seconds after live before gadget locker tiles become interactable; tiles are also locked pre-LIVE.
 };
 

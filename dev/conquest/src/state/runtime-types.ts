@@ -227,14 +227,12 @@ type ConquestRuntimeScaffold = {
         pregameHelpDirty: boolean;
         ticketLeaderTeam: TeamID | 0;
         hudGenerationByPid: Record<number, number>;
+        combatHudGenerationByPid: Record<number, number>;
         teamSwapRefreshTokenByPid: Record<number, number>;
         teamSwapHudResetPendingByPid: Record<number, boolean>;
         perspectiveTeamByPid: Record<number, TeamID | 0>;
         teamSwapPerspectiveLockUntilByPid: Record<number, number>;
         engageHiddenUntilDeployByPid: Record<number, boolean>;
-        worldIconDiagP0: number;
-        worldIconDiagP1: number;
-        worldIconDiagP2: number;
         hudStatusVmByPid: Record<number, {
             isLive: boolean;
             isGameOver: boolean;

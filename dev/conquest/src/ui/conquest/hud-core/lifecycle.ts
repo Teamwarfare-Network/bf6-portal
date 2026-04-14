@@ -161,6 +161,8 @@ function twlConquestHudHideAllPlayers(): void {
 }
 
 function twlConquestHudDestroyPlayer(pid: number): void {
+    State.conquest.debug.combatHudGenerationByPid[pid] =
+        (State.conquest.debug.combatHudGenerationByPid[pid] ?? 0) + 1;
     twlConquestHudHidePlayer(pid);
     twlConquestHudDeleteAllByName(twlConquestHudTicketBlueBoxName(pid));
     twlConquestHudDeleteAllByName(twlConquestHudTicketRedBoxName(pid));

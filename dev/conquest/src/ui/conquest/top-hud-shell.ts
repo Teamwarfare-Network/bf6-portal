@@ -175,13 +175,7 @@ function updateHudTeamSwapButtonVisibilityForPid(pid: number): void {
 
 // Updates team swap button visibility for all active players.
 function updateHudTeamSwapButtonVisibilityForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
-        updateHudTeamSwapButtonVisibilityForPid(mod.GetObjId(p));
-    }
+    forEachValidPlayer((_player, pid) => updateHudTeamSwapButtonVisibilityForPid(pid));
 }
 
 // Ensures the non-combat top-HUD shell exists for one player on the active hard-cut shell path.

@@ -46,11 +46,15 @@ function twlConquestHudProcessPlayerFrame(
     }
 
     const expectedLayoutFlagCount = twlConquestHudGetLayoutFlagCount();
+    const expectedGeneration = State.conquest.debug.combatHudGenerationByPid[pid] ?? 0;
     const existingEntry = twlConquestHudGetEntry(pid);
     if (
         existingEntry
         && existingEntry.initialized
-        && existingEntry.layoutFlagCount !== expectedLayoutFlagCount
+        && (
+            existingEntry.layoutFlagCount !== expectedLayoutFlagCount
+            || existingEntry.generationStamp !== expectedGeneration
+        )
     ) {
         twlConquestHudRecoverEntry(pid);
     }

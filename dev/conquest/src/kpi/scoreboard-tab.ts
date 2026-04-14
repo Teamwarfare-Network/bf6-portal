@@ -82,18 +82,12 @@ function updateScoreboardForPlayer(player: mod.Player): void {
 
 // Pushes KPI values for all connected players. Only updates dirty entries unless forced.
 function updateScoreboardForAllPlayers(force?: boolean): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-    for (let i = 0; i < count; i++) {
-        const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
-        const pid = safeGetPlayerId(player);
-        if (pid === undefined) continue;
+    forEachValidPlayer((player, pid) => {
         const kpi = State.players.kpiByPid[pid];
-        if (!kpi) continue;
-        if (!force && !kpi.dirty) continue;
+        if (!kpi) return;
+        if (!force && !kpi.dirty) return;
         updateScoreboardForPlayer(player);
-    }
+    });
 }
 
 // Pushes team ticket counts to the scoreboard header display via SetGameModeScore.
