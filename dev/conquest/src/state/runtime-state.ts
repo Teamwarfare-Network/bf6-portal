@@ -15,6 +15,7 @@ const State: GameState = {
             vehicleSelectionIndexByKey: {},
             gameMode: READY_DIALOG_GAME_MODE_OPTIONS[READY_DIALOG_GAME_MODE_DEFAULT_INDEX],
             gameSettings: mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat,
+            vehicleDeployMethod: VEHICLE_DEPLOY_METHOD_DEFAULT,
             confirmed: {
                 gameMode: READY_DIALOG_GAME_MODE_OPTIONS[READY_DIALOG_GAME_MODE_DEFAULT_INDEX],
                 gameSettings: mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat,
@@ -22,6 +23,7 @@ const State: GameState = {
                 aircraftCeilingOverrideEnabled: false,
                 autoStartMinActivePlayers: DEFAULT_AUTO_START_MIN_ACTIVE_PLAYERS,
                 vehicleSelectionIndexByKey: {},
+                vehicleDeployMethod: VEHICLE_DEPLOY_METHOD_DEFAULT,
             },
         },
         phase: MatchPhase.NotReady,

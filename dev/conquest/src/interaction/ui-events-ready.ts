@@ -49,6 +49,10 @@ function handleReadyDialogGridKnobClick(
         setReadyDialogGameModeIndex(State.round.modeConfig.gameModeIndex + delta, true, eventPlayer);
         return true;
     }
+    if (knobKey === READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY) {
+        setReadyDialogVehicleDeployMethod(State.round.modeConfig.vehicleDeployMethod + delta, eventPlayer);
+        return true;
+    }
     if (knobKey === READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY) {
         return true;
     }

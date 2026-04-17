@@ -32,23 +32,6 @@ function forceSpawnAllReadyVehicleSlots(): void {
     void runSequentialSpawns(indices, State.vehicles.spawnSequenceToken);
 }
 
-// Unspawns any vehicles not tracked by a slot at live transition. Catches orphans from pre-match
-// seat failures or bind mismatches (e.g. a deployed Jeep whose ForcePlayerToSeat failed and whose
-// vehicleId was never written to a slot via the bind path). Safe at live transition because every
-// enabled slot should have a bound vehicle and any untracked vehicle is, by definition, an orphan.
-function cleanupOrphanedVehiclesForLiveTransition(): void {
-    if (!State.vehicles?.vehicleToSlot) return;
-    const vehicles = mod.AllVehicles();
-    const count = mod.CountOf(vehicles);
-    for (let i = 0; i < count; i++) {
-        const vehicle = mod.ValueInArray(vehicles, i) as mod.Vehicle;
-        if (!vehicle) continue;
-        const objId = getObjId(vehicle);
-        if (State.vehicles.vehicleToSlot[objId] !== undefined) continue;
-        try { mod.UnspawnObject(vehicle); } catch {}
-    }
-}
-
 // Binds clock expiry to Conquest end-condition checks for continuous live flow.
 function bindClockExpiryForContinuousMode(): void {
     State.round.clock.expiryHandlers = [
@@ -71,7 +54,6 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     lifecycleSetLiveBaseline("pregame-start-match");
     State.round.liveStartedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
     cleanupMainBaseTeamWorldIconsForLiveTransition();
-    cleanupOrphanedVehiclesForLiveTransition();
     clearActiveBoundaryViolationsForAllPlayers();
     updateReadyDialogModeConfigForAllHiddenBuiltCaches();
     updateReadyToggleButtonsForAllBuiltReadyDialogs();

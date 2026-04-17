@@ -3,6 +3,11 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.257: Fix helicopter binding: restore AutoSpawn(false) in slot creation to prevent init-delay auto-spawn chaos; add vehicle-search fallback after retry loop (mirrors deploy-fulfillment pattern); reduce config wait to Wait(0)
+// v1.256: Fix helicopter spawner binding: refresh active tracking timestamp per spawn attempt to prevent bind window expiration; add transform correction to force-bind fallback
+// v1.255: Fix: apply 2s spawner initialization delay for Vanilla Deploy helicopter binding (UH-60, AH-6M)
+// v1.254: Add Vehicle Deploy Method knob to ready dialog config column
+// v1.253: Reverted src to v1.223 checkpoint (commit 3aa9edf) on new branch feature/conquest_attempt_c. Conquest attempt B (v1.223-v1.252) abandoned after exhaustive testing proved mod.ForcePlayerToSeat is unreliable across all contexts — admin button direct call, undeploy+redeploy cycle hooking OnPlayerDeployed, and normal deploy-screen flow all failed. Vehicle spawning confirmed working for all 4 types via BountyHunter pattern. Full attempt B source preserved in reference_implementations/reference_conquest_attempt_b/src/.
 // v1.252: fix: seat via undeploy+redeploy cycle — ForcePlayerToSeat only works during OnPlayerDeployed
 // v1.251: fix: remove pre-seat teleport (was destroying vehicles), use seat 0 matching production pattern
 // v1.250: fix: correct API names in BH test buttons — GetFacingDirection, XComponentOf/YComponentOf/ZComponentOf

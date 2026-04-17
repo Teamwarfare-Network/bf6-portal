@@ -157,6 +157,7 @@ async function onVehicleSpawnedImpl(eventVehicle: mod.Vehicle): Promise<void> {
                 slot.expectingSpawn = false;
                 bindVehicleToSpawnerSlot(slot, vehicleObjId);
                 State.vehicles.vehicleToSlot[vehicleObjId] = slotIndex;
+                void maybeApplySpawnTransformCorrectionToVehicle(eventVehicle, slot);
             }
         }
     }

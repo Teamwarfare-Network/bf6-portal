@@ -94,12 +94,14 @@ async function runPregameCountdown(expectedToken: number, triggerPlayer?: mod.Pl
 
     // Staggered delay-info lines: first shows immediately, second at +3s, third & fourth at +6s.
     // Assumes PREGAME_COUNTDOWN_START_NUMBER >= 10 so all four lines get meaningful display time.
-    showPregameCountdownDelayLineForAllPlayers(0);
+    // Lines are gated by confirmed deploy method: line 0 (aircraft HQ) if method >= HQ, line 1 (air deploy) if HQ_FORWARD_AIR, line 2 (forward) if method >= HQ_FORWARD, line 3 (gadgets) always.
+    const countdownDeployMethod = State.round.modeConfig.confirmed.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT;
+    if (countdownDeployMethod >= VEHICLE_DEPLOY_METHOD_HQ) showPregameCountdownDelayLineForAllPlayers(0);
 
     for (let value = PREGAME_COUNTDOWN_START_NUMBER; value >= 1; value--) {
-        if (value === PREGAME_COUNTDOWN_START_NUMBER - 3) showPregameCountdownDelayLineForAllPlayers(1);
+        if (value === PREGAME_COUNTDOWN_START_NUMBER - 3 && countdownDeployMethod === VEHICLE_DEPLOY_METHOD_HQ_FORWARD_AIR) showPregameCountdownDelayLineForAllPlayers(1);
         if (value === PREGAME_COUNTDOWN_START_NUMBER - 6) {
-            showPregameCountdownDelayLineForAllPlayers(2);
+            if (countdownDeployMethod >= VEHICLE_DEPLOY_METHOD_HQ_FORWARD) showPregameCountdownDelayLineForAllPlayers(2);
             showPregameCountdownDelayLineForAllPlayers(3);
         }
         if (!isPregameCountdownStillValid(expectedToken, force)) {

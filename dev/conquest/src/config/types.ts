@@ -44,6 +44,7 @@ type WorldInteractableConfig = {
 type ReadyDialogPresetPackage = {
     playersPerSide: number;
     vehicleSelectionByKey: Record<string, mod.VehicleList | undefined>;
+    vehicleDeployMethod?: number;
 };
 
 // Describes one gadget slot in the locker menu (assault items, medic items, recon items).

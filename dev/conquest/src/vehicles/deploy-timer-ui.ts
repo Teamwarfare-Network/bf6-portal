@@ -23,8 +23,6 @@ function getVehicleDeployTimerLabelKey(vehicleType: mod.VehicleList): number {
             return mod.stringkeys.twl.readyDialog.vehicleOptionPanthera;
         case VEHICLE_AH6M:
             return mod.stringkeys.twl.readyDialog.vehicleShortLittleBird;
-        case VEHICLE_AH6M_PAX:
-            return mod.stringkeys.twl.readyDialog.vehicleShortLittleBirdPax;
         case mod.VehicleList.UH60:
         case mod.VehicleList.UH60_Pax:
             return mod.stringkeys.twl.readyDialog.vehicleOptionBlackHawk;
@@ -58,10 +56,6 @@ function getVehicleDeployTimerLabelKey(vehicleType: mod.VehicleList): number {
             return mod.stringkeys.twl.readyDialog.vehicleShortGolfCart;
         case mod.VehicleList.Flyer60:
             return mod.stringkeys.twl.readyDialog.vehicleShortFlyer60;
-        case VEHICLE_DIRTBIKE:
-            return mod.stringkeys.twl.readyDialog.vehicleShortDirtBike;
-        case VEHICLE_DIRTBIKE_PAX:
-            return mod.stringkeys.twl.readyDialog.vehicleShortDirtBikePax;
         case mod.VehicleList.Vector:
             return mod.stringkeys.twl.readyDialog.vehicleShortVector;
         case mod.VehicleList.RHIB:
@@ -97,7 +91,7 @@ function isVehicleDeployTimerAdminOverrideEnabledForPid(pid: number): boolean {
     return !!State.players.readyDialogData[pid]?.vehicleTimersVisibleWhileDeployed;
 }
 
-function getVehicleDeployTrackedSlotsForPlayer(player: mod.Player): VehicleSpawnerSlot[] {
+function getVehicleDeployVisibleSlotsForPlayer(player: mod.Player): VehicleSpawnerSlot[] {
     const teamId = safeGetTeamNumberFromPlayer(player, 0);
     if (teamId !== TeamID.Team1 && teamId !== TeamID.Team2) return [];
     const selectedSlotNumbers: Record<number, boolean> = {};
@@ -108,7 +102,7 @@ function getVehicleDeployTrackedSlotsForPlayer(player: mod.Player): VehicleSpawn
         selectedSlotNumbers[selectedSpecs[i].slotNumber] = true;
     }
     const slots = State.vehicles.slots.filter((slot) =>
-        slot.deployFlowTracked
+        slot.enabled
         && slot.teamId === teamId
         && selectedSlotNumbers[slot.slotNumber] === true
     );
@@ -119,7 +113,7 @@ function getVehicleDeployTrackedSlotsForPlayer(player: mod.Player): VehicleSpawn
 function getVehicleDeployRenderSlotsForPlayer(player: mod.Player): VehicleSpawnerSlot[] {
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return [];
-    const slots = getVehicleDeployTrackedSlotsForPlayer(player);
+    const slots = getVehicleDeployVisibleSlotsForPlayer(player);
     if (
         !State.players.deployedByPid[pid]
         || isVehicleDeployTimerAdminOverrideEnabledForPid(pid)
@@ -134,7 +128,7 @@ function shouldShowVehicleDeployTimersForPid(pid: number): boolean {
     if (isPidDisconnected(pid)) return false;
     const player = safeFindPlayer(pid);
     if (!player || !mod.IsPlayerValid(player)) return false;
-    return getVehicleDeployTrackedSlotsForPlayer(player).length > 0;
+    return getVehicleDeployVisibleSlotsForPlayer(player).length > 0;
 }
 
 type VehicleDeployTimerRenderPlan = {
@@ -159,7 +153,7 @@ function buildVehicleDeployTimerRenderPlan(player: mod.Player, pid: number): Veh
     const adminPanelOpen = State.players.readyDialogData[pid]?.adminPanelVisible === true;
     const visible = shouldShowRows && warmReady && !adminPanelOpen;
 
-    let signature = `${warmReady ? 1 : 0}|${shouldShowRows ? 1 : 0}|${visible ? 1 : 0}|${State.players.deployedByPid[pid] ? 1 : 0}|${hasPendingDirectSpawnClaim ? 1 : 0}|${liveTerminalOpen ? 1 : 0}|${adminPanelOpen ? 1 : 0}|${State.conquest.lifecyclePhase}|${getRoundStartAirDelayRemainingSeconds()}|${isRoundStartAirDeployDelayActive() ? 1 : 0}|${isRoundStartForwardDeployDelayActive() ? 1 : 0}`;
+    let signature = `${warmReady ? 1 : 0}|${shouldShowRows ? 1 : 0}|${visible ? 1 : 0}|${State.players.deployedByPid[pid] ? 1 : 0}|${hasPendingDirectSpawnClaim ? 1 : 0}|${liveTerminalOpen ? 1 : 0}|${adminPanelOpen ? 1 : 0}|${State.conquest.lifecyclePhase}|${getRoundStartAirDelayRemainingSeconds()}|${isRoundStartAirDeployDelayActive() ? 1 : 0}|${isRoundStartForwardDeployDelayActive() ? 1 : 0}|dm:${State.round.modeConfig.confirmed.vehicleDeployMethod ?? 0}`;
     for (let i = 0; i < slots.length; i++) {
         const slot = slots[i];
         signature += `#${i}:${slot.slotNumber},${slot.vehicleType},${slot.vehicleId},${slot.activeOwnerPid ?? -1},${slot.pendingSpawnOwnerPid ?? -1},${slot.pendingSpawnMode ?? "none"},${getVehicleSlotRespawnRemainingSeconds(slot)},${isVehicleDeploySlotReadyForSpawnButton(slot) ? 1 : 0}`;
@@ -192,7 +186,6 @@ function doesVehicleTypeSupportAirDeploy(vehicleType: mod.VehicleList): boolean 
         case mod.VehicleList.AH64:
         case mod.VehicleList.Eurocopter:
         case VEHICLE_AH6M:
-        case VEHICLE_AH6M_PAX:
         case mod.VehicleList.UH60:
         case mod.VehicleList.UH60_Pax:
         case mod.VehicleList.F16:
@@ -1509,13 +1502,18 @@ function renderVehicleDeployTimerRow(
     const airDelayActive = isRoundStartAirDelayActive();
     const airDeployDelayActive = isRoundStartAirDeployDelayActive();
     const forwardDelayActive = isRoundStartForwardDeployDelayActive();
-    // Spawn button (air/forward): blocked during all applicable round-start delays.
-    const showSpawnButton = slotReadyForButtons && isMatchLive() && (
-        (isAirType && !airDelayActive && !airDeployDelayActive)
-        || (isForwardType && hasEnabledTankSpawnVolumesForTeam(slotTeamId) && !forwardDelayActive)
+    const confirmedMethod = State.round.modeConfig.confirmed.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT;
+    const hqDeployAllowed = confirmedMethod >= VEHICLE_DEPLOY_METHOD_HQ;
+    const forwardDeployAllowed = confirmedMethod >= VEHICLE_DEPLOY_METHOD_HQ_FORWARD;
+    const airDeployAllowed = confirmedMethod === VEHICLE_DEPLOY_METHOD_HQ_FORWARD_AIR;
+    // Spawn button (air/forward): blocked during all applicable round-start delays; gated by deploy method.
+    const showSpawnButton = slotReadyForButtons && slot.deployFlowTracked && isMatchLive() && (
+        (isAirType && airDeployAllowed && !airDelayActive && !airDeployDelayActive)
+        || (isForwardType && forwardDeployAllowed && hasEnabledTankSpawnVolumesForTeam(slotTeamId) && !forwardDelayActive)
     );
-    // Ground/HQ button: aircraft blocked during full airDelay; always blocked during countdown.
-    const showGroundButton = slotReadyForButtons && doesVehicleTypeSupportGroundDeploy(slot.vehicleType) && !isCountdown
+    // Ground/HQ button: aircraft blocked during full airDelay; always blocked during countdown; gated by deploy method.
+    const showGroundButton = slotReadyForButtons && slot.deployFlowTracked && hqDeployAllowed
+        && doesVehicleTypeSupportGroundDeploy(slot.vehicleType) && !isCountdown
         && !(isAirType && airDelayActive);
     let showTimer = true;
     layoutVehicleDeployRowForState(row, showPlayerName, showSpawnButton, showGroundButton);
@@ -1818,17 +1816,15 @@ function tryHandleVehicleDeployTimerButtonEvent(
         }
     }
 
-    const slots = getVehicleDeployTrackedSlotsForPlayer(eventPlayer);
+    const slots = getVehicleDeployVisibleSlotsForPlayer(eventPlayer);
     const slot = slots[rowIndex];
     if (!slot) return true;
 
     if (mode === "air" && doesVehicleTypeSupportForwardDeploy(slot.vehicleType)) {
         mode = "forward";
     }
-    if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagBegin(eventPlayer, slot.vehicleType, mode);
     const claimed = tryClaimVehicleDirectSpawnForPlayer(eventPlayer, slot, mode);
     if (!claimed) {
-        if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetClickBlocked(eventPlayer);
         updateVehicleDeployTimerHudForPlayer(eventPlayer);
         return true;
     }

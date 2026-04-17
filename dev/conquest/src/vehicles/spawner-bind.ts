@@ -218,7 +218,6 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
                 // aircraft spawn (forced by ForceVehicleSpawnerSpawn with the configured type) can
                 // bind on its own OnVehicleSpawned event.
                 if (rejectWrongCategoryBindForAircraftSlot(activeSlot, eventVehicle)) {
-                    if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagBroadcastBind("reject-abrams");
                     return 0;
                 }
                 activeSlot.expectingSpawn = false;
@@ -228,10 +227,6 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
                 State.vehicles.activeSpawnToken = undefined;
                 State.vehicles.activeSpawnRequestedAtSeconds = undefined;
                 void maybeApplySpawnTransformCorrectionToVehicle(eventVehicle, activeSlot);
-                if (FEATURE_DEPLOY_DIAGNOSTIC) {
-                    deployDiagBroadcastBind("ok");
-                    deployDiagBroadcastSpawn("ok");
-                }
                 return activeSlot.teamId;
             }
         } else {
@@ -261,7 +256,6 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
             if (d <= VEHICLE_SPAWNER_BIND_DISTANCE_METERS) {
                 // CQ_Bug_49: same reject rule applies to the distance fallback path.
                 if (rejectWrongCategoryBindForAircraftSlot(slot, eventVehicle)) {
-                    if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagBroadcastBind("reject-abrams");
                     return 0;
                 }
                 slot.expectingSpawn = false;
@@ -273,16 +267,11 @@ function bindSpawnedVehicleToSlot(eventVehicle: mod.Vehicle, vehiclePos: mod.Vec
                     State.vehicles.activeSpawnRequestedAtSeconds = undefined;
                 }
                 void maybeApplySpawnTransformCorrectionToVehicle(eventVehicle, slot);
-                if (FEATURE_DEPLOY_DIAGNOSTIC) {
-                    deployDiagBroadcastBind("ok");
-                    deployDiagBroadcastSpawn("ok");
-                }
                 return slot.teamId;
             }
         } catch { continue; }
     }
 
-    if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagBroadcastBind("not-expecting");
     return 0;
 }
 

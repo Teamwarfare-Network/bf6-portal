@@ -58,7 +58,7 @@ const READY_DIALOG_MODE_GRID_COLUMN_SPECS: ReadyDialogGridColumnSpec[] = [
         knobSpecs: [
             { key: READY_DIALOG_CONFIG_GAME_KNOB_KEY, labelKey: mod.stringkeys.twl.readyDialog.gameModeLabel },
             { key: READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY, labelKey: mod.stringkeys.twl.readyDialog.modeSettingsLabel },
-            { key: READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY, labelKey: mod.stringkeys.twl.readyDialog.vehiclesCountLabel },
+            { key: READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY, labelKey: mod.stringkeys.twl.readyDialog.vehicleDeployLabel },
             { key: READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY, labelKey: mod.stringkeys.twl.readyDialog.playersLabel },
         ],
     },
@@ -140,7 +140,6 @@ function getReadyDialogModeGridAllKnobKeys(): string[] {
 }
 
 function isReadyDialogModeGridPlaceholderKnobKey(knobKey: string): boolean {
-    return knobKey === READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY
-        || knobKey === READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY;
+    return knobKey === READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY;
 }
 

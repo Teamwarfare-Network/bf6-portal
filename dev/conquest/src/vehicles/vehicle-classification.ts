@@ -6,7 +6,6 @@ function isAircraftVehicleType(vehicleType: mod.VehicleList): boolean {
         case mod.VehicleList.AH64:
         case mod.VehicleList.Eurocopter:
         case VEHICLE_AH6M:
-        case VEHICLE_AH6M_PAX:
         case mod.VehicleList.UH60:
         case mod.VehicleList.UH60_Pax:
         case mod.VehicleList.F16:
@@ -51,7 +50,6 @@ function isAircraftVehicleInstance(vehicle: mod.Vehicle): boolean {
         mod.CompareVehicleName(vehicle, mod.VehicleList.AH64)
         || mod.CompareVehicleName(vehicle, mod.VehicleList.Eurocopter)
         || mod.CompareVehicleName(vehicle, VEHICLE_AH6M)
-        || mod.CompareVehicleName(vehicle, VEHICLE_AH6M_PAX)
         || mod.CompareVehicleName(vehicle, mod.VehicleList.UH60)
         || mod.CompareVehicleName(vehicle, mod.VehicleList.UH60_Pax)
         || mod.CompareVehicleName(vehicle, mod.VehicleList.F16)

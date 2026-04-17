@@ -34,6 +34,10 @@ function addVehicleSpawnerSlot(teamId: TeamID, slotNumber: number, spawnPos: mod
         spawnerRot
     ) as mod.VehicleSpawner;
 
+    // Full configuration is deferred to bootstrap after a 2-second engine initialization delay,
+    // but suppress auto-spawn immediately to prevent default Abrams from appearing during init.
+    mod.SetVehicleSpawnerAutoSpawn(spawner, false);
+
     const slot: VehicleSpawnerSlot = {
         teamId,
         slotNumber,

@@ -70,7 +70,6 @@ async function tryBeginVehicleDirectSpawnDeployFromSpawnPoint(player: mod.Player
         try {
             mod.SpawnPlayerFromSpawnPoint(player, spawnPoint);
             if (await waitForPlayerToEnterDeployedState(player)) {
-                if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetDeploy(player, "state-ok");
                 return true;
             }
         } catch {
@@ -81,25 +80,19 @@ async function tryBeginVehicleDirectSpawnDeployFromSpawnPoint(player: mod.Player
     try {
         mod.SpawnPlayerFromSpawnPoint(player, spawnPointId);
         if (await waitForPlayerToEnterDeployedState(player)) {
-            if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetDeploy(player, "state-ok");
             return true;
         }
     } catch {
         // Fall through to normal engine deploy.
     }
 
-    if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetDeploy(player, "timeout");
     return false;
 }
 
 async function beginVehicleDirectSpawnDeployForPlayer(player: mod.Player): Promise<void> {
-    if (FEATURE_DEPLOY_DIAGNOSTIC && player && mod.IsPlayerValid(player)) deployDiagSetPrep(player, "entered");
     if (!player || !mod.IsPlayerValid(player)) return;
     const pid = safeGetPlayerId(player);
-    if (pid !== undefined && isHudTransitionBlockingForPid(pid)) {
-        if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetPrep(player, "hud-blocked");
-        return;
-    }
+    if (pid !== undefined && isHudTransitionBlockingForPid(pid)) return;
     const slot = getPendingVehicleDirectSpawnSlotForPlayer(player);
     if (slot) {
         const prepared = await preparePendingVehicleDirectSpawnVehicleForPlayer(player, slot);
@@ -108,8 +101,6 @@ async function beginVehicleDirectSpawnDeployForPlayer(player: mod.Player): Promi
             updateVehicleDeployTimerHudForAllPlayers();
             return;
         }
-    } else {
-        if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetPrep(player, "no-slot");
     }
     const teamId = safeGetTeamNumberFromPlayer(player, 0);
     if (teamId !== TeamID.Team1 && teamId !== TeamID.Team2) {
@@ -171,8 +162,6 @@ function isFastMoverDirectSpawnVehicle(vehicleType: mod.VehicleList): boolean {
         case mod.VehicleList.Quadbike:
         case mod.VehicleList.GolfCart:
         case mod.VehicleList.Flyer60:
-        case VEHICLE_DIRTBIKE:
-        case VEHICLE_DIRTBIKE_PAX:
             return true;
         default:
             return false;
@@ -342,10 +331,12 @@ function tryFindVehicleNearDirectSpawnAirPoint(pos: mod.Vector): mod.Vehicle | u
     return closestVehicle;
 }
 
-// v1.245: BountyHunter-pattern fresh aircraft spawner. Creates a new runtime VehicleSpawner,
-// waits 2s for engine initialization, cleans up any default auto-spawn, then configures with
-// ONLY the 3 BountyHunter calls (VehicleType + AutoSpawn(true) + RespawnTime) and polls for
-// the vehicle to appear. No configureVehicleSpawner, no ForceVehicleSpawnerSpawn.
+// CQ_Bug_49: Forces a runtime aircraft spawner at the slot's birth-spawn volume and binds the
+// resulting vehicle to the slot. The ordering matters: tracking is armed BEFORE SpawnObject so
+// that the synchronous configure + force-spawn block pre-empts the engine's baked-in default
+// auto-spawn from `RuntimeSpawn_Common.VehicleSpawner` (which would otherwise spawn an Abrams).
+// A wrong-category bind (engine default slipping through) is caught downstream by the tank-instance
+// reject guard in `bindSpawnedVehicleToSlot`.
 async function spawnFreshAircraftDirectSpawnVehicleForSlot(slot: VehicleSpawnerSlot): Promise<mod.Vehicle | undefined> {
     if (!shouldUseFreshAircraftAirDirectSpawn(slot)) return undefined;
     if (!isVehicleSlotReadyForReservationDeploy(slot)) return undefined;
@@ -366,10 +357,12 @@ async function spawnFreshAircraftDirectSpawnVehicleForSlot(slot: VehicleSpawnerS
     slot.spawnRequestAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
     slot.suppressNextBindSpawnTransformCorrection = true;
     refreshVehicleSlotAuthoritativeState(slot);
+    State.vehicles.activeSpawnSlotIndex = slotIndex;
+    State.vehicles.activeSpawnToken = slot.spawnRequestToken;
+    State.vehicles.activeSpawnRequestedAtSeconds = slot.spawnRequestAtSeconds;
 
     let spawnedVehicle: mod.Vehicle | undefined = undefined;
     let runtimeSpawner: mod.VehicleSpawner | undefined = undefined;
-    const fulfillToken = slot.enableToken;
 
     try {
         runtimeSpawner = mod.SpawnObject(
@@ -379,40 +372,14 @@ async function spawnFreshAircraftDirectSpawnVehicleForSlot(slot: VehicleSpawnerS
         ) as mod.VehicleSpawner;
         if (!runtimeSpawner) return undefined;
 
-        await mod.Wait(2.0);
-        if (!slot.enabled || slot.enableToken !== fulfillToken) return undefined;
+        mod.SetVehicleSpawnerAutoSpawn(runtimeSpawner, false);
+        configureVehicleSpawner(runtimeSpawner, slot.vehicleType);
+        await mod.Wait(0);
+        mod.ForceVehicleSpawnerSpawn(runtimeSpawner);
+        await mod.Wait(VEHICLE_DIRECT_SPAWN_FULFILLMENT_SPAWN_SETTLE_SECONDS);
 
-        // Destroy any default vehicle (Abrams) that auto-spawned during the 2s wait.
-        const staleVehicles = mod.AllVehicles();
-        const staleCount = mod.CountOf(staleVehicles);
-        for (let i = 0; i < staleCount; i++) {
-            const sv = mod.ValueInArray(staleVehicles, i) as mod.Vehicle;
-            if (!sv) continue;
-            try {
-                const svPos = mod.GetObjectPosition(sv);
-                if (mod.DistanceBetween(svPos, birthSpawn.pos) <= VEHICLE_DIRECT_SPAWN_FRESH_AIR_FIND_RADIUS_METERS) {
-                    mod.UnspawnObject(sv);
-                }
-            } catch {}
-        }
-
-        // Arm bind handler NOW (after stale cleanup, before the real vehicle spawns).
-        State.vehicles.activeSpawnSlotIndex = slotIndex;
-        State.vehicles.activeSpawnToken = slot.spawnRequestToken;
-        State.vehicles.activeSpawnRequestedAtSeconds = slot.spawnRequestAtSeconds;
-
-        // BountyHunter 3-call pattern — no configureVehicleSpawner, no ForceVehicleSpawnerSpawn.
-        mod.SetVehicleSpawnerVehicleType(runtimeSpawner, slot.vehicleType);
-        mod.SetVehicleSpawnerAutoSpawn(runtimeSpawner, true);
-        mod.SetVehicleSpawnerRespawnTime(runtimeSpawner, 0);
-
-        const deadline = mod.GetMatchTimeElapsed() + 8.0;
-        while (mod.GetMatchTimeElapsed() < deadline) {
-            if (!slot.enabled || slot.enableToken !== fulfillToken) break;
-            if (slot.vehicleId !== -1) {
-                spawnedVehicle = tryGetSpawnedVehicleForSlot(slot);
-                break;
-            }
+        spawnedVehicle = await waitForSpawnedVehicleForSlot(slot);
+        if (!spawnedVehicle) {
             spawnedVehicle = tryFindVehicleNearDirectSpawnAirPoint(birthSpawn.pos);
             if (spawnedVehicle) {
                 const vehicleObjId = getObjId(spawnedVehicle);
@@ -423,12 +390,8 @@ async function spawnFreshAircraftDirectSpawnVehicleForSlot(slot: VehicleSpawnerS
                 clearVehicleDirectSpawnActiveTrackingForSlot(slotIndex, slot.spawnRequestToken);
                 vehicleSpawnBaseTeamByObjId[vehicleObjId] = slot.teamId;
                 registerVehicleToTeam(spawnedVehicle, slot.teamId);
-                break;
             }
-            await mod.Wait(0.25);
         }
-
-        try { mod.SetVehicleSpawnerAutoSpawn(runtimeSpawner, false); } catch {}
         return spawnedVehicle;
     } finally {
         if (!spawnedVehicle) {
@@ -437,8 +400,9 @@ async function spawnFreshAircraftDirectSpawnVehicleForSlot(slot: VehicleSpawnerS
             refreshVehicleSlotAuthoritativeState(slot);
             clearVehicleDirectSpawnActiveTrackingForSlot(slotIndex, slot.spawnRequestToken);
             if (runtimeSpawner) {
-                try { mod.SetVehicleSpawnerAutoSpawn(runtimeSpawner, false); } catch {}
-                try { mod.UnspawnObject(runtimeSpawner); } catch {}
+                try {
+                    mod.UnspawnObject(runtimeSpawner);
+                } catch {}
             }
         } else if (runtimeSpawner) {
             slot.freshAirRuntimeSpawner = runtimeSpawner;
@@ -527,51 +491,29 @@ async function spawnForwardDeployVehicleForSlot(slot: VehicleSpawnerSlot): Promi
 }
 
 async function preparePendingVehicleDirectSpawnVehicleForPlayer(player: mod.Player, slot: VehicleSpawnerSlot): Promise<boolean> {
-    if (!player || !mod.IsPlayerValid(player)) {
-        if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetPrep(player, "failed");
-        return false;
-    }
-    if (!slot.enabled || slot.pendingSpawnOwnerPid === undefined || slot.pendingSpawnMode === undefined) {
-        if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetPrep(player, "failed");
-        return false;
-    }
+    if (!player || !mod.IsPlayerValid(player)) return false;
+    if (!slot.enabled || slot.pendingSpawnOwnerPid === undefined || slot.pendingSpawnMode === undefined) return false;
 
     if (shouldUseFreshAircraftAirDirectSpawn(slot)) {
-        const ready = isVehicleSlotReadyForReservationDeploy(slot);
-        if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetPrep(player, ready ? "skip" : (("fail-" + describeVehicleSlotReadyFailure(slot)) as any));
-        return ready;
+        return isVehicleSlotReadyForReservationDeploy(slot);
     }
 
     // Forward deploy: skip vehicleId === -1 readiness check — the existing pad vehicle will be
     // destroyed during fulfillment before spawning at the forward position.
     if (slot.pendingSpawnMode === "forward" && isTankSpawnVolumeVehicleType(slot.vehicleType)) {
-        const ready = slot.enabled && shouldGateVehicleSlotSpawnUntilReservationDeploy(slot);
-        if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetPrep(player, ready ? "skip" : "failed");
-        return ready;
+        return slot.enabled && shouldGateVehicleSlotSpawnUntilReservationDeploy(slot);
     }
 
     const prepToken = slot.enableToken;
     let vehicle = tryGetSpawnedVehicleForSlot(slot);
     if (!vehicle) {
-        if (!isVehicleSlotReadyForReservationDeploy(slot)) {
-            if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetPrep(player, ("fail-" + describeVehicleSlotReadyFailure(slot)) as any);
-            return false;
-        }
+        if (!isVehicleSlotReadyForReservationDeploy(slot)) return false;
         vehicle = await spawnDirectSpawnVehicleIfReady(slot);
-        if (!vehicle) {
-            if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetPrep(player, "failed");
-            return false;
-        }
-        if (!slot.enabled || slot.enableToken !== prepToken) {
-            if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetPrep(player, "failed");
-            return false;
-        }
+        if (!vehicle) return false;
+        // Guard: slot may have been disabled or retuned during the async spawn.
+        if (!slot.enabled || slot.enableToken !== prepToken) return false;
     }
-    if (!isDirectSpawnDriverSeatAvailable(vehicle)) {
-        if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetPrep(player, "failed");
-        return false;
-    }
-    if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetPrep(player, "ok");
+    if (!isDirectSpawnDriverSeatAvailable(vehicle)) return false;
     return true;
 }
 
@@ -614,20 +556,16 @@ async function tryFulfillPendingVehicleDirectSpawnSeatForPlayer(
     player: mod.Player,
     failureMode: VehiclePendingSpawnFailureMode
 ): Promise<ConquestVehicleDirectSpawnDeployResult> {
-    if (FEATURE_DEPLOY_DIAGNOSTIC && player && mod.IsPlayerValid(player)) deployDiagSetPrep(player, "fulfill-entry");
     const slot = getPendingVehicleDirectSpawnSlotForPlayer(player);
     const pendingMode = getPendingVehicleDirectSpawnModeForPlayer(player);
     if (!slot) {
-        if (FEATURE_DEPLOY_DIAGNOSTIC && player && mod.IsPlayerValid(player)) deployDiagSetPrep(player, "fulfill-no-slot");
         return { consumedDeploy: false, fulfilled: false };
     }
     if (pendingMode !== "air" && pendingMode !== "ground" && pendingMode !== "forward") {
-        if (FEATURE_DEPLOY_DIAGNOSTIC && player && mod.IsPlayerValid(player)) deployDiagSetPrep(player, "fulfill-bad-mode");
         clearVehiclePendingSpawnRequestForSlot(slot);
         return { consumedDeploy: false, fulfilled: false };
     }
     if (!canFulfillVehicleDirectSpawnForPlayer(player, slot)) {
-        if (FEATURE_DEPLOY_DIAGNOSTIC && player && mod.IsPlayerValid(player)) deployDiagSetPrep(player, "fulfill-can't");
         clearVehiclePendingSpawnRequestForSlot(slot);
         return { consumedDeploy: false, fulfilled: false };
     }
@@ -659,7 +597,6 @@ async function tryFulfillPendingVehicleDirectSpawnSeatForPlayer(
     let vehicle = tryGetSpawnedVehicleForSlot(slot);
     if (!vehicle) {
         if (!isVehicleSlotReadyForReservationDeploy(slot)) {
-            if (FEATURE_DEPLOY_DIAGNOSTIC && player && mod.IsPlayerValid(player)) deployDiagSetPrep(player, "fulfill-notready");
             clearVehiclePendingSpawnRequestForSlot(slot);
             return { consumedDeploy: false, fulfilled: false };
         }
@@ -669,25 +606,19 @@ async function tryFulfillPendingVehicleDirectSpawnSeatForPlayer(
                 ? await spawnForwardDeployVehicleForSlot(slot)
                 : await spawnDirectSpawnVehicleIfReady(slot);
         if (!vehicle) {
-            if (FEATURE_DEPLOY_DIAGNOSTIC && player && mod.IsPlayerValid(player)) deployDiagSetPrep(player, "fulfill-nospawn");
             return handlePendingVehicleSpawnSeatFailure(player, slot, failureMode);
         }
         // Guard: slot may have been disabled or retuned during the async spawn above.
         if (!slot.enabled || slot.enableToken !== fulfillToken) {
-            if (FEATURE_DEPLOY_DIAGNOSTIC && player && mod.IsPlayerValid(player)) deployDiagSetPrep(player, "fulfill-token");
             clearVehiclePendingSpawnRequestForSlot(slot);
             return { consumedDeploy: false, fulfilled: false };
         }
     } else if (!isDirectSpawnDriverSeatAvailable(vehicle)) {
-        if (FEATURE_DEPLOY_DIAGNOSTIC && player && mod.IsPlayerValid(player)) deployDiagSetPrep(player, "fulfill-seatocc");
         clearVehiclePendingSpawnRequestForSlot(slot);
         return { consumedDeploy: false, fulfilled: false };
-    } else {
-        if (FEATURE_DEPLOY_DIAGNOSTIC && player && mod.IsPlayerValid(player)) deployDiagSetPrep(player, "fulfill-gotveh");
     }
 
     if (!isDirectSpawnDriverSeatAvailable(vehicle)) {
-        if (FEATURE_DEPLOY_DIAGNOSTIC && player && mod.IsPlayerValid(player)) deployDiagSetPrep(player, "fulfill-seatocc");
         return handlePendingVehicleSpawnSeatFailure(player, slot, failureMode);
     }
 
@@ -710,22 +641,18 @@ async function tryFulfillPendingVehicleDirectSpawnSeatForPlayer(
 
     let fulfilled = await verifyPlayerForcedIntoDirectSpawnSeat(player, vehicle);
     if (!fulfilled && isFastMoverDirectSpawnVehicle(slot.vehicleType)) {
-        if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetSeat(player, "retry-neg1");
         mod.ForcePlayerToSeat(player, vehicle, -1);
         fulfilled = await verifyPlayerForcedIntoAnyDirectSpawnSeat(player, vehicle);
     }
     if (!fulfilled) {
-        if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetSeat(player, "verify-failed");
         return handlePendingVehicleSpawnSeatFailure(player, slot, failureMode);
     }
-    if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetSeat(player, "verify-ok");
 
     const pid = safeGetPlayerId(player);
     clearVehiclePendingSpawnRequestForSlot(slot);
     if (pid !== undefined) {
         slot.activeOwnerPid = pid;
     }
-    if (FEATURE_DEPLOY_DIAGNOSTIC && player && mod.IsPlayerValid(player)) deployDiagSetPrep(player, "fulfill-ok");
     updateVehicleDeployTimerHudForAllPlayers();
     return { consumedDeploy: true, fulfilled: true };
 }

@@ -5,19 +5,8 @@
 // and all external call sites are guarded to no-op. Toggle the matching imports in index.ts.
 const FEATURE_PERF_DIAG = false;
 const FEATURE_POSITION_DEBUG = false;
-const FEATURE_ADMIN_PANEL = true;
+const FEATURE_ADMIN_PANEL = false;
 const FEATURE_JOIN_PROMPT = false;
-// v1.239 Phase 1 Part A: per-player deploy-flow trace HUD wired into the production deploy path.
-// When true, an 8-row overlay shows Vehicle/Mode/Click/Prep/Spawn/Bind/Deploy/Seat outcomes for the
-// most recent deploy click so working F16 HQ Deploy can be compared side-by-side with failing F22/
-// AH64/MH6 HQ Deploy. Default off — flip locally for diagnostic playtests. Rip module + twl.deployDiag.*
-// strings wholesale once Phase 1 produces the data to pick a Phase 2 branch.
-const FEATURE_DEPLOY_DIAGNOSTIC = false;
-// v1.235 Phase 1 Part B: "Test Minimal Spawn" admin-panel row — all 6 variants (BASE/S-1/TP0/
-// TP5/TPW/SPWN) failed in testing, so Part B is exhausted and the flag is OFF to reclaim bundle
-// budget for the Phase 1 Part A diagnostic HUD (FEATURE_DEPLOY_DIAGNOSTIC). Source kept in
-// src/admin-panel/test-minimal-spawn.ts for reference; flip true to re-run any variant.
-const FEATURE_MIN_SPAWN_TEST = false;
 
 const CONQUEST_STARTING_TICKETS = 350;
 const CONQUEST_CAPTURE_TIME_SECONDS = 10;

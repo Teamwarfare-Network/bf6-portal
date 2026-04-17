@@ -7,6 +7,7 @@ type ReadyDialogModeConfigDiffState = {
     hasUnsavedChanges: boolean;
     gameModeDirty: boolean;
     playersDirty: boolean;
+    vehicleDeployMethodDirty: boolean;
     vehicleDirtyByKey: Record<string, boolean>;
 };
 
@@ -21,8 +22,9 @@ function buildReadyDialogModeConfigDiffState(): ReadyDialogModeConfigDiffState {
 
     const gameModeDirty = cfg.gameMode !== cfg.confirmed.gameMode;
     const playersDirty = Math.floor(cfg.autoStartMinActivePlayers) !== getReadyDialogConfirmedAutoStartMinActivePlayers();
+    const vehicleDeployMethodDirty = (cfg.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT) !== (cfg.confirmed.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT);
 
-    if (gameModeDirty || playersDirty) {
+    if (gameModeDirty || playersDirty || vehicleDeployMethodDirty) {
         hasUnsavedChanges = true;
     }
 
@@ -36,6 +38,7 @@ function buildReadyDialogModeConfigDiffState(): ReadyDialogModeConfigDiffState {
         hasUnsavedChanges,
         gameModeDirty,
         playersDirty,
+        vehicleDeployMethodDirty,
         vehicleDirtyByKey,
     };
 }
@@ -45,6 +48,7 @@ function isReadyDialogModeConfigDirtyForKnobKey(
     diff: ReadyDialogModeConfigDiffState = buildReadyDialogModeConfigDiffState()
 ): boolean {
     if (knobKey === READY_DIALOG_CONFIG_GAME_KNOB_KEY) return diff.gameModeDirty;
+    if (knobKey === READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY) return diff.vehicleDeployMethodDirty;
     if (knobKey === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) return diff.playersDirty;
     return diff.vehicleDirtyByKey[knobKey] === true;
 }
@@ -98,6 +102,9 @@ function ensureCustomGameModeForManualChange(): void {
 function isReadyDialogModePresetActive(gameModeKey: number): boolean {
     if (isReadyDialogGameModeCustom(gameModeKey)) return false;
     if (Math.floor(State.round.modeConfig.autoStartMinActivePlayers) !== getReadyDialogPresetPlayersPerSide(gameModeKey)) return false;
+    const presetPackage = getReadyDialogPresetPackage(ACTIVE_MAP_CONFIG, gameModeKey);
+    const presetDeployMethod = presetPackage?.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT;
+    if ((State.round.modeConfig.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT) !== presetDeployMethod) return false;
     const defaultVehicleSelections = buildReadyDialogVehicleSelectionIndexByGameMode(ACTIVE_MAP_CONFIG, gameModeKey);
     for (const knobKey of READY_DIALOG_ALL_VEHICLE_KNOB_KEYS) {
         if ((State.round.modeConfig.vehicleSelectionIndexByKey?.[knobKey] ?? 0) !== (defaultVehicleSelections[knobKey] ?? 0)) {
@@ -110,9 +117,11 @@ function isReadyDialogModePresetActive(gameModeKey: number): boolean {
 function applyReadyDialogModePresetForGameMode(gameModeKey: number): boolean {
     if (isReadyDialogGameModeCustom(gameModeKey)) return false;
 
+    const presetPackage = getReadyDialogPresetPackage(ACTIVE_MAP_CONFIG, gameModeKey);
     suppressReadyDialogModeAutoSwitch = true;
     State.round.modeConfig.autoStartMinActivePlayers = getReadyDialogPresetPlayersPerSide(gameModeKey);
     State.round.modeConfig.vehicleSelectionIndexByKey = buildReadyDialogVehicleSelectionIndexByGameMode(ACTIVE_MAP_CONFIG, gameModeKey);
+    State.round.modeConfig.vehicleDeployMethod = presetPackage?.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT;
     State.round.modeConfig.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
     State.round.modeConfig.aircraftCeilingOverridePending = false;
     State.round.modeConfig.gameSettings = mod.stringkeys.twl.system.genericCounter;
@@ -129,6 +138,7 @@ function resetReadyDialogModeConfigToDefaults(changedBy?: mod.Player): void {
     State.round.modeConfig.gameMode = defaultGameMode;
     State.round.modeConfig.autoStartMinActivePlayers = getReadyDialogPresetPlayersPerSide(defaultGameMode);
     State.round.modeConfig.vehicleSelectionIndexByKey = buildReadyDialogVehicleSelectionIndexByGameMode(ACTIVE_MAP_CONFIG, defaultGameMode);
+    State.round.modeConfig.vehicleDeployMethod = VEHICLE_DEPLOY_METHOD_DEFAULT;
     State.round.modeConfig.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
     State.round.modeConfig.aircraftCeilingOverridePending = false;
     State.round.modeConfig.gameSettings = mod.stringkeys.twl.system.genericCounter;
@@ -176,6 +186,16 @@ function setReadyDialogVehicleSelectionIndexByKey(knobKey: string, nextIndex: nu
     updateReadyDialogModeConfigForAllVisibleViewers();
 }
 
+function setReadyDialogVehicleDeployMethod(nextValue: number, changedBy?: mod.Player): void {
+    const count = READY_DIALOG_VEHICLE_DEPLOY_METHOD_OPTIONS.length;
+    const clamped = ((nextValue % count) + count) % count;
+    if (clamped === State.round.modeConfig.vehicleDeployMethod) return;
+    ensureCustomGameModeForManualChange();
+    State.round.modeConfig.vehicleDeployMethod = clamped;
+    requireReadyReconfirmAfterConfigChange(changedBy);
+    updateReadyDialogModeConfigForAllVisibleViewers();
+}
+
 function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
     const cfg = State.round.modeConfig;
     const prevGameMode = cfg.confirmed.gameMode;
@@ -194,6 +214,7 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
         aircraftCeilingOverrideEnabled: false,
         autoStartMinActivePlayers: confirmedPlayers,
         vehicleSelectionIndexByKey: { ...(cfg.vehicleSelectionIndexByKey ?? {}) },
+        vehicleDeployMethod: cfg.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT,
     };
 
     disableCustomAircraftCeilingAndRestoreDefault();

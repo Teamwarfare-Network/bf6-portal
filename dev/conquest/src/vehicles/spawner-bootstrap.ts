@@ -43,12 +43,11 @@ async function startVehicleSpawnerSystem(): Promise<void> {
         addVehicleSpawnerSlot(TeamID.Team2, spec.slotNumber, spec.pos, spec.rot, spec.vehicle);
     }
 
-    // BountyHunter pattern: engine needs time to initialize runtime-spawned VehicleSpawner
-    // objects before any SetVehicleSpawner* configuration calls will take effect.
+    // Engine needs time to initialize spawner objects before SetVehicleSpawner* calls take effect.
+    // Without this delay, ForceVehicleSpawnerSpawn produces default Abrams on aircraft slots.
     await mod.Wait(2.0);
     for (let i = 0; i < State.vehicles.slots.length; i++) {
-        const slot = State.vehicles.slots[i];
-        configureVehicleSpawner(slot.spawner, slot.vehicleType);
+        configureVehicleSpawner(State.vehicles.slots[i].spawner, State.vehicles.slots[i].vehicleType);
     }
 
     // Startup must sync the already-confirmed package into the newly-created slot inventory

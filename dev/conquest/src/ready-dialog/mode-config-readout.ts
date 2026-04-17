@@ -220,6 +220,7 @@ function buildReadyDialogModeConfigSignature(pid: number): string {
     const viewer = safeFindPlayer(pid);
     const viewerTeam = safeGetTeamNumberFromPlayer(viewer, TeamID.Team1);
     let signature = `${pid}|team:${viewerTeam}|live:${isMatchLive() ? 1 : 0}|mode:${cfg.gameMode}|players:${counts.left},${counts.right},${counts.total}`;
+    signature += `|deploy:${cfg.vehicleDeployMethod ?? 0}|confirmedDeploy:${cfg.confirmed.vehicleDeployMethod ?? 0}`;
     signature += `|confirmedMode:${cfg.confirmed.gameMode}|confirmedPlayers:${getReadyDialogConfirmedAutoStartMinActivePlayers()}`;
 
     for (const knobKey of READY_DIALOG_ALL_VEHICLE_KNOB_KEYS) {
@@ -277,6 +278,15 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
 
                 if (knob.key === READY_DIALOG_CONFIG_GAME_KNOB_KEY) {
                     updateReadyDialogGridKnobValueForPid(pid, knob.key, mod.Message(cfg.gameMode));
+                    setReadyDialogGridKnobValueColorForPid(
+                        pid,
+                        knob.key,
+                        isReadyDialogModeConfigDirtyForKnobKey(knob.key, diff) ? COLOR_NOT_READY_RED : COLOR_READY_GREEN
+                    );
+                } else if (knob.key === READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY) {
+                    const idx = cfg.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT;
+                    const labelKey = READY_DIALOG_VEHICLE_DEPLOY_METHOD_OPTIONS[idx] ?? READY_DIALOG_VEHICLE_DEPLOY_METHOD_OPTIONS[0];
+                    updateReadyDialogGridKnobValueForPid(pid, knob.key, mod.Message(labelKey));
                     setReadyDialogGridKnobValueColorForPid(
                         pid,
                         knob.key,

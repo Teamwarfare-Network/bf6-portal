@@ -112,6 +112,7 @@ type ReadyDialogModeConfig = {
     vehicleSelectionIndexByKey: Record<string, number>;
     gameMode: number;
     gameSettings: number;
+    vehicleDeployMethod: number;
     confirmed: {
         gameMode: number;
         gameSettings: number;
@@ -119,6 +120,7 @@ type ReadyDialogModeConfig = {
         aircraftCeilingOverrideEnabled: boolean;
         autoStartMinActivePlayers: number;
         vehicleSelectionIndexByKey: Record<string, number>;
+        vehicleDeployMethod: number;
     };
 };
 
@@ -187,11 +189,8 @@ const VEHICLE_GOLFCART = mod.VehicleList.GolfCart;
 const VEHICLE_FLYER60 = mod.VehicleList.Flyer60;
 const VEHICLE_VECTOR = mod.VehicleList.Vector;
 const VEHICLE_RHIB = mod.VehicleList.RHIB;
-// AH6M / DirtBike entries are present in the runtime SDK (game 1.2.3) but may not be in the installed types package.
+// AH6M is used here from the current runtime despite being absent from the local core reference snapshot.
 const VEHICLE_AH6M = (mod.VehicleList as any).AH6M as mod.VehicleList;
-const VEHICLE_AH6M_PAX = (mod.VehicleList as any).AH6M_Pax as mod.VehicleList;
-const VEHICLE_DIRTBIKE = (mod.VehicleList as any).DirtBike as mod.VehicleList;
-const VEHICLE_DIRTBIKE_PAX = (mod.VehicleList as any).DirtBike_Pax as mod.VehicleList;
 // VFX prefab constants — referenced by map config anchor `vfx:` fields. Add new entries here.
 const VFX_GREEN_SMOKE  = mod.RuntimeSpawn_Common.FX_Granite_Strike_Smoke_Marker_Green;
 const VFX_RED_SMOKE    = mod.RuntimeSpawn_Common.FX_Granite_Strike_Smoke_Marker_Red;
@@ -202,6 +201,17 @@ const READY_DIALOG_AIRCRAFT_CEILING_MIN = -200;
 const READY_DIALOG_AIRCRAFT_CEILING_MAX = 5000;
 const READY_DIALOG_AIRCRAFT_CEILING_STEP = 10;
 let suppressReadyDialogModeAutoSwitch = false;
+const VEHICLE_DEPLOY_METHOD_VANILLA = 0;
+const VEHICLE_DEPLOY_METHOD_HQ = 1;
+const VEHICLE_DEPLOY_METHOD_HQ_FORWARD = 2;
+const VEHICLE_DEPLOY_METHOD_HQ_FORWARD_AIR = 3;
+const VEHICLE_DEPLOY_METHOD_DEFAULT = VEHICLE_DEPLOY_METHOD_VANILLA;
+const READY_DIALOG_VEHICLE_DEPLOY_METHOD_OPTIONS: number[] = [
+    mod.stringkeys.twl.readyDialog.vehicleDeployVanilla,
+    mod.stringkeys.twl.readyDialog.vehicleDeployHq,
+    mod.stringkeys.twl.readyDialog.vehicleDeployHqForward,
+    mod.stringkeys.twl.readyDialog.vehicleDeployHqForwardAir,
+];
 
 const READY_DIALOG_TEAM1_JET_KNOB_KEYS = ["team1Jet1", "team1Jet2"] as const;
 const READY_DIALOG_TEAM2_JET_KNOB_KEYS = ["team2Jet1", "team2Jet2"] as const;
@@ -239,7 +249,6 @@ const READY_DIALOG_HELI_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortApache, vehicle: VEHICLE_AH64 },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortEuro, vehicle: VEHICLE_EUROCOPTER },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortLittleBird, vehicle: VEHICLE_AH6M },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortLittleBirdPax, vehicle: VEHICLE_AH6M_PAX },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawk, vehicle: VEHICLE_UH60 },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawkPax, vehicle: VEHICLE_UH60_PAX },
 ];
@@ -259,8 +268,6 @@ const READY_DIALOG_FAST_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauder, vehicle: VEHICLE_MARAUDER },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauderPax, vehicle: VEHICLE_MARAUDER_PAX },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortQuadbike, vehicle: VEHICLE_QUADBIKE },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortDirtBike, vehicle: VEHICLE_DIRTBIKE },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortDirtBikePax, vehicle: VEHICLE_DIRTBIKE_PAX },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortGolfCart, vehicle: VEHICLE_GOLFCART },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortFlyer60, vehicle: VEHICLE_FLYER60 },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortVector, vehicle: VEHICLE_VECTOR },

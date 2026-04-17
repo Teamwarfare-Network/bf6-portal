@@ -38,9 +38,9 @@ async function forceSpawnWithRetry(slotIndex: number): Promise<boolean> {
     // Re-apply config before forcing spawn to avoid the default vehicle type.
     try {
         configureVehicleSpawner(slot.spawner, slot.vehicleType);
-        await mod.Wait(1.0);
+        await mod.Wait(0);
 
-        for (let attempt = 0; attempt < 5; attempt++) {
+        for (let attempt = 0; attempt < 20; attempt++) {
             if (!slot.enabled || slot.enableToken !== token) {
                 slot.expectingSpawn = false;
                 refreshVehicleSlotAuthoritativeState(slot);
@@ -51,6 +51,9 @@ async function forceSpawnWithRetry(slotIndex: number): Promise<boolean> {
                 }
                 return false;
             }
+
+            slot.spawnRequestAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
+            State.vehicles.activeSpawnRequestedAtSeconds = slot.spawnRequestAtSeconds;
 
             mod.ForceVehicleSpawnerSpawn(slot.spawner);
 
@@ -59,32 +62,37 @@ async function forceSpawnWithRetry(slotIndex: number): Promise<boolean> {
             }
 
             await mod.Wait(0.25);
+
+            if (!slot.expectingSpawn && slot.vehicleId !== -1) {
+                return true;
+            }
         }
 
-        // AutoSpawn fallback (BountyHunter pattern) for vehicle types where
-        // ForceVehicleSpawnerSpawn silently produces no vehicle (F22/MH6/Eurocopter/JAS39).
-        mod.SetVehicleSpawnerAutoSpawn(slot.spawner, true);
-        for (let attempt = 0; attempt < 15; attempt++) {
-            if (!slot.enabled || slot.enableToken !== token) {
-                mod.SetVehicleSpawnerAutoSpawn(slot.spawner, false);
+        // Fallback: if OnVehicleSpawned binding missed the vehicle, search near the spawner
+        // and bind manually. Mirrors deploy-fulfillment's tryFindVehicleNear fallback.
+        if (slot.vehicleId === -1) {
+            const spawnerPos = mod.GetObjectPosition(slot.spawner);
+            const vehicles = mod.AllVehicles();
+            const vCount = mod.CountOf(vehicles);
+            for (let v = 0; v < vCount; v++) {
+                const veh = mod.ValueInArray(vehicles, v) as mod.Vehicle;
+                if (!veh) continue;
+                const vObjId = getObjId(veh);
+                if (State.vehicles.vehicleToSlot[vObjId] !== undefined) continue;
+                if (mod.DistanceBetween(mod.GetObjectPosition(veh), spawnerPos) > VEHICLE_SPAWNER_BIND_DISTANCE_METERS * 3) continue;
+                if (isAircraftSpawnVolumeVehicleType(slot.vehicleType) && isTankVehicleInstance(veh)) continue;
                 slot.expectingSpawn = false;
-                refreshVehicleSlotAuthoritativeState(slot);
+                bindVehicleToSpawnerSlot(slot, vObjId);
+                State.vehicles.vehicleToSlot[vObjId] = slotIndex;
                 if (State.vehicles.activeSpawnSlotIndex === slotIndex && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
                     State.vehicles.activeSpawnSlotIndex = undefined;
                     State.vehicles.activeSpawnToken = undefined;
                     State.vehicles.activeSpawnRequestedAtSeconds = undefined;
                 }
-                return false;
-            }
-
-            if (!slot.expectingSpawn && slot.vehicleId !== -1) {
-                mod.SetVehicleSpawnerAutoSpawn(slot.spawner, false);
+                void maybeApplySpawnTransformCorrectionToVehicle(veh, slot);
                 return true;
             }
-
-            await mod.Wait(0.25);
         }
-        mod.SetVehicleSpawnerAutoSpawn(slot.spawner, false);
     } catch {
         slot.expectingSpawn = false;
         refreshVehicleSlotAuthoritativeState(slot);
