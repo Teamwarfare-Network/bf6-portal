@@ -43,6 +43,14 @@ async function startVehicleSpawnerSystem(): Promise<void> {
         addVehicleSpawnerSlot(TeamID.Team2, spec.slotNumber, spec.pos, spec.rot, spec.vehicle);
     }
 
+    // BountyHunter pattern: engine needs time to initialize runtime-spawned VehicleSpawner
+    // objects before any SetVehicleSpawner* configuration calls will take effect.
+    await mod.Wait(2.0);
+    for (let i = 0; i < State.vehicles.slots.length; i++) {
+        const slot = State.vehicles.slots[i];
+        configureVehicleSpawner(slot.spawner, slot.vehicleType);
+    }
+
     // Startup must sync the already-confirmed package into the newly-created slot inventory
     // before first enable/reveal so the pre-live vehicle HUD matches the ready-dialog defaults.
     applyVehicleSpawnSpecsToExistingSlots();

@@ -9,6 +9,7 @@ function resolveVehicleSlotSpawnCategory(vehicleType: mod.VehicleList): VehicleS
             return "attack_chopper";
         case mod.VehicleList.UH60:
         case mod.VehicleList.UH60_Pax:
+        case VEHICLE_AH6M_PAX:
             return "transport_chopper";
         case mod.VehicleList.F16:
         case mod.VehicleList.F22:
@@ -29,6 +30,8 @@ function resolveVehicleSlotSpawnCategory(vehicleType: mod.VehicleList): VehicleS
         case mod.VehicleList.Flyer60:
         case mod.VehicleList.Vector:
         case mod.VehicleList.RHIB:
+        case VEHICLE_DIRTBIKE:
+        case VEHICLE_DIRTBIKE_PAX:
             return "fast_mover";
         default:
             return "other";
@@ -58,6 +61,21 @@ function isVehicleSlotReadyForReservationDeploy(slot: VehicleSpawnerSlot): boole
         && !slot.respawnRunning
         && !slot.spawnRetryScheduled
         && getVehicleSlotRespawnRemainingSeconds(slot) <= 0;
+}
+
+// v1.241 deploy-diagnostic helper: returns the first failing sub-check of
+// isVehicleSlotReadyForReservationDeploy so the HUD can show *why* PREP failed
+// (needed to distinguish F22 failing which check vs F16 passing). Strip with
+// the rest of FEATURE_DEPLOY_DIAGNOSTIC when done.
+function describeVehicleSlotReadyFailure(slot: VehicleSpawnerSlot): "ok" | "enabled" | "vid" | "expecting" | "respawn" | "retry" | "timer" | "gated" {
+    if (!slot.enabled) return "enabled";
+    if (!shouldGateVehicleSlotSpawnUntilReservationDeploy(slot)) return "gated";
+    if (slot.vehicleId !== -1) return "vid";
+    if (slot.expectingSpawn) return "expecting";
+    if (slot.respawnRunning) return "respawn";
+    if (slot.spawnRetryScheduled) return "retry";
+    if (getVehicleSlotRespawnRemainingSeconds(slot) > 0) return "timer";
+    return "ok";
 }
 
 // Recomputes authoritative slot metadata used by later deploy-screen/timer/queue work.

@@ -6,14 +6,34 @@
 
 | Phase | Target Version | Status (SP) | Status (MP) |
 |---|---|---|---|
-| 1 — Per-slot spawn tracking | v1.223 | pending | pending |
-| 2 — Wrong-vehicle slot recovery safety net | v1.224 | pending | pending |
-| 3 — Tank-reject on forward fallback + UnspawnObject failure blacklist | v1.225 | pending | pending |
-| 4 — Preemptive Abrams wipe around runtime spawner | v1.226 | pending | pending |
-| 5 — Remove silent Air→Forward rewrite + UI class audit | v1.227 | pending | pending |
-| 6 — Forward-deploy pad despawn ordering fix | v1.228 | pending | pending |
-| 7 — Vehicle-occupancy cache safety + spawner-leak audit | v1.229 | pending | pending |
-| 8 — Console deploy-screen input audit (investigate only) | v1.230 | deferred | deferred |
+| 1 — Per-slot spawn tracking | v1.223 | shipped 2026-04-13, regressed SP Air/Forward | superseded by v1.224 hotfix |
+| 1a — Hotfix: single-expecting fallback + extended Abrams intercept | v1.224 | shipped 2026-04-13 (SP playtest pending) | pending |
+| 2 — Wrong-vehicle slot recovery safety net | v1.225 | pending | pending |
+| 3 — Tank-reject on forward fallback + UnspawnObject failure blacklist | v1.226 | pending | pending |
+| 4 — Preemptive Abrams wipe around runtime spawner | v1.227 | pending | pending |
+| 5 — Remove silent Air→Forward rewrite + UI class audit | v1.228 | pending | pending |
+| 6 — Forward-deploy pad despawn ordering fix | v1.229 | pending | pending |
+| 7 — Vehicle-occupancy cache safety + spawner-leak audit | v1.230 | pending | pending |
+| 8 — Console deploy-screen input audit (investigate only) | v1.231 | deferred | deferred |
+
+---
+
+## Phase 1a Hotfix (v1.224) — Post-mortem
+
+**Reported after v1.223 playtest**: "Forward Deploy and Air Deploy are not working at all. HQ deploys seem to work fine. Sometimes I'm seeing the aircraft spawn in the distance, and sometimes I'm not sure anything spawned."
+
+**Two distinct regressions introduced by Phase 1**:
+
+1. **Aircraft bind radius too tight**. Phase 1 anchored the bind lookup to `slot.lastRequestedSpawnPos` and required the inbound vehicle to be within `VEHICLE_SPAWNER_BIND_DISTANCE_METERS` (7m). Jets and helis spawn with initial velocity, so by the time `OnVehicleSpawned` fires the aircraft has been displaced beyond 7m. The scan returned -1, the aircraft was orphaned, `slot.vehicleId` stayed -1, `waitForSpawnedVehicleForSlot` timed out, and fulfillment failed with no seat. The prior `activeSpawn*` singleton had no distance constraint, so this regression was Phase-1-introduced.
+
+2. **Non-tank ground slots now deterministically catch the AutoSpawn Abrams**. The `RuntimeSpawn_Common.VehicleSpawner` prefab's AutoSpawn fires synchronously before `SetVehicleSpawnerAutoSpawn(false)` can land, spawning an Abrams at the requested position. With Phase 1's per-slot position tracking, that Abrams now matches `slot.lastRequestedSpawnPos` exactly (distance ≈ 0). The `CQ_Bug_49` intercept at `vehicle-events.ts:121` only fired for aircraft-class slots; non-tank ground slots (Quadbike, Marauder) fell through to `bindSpawnedVehicleToSlot`, where `rejectWrongCategoryBindForAircraftSlot` also only rejected for aircraft slots. Result: 100% Abrams-substitution on non-tank forward deploys.
+
+**Fix shipped in v1.224**:
+- `spawner-bind.ts::findExpectingSpawnerSlotForVehiclePos`: add single-expecting fallback. If the position scan finds no slot within 7m but exactly one slot is expecting, return it. MP safety preserved because two concurrent expecting slots still require position disambiguation in the primary pass.
+- `spawner-bind.ts`: rename `rejectWrongCategoryBindForAircraftSlot` → `rejectWrongCategoryBindForSlot` and generalize to `isTankVehicleInstance(eventVehicle) && !isTankVehicleType(slot.vehicleType)`.
+- `vehicle-events.ts::onVehicleSpawnedImpl`: generalize the CQ_Bug_49 intercept from `isAircraftSpawnVolumeVehicleType(slot.vehicleType)` to `!isTankVehicleType(slot.vehicleType)` — now covers aircraft AND non-tank ground slots.
+
+**Lesson captured**: any per-slot position anchor must account for engine-side post-spawn physics. For aircraft, this means either (a) a much larger bind radius or (b) a fallback when the scan is unambiguous. v1.224 uses (b) because it preserves the tighter MP-safety envelope when contention exists.
 
 ---
 

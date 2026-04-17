@@ -118,7 +118,7 @@ function tryHandleAdminTesterButtonEvent(
             // CQ_Bug_51: lock in the admin's choice so later reveal paths (respawn, team-swap
             // re-warm, ready-dialog close) stop re-asserting posDebugVisible=true via autoStart.
             state.posDebugAdminOverride = true;
-            setPositionDebugVisibleForPlayer(eventPlayer, state.posDebugVisible);
+            if (FEATURE_POSITION_DEBUG) setPositionDebugVisibleForPlayer(eventPlayer, state.posDebugVisible);
             handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.positionDebug);
         }
     );
@@ -208,6 +208,73 @@ function tryHandleAdminTesterButtonEvent(
     );
     if (groundDeployAllHandled !== undefined) return groundDeployAllHandled;
 
+    if (FEATURE_ADMIN_PANEL) {
+        const bhF16Handled = tryHandleAdminPanelPrimaryAction(
+            playerId, widgetName, eventUIButtonEvent, UI_TEST_BUTTON_BH_F16_ID,
+            () => { runBhSpawnTestF16(eventPlayer); }
+        );
+        if (bhF16Handled !== undefined) return bhF16Handled;
+
+        const bhAH6MHandled = tryHandleAdminPanelPrimaryAction(
+            playerId, widgetName, eventUIButtonEvent, UI_TEST_BUTTON_BH_AH6M_ID,
+            () => { runBhSpawnTestAH6M(eventPlayer); }
+        );
+        if (bhAH6MHandled !== undefined) return bhAH6MHandled;
+
+        const bhDirtBikeHandled = tryHandleAdminPanelPrimaryAction(
+            playerId, widgetName, eventUIButtonEvent, UI_TEST_BUTTON_BH_DIRTBIKE_ID,
+            () => { runBhSpawnTestDirtBike(eventPlayer); }
+        );
+        if (bhDirtBikeHandled !== undefined) return bhDirtBikeHandled;
+
+        const bhBlackHawkHandled = tryHandleAdminPanelPrimaryAction(
+            playerId, widgetName, eventUIButtonEvent, UI_TEST_BUTTON_BH_BLACKHAWK_ID,
+            () => { runBhSpawnTestBlackHawk(eventPlayer); }
+        );
+        if (bhBlackHawkHandled !== undefined) return bhBlackHawkHandled;
+    }
+
+    if (FEATURE_MIN_SPAWN_TEST) {
+        // v1.236 Phase 1: all 5 buttons test F16 (control vehicle) with different teleport+wait+seat
+        // variants. Button IDs are repurposed from the original per-vehicle matrix — the ID
+        // constants keep their old names but the handlers now map variant axes, not vehicles.
+        const minSpawnBaseHandled = tryHandleAdminPanelPrimaryAction(
+            playerId, widgetName, eventUIButtonEvent, UI_TEST_BUTTON_MIN_SPAWN_F16_ID,
+            () => { void runMinimalSpawnTest(eventPlayer, mod.VehicleList.F16, MIN_SPAWN_TEST_VARIANT_BASE); }
+        );
+        if (minSpawnBaseHandled !== undefined) return minSpawnBaseHandled;
+
+        const minSpawnSeatMinusOneHandled = tryHandleAdminPanelPrimaryAction(
+            playerId, widgetName, eventUIButtonEvent, UI_TEST_BUTTON_MIN_SPAWN_AH64_ID,
+            () => { void runMinimalSpawnTest(eventPlayer, mod.VehicleList.F16, MIN_SPAWN_TEST_VARIANT_SEAT_MINUS_ONE); }
+        );
+        if (minSpawnSeatMinusOneHandled !== undefined) return minSpawnSeatMinusOneHandled;
+
+        const minSpawnTpGroundHandled = tryHandleAdminPanelPrimaryAction(
+            playerId, widgetName, eventUIButtonEvent, UI_TEST_BUTTON_MIN_SPAWN_F22_ID,
+            () => { void runMinimalSpawnTest(eventPlayer, mod.VehicleList.F16, MIN_SPAWN_TEST_VARIANT_TP_GROUND); }
+        );
+        if (minSpawnTpGroundHandled !== undefined) return minSpawnTpGroundHandled;
+
+        const minSpawnTp5yHandled = tryHandleAdminPanelPrimaryAction(
+            playerId, widgetName, eventUIButtonEvent, UI_TEST_BUTTON_MIN_SPAWN_MH6_ID,
+            () => { void runMinimalSpawnTest(eventPlayer, mod.VehicleList.F16, MIN_SPAWN_TEST_VARIANT_TP_5Y); }
+        );
+        if (minSpawnTp5yHandled !== undefined) return minSpawnTp5yHandled;
+
+        const minSpawnTp5yLongHandled = tryHandleAdminPanelPrimaryAction(
+            playerId, widgetName, eventUIButtonEvent, UI_TEST_BUTTON_MIN_SPAWN_ABRAMS_ID,
+            () => { void runMinimalSpawnTest(eventPlayer, mod.VehicleList.F16, MIN_SPAWN_TEST_VARIANT_TP_5Y_LONG); }
+        );
+        if (minSpawnTp5yLongHandled !== undefined) return minSpawnTp5yLongHandled;
+
+        const minSpawnSpwnHandled = tryHandleAdminPanelPrimaryAction(
+            playerId, widgetName, eventUIButtonEvent, UI_TEST_BUTTON_MIN_SPAWN_SPWN_ID,
+            () => { void runMinimalSpawnTestWithSpawnPoint(eventPlayer); }
+        );
+        if (minSpawnSpwnHandled !== undefined) return minSpawnSpwnHandled;
+    }
+
     switch (widgetName) {
         case UI_TEST_BUTTON_CLOCK_TIME_DEC_ID + playerId:
         case UI_TEST_BUTTON_CLOCK_TIME_INC_ID + playerId:
@@ -221,6 +288,16 @@ function tryHandleAdminTesterButtonEvent(
         case UI_ADMIN_MATCH_LENGTH_DEC_ID + playerId:
         case UI_ADMIN_MATCH_LENGTH_INC_ID + playerId:
         case UI_TEST_BUTTON_GROUND_DEPLOY_ALL_ID + playerId:
+        case UI_TEST_BUTTON_MIN_SPAWN_F16_ID + playerId:
+        case UI_TEST_BUTTON_MIN_SPAWN_AH64_ID + playerId:
+        case UI_TEST_BUTTON_MIN_SPAWN_F22_ID + playerId:
+        case UI_TEST_BUTTON_MIN_SPAWN_MH6_ID + playerId:
+        case UI_TEST_BUTTON_MIN_SPAWN_ABRAMS_ID + playerId:
+        case UI_TEST_BUTTON_MIN_SPAWN_SPWN_ID + playerId:
+        case UI_TEST_BUTTON_BH_F16_ID + playerId:
+        case UI_TEST_BUTTON_BH_AH6M_ID + playerId:
+        case UI_TEST_BUTTON_BH_DIRTBIKE_ID + playerId:
+        case UI_TEST_BUTTON_BH_BLACKHAWK_ID + playerId:
             return true;
     }
 

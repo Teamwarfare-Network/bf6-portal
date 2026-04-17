@@ -107,6 +107,23 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
         ensureTopHudShellForPlayer(eventPlayer);
     }
     renderCriticalHudForReveal(eventPlayer, pid);
+
+    // BH test hook: seat the player into a BH-spawned vehicle during this deploy event.
+    if (FEATURE_ADMIN_PANEL && bhPendingSeatByPid[pid]) {
+        const bhVehicle = bhPendingSeatByPid[pid];
+        delete bhPendingSeatByPid[pid];
+        State.players.posDebugVehicleObjIdByPid[pid] = getObjId(bhVehicle);
+        State.players.posDebugTransformSourceByPid[pid] = "vehicle";
+        mod.ForcePlayerToSeat(eventPlayer, bhVehicle, 0);
+        await mod.Wait(0.3);
+        const seated = safeGetVehicleFromPlayer(eventPlayer) !== undefined;
+        const msgKey = seated
+            ? mod.stringkeys.twl.adminPanel.tester.buttons.bhResultSeated
+            : mod.stringkeys.twl.adminPanel.tester.buttons.bhResultSeatFail;
+        try { mod.DisplayHighlightedWorldLogMessage(mod.Message(msgKey), eventPlayer); } catch {}
+        return;
+    }
+
     const pendingDirectSpawnMode = getPendingVehicleDirectSpawnModeForPlayer(eventPlayer);
     const directSpawnDeployResult = await conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(eventPlayer);
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;

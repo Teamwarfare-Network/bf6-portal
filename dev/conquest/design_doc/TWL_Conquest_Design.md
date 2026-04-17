@@ -3745,20 +3745,20 @@ None
 
 ## Codebase Reference Map
 
-Last updated: v1.221 (2026-04-13)
+Last updated: v1.230 (2026-04-14)
 
 ### Project Stats
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.221 |
-| Source files | 116 .ts files + 1 .json |
-| Total source bytes | ~1,350,000 (includes Changelog + excluded stubs) |
-| Total source lines | 24,444 |
-| Bundle size (script) | 998,868 bytes |
-| Bundle size (strings) | 19,908 bytes |
+| Version | 1.236 |
+| Source files | 119 .ts files + 1 .json |
+| Total source bytes | ~1,392,000 (includes Changelog + excluded stubs) |
+| Total source lines | 29,989 |
+| Bundle size (script) | 1,000,672 bytes |
+| Bundle size (strings) | 20,518 bytes |
 | Bundle limit | 1,048,576 bytes (1 MiB) — applies to script only |
-| Headroom | 49,708 bytes (4.74%) |
+| Headroom | 47,904 bytes (4.57%) |
 | Entry point | `src/index.ts` -> 22 Portal event handlers |
 | Build pipeline | `prebuild.js` -> `bf6-portal-bundler` -> `postbuild.js` -> `verify.js` |
 | Build output | `dist/bundle.ts` + `dist/bundle.strings.json` |

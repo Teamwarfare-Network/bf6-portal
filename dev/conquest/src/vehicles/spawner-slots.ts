@@ -34,11 +34,6 @@ function addVehicleSpawnerSlot(teamId: TeamID, slotNumber: number, spawnPos: mod
         spawnerRot
     ) as mod.VehicleSpawner;
 
-    // Disable autos right away to avoid the default vehicle spawning before we configure the spawner.
-    mod.SetVehicleSpawnerAutoSpawn(spawner, false);
-
-    configureVehicleSpawner(spawner, vehicleType);
-
     const slot: VehicleSpawnerSlot = {
         teamId,
         slotNumber,

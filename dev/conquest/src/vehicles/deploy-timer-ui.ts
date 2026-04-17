@@ -23,6 +23,8 @@ function getVehicleDeployTimerLabelKey(vehicleType: mod.VehicleList): number {
             return mod.stringkeys.twl.readyDialog.vehicleOptionPanthera;
         case VEHICLE_AH6M:
             return mod.stringkeys.twl.readyDialog.vehicleShortLittleBird;
+        case VEHICLE_AH6M_PAX:
+            return mod.stringkeys.twl.readyDialog.vehicleShortLittleBirdPax;
         case mod.VehicleList.UH60:
         case mod.VehicleList.UH60_Pax:
             return mod.stringkeys.twl.readyDialog.vehicleOptionBlackHawk;
@@ -56,6 +58,10 @@ function getVehicleDeployTimerLabelKey(vehicleType: mod.VehicleList): number {
             return mod.stringkeys.twl.readyDialog.vehicleShortGolfCart;
         case mod.VehicleList.Flyer60:
             return mod.stringkeys.twl.readyDialog.vehicleShortFlyer60;
+        case VEHICLE_DIRTBIKE:
+            return mod.stringkeys.twl.readyDialog.vehicleShortDirtBike;
+        case VEHICLE_DIRTBIKE_PAX:
+            return mod.stringkeys.twl.readyDialog.vehicleShortDirtBikePax;
         case mod.VehicleList.Vector:
             return mod.stringkeys.twl.readyDialog.vehicleShortVector;
         case mod.VehicleList.RHIB:
@@ -186,6 +192,7 @@ function doesVehicleTypeSupportAirDeploy(vehicleType: mod.VehicleList): boolean 
         case mod.VehicleList.AH64:
         case mod.VehicleList.Eurocopter:
         case VEHICLE_AH6M:
+        case VEHICLE_AH6M_PAX:
         case mod.VehicleList.UH60:
         case mod.VehicleList.UH60_Pax:
         case mod.VehicleList.F16:
@@ -1818,8 +1825,10 @@ function tryHandleVehicleDeployTimerButtonEvent(
     if (mode === "air" && doesVehicleTypeSupportForwardDeploy(slot.vehicleType)) {
         mode = "forward";
     }
+    if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagBegin(eventPlayer, slot.vehicleType, mode);
     const claimed = tryClaimVehicleDirectSpawnForPlayer(eventPlayer, slot, mode);
     if (!claimed) {
+        if (FEATURE_DEPLOY_DIAGNOSTIC) deployDiagSetClickBlocked(eventPlayer);
         updateVehicleDeployTimerHudForPlayer(eventPlayer);
         return true;
     }

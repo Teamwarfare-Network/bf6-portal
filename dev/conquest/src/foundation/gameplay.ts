@@ -187,8 +187,11 @@ const VEHICLE_GOLFCART = mod.VehicleList.GolfCart;
 const VEHICLE_FLYER60 = mod.VehicleList.Flyer60;
 const VEHICLE_VECTOR = mod.VehicleList.Vector;
 const VEHICLE_RHIB = mod.VehicleList.RHIB;
-// AH6M is used here from the current runtime despite being absent from the local core reference snapshot.
+// AH6M / DirtBike entries are present in the runtime SDK (game 1.2.3) but may not be in the installed types package.
 const VEHICLE_AH6M = (mod.VehicleList as any).AH6M as mod.VehicleList;
+const VEHICLE_AH6M_PAX = (mod.VehicleList as any).AH6M_Pax as mod.VehicleList;
+const VEHICLE_DIRTBIKE = (mod.VehicleList as any).DirtBike as mod.VehicleList;
+const VEHICLE_DIRTBIKE_PAX = (mod.VehicleList as any).DirtBike_Pax as mod.VehicleList;
 // VFX prefab constants — referenced by map config anchor `vfx:` fields. Add new entries here.
 const VFX_GREEN_SMOKE  = mod.RuntimeSpawn_Common.FX_Granite_Strike_Smoke_Marker_Green;
 const VFX_RED_SMOKE    = mod.RuntimeSpawn_Common.FX_Granite_Strike_Smoke_Marker_Red;
@@ -236,6 +239,7 @@ const READY_DIALOG_HELI_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortApache, vehicle: VEHICLE_AH64 },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortEuro, vehicle: VEHICLE_EUROCOPTER },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortLittleBird, vehicle: VEHICLE_AH6M },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortLittleBirdPax, vehicle: VEHICLE_AH6M_PAX },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawk, vehicle: VEHICLE_UH60 },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawkPax, vehicle: VEHICLE_UH60_PAX },
 ];
@@ -255,6 +259,8 @@ const READY_DIALOG_FAST_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauder, vehicle: VEHICLE_MARAUDER },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauderPax, vehicle: VEHICLE_MARAUDER_PAX },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortQuadbike, vehicle: VEHICLE_QUADBIKE },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortDirtBike, vehicle: VEHICLE_DIRTBIKE },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortDirtBikePax, vehicle: VEHICLE_DIRTBIKE_PAX },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortGolfCart, vehicle: VEHICLE_GOLFCART },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortFlyer60, vehicle: VEHICLE_FLYER60 },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortVector, vehicle: VEHICLE_VECTOR },

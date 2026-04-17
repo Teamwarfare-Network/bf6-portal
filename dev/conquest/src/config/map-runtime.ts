@@ -555,20 +555,20 @@ function refreshVehicleSpawnSpecsFromModeConfig(): void {
     ];
 }
 
-// Recreates the physical spawner object at a new position when the spawn anchor changes.
-// The engine's abandonment system tracks distance from the spawner, so the spawner must
-// stay co-located with the vehicle's intended spawn/teleport position.
+// Relocates the existing physical spawner in place when the spawn anchor changes.
+// SetObjectTransform avoids the AutoSpawn race that UnspawnObject + SpawnObject would
+// re-trigger via the RuntimeSpawn_Common.VehicleSpawner prefab default. The engine's
+// abandonment system tracks distance from the spawner, so the spawner must stay
+// co-located with the vehicle's intended spawn/teleport position.
 function relocateSlotSpawner(slot: VehicleSpawnerSlot, newPos: mod.Vector, newRot: mod.Vector): void {
-    try { mod.UnspawnObject(slot.spawner); } catch {}
-    const spawner = mod.SpawnObject(
-        mod.RuntimeSpawn_Common.VehicleSpawner,
-        newPos,
-        newRot
-    ) as mod.VehicleSpawner;
-    mod.SetVehicleSpawnerAutoSpawn(spawner, false);
-    configureVehicleSpawner(spawner, slot.vehicleType);
-    slot.spawner = spawner;
-    slot.spawnerObjId = getObjId(spawner);
+    // Spawner rotation must include VEHICLE_SPAWN_YAW_OFFSET_DEG to match the per-map spawn
+    // yaw convention that addVehicleSpawnerSlot applies at initial creation. Without the offset,
+    // relocated spawners produce vehicles facing the wrong direction (regression introduced v1.230).
+    const offsetYaw = mod.YComponentOf(newRot) + VEHICLE_SPAWN_YAW_OFFSET_DEG;
+    const spawnerRot = mod.CreateVector(mod.XComponentOf(newRot), offsetYaw, mod.ZComponentOf(newRot));
+    mod.SetObjectTransform(slot.spawner, mod.CreateTransform(newPos, spawnerRot));
+    slot.spawnRot = spawnerRot;
+    configureVehicleSpawner(slot.spawner, slot.vehicleType);
 }
 
 // Applies updated runtime spawn specs to already-registered spawner slots.

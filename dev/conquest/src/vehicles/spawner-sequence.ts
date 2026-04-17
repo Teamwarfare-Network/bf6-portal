@@ -38,9 +38,9 @@ async function forceSpawnWithRetry(slotIndex: number): Promise<boolean> {
     // Re-apply config before forcing spawn to avoid the default vehicle type.
     try {
         configureVehicleSpawner(slot.spawner, slot.vehicleType);
-        await mod.Wait(0);
+        await mod.Wait(1.0);
 
-        for (let attempt = 0; attempt < 20; attempt++) {
+        for (let attempt = 0; attempt < 5; attempt++) {
             if (!slot.enabled || slot.enableToken !== token) {
                 slot.expectingSpawn = false;
                 refreshVehicleSlotAuthoritativeState(slot);
@@ -60,6 +60,31 @@ async function forceSpawnWithRetry(slotIndex: number): Promise<boolean> {
 
             await mod.Wait(0.25);
         }
+
+        // AutoSpawn fallback (BountyHunter pattern) for vehicle types where
+        // ForceVehicleSpawnerSpawn silently produces no vehicle (F22/MH6/Eurocopter/JAS39).
+        mod.SetVehicleSpawnerAutoSpawn(slot.spawner, true);
+        for (let attempt = 0; attempt < 15; attempt++) {
+            if (!slot.enabled || slot.enableToken !== token) {
+                mod.SetVehicleSpawnerAutoSpawn(slot.spawner, false);
+                slot.expectingSpawn = false;
+                refreshVehicleSlotAuthoritativeState(slot);
+                if (State.vehicles.activeSpawnSlotIndex === slotIndex && State.vehicles.activeSpawnToken === slot.spawnRequestToken) {
+                    State.vehicles.activeSpawnSlotIndex = undefined;
+                    State.vehicles.activeSpawnToken = undefined;
+                    State.vehicles.activeSpawnRequestedAtSeconds = undefined;
+                }
+                return false;
+            }
+
+            if (!slot.expectingSpawn && slot.vehicleId !== -1) {
+                mod.SetVehicleSpawnerAutoSpawn(slot.spawner, false);
+                return true;
+            }
+
+            await mod.Wait(0.25);
+        }
+        mod.SetVehicleSpawnerAutoSpawn(slot.spawner, false);
     } catch {
         slot.expectingSpawn = false;
         refreshVehicleSlotAuthoritativeState(slot);

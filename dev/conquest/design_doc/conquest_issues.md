@@ -1,6 +1,6 @@
 # Conquest Issues
 
-Last Updated: 2026-04-13 (v1.221)  
+Last Updated: 2026-04-14 (v1.230)  
 Last Tested Build: `v1.158` (v1.155 stripped the Phase A pre-seat player teleport entirely after git archaeology showed the whole "three-phase regression" narrative was a phantom — `deploy-fulfillment.ts` now byte-equals `b228efc`, matching the v1.109 known-good shape that predates the v1.106-v1.108 teleport-before-`ForcePlayerToSeat` incident; v1.158 ships two isolated World Icon fixes — the air-deploy HQ suppression fix for CQ_Bug_55 that clears `inMainBaseByPid[pid]` when a consumed deploy was air-mode so the existing sync at the end of `onPlayerDeployedImpl` hides the HQ icons automatically, and a `FEATURE_WORLD_ICON_DIAG` dev-only telemetry flag (defaulting false, stripped from shipping builds by postbuild dead-code elimination) that emits one `DisplayHighlightedWorldLogMessage` per spawned-WorldIcon spawn/destroy event to the owning player, encoded as `pid*10000000 + objId*1000 + action*100 + total`, so the next MP playtest can answer whether `SetWorldIconOwner` actually filters per-player visibility in multiplayer — CQ_Bug_25 multi-player confirmation. CQ_Bug_54 remains open for the fresh-aircraft runtime-spawner race that still leaks a tank when the prefab default fires before `SetVehicleSpawnerAutoSpawn(false)` can stop it)
 
 ## Current Snapshot
@@ -69,6 +69,7 @@ Last Tested Build: `v1.158` (v1.155 stripped the Phase A pre-seat player telepor
 - `CQ_Perf_TickContext_AllPlayers_Cache`: Resolved (v1.219 — `src/state/tick-context.ts`; per-subtick AllPlayers snapshot shared across all forEachValidPlayer callers)
 - `CQ_Perf_Combat_HUD_Dirty_Gate`: Resolved (v1.221 — `twlConquestHudTickFrame` gated on `hudDirty || force`; AGENTS.md dirty-flag contract added)
 - `CQ_Polish_MP_Validation_v1.214_to_v1.221`: Pending next playtest (MP-only scenarios from the stability/perf pass)
+- `CQ_Bug_ActiveSpawnSingletonMPRace`: Fixed v1.223 (primary hypothesis for intermittent Abrams-substitution on Air/Forward Deploy in MP). Replaced `State.vehicles.activeSpawn{SlotIndex,Token,RequestedAtSeconds}` global singleton with per-slot `lastRequestedSpawnPos` + existing `expectingSpawn` flag. `OnVehicleSpawned` now picks the closest expecting slot within `VEHICLE_SPAWNER_BIND_DISTANCE_METERS` instead of reading a single active pointer that concurrent MP clicks would clobber. MP validation required before Phase 2 ships. See `abrams_substitution_plan.md`.
 
 ## CQ_Bug_42
 Title: CountOf Called With Invalid/Undefined Array Argument During Gameplay
@@ -1970,10 +1971,12 @@ Secondary Open Questions:
 
 Status:
 - Open. Remains an independent race condition in the fresh-aircraft runtime-spawner path. Priority is driven by whether MP bake testing surfaces "landed in a tank" or "no aircraft" symptoms — either would point here. The CQ_Bug_49 guards (inline intercept in `onVehicleSpawnedImpl`, reject-wrong-category in `bindSpawnedVehicleToSlot`, tank-exclusion in `tryFindVehicleNearDirectSpawnAirPoint`) catch the immediate tank-in-air symptom, but do not fix the underlying question of why the real aircraft sometimes fails to arrive after the reject.
+- v1.230 (Phase A of `air_forward_relocate_reuse_plan.md`): `relocateSlotSpawner` ([src/config/map-runtime.ts:561](../src/config/map-runtime.ts)) now uses `mod.SetObjectTransform` on the persistent `slot.spawner` instead of `UnspawnObject` + `SpawnObject(RuntimeSpawn_Common.VehicleSpawner)`. This closes one Abrams-AutoSpawn race surface (every ready-dialog vehicle-type change) and is the architecture-validation gate for Phases B–E, which will eliminate the per-click fresh runtime spawner used by Air/Forward today. Air/Forward fulfillment paths still use the racy fresh runtime spawner — CQ_Bug_54 stays Open until Phase C lands.
 
 Related:
 - CQ_Bug_49 (the tank rejection guard is the immediate symptom's handler; CQ_Bug_54 is the question of why the follow-up real aircraft spawn fails to arrive).
 - CQ_Bug_52 (not the same issue, but shares the fresh-aircraft runtime-spawner subsystem — the CQ52 counter will stay live across CQ_Bug_54 investigation to confirm no regression).
+- `air_forward_relocate_reuse_plan.md` (Phases A–E rearchitecture; Phase A landed in v1.230).
 
 ## CQ_Bug_55
 Title: Air Deploy Does Not Suppress Main-Base HQ World Icons
@@ -2264,3 +2267,60 @@ Pending scenarios (next MP playtest):
 
 Status:
 - Pending next playtest. All SP smoke checks passed. No new blocking issues observed.
+
+## CQ_Bug_ActiveSpawnSingletonMPRace
+Title: Concurrent MP Air/Forward Deploy Clicks Clobber Global `activeSpawn*` Singleton → Wrong-Slot Vehicle Attribution → Abrams Substitution
+
+Observed (v1.222 MP, 2026-04-13):
+- **Air Deploy and Forward Deploy intermittently spawn an Abrams in place of the intended vehicle.** Happens across every tested vehicle class (Jets, Helis, Transports, quads) — not isolated to specific slots.
+- **MP-specific**: the user could not reproduce in SP despite hammering Air/Forward. Strong signal that shared state is being mutated by concurrent players.
+- HQ Deploy is always safe.
+- Error log (v1.221 screenshot): repeated `UNSPAWNOBJECT`, `GETPLAYERVEHICLESEAT`, `GETVEHICLEFROMPLAYER` script errors accumulate during the match. Those are secondary but indicate orphan vehicles and stale caches compound the symptom.
+
+Root Cause (v1.223 fix target):
+- `State.vehicles.activeSpawnSlotIndex / activeSpawnToken / activeSpawnRequestedAtSeconds` was a **global singleton** armed by every direct-spawn path (fresh-air: `spawnFreshAircraftDirectSpawnVehicleForSlot`; forward: `spawnForwardDeployVehicleForSlot`; sequence: `forceSpawnWithRetry`) and read on every `OnVehicleSpawned` in `vehicle-events.ts` + `spawner-bind.ts`. Two players clicking Air/Forward within the ~0.1-0.4s bind window caused the second click to overwrite the first's tracking. When player A's aircraft then fired its spawn event, the bind path attributed it to player B's slot — and if player B's slot was not aircraft-class, the CQ_Bug_49 tank-reject guard did not fire, so a prefab-default Abrams could bind to player B's aircraft slot (or worse, a wrong-class instance could seat as if it were the requested vehicle).
+- SP never reproduced because the singleton was sufficient for serialized single-click flows.
+
+Resolution (v1.223):
+- Removed `State.vehicles.activeSpawn*` triple entirely (runtime-types.ts, runtime-state.ts).
+- Added per-slot `VehicleSpawnerSlot.lastRequestedSpawnPos?: mod.Vector`. Writers:
+  - `forceSpawnWithRetry` (sequence): sets to `mod.GetObjectPosition(slot.spawner)` — map-authored pad pos.
+  - `spawnFreshAircraftDirectSpawnVehicleForSlot`: sets to `birthSpawn.pos` — sampled aircraft volume pos.
+  - `spawnForwardDeployVehicleForSlot`: sets to `boundedTransform.pos` — forward-deploy volume pos.
+- `spawner-bind.ts`: new `findExpectingSpawnerSlotForVehiclePos(vehiclePos)` scans all enabled slots with `expectingSpawn=true && !expired`, returns the closest within `VEHICLE_SPAWNER_BIND_DISTANCE_METERS (7m)`. Used by both `bindSpawnedVehicleToSlot` and `onVehicleSpawnedImpl`.
+- Cleared on bind success, on failure paths, on fulfillment reset, and in the CQ_Bug_52 watchdog reap in `pollVehicleSpawnerSlots`.
+- Removed now-redundant `clearVehicleDirectSpawnActiveTrackingForSlot` helper.
+- Preserves CQ_Bug_49 tank-instance reject for aircraft slots. Preserves `suppressNextBindSpawnTransformCorrection` wiring. Preserves `expectingSpawn` watchdog.
+
+Files changed: `src/state/runtime-types.ts`, `src/state/runtime-state.ts`, `src/vehicles/spawner-slots.ts`, `src/vehicles/spawner-bind.ts`, `src/vehicles/spawner-sequence.ts`, `src/vehicles/deploy-fulfillment.ts`, `src/index/vehicle-events.ts`.
+
+Regression + Hotfix (v1.224):
+- v1.223 broke SP Air and Forward Deploy entirely. User report: "Forward Deploy and Air Deploy are not working at all. HQ deploys seem to work fine. Sometimes I'm seeing the aircraft spawn in the distance, and sometimes I'm not sure anything spawned."
+- Root causes:
+  1. **Aircraft bind radius too tight**. Jets/helis spawn with initial velocity; by the time `OnVehicleSpawned` fires, the aircraft has been displaced beyond `VEHICLE_SPAWNER_BIND_DISTANCE_METERS` (7m) from `slot.lastRequestedSpawnPos = birthSpawn.pos`. The position-only scan returned -1 → aircraft orphaned → `slot.vehicleId` stayed -1 → `waitForSpawnedVehicleForSlot` timed out → fulfillment failed with no seat. The prior global `activeSpawn*` path had no distance constraint.
+  2. **Non-tank-volume slots (Quadbike/Marauder) now deterministically caught the AutoSpawn Abrams**. The runtime-spawner prefab's AutoSpawn fires before `SetVehicleSpawnerAutoSpawn(false)` lands, spawning an Abrams at `boundedTransform.pos`. With per-slot position tracking, that Abrams now matches the slot's `lastRequestedSpawnPos` exactly (d≈0) and binds via `bindSpawnedVehicleToSlot`. The `CQ_Bug_49` intercept only fired for aircraft slots; non-tank ground slots fell through and Abrams-substituted every time.
+- Hotfix:
+  - `spawner-bind.ts::findExpectingSpawnerSlotForVehiclePos`: if the position scan finds no match but exactly one slot is expecting, return it unconditionally. MP safety preserved — the concurrent case still requires position disambiguation on the primary pass.
+  - `vehicle-events.ts` onVehicleSpawnedImpl: generalized the CQ_Bug_49 intercept from `isAircraftSpawnVolumeVehicleType(slot.vehicleType)` to `!isTankVehicleType(slot.vehicleType)` — covers aircraft AND non-tank ground slots (Quadbike, Marauder, etc.).
+  - Renamed `rejectWrongCategoryBindForAircraftSlot` → `rejectWrongCategoryBindForSlot` with matching logic.
+
+Second Regression + Fix (v1.226):
+- v1.224 hotfix still failed in SP. User report (2026-04-14): "Air deploy still does not work. I tried 4-5 times and all times they failed. Some spawned Tanks. None spawned me in the vehicle, I was either spawned as a soldier, or didn't spawn at all. I saw the vehicles on the minimap in the far distance spawn without me."
+- Post-mortem identified FOUR distinct failure modes compounding:
+  1. **Aircraft physics displacement >7m**. Same v1.223 root cause: `birthSpawn.pos` is the sample point, but jet/heli velocity carries the vehicle outside the 7m bind radius before `OnVehicleSpawned` fires. Position-only scan returns -1.
+  2. **Single-expecting fallback insufficient for watchdog-driven respawns**. The CQ_Bug_52 watchdog (`pollVehicleSpawnerSlots`) calls `scheduleRespawn` mid-match. If two slots are expecting simultaneously (one from user click + one from watchdog), the single-expecting fallback returns -1. Multiple MP players clicking concurrently hits the same failure mode.
+  3. **Tank-type slots (Leopard/CV90/Bradley) still Abrams-substituted**. The v1.224 intercept `!isTankVehicleType(slot.vehicleType)` skipped tank-type slots entirely. When a tank slot's runtime spawner fires AutoSpawn (always producing Abrams, the prefab default), the intercept did not run. If user had configured Leopard/CV90/Bradley, they still got Abrams because `isTankVehicleInstance(Abrams) === true` and `rejectWrongCategoryBindForAircraftSlot` only rejected aircraft-slot binds.
+  4. **UnspawnObject silent failure** (deferred — error log evidence from v1.221 screenshot shows >10 silent failures per match; orphan Abrams persist and can be picked up by subsequent position scans).
+- v1.226 fixes:
+  - `spawner-bind.ts::findExpectingSpawnerSlotForVehicle(eventVehicle, vehiclePos)` — renamed + third-tier class-aware fallback. Primary pass: position match within 7m (closest). Secondary: single-expecting slot. Tertiary: **class match** — aircraft instance → aircraft-volume slot; tank instance → tank-type slot; other ground → non-aircraft-non-tank slot. If exactly one class-match exists, bind to it. Solves #1 (aircraft displacement) and #2 (watchdog mid-match, MP concurrent).
+  - `spawner-bind.ts::rejectWrongCategoryBindForSlot` — rewrote to target Abrams specifically via `mod.CompareVehicleName(eventVehicle, mod.VehicleList.Abrams)`. Reject any Abrams instance binding to any slot whose `vehicleType !== Abrams`. Does not over-reject real Leopard/CV90/Bradley (which ARE tank-instances) on their correctly-configured tank slots.
+  - `vehicle-events.ts` onVehicleSpawnedImpl — CQ_Bug_49 intercept tightened to the same Abrams-specific test: `slot.vehicleType !== mod.VehicleList.Abrams && mod.CompareVehicleName(eventVehicle, mod.VehicleList.Abrams)`. Covers aircraft slots, non-tank ground slots, AND non-Abrams tank slots (Leopard/CV90/Bradley). Fixes #3.
+- Deferred to future phase: UnspawnObject silent-failure mitigation (rejection blacklist for orphan objIds so subsequent scans skip them).
+
+Status:
+- Fixed in code v1.226. **Pending SP playtest** before MP validation.
+
+Related:
+- CQ_Bug_49 (tank-reject intercept — rewritten in v1.226 to target Abrams specifically, preserving real-tank binds on tank slots).
+- CQ_Bug_52 (`expectingSpawn` watchdog in `pollVehicleSpawnerSlots` — simplified in v1.223, no longer gates on the now-removed global active-tracker).
+- CQ_Bug_54 (fresh-aircraft runtime-spawner prefab AutoSpawn race — independent, targeted in Phase 4 of the Abrams plan).
