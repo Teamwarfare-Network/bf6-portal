@@ -3,6 +3,16 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.286: hq-deploy: pending-state HUD signal (SPAWNING/DEPLOYING in warning yellow) and tighten sinkAndDestroyVehicle slot context at vehicle-type change
+// v1.285: hq-deploy: revert to slotPos-priority sink (v1.284 GetObjectPosition-primary was worse); defer fallback-source work to Phase 5
+// v1.284: hq-deploy: sink via relative Y-200 offset instead of absolute -1000 (minimap 3D projection was showing illusion of map-center drag)
+// v1.283: hq-deploy: prefer slot.spawnPos over GetObjectPosition in sinkAndDestroyVehicle so countdown-reset destroys don't warp vehicles to map-center
+// v1.282: hq-deploy: extend sink-to-damage delay from 500ms to 1500ms so teleport lands before explosion
+// v1.281: hq-deploy: restore per-slot respawn cooldown in HQ mode + guard sinkAndDestroyVehicle against zero-vector GetObjectPosition
+// v1.280: hq-deploy: seat deploy-menu players via OnPlayerDeployed + ForcePlayerToSeat (BountyHunter pattern)
+// v1.279: hq-deploy: per-slot player-triggered dispatch via reused deploy-menu button (seating stub)
+// v1.278: hq-deploy: gate vanilla auto-spawn and auto-respawn on deploy-method knob
+// v1.277: hq-deploy: restore HQ option in ready-dialog knob (no behavior yet)
 // v1.276: cleanup: consolidate vehicle destroy logic into single sinkAndDestroyVehicle wrapper (preserves X/Z, sinks to y=-1000, damages after 500ms) — replaces 4 duplicated inline sites
 // v1.275: fix: rework cleanup filters — countdown-reset uses tracked vehicleId set (not pad-proximity, which missed drifted vehicles leaving them unbound post-reset); startup cleanup filters by Abrams type (the engine default auto-spawn) so emplacements survive
 // v1.274: fix: cleanup sweeps (startup + countdown-reset) now skip vehicles not near our slot pads (15m) so map emplacements survive

@@ -68,6 +68,14 @@ function getDesiredSpawnerCountsForPreset(presetIndex: number): { team1: number;
     };
 }
 
+// Gate helper — true only when the confirmed deploy method is Vanilla. All auto-dispatch
+// sites (round-start fleet, countdown-reset fleet, post-destroy respawn) check this so HQ
+// mode leaves the pads empty and owned by player-driven requests (see hq-deploy module).
+function isVanillaDeployMode(): boolean {
+    const confirmed = State.round.modeConfig.confirmed.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT;
+    return confirmed === VEHICLE_DEPLOY_METHOD_VANILLA;
+}
+
 // Kept as no-op for endMatch call-site compatibility. Reservations are gone.
 function clearAllVehicleReservations(): void {
     // no-op (v1.258): reservation system removed; Vanilla slots have no reservation state.
@@ -78,20 +86,33 @@ function clearVehicleReservationForPid(_pid: number): void {
 }
 
 // Canonical destroy path for any tracked vehicle we want gone (startup cleanup, countdown
-// reset, prior-vehicle purge on vehicle-type change). Reads current X/Z, teleports to
-// (X, -1000, Z), then deals lethal damage after 500ms so the explosion is inaudible at the
-// pad. Use this instead of raw DealDamage / UnspawnObject so every destroy is uniform:
-//   - UnspawnObject on transitional vehicles emits engine-side errors try/catch can't suppress
-//   - DealDamage without first sinking is audible at the pad
-//   - Any ad-hoc variant risks losing the X/Z preservation and dragging the vehicle to map-center
-function sinkAndDestroyVehicle(v: mod.Vehicle): void {
-    try {
-        const pos = mod.GetObjectPosition(v);
-        const x = mod.XComponentOf(pos);
-        const z = mod.ZComponentOf(pos);
-        mod.Teleport(v, mod.CreateVector(x, -1000, z), 0);
-    } catch {}
-    Timers.setTimeout(() => { try { mod.DealDamage(v, 9999); } catch {} }, 500);
+// reset, prior-vehicle purge on vehicle-type change). Reads X/Z, teleports to (X, -1000, Z),
+// then deals lethal damage after 1500ms so the explosion is muffled beneath the pad.
+// slotPos-priority proved necessary at Vanilla->HQ countdown reset: GetObjectPosition
+// returned an off-pad position that dragged vehicles to map-center. v1.284 tried a relative
+// Y-200 offset with GetObjectPosition only -- that was worse, confirming the X/Z from
+// GetObjectPosition is unreliable in that window. Slot-context callers pass slot.spawnPos;
+// the startup Abrams cleanup is the only caller without a slot and falls back to
+// GetObjectPosition.
+// TODO (Phase 5 polish): revisit whether the fallback path can use a different authoritative
+// source (object registration snapshot?) so we don't depend on GetObjectPosition at all.
+function sinkAndDestroyVehicle(v: mod.Vehicle, slotPos?: mod.Vector): void {
+    let x = 0;
+    let z = 0;
+    if (slotPos) {
+        try {
+            x = mod.XComponentOf(slotPos);
+            z = mod.ZComponentOf(slotPos);
+        } catch {}
+    } else {
+        try {
+            const pos = mod.GetObjectPosition(v);
+            x = mod.XComponentOf(pos);
+            z = mod.ZComponentOf(pos);
+        } catch {}
+    }
+    try { mod.Teleport(v, mod.CreateVector(x, -1000, z), 0); } catch {}
+    Timers.setTimeout(() => { try { mod.DealDamage(v, 9999); } catch {} }, 1500);
 }
 
 //#endregion ----------------- Public Helpers --------------------
@@ -180,12 +201,16 @@ async function startVanillaVehicleSpawnerSystem(): Promise<void> {
     applySpawnerEnablementForMatchup(State.round.matchupPresetIndex, false);
     revealVehicleSpawnerUiAfterStartup();
 
-    for (let i = 0; i < State.vehicles.slots.length; i++) {
-        const slot = State.vehicles.slots[i];
-        if (!slot?.enabled) continue;
-        enqueueDispatch(i);
+    // Round-start fleet dispatch is Vanilla-only. HQ mode keeps pads empty at match start;
+    // vehicles come from player-driven requests via hq-deploy.
+    if (isVanillaDeployMode()) {
+        for (let i = 0; i < State.vehicles.slots.length; i++) {
+            const slot = State.vehicles.slots[i];
+            if (!slot?.enabled) continue;
+            enqueueDispatch(i);
+        }
+        await spawnMutex;
     }
-    await spawnMutex;
 }
 
 // Creates one spawner at zeroRot and registers the slot. Map yaw is applied to the vehicle
@@ -229,7 +254,9 @@ function addVanillaSpawnerSlot(
         respawnRunning: false,
         spawnRetryScheduled: false,
         spawnCategory: "other",
-        deployFlowTracked: false,
+        // v1.279: HQ wiring — flip to true so button visibility can light up when HQ mode is active.
+        // Downstream visibility still gates on hqDeployAllowed, so Vanilla stays unaffected.
+        deployFlowTracked: true,
         availabilityPhase: "DISABLED",
         pendingSpawnOwnerPid: undefined,
         pendingSpawnMode: undefined,
@@ -315,6 +342,11 @@ function bindSpawnedVehicleToExpectingSlot(eventVehicle: mod.Vehicle): boolean {
         slot.respawnClock = undefined;
     }
     registerVehicleToTeam(eventVehicle, slot.teamId);
+    // HQ post-bind hook: if this dispatch was a player-triggered HQ claim, notify hq-deploy
+    // so Phase 3 can clear the claim (Phase 4 will route this into the seating flow).
+    if (slot.pendingSpawnOwnerPid !== undefined) {
+        try { onHqVehicleSpawnedForClaim(slot, eventVehicle); } catch {}
+    }
     try { updateVehicleDeployTimerHudForAllPlayers(); } catch {}
     const resolver = currentSpawnResolve;
     currentSpawnResolve = undefined;
@@ -338,6 +370,10 @@ function onSlotVehicleDestroyed(eventVehicle: mod.Vehicle): void {
         try { updateVehicleDeployTimerHudForAllPlayers(); } catch {}
         return;
     }
+    // Start the cooldown in both modes. In Vanilla the onComplete auto-dispatches; in HQ
+    // the onComplete just clears the clock, and the active clock acts as a request gate in
+    // requestHqVehicleSpawn so players cannot re-request the same slot before the 120s
+    // cooldown expires.
     startRespawnCountdown(slot, slotIndex);
     try { updateVehicleDeployTimerHudForAllPlayers(); } catch {}
 }
@@ -360,6 +396,13 @@ function startRespawnCountdown(slot: VehicleSpawnerSlot, slotIndex: number): voi
             slot.respawnClock = undefined;
             if (!slot.enabled) return;
             if (slot.vehicleId !== -1) return;
+            // Vanilla: auto-dispatch the respawn. HQ: clock expiry just re-opens the slot
+            // for a fresh player-driven request (handled by requestHqVehicleSpawn gating
+            // on slot.respawnClock presence).
+            if (!isVanillaDeployMode()) {
+                try { updateVehicleDeployTimerHudForAllPlayers(); } catch {}
+                return;
+            }
             enqueueDispatch(slotIndex);
         },
     });
@@ -394,7 +437,7 @@ function setSpawnerSlotEnabled(slotIndex: number, enabled: boolean): boolean {
             const priorVehicle = findVehicleById(priorVehicleId);
             delete State.vehicles.vehicleToSlot[priorVehicleId];
             slot.vehicleId = -1;
-            if (priorVehicle) sinkAndDestroyVehicle(priorVehicle);
+            if (priorVehicle) sinkAndDestroyVehicle(priorVehicle, slot.spawnPos);
         }
         slot.activeOwnerPid = undefined;
         return false;
@@ -442,7 +485,10 @@ function applySpawnerEnablementForMatchup(presetIndex: number, spawnOnEnable: bo
         if (spawnOnEnable && shouldSpawn) spawnQueue.push(slotIndex);
     }
 
-    if (spawnOnEnable) {
+    // spawnOnEnable fires auto-dispatch to fill newly-enabled slots (ready-dialog apply,
+    // startMatch, post-match refresh). HQ mode skips it entirely — slots remain enabled
+    // (so hq-deploy requests can target them) but stay empty until a player click.
+    if (spawnOnEnable && isVanillaDeployMode()) {
         for (let i = 0; i < State.vehicles.slots.length; i++) {
             const slot = State.vehicles.slots[i];
             if (!slot.enabled) continue;
@@ -479,7 +525,10 @@ async function resetVehicleSlotsAtCountdownStart(): Promise<void> {
     // Collect the bound vehicles BEFORE dropping bindings so we know exactly which
     // vehicles to destroy — position-based filtering was fragile and missed vehicles
     // that had drifted beyond the pad radius, leaving them alive + unbound after reset.
-    const vehiclesToKill: mod.Vehicle[] = [];
+    // Pair with the slot's spawnPos so sinkAndDestroyVehicle has an authoritative
+    // fallback if the engine returns a zero-vector GetObjectPosition on a transitional
+    // vehicle (observed during Vanilla→HQ countdown-start).
+    const vehiclesToKill: { vehicle: mod.Vehicle; fallbackPos: mod.Vector | undefined }[] = [];
     for (const slot of State.vehicles.slots) {
         if (!slot) continue;
         if (slot.respawnClock) {
@@ -491,20 +540,23 @@ async function resetVehicleSlotsAtCountdownStart(): Promise<void> {
             delete State.vehicles.vehicleToSlot[slot.vehicleId];
             slot.vehicleId = -1;
             slot.activeOwnerPid = undefined;
-            if (boundVehicle) vehiclesToKill.push(boundVehicle);
+            if (boundVehicle) vehiclesToKill.push({ vehicle: boundVehicle, fallbackPos: slot.spawnPos });
         }
     }
 
     // Destroy each bound vehicle via the canonical wrapper (sinks to y=-1000 preserving
     // X/Z, then DealDamage after 500ms so explosions aren't audible at the pad).
-    for (const v of vehiclesToKill) sinkAndDestroyVehicle(v);
+    for (const entry of vehiclesToKill) sinkAndDestroyVehicle(entry.vehicle, entry.fallbackPos);
 
-    // Phase C -- enqueue fresh dispatches. The mutex serializes; by the time the
-    // countdown hits LIVE!, every enabled slot is bound and positioned.
-    for (let i = 0; i < State.vehicles.slots.length; i++) {
-        const slot = State.vehicles.slots[i];
-        if (!slot?.enabled) continue;
-        enqueueDispatch(i);
+    // Phase C -- enqueue fresh dispatches. Vanilla-only: HQ mode leaves pads empty until
+    // a player-driven request fires via hq-deploy. The destroy pass above still runs in
+    // HQ mode so any stray bound vehicles from a prior Vanilla round are cleaned.
+    if (isVanillaDeployMode()) {
+        for (let i = 0; i < State.vehicles.slots.length; i++) {
+            const slot = State.vehicles.slots[i];
+            if (!slot?.enabled) continue;
+            enqueueDispatch(i);
+        }
     }
 
     try { updateVehicleDeployTimerHudForAllPlayers(); } catch {}

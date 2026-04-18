@@ -61,7 +61,7 @@ type ReusableTimerWidgetCacheEntry = {
     secOnes: mod.UIWidget;
     lastDisplayedSeconds?: number;
     lastVisibleState?: boolean;
-    lastStatusMode?: "timer" | "ready" | "active";
+    lastStatusMode?: "timer" | "ready" | "active" | "spawning" | "deploying";
 };
 
 type VehicleDeployTimerRowCacheEntry = {

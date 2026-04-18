@@ -51,6 +51,7 @@ import './vehicles/ownership';
 import './vehicles/registration';
 import './vehicles/timers';
 import './vehicles/vanilla-spawner';
+import './vehicles/hq-deploy';
 import './vehicles/deploy-live-menu';
 import './clock/timer-instance';
 import './clock/state';

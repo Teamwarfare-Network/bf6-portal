@@ -228,6 +228,9 @@ const State: GameState = {
         configReady: false,
         startupCleanupDone: false,
     },
+    hqDeploy: {
+        lastRequestAtSecondsByPid: {},
+    },
     hudCache: {
         topHudShellByPid: {},
         clockWidgetCache: {},

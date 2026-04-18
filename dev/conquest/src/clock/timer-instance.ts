@@ -347,7 +347,7 @@ function setReusableTimerSeconds(cache: ReusableTimerWidgetCacheEntry, totalSeco
 
 function setReusableTimerStatus(
     cache: ReusableTimerWidgetCacheEntry,
-    statusMode: "ready" | "active",
+    statusMode: "ready" | "active" | "spawning" | "deploying",
     label: mod.Message,
     color: mod.Vector
 ): void {

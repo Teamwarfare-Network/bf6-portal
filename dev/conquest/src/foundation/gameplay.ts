@@ -197,9 +197,12 @@ const VEHICLE_DEPLOY_METHOD_HQ = 1;
 const VEHICLE_DEPLOY_METHOD_HQ_FORWARD = 2;
 const VEHICLE_DEPLOY_METHOD_HQ_FORWARD_AIR = 3;
 const VEHICLE_DEPLOY_METHOD_DEFAULT = VEHICLE_DEPLOY_METHOD_VANILLA;
-// v1.258: Vehicle Deploy Method frozen to Vanilla; HQ/forward/air paths removed.
+// v1.277: HQ reintroduced on v1.276 base; Vanilla remains default. Forward/Air still excluded
+// until the HQ seating path is proven. Adding entries here opens new knob positions; the
+// downstream gates (vanilla-spawner, deploy-timer-ui, hq-deploy) read the confirmed value.
 const READY_DIALOG_VEHICLE_DEPLOY_METHOD_OPTIONS: number[] = [
     mod.stringkeys.twl.readyDialog.vehicleDeployVanilla,
+    mod.stringkeys.twl.readyDialog.vehicleDeployHq,
 ];
 
 const READY_DIALOG_TEAM1_JET_KNOB_KEYS = ["team1Jet1", "team1Jet2"] as const;

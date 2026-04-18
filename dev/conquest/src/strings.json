@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.276)",
+        "title": "teamwarfare . net | TWL Conquest (v1.286)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -336,6 +336,8 @@
       "ready": "READY",
       "idle": "IDLE",
       "active": "ACTIVE",
+      "spawning": "SPAWNING",
+      "deploying": "DEPLOYING",
       "helpEmpty": " ",
       "helpArtilleryStrike": "Call in an artillery barrage on a targeted location",
       "helpSpawnBeacon": "Deploy a spawn beacon for your team to use",

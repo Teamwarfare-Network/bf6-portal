@@ -128,6 +128,10 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     if (directSpawnDeployResult.consumedDeploy) {
         return;
     }
+    // HQ Deploy seat hook (Phase 4): if a pending HQ claim is seat_pending for this pid,
+    // call mod.ForcePlayerToSeat inside the OnPlayerDeployed event chain (BountyHunter
+    // context -- the only reliable one for ForcePlayerToSeat on freshly-deployed players).
+    try { onHqSeatPendingPlayerDeployed(eventPlayer, pid); } catch {}
     await spawnReadyDialogInteractPoint(eventPlayer);
 }
 

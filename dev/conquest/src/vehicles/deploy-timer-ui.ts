@@ -1554,8 +1554,17 @@ function renderVehicleDeployTimerRow(
         clearVehicleDeployActionButtonState(row, "ground");
     }
 
-    if (slot.vehicleId !== -1) {
+    // HQ claim phases: spawn_pending (pendingSpawnOwnerPid set, vehicleId === -1) and
+    // seat_pending (pendingSpawnOwnerPid set, vehicleId !== -1). Buttons are already
+    // suppressed via isVehicleDeploySlotReadyForSpawnButton; this branch replaces the
+    // misleading "READY" fallback with a distinct SPAWNING/DEPLOYING signal in yellow.
+    const hqClaimActive = slot.pendingSpawnOwnerPid !== undefined;
+    if (slot.vehicleId !== -1 && hqClaimActive) {
+        setReusableTimerStatus(row.timer, "deploying", mod.Message(mod.stringkeys.twl.ui.deploying), COLOR_WARNING_YELLOW);
+    } else if (slot.vehicleId !== -1) {
         setReusableTimerStatus(row.timer, "active", mod.Message(mod.stringkeys.twl.ui.active), COLOR_LOW_TIME);
+    } else if (hqClaimActive) {
+        setReusableTimerStatus(row.timer, "spawning", mod.Message(mod.stringkeys.twl.ui.spawning), COLOR_WARNING_YELLOW);
     } else if (showSpawnButton || showGroundButton) {
         setReusableTimerStatus(row.timer, "ready", mod.Message(mod.stringkeys.twl.ui.ready), COLOR_READY_GREEN);
     } else if (isAirType && airDelayActive) {
@@ -1824,7 +1833,12 @@ function tryHandleVehicleDeployTimerButtonEvent(
         }
     }
 
-    // v1.258: direct-spawn pipeline removed. Vanilla-only: button clicks are visual-only.
+    // v1.279 Phase 3: HQ dispatch wiring. Deploy-menu ONLY -- on-foot live-terminal path is
+    // deferred to Phase 6. Vanilla mode takes the no-op branch (requestHqVehicleSpawn rejects
+    // with reason "not_hq_mode") so Vanilla clicks stay visual-only exactly as before.
+    if (!liveTerminalOpen) {
+        requestHqVehicleSpawn(eventPlayer, pid, rowIndex);
+    }
     updateVehicleDeployTimerHudForPlayer(eventPlayer);
     return true;
 }

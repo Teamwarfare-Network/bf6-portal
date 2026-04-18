@@ -413,6 +413,9 @@ interface GameState {
         configReady: boolean;
         startupCleanupDone: boolean;
     };
+    hqDeploy: {
+        lastRequestAtSecondsByPid: Record<number, number>;
+    };
     hudCache: {
         topHudShellByPid: Record<number, TopHudShellRefs>;
         clockWidgetCache: Record<number, ClockWidgetCacheEntry>;

@@ -595,7 +595,7 @@ function applyVehicleSpawnSpecsToExistingSlots(): void {
             const priorVehicleId = slot.vehicleId;
             if (!isMatchLive() && priorVehicleId !== -1) {
                 const priorVehicle = findVehicleById(priorVehicleId);
-                if (priorVehicle) sinkAndDestroyVehicle(priorVehicle);
+                if (priorVehicle) sinkAndDestroyVehicle(priorVehicle, slot.spawnPos);
                 delete State.vehicles.vehicleToSlot[priorVehicleId];
                 slot.vehicleId = -1;
                 slot.activeOwnerPid = undefined;
