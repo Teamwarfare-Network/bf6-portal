@@ -1,32 +1,27 @@
 # TWL Conquest Design and Implementation Plan
 
-Last updated: 2026-04-04  
+Last updated: 2026-04-18 (v1.289)
 Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
 
 ## Current Status
 
 - This is the authoritative master design document for TWL Conquest.
-- Accepted current implementation baseline (as of v1.025, 2026-04-04):
+- Accepted current implementation baseline (as of v1.289, 2026-04-18):
   - Phase 1: completed
   - Phase 2A: completed
   - Phase 2B: completed (remaining future validation deferred to Phase 10)
   - Phase 3A, 3B, 3C: completed
   - Phase 4, 4B: completed
-  - Phase 5A-5G: completed (remaining polish, validation depth, and follow-up bugs deferred to Phase 10)
-  - Phase 6: completed (boundary system functional; remaining tuning deferred to Phase 10)
-  - Phase 7: completed (pre-game 20s countdown with undeploy/vehicle reset/deploy gating, victory dialog with ticket scoreboard/crown/result line, endMatch winner inference; remaining polish deferred to Phase 10)
-- Current next implementation target:
-  - Phase 8: Spawn behavior and restrictions
-  - Phase 9: Custom scoreboard + KPI tracking (in progress — prototype v1.178)
-  - Phase 10: Iteration, playtesting, and polish — collects all deferred work from earlier phases including:
-    - UI/menu lifecycle hardening and first-use performance stabilization (from Phase 5/6 era)
-    - All open bugs tracked in `design_doc/conquest_issues.md`
-    - Victory dialog further polish (drop shadows, roster perspective swap, layout refinement)
-    - Countdown/pre-game polish
-    - Boundary tuning and edge cases
+  - Phase 5A–5G: completed. **The v1.258–v1.259 Vanilla spawner rewrite replaces the Phase 5 deploy-fulfillment / reservations / spawner-sequence modules with one persistent `VehicleSpawner` per slot, a serial `spawnMutex`, event-driven bind via `OnVehicleSpawned`, and `Clocks.CountDownClock` respawn.** All non-Vanilla deploy paths (legacy air-deploy, forward-deploy, HQ-forward, HQ-forward-air) were removed. Remaining polish tracked in Phase 10.
+  - Phase 6 (design doc nomenclature): Boundary system completed (functional; remaining tuning in Phase 10).
+  - Phase 6 (runtime feature nomenclature — opt-in HQ Deploy mode): completed v1.277–v1.289. `VEHICLE_DEPLOY_METHOD_HQ` selectable from the ready-dialog knob. Player-triggered per-slot spawns with seating via the `OnPlayerDeployed` BountyHunter pattern. On-foot live-terminal seating via undeploy→redeploy (Option C). See `CQ_Feat_Phase6_HQ_Deploy` in `conquest_issues.md` and `src/vehicles/hq-deploy.ts`. **Note:** this runtime-feature label overlaps with the design doc's canonical Phase 6 = Boundary; resolve any ambiguity by context.
+  - Phase 7: completed (pre-game countdown, staggered delay-line reveals at Y=-420/-380/-340/-300, 4th line for gadget-delay; victory dialog with ticket scoreboard/crown/result line; endMatch winner inference; remaining polish in Phase 10).
+  - Phase 8: active — `src/interaction/spawn-selector.ts` + `PlayerSpawner` / `SpawnPlayerFromSpawnPoint` pattern confirmed per memory `project_phase8_spawn_pattern.md`. Authored-spawn + fallback chain work tracked under Phase 8.
+  - Phase 9: Custom tab scoreboard + KPI tracking active in `src/kpi/` (kpi-state.ts, scoreboard-tab.ts) with team-equality friendly-fire guard (v1.212, CQ_Bug_56). Score formula CF-38 live.
 - Current open Conquest bug status:
-  - See `design_doc/conquest_issues.md` for the active issue list
-  - All open bugs are now tracked for Phase 10 polish unless otherwise noted
+  - See `design_doc/conquest_issues.md` for the active issue list.
+  - The 2026-04-18 pass marked CQ_Bug_49 / 52 / 53 / 54 / 55 / `ActiveSpawnSingletonMPRace` as **Obsolete (v1.259 rewrite)** — underlying code paths were deleted wholesale.
+  - Newly added: `CQ_Refactor_Vanilla_Vehicle_Spawner_Rewrite`, `CQ_Refactor_Vehicle_Destroy_Consolidation`, `CQ_Feat_Phase6_HQ_Deploy`, `CQ_Bug_Abrams_Substitution_Transport_Slot_Regression` (open), `CQ_Polish_Respawn_Redeploy_Timer_Audit` (open, deferred to polish).
 - Active companion documents:
   - `design_doc/api_checklist.md`
   - `design_doc/conquest_issues.md`
@@ -3745,36 +3740,37 @@ None
 
 ## Codebase Reference Map
 
-Last updated: v1.230 (2026-04-14)
+Last updated: v1.289 (2026-04-18)
 
 ### Project Stats
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.236 |
+| Version | 1.289 |
 | Source files | 119 .ts files + 1 .json |
-| Total source bytes | ~1,392,000 (includes Changelog + excluded stubs) |
-| Total source lines | 29,989 |
-| Bundle size (script) | 1,000,672 bytes |
-| Bundle size (strings) | 20,518 bytes |
+| Total source lines | 29,447 |
+| Bundle size (script) | 968,479 bytes |
+| Bundle size (strings) | 20,816 bytes |
 | Bundle limit | 1,048,576 bytes (1 MiB) — applies to script only |
-| Headroom | 47,904 bytes (4.57%) |
+| Headroom | 80,097 bytes (7.64%) |
 | Entry point | `src/index.ts` -> 22 Portal event handlers |
 | Build pipeline | `prebuild.js` -> `bf6-portal-bundler` -> `postbuild.js` -> `verify.js` |
 | Build output | `dist/bundle.ts` + `dist/bundle.strings.json` |
+
+Net size trend: v1.221 was 998,868 bytes (49,708 / 4.74% headroom). The v1.259 spawner rewrite, which deleted `deploy-fulfillment.ts` / `reservations.ts` / `spawner-sequence.ts` / `spawner-bind.ts` / `spawner-slots.ts` / `spawner-bootstrap.ts` (~50K source) and substituted `vanilla-spawner.ts` (~25K) + `hq-deploy.ts` (~13K) accounts for most of the subsequent reclaim. Flipping `FEATURE_ADMIN_PANEL` to `false` removed another ~20–25K.
 
 #### Compile-Time Feature Flags
 
 Feature flags in `src/config/conquest-constants.ts` control file-level bundle exclusion. When FALSE, associated source files are not imported and all call-site references are stripped by `postbuild.js` dead-code elimination. The `prebuild.js` script auto-syncs `// @feature`-tagged imports in `index.ts` with the flag values.
 
-| Flag | Default | Excluded source | Approx. bundle savings | Purpose |
+| Flag | Current | Excluded source | Approx. bundle savings | Purpose |
 |------|---------|----------------|----------------------|---------|
-| `FEATURE_PERF_DIAG` | `false` | 16,676 bytes (2 files) | ~8-10K | Debug performance HUD |
-| `FEATURE_ADMIN_PANEL` | `true` | 43,174 bytes (4 files) | ~20-25K | Admin panel UI + action buttons |
-| `FEATURE_JOIN_PROMPT` | `false` | 313 bytes (3 stubs) | ~0 | Future tip/prompt features |
-| `FEATURE_POSITION_DEBUG` | `true` | hud/position-debug.ts | ~18.6K source | Coordinate display (standalone file) |
+| `FEATURE_PERF_DIAG` | `false` | `hud/perf-diag.ts`, `hud/ui-cache-perf.ts` | ~8–10K | Debug performance HUD |
+| `FEATURE_ADMIN_PANEL` | `false` | `admin-panel/*` (4 files) | ~20–25K | Admin panel UI + action buttons |
+| `FEATURE_JOIN_PROMPT` | `false` | 3 stub files | ~0 | Future tip/prompt features |
+| `FEATURE_POSITION_DEBUG` | `false` | `hud/position-debug.ts` | ~18.6K source | Coordinate display (standalone file) |
 
-Note: The loading overlay shown during the player UI warm gate (`src/ready-dialog/loading-overlay.ts`) is always included and not controlled by any feature flag. `FEATURE_JOIN_PROMPT` controls only future tip/prompt extensions.
+All feature flags are currently `false` in the shipped v1.289 bundle. Flip back to `true` for live admin/diagnostic tuning as needed. The loading overlay (`src/ready-dialog/loading-overlay.ts`) is always included regardless of flags. `FEATURE_JOIN_PROMPT` controls only future tip/prompt extensions.
 
 #### Bundle Size Notes
 
@@ -3899,19 +3895,19 @@ src/
     ui.ts                     -- Clock widget build, cache, digit rendering (325 lines | 14.2K)
 
   vehicles/
-    vehicle-classification.ts -- Vehicle type guards (aircraft, jet, tank, heli) (61 lines | 2.0K)
-    registration.ts           -- Vehicle team registry, base team inference (45 lines | 2.3K)
-    ownership.ts              -- Seat-to-player ownership tracking (69 lines | 2.7K)
-    reservations.ts           -- Vehicle spawn reservations (79 lines | 3.3K)
-    timers.ts                 -- Vehicle respawn timer tracking (164 lines | 6.6K)
-    spawner-slots.ts          -- Slot state machine, enablement/reservation; UnspawnObject guarded (203 lines | 9.2K)
-    spawner-sequence.ts       -- Slot sequencing logic (199 lines | 7.8K)
-    spawner-bind.ts           -- Vehicle-to-slot binding on spawn (268 lines | 12.0K)
-    spawner-bootstrap.ts      -- Spawner system initialization; startup cleanup UnspawnObject guarded (100 lines | 4.8K)
-    deploy-fulfillment.ts     -- Direct vehicle spawn on deploy (air/ground/forward); forward-deploy free-space guard @10m; pre-seat teleport removed (524 lines | 22.7K)
-    deploy-live-menu.ts       -- Live deploy menu UI for spawn selection (87 lines | 3.3K)
-    deploy-timer-ui.ts        -- Vehicle spawn timer HUD display; round-start delay HUD loop; render signature includes delay state (1,961 lines | 85.3K)
-    array-helpers.ts          -- Vehicle array manipulation helpers
+    vehicle-classification.ts -- Vehicle type guards (aircraft, jet, tank, heli, bike, etc. — DirtBike/DirtBike_Pax/AH6M_Pax added v1.262) (3.0K)
+    registration.ts           -- Vehicle team registry, base team inference (2.3K)
+    ownership.ts              -- Seat-to-player ownership tracking (2.7K)
+    timers.ts                 -- Vehicle respawn timer tracking (shared helpers used by vanilla-spawner) (1.0K)
+    vanilla-spawner.ts        -- Vanilla mode spawner (v1.258–v1.259 rewrite). One persistent VehicleSpawner per slot; serial spawnMutex dispatches ForceVehicleSpawnerSpawn; OnVehicleSpawned bind via bindSpawnedVehicleToExpectingSlot; Clocks.CountDownClock respawn; canonical sinkAndDestroyVehicle destroy wrapper (v1.276). (~565 lines | 25.2K)
+    hq-deploy.ts              -- Phase 6 HQ Deploy (v1.277–v1.289). Opt-in VEHICLE_DEPLOY_METHOD_HQ. requestHqVehicleSpawn reserves + enqueues; post-bind hook transitions claim spawn_pending → seat_pending; beginHqSeatFlow + OnPlayerDeployed seat via ForcePlayerToSeat (BountyHunter pattern). On-foot Option C: undeploy → redeploy → seat with SetRedeployTime(0) bypass. (~12.7K)
+    deploy-live-menu.ts       -- Live deploy menu UI for spawn selection (3.3K)
+    deploy-timer-ui.ts        -- Vehicle spawn timer HUD display; round-start delay HUD loop; per-slot HQ button wiring; pending-state SPAWNING/DEPLOYING header (v1.286) (2,026 lines | 90.4K)
+    array-helpers.ts          -- Vehicle array manipulation helpers (0.9K)
+
+  # Removed in v1.258–v1.259 rewrite (historical reference only):
+  #   reservations.ts, spawner-slots.ts, spawner-sequence.ts, spawner-bind.ts,
+  #   spawner-bootstrap.ts, deploy-fulfillment.ts
 
   ui/
     conquest/
@@ -3979,7 +3975,7 @@ All functions exported from `src/index.ts`. Each delegates to an `*Impl` functio
 - Main loop (0.12s tick): `conquestPhase2ARefreshLiveCaptureStateSubtick()`, `updateConquestCombatHudForAllPlayers()`, `conquestPhase4FlushCaptureSoundQueue()`, `conquestPhase4BFlushCaptureVoiceOverQueue()`
 - Second boundary: `updateVehicleDeployTimerHudForAllPlayers()`, `ensureActiveWorldInteractablesReady()`, `checkTakeoffLimitForAllPlayers()`, `tickBoundaryEnforcement()`
 
-#### index/capture-tickets.ts — Phase 2A Capture + Tickets (2,159 lines)
+#### index/capture-tickets.ts — Phase 2A Capture + Tickets (2,150 lines)
 - `conquestPhase2ARefreshLiveCaptureStateSubtick()` — sub-tick capture sync from engine
 - `conquestPhase2AOnLiveTick()` — second-boundary bleed + end check + HUD refresh
 - `conquestPhase2AApplyBleedTick()` — ticket bleed math
@@ -3998,14 +3994,15 @@ All functions exported from `src/index.ts`. Each delegates to an `*Impl` functio
 - `runTeamSwapLoadingGate(player, pid, newTeamNum, waitForUndeploy)` — team-swap gate sequence
 - Stagger: `_prebuildStaggerIndex * 0.25s` offsets concurrent joins so players don't contend for the lock
 
-#### interaction/ammo-resupply-menu.ts — Gadget Menu (1,953 lines)
+#### interaction/ammo-resupply-menu.ts — Gadget Menu (2,190 lines)
 - `resetArmState(pid)` / `resetArmTimers(pid)` — clear ammo menu state
 - `armCacheOk(cache)` — validate menu cache completeness
 - `buildTile(...)` — build complete gadget tile with button, icon, cooldown
 - `armRefreshFrame(pid, objId)` — refresh menu frame contents
 - `openArmMenu(player)` / `closeArmMenu(player)` — menu open/close lifecycle
+- `buildLockerSnapshot(player)` / `allLockerGadgetIds()` — per-player one-shot probe of ownership + launcher slot (HasEquipment + IsInventorySlotActive + ammo-shape); drives same-slot launcher swap and honest launcher-ammo routing
 
-#### vehicles/deploy-timer-ui.ts — Vehicle Timer HUD (1,961 lines)
+#### vehicles/deploy-timer-ui.ts — Vehicle Timer HUD (2,026 lines)
 - `updateVehicleDeployTimerHudForAllPlayers()` — per-second refresh for all viewers
 - `prebuildVehicleDeployTimerHudHiddenForPlayer(player)` — hidden prebuild for loading gate
 - `revealVehicleDeployTimerHudForPlayer(player)` — reveal on gate release
@@ -4111,25 +4108,36 @@ UI Caches Cold: 0 Avg; Invalid: 0 Avg (0 High)
 - **Warm Token Invalidation**: `hudWarmToken` per player prevents stale async passes from writing to current state
 - **ForAllPlayers Pattern**: ~30 functions iterate `mod.AllPlayers()` with validity checks to broadcast state updates
 
-### Largest Files (by bytes — bundle size impact)
+### Largest Files (by lines — v1.289)
 
-| File | Bytes | Lines | Concern |
-|------|-------|-------|---------|
-| `index/capture-tickets.ts` | 87.5K | 2,159 | Capture state, bleed, view models, combat HUD (largest file in bundle) |
-| `vehicles/deploy-timer-ui.ts` | 85.3K | 1,961 | Vehicle spawn timer HUD |
-| `interaction/ammo-resupply-menu.ts` | 69.5K | 1,880 | Gadget/ammo menu |
-| `ui/conquest/hud-core/build.ts` | 44.8K | 1,115 | Combat HUD widget construction |
-| `config/map-runtime.ts` | 33.8K | 777 | Map config application, spawner relocation |
-| `interaction/actions.ts` | 31.9K | 719 | Loading gate orchestration |
-| `ui/conquest/hud-core/render.ts` | 31.7K | 667 | Combat HUD visual update |
-| `admin-panel/build.ts` | 11.5K | 348 | Admin panel widgets (position debug moved to hud/position-debug.ts) |
-| `ui/dialog/victory-build.ts` | 25.1K | 527 | Victory dialog widget construction |
-| `vehicles/deploy-fulfillment.ts` | 22.7K | 524 | Direct vehicle spawn |
-| `foundation/ui-layout.ts` | 21.9K | 349 | HUD dimensions, colors, timing constants |
-| `hud/status.ts` | 21.3K | 553 | Status dock, safe setters |
-| `ui/conquest/hud-core/constants.ts` | 21.1K | 402 | HUD layout, colors, sizing |
-| `config/maps/operation-firestorm.ts` | 20.4K | 371 | Map-specific spawn/capture/ceiling config |
+| File | Lines | Concern |
+|------|-------|---------|
+| `index/capture-tickets.ts` | 2,150 | Capture state, bleed, view models, combat HUD (largest logic file) |
+| `vehicles/deploy-timer-ui.ts` | 2,026 | Vehicle spawn timer HUD; per-slot HQ button wiring |
+| `interaction/ammo-resupply-menu.ts` | 2,190 | Gadget/ammo menu |
+| `ui/conquest/hud-core/build.ts` | 1,116 | Combat HUD widget construction |
+| `Changelog.ts` | 965 | Version history; stripped to ~0 bundle bytes by postbuild |
+| `config/map-runtime.ts` | 798 | Map config application, spawner relocation |
+| `interaction/actions.ts` | 761 | Loading gate orchestration |
+| `ui/conquest/hud-core/render.ts` | 667 | Combat HUD visual update |
+| `vehicles/vanilla-spawner.ts` | 565 | Vanilla spawner (v1.258–v1.259 rewrite); serial dispatch + bind + respawn + sinkAndDestroyVehicle |
+| `hud/status.ts` | 564 | Status dock, safe setters |
+| `ui/dialog/victory-build.ts` | 527 | Victory dialog widget construction |
+| `boundary/prompt-ui.ts` | 477 | Boundary violation countdown UI |
+| `state/runtime-types.ts` | 433 | GameState shape (incl. VehicleSpawnerSlot, HqClaim) |
+| `state/ui-helpers.ts` | 412 | Widget builder helpers |
+| `clock/timer-instance.ts` | 404 | Reusable MM:SS timer widget builders |
+| `ui/conquest/hud-core/constants.ts` | 402 | HUD layout, colors, sizing |
+| `index/capture-vo.ts` | 376 | Objective voice-over queue |
+| `ready-dialog/mode-config-readout.ts` | 363 | Vehicle selection readout |
+| `hud/position-debug.ts` | 359 | [EXCLUDED: FEATURE_POSITION_DEBUG=false] Coordinate display |
+| `interaction/world-interactables.ts` | 356 | Per-player spawned WorldIcon clones with SetWorldIconOwner |
+| `foundation/ui-layout.ts` | 351 | HUD dimensions, colors, timing |
+| `boundary/enforcement.ts` | 350 | Map boundary enforcement |
+| `admin-panel/build.ts` | 348 | [EXCLUDED: FEATURE_ADMIN_PANEL=false] Admin panel widgets |
+| `hud/perf-diag.ts` | 345 | [EXCLUDED: FEATURE_PERF_DIAG=false] Performance diagnostic panel |
+| `config/maps/operation-firestorm.ts` | 308 | Firestorm map spawn/capture config |
 
-Top 15 files total **~646K** of ~1,033K bundle (62.5%). Changelog alone is 12%.
+The three 2K-line mega-files (`capture-tickets.ts`, `deploy-timer-ui.ts`, `ammo-resupply-menu.ts`) remain the dominant files and are flagged in `conquest_optimization_analysis.md` as split candidates. `Changelog.ts` is large as source but stripped to ~0 bundle bytes.
 
 

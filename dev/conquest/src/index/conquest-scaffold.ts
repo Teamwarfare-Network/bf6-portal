@@ -78,5 +78,6 @@ function initializeConquestPhase1Scaffold(): void {
     State.conquest.debug.hudClockVmByPid = {};
     State.round.smk = {};
     State.round.asg = {};
+    State.round.asgL = {};
 }
 

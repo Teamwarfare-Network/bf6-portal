@@ -3157,9 +3157,9 @@
                 "z": 1
             },
             "position": {
-                "x": -237.148013,
-                "y": 134.23332,
-                "z": -161.7068
+                "x": -246.845313,
+                "y": 132.34502,
+                "z": -169.3515
             },
             "id": "CapturePoint A/SpawnsA/Team2/T2A SP 3"
         },
@@ -5876,7 +5876,7 @@
             },
             "position": {
                 "x": -765.139,
-                "y": 132.228,
+                "y": 132.81,
                 "z": 293.989
             },
             "id": "StationaryEmplacementSpawner9"
@@ -6234,6 +6234,131 @@
                 "z": -89.455
             },
             "id": "InWorld Spatials/WalkwayLadder_1026"
+        },
+        {
+            "name": "TankerTrailer_01_A",
+            "type": "TankerTrailer_01_A",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 0.997482,
+                "z": -0.0709229
+            },
+            "front": {
+                "x": 0,
+                "y": 0.0709229,
+                "z": 0.997482
+            },
+            "position": {
+                "x": -85.322,
+                "y": 124.553,
+                "z": -114.261
+            },
+            "id": "InWorld Spatials/TankerTrailer_01_A"
+        },
+        {
+            "name": "TankerTrailer_01_Foot",
+            "type": "TankerTrailer_01_Foot",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 0.997482,
+                "z": -0.0709229
+            },
+            "front": {
+                "x": 0,
+                "y": 0.0709229,
+                "z": 0.997482
+            },
+            "position": {
+                "x": -85.322,
+                "y": 124.553,
+                "z": -114.261
+            },
+            "id": "InWorld Spatials/TankerTrailer_01_A/TankerTrailer_01_Foot"
+        },
+        {
+            "name": "SemiTruckTrailer_01",
+            "type": "SemiTruckTrailer_01",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            "position": {
+                "x": -177.872,
+                "y": 124.948,
+                "z": -67.3698
+            },
+            "id": "InWorld Spatials/SemiTruckTrailer_01"
+        },
+        {
+            "name": "GM1083CargoTruck_01_Fuel",
+            "type": "GM1083CargoTruck_01_Fuel",
+            "right": {
+                "x": 0.824304,
+                "y": 0,
+                "z": -0.566147
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.566147,
+                "y": 0,
+                "z": 0.824304
+            },
+            "position": {
+                "x": -259.04,
+                "y": 133.884,
+                "z": -64.6008
+            },
+            "id": "InWorld Spatials/GM1083CargoTruck_01_Fuel"
+        },
+        {
+            "name": "GM1083CargoTruck_01_Fuel2",
+            "type": "GM1083CargoTruck_01_Fuel",
+            "right": {
+                "x": -0.605391,
+                "y": 0,
+                "z": -0.795928
+            },
+            "up": {
+                "x": 0,
+                "y": 1,
+                "z": 0
+            },
+            "front": {
+                "x": 0.795928,
+                "y": 0,
+                "z": -0.605391
+            },
+            "position": {
+                "x": 71.2779,
+                "y": 121.324,
+                "z": -134.666
+            },
+            "id": "InWorld Spatials/GM1083CargoTruck_01_Fuel2"
         }
     ],
     "Static": [

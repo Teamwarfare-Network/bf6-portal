@@ -33,6 +33,9 @@ type VehicleSpawnerSlot = {
     availabilityPhase: VehicleSlotAvailabilityPhase;
     pendingSpawnOwnerPid?: number;
     pendingSpawnMode?: VehicleDirectSpawnMode;
+    // HQ claim trigger surface: "deploy_menu" (dead, at deploy screen) vs "on_foot"
+    // (alive, live-terminal). Drives the beginHqSeatFlow branch selection.
+    hqSource?: "deploy_menu" | "on_foot";
     activeOwnerPid?: number;
     suppressNextBindSpawnTransformCorrection?: boolean;
     freshAirRuntimeSpawner?: mod.VehicleSpawner;
@@ -311,6 +314,7 @@ interface GameState {
             n: number;
         }>;
         asg: Record<number, Array<{ c: number; n: number }>>;
+        asgL: Record<number, Array<{ c: number; n: number } | null>>;
     };
     conquest: ConquestRuntimeScaffold;
     match: {
@@ -356,6 +360,22 @@ interface GameState {
             aC: number;
             aN: number;
             s: number;
+        }>;
+        // Per-player authoritative model of both gadget slots. Seeded by a one-time probe when
+        // the locker menu opens, then updated deterministically on every grant/replace. Deleted
+        // on menu close so the next open re-probes fresh (no drift from respawns / kit pickups).
+        lockerSlots: Record<number, {
+            g1: {
+                kind: "unknown" | "empty" | "launcher" | "gadget";
+                gadget?: number;
+                source: "probed" | "placed";
+            };
+            g2: {
+                kind: "unknown" | "empty" | "launcher" | "gadget";
+                gadget?: number;
+                source: "probed" | "placed";
+            };
+            initializedAt: number;
         }>;
         armS: Record<number, {
             mN: number;

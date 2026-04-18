@@ -56,14 +56,14 @@ const ARM_SCHEMA = 5;
 // Default gadget locker layout matching the original hardcoded items.
 const DEFAULT_GADGET_LOCKER_CONFIG: GadgetLockerConfig = {
     assault: [
-        { name: "Artillery",     labelKey: STR_UI_ARTILLERY_STRIKE, gadget: mod.Gadgets.CallIn_Artillery_Strike,     slot: mod.InventorySlots.Callins,   cooldownSeconds: 360, teamShared: true, maxCount: 1, iconSize: 56, iconY: IY },
-        { name: "SpawnBeacon",   labelKey: STR_UI_SPAWN_BEACON,     gadget: mod.Gadgets.Deployable_Deploy_Beacon,    slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 600, teamShared: true, maxCount: 1, iconSize: 36, iconY: IY },
+        { name: "Artillery",     labelKey: STR_UI_ARTILLERY_STRIKE, gadget: mod.Gadgets.CallIn_Artillery_Strike,     slot: mod.InventorySlots.Callins,   cooldownSeconds: 600, teamShared: true, maxCount: 1, iconSize: 56, iconY: IY },
+        { name: "SpawnBeacon",   labelKey: STR_UI_SPAWN_BEACON,     gadget: mod.Gadgets.Deployable_Deploy_Beacon,    slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 900, teamShared: true, maxCount: 1, iconSize: 36, iconY: IY },
         { name: "AssaultLadder", labelKey: STR_UI_ASSAULT_LADDER,   gadget: mod.Gadgets.Misc_Assault_Ladder,         slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 480, teamShared: true, maxCount: 1, iconSize: 36, iconY: IY },
     ],
     launchers: [
-        { labelKey: STR_UI_RPG,     gadget: mod.Gadgets.Launcher_Unguided_Rocket },
-        { labelKey: STR_UI_AT4,     gadget: mod.Gadgets.Launcher_Aim_Guided },
-        { labelKey: STR_UI_STINGER, gadget: mod.Gadgets.Launcher_Air_Defense },
+        { name: "RPG",     labelKey: STR_UI_RPG,     gadget: mod.Gadgets.Launcher_Unguided_Rocket },
+        { name: "AT4",     labelKey: STR_UI_AT4,     gadget: mod.Gadgets.Launcher_Aim_Guided, pool: { maxCount: 4, rechargeSeconds: 180, teamShared: true } },
+        { name: "Stinger", labelKey: STR_UI_STINGER, gadget: mod.Gadgets.Launcher_Air_Defense },
     ],
     launcherCooldownSeconds: 180,
     ammoCooldownSeconds: 60,
@@ -72,7 +72,7 @@ const DEFAULT_GADGET_LOCKER_CONFIG: GadgetLockerConfig = {
         { name: "MedicGrenadeIntercept", labelKey: STR_UI_GRENADE_INTERCEPT, gadget: mod.Gadgets.Deployable_Grenade_Intercept_System, slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 180, teamShared: false, maxCount: 1, iconSize: 36, iconY: IY },
         { name: "MedicMissileIntercept", labelKey: STR_UI_MISSILE_INTERCEPT, gadget: mod.Gadgets.Deployable_Missile_Intercept_System, slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 180, teamShared: false, maxCount: 1, iconSize: 36, iconY: IY },
     ],
-    medicSmoke: { name: "MedicSmoke", labelKey: STR_UI_SMOKE_SCREEN, gadget: mod.Gadgets.CallIn_Smoke_Screen, slot: mod.InventorySlots.Callins, cooldownSeconds: 300, teamShared: true, maxCount: 1 },
+    medicSmoke: { name: "MedicSmoke", labelKey: STR_UI_SMOKE_SCREEN, gadget: mod.Gadgets.CallIn_Smoke_Screen, slot: mod.InventorySlots.Callins, cooldownSeconds: 420, teamShared: true, maxCount: 1 },
     recon: [
         { name: "ReconDrone", labelKey: STR_UI_DRONE,                gadget: mod.Gadgets.Deployable_Recon_Drone,         slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 300, teamShared: false, maxCount: 1, iconSize: 30, iconY: IY },
         { name: "ReconC4",    labelKey: STR_UI_C4,                   gadget: mod.Gadgets.Misc_Demolition_Charge,         slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 180, teamShared: false, maxCount: 1, iconSize: 40, iconY: IY },
@@ -138,8 +138,10 @@ const DURATION_LABEL_MAP: Record<number, number> = {
     180: mod.stringkeys.twl.ui.duration3m,
     300: mod.stringkeys.twl.ui.duration5m,
     360: mod.stringkeys.twl.ui.duration6m,
+    420: mod.stringkeys.twl.ui.duration7m,
     480: mod.stringkeys.twl.ui.duration8m,
     600: mod.stringkeys.twl.ui.duration10m,
+    900: mod.stringkeys.twl.ui.duration15m,
 };
 function armDur(seconds: number): mod.Message {
     return mod.Message(DURATION_LABEL_MAP[seconds] ?? STR_UI_READY);
@@ -189,6 +191,7 @@ function resetAllArmTimers(): void {
     State.players.armS = {};
     State.round.smk = {};
     State.round.asg = {};
+    State.round.asgL = {};
     refreshOpenArm(0, true);
 }
 function ammoResupplyMenuName(kind: string, pid: number, index?: number): string {
@@ -307,6 +310,20 @@ function ensAsg(teamId: TeamID | 0): Array<{ c: number; n: number }> | undefined
     }
     return State.round.asg[teamId];
 }
+// Returns (or initializes) the per-team launcher pool array. One entry per config launcher; null when that launcher has no pool.
+function ensAsgL(teamId: TeamID | 0): Array<{ c: number; n: number } | null> | undefined {
+    if (teamId !== TeamID.Team1 && teamId !== TeamID.Team2) return undefined;
+    if (!State.round.asgL[teamId]) {
+        const cfg = ACTIVE_GADGET_CONFIG;
+        const arr: Array<{ c: number; n: number } | null> = [];
+        for (let i = 0; i < cfg.launchers.length; i++) {
+            const pool = cfg.launchers[i].pool;
+            arr.push(pool ? { c: pool.maxCount, n: 0 } : null);
+        }
+        State.round.asgL[teamId] = arr;
+    }
+    return State.round.asgL[teamId];
+}
 function ensSmk(teamId: TeamID | 0): {
     c: number;
     n: number;
@@ -361,6 +378,23 @@ function syncAsg(
     for (let i = 0; i < state.length; i++) {
         const max = cfg.assault[i]?.maxCount ?? 1;
         if (state[i].c < max && state[i].n > 0 && now >= state[i].n) { state[i].c = max; state[i].n = 0; }
+    }
+}
+// Ticks each launcher pool's per-charge drip: refills one charge at a time over rechargeSeconds.
+function syncAsgL(
+    state: Array<{ c: number; n: number } | null>,
+    now: number
+): void {
+    const cfg = ACTIVE_GADGET_CONFIG;
+    for (let i = 0; i < state.length; i++) {
+        const entry = state[i];
+        const pool = cfg.launchers[i]?.pool;
+        if (!entry || !pool) continue;
+        while (entry.c < pool.maxCount && entry.n > 0 && now >= entry.n) {
+            entry.c++;
+            entry.n = entry.c < pool.maxCount ? entry.n + pool.rechargeSeconds : 0;
+        }
+        if (entry.c >= pool.maxCount) { entry.c = pool.maxCount; entry.n = 0; }
     }
 }
 function syncSmk(
@@ -791,38 +825,181 @@ function refreshOpenArm(teamId: TeamID | 0 = 0, force: boolean = false): void {
         refreshArmMenu(player, objId, cache, true);
     }
 }
-// Returns true if the player has any launcher from the active gadget config equipped.
-function hasManagedL(eventPlayer: mod.Player): boolean {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
-    const launchers = ACTIVE_GADGET_CONFIG.launchers;
-    for (let i = 0; i < launchers.length; i++) {
-        try {
-            if (mod.HasEquipment(eventPlayer, launchers[i].gadget)) return true;
-        } catch {}
+// Every launcher enum value -- used for detection + sweep so class-loadout launcher variants
+// (e.g. Launcher_High_Explosive labelled "RPG" in-game) don't slip past and produce a 2-launcher
+// state. A v1.293 post-mortem showed that sweeping only ACTIVE_GADGET_CONFIG.launchers missed
+// class launchers whose enum value didn't match any of our 3 tiles.
+const ALL_LAUNCHER_VARIANTS: number[] = [
+    mod.Gadgets.Launcher_Aim_Guided,
+    mod.Gadgets.Launcher_Air_Defense,
+    mod.Gadgets.Launcher_Auto_Guided,
+    mod.Gadgets.Launcher_Breaching_Projectile,
+    mod.Gadgets.Launcher_High_Explosive,
+    mod.Gadgets.Launcher_Incendiary_Airburst,
+    mod.Gadgets.Launcher_Long_Range,
+    mod.Gadgets.Launcher_Smoke_Grenade,
+    mod.Gadgets.Launcher_Thermobaric_Grenade,
+    mod.Gadgets.Launcher_Unguided_Rocket,
+];
+// Per-player authoritative locker slot state -- seeded by a one-time probe on menu open,
+// then updated on every grant/replace we ourselves service. Replaces the per-click
+// buildLockerSnapshot that flip-flopped across launcher variants. See the plan file
+// sleepy-juggling-thunder for the full rationale.
+function probeSlot(player: mod.Player, slot: mod.InventorySlots): { kind: "unknown" | "empty" | "launcher" | "gadget"; source: "probed" } {
+    let loaded = 0, mag = 0, active = false;
+    try { loaded = mod.GetInventoryAmmo(player, slot); } catch {}
+    try { mag = mod.GetInventoryMagazineAmmo(player, slot); } catch {}
+    try { active = mod.IsInventorySlotActive(player, slot); } catch {}
+    const populated = loaded > 0 || mag > 0;
+    if (populated && loaded === 1) return { kind: "launcher", source: "probed" };
+    if (populated) return { kind: "gadget", source: "probed" };
+    if (active) return { kind: "unknown", source: "probed" };
+    return { kind: "empty", source: "probed" };
+}
+function initLockerSlotStateFromProbe(pid: number, player: mod.Player): void {
+    const g1 = probeSlot(player, mod.InventorySlots.GadgetOne);
+    const g2 = probeSlot(player, mod.InventorySlots.GadgetTwo);
+    // Attach owned launchers to whichever slot has kind="launcher". HasEquipment misses some
+    // class variants (that's the whole reason we're here), but any launcher it DOES see we
+    // want annotated so click-dup-reject works for the common case.
+    for (let i = 0; i < ALL_LAUNCHER_VARIANTS.length; i++) {
+        const lg = ALL_LAUNCHER_VARIANTS[i];
+        let owned = false;
+        try { owned = mod.HasEquipment(player, lg); } catch {}
+        if (!owned) continue;
+        if (g1.kind === "launcher" && (g1 as any).gadget === undefined) { (g1 as any).gadget = lg; continue; }
+        if (g2.kind === "launcher" && (g2 as any).gadget === undefined) { (g2 as any).gadget = lg; continue; }
     }
+    // Attach owned non-launcher managed gadgets (C4, Drone, Beacon, Ladder, Intercepts) to
+    // whichever gadget slot has kind="gadget" and no id yet. Best-effort -- used for tile
+    // dup-dim on menu open before the user places anything.
+    const cfg = ACTIVE_GADGET_CONFIG;
+    const nonLauncherManaged: number[] = [];
+    for (const a of cfg.assault) nonLauncherManaged.push(a.gadget);
+    for (const m of cfg.medicItems) nonLauncherManaged.push(m.gadget);
+    for (const r of cfg.recon) nonLauncherManaged.push(r.gadget);
+    for (let i = 0; i < nonLauncherManaged.length; i++) {
+        const g = nonLauncherManaged[i];
+        let owned = false;
+        try { owned = mod.HasEquipment(player, g); } catch {}
+        if (!owned) continue;
+        if (g1.kind === "gadget" && (g1 as any).gadget === undefined) { (g1 as any).gadget = g; continue; }
+        if (g2.kind === "gadget" && (g2 as any).gadget === undefined) { (g2 as any).gadget = g; continue; }
+    }
+    State.players.lockerSlots[pid] = {
+        g1: g1 as any,
+        g2: g2 as any,
+        initializedAt: mod.GetMatchTimeElapsed(),
+    };
+}
+function slotWithLauncher(slotsState: any): mod.InventorySlots | undefined {
+    if (!slotsState) return undefined;
+    if (slotsState.g1.kind === "launcher") return mod.InventorySlots.GadgetOne;
+    if (slotsState.g2.kind === "launcher") return mod.InventorySlots.GadgetTwo;
+    return undefined;
+}
+function ownedByLockerState(slotsState: any, gadgetId: number): boolean {
+    if (!slotsState) return false;
+    if (slotsState.g1.gadget === gadgetId) return true;
+    if (slotsState.g2.gadget === gadgetId) return true;
     return false;
 }
-function giveLauncher(eventPlayer: mod.Player, gadget: number): boolean {
+// Owned check for a tile. Gadget-slot tiles consult state (authoritative post-probe).
+// Callins / Throwable tiles fall back to HasEquipment since we don't model those slots.
+function tileOwned(eventPlayer: mod.Player, slotsState: any, gadgetId: number, inventorySlot: mod.InventorySlots | undefined): boolean {
+    if (inventorySlot === mod.InventorySlots.GadgetOne || inventorySlot === mod.InventorySlots.GadgetTwo) {
+        return ownedByLockerState(slotsState, gadgetId);
+    }
+    try { return mod.HasEquipment(eventPlayer, gadgetId); } catch { return false; }
+}
+function recordPlacement(pid: number, slot: mod.InventorySlots, gadgetId: number, kind: "launcher" | "gadget"): void {
+    const slotsState = State.players.lockerSlots[pid];
+    if (!slotsState) return;
+    const entry = slot === mod.InventorySlots.GadgetOne ? slotsState.g1 : slot === mod.InventorySlots.GadgetTwo ? slotsState.g2 : undefined;
+    if (!entry) return;
+    entry.kind = kind;
+    entry.gadget = gadgetId;
+    entry.source = "placed";
+}
+// Re-probes the sibling gadget slot after a placement so state reflects side effects of the
+// gadget-id sweep (e.g. a class-loadout C4 in GadgetOne getting removed when we placed C4 in
+// GadgetTwo). Only overwrites when we don't already know the sibling's id -- a known locker-
+// placed gadget should not be downgraded to an anonymous probe reading.
+function reprobeSiblingGadgetSlot(pid: number, placedSlot: mod.InventorySlots, player: mod.Player): void {
+    if (placedSlot !== mod.InventorySlots.GadgetOne && placedSlot !== mod.InventorySlots.GadgetTwo) return;
+    const slotsState = State.players.lockerSlots[pid];
+    if (!slotsState) return;
+    const placedIsG1 = placedSlot === mod.InventorySlots.GadgetOne;
+    const siblingEntry = placedIsG1 ? slotsState.g2 : slotsState.g1;
+    if (siblingEntry.gadget !== undefined) return;
+    const siblingSlot = placedIsG1 ? mod.InventorySlots.GadgetTwo : mod.InventorySlots.GadgetOne;
+    const fresh = probeSlot(player, siblingSlot);
+    siblingEntry.kind = fresh.kind;
+    siblingEntry.source = "probed";
+}
+// If the tile's preferred gadget slot is occupied (by anything we probed or placed) and the
+// sibling gadget slot is empty, retarget to the empty slot. Preserves class-loadout gadgets
+// (C4/Drone/intercepts) that HasEquipment can't identify -- rather than blind-replace the
+// unknown occupant, drop into the confirmed-empty slot.
+function preferEmptyGadgetSlot(pid: number, preferredSlot: mod.InventorySlots): mod.InventorySlots {
+    if (preferredSlot !== mod.InventorySlots.GadgetOne && preferredSlot !== mod.InventorySlots.GadgetTwo) return preferredSlot;
+    const slotsState = State.players.lockerSlots[pid];
+    if (!slotsState) return preferredSlot;
+    const preferredIsG1 = preferredSlot === mod.InventorySlots.GadgetOne;
+    const preferredEntry = preferredIsG1 ? slotsState.g1 : slotsState.g2;
+    if (preferredEntry.kind === "empty") return preferredSlot;
+    const siblingEntry = preferredIsG1 ? slotsState.g2 : slotsState.g1;
+    if (siblingEntry.kind === "empty") {
+        return preferredIsG1 ? mod.InventorySlots.GadgetTwo : mod.InventorySlots.GadgetOne;
+    }
+    return preferredSlot;
+}
+// Grants a launcher. Reads the authoritative per-player slot state for dup-reject and target
+// selection; updates state on success. Non-negotiable: any launcher tile click always targets
+// whichever slot currently holds a launcher (per state). Only when no launcher exists in
+// either slot do we fall back to GadgetTwo. Ammo is preserved across the swap.
+function giveLauncher(eventPlayer: mod.Player, gadget: number, pid: number): boolean {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    const slotsState = State.players.lockerSlots[pid];
+    if (!slotsState) return false;
+    if (ownedByLockerState(slotsState, gadget)) return false; // dup -> silent reject
+    const currentLauncherSlot = slotWithLauncher(slotsState);
+    const targetSlot: mod.InventorySlots = currentLauncherSlot !== undefined
+        ? currentLauncherSlot
+        : mod.InventorySlots.GadgetTwo;
+    // Preserve launcher-in-slot ammo across the swap -- rocket ammo is fungible from the
+    // player's perspective for RPG/AT4/Stinger.
+    let preserveLoaded = 1;
+    let preserveMag = 0;
     try {
-        if (mod.HasEquipment(eventPlayer, gadget)) {
-            return false;
+        const a = mod.GetInventoryAmmo(eventPlayer, targetSlot);
+        if (a > 0) preserveLoaded = a;
+    } catch {}
+    try {
+        const m = mod.GetInventoryMagazineAmmo(eventPlayer, targetSlot);
+        if (m > 0) preserveMag = m;
+    } catch {}
+    // Defensive sweep: if any other launcher variant is HasEquipment-visible, remove it.
+    // State-driven placement should keep both slots from holding launchers, but class-loadout
+    // pickups between menu sessions could leave a stray.
+    for (let i = 0; i < ALL_LAUNCHER_VARIANTS.length; i++) {
+        const L = ALL_LAUNCHER_VARIANTS[i];
+        if (L === gadget) continue;
+        let owned = false;
+        try { owned = mod.HasEquipment(eventPlayer, L); } catch {}
+        if (owned) {
+            try { mod.RemoveEquipment(eventPlayer, L); } catch {}
         }
-    } catch {}
+    }
+    try { mod.RemoveEquipment(eventPlayer, targetSlot); } catch {}
     try {
-        mod.RemoveEquipment(eventPlayer, mod.InventorySlots.GadgetTwo);
-    } catch {}
-    try {
-        mod.AddEquipment(eventPlayer, gadget, mod.InventorySlots.GadgetTwo);
+        mod.AddEquipment(eventPlayer, gadget, targetSlot);
     } catch {
         return false;
     }
-    try {
-        mod.SetInventoryAmmo(eventPlayer, mod.InventorySlots.GadgetTwo, 1);
-    } catch {}
-    try {
-        mod.SetInventoryMagazineAmmo(eventPlayer, mod.InventorySlots.GadgetTwo, 0);
-    } catch {}
+    try { mod.SetInventoryAmmo(eventPlayer, targetSlot, preserveLoaded); } catch {}
+    try { mod.SetInventoryMagazineAmmo(eventPlayer, targetSlot, preserveMag); } catch {}
+    recordPlacement(pid, targetSlot, gadget, "launcher");
     return true;
 }
 function giveMedicSmoke(eventPlayer: mod.Player): boolean {
@@ -833,6 +1010,7 @@ function giveMedicSmoke(eventPlayer: mod.Player): boolean {
         hasSmoke = mod.HasEquipment(eventPlayer, smokeGadget);
     } catch {}
     if (hasSmoke) return false;
+    // Callins slot -- not modelled in lockerSlots state; HasEquipment is canonical here.
     try {
         mod.RemoveEquipment(eventPlayer, mod.InventorySlots.Callins);
     } catch {}
@@ -851,74 +1029,123 @@ function giveMedicSmoke(eventPlayer: mod.Player): boolean {
     } catch {}
     return hasSmoke;
 }
+// Grants an assault/medic-row gadget into a specific slot. Dup check consults lockerSlots
+// state for gadget-slot placements (authoritative) and HasEquipment for Callins/Throwable.
 function giveAssaultItem(
     eventPlayer: mod.Player,
     gadget: number,
     inventorySlot: mod.InventorySlots,
-    forceSwitch: boolean
+    forceSwitch: boolean,
+    pid: number
 ): boolean {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    const slotsState = State.players.lockerSlots[pid];
+    if (inventorySlot === mod.InventorySlots.GadgetOne || inventorySlot === mod.InventorySlots.GadgetTwo) {
+        if (ownedByLockerState(slotsState, gadget)) return false;
+    } else {
+        try {
+            if (mod.HasEquipment(eventPlayer, gadget)) return false;
+        } catch {}
+    }
+    // Retarget to an empty sibling gadget slot if the configured slot is occupied. Protects
+    // a class-loadout gadget in the other slot that HasEquipment couldn't identify.
+    const targetSlot = preferEmptyGadgetSlot(pid, inventorySlot);
+    // Gadget-id sweep: removes any existing copy in any slot before we place. Mirrors the
+    // launcher-variant sweep in giveLauncher. Intended to catch class-loadout gadgets that
+    // HasEquipment can't see (e.g. class C4 in GadgetOne while tile targets GadgetTwo).
+    try { mod.RemoveEquipment(eventPlayer, gadget); } catch {}
     try {
-        mod.RemoveEquipment(eventPlayer, inventorySlot);
+        mod.RemoveEquipment(eventPlayer, targetSlot);
     } catch {}
     try {
-        mod.AddEquipment(eventPlayer, gadget, inventorySlot);
+        mod.AddEquipment(eventPlayer, gadget, targetSlot);
     } catch {
         return false;
     }
     if (forceSwitch) {
         try {
-            mod.ForceSwitchInventory(eventPlayer, inventorySlot);
+            mod.ForceSwitchInventory(eventPlayer, targetSlot);
         } catch {}
+    }
+    if (targetSlot === mod.InventorySlots.GadgetOne || targetSlot === mod.InventorySlots.GadgetTwo) {
+        recordPlacement(pid, targetSlot, gadget, "gadget");
+        reprobeSiblingGadgetSlot(pid, targetSlot, eventPlayer);
     }
     return true;
 }
+// Grants a recon-column gadget into a specific slot. Dup check consults lockerSlots state
+// for gadget-slot placements (authoritative) and HasEquipment for Throwable.
 function giveReconItem(
     eventPlayer: mod.Player,
     gadget: number,
-    inventorySlot: mod.InventorySlots
+    inventorySlot: mod.InventorySlots,
+    pid: number
 ): boolean {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    const slotsState = State.players.lockerSlots[pid];
+    if (inventorySlot === mod.InventorySlots.GadgetOne || inventorySlot === mod.InventorySlots.GadgetTwo) {
+        if (ownedByLockerState(slotsState, gadget)) return false;
+    } else {
+        try {
+            if (mod.HasEquipment(eventPlayer, gadget)) return false;
+        } catch {}
+    }
+    // Retarget to an empty sibling gadget slot if the configured slot is occupied. Protects
+    // a class-loadout gadget in the other slot that HasEquipment couldn't identify.
+    const targetSlot = preferEmptyGadgetSlot(pid, inventorySlot);
+    // Gadget-id sweep: removes any existing copy in any slot before we place. Mirrors the
+    // launcher-variant sweep in giveLauncher -- class C4 / Drone in the non-target slot would
+    // otherwise produce a double-equip when HasEquipment misses the class variant.
+    try { mod.RemoveEquipment(eventPlayer, gadget); } catch {}
     try {
-        mod.RemoveEquipment(eventPlayer, inventorySlot);
+        mod.RemoveEquipment(eventPlayer, targetSlot);
     } catch {}
     try {
-        mod.AddEquipment(eventPlayer, gadget, inventorySlot);
+        mod.AddEquipment(eventPlayer, gadget, targetSlot);
     } catch {
         return false;
     }
-    if (inventorySlot === mod.InventorySlots.Throwable) {
+    if (targetSlot === mod.InventorySlots.Throwable) {
         try {
             mod.SetInventoryAmmo(eventPlayer, mod.InventorySlots.Throwable, 2);
         } catch {}
     } else if (gadget === mod.Gadgets.Misc_Demolition_Charge) {
         try {
-            mod.SetInventoryAmmo(eventPlayer, mod.InventorySlots.GadgetTwo, 3);
+            mod.SetInventoryAmmo(eventPlayer, targetSlot, 3);
         } catch {}
+    }
+    if (targetSlot === mod.InventorySlots.GadgetOne || targetSlot === mod.InventorySlots.GadgetTwo) {
+        recordPlacement(pid, targetSlot, gadget, "gadget");
+        reprobeSiblingGadgetSlot(pid, targetSlot, eventPlayer);
     }
     return true;
 }
-function giveRocketCharge(eventPlayer: mod.Player): boolean {
+// Refills launcher ammo. Targets whichever slot state reports as holding a launcher.
+// Returns false (and consumes no charge) when no launcher slot is tracked.
+function giveRocketCharge(eventPlayer: mod.Player, pid: number): boolean {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
-    if (!hasManagedL(eventPlayer)) return false;
+    const slotsState = State.players.lockerSlots[pid];
+    if (!slotsState) return false;
+    const slot = slotWithLauncher(slotsState);
+    if (slot === undefined) return false;
     let ammo = 0;
     let magAmmo = 0;
     try {
-        ammo = Math.max(0, mod.GetInventoryAmmo(eventPlayer, mod.InventorySlots.GadgetTwo));
+        ammo = Math.max(0, mod.GetInventoryAmmo(eventPlayer, slot));
     } catch {}
     try {
-        magAmmo = Math.max(0, mod.GetInventoryMagazineAmmo(eventPlayer, mod.InventorySlots.GadgetTwo));
+        magAmmo = Math.max(0, mod.GetInventoryMagazineAmmo(eventPlayer, slot));
     } catch {}
     if (ammo <= 0) {
         try {
-            mod.SetInventoryAmmo(eventPlayer, mod.InventorySlots.GadgetTwo, 1);
+            mod.SetInventoryAmmo(eventPlayer, slot, 1);
         } catch {
             return false;
         }
         return true;
     }
     try {
-        mod.SetInventoryMagazineAmmo(eventPlayer, mod.InventorySlots.GadgetTwo, magAmmo + 1);
+        mod.SetInventoryMagazineAmmo(eventPlayer, slot, magAmmo + 1);
     } catch {
         return false;
     }
@@ -1178,7 +1405,9 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
             18,
             mod.UIAnchor.Center,
             mod.UIAnchor.Center,
-            armScope(false),
+            launcherItem.pool?.teamShared
+                ? mod.Message(STR_UI_N_PER_TEAM, launcherItem.pool.maxCount)
+                : armScope(false),
             eventPlayer,
             rowParent,
             TILE_SCOPE_SIZE,
@@ -1520,9 +1749,11 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     const isReconClass = isCls(eventPlayer, mod.SoldierClass.Recon);
     const smokeState = ensSmk(teamId);
     const assaultState = ensAsg(teamId);
+    const launcherPoolState = ensAsgL(teamId);
     syncArm(launch, now);
     if (smokeState) syncSmk(smokeState, now);
     if (assaultState) syncAsg(assaultState, now);
+    if (launcherPoolState) syncAsgL(launcherPoolState, now);
     if (assaultGroup.n <= now) {
         assaultGroup.n = 0;
         assaultGroup.s = -1;
@@ -1540,11 +1771,16 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     const launcherReady = launcherRemaining <= 0;
     const launcherMessage = fmtClock(launcherRemaining);
     const launcherColor = launcherReady ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW;
-    const hasLauncher = hasManagedL(eventPlayer);
+    // Authoritative per-player slot state, seeded on menu open and kept in sync by give* calls.
+    // Tile dup-dim and launcher-slot visibility all read from this; no per-tick re-probing.
+    const slotsState = State.players.lockerSlots[pid];
+    const launcherSlotKnown = slotWithLauncher(slotsState) !== undefined;
+    const hasLauncher = launcherSlotKnown;
     const smokeCount = Math.max(0, Math.min(cfg.medicSmoke.maxCount, smokeState?.c ?? 0));
     const smokeRemaining = Math.max(0, (smokeState?.n ?? 0) - now);
     const smokeReady = smokeRemaining <= 0;
-    const smokeEnabled = isMedicClass && smokeCount > 0 && smokeReady && !gadgetBlocked;
+    const smokeAlreadyHas = tileOwned(eventPlayer, slotsState, cfg.medicSmoke.gadget, cfg.medicSmoke.slot);
+    const smokeEnabled = isMedicClass && smokeCount > 0 && smokeReady && !gadgetBlocked && !smokeAlreadyHas;
     const smokeMessage = smokeRemaining > 0 ? fmtClock(smokeRemaining) : mod.Message(STR_UI_READY);
     const smokeOverlayMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, smokeCount);
     const medicRemaining = Math.max(0, (state.mN ?? 0) - now);
@@ -1592,7 +1828,8 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         const count = Math.max(0, Math.min(item.maxCount, asgEntry?.c ?? 0));
         const remaining = Math.max(0, (asgEntry?.n ?? 0) - now);
         const ready = count > 0 && remaining <= 0;
-        const enabled = isAssaultClass && assaultGroupRemaining <= 0 && ready && !gadgetBlocked;
+        const alreadyHas = tileOwned(eventPlayer, slotsState, item.gadget, item.slot);
+        const enabled = isAssaultClass && assaultGroupRemaining <= 0 && ready && !gadgetBlocked && !alreadyHas;
         const showSelectedAssaultTimer = isAssaultClass && assaultGroupRemaining > 0 && assaultGroup.s === i;
         const hideAssaultTimer = isAssaultClass && assaultGroupRemaining > 0 && assaultGroup.s !== i;
         const sig = [
@@ -1603,6 +1840,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             hideAssaultTimer ? 1 : 0,
             isAssaultClass ? 1 : 0,
             assaultGroupRemaining > 0 ? 1 : 0,
+            alreadyHas ? 1 : 0,
         ].join("|");
         if (tile.sig !== sig) {
             const overlayMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, count);
@@ -1642,6 +1880,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             smokeRemaining > 0 ? Math.ceil(smokeRemaining) : 0,
             isMedicClass ? 1 : 0,
             smokeReady ? 1 : 0,
+            smokeAlreadyHas ? 1 : 0,
         ].join("|");
         if (cache.m.sig !== sig) {
             setTileHeaderWidgets(cache.m, STR_UI_SMOKE_SCREEN, smokeEnabled ? COLOR_READY_GREEN : isMedicClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
@@ -1662,7 +1901,8 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     for (let i = 0; i < cache.x.length; i++) {
         const tile = cache.x[i];
         const medicItem = cfg.medicItems[i];
-        const enabled = isMedicClass && medicReady && !gadgetBlocked;
+        const medicAlreadyHas = tileOwned(eventPlayer, slotsState, medicItem.gadget, medicItem.slot);
+        const enabled = isMedicClass && medicReady && !gadgetBlocked && !medicAlreadyHas;
         const count = medicReady ? medicItem.maxCount : 0;
         const showSelectedMedicTimer = isMedicClass && medicRemaining > 0 && state.mS === i;
         const sig = [
@@ -1671,6 +1911,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             medicRemaining > 0 ? Math.ceil(medicRemaining) : 0,
             showSelectedMedicTimer ? 1 : 0,
             isMedicClass ? 1 : 0,
+            medicAlreadyHas ? 1 : 0,
         ].join("|");
         if (tile.sig !== sig) {
             setTileHeaderWidgets(tile, medicItem.labelKey, enabled ? COLOR_READY_GREEN : isMedicClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
@@ -1689,18 +1930,28 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     }
     for (let i = 0; i < cache.rows.length; i++) {
         const row = cache.rows[i];
-        const launcherEnabled = isEngineerClass && launcherReady && !gadgetBlocked;
-        const launcherCount = launcherReady ? 1 : 0;
+        const launcherItem = cfg.launchers[i];
+        const pool = launcherItem.pool;
+        const poolEntry = pool ? launcherPoolState?.[i] : null;
+        const poolCount = pool ? (poolEntry?.c ?? 0) : 1;
+        const poolRemaining = pool ? Math.max(0, (poolEntry?.n ?? 0) - now) : 0;
+        const poolReady = !pool || poolCount > 0;
+        const launcherAlreadyHas = ownedByLockerState(slotsState, launcherItem.gadget);
+        const launcherEnabled = isEngineerClass && launcherReady && poolReady && !gadgetBlocked && !launcherAlreadyHas;
+        const launcherCount = pool ? poolCount : (launcherReady ? 1 : 0);
         const showSelectedLauncherTimer = isEngineerClass && launcherRemaining > 0 && launch.s === i;
         const sig = [
             launcherEnabled ? 1 : 0,
             launcherCount,
             launcherRemaining > 0 ? Math.ceil(launcherRemaining) : 0,
+            pool ? Math.ceil(poolRemaining) : 0,
             showSelectedLauncherTimer ? 1 : 0,
             isEngineerClass ? 1 : 0,
+            pool ? 1 : 0,
+            launcherAlreadyHas ? 1 : 0,
         ].join("|");
         if (row.sig !== sig) {
-            setTileHeaderWidgets(row, cfg.launchers[i].labelKey, launcherEnabled ? COLOR_READY_GREEN : isEngineerClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
+            setTileHeaderWidgets(row, launcherItem.labelKey, launcherEnabled ? COLOR_READY_GREEN : isEngineerClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
             safeSetUITextLabel(row.cd, launcherRemaining > 0 ? launcherMessage : mod.Message(STR_UI_READY));
             safeSetUITextColor(row.cd, isEngineerClass ? (showSelectedLauncherTimer ? COLOR_GRAY : launcherColor) : COLOR_GRAY);
             safeSetUIWidgetVisible(row.cd, !isEngineerClass || launcherRemaining <= 0 || showSelectedLauncherTimer);
@@ -1719,7 +1970,10 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     }
     const ammoCount = Math.max(0, Math.min(cfg.ammoMaxCharges, launch.aC));
     const ammoRemaining = Math.max(0, launch.aN - now);
-    const ammoEnabled = isEngineerClass && ammoCount > 0 && hasLauncher && !gadgetBlocked;
+    // Ammo enabled only when state says a launcher slot exists. giveRocketCharge refuses when
+    // slotWithLauncher is undefined, so we must not render a "ready" tile that would consume
+    // a charge for nothing.
+    const ammoEnabled = isEngineerClass && ammoCount > 0 && launcherSlotKnown && !gadgetBlocked;
     const ammoOverlayMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, ammoCount);
     {
         const sig = [
@@ -1739,7 +1993,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             );
             safeSetUITextColor(
                 cache.e.cd,
-                !isEngineerClass || !hasLauncher ? COLOR_GRAY : (ammoRemaining > 0 ? COLOR_WARNING_YELLOW : COLOR_READY_GREEN)
+                !isEngineerClass || !hasLauncher || !launcherSlotKnown ? COLOR_GRAY : (ammoRemaining > 0 ? COLOR_WARNING_YELLOW : COLOR_READY_GREEN)
             );
             safeSetUITextLabel(cache.e.cs, ammoOverlayMessage);
             safeSetUITextLabel(cache.e.ct, ammoOverlayMessage);
@@ -1758,7 +2012,8 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         const reconItem = cfg.recon[i];
         const remaining = i === 0 ? reconDroneRemaining : reconSharedRemaining;
         const ready = remaining <= 0;
-        const enabled = isReconClass && ready && !gadgetBlocked;
+        const reconAlreadyHas = tileOwned(eventPlayer, slotsState, reconItem.gadget, reconItem.slot);
+        const enabled = isReconClass && ready && !gadgetBlocked && !reconAlreadyHas;
         const count = ready ? reconItem.maxCount : 0;
         const showSelectedReconTimer = i > 0 && isReconClass && reconSharedRemaining > 0 && state.rgS === i;
         const sig = [
@@ -1768,6 +2023,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             showSelectedReconTimer ? 1 : 0,
             isReconClass ? 1 : 0,
             i,
+            reconAlreadyHas ? 1 : 0,
         ].join("|");
         if (tile.sig !== sig) {
             setTileHeaderWidgets(tile, reconItem.labelKey, enabled ? COLOR_READY_GREEN : isReconClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
@@ -1801,6 +2057,9 @@ function closeArmMenu(eventPlayer: mod.Player | number): void {
     if (!isArmOpen(pid)) return;
     setArmOpen(pid, false);
     setArmObj(pid, undefined);
+    // Wipe per-session slot state so the next open re-probes fresh (avoids drift from
+    // between-session respawns, kit pickups, class changes).
+    delete State.players.lockerSlots[pid];
     const cache = State.hudCache.ammoResupplyMenuCache[pid];
     if (cache) showArmMenu(cache, false);
     if (player && mod.IsPlayerValid(player)) {
@@ -1828,6 +2087,9 @@ function openArmMenu(eventPlayer: mod.Player, objId: number): boolean {
     const cache = buildArmMenuHidden(eventPlayer);
     if (!cache) return false;
     setArmObj(pid, objId);
+    // Seed authoritative slot state BEFORE the first refresh so tile dup-dim and the Launcher
+    // Ammo enable flag read from accurate data on the opening frame.
+    initLockerSlotStateFromProbe(pid, eventPlayer);
     refreshArmMenu(eventPlayer, objId, cache, true);
     showArmMenu(cache, true);
     setArmOpen(pid, true);
@@ -1924,9 +2186,11 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
     const isReconClass = isCls(eventPlayer, mod.SoldierClass.Recon);
     const smokeState = ensSmk(teamId);
     const assaultState = ensAsg(teamId);
+    const launcherPoolState = ensAsgL(teamId);
     syncArm(launch, now);
     if (smokeState) syncSmk(smokeState, now);
     if (assaultState) syncAsg(assaultState, now);
+    if (launcherPoolState) syncAsgL(launcherPoolState, now);
     if (assaultTileIndex >= 0) {
         if (!isAssaultClass || !assaultState) return true;
         const item = cfg.assault[assaultTileIndex];
@@ -1935,7 +2199,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         const count = asgEntry.c;
         const nextReady = asgEntry.n;
         if (assaultGroup.n > now || count <= 0 || nextReady > now) return true;
-        if (giveAssaultItem(eventPlayer, item.gadget, item.slot, item.slot === mod.InventorySlots.Callins)) {
+        if (giveAssaultItem(eventPlayer, item.gadget, item.slot, item.slot === mod.InventorySlots.Callins, pid)) {
             const next = now + item.cooldownSeconds;
             assaultGroup.n = next;
             assaultGroup.s = assaultTileIndex;
@@ -1959,7 +2223,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
     if (medicTileIndex >= 0) {
         if (!isMedicClass || (state.mN ?? 0) > now) return true;
         const item = cfg.medicItems[medicTileIndex];
-        if (giveAssaultItem(eventPlayer, item.gadget, mod.InventorySlots.GadgetTwo, false)) {
+        if (giveAssaultItem(eventPlayer, item.gadget, mod.InventorySlots.GadgetTwo, false, pid)) {
             state.mN = now + item.cooldownSeconds;
             state.mS = medicTileIndex;
             playArmSfx(eventPlayer);
@@ -1969,11 +2233,20 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
     }
     if (actionIndex >= 0) {
         if (!isEngineerClass || launch.lN > now) return true;
-        if (giveLauncher(eventPlayer, cfg.launchers[actionIndex].gadget)) {
+        const launcherItem = cfg.launchers[actionIndex];
+        const pool = launcherItem.pool;
+        const poolEntry = pool ? launcherPoolState?.[actionIndex] : undefined;
+        if (pool && (!poolEntry || poolEntry.c <= 0)) return true;
+        if (giveLauncher(eventPlayer, launcherItem.gadget, pid)) {
             launch.lN = now + cfg.launcherCooldownSeconds;
             launch.s = actionIndex;
+            if (pool && poolEntry) {
+                poolEntry.c -= 1;
+                if (poolEntry.n <= now) poolEntry.n = now + pool.rechargeSeconds;
+            }
             playArmSfx(eventPlayer);
-            refreshArmMenu(eventPlayer, objId, cache, true);
+            if (pool) refreshOpenArm(teamId, true);
+            else refreshArmMenu(eventPlayer, objId, cache, true);
         }
         return true;
     }
@@ -1982,7 +2255,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         const item = cfg.recon[reconTileIndex];
         const nextReady = reconTileIndex === 0 ? state.rdN : state.rgN;
         if (nextReady > now) return true;
-        if (giveReconItem(eventPlayer, item.gadget, item.slot)) {
+        if (giveReconItem(eventPlayer, item.gadget, item.slot, pid)) {
             if (reconTileIndex === 0) state.rdN = now + item.cooldownSeconds;
             else {
                 state.rgN = now + item.cooldownSeconds;
@@ -1995,7 +2268,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
     }
     if (isChargeWidget) {
         if (launch.aC <= 0) return true;
-        if (giveRocketCharge(eventPlayer)) {
+        if (giveRocketCharge(eventPlayer, pid)) {
             launch.aC = Math.max(0, launch.aC - 1);
             if (launch.aC < cfg.ammoMaxCharges && launch.aN <= now) launch.aN = now + cfg.ammoCooldownSeconds;
             playArmSfx(eventPlayer);

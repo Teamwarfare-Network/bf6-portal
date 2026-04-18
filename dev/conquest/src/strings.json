@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.286)",
+        "title": "teamwarfare . net | TWL Conquest (v1.303)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -307,6 +307,7 @@
       "noLauncher": "N/A",
       "onePerTeam": "1 per team",
       "onePerPlayer": "1 per player",
+      "nPerTeam": "{0} per team",
       "chooseOnlyOne": "CHOOSE ONLY ONE",
       "lineSmoke": "SMOKE",
       "lineArtillery": "ARTILLERY",
@@ -325,9 +326,11 @@
       "duration3m": "3m",
       "duration5m": "5m",
       "duration6m": "6m",
+      "duration7m": "7m",
       "duration7m30s": "7m30s",
       "duration8m": "8m",
       "duration10m": "10m",
+      "duration15m": "15m",
       "spawn": "DEPLOY",
       "airDeploy": "AIR DEPLOY",
       "groundDeploy": "GROUND DEPLOY",

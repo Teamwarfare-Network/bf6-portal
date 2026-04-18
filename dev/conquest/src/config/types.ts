@@ -64,6 +64,12 @@ type GadgetItemConfig = {
 type GadgetLockerLauncherConfig = {
     labelKey: number;        // Display name string key
     gadget: number;          // mod.Gadgets launcher enum
+    name?: string;           // Stable key for widget/state lookup (falls back to index when omitted)
+    pool?: {
+        maxCount: number;        // Team/player pool size
+        rechargeSeconds: number; // Per-charge drip interval (refills one charge at a time)
+        teamShared: boolean;     // true = team-scoped pool; false reserved for per-player pool (not yet wired)
+    };
 };
 
 // Per-map gadget locker layout. Omit from MapConfig to use defaults.

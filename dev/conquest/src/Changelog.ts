@@ -3,6 +3,23 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.303: ammo-locker: re-probe sibling gadget slot after placement so the id-sweep's side effects (freed class-loadout slot) become visible to subsequent clicks
+// v1.302: ammo-locker: retarget recon/assault/medic gadget placements to empty sibling slot when configured slot is occupied (preserves class-loadout gadgets)
+// v1.301: ammo-locker: gadget-id sweep before AddEquipment in recon/assault helpers to catch class-loadout duplicates (C4/Drone)
+// v1.300: ammo-locker: authoritative per-player slot state; probe on open, update on click
+// v1.299: ammo-locker: per-player slot cache from giveLauncher so refill targets the exact slot swapped into (AT4/Stinger)
+// v1.298: ammo-locker: remove over-aggressive stomp guard to restore cross-launcher swap
+// v1.297: ammo-locker: stomp guard for invisible-class launchers; remove bogus GadgetTwo fallback in refill
+// v1.296: ammo-locker: restore HasEquipment dup-reject (fixes 2-RPG regression); ammo refill falls back to GadgetTwo on probe miss
+// v1.295: ammo-locker: switch launcher-slot probe + ammo refill to ammo-populated detection; drop HasEquipment-based dup-reject on launchers (class variants invisible to it)
+// v1.294: ammo-locker: sweep all 10 launcher variants (fixes 2-launcher state when class loadout uses a variant outside our tile set)
+// v1.293: ammo-locker: snapshot-probe dynamic slot management (dup prevent + same-slot launcher swap + honest launcher ammo)
+// v1.292: ammo-locker: tuning fixes (AT4 pool 3->4, duration labels for 7m/15m, N per team scope string)
+// v1.291: ammo-locker: tuning (Artillery 10m, SpawnBeacon 15m, Smoke 7m) + per-launcher team pool config (AT4 3/team, 180s per-charge drip)
+// v1.290: ammo-locker: tuning (Artillery 10m, SpawnBeacon 15m, Smoke 7m) + per-launcher team pool config (AT4 3/team, 180s per-charge drip)
+// v1.289: hq-deploy: zero redeploy timer around UndeployPlayer so on-foot seat flow is not delayed by post-death countdown
+// v1.288: hq-deploy: on-foot path — poll undeploy completion and retry DeployPlayer after the deploy-screen transition
+// v1.287: hq-deploy: on-foot live-terminal HQ dispatch with undeploy->redeploy seating (Option C)
 // v1.286: hq-deploy: pending-state HUD signal (SPAWNING/DEPLOYING in warning yellow) and tighten sinkAndDestroyVehicle slot context at vehicle-type change
 // v1.285: hq-deploy: revert to slotPos-priority sink (v1.284 GetObjectPosition-primary was worse); defer fallback-source work to Phase 5
 // v1.284: hq-deploy: sink via relative Y-200 offset instead of absolute -1000 (minimap 3D projection was showing illusion of map-center drag)

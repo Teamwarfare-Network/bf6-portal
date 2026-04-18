@@ -1,7 +1,11 @@
 # Conquest Issues
 
-Last Updated: 2026-04-14 (v1.230)  
-Last Tested Build: `v1.158` (v1.155 stripped the Phase A pre-seat player teleport entirely after git archaeology showed the whole "three-phase regression" narrative was a phantom — `deploy-fulfillment.ts` now byte-equals `b228efc`, matching the v1.109 known-good shape that predates the v1.106-v1.108 teleport-before-`ForcePlayerToSeat` incident; v1.158 ships two isolated World Icon fixes — the air-deploy HQ suppression fix for CQ_Bug_55 that clears `inMainBaseByPid[pid]` when a consumed deploy was air-mode so the existing sync at the end of `onPlayerDeployedImpl` hides the HQ icons automatically, and a `FEATURE_WORLD_ICON_DIAG` dev-only telemetry flag (defaulting false, stripped from shipping builds by postbuild dead-code elimination) that emits one `DisplayHighlightedWorldLogMessage` per spawned-WorldIcon spawn/destroy event to the owning player, encoded as `pid*10000000 + objId*1000 + action*100 + total`, so the next MP playtest can answer whether `SetWorldIconOwner` actually filters per-player visibility in multiplayer — CQ_Bug_25 multi-player confirmation. CQ_Bug_54 remains open for the fresh-aircraft runtime-spawner race that still leaks a tank when the prefab default fires before `SetVehicleSpawnerAutoSpawn(false)` can stop it)
+Last Updated: 2026-04-18 (v1.289)
+Last Tested Build: `v1.289` — Phase 6 HQ Deploy functional for both deploy-menu and on-foot live-terminal surfaces. Vanilla regression path remains byte-identical to the v1.276 baseline. Outstanding: late-joiner redeploy-timer investigation deferred to the polish phase (see memory `project_respawn_redeploy_timer_polish.md`).
+
+**Architecture note (v1.258–v1.259 rewrite).** The Vanilla vehicle spawner was rewritten around one persistent `VehicleSpawner` per slot, a serial `spawnMutex` dispatching via `ForceVehicleSpawnerSpawn`, event-driven bind via `OnVehicleSpawned`, and `Clocks.CountDownClock`-driven respawn. Files `src/vehicles/deploy-fulfillment.ts`, `src/vehicles/reservations.ts`, and `src/vehicles/spawner-sequence.ts` were deleted. All non-Vanilla deploy paths (legacy air-deploy, forward-deploy, HQ-forward) were removed. Any bug entry below whose root cause lived in those files is flagged **Obsolete (v1.259 rewrite)** — the underlying code no longer exists.
+
+**Phase 6 HQ Deploy (v1.277–v1.289).** A parallel opt-in deploy mode lives in `src/vehicles/hq-deploy.ts`. It is selectable from the ready-dialog `Vehicle Deploy Method` knob (`VANILLA` | `HQ`). HQ mode pads start empty at LIVE; a player-triggered click on a per-slot HQ button (deploy screen or live-terminal) dispatches the slot's spawn and seats the requester via `ForcePlayerToSeat` inside the `OnPlayerDeployed` event (BountyHunter pattern). No auto-respawn in HQ mode.
 
 ## Current Snapshot
 - `CQ_Bug_1`: Resolved
@@ -52,13 +56,13 @@ Last Tested Build: `v1.158` (v1.155 stripped the Phase A pre-seat player telepor
 - `CQ_Bug_46`: Resolved (v1.127 — jet and transport spawn rotations on Firestorm were authored in radians instead of degrees)
 - `CQ_Bug_47`: Resolved (v1.137 — Ground Deploy All admin button spawned wrong vehicle types and bypassed orientation pipeline)
 - `CQ_Bug_48`: Resolved (v1.135 — duplicate position debug functions and missing setPerfDiagEnabled when FEATURE_PERF_DIAG=false)
-- `CQ_Bug_49`: Behavioral fix confirmed (v1.146 SP — user tested multiple deploys with no tank-in-the-air regression on heli or jet slots; ground deploys unchanged). v1.147 cleanup: deferred orphan-tank sweep removed (now redundant with inline intercept)
+- `CQ_Bug_49`: **Obsolete (v1.259 rewrite)** — `spawnFreshAircraftDirectSpawnVehicleForSlot` path deleted. Preserved here as historical record of the four-layer guard approach.
 - `CQ_Bug_50`: Fixed (v1.148 — root cause was NOT death races; it was the `releaseLoadingGate` → `revealAllUiFamilies` → `renderAdminUiFamilyForReveal` → `autoStartPositionDebugOnDeploy` reveal chain firing a sync initial sample against `mod.GetSoldierState` on a player still sitting on the deploy screen. Fixed by gating `autoStartPositionDebugOnDeploy` on `isPlayerDeployed` and routing the position-debug soldier sampler through `safeGetSoldierStateVector`)
 - `CQ_Bug_51`: Fixed (v1.149 — admin position-debug toggle would un-stick after death/respawn or any reveal path because `autoStartPositionDebugOnDeploy` unconditionally reset `posDebugVisible=true`. Added `posDebugAdminOverride` sticky flag set by the admin handler; autoStart now only force-enables on the first reveal of a session and otherwise reattaches the loop to whatever state the admin left behind)
-- `CQ_Bug_52`: Fixed (v1.150 — silent air-deploy failure on specific aircraft slots when the fresh-air birth-spawn landed after the 2s bind-tracker timeout. Closed `expectingSpawn` leak in `bindSpawnedVehicleToSlot` expired branch, added watchdog reap in `pollVehicleSpawnerSlots` after 10s, forced HUD refresh on bind. Temporary `CQ52:` diagnostic counter on the admin panel validates the fix across a few live rounds; remove when it stays at 0)
-- `CQ_Bug_53`: Reverted to known-good v1.151 shape in v1.154 while root-cause investigation continues. Phase A teleport (v1.151) + HQ `SpawnPlayerFromSpawnPoint` pre-step work together cleanly; Phase B (v1.152) stripped the pre-step and regressed into an engine-native AirCombatVolume OOB latch (10s counter → player+vehicle kill); Phase C (v1.153) one-shot 150ms settle dropped the rate from ~100% to ~85% but did not resolve. v1.154 restores the v1.151 shape: HQ spawn-point pre-step, helper chain, map-config fields, validation entries, and runtime constant assignments all reinstated from the `b228efc` checkpoint. The Phase A teleport block stays in `tryFulfillPendingVehicleDirectSpawnSeatForPlayer`, but the Phase C `AIR_DEPLOY_FRESH_AIRCRAFT_SETTLE_SECONDS` wait is removed — it was not load-bearing and carrying it forward would muddy the follow-up investigation. The original CQ_Bug_53 design goal (spawn-point-independent air deploy for flag-A / squad-mate cases) is deferred pending results from the SP-only instrumentation build planned for v1.155. Three live hypotheses for the Phase B regression: (H1) player transform not committed when `DeployPlayer` returns, teleport silently no-ops; (H2) engine combat-area sampler reads a separate stale position cache; (H3) `mod.Teleport` silently fails on a freshly-deployed player without a prior committed transform. v1.155 will instrument T0/T1/T2 sample points via the existing `position-debug.ts` HUD infrastructure to distinguish them.
-- `CQ_Bug_54`: Open — fresh-aircraft runtime-spawner race. When the direct-spawn fresh-aircraft path instantiates a `RuntimeSpawn_Common.VehicleSpawner` prefab at a birth-spawn volume point, the prefab's baked-in AutoSpawn sometimes fires a default Abrams before `SetVehicleSpawnerAutoSpawn(false)` + `configureVehicleSpawner` can apply. The CQ_Bug_49 guard in `onVehicleSpawnedImpl` unspawns the tank without clearing `expectingSpawn` (by design, so the real aircraft can bind on its own `OnVehicleSpawned`), but in the failure mode the real aircraft from `ForceVehicleSpawnerSpawn` never arrives. Observed as: tank flashes, `ForcePlayerToSeat` has no aircraft to seat into, graceful undeploy. Not reproducing every click — timing-dependent. Three candidate fixes identified; all three are blocked on verifying that `mod.Teleport` operates on `mod.VehicleSpawner` instances, not just `mod.Vehicle`. This blocks all redesign paths that avoid per-deploy runtime prefab instantiation.
-- `CQ_Bug_55`: Resolved (v1.158 — air deploy no longer leaves HQ World Icons visible after the player spawns directly into an aircraft kilometers away from main base; `onPlayerDeployedImpl` now clears `inMainBaseByPid[pid]` when the fulfillment path consumed an air-mode direct spawn, so the subsequent `syncWorldInteractableRuntimeIconsForPlayer` call hides the HQ icons)
+- `CQ_Bug_52`: **Obsolete (v1.259 rewrite)** — fresh-air bind-tracker + `pollVehicleSpawnerSlots` watchdog deleted with the fulfillment path. Admin CQ52 counter removed with the rewrite.
+- `CQ_Bug_53`: **Obsolete (v1.259 rewrite)** — air-deploy path and `tryFulfillPendingVehicleDirectSpawnSeatForPlayer` deleted. The spawn-point-independent air-deploy design goal is superseded by Phase 6 HQ Deploy's player-triggered dispatch model. Memory `project_teleport_vehicle_spawn_mystery.md` retains the durable lesson: never teleport a player before `ForcePlayerToSeat`.
+- `CQ_Bug_54`: **Obsolete (v1.259 rewrite)** — per-click runtime `RuntimeSpawn_Common.VehicleSpawner` prefab instantiation was deleted outright. Slots now use one persistent spawner each, so the prefab-default Abrams race cannot occur.
+- `CQ_Bug_55`: **Obsolete (v1.259 rewrite)** — air-deploy consumed-deploy branch in `onPlayerDeployedImpl` no longer exists; Phase 6 HQ Deploy's seating path handles HQ World Icon visibility through its own `beginHqSeatFlow` lifecycle.
 - `CQ_Bug_56`: Resolved (v1.212 — Kills counter incremented on friendly kills when team damage was on. `onPlayerEarnedKillImpl` now compares killer/victim team via `safeGetTeamNumberFromPlayer(..., 0)` and skips the increment when teams match; fails open on unassigned team (team 0) rather than silently dropping)
 - `CQ_Feat_Pregame_Countdown_Delay_Lines`: Resolved (v1.208–v1.209 — staggered 3-line reveal of the round-start delay info at 0/+3s/+6s above the pregame countdown, Y raised to -420/-380/-340. Cache-preservation fix in `ensureCountdownUIAndGetWidget` so `delayLineWidgets` survives per-tick recreation and the lines actually hide on LIVE!)
 - `CQ_Feat_Round_Start_Gadget_Delay`: Resolved (v1.210–v1.211 — new `roundStartGadgetDelay` MapConfig (Firestorm default 60). 4th pregame countdown line at Y=-300 staggered in with the forward-deploy line at -6s. Gadget locker menu opens pre-LIVE + during delay with preview/stats visible, all tiles forced disabled via `gadgetBlocked`, yellow status header counts down. Two string variants: `twl.countdown.delayGadgets` pre-LIVE, `twl.countdown.delayGadgetsLive` post-LIVE)
@@ -69,7 +73,26 @@ Last Tested Build: `v1.158` (v1.155 stripped the Phase A pre-seat player telepor
 - `CQ_Perf_TickContext_AllPlayers_Cache`: Resolved (v1.219 — `src/state/tick-context.ts`; per-subtick AllPlayers snapshot shared across all forEachValidPlayer callers)
 - `CQ_Perf_Combat_HUD_Dirty_Gate`: Resolved (v1.221 — `twlConquestHudTickFrame` gated on `hudDirty || force`; AGENTS.md dirty-flag contract added)
 - `CQ_Polish_MP_Validation_v1.214_to_v1.221`: Pending next playtest (MP-only scenarios from the stability/perf pass)
-- `CQ_Bug_ActiveSpawnSingletonMPRace`: Fixed v1.223 (primary hypothesis for intermittent Abrams-substitution on Air/Forward Deploy in MP). Replaced `State.vehicles.activeSpawn{SlotIndex,Token,RequestedAtSeconds}` global singleton with per-slot `lastRequestedSpawnPos` + existing `expectingSpawn` flag. `OnVehicleSpawned` now picks the closest expecting slot within `VEHICLE_SPAWNER_BIND_DISTANCE_METERS` instead of reading a single active pointer that concurrent MP clicks would clobber. MP validation required before Phase 2 ships. See `abrams_substitution_plan.md`.
+- `CQ_Bug_ActiveSpawnSingletonMPRace`: **Obsolete (v1.259 rewrite)** — the Air/Forward Deploy paths this raced on no longer exist. The v1.223 per-slot `lastRequestedSpawnPos` + `expectingSpawn` pattern informed the design of the persistent-spawner `bindSpawnedVehicleToExpectingSlot` helper. Historical record only.
+- `CQ_Feat_Vehicle_Deploy_Method_Knob`: Resolved (v1.254 — ready-dialog knob for `Vehicle Deploy Method`. Initial option set scoped to `VANILLA`; `HQ` added v1.277. `HQ_FORWARD` / `HQ_FORWARD_AIR` remain out of scope.)
+- `CQ_Refactor_Vanilla_Vehicle_Spawner_Rewrite`: Resolved (v1.258–v1.259 — deleted `deploy-fulfillment.ts`, `reservations.ts`, `spawner-sequence.ts`. Removed all non-Vanilla deploy paths. New shape: persistent `VehicleSpawner` per slot, serial `spawnMutex`, `ForceVehicleSpawnerSpawn` dispatch, `OnVehicleSpawned` bind, `Clocks.CountDownClock` respawn. Closes CQ_Bug_49/52/53/54/55/ActiveSpawnSingletonMPRace by deletion of the underlying paths.)
+- `CQ_Bug_Global_SetTimeout_Sandbox`: Resolved (v1.261 — `setTimeout` does not exist in the Portal sandbox and rejected the first `doDispatch` promise, poisoning the mutex `.then()` chain and preventing subsequent slot dispatches. Switched to `Timers.setTimeout`; wrapped `Promise.race` in try/catch; every mutex enqueue now routes through `enqueueDispatch()` which appends `.catch(() => {})`.)
+- `CQ_Refactor_Live_Start_Fleet_Reset_Sink`: Resolved (v1.262 — live-start pre-live vehicles sunk to y=-1000 then DealDamage; avoids audible explosions at pads and `UnspawnObject` engine-side error path. Also added vehicle types: `DirtBike`, `DirtBike_Pax`, `AH6M_Pax` across classification, deploy-timer labels, ready-dialog knob options, strings. Firestorm presets replaced `Quadbike` → `DirtBike`/`DirtBike_Pax` and swapped Team2 AH6M → AH6M_Pax across all matchup sizes.)
+- `CQ_Refactor_Vehicle_Reset_Moved_To_Countdown_Start`: Resolved (v1.263–v1.265 — fleet reset moved from LIVE-start to countdown-start so fresh spawns complete during countdown and there is no jumble at LIVE!. Sink → 0.5s wait → `DealDamage`. Removed dead `destroyAllTrackedVehicles` helper.)
+- `CQ_Bug_Abrams_Substitution_Transport_Slot_Regression`: **Open** — v1.266–v1.269 attempted a fix via `relocateSlotSpawner` + Phase C re-configure + Abrams-reject guard and reverted after multiple regressions (5 of 8 slots failing to spawn; audible explosions on retries). Current v1.289 behavior: wrong vehicle may be visible at countdown start on transport slots after heli/ground knob toggles, but no slots stay empty. Fresh diagnostic pass required before the next attempt. v1.271 mitigates by waiting 2s for engine init before `relocateSlotSpawner` configure.
+- `CQ_Refactor_Vehicle_Destroy_Consolidation`: Resolved (v1.270–v1.276 — fix passes culminating in the single `sinkAndDestroyVehicle` wrapper. Preserves X/Z, teleports to y=-1000, damages after ~500–1500ms. Replaces 4 duplicated inline sites. v1.283/v1.285 re-confirmed the `slot.spawnPos`-priority fallback — `GetObjectPosition` returns bad X/Z at Vanilla→HQ countdown reset. See memory `project_getobjectposition_unreliable_on_destroy.md`.)
+- `CQ_Feat_Phase6_HQ_Deploy`: Resolved (v1.277–v1.289 — opt-in `VEHICLE_DEPLOY_METHOD_HQ` deploy mode. Six implementation phases:
+  - v1.277: ready-dialog knob option (no behavior).
+  - v1.278: gate vanilla auto-spawn + auto-respawn on knob; HQ pads start empty.
+  - v1.279: per-slot player-triggered dispatch via deploy-menu HQ buttons (seating stub).
+  - v1.280: deploy-menu seating via `OnPlayerDeployed` + `ForcePlayerToSeat` (BountyHunter pattern).
+  - v1.281–v1.285: sink-and-destroy polish for HQ cleanup; restore per-slot respawn cooldown in HQ mode.
+  - v1.286: pending-state HUD signal (SPAWNING/DEPLOYING in warning yellow).
+  - v1.287: on-foot live-terminal seating via undeploy → redeploy (Option C).
+  - v1.288: poll undeploy completion; retry `DeployPlayer` 3× with 0.4s waits.
+  - v1.289: zero redeploy timer (`SetRedeployTime=0`) around `UndeployPlayer` so the on-foot flow is not blocked by post-death countdown.
+  Durable design constraints: never teleport player before `ForcePlayerToSeat`; `ForcePlayerToSeat` only reliable inside `OnPlayerDeployed`; no code copied from the deleted fulfillment/reservations modules.)
+- `CQ_Polish_Respawn_Redeploy_Timer_Audit`: **Open** — late-joiner `SetRedeployTime(HUD_WARM_REDEPLOY_BLOCK_SECONDS)` in `holdPlayerAtDeploy` may be applying globally rather than per-player; `SetRedeployTime(0)` persistence (one-shot vs persistent) not empirically verified. Deferred to polish phase. See memory `project_respawn_redeploy_timer_polish.md`.
 
 ## CQ_Bug_42
 Title: CountOf Called With Invalid/Undefined Array Argument During Gameplay
@@ -2324,3 +2347,130 @@ Related:
 - CQ_Bug_49 (tank-reject intercept — rewritten in v1.226 to target Abrams specifically, preserving real-tank binds on tank slots).
 - CQ_Bug_52 (`expectingSpawn` watchdog in `pollVehicleSpawnerSlots` — simplified in v1.223, no longer gates on the now-removed global active-tracker).
 - CQ_Bug_54 (fresh-aircraft runtime-spawner prefab AutoSpawn race — independent, targeted in Phase 4 of the Abrams plan).
+
+Supersession note: the entire Air/Forward Deploy path that this bug guarded was deleted in the v1.259 rewrite. The pattern of per-slot `lastRequestedSpawnPos` + `expectingSpawn` + nearest-slot bind informed the v1.259 persistent-spawner design and lives on inside `bindSpawnedVehicleToExpectingSlot` in `vanilla-spawner.ts`.
+
+## CQ_Refactor_Vanilla_Vehicle_Spawner_Rewrite (v1.258–v1.259)
+Title: Full Rewrite of Vehicle Spawner — Persistent Spawner + Serial Mutex + Event-Driven Bind + Clocks-Driven Respawn
+
+Motivation:
+- The v1.200-series deploy-fulfillment path had accumulated ~6 layered guards (CQ_Bug_39/49/52/54/55 + CQ_Bug_ActiveSpawnSingletonMPRace + the v1.226 class-aware fallback). Each incremental fix narrowed the failure envelope but never eliminated the underlying race: per-click runtime prefab instantiation + global active-tracker + 20-retry loop + 5s poll + 3-path bind cascade.
+- Root architectural fix: one persistent `VehicleSpawner` per slot created at match start; all spawn requests serialized through a single mutex that calls `ForceVehicleSpawnerSpawn`; bind is event-driven via `OnVehicleSpawned`; respawn is time-driven via `Clocks.CountDownClock`.
+
+Resolution (v1.258–v1.261):
+- New file: `src/vehicles/vanilla-spawner.ts` — ~565 lines. Owns `enqueueDispatch`, `doDispatch`, `bindSpawnedVehicleToExpectingSlot`, `resetVehicleSlotsAtCountdownStart`, `startRespawnCountdown`, `sinkAndDestroyVehicle`.
+- Deleted: `src/vehicles/deploy-fulfillment.ts`, `src/vehicles/reservations.ts`, `src/vehicles/spawner-sequence.ts`, `src/vehicles/spawner-bind.ts`, runtime-side bind helpers, `pollVehicleSpawnerSlots` watchdog.
+- Removed: all `VEHICLE_DEPLOY_METHOD_AIR` / `VEHICLE_DEPLOY_METHOD_FORWARD` / `VEHICLE_DEPLOY_METHOD_HQ_FORWARD` / `VEHICLE_DEPLOY_METHOD_HQ_FORWARD_AIR` branches and their supporting helpers. `VEHICLE_DEPLOY_METHOD_VANILLA` is the only deploy method; `VEHICLE_DEPLOY_METHOD_HQ` was added on top as Phase 6 opt-in.
+- v1.261 follow-up: `setTimeout` is not in the Portal sandbox and rejected the first `doDispatch` promise, poisoning the `.then()` chain. Switched to `Timers.setTimeout`; wrapped `Promise.race` in try/catch; routed every mutex enqueue through `enqueueDispatch()` with `.catch(() => {})`.
+
+Obsoleted by this rewrite (underlying code deleted):
+- CQ_Bug_49, CQ_Bug_52, CQ_Bug_53, CQ_Bug_54, CQ_Bug_55, CQ_Bug_ActiveSpawnSingletonMPRace.
+
+Preserved:
+- Durable lessons live in memory: `project_teleport_vehicle_spawn_mystery.md`, `project_force_player_to_seat_unreliable.md`, `project_getobjectposition_unreliable_on_destroy.md`.
+
+Status: Resolved v1.259. SP regression-tested through the v1.260–v1.289 bumps; no v1.258-rewrite-specific regressions observed.
+
+## CQ_Refactor_Vehicle_Destroy_Consolidation (v1.270–v1.276)
+Title: Single `sinkAndDestroyVehicle` Wrapper Replaces Four Duplicated Inline Destroy Sites
+
+Motivation:
+- Four call sites duplicated the "sink to y=-1000, wait, DealDamage" idiom (startup cleanup, countdown-reset, prior-vehicle teardown, respawn-triggered teardown). Each had slightly different parameters; some did not preserve X/Z on the sink teleport, causing a minimap "slide to map-center" artifact at countdown reset.
+
+Key fixes along the path:
+- v1.270: preserve X/Z when teleporting vehicles down at countdown.
+- v1.271: `relocateSlotSpawner` waits 2s for engine init before configure (fixes transport-3 Abrams-instead-of-selected bug when heli/ground toggle forces pad relocation).
+- v1.272: replace vehicle `UnspawnObject` with `DealDamage` at startup cleanup and prior-vehicle destruction (`UnspawnObject` on transitional vehicles emits engine-side errors that try/catch cannot suppress).
+- v1.273: sink vehicles to y=-1000 BEFORE `DealDamage` at startup cleanup + prior-vehicle destroy sites so explosions are not audible at pad positions.
+- v1.274: cleanup sweeps skip vehicles not near our slot pads (15m) so map-authored emplacements survive.
+- v1.275: rework cleanup filters — countdown-reset uses tracked `vehicleId` set (not pad-proximity which missed drifted vehicles); startup cleanup filters by Abrams type (the engine default auto-spawn) so emplacements survive.
+- v1.276: **consolidation** — single `sinkAndDestroyVehicle(vehicle, fallbackPos)` wrapper. Preserves X/Z. Sinks to y=-1000. Damages after 500–1500ms depending on call site. Prefers `slot.spawnPos` over `GetObjectPosition` (v1.283/v1.285) because `GetObjectPosition` returns bad X/Z at Vanilla→HQ countdown reset. See memory `project_getobjectposition_unreliable_on_destroy.md`.
+
+Status: Resolved v1.276. Confirmed during v1.277–v1.289 HQ Deploy work; used as the canonical destroy wrapper for HQ-mode cleanup (LIVE start, respawn suppression cleanup, orphan on abort).
+
+## CQ_Feat_Phase6_HQ_Deploy (v1.277–v1.289)
+Title: Opt-In HQ Deploy Mode — Player-Triggered Per-Slot Vehicle Spawn with Automatic Seating
+
+Design:
+- Ready-dialog knob `Vehicle Deploy Method`: `VANILLA` (default) | `HQ`.
+- Vanilla mode (unchanged): fleet pre-spawns at LIVE; auto-respawn after destruction.
+- HQ mode: pads start empty at LIVE. A player presses an HQ button for a specific slot (deploy screen OR on-foot live-terminal) → that slot's spawn is dispatched → after the vehicle settles, the requesting player is seated into it. No auto-respawn.
+
+Architecture:
+- New file: `src/vehicles/hq-deploy.ts` (~430 lines). No code copied from the deleted fulfillment/reservations modules.
+- `requestHqVehicleSpawn(player, pid, rowIndex, source)` — validates + reserves + dispatches. Slot fields used: `pendingSpawnOwnerPid`, `pendingSpawnMode`, `hqSource` ("deploy_menu" | "on_foot").
+- Dispatch reuses the Vanilla `enqueueDispatch(slotIndex)` serial mutex. No new spawn mechanism.
+- Post-bind hook: `bindSpawnedVehicleToExpectingSlot` (vanilla-spawner.ts) now checks `slot.pendingSpawnOwnerPid` after bind and calls `onHqVehicleSpawnedForClaim` to transition the claim from `spawn_pending` → `seat_pending`.
+- Seating: `beginHqSeatFlow` waits `HQ_DEPLOY_SEAT_SETTLE_SECONDS`, then calls `mod.DeployPlayer(player)`. `onHqSeatPendingPlayerDeployed` (hooked in `src/index/player-deploy.ts`) fires inside the `OnPlayerDeployed` event and calls `mod.ForcePlayerToSeat(player, vehicle, -1)` — the BountyHunter pattern is the only reliable context for `ForcePlayerToSeat`.
+- On-foot seating (v1.287–v1.289, Option C): alive on-foot players are `mod.UndeployPlayer`'d → redeployed → seated in the `OnPlayerDeployed` chain. v1.289 wraps the transition with `mod.SetRedeployTime(player, 0)` to bypass the post-death countdown that `UndeployPlayer` triggers.
+- Abort / timeout / disconnect: `sinkAndDestroyVehicle` cleans up orphaned vehicles. 10s claim timeout forces clearing + destroy.
+
+Durable constraints (do not violate):
+- Never `mod.Teleport` a player before `ForcePlayerToSeat`. Caused engine OOB latch twice historically (v1.106–v1.108, v1.151–v1.154).
+- `ForcePlayerToSeat` is only reliable inside the `OnPlayerDeployed` event chain.
+- Do not copy code from the deleted `deploy-fulfillment.ts` / `reservations.ts` / `spawner-sequence.ts`.
+- Vanilla mode must remain byte-identical when HQ is active. All HQ logic is gated on `isVanillaDeployMode()` returning false.
+
+Phases shipped:
+- v1.277 — ready-dialog knob option (no behavior yet).
+- v1.278 — gate vanilla auto-spawn + auto-respawn on knob; HQ pads start empty at LIVE.
+- v1.279 — per-slot player-triggered dispatch via deploy-menu HQ buttons (seating stub).
+- v1.280 — deploy-menu seating via `OnPlayerDeployed` + `ForcePlayerToSeat`.
+- v1.281–v1.285 — sink-and-destroy polish for HQ cleanup; restore per-slot respawn cooldown in HQ mode.
+- v1.286 — pending-state HUD signal (SPAWNING/DEPLOYING in warning yellow); tighten `sinkAndDestroyVehicle` slot context at vehicle-type change.
+- v1.287 — on-foot live-terminal seating via undeploy → redeploy (Option C).
+- v1.288 — poll undeploy completion; retry `DeployPlayer` 3× with 0.4s waits.
+- v1.289 — `mod.SetRedeployTime(player, 0)` around `UndeployPlayer` so on-foot seat flow is not delayed by post-death countdown.
+
+Status: Resolved v1.289. Playtested for deploy-menu (transport / tank / helicopter slots) and on-foot live-terminal. Late-joiner redeploy-timer audit deferred to polish phase (see `CQ_Polish_Respawn_Redeploy_Timer_Audit`).
+
+## CQ_Bug_Abrams_Substitution_Transport_Slot_Regression
+Title: Transport-Slot Wrong-Vehicle on Heli/Ground Knob Toggle (Post-v1.259)
+
+Observed (v1.266–v1.269):
+- After toggling the vehicle-type knob (heli ↔ ground) for a transport slot, the wrong vehicle (often default Abrams) can appear at the pad at countdown start.
+- Root cause candidate: spawner not correctly re-configured when the physical pad was relocated.
+
+v1.266–v1.268 fix attempts and reverts:
+- v1.266: `relocateSlotSpawner` → `SetObjectTransform` in-place + Phase C re-push `configureVehicleSpawner` before each dispatch + `bindSpawnedVehicleToExpectingSlot` rejects stray default Abrams when expecting slot's intended type is not a tank.
+- v1.267: reverted v1.266 (5 of 8 slots failed to spawn at map start; rejected-Abrams `DealDamage` produced audible explosions on retries).
+- v1.268: re-attempted with teleport-straight-down + sink-then-delayed-damage on rejected Abrams. Also reverted.
+- v1.269: reverted to v1.265 spawner behavior — wrong-vehicle may be visible at countdown start, but no slots are empty.
+- v1.271: mitigated by waiting 2s for engine init before `relocateSlotSpawner` configure.
+
+Status: **Open.** Fresh diagnostic pass required before next attempt. Current shipped behavior (v1.289): wrong-vehicle visible at countdown start on post-toggle transport slots is possible; no empty slots. Not blocking Phase 6 HQ Deploy since HQ mode does not rely on countdown-start fleet behavior.
+
+## CQ_Polish_Respawn_Redeploy_Timer_Audit
+Title: Late-Joiner `SetRedeployTime` May Apply Globally; `SetRedeployTime(0)` Persistence Not Verified
+
+Observed (v1.289):
+- User report during HQ Deploy on-foot playtest: when a late-joining player is held at deploy via `holdPlayerAtDeploy` / `applyPlayerDeployAvailability` with `mod.SetRedeployTime(eventPlayer, HUD_WARM_REDEPLOY_BLOCK_SECONDS)` (constant = 60 in `src/interaction/actions.ts`), the long redeploy timer appears to apply to every player in the match, not just the late joiner.
+- Additionally, `SetRedeployTime(player, 0)` is used by `beginHqSeatFlow` (HQ on-foot) to bypass the post-death countdown before `DeployPlayer`. It is not empirically verified whether this is a one-shot override consumed by the next redeploy or a persistent value that could give the player instant respawn on their next death.
+
+Candidate experiments (polish phase):
+- Remove `SetRedeployTime(HUD_WARM_REDEPLOY_BLOCK_SECONDS)` from `holdPlayerAtDeploy` / `applyPlayerDeployAvailability` and rely solely on `EnablePlayerDeploy(false)` + loading overlay. Confirm on a fresh join whether other players' timers change.
+- After HQ seat completes, explicitly restore `SetRedeployTime(player, <prior_value>)` if persistence is confirmed.
+
+Related:
+- Memory: `project_respawn_redeploy_timer_polish.md` (holds the three open questions verbatim).
+- Phase 6 HQ Deploy on-foot flow depends on `SetRedeployTime(0)`; behavior change here must be regression-tested against HQ flow.
+
+Status: **Open.** Deferred to polish phase per user direction at v1.289 closeout.
+
+## CQ_Polish_Launcher_Ammo_Per_Launcher_Cap
+Title: `giveRocketCharge` Consumes a Charge at Max Launcher Ammo
+
+Observed (v1.300):
+- Each launcher has a hard in-engine cap on reserve rockets that differs per variant (RPG vs AT4 vs Stinger). `giveRocketCharge` in `src/interaction/ammo-resupply-menu.ts` increments `SetInventoryMagazineAmmo(slot, mag + 1)` (or sets loaded=1 when empty) without knowing the per-launcher cap, so the engine silently clamps the write and the locker's `launch.aC` charge is still consumed.
+- Accepted for now: user tolerates the wasted charge and has chosen not to gate the tile on a cap check.
+
+Candidate experiments (polish phase):
+- Hardcode per-launcher max-reserve values keyed off the `gadget` id stored in `State.players.lockerSlots[pid]` (the slot holding the launcher).
+- Either pre-read `GetInventoryMagazineAmmo` + compare to the cap and refuse (return false → no charge consumed), or render the Launcher Ammo tile as disabled once at cap.
+- Verify caps empirically per launcher; engine constants are not exposed via the API.
+
+Related:
+- v1.300 authoritative per-player slot state: `src/interaction/ammo-resupply-menu.ts::giveRocketCharge` (uses `slotWithLauncher(slotsState)` to pick the target slot).
+- Plan: `C:\Users\Soldat\.claude\plans\sleepy-juggling-thunder.md` (scope explicitly excluded per-launcher caps).
+
+Status: **Open.** Deferred to polish phase per user direction at v1.300 closeout.

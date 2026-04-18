@@ -52,7 +52,12 @@ type HqRequestResult = { ok: boolean; reason?: string };
 // Core request entry. Validates + reserves the slot, then enqueues the same serial dispatch
 // the Vanilla path uses at countdown start. Returns immediately; bind + seat resolution
 // happen asynchronously via OnVehicleSpawned -> onHqVehicleSpawnedForClaim -> beginHqSeatFlow.
-function requestHqVehicleSpawn(player: mod.Player, pid: number, rowIndex: number): HqRequestResult {
+//
+// `source` selects the seat path inside beginHqSeatFlow:
+//   "deploy_menu" -- player is dead at deploy screen; DeployPlayer directly (Phase 4 path).
+//   "on_foot"     -- player is alive at live-terminal; UndeployPlayer -> DeployPlayer so the
+//                    seat call runs inside the redeploy's OnPlayerDeployed chain (Phase 6).
+function requestHqVehicleSpawn(player: mod.Player, pid: number, rowIndex: number, source: "deploy_menu" | "on_foot" = "deploy_menu"): HqRequestResult {
     if (!isHqDeployMode()) return { ok: false, reason: "not_hq_mode" };
     if (!player || !mod.IsPlayerValid(player)) return { ok: false, reason: "invalid_player" };
 
@@ -86,6 +91,7 @@ function requestHqVehicleSpawn(player: mod.Player, pid: number, rowIndex: number
     // Reserve. pendingSpawnMode is reused as a presence flag for the HUD signature.
     slot.pendingSpawnOwnerPid = pid;
     slot.pendingSpawnMode = "ground";
+    slot.hqSource = source;
     State.hqDeploy.lastRequestAtSecondsByPid[pid] = nowSeconds;
 
     // Schedule a claim-timeout guard. Covers both spawn_pending (bind never arrives) and
@@ -128,6 +134,7 @@ async function scheduleHqClaimTimeout(slotIndex: number, pid: number, requestedA
     }
     slot.pendingSpawnOwnerPid = undefined;
     slot.pendingSpawnMode = undefined;
+    slot.hqSource = undefined;
     try { updateVehicleDeployTimerHudForAllPlayers(); } catch {}
 }
 
@@ -149,6 +156,10 @@ function onHqVehicleSpawnedForClaim(slot: VehicleSpawnerSlot, vehicle: mod.Vehic
 
 // Settles the newly-spawned vehicle, then triggers the engine's deploy event chain. The
 // seat itself happens inside onHqSeatPendingPlayerDeployed, invoked from onPlayerDeployedImpl.
+//
+// Phase 6: for source === "on_foot" the player is alive, so OnPlayerDeployed won't fire
+// from DeployPlayer alone. We UndeployPlayer first, then DeployPlayer -- the redeploy fires
+// OnPlayerDeployed naturally and the seat hook runs in BountyHunter context.
 async function beginHqSeatFlow(pid: number, vehicle: mod.Vehicle): Promise<void> {
     await mod.Wait(HQ_DEPLOY_SEAT_SETTLE_SECONDS);
 
@@ -160,8 +171,44 @@ async function beginHqSeatFlow(pid: number, vehicle: mod.Vehicle): Promise<void>
     if (!slot) return;
     if (slot.vehicleId === -1) return;
 
+    if (slot.hqSource === "on_foot") {
+        // Alive on-foot player -- undeploy first so the redeploy fires OnPlayerDeployed.
+        // closeVehicleDeployLiveMenuForPlayer runs as part of onPlayerUndeployImpl and
+        // closes the menu naturally. No mod.Teleport before the seat call -- the ban stands.
+        // Zero the player's redeploy timer so the forced DeployPlayer below is not delayed
+        // by the engine's post-death countdown (UndeployPlayer is treated like a death).
+        try { mod.SetRedeployTime(player, 0); } catch {}
+        try { mod.UndeployPlayer(player); } catch {}
+        // Poll for the undeploy to register (mirrors the deferForcedUndeploy retry pattern
+        // in player-deploy.ts: a single UndeployPlayer call is sometimes swallowed). Wait
+        // up to 1.5s for deployedByPid to flip false, then fall through regardless.
+        for (let i = 0; i < 15; i++) {
+            await mod.Wait(0.1);
+            if (!mod.IsPlayerValid(player)) return;
+            if (!State.players.deployedByPid[pid]) break;
+            if (i === 5) { try { mod.UndeployPlayer(player); } catch {} }
+        }
+        // Extra grace for the deploy-screen transition to settle before DeployPlayer fires.
+        await mod.Wait(0.3);
+        if (!mod.IsPlayerValid(player)) return;
+        if (State.players.deployedByPid[pid]) return;  // undeploy never took; abort seat
+    }
+
     // Trigger OnPlayerDeployed. The seat call runs inside that handler (BountyHunter context).
+    // On-foot path: retry up to 3x if the first DeployPlayer is swallowed before the deploy
+    // screen finishes loading. Each retry waits for deployedByPid to flip true before stopping.
+    // Re-zero the redeploy timer defensively in case the deploy-screen transition restored it.
+    if (slot.hqSource === "on_foot") { try { mod.SetRedeployTime(player, 0); } catch {} }
     try { mod.DeployPlayer(player); } catch {}
+    if (slot.hqSource === "on_foot") {
+        for (let i = 0; i < 3; i++) {
+            await mod.Wait(0.4);
+            if (!mod.IsPlayerValid(player)) return;
+            if (State.players.deployedByPid[pid]) break;
+            try { mod.SetRedeployTime(player, 0); } catch {}
+            try { mod.DeployPlayer(player); } catch {}
+        }
+    }
 }
 
 // Called from onPlayerDeployedImpl. If a HQ claim is seat_pending for this pid, seat the
@@ -180,6 +227,7 @@ function onHqSeatPendingPlayerDeployed(player: mod.Player, pid: number): void {
     // lands on foot at the pad and can press E to enter manually -- no retry loop.
     slot.pendingSpawnOwnerPid = undefined;
     slot.pendingSpawnMode = undefined;
+    slot.hqSource = undefined;
 
     if (!vehicle) {
         try { updateVehicleDeployTimerHudForAllPlayers(); } catch {}

@@ -72,6 +72,7 @@ const State: GameState = {
         },
         smk: {},
         asg: {},
+        asgL: {},
     },
     conquest: {
         lifecyclePhase: "NOT_READY",
@@ -206,6 +207,7 @@ const State: GameState = {
         armG: {},
         armL: {},
         armS: {},
+        lockerSlots: {},
         uiCachePerfByPid: {},
         deployedByPid: {},
         disconnectedByPid: {},

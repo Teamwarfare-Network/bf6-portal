@@ -1833,12 +1833,12 @@ function tryHandleVehicleDeployTimerButtonEvent(
         }
     }
 
-    // v1.279 Phase 3: HQ dispatch wiring. Deploy-menu ONLY -- on-foot live-terminal path is
-    // deferred to Phase 6. Vanilla mode takes the no-op branch (requestHqVehicleSpawn rejects
-    // with reason "not_hq_mode") so Vanilla clicks stay visual-only exactly as before.
-    if (!liveTerminalOpen) {
-        requestHqVehicleSpawn(eventPlayer, pid, rowIndex);
-    }
+    // v1.279 Phase 3 / Phase 6: HQ dispatch wiring. Deploy-menu and live-terminal routes both
+    // dispatch through requestHqVehicleSpawn -- the `source` param selects the seat path
+    // inside beginHqSeatFlow ("on_foot" triggers undeploy->redeploy; "deploy_menu" deploys
+    // directly). Vanilla mode takes the no-op branch (rejection reason "not_hq_mode").
+    const source = liveTerminalOpen ? "on_foot" : "deploy_menu";
+    requestHqVehicleSpawn(eventPlayer, pid, rowIndex, source);
     updateVehicleDeployTimerHudForPlayer(eventPlayer);
     return true;
 }

@@ -61,6 +61,7 @@ const STR_UI_ASSAULT_LADDER = mod.stringkeys.twl.ui.assaultLadder;
 const STR_UI_NO_LAUNCHER = mod.stringkeys.twl.ui.noLauncher;
 const STR_UI_ONE_PER_TEAM = mod.stringkeys.twl.ui.onePerTeam;
 const STR_UI_ONE_PER_PLAYER = mod.stringkeys.twl.ui.onePerPlayer;
+const STR_UI_N_PER_TEAM = mod.stringkeys.twl.ui.nPerTeam;
 const STR_UI_CHOOSE_ONLY_ONE = mod.stringkeys.twl.ui.chooseOnlyOne;
 const STR_UI_LINE_SMOKE = mod.stringkeys.twl.ui.lineSmoke;
 const STR_UI_LINE_ARTILLERY = mod.stringkeys.twl.ui.lineArtillery;
