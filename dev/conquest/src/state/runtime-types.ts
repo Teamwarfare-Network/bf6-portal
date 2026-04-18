@@ -36,6 +36,9 @@ type VehicleSpawnerSlot = {
     activeOwnerPid?: number;
     suppressNextBindSpawnTransformCorrection?: boolean;
     freshAirRuntimeSpawner?: mod.VehicleSpawner;
+    // v1.258 rewrite: Clocks-backed respawn countdown. Active only while counting down;
+    // cleared on bind, slot-disable, type-change, or matchup re-apply.
+    respawnClock?: Clocks.CountDownClock;
 };
 
 type VehicleSlotSpawnCategory =

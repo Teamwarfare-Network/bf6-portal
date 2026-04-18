@@ -2629,7 +2629,7 @@
         },
         {
             "name": "VehicleSpawner B",
-            "VehicleType": "AH64",
+            "VehicleType": "Vector",
             "P_AutoSpawnEnabled": true,
             "P_DefaultRespawnTime": 120,
             "type": "VehicleSpawner",

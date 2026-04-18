@@ -558,17 +558,23 @@ function refreshVehicleSpawnSpecsFromModeConfig(): void {
 // Recreates the physical spawner object at a new position when the spawn anchor changes.
 // The engine's abandonment system tracks distance from the spawner, so the spawner must
 // stay co-located with the vehicle's intended spawn/teleport position.
-function relocateSlotSpawner(slot: VehicleSpawnerSlot, newPos: mod.Vector, newRot: mod.Vector): void {
+async function relocateSlotSpawner(slot: VehicleSpawnerSlot, newPos: mod.Vector, newRot: mod.Vector): Promise<void> {
     try { mod.UnspawnObject(slot.spawner); } catch {}
     const spawner = mod.SpawnObject(
         mod.RuntimeSpawn_Common.VehicleSpawner,
         newPos,
         newRot
     ) as mod.VehicleSpawner;
-    mod.SetVehicleSpawnerAutoSpawn(spawner, false);
-    configureVehicleSpawner(spawner, slot.vehicleType);
     slot.spawner = spawner;
     slot.spawnerObjId = getObjId(spawner);
+    // Engine needs ~2s after SpawnObject before SetVehicleSpawner* calls apply
+    // (same init window as addVanillaSpawnerSlot). Without this wait,
+    // SetVehicleSpawnerVehicleType is silently dropped and the spawner stays
+    // at engine-default Abrams — the transport-3 quad-bike → Abrams bug.
+    await mod.Wait(2.0);
+    if (slot.spawner !== spawner) return; // another relocate raced us; abandon
+    mod.SetVehicleSpawnerAutoSpawn(spawner, false);
+    configureVehicleSpawner(spawner, slot.vehicleType);
 }
 
 // Applies updated runtime spawn specs to already-registered spawner slots.
@@ -589,9 +595,7 @@ function applyVehicleSpawnSpecsToExistingSlots(): void {
             const priorVehicleId = slot.vehicleId;
             if (!isMatchLive() && priorVehicleId !== -1) {
                 const priorVehicle = findVehicleById(priorVehicleId);
-                if (priorVehicle) {
-                    try { mod.UnspawnObject(priorVehicle); } catch {}
-                }
+                if (priorVehicle) sinkAndDestroyVehicle(priorVehicle);
                 delete State.vehicles.vehicleToSlot[priorVehicleId];
                 slot.vehicleId = -1;
                 slot.activeOwnerPid = undefined;
@@ -606,7 +610,10 @@ function applyVehicleSpawnSpecsToExistingSlots(): void {
         slot.spawnPos = spec.pos;
         slot.spawnRot = spec.rot;
         if (posChanged) {
-            relocateSlotSpawner(slot, spec.pos, spec.rot);
+            // Fire-and-forget: relocate awaits the engine's 2s init window internally.
+            // The caller (confirm flow) runs pre-countdown, so the user clicking "Ready"
+            // gives the relocate time to finish before the countdown-start dispatch.
+            void relocateSlotSpawner(slot, spec.pos, spec.rot);
         }
         refreshVehicleSlotAuthoritativeState(slot);
     }

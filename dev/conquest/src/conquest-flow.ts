@@ -1,35 +1,11 @@
 ﻿// @ts-nocheck
 // Module: conquest-flow -- continuous-live flow orchestration and phase-state helpers.
 
-// Destroys all tracked vehicles in spawner slots using massive damage so the destruction animation plays.
-function destroyAllTrackedVehicles(): void {
-    if (!State.vehicles?.slots) return;
-    for (let i = 0; i < State.vehicles.slots.length; i++) {
-        const slot = State.vehicles.slots[i];
-        if (!slot.enabled || slot.vehicleId === -1) continue;
-        const vehicle = findVehicleById(slot.vehicleId);
-        if (vehicle) {
-            try { mod.DealDamage(vehicle, 9999); } catch {}
-        }
-        slot.vehicleId = -1;
-    }
-}
-
-// Force-spawns all enabled vehicle slots that currently have no live vehicle.
-// Uses the same sequential spawn pipeline as the normal deploy flow so that
-// each vehicle is bound, token-tracked, and teleported to its correct orientation.
+// Force-spawns all enabled vehicle slots that currently have no live vehicle by
+// re-applying matchup enablement; vanilla-spawner's mutex serializes the chain.
 function forceSpawnAllReadyVehicleSlots(): void {
     if (!State.vehicles?.slots) return;
-    const indices: number[] = [];
-    for (let i = 0; i < State.vehicles.slots.length; i++) {
-        const slot = State.vehicles.slots[i];
-        if (!slot.enabled || slot.vehicleId !== -1) continue;
-        indices.push(i);
-    }
-    if (indices.length === 0) return;
-    State.vehicles.spawnSequenceToken = (State.vehicles.spawnSequenceToken ?? 0) + 1;
-    State.vehicles.spawnSequenceInProgress = true;
-    void runSequentialSpawns(indices, State.vehicles.spawnSequenceToken);
+    applySpawnerEnablementForMatchup(State.round.matchupPresetIndex, true);
 }
 
 // Binds clock expiry to Conquest end-condition checks for continuous live flow.

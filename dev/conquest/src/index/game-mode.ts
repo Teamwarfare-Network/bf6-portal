@@ -67,7 +67,7 @@ async function onGameModeStartedImpl(): Promise<void> {
     );
 
     // Start vehicle spawner backend before any optional HUD-core warmup so gameplay systems can proceed independently.
-    void startVehicleSpawnerSystem();
+    void startVanillaVehicleSpawnerSystem();
     conquestPhase4PrimeSoundRuntime();
 
     // Ensure HUD exists for anyone already in-game at start

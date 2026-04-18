@@ -179,7 +179,7 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
 
                     team1Heli1: VEHICLE_AH6M,
                     team1Heli2: undefined,
-                    team2Heli1: VEHICLE_AH6M,
+                    team2Heli1: VEHICLE_AH6M_PAX,
                     team2Heli2: undefined,
 
                     team1Ground1: VEHICLE_ABRAMS,
@@ -191,11 +191,11 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
                     team2Ground3: undefined,
                     team2Ground4: undefined,
 
-                    team1Fast1: VEHICLE_QUADBIKE,
+                    team1Fast1: VEHICLE_DIRTBIKE,
                     team1Fast2: VEHICLE_FLYER60,
                     team1Fast3: undefined,
                     team1Fast4: undefined,
-                    team2Fast1: VEHICLE_QUADBIKE,
+                    team2Fast1: VEHICLE_DIRTBIKE_PAX,
                     team2Fast2: VEHICLE_FLYER60,
                     team2Fast3: undefined,
                     team2Fast4: undefined,
@@ -211,7 +211,7 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
 
                     team1Heli1: VEHICLE_AH6M,
                     team1Heli2: undefined,
-                    team2Heli1: VEHICLE_AH6M,
+                    team2Heli1: VEHICLE_AH6M_PAX,
                     team2Heli2: undefined,
 
                     team1Ground1: VEHICLE_ABRAMS,
@@ -223,14 +223,14 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
                     team2Ground3: undefined,
                     team2Ground4: undefined,
 
-                    team1Fast1: VEHICLE_QUADBIKE,
+                    team1Fast1: VEHICLE_DIRTBIKE,
                     team1Fast2: VEHICLE_FLYER60,
                     team1Fast3: VEHICLE_UH60,
-                    team1Fast4: VEHICLE_QUADBIKE,
-                    team2Fast1: VEHICLE_QUADBIKE,
+                    team1Fast4: VEHICLE_DIRTBIKE,
+                    team2Fast1: VEHICLE_DIRTBIKE_PAX,
                     team2Fast2: VEHICLE_FLYER60,
                     team2Fast3: VEHICLE_UH60_PAX,
-                    team2Fast4: VEHICLE_QUADBIKE,
+                    team2Fast4: VEHICLE_DIRTBIKE_PAX,
                 },
             },
             [mod.stringkeys.twl.readyDialog.gameModeConquest12v12]: {
@@ -244,7 +244,7 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
                     team1Heli1: VEHICLE_AH64,
                     team1Heli2: VEHICLE_AH6M,
                     team2Heli1: VEHICLE_EUROCOPTER,
-                    team2Heli2: VEHICLE_AH6M,
+                    team2Heli2: VEHICLE_AH6M_PAX,
 
                     team1Ground1: VEHICLE_ABRAMS,
                     team1Ground2: VEHICLE_GEPARD,    // Engine "Gepard" = actual Cheetah 1A2
@@ -255,14 +255,14 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
                     team2Ground3: undefined,
                     team2Ground4: undefined,
 
-                    team1Fast1: VEHICLE_QUADBIKE,
+                    team1Fast1: VEHICLE_DIRTBIKE,
                     team1Fast2: VEHICLE_FLYER60,
                     team1Fast3: VEHICLE_UH60,
-                    team1Fast4: VEHICLE_QUADBIKE,
-                    team2Fast1: VEHICLE_QUADBIKE,
+                    team1Fast4: VEHICLE_DIRTBIKE,
+                    team2Fast1: VEHICLE_DIRTBIKE_PAX,
                     team2Fast2: VEHICLE_FLYER60,
                     team2Fast3: VEHICLE_UH60_PAX,
-                    team2Fast4: VEHICLE_QUADBIKE,
+                    team2Fast4: VEHICLE_DIRTBIKE_PAX,
                 },
             },
             [mod.stringkeys.twl.readyDialog.gameModeConquest16v16]: {
@@ -276,7 +276,7 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
                     team1Heli1: VEHICLE_AH64,
                     team1Heli2: VEHICLE_AH6M,
                     team2Heli1: VEHICLE_EUROCOPTER,
-                    team2Heli2: VEHICLE_AH6M,
+                    team2Heli2: VEHICLE_AH6M_PAX,
 
                     team1Ground1: VEHICLE_ABRAMS,
                     team1Ground2: VEHICLE_GEPARD,    // Engine "Gepard" = actual Cheetah 1A2
@@ -287,14 +287,14 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
                     team2Ground3: VEHICLE_CV90,
                     team2Ground4: undefined,
 
-                    team1Fast1: VEHICLE_QUADBIKE,
+                    team1Fast1: VEHICLE_DIRTBIKE,
                     team1Fast2: VEHICLE_FLYER60,
                     team1Fast3: VEHICLE_UH60,
-                    team1Fast4: VEHICLE_QUADBIKE,
-                    team2Fast1: VEHICLE_QUADBIKE,
+                    team1Fast4: VEHICLE_DIRTBIKE,
+                    team2Fast1: VEHICLE_DIRTBIKE_PAX,
                     team2Fast2: VEHICLE_FLYER60,
                     team2Fast3: VEHICLE_UH60_PAX,
-                    team2Fast4: VEHICLE_QUADBIKE,
+                    team2Fast4: VEHICLE_DIRTBIKE_PAX,
                 },
             },
         },

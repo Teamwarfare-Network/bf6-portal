@@ -56,18 +56,6 @@ const VEHICLE_SPAWNER_TIME_UNTIL_ABANDON_SECONDS = 30;
 const VEHICLE_SPAWNER_KEEP_ALIVE_ABANDON_RADIUS = 100;
 const VEHICLE_SPAWNER_KEEP_ALIVE_SPAWNER_RADIUS = 50;
 
-// Vehicle spawner backend logic. These are quite particular, changing can cause bugs
-const VEHICLE_SPAWNER_START_DELAY_SECONDS = 1;
-// Startup cleanup radius is intentionally larger than bind radius to catch default spawns
-// that appear offset from the configured spawn points (Defense Nexus/Golf Course/Blackwell slot 1).
-const VEHICLE_SPAWNER_STARTUP_CLEANUP_RADIUS_METERS = 50.0;
-const VEHICLE_SPAWNER_POLL_INTERVAL_SECONDS = 5.0;
-const VEHICLE_SPAWNER_BIND_DISTANCE_METERS = 7.0;
-const VEHICLE_SPAWNER_BIND_TIMEOUT_SECONDS = 2.0; // This should not be smaller than VEHICLE_SPAWNER_KEEP_ALIVE_SPAWNER_RADIUS
-// CQ_Bug_52: watchdog reap threshold. Any slot whose expectingSpawn has been true longer than this
-// without the global active tracker still pointing at it is considered latched and reaped.
-const VEHICLE_SPAWNER_STUCK_EXPECTING_SPAWN_THRESHOLD_SECONDS = 10.0;
-
 // Main base trigger fallback ids.
   // These remain only as compatibility defaults until every map owns its main-base trigger ids in MapConfig.
   const TEAM1_MAIN_BASE_TRIGGER_ID = 501;
@@ -191,6 +179,9 @@ const VEHICLE_VECTOR = mod.VehicleList.Vector;
 const VEHICLE_RHIB = mod.VehicleList.RHIB;
 // AH6M is used here from the current runtime despite being absent from the local core reference snapshot.
 const VEHICLE_AH6M = (mod.VehicleList as any).AH6M as mod.VehicleList;
+const VEHICLE_AH6M_PAX = (mod.VehicleList as any).AH6M_Pax as mod.VehicleList;
+const VEHICLE_DIRTBIKE = (mod.VehicleList as any).DirtBike as mod.VehicleList;
+const VEHICLE_DIRTBIKE_PAX = (mod.VehicleList as any).DirtBike_Pax as mod.VehicleList;
 // VFX prefab constants — referenced by map config anchor `vfx:` fields. Add new entries here.
 const VFX_GREEN_SMOKE  = mod.RuntimeSpawn_Common.FX_Granite_Strike_Smoke_Marker_Green;
 const VFX_RED_SMOKE    = mod.RuntimeSpawn_Common.FX_Granite_Strike_Smoke_Marker_Red;
@@ -206,11 +197,9 @@ const VEHICLE_DEPLOY_METHOD_HQ = 1;
 const VEHICLE_DEPLOY_METHOD_HQ_FORWARD = 2;
 const VEHICLE_DEPLOY_METHOD_HQ_FORWARD_AIR = 3;
 const VEHICLE_DEPLOY_METHOD_DEFAULT = VEHICLE_DEPLOY_METHOD_VANILLA;
+// v1.258: Vehicle Deploy Method frozen to Vanilla; HQ/forward/air paths removed.
 const READY_DIALOG_VEHICLE_DEPLOY_METHOD_OPTIONS: number[] = [
     mod.stringkeys.twl.readyDialog.vehicleDeployVanilla,
-    mod.stringkeys.twl.readyDialog.vehicleDeployHq,
-    mod.stringkeys.twl.readyDialog.vehicleDeployHqForward,
-    mod.stringkeys.twl.readyDialog.vehicleDeployHqForwardAir,
 ];
 
 const READY_DIALOG_TEAM1_JET_KNOB_KEYS = ["team1Jet1", "team1Jet2"] as const;
@@ -249,6 +238,7 @@ const READY_DIALOG_HELI_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortApache, vehicle: VEHICLE_AH64 },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortEuro, vehicle: VEHICLE_EUROCOPTER },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortLittleBird, vehicle: VEHICLE_AH6M },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortLittleBirdPax, vehicle: VEHICLE_AH6M_PAX },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawk, vehicle: VEHICLE_UH60 },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawkPax, vehicle: VEHICLE_UH60_PAX },
 ];
@@ -267,6 +257,8 @@ const READY_DIALOG_FAST_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortNoSpawn, vehicle: undefined },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauder, vehicle: VEHICLE_MARAUDER },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauderPax, vehicle: VEHICLE_MARAUDER_PAX },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortDirtBike, vehicle: VEHICLE_DIRTBIKE },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortDirtBikePax, vehicle: VEHICLE_DIRTBIKE_PAX },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortQuadbike, vehicle: VEHICLE_QUADBIKE },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortGolfCart, vehicle: VEHICLE_GOLFCART },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortFlyer60, vehicle: VEHICLE_FLYER60 },
@@ -276,6 +268,7 @@ const READY_DIALOG_FAST_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
 const READY_DIALOG_TEAM1_TRANSPORT_SLOT_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortNoSpawn, vehicle: undefined },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauder, vehicle: VEHICLE_MARAUDER },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortDirtBike, vehicle: VEHICLE_DIRTBIKE },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortQuadbike, vehicle: VEHICLE_QUADBIKE },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortGolfCart, vehicle: VEHICLE_GOLFCART },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortFlyer60, vehicle: VEHICLE_FLYER60 },
@@ -285,6 +278,7 @@ const READY_DIALOG_TEAM1_TRANSPORT_SLOT_VEHICLE_OPTIONS: ReadyDialogVehicleOptio
 const READY_DIALOG_TEAM2_TRANSPORT_SLOT_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortNoSpawn, vehicle: undefined },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauderPax, vehicle: VEHICLE_MARAUDER_PAX },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortDirtBikePax, vehicle: VEHICLE_DIRTBIKE_PAX },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortQuadbike, vehicle: VEHICLE_QUADBIKE },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortGolfCart, vehicle: VEHICLE_GOLFCART },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortFlyer60, vehicle: VEHICLE_FLYER60 },

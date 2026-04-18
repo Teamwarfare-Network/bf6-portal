@@ -107,8 +107,8 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
         ensureTopHudShellForPlayer(eventPlayer);
     }
     renderCriticalHudForReveal(eventPlayer, pid);
-    const pendingDirectSpawnMode = getPendingVehicleDirectSpawnModeForPlayer(eventPlayer);
-    const directSpawnDeployResult = await conquestPhase5DTryFulfillVehicleSpawnButtonOnDeploy(eventPlayer);
+    const pendingDirectSpawnMode = undefined;
+    const directSpawnDeployResult = { consumedDeploy: false };
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     // Overwrite the optimistic inMainBaseByPid=true seed (line 69) with the real classifier
     // result now that fulfillment has finalized the player's world position. The optimistic

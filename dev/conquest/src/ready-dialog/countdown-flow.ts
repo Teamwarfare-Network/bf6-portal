@@ -41,7 +41,9 @@ function startPregameCountdown(triggerPlayer?: mod.Player, force?: boolean): voi
     undeployAllDeployedPlayers();
     mod.EnableAllPlayerDeploy(false);
     invalidateCountdownWidgetCacheForAllPlayers();
-    destroyAllTrackedVehicles();
+    // Sink + damage every pre-countdown vehicle and respawn the live-round fleet DURING the
+    // countdown so vehicles are bound and positioned before the "LIVE!" banner fades.
+    void resetVehicleSlotsAtCountdownStart();
 
     State.round.countdown.isActive = true;
     State.round.countdown.isRequested = true;

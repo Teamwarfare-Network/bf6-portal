@@ -3,7 +3,7 @@
 
 //#region -------------------- Versioning --------------------
 
-// version: 1.257 | Date: 04.17.26 | Time: 20:08 UTC
+// version: 1.276 | Date: 04.18.26 | Time: 04:20 UTC
 // version policy header file: src/header-file.ts
 // version policy footer file: src/footer-file.ts
 // version policy strings file: src/strings.json
@@ -56,6 +56,11 @@
 //  - TypeScript Project Template for Battlefield 6 Portal Scripting by Mike DeLuca: https://github.com/deluca-mike/bf6-portal-scripting-template
 //     - Multi-Click detector by Mike DeLuca: https://github.com/deluca-mike/bf6-portal-utils/tree/master/interact-multi-click-detector
 //     - Map detector by Mike DeLuca: https://github.com/deluca-mike/bf6-portal-utils/tree/master/map-detector
+//     - bf6-portal-utils by Mike DeLuca (MIT License, (c) 2026): https://github.com/deluca-mike/bf6-portal-utils
+//         Inlined (not npm-installed) into src/foundation/bf6-utils/ because Conquest uses a flat
+//         bundle concatenation model. Modules used: Logging, CallbackHandler, Timers, Clocks.
+//         Migration path: when Conquest adopts `npm i -D bf6-portal-utils`, delete
+//         src/foundation/bf6-utils/ and import from the package instead.
 //  - Team Switch UI Template by TheOzzy: https://github.com/The0zzy/BF6-Portal-TeamSwitchUI
 //  - BF6 Portal Assistant by Quoeiza: https://chatgpt.com/g/g-68f28580eefc8191b4cf40bbf2305db3-bf6-portal-assistant
 //     - GPT Prompt: https://gist.github.com/Quoeiza/8085f142ad8a05ee04b79adcc4ad8fd7

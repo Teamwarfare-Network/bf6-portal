@@ -23,6 +23,8 @@ function getVehicleDeployTimerLabelKey(vehicleType: mod.VehicleList): number {
             return mod.stringkeys.twl.readyDialog.vehicleOptionPanthera;
         case VEHICLE_AH6M:
             return mod.stringkeys.twl.readyDialog.vehicleShortLittleBird;
+        case VEHICLE_AH6M_PAX:
+            return mod.stringkeys.twl.readyDialog.vehicleShortLittleBirdPax;
         case mod.VehicleList.UH60:
         case mod.VehicleList.UH60_Pax:
             return mod.stringkeys.twl.readyDialog.vehicleOptionBlackHawk;
@@ -52,6 +54,10 @@ function getVehicleDeployTimerLabelKey(vehicleType: mod.VehicleList): number {
             return mod.stringkeys.twl.readyDialog.vehicleShortMarauderPax;
         case mod.VehicleList.Quadbike:
             return mod.stringkeys.twl.readyDialog.vehicleShortQuadbike;
+        case VEHICLE_DIRTBIKE:
+            return mod.stringkeys.twl.readyDialog.vehicleShortDirtBike;
+        case VEHICLE_DIRTBIKE_PAX:
+            return mod.stringkeys.twl.readyDialog.vehicleShortDirtBikePax;
         case mod.VehicleList.GolfCart:
             return mod.stringkeys.twl.readyDialog.vehicleShortGolfCart;
         case mod.VehicleList.Flyer60:
@@ -143,7 +149,8 @@ type VehicleDeployTimerRenderPlan = {
 function buildVehicleDeployTimerRenderPlan(player: mod.Player, pid: number): VehicleDeployTimerRenderPlan {
     const slots = getVehicleDeployRenderSlotsForPlayer(player);
     const liveTerminalOpen = isVehicleDeployLiveTerminalModeForPid(pid);
-    const hasPendingDirectSpawnClaim = !State.players.deployedByPid[pid] && !!findVehicleSlotByPendingSpawnOwnerPid(pid);
+    // v1.258: direct-spawn claim system removed; Vanilla has no pending claims.
+    const hasPendingDirectSpawnClaim = false;
     // Harden: during live match, ignore swap-transition flag (can get stuck), but always respect
     // hudWarmCompleted so late joiners still wait for UI families to build.
     const warmReady = isHudWarmReadyForPid(pid) && (isMatchLive() || !isHudSwapTransitionActiveForPid(pid));
@@ -186,6 +193,7 @@ function doesVehicleTypeSupportAirDeploy(vehicleType: mod.VehicleList): boolean 
         case mod.VehicleList.AH64:
         case mod.VehicleList.Eurocopter:
         case VEHICLE_AH6M:
+        case VEHICLE_AH6M_PAX:
         case mod.VehicleList.UH60:
         case mod.VehicleList.UH60_Pax:
         case mod.VehicleList.F16:
@@ -1816,28 +1824,8 @@ function tryHandleVehicleDeployTimerButtonEvent(
         }
     }
 
-    const slots = getVehicleDeployVisibleSlotsForPlayer(eventPlayer);
-    const slot = slots[rowIndex];
-    if (!slot) return true;
-
-    if (mode === "air" && doesVehicleTypeSupportForwardDeploy(slot.vehicleType)) {
-        mode = "forward";
-    }
-    const claimed = tryClaimVehicleDirectSpawnForPlayer(eventPlayer, slot, mode);
-    if (!claimed) {
-        updateVehicleDeployTimerHudForPlayer(eventPlayer);
-        return true;
-    }
-
-    if (liveTerminalOpen) {
-        closeVehicleDeployLiveMenuForPlayer(eventPlayer);
-        updateVehicleDeployTimerHudForAllPlayers();
-        void beginVehicleLiveTerminalSpawnForPlayer(eventPlayer);
-        return true;
-    }
-
-    updateVehicleDeployTimerHudForAllPlayers();
-    void beginVehicleDirectSpawnDeployForPlayer(eventPlayer);
+    // v1.258: direct-spawn pipeline removed. Vanilla-only: button clicks are visual-only.
+    updateVehicleDeployTimerHudForPlayer(eventPlayer);
     return true;
 }
 
@@ -1903,6 +1891,10 @@ function refreshVehicleDeployTimersForPlayerPreservingVisibility(player: mod.Pla
         !State.players.deployedByPid[pid]
         || isVehicleDeployTimerAdminOverrideEnabledForPid(pid)
         || isVehicleDeployLiveTerminalModeForPid(pid)
+        // v1.261: auto-reveal passive HUD for deployed viewers whenever a slot is cooling down.
+        // Why: prior gating required currentlyVisible to stay visible; if the HUD was hidden at
+        // deploy time, a later destroy→respawn countdown couldn't re-surface it.
+        || renderPlan.shouldShowRows
     );
     const nextVisibleState = renderPlan.visible && (currentlyVisible || autoOwnsVisibility);
     if (cache.lastRenderSignature === renderPlan.signature && cache.lastVisibleState === nextVisibleState) {
