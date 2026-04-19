@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.303)",
+        "title": "teamwarfare . net | TWL Conquest (v1.313)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -280,6 +280,7 @@
       "minus": "-",
       "left": "<",
       "right": ">",
+      "gadgetSlotLabel": "Gadget Slot {0}",
       "loading": "SCRIPT LOADING",
       "customScriptsLoading": "Custom Experience Engaging...",
       "assault": "ASSAULT",

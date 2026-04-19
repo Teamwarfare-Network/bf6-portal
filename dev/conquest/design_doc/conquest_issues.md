@@ -1,7 +1,7 @@
 # Conquest Issues
 
-Last Updated: 2026-04-18 (v1.289)
-Last Tested Build: `v1.289` — Phase 6 HQ Deploy functional for both deploy-menu and on-foot live-terminal surfaces. Vanilla regression path remains byte-identical to the v1.276 baseline. Outstanding: late-joiner redeploy-timer investigation deferred to the polish phase (see memory `project_respawn_redeploy_timer_polish.md`).
+Last Updated: 2026-04-18 (v1.313)
+Last Tested Build: `v1.313` — Phase 6 HQ Deploy remains functional (both deploy-menu and on-foot live-terminal surfaces). Gadget locker rework (v1.290–v1.313) completed: per-launcher team pools, tuned durations, authoritative per-player slot state, slot-based `HasEquipment`-diff probe, per-class slot-toggle row with preference persistence. Vanilla regression path remains byte-identical to the v1.276 baseline. Outstanding: late-joiner redeploy-timer investigation deferred to the polish phase (see memory `project_respawn_redeploy_timer_polish.md`).
 
 **Architecture note (v1.258–v1.259 rewrite).** The Vanilla vehicle spawner was rewritten around one persistent `VehicleSpawner` per slot, a serial `spawnMutex` dispatching via `ForceVehicleSpawnerSpawn`, event-driven bind via `OnVehicleSpawned`, and `Clocks.CountDownClock`-driven respawn. Files `src/vehicles/deploy-fulfillment.ts`, `src/vehicles/reservations.ts`, and `src/vehicles/spawner-sequence.ts` were deleted. All non-Vanilla deploy paths (legacy air-deploy, forward-deploy, HQ-forward) were removed. Any bug entry below whose root cause lived in those files is flagged **Obsolete (v1.259 rewrite)** — the underlying code no longer exists.
 
@@ -38,7 +38,7 @@ Last Tested Build: `v1.289` — Phase 6 HQ Deploy functional for both deploy-men
 - `CQ_Bug_28`: Open (Phase 10 — vehicle-specific, only some vehicles affected; needs investigation)
 - `CQ_Bug_29`: Open (Phase 10 — needs repro)
 - `CQ_Bug_30`: Likely resolved (believed fixed by loading gate rearchitecture and UI cache polish; needs confirmation)
-- `CQ_Bug_31`: Open (Phase 10 investigation)
+- `CQ_Bug_31`: Likely obsolete (v1.308–v1.313 reworked the gadget locker slot-probe path wholesale; the v1.306 by-id probe that could destroy gadgets has been removed. Deploy path also substantially changed in v1.258–v1.289. Re-observe under v1.313 before acting — original symptom may no longer reproduce.)
 - `CQ_Bug_32`: Open (Phase 10 polish)
 - `CQ_Bug_33`: Open (Phase 10 polish)
 - `CQ_Bug_34`: Partially resolved (Firestorm ground + air spawn orientations tuned v1.132-v1.141; other maps still need pass)
@@ -411,21 +411,17 @@ Expected:
 - Ground/air deploy actions should not produce cleanup or unspawn errors during ordinary use.
 
 Status:
-- Open.
-- Active investigation.
+- Likely obsolete as of v1.313. Re-observe before treating as active.
+- Gadget locker path reworked wholesale (v1.308 slot-based `HasEquipment`-diff probe replaced the v1.306 by-id probe; v1.309 dropped the destructive by-id sweep in `giveLauncher`; v1.311 corrected the `Deployable_Vehicle_Supply_Crate` enum; v1.312 removed the ambiguous `loaded===1 → launcher` inference from `probeSlot`). The failure surfaces (cooldown / charges / button state / countdown state) for this path have been re-implemented on top of authoritative per-player slot state (`State.players.lockerSlots`).
+- Deploy cleanup `UnspawnObject` path was reworked via `sinkAndDestroyVehicle` consolidation (v1.270–v1.276) and Phase 6 HQ Deploy seat-flow (v1.277–v1.289).
+- If the original symptom does not reproduce in v1.313, close this entry. If it does, open a fresh issue with a v1.313 stacktrace rather than re-opening v1.290-era analysis.
 
 Current Best Read:
-- One issue is likely in the gadget locker UI/state path.
-- A second issue may be in ground or air deploy cleanup, but that remains an inference and is not yet confirmed.
-- Treat these as potentially separate failures until a shared repro proves otherwise.
+- Both suspected paths have been rewritten since the original observation; the original root cause (whatever it was) likely no longer exists.
 
 Recommended Later Investigation:
-- Reproduce with admin log visible and note the exact user action immediately before each error.
-- Separate:
-  - gadget locker click / cooldown update
-  - ground deploy
-  - air deploy
-- Confirm whether `UnspawnObject` is tied to deploy cleanup, world interactables, or a stale UI/widget ownership path.
+- First re-test under v1.313 before investing further.
+- If it still reproduces, capture admin log + exact action sequence and file a new CQ_Bug_* with a v1.313-specific body — do not treat CQ_Bug_31 as "the bug" since the code under it has been replaced twice over.
 
 ## CQ_Bug_30
 Title: First-Time Menu Creation Causes Noticeable Hitching / Delay
@@ -2474,3 +2470,43 @@ Related:
 - Plan: `C:\Users\Soldat\.claude\plans\sleepy-juggling-thunder.md` (scope explicitly excluded per-launcher caps).
 
 Status: **Open.** Deferred to polish phase per user direction at v1.300 closeout.
+
+## CQ_Refactor_Gadget_Locker_v1.290_to_v1.313
+Title: Gadget Locker Authoritative Slot State + Slot-Based Probe + Preference Persistence
+
+Scope:
+- `src/interaction/ammo-resupply-menu.ts` (2,504 lines as of v1.313; +496 since v1.221).
+- `src/state/runtime-state.ts` added `State.players.lockerSlots` and `State.players.lockerSlotToggle`.
+
+Goal:
+- Replace ammo-inference-based launcher detection with an authoritative per-player slot map, supply a per-class slot-toggle control in the menu header, and make the probe safe enough that a destructive by-id `RemoveEquipment` cannot silently delete the player's Supply Crate during a launcher swap.
+
+Timeline:
+- v1.290–v1.292: per-launcher team pool config (AT4 3/team, 180s per-charge drip) and duration-label tuning (Artillery 10m, Smoke 7m, Spawn Beacon 15m).
+- v1.293–v1.299: snapshot-probe dynamic slot management — dup-prevent, same-slot launcher swap, honest launcher ammo.
+- v1.300: authoritative `State.players.lockerSlots[pid]` (g1/g2 with `kind: unknown|empty|launcher|gadget`); probe on open, update on click.
+- v1.301–v1.303: ammo-locker retargeting — sweep class-loadout duplicates (C4/Drone) before `AddEquipment`; retarget recon/assault/medic gadget placements to empty sibling slot; re-probe sibling after placement.
+- v1.304–v1.305: per-class slot-toggle row under each class header (visual tuning: narrow row, equalized gutters, tiles pushed down 50px).
+- v1.306–v1.307: differential-remove probe authoritatively identifies launcher slot; removed dead `ARM_SCHEMA` cache-version field.
+- v1.308: **slot-based probe** — `probeLauncherSlot` uses `RemoveEquipment(player, GadgetOne)` + `HasEquipment` diff to identify which gadget was in slot 1, then restores it. Replaces the v1.306 by-id probe that could destroy the wrong gadget.
+- v1.309: dropped the by-id defensive sweep in `giveLauncher` — slot-based remove of `targetSlot` is sufficient. Fixes: engineer with Supply Crate slot 1 + Stinger slot 2 clicking AT4 no longer loses the Supply Crate.
+- v1.310: narrowed probe candidates to the 4 engineer buckets — launcher variants + AV Mine + EOD Bot + Supply Crate — replacing the 42-entry `GADGET_SLOT_CANDIDATES` with `ENGINEER_GADGET_CANDIDATES`.
+- v1.311: **enum-mismatch fix** — added `mod.Gadgets.Deployable_Vehicle_Supply_Crate` to the probe candidates. The engineer default Supply Crate registers as `Deployable_Vehicle_Supply_Crate`, NOT `Class_Supply_Bag`. Without this the v1.310 probe removed the Supply Crate but the diff found no flip and skipped the restore. Captured as durable memory (`project_engineer_supply_crate_enum.md`).
+- v1.312: **probe-disambiguation fix** — removed the ambiguous `loaded === 1 → launcher` inference from `probeSlot`. Supply Crate also reports `loaded === 1`, so the old heuristic false-positively marked a Supply Crate slot as "launcher"; `slotWithLauncher` then returned the wrong slot and (a) the slot-toggle was ignored when no launcher was held, and (b) the Launcher Ammo tile became incorrectly enabled. `probeSlot` now reports `kind: "gadget"` for any populated slot without trying to distinguish launcher vs non-launcher.
+- v1.313: **toggle preference persistence** — `closeArmMenu` wipes `State.players.lockerSlots[pid]` (probed, re-derivable state) but preserves `State.players.lockerSlotToggle[pid]` (player preference). Default remains slot 2 at round start; once changed, the preference sticks across close/reopen.
+
+Durable lessons:
+- Engineer default Supply Crate enum = `Deployable_Vehicle_Supply_Crate` (not `Class_Supply_Bag`).
+- `GetInventoryAmmo === 1` is ambiguous across launcher vs Supply Crate; do NOT use it to distinguish slot contents.
+- By-id `RemoveEquipment(player, gadget_id)` can destroy the wrong gadget under Portal's current behavior; slot-based `RemoveEquipment(player, InventorySlots.GadgetOne/Two)` is deterministic.
+- Probe candidate lists must be validated against the specific engine-registered enum for the class's default loadout, not a nominally similar enum.
+
+Status: **Resolved** at v1.313. Regression surfaces to watch on future playtests:
+- Engineer default loadout + click each launcher tile: Supply Crate survives, launcher lands in the toggled slot.
+- Engineer with no launcher: toggle honored when giving first launcher; Launcher Ammo tile disabled.
+- Engineer with launcher in slot 1 vs slot 2: refill and swap both target the occupied slot.
+- Kit pickup of an off-spec gadget: probe still identifies the correct buckets.
+
+Related:
+- `CQ_Polish_Launcher_Ammo_Per_Launcher_Cap` (still open; per-launcher reserve cap not consulted in `giveRocketCharge`).
+- Memory: `project_engineer_supply_crate_enum.md`.

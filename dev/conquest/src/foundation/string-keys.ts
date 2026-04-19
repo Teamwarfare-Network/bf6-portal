@@ -39,6 +39,7 @@ const STR_HUD_CONQUEST_CAPTURE_STATUS_NEUTRALIZING = mod.stringkeys.twl.hud.conq
 const STR_HUD_CONQUEST_CAPTURE_STATUS_CONTESTING = mod.stringkeys.twl.hud.conquest.captureStatus.contesting;
 const STR_HUD_CONQUEST_CAPTURE_STATUS_CAPTURING = mod.stringkeys.twl.hud.conquest.captureStatus.capturing;
 const STR_SYSTEM_GENERIC_PERCENT = mod.stringkeys.twl.system.genericPercent;
+const STR_UI_GADGET_SLOT_LABEL = mod.stringkeys.twl.ui.gadgetSlotLabel;
 const STR_UI_ASSAULT = mod.stringkeys.twl.ui.assault;
 const STR_UI_ENGINEER = mod.stringkeys.twl.ui.engineer;
 const STR_UI_GADGETS = mod.stringkeys.twl.ui.gadgets;

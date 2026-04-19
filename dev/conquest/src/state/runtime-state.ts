@@ -208,6 +208,7 @@ const State: GameState = {
         armL: {},
         armS: {},
         lockerSlots: {},
+        lockerSlotToggle: {},
         uiCachePerfByPid: {},
         deployedByPid: {},
         disconnectedByPid: {},

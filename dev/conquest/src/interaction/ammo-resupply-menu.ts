@@ -15,7 +15,7 @@ const RX = 264;
 const AMMO_RESUPPLY_TILE_SIZE = 120;
 const AMMO_RESUPPLY_TILE_LABEL_WIDTH = 220;
 const AMMO_RESUPPLY_TILE_TIMER_WIDTH = 220;
-const SY = -268;
+const SY = -218;
 const DY = 126;
 const LY = 44;
 const SPY = 30;
@@ -49,7 +49,10 @@ const LAUNCH_AMMO_ICON_Y = IY;
 const AMMO_RESUPPLY_CLOSE_BUTTON_Y = 396;
 const AMMO_RESUPPLY_CLOSE_BUTTON_WIDTH = 260;
 const AMMO_RESUPPLY_CLOSE_BUTTON_HEIGHT = 50;
-const ARM_SCHEMA = 5;
+const AMMO_RESUPPLY_SLOT_TOGGLE_Y = -314;
+const AMMO_RESUPPLY_SLOT_TOGGLE_BUTTON_W = 24;
+const AMMO_RESUPPLY_SLOT_TOGGLE_BUTTON_H = 24;
+const AMMO_RESUPPLY_SLOT_TOGGLE_LABEL_W = 90;
 
 //#region -------------------- Gadget Locker Config --------------------
 
@@ -234,7 +237,6 @@ function mkArmCache(pid: number): AmmoResupplyMenuCacheEntry {
     for (let i = 0; i < cfg.recon.length; i++) q.push({} as any);
     return {
         rootName: ammoResupplyMenuName("Root", pid),
-        sv: ARM_SCHEMA,
         h: [],
         a,
         rows,
@@ -764,6 +766,13 @@ function armInitVisible(cache: AmmoResupplyMenuCacheEntry): void {
     if (cache.h) {
         for (let i = 0; i < cache.h.length; i++) widgets.push(cache.h[i]);
     }
+    if (cache.st) {
+        for (let i = 0; i < cache.st.length; i++) {
+            const row = cache.st[i];
+            if (!row) continue;
+            widgets.push(row.prev, row.prevLabel, row.label, row.next, row.nextLabel);
+        }
+    }
     const tileLists: Array<Array<AmmoResupplyMenuChargeCacheEntry | AmmoResupplyMenuActionRowCacheEntry>> = [
         cache.a, cache.rows, cache.x, cache.q,
     ];
@@ -846,15 +855,99 @@ const ALL_LAUNCHER_VARIANTS: number[] = [
 // buildLockerSnapshot that flip-flopped across launcher variants. See the plan file
 // sleepy-juggling-thunder for the full rationale.
 function probeSlot(player: mod.Player, slot: mod.InventorySlots): { kind: "unknown" | "empty" | "launcher" | "gadget"; source: "probed" } {
+    // Never infer "launcher" from ammo here -- a Supply Crate with 1 charge has loaded===1 and
+    // would be falsely labelled as launcher, which then fooled slotWithLauncher/launcherSlotKnown
+    // (v1.311 playtest: box+EOD loadout, no launcher, toggle slot 2, launcher still landed in
+    // slot 1; Launcher Ammo tile was also incorrectly enabled). probeLauncherSlot's HasEquipment
+    // diff is the sole authority for the "launcher" kind.
     let loaded = 0, mag = 0, active = false;
     try { loaded = mod.GetInventoryAmmo(player, slot); } catch {}
     try { mag = mod.GetInventoryMagazineAmmo(player, slot); } catch {}
     try { active = mod.IsInventorySlotActive(player, slot); } catch {}
     const populated = loaded > 0 || mag > 0;
-    if (populated && loaded === 1) return { kind: "launcher", source: "probed" };
     if (populated) return { kind: "gadget", source: "probed" };
     if (active) return { kind: "unknown", source: "probed" };
     return { kind: "empty", source: "probed" };
+}
+// The only gadgets an engineer can hold in GadgetOne/GadgetTwo: Supply Crate, AV Mine,
+// Launcher (any variant), or EOD Bot. Launcher variants are enumerated so the HasEquipment
+// diff can restore the exact variant; AV Mine has three variants (standard + Acoustic +
+// Tripwire) so all three are included. Supply Crate is actually Deployable_Vehicle_Supply_Crate
+// at runtime (v1.310 playtest: Class_Supply_Bag alone missed it -> slot 1 crate removed and
+// never restored). Class_Supply_Bag is kept as a belt-and-braces entry for class variants.
+// Any gadget we miss that lived in slot 1 would be invisible to the probe and lost on restore.
+const ENGINEER_GADGET_CANDIDATES: number[] = [
+    ...ALL_LAUNCHER_VARIANTS,
+    mod.Gadgets.Misc_Anti_Vehicle_Mine,
+    mod.Gadgets.Misc_Acoustic_Sensor_AV_Mine,
+    mod.Gadgets.Misc_Tripwire_Sensor_AV_Mine,
+    mod.Gadgets.Deployable_EOD_Bot,
+    mod.Gadgets.Deployable_Vehicle_Supply_Crate,
+    mod.Gadgets.Class_Supply_Bag,
+];
+// Slot-based remove probe: removes whatever is in GadgetOne (by slot, not by id), uses a
+// HasEquipment before/after diff to identify the exact gadget that was removed, then restores
+// it via AddEquipment. If the launcher flipped, it was in slot 1; otherwise the launcher is in
+// slot 2 (it survived the slot-1 probe). Shortcut: no launcher owned means no probe runs and
+// the toggle drives the next launcher placement.
+function probeLauncherSlot(player: mod.Player): {
+    slot: mod.InventorySlots | undefined;
+    gadget: number | undefined;
+} {
+    if (!player || !mod.IsPlayerValid(player)) return { slot: undefined, gadget: undefined };
+    if (!isCls(player, mod.SoldierClass.Engineer)) return { slot: undefined, gadget: undefined };
+    if (safeGetSoldierStateBool(player, mod.SoldierStateBool.IsInVehicle, false)) return { slot: undefined, gadget: undefined };
+    let ownedLauncher: number | undefined = undefined;
+    for (let i = 0; i < ALL_LAUNCHER_VARIANTS.length; i++) {
+        const L = ALL_LAUNCHER_VARIANTS[i];
+        let owned = false;
+        try { owned = mod.HasEquipment(player, L); } catch {}
+        if (owned) { ownedLauncher = L; break; }
+    }
+    if (ownedLauncher === undefined) return { slot: undefined, gadget: undefined };
+    // Skip when either gadget slot is wielded -- removing the active slot causes a visible
+    // hand-animation glitch. Rare at locker-open since the player usually has primary wielded.
+    let g1Active = false, g2Active = false;
+    try { g1Active = mod.IsInventorySlotActive(player, mod.InventorySlots.GadgetOne); } catch {}
+    try { g2Active = mod.IsInventorySlotActive(player, mod.InventorySlots.GadgetTwo); } catch {}
+    if (g1Active || g2Active) return { slot: undefined, gadget: undefined };
+    const before: { gadget: number; had: boolean }[] = [];
+    for (let i = 0; i < ENGINEER_GADGET_CANDIDATES.length; i++) {
+        const g = ENGINEER_GADGET_CANDIDATES[i];
+        let had = false;
+        try { had = mod.HasEquipment(player, g); } catch {}
+        before.push({ gadget: g, had });
+    }
+    try { mod.RemoveEquipment(player, mod.InventorySlots.GadgetOne); } catch {
+        return { slot: undefined, gadget: undefined };
+    }
+    let removedFromSlot1: number | undefined = undefined;
+    let multipleFlips = false;
+    for (let i = 0; i < before.length; i++) {
+        const b = before[i];
+        if (!b.had) continue;
+        let stillHas = true;
+        try { stillHas = mod.HasEquipment(player, b.gadget); } catch {}
+        if (!stillHas) {
+            if (removedFromSlot1 !== undefined) { multipleFlips = true; break; }
+            removedFromSlot1 = b.gadget;
+        }
+    }
+    // API surprise: more than one gadget disappeared. Best-effort restore the launcher and bail
+    // so downstream falls back to the heuristic rather than trust wrong authoritative state.
+    if (multipleFlips) {
+        try { mod.AddEquipment(player, ownedLauncher, mod.InventorySlots.GadgetOne); } catch {}
+        return { slot: undefined, gadget: undefined };
+    }
+    // Restore the removed gadget to slot 1. If nothing flipped, slot 1 was empty -- no restore.
+    if (removedFromSlot1 !== undefined) {
+        try { mod.AddEquipment(player, removedFromSlot1, mod.InventorySlots.GadgetOne); } catch {}
+    }
+    // Launcher vanished from slot 1 -> launcher was in slot 1. Otherwise it must be in slot 2.
+    const launcherSlot = removedFromSlot1 === ownedLauncher
+        ? mod.InventorySlots.GadgetOne
+        : mod.InventorySlots.GadgetTwo;
+    return { slot: launcherSlot, gadget: ownedLauncher };
 }
 function initLockerSlotStateFromProbe(pid: number, player: mod.Player): void {
     const g1 = probeSlot(player, mod.InventorySlots.GadgetOne);
@@ -937,28 +1030,34 @@ function reprobeSiblingGadgetSlot(pid: number, placedSlot: mod.InventorySlots, p
     siblingEntry.kind = fresh.kind;
     siblingEntry.source = "probed";
 }
-// If the tile's preferred gadget slot is occupied (by anything we probed or placed) and the
-// sibling gadget slot is empty, retarget to the empty slot. Preserves class-loadout gadgets
-// (C4/Drone/intercepts) that HasEquipment can't identify -- rather than blind-replace the
-// unknown occupant, drop into the confirmed-empty slot.
-function preferEmptyGadgetSlot(pid: number, preferredSlot: mod.InventorySlots): mod.InventorySlots {
-    if (preferredSlot !== mod.InventorySlots.GadgetOne && preferredSlot !== mod.InventorySlots.GadgetTwo) return preferredSlot;
-    const slotsState = State.players.lockerSlots[pid];
-    if (!slotsState) return preferredSlot;
-    const preferredIsG1 = preferredSlot === mod.InventorySlots.GadgetOne;
-    const preferredEntry = preferredIsG1 ? slotsState.g1 : slotsState.g2;
-    if (preferredEntry.kind === "empty") return preferredSlot;
-    const siblingEntry = preferredIsG1 ? slotsState.g2 : slotsState.g1;
-    if (siblingEntry.kind === "empty") {
-        return preferredIsG1 ? mod.InventorySlots.GadgetTwo : mod.InventorySlots.GadgetOne;
-    }
-    return preferredSlot;
+// Returns the HDR_KEYS-order class index (0=Assault,1=Engineer,2=Medic,3=Recon) for the player,
+// or undefined if the class isn't one of the four.
+function getPlayerClassHdrIndex(player: mod.Player): number | undefined {
+    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    if (isCls(player, mod.SoldierClass.Assault)) return 0;
+    if (isCls(player, mod.SoldierClass.Engineer)) return 1;
+    if (isCls(player, mod.SoldierClass.Support)) return 2;
+    if (isCls(player, mod.SoldierClass.Recon)) return 3;
+    return undefined;
+}
+// Creates the per-player slot-toggle state if absent, defaulting every class to Gadget Slot 2.
+function ensureSlotToggleState(pid: number): void {
+    if (State.players.lockerSlotToggle[pid]) return;
+    State.players.lockerSlotToggle[pid] = { slotByClass: [2, 2, 2, 2] };
+}
+// Returns the inventory slot that the player's class toggle currently points to. Defaults to
+// GadgetTwo when state is missing or the class index is out of range.
+function slotFromToggle(pid: number, classHdrIndex: number): mod.InventorySlots {
+    const state = State.players.lockerSlotToggle[pid];
+    if (!state || classHdrIndex < 0 || classHdrIndex > 3) return mod.InventorySlots.GadgetTwo;
+    const choice = state.slotByClass[classHdrIndex];
+    return choice === 1 ? mod.InventorySlots.GadgetOne : mod.InventorySlots.GadgetTwo;
 }
 // Grants a launcher. Reads the authoritative per-player slot state for dup-reject and target
 // selection; updates state on success. Non-negotiable: any launcher tile click always targets
 // whichever slot currently holds a launcher (per state). Only when no launcher exists in
 // either slot do we fall back to GadgetTwo. Ammo is preserved across the swap.
-function giveLauncher(eventPlayer: mod.Player, gadget: number, pid: number): boolean {
+function giveLauncher(eventPlayer: mod.Player, gadget: number, pid: number, fallbackSlot: mod.InventorySlots): boolean {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
     const slotsState = State.players.lockerSlots[pid];
     if (!slotsState) return false;
@@ -966,7 +1065,7 @@ function giveLauncher(eventPlayer: mod.Player, gadget: number, pid: number): boo
     const currentLauncherSlot = slotWithLauncher(slotsState);
     const targetSlot: mod.InventorySlots = currentLauncherSlot !== undefined
         ? currentLauncherSlot
-        : mod.InventorySlots.GadgetTwo;
+        : fallbackSlot;
     // Preserve launcher-in-slot ammo across the swap -- rocket ammo is fungible from the
     // player's perspective for RPG/AT4/Stinger.
     let preserveLoaded = 1;
@@ -979,18 +1078,11 @@ function giveLauncher(eventPlayer: mod.Player, gadget: number, pid: number): boo
         const m = mod.GetInventoryMagazineAmmo(eventPlayer, targetSlot);
         if (m > 0) preserveMag = m;
     } catch {}
-    // Defensive sweep: if any other launcher variant is HasEquipment-visible, remove it.
-    // State-driven placement should keep both slots from holding launchers, but class-loadout
-    // pickups between menu sessions could leave a stray.
-    for (let i = 0; i < ALL_LAUNCHER_VARIANTS.length; i++) {
-        const L = ALL_LAUNCHER_VARIANTS[i];
-        if (L === gadget) continue;
-        let owned = false;
-        try { owned = mod.HasEquipment(eventPlayer, L); } catch {}
-        if (owned) {
-            try { mod.RemoveEquipment(eventPlayer, L); } catch {}
-        }
-    }
+    // Clear the target slot via slot-based remove only. By-id RemoveEquipment is unreliable in
+    // Portal (v1.306 bug: RemoveEquipment(player, launcherId) can take the wrong gadget -- e.g.
+    // a Supply Crate in the sibling slot) so the previous launcher-id sweep is removed. The
+    // probe at menu-open keeps `targetSlot` pointed at the real launcher slot, so this
+    // slot-based remove clears the existing launcher without touching the sibling slot.
     try { mod.RemoveEquipment(eventPlayer, targetSlot); } catch {}
     try {
         mod.AddEquipment(eventPlayer, gadget, targetSlot);
@@ -1047,9 +1139,7 @@ function giveAssaultItem(
             if (mod.HasEquipment(eventPlayer, gadget)) return false;
         } catch {}
     }
-    // Retarget to an empty sibling gadget slot if the configured slot is occupied. Protects
-    // a class-loadout gadget in the other slot that HasEquipment couldn't identify.
-    const targetSlot = preferEmptyGadgetSlot(pid, inventorySlot);
+    const targetSlot = inventorySlot;
     // Gadget-id sweep: removes any existing copy in any slot before we place. Mirrors the
     // launcher-variant sweep in giveLauncher. Intended to catch class-loadout gadgets that
     // HasEquipment can't see (e.g. class C4 in GadgetOne while tile targets GadgetTwo).
@@ -1090,9 +1180,7 @@ function giveReconItem(
             if (mod.HasEquipment(eventPlayer, gadget)) return false;
         } catch {}
     }
-    // Retarget to an empty sibling gadget slot if the configured slot is occupied. Protects
-    // a class-loadout gadget in the other slot that HasEquipment couldn't identify.
-    const targetSlot = preferEmptyGadgetSlot(pid, inventorySlot);
+    const targetSlot = inventorySlot;
     // Gadget-id sweep: removes any existing copy in any slot before we place. Mirrors the
     // launcher-variant sweep in giveLauncher -- class C4 / Drone in the non-target slot would
     // otherwise produce a double-equip when HasEquipment misses the class variant.
@@ -1183,16 +1271,8 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return undefined;
     let cache = State.hudCache.ammoResupplyMenuCache[pid];
-    if (!cache || cache.sv !== ARM_SCHEMA) {
-        if (cache) {
-            if (FEATURE_PERF_DIAG) {
-                incrementUiCachePerfCounter(pid, "gadget", "invalid");
-                incrementUiCachePerfCounter(pid, "gadget", "rebuilt");
-            }
-            destroyArmMenu(pid);
-        } else {
-            if (FEATURE_PERF_DIAG) incrementUiCachePerfCounter(pid, "gadget", "built");
-        }
+    if (!cache) {
+        if (FEATURE_PERF_DIAG) incrementUiCachePerfCounter(pid, "gadget", "built");
         cache = mkArmCache(pid);
         State.hudCache.ammoResupplyMenuCache[pid] = cache;
     }
@@ -1307,6 +1387,7 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
             false,
             READY_DIALOG_LABEL_TEXT_COLOR
         );
+        buildSlotToggleRow(cache, pid, i, root, eventPlayer);
     }
     for (let i = 0; i < cfg.assault.length; i++) {
         const tileY = assaultStartY + (i * DY);
@@ -1696,6 +1777,74 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
     showArmMenu(cache, false);
     return cache;
 }
+// Builds one [<] Gadget Slot N [>] row under a class header. Interactivity is controlled by
+// refreshArmMenu based on the player's current class.
+function buildSlotToggleRow(
+    cache: AmmoResupplyMenuCacheEntry,
+    pid: number,
+    i: number,
+    root: mod.UIWidget,
+    eventPlayer: mod.Player
+): void {
+    const centerX = HDR_X[i];
+    const buttonW = AMMO_RESUPPLY_SLOT_TOGGLE_BUTTON_W;
+    const buttonH = AMMO_RESUPPLY_SLOT_TOGGLE_BUTTON_H;
+    const labelW = AMMO_RESUPPLY_SLOT_TOGGLE_LABEL_W;
+    const y = AMMO_RESUPPLY_SLOT_TOGGLE_Y;
+    const prevX = centerX - (labelW / 2) - (buttonW / 2);
+    const nextX = centerX + (labelW / 2) + (buttonW / 2);
+    const prevName = ammoResupplyMenuName("SlotTogglePrev", pid, i);
+    const labelName = ammoResupplyMenuName("SlotToggleLabel", pid, i);
+    const nextName = ammoResupplyMenuName("SlotToggleNext", pid, i);
+    const prevLabelName = ammoResupplyMenuName("SlotTogglePrevLabel", pid, i);
+    const nextLabelName = ammoResupplyMenuName("SlotToggleNextLabel", pid, i);
+
+    const prevBorder = addOutlinedButton(prevName, prevX, y, buttonW, buttonH, mod.UIAnchor.Center, root, eventPlayer, 1);
+    const prevLabel = addReadyDialogCenteredText(
+        prevLabelName,
+        buttonW,
+        buttonH,
+        mod.Message(mod.stringkeys.twl.ui.left),
+        eventPlayer,
+        prevBorder ?? root,
+        14
+    );
+    const label = addReadyDialogText(
+        labelName,
+        centerX,
+        y,
+        labelW,
+        buttonH,
+        mod.UIAnchor.Center,
+        mod.UIAnchor.Center,
+        mod.Message(STR_UI_GADGET_SLOT_LABEL, 2),
+        eventPlayer,
+        root,
+        14,
+        true,
+        READY_DIALOG_LABEL_TEXT_COLOR
+    );
+    const nextBorder = addOutlinedButton(nextName, nextX, y, buttonW, buttonH, mod.UIAnchor.Center, root, eventPlayer, 1);
+    const nextLabel = addReadyDialogCenteredText(
+        nextLabelName,
+        buttonW,
+        buttonH,
+        mod.Message(mod.stringkeys.twl.ui.right),
+        eventPlayer,
+        nextBorder ?? root,
+        14
+    );
+    const prevButton = safeFind(prevName);
+    const nextButton = safeFind(nextName);
+    if (!cache.st) cache.st = [];
+    cache.st[i] = {
+        prev: prevButton ?? prevBorder,
+        prevLabel,
+        label,
+        next: nextButton ?? nextBorder,
+        nextLabel,
+    };
+}
 function destroyArmMenu(pid: number): void {
     for (let i = 0; i < 32; i++) {
         const widget = safeFind(ammoResupplyMenuName("Root", pid));
@@ -1791,6 +1940,34 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         for (let i = 0; i < cache.h.length; i++) {
             const active = (i === 0 && isAssaultClass) || (i === 1 && isEngineerClass) || (i === 2 && isMedicClass) || (i === 3 && isReconClass);
             safeSetUITextColor(cache.h[i], active ? COLOR_READY_GREEN : COLOR_NOT_READY_RED);
+        }
+    }
+    const toggleState = State.players.lockerSlotToggle[pid];
+    if (cache.st && toggleState) {
+        const currentClassIdx = getPlayerClassHdrIndex(eventPlayer);
+        for (let i = 0; i < 4; i++) {
+            const row = cache.st[i];
+            if (!row) continue;
+            const choice = toggleState.slotByClass[i];
+            safeSetUITextLabel(row.label, mod.Message(STR_UI_GADGET_SLOT_LABEL, choice));
+            const enabled = i === currentClassIdx;
+            const btnAlpha = enabled ? BUTTON_OPACITY_BASE : DIS_A;
+            const borderAlpha = enabled ? BUTTON_BORDER_OPACITY : DIS_A;
+            if (row.prev) {
+                try { mod.SetUIButtonEnabled(row.prev, enabled); } catch {}
+                safeSetUIWidgetBgAlpha(row.prev, btnAlpha);
+            }
+            if (row.next) {
+                try { mod.SetUIButtonEnabled(row.next, enabled); } catch {}
+                safeSetUIWidgetBgAlpha(row.next, btnAlpha);
+            }
+            const prevBorder = safeFind(ammoResupplyMenuName("SlotTogglePrev", pid, i) + "_BORDER");
+            const nextBorder = safeFind(ammoResupplyMenuName("SlotToggleNext", pid, i) + "_BORDER");
+            if (prevBorder) safeSetUIWidgetBgAlpha(prevBorder, borderAlpha);
+            if (nextBorder) safeSetUIWidgetBgAlpha(nextBorder, borderAlpha);
+            safeSetUITextAlpha(row.prevLabel, enabled ? 1 : DIS_A);
+            safeSetUITextAlpha(row.nextLabel, enabled ? 1 : DIS_A);
+            safeSetUITextAlpha(row.label, enabled ? 1 : DIS_A);
         }
     }
     safeSetUITextColor(cache.at, COLOR_WARNING_YELLOW);
@@ -2057,8 +2234,10 @@ function closeArmMenu(eventPlayer: mod.Player | number): void {
     if (!isArmOpen(pid)) return;
     setArmOpen(pid, false);
     setArmObj(pid, undefined);
-    // Wipe per-session slot state so the next open re-probes fresh (avoids drift from
-    // between-session respawns, kit pickups, class changes).
+    // Wipe the probed slot contents so the next open re-probes fresh (avoids drift from
+    // between-session respawns, kit pickups, class changes). The slot toggle is a player
+    // preference -- preserve it across close/reopen. Round-start reset still clears it via
+    // State.players wipe.
     delete State.players.lockerSlots[pid];
     const cache = State.hudCache.ammoResupplyMenuCache[pid];
     if (cache) showArmMenu(cache, false);
@@ -2090,6 +2269,20 @@ function openArmMenu(eventPlayer: mod.Player, objId: number): boolean {
     // Seed authoritative slot state BEFORE the first refresh so tile dup-dim and the Launcher
     // Ammo enable flag read from accurate data on the opening frame.
     initLockerSlotStateFromProbe(pid, eventPlayer);
+    const probed = probeLauncherSlot(eventPlayer);
+    if (probed.slot !== undefined && probed.gadget !== undefined) {
+        const slotsState = State.players.lockerSlots[pid];
+        if (slotsState) {
+            const siblingEntry = probed.slot === mod.InventorySlots.GadgetOne
+                ? slotsState.g2 : slotsState.g1;
+            if (siblingEntry.kind === "launcher") {
+                siblingEntry.kind = siblingEntry.gadget ? "gadget" : "unknown";
+                siblingEntry.source = "probed";
+            }
+        }
+        recordPlacement(pid, probed.slot, probed.gadget, "launcher");
+    }
+    ensureSlotToggleState(pid);
     refreshArmMenu(eventPlayer, objId, cache, true);
     showArmMenu(cache, true);
     setArmOpen(pid, true);
@@ -2125,6 +2318,30 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         || widgetName.indexOf(closeButtonLabelName) >= 0;
     const isMedicWidget = widgetName === medicButtonName || widgetName === medicButtonBorderName;
     const isChargeWidget = widgetName === chargeButtonName || widgetName === chargeButtonBorderName;
+    let toggleClassIdx = -1;
+    for (let i = 0; i < 4; i++) {
+        const prevName = ammoResupplyMenuName("SlotTogglePrev", pid, i);
+        const nextName = ammoResupplyMenuName("SlotToggleNext", pid, i);
+        if (widgetName === prevName || widgetName === `${prevName}_BORDER`
+            || widgetName === nextName || widgetName === `${nextName}_BORDER`) {
+            toggleClassIdx = i;
+            break;
+        }
+    }
+    if (toggleClassIdx >= 0) {
+        if (!mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.ButtonDown)) return true;
+        const currentClassIdx = getPlayerClassHdrIndex(eventPlayer);
+        if (toggleClassIdx !== currentClassIdx) return true;
+        ensureSlotToggleState(pid);
+        const ts = State.players.lockerSlotToggle[pid];
+        if (!ts) return true;
+        ts.slotByClass[toggleClassIdx] = ts.slotByClass[toggleClassIdx] === 1 ? 2 : 1;
+        playArmSfx(eventPlayer);
+        const objId = getArmObj(pid);
+        const cache = State.hudCache.ammoResupplyMenuCache[pid];
+        if (objId !== undefined && cache) refreshArmMenu(eventPlayer, objId, cache, true);
+        return true;
+    }
     const cfg = ACTIVE_GADGET_CONFIG;
     let medicTileIndex = -1;
     for (let i = 0; i < cfg.medicItems.length; i++) {
@@ -2199,7 +2416,10 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         const count = asgEntry.c;
         const nextReady = asgEntry.n;
         if (assaultGroup.n > now || count <= 0 || nextReady > now) return true;
-        if (giveAssaultItem(eventPlayer, item.gadget, item.slot, item.slot === mod.InventorySlots.Callins, pid)) {
+        const assaultSlot = (item.slot === mod.InventorySlots.GadgetOne || item.slot === mod.InventorySlots.GadgetTwo)
+            ? slotFromToggle(pid, 0)
+            : item.slot;
+        if (giveAssaultItem(eventPlayer, item.gadget, assaultSlot, assaultSlot === mod.InventorySlots.Callins, pid)) {
             const next = now + item.cooldownSeconds;
             assaultGroup.n = next;
             assaultGroup.s = assaultTileIndex;
@@ -2223,7 +2443,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
     if (medicTileIndex >= 0) {
         if (!isMedicClass || (state.mN ?? 0) > now) return true;
         const item = cfg.medicItems[medicTileIndex];
-        if (giveAssaultItem(eventPlayer, item.gadget, mod.InventorySlots.GadgetTwo, false, pid)) {
+        if (giveAssaultItem(eventPlayer, item.gadget, slotFromToggle(pid, 2), false, pid)) {
             state.mN = now + item.cooldownSeconds;
             state.mS = medicTileIndex;
             playArmSfx(eventPlayer);
@@ -2237,7 +2457,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         const pool = launcherItem.pool;
         const poolEntry = pool ? launcherPoolState?.[actionIndex] : undefined;
         if (pool && (!poolEntry || poolEntry.c <= 0)) return true;
-        if (giveLauncher(eventPlayer, launcherItem.gadget, pid)) {
+        if (giveLauncher(eventPlayer, launcherItem.gadget, pid, slotFromToggle(pid, 1))) {
             launch.lN = now + cfg.launcherCooldownSeconds;
             launch.s = actionIndex;
             if (pool && poolEntry) {
@@ -2255,7 +2475,10 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         const item = cfg.recon[reconTileIndex];
         const nextReady = reconTileIndex === 0 ? state.rdN : state.rgN;
         if (nextReady > now) return true;
-        if (giveReconItem(eventPlayer, item.gadget, item.slot, pid)) {
+        const reconSlot = (item.slot === mod.InventorySlots.GadgetOne || item.slot === mod.InventorySlots.GadgetTwo)
+            ? slotFromToggle(pid, 3)
+            : item.slot;
+        if (giveReconItem(eventPlayer, item.gadget, reconSlot, pid)) {
             if (reconTileIndex === 0) state.rdN = now + item.cooldownSeconds;
             else {
                 state.rgN = now + item.cooldownSeconds;

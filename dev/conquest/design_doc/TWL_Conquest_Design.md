@@ -2756,7 +2756,7 @@ World interactable feature contract:
     - three ammo-charge icon buttons sit below the launcher rows
     - each ammo-charge button owns its own `60` second cooldown
     - ammo-charge buttons only attempt to resupply managed rocket-launcher ammo, not general inventory ammo
-    - current implementation always replaces `InventorySlots.GadgetTwo`; first-slot preference preservation is deferred follow-up work
+    - as of v1.304–v1.313 the player picks the target slot via a per-class slot-toggle row under each class header; default is `InventorySlots.GadgetTwo` at round start, preference is stored in `State.players.lockerSlotToggle[pid]` and persists across close/reopen (v1.313). Probe on open derives actual slot contents into `State.players.lockerSlots[pid]` via `probeLauncherSlot` (slot-based `RemoveEquipment` + `HasEquipment` diff, candidates narrowed to the 4 engineer buckets in `ENGINEER_GADGET_CANDIDATES`).
     - temporary icon evaluation should stay on the verified 2D UI paths only; do not rely on unverified string-key icon registries
     - current accepted ammo-button icon path is the verified `AddUIGadgetImage(...)` gadget-image route, using `CallIn_Ammo_Drop` as the safe ammo-box proxy until a better verified 2D icon source is locked
   - initial scope:
@@ -3994,13 +3994,17 @@ All functions exported from `src/index.ts`. Each delegates to an `*Impl` functio
 - `runTeamSwapLoadingGate(player, pid, newTeamNum, waitForUndeploy)` — team-swap gate sequence
 - Stagger: `_prebuildStaggerIndex * 0.25s` offsets concurrent joins so players don't contend for the lock
 
-#### interaction/ammo-resupply-menu.ts — Gadget Menu (2,190 lines)
+#### interaction/ammo-resupply-menu.ts — Gadget Menu (2,504 lines)
 - `resetArmState(pid)` / `resetArmTimers(pid)` — clear ammo menu state
 - `armCacheOk(cache)` — validate menu cache completeness
 - `buildTile(...)` — build complete gadget tile with button, icon, cooldown
 - `armRefreshFrame(pid, objId)` — refresh menu frame contents
-- `openArmMenu(player)` / `closeArmMenu(player)` — menu open/close lifecycle
-- `buildLockerSnapshot(player)` / `allLockerGadgetIds()` — per-player one-shot probe of ownership + launcher slot (HasEquipment + IsInventorySlotActive + ammo-shape); drives same-slot launcher swap and honest launcher-ammo routing
+- `openArmMenu(player)` / `closeArmMenu(player)` — menu open/close lifecycle. `closeArmMenu` clears `State.players.lockerSlots[pid]` (probed state) but preserves `State.players.lockerSlotToggle[pid]` (player preference) so the selected target slot sticks across reopen.
+- `ENGINEER_GADGET_CANDIDATES` — 13-entry probe list (10 launcher variants + AV Mine variants + EOD Bot + both `Deployable_Vehicle_Supply_Crate` and `Class_Supply_Bag`). Narrowed from the original 42-entry class-agnostic list; engineer default Supply Crate registers as `Deployable_Vehicle_Supply_Crate`.
+- `probeLauncherSlot(player)` — slot-based probe: snapshot `HasEquipment` for each candidate, `RemoveEquipment(player, InventorySlots.GadgetOne)`, diff to find the single flipped gadget, restore via `AddEquipment(player, flipped, GadgetOne)`. Authoritatively resolves slot 1 vs slot 2 contents including the specific launcher variant.
+- `probeSlot(player, slot)` — reads `GetInventoryAmmo` / `GetInventoryMagazineAmmo` / `IsInventorySlotActive` and classifies slot as `empty` / `unknown` / `gadget`. Does NOT attempt to distinguish launcher vs non-launcher from ammo shape (Supply Crate also reports `loaded === 1`).
+- `slotWithLauncher(slotsState)` — returns the slot currently holding a launcher based on the authoritative `State.players.lockerSlots[pid]` map; drives launcher ammo refill and tile enable state.
+- Authoritative slot state — `State.players.lockerSlots[pid]` (probed contents, wiped on close) + `State.players.lockerSlotToggle[pid]` (player preference, default slot 2, persists across close/reopen).
 
 #### vehicles/deploy-timer-ui.ts — Vehicle Timer HUD (2,026 lines)
 - `updateVehicleDeployTimerHudForAllPlayers()` — per-second refresh for all viewers

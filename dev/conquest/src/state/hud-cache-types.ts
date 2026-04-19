@@ -187,7 +187,6 @@ type AmmoResupplyMenuChargeCacheEntry = {
 
 type AmmoResupplyMenuCacheEntry = {
     rootName: string;
-    sv?: number;
     lastRefreshSecond?: number;
     root?: mod.UIWidget;
     borderTop?: mod.UIWidget;
@@ -220,5 +219,13 @@ type AmmoResupplyMenuCacheEntry = {
     closeButtonBorder?: mod.UIWidget;
     closeButton?: mod.UIWidget;
     closeButtonText?: mod.UIWidget;
+    // Per-class slot-toggle row widgets under each class header. Indices 0..3 match HDR_KEYS.
+    st?: Array<{
+        prev?: mod.UIWidget;
+        prevLabel?: mod.UIWidget;
+        label?: mod.UIWidget;
+        next?: mod.UIWidget;
+        nextLabel?: mod.UIWidget;
+    } | undefined>;
 };
 

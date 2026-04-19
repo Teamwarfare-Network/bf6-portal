@@ -3,6 +3,16 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.313: gadget-locker: persist slot toggle preference across close/reopen (only wipe probed contents)
+// v1.312: gadget-locker: remove ambiguous 'launcher' inference from probeSlot; Supply Crate loaded===1 was false-positive making slotWithLauncher wrong (toggle ignored, Launcher Ammo enabled without launcher)
+// v1.311: gadget-locker: add Deployable_Vehicle_Supply_Crate to engineer probe candidates; Class_Supply_Bag alone missed the default Supply Crate and it was removed-not-restored
+// v1.310: gadget-locker: narrow probe candidates to 4 engineer buckets (launcher variants + AV Mine + EOD Bot + Supply Crate)
+// v1.309: gadget-locker: drop by-id defensive sweep in giveLauncher; slot-based remove of targetSlot is sufficient
+// v1.308: gadget-locker: slot-based remove probe with HasEquipment diff replaces by-id probe
+// v1.307: remove dead ARM_SCHEMA cache-version field
+// v1.306: gadget-locker: differential-remove probe identifies launcher slot authoritatively
+// v1.305: gadget-locker: narrow slot toggle row, equalize gutters, push tiles down 50px
+// v1.304: gadget-locker: per-class slot toggle under class headers
 // v1.303: ammo-locker: re-probe sibling gadget slot after placement so the id-sweep's side effects (freed class-loadout slot) become visible to subsequent clicks
 // v1.302: ammo-locker: retarget recon/assault/medic gadget placements to empty sibling slot when configured slot is occupied (preserves class-loadout gadgets)
 // v1.301: ammo-locker: gadget-id sweep before AddEquipment in recon/assault helpers to catch class-loadout duplicates (C4/Drone)

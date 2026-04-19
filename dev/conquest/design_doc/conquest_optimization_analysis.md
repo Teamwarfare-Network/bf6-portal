@@ -1,6 +1,6 @@
 # TWL Conquest Optimization Analysis
 
-Last updated: v1.289 (2026-04-18)
+Last updated: v1.313 (2026-04-18)
 Companion to: `TWL_Conquest_Design.md` (see "Codebase Reference Map" for file/function index) and `conquest_issues.md`.
 
 ## Baseline
@@ -54,7 +54,7 @@ Companion to: `TWL_Conquest_Design.md` (see "Codebase Reference Map" for file/fu
 
 ### 2. Widget name generation — still open (low priority)
 
-`vehicles/deploy-timer-ui.ts` (2,026 lines), `interaction/ammo-resupply-menu.ts` (2,008 lines), `admin-panel/build.ts` (when enabled, 348 lines), `boundary/prompt-ui.ts` (~477 lines) all build widget names from inline template literals repeating the `prefix_${pid}_${suffix}` pattern hundreds of times. A factory `wn(prefix, ...parts)` would save 2–4 KB. With 7.6% headroom this is not urgent.
+`vehicles/deploy-timer-ui.ts` (2,026 lines), `interaction/ammo-resupply-menu.ts` (2,504 lines), `admin-panel/build.ts` (when enabled, 348 lines), `boundary/prompt-ui.ts` (~477 lines) all build widget names from inline template literals repeating the `prefix_${pid}_${suffix}` pattern hundreds of times. A factory `wn(prefix, ...parts)` would save 2–4 KB. With 7.6% headroom this is not urgent.
 
 ### 6. Comment audit — still open (low priority)
 
@@ -76,15 +76,15 @@ The v1.259 rewrite deleted six files but may have left references (imports, type
 | 4 | Decouple debug/diagnostics state from core runtime | Medium | Medium | Partially resolved (FEATURE_* flags isolate; some hudDirty + perspective maps still interleaved) |
 | 5 | Extract loading gate into self-contained module | Medium | Medium-High | **Open** |
 | 6 | **New** — Split `vehicles/deploy-timer-ui.ts` (2,026 lines) into build / render / HQ-wiring | Medium | Medium | **Open** — carries HQ button wiring and Vanilla timer display together; clean split possible |
-| 7 | **New** — Split `interaction/ammo-resupply-menu.ts` (2,008 lines) | Medium | Medium | **Open** — grew for gadget-delay header + tile gate; tile builders are extractable |
+| 7 | **New** — Split `interaction/ammo-resupply-menu.ts` (2,504 lines) | Medium | Medium | **Open** — grew +496 lines since v1.221 from gadget-delay header, tile gate, class slot-toggle row, and v1.308–v1.313 probe rework; tile builders are extractable |
 
 ### Three 2K-line mega-files persist
 
-| File | Lines (v1.289) | Lines (v1.221) | Notes |
+| File | Lines (v1.313) | Lines (v1.221) | Notes |
 |---|---|---|---|
 | `index/capture-tickets.ts` | 2,150 | 2,147 | Stable; Phase 2A sync + bleed + 7 combat HUD view models + dispatch |
 | `vehicles/deploy-timer-ui.ts` | 2,026 | 2,031 | HQ button wiring and pending-state header (v1.286) added without size growth |
-| `interaction/ammo-resupply-menu.ts` | 2,008 | 2,008 | Unchanged |
+| `interaction/ammo-resupply-menu.ts` | 2,504 | 2,008 | **+496 lines** — gadget-delay status header, launcher tile gating, per-class slot-toggle row (v1.304/v1.305), and the v1.308–v1.313 slot-based HasEquipment-diff probe (`probeLauncherSlot` / `probeSlot` + `ENGINEER_GADGET_CANDIDATES` + `slotWithLauncher` + `lockerSlotToggle` preference persistence) |
 
 A navigability split pass would improve readability with zero bundle impact (bundler concatenates). Priority: low while feature work is active.
 

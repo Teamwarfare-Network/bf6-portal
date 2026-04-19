@@ -384,6 +384,12 @@ interface GameState {
             rgN: number;
             rgS: number;
         }>;
+        // Per-player per-class choice of which gadget slot the locker menu should clobber on
+        // placement. Initialized to [2,2,2,2] on menu open, cleared on close. Indices match
+        // HDR_KEYS order: 0=Assault, 1=Engineer, 2=Medic, 3=Recon.
+        lockerSlotToggle: Record<number, {
+            slotByClass: [1 | 2, 1 | 2, 1 | 2, 1 | 2];
+        }>;
         uiCachePerfByPid: Record<number, {
             vehicle: {
                 built: number;
