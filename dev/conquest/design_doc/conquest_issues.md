@@ -1,7 +1,7 @@
 # Conquest Issues
 
-Last Updated: 2026-04-18 (v1.313)
-Last Tested Build: `v1.313` — Phase 6 HQ Deploy remains functional (both deploy-menu and on-foot live-terminal surfaces). Gadget locker rework (v1.290–v1.313) completed: per-launcher team pools, tuned durations, authoritative per-player slot state, slot-based `HasEquipment`-diff probe, per-class slot-toggle row with preference persistence. Vanilla regression path remains byte-identical to the v1.276 baseline. Outstanding: late-joiner redeploy-timer investigation deferred to the polish phase (see memory `project_respawn_redeploy_timer_polish.md`).
+Last Updated: 2026-04-20 (v1.332)
+Last Tested Build: `v1.313` — Phase 6 HQ Deploy remains functional (both deploy-menu and on-foot live-terminal surfaces). Gadget locker rework (v1.290–v1.313) completed: per-launcher team pools, tuned durations, authoritative per-player slot state, slot-based `HasEquipment`-diff probe, per-class slot-toggle row with preference persistence. Vanilla regression path remains byte-identical to the v1.276 baseline. v1.314 reworks the ready-dialog config column to checkbox seeds (UI-only; Air/Forward/SupplyBoxes wiring pending). Outstanding: late-joiner redeploy-timer investigation deferred to the polish phase (see memory `project_respawn_redeploy_timer_polish.md`).
 
 **Architecture note (v1.258–v1.259 rewrite).** The Vanilla vehicle spawner was rewritten around one persistent `VehicleSpawner` per slot, a serial `spawnMutex` dispatching via `ForceVehicleSpawnerSpawn`, event-driven bind via `OnVehicleSpawned`, and `Clocks.CountDownClock`-driven respawn. Files `src/vehicles/deploy-fulfillment.ts`, `src/vehicles/reservations.ts`, and `src/vehicles/spawner-sequence.ts` were deleted. All non-Vanilla deploy paths (legacy air-deploy, forward-deploy, HQ-forward) were removed. Any bug entry below whose root cause lived in those files is flagged **Obsolete (v1.259 rewrite)** — the underlying code no longer exists.
 
@@ -64,6 +64,9 @@ Last Tested Build: `v1.313` — Phase 6 HQ Deploy remains functional (both deplo
 - `CQ_Bug_54`: **Obsolete (v1.259 rewrite)** — per-click runtime `RuntimeSpawn_Common.VehicleSpawner` prefab instantiation was deleted outright. Slots now use one persistent spawner each, so the prefab-default Abrams race cannot occur.
 - `CQ_Bug_55`: **Obsolete (v1.259 rewrite)** — air-deploy consumed-deploy branch in `onPlayerDeployedImpl` no longer exists; Phase 6 HQ Deploy's seating path handles HQ World Icon visibility through its own `beginHqSeatFlow` lifecycle.
 - `CQ_Bug_56`: Resolved (v1.212 — Kills counter incremented on friendly kills when team damage was on. `onPlayerEarnedKillImpl` now compares killer/victim team via `safeGetTeamNumberFromPlayer(..., 0)` and skips the increment when teams match; fails open on unassigned team (team 0) rather than silently dropping)
+- `CQ_Bug_Loadout_Not_Respected`: **Open — scope confirmed (v1.332 playtest)**. Forward Deploy and Air Deploy do NOT respect the player's loadout (e.g. TOW on AH-6M); HQ Deploy does. Same `ForcePlayerToSeat` call site (`onHqSeatPendingPlayerDeployed`); suspected cause is vehicle position at deploy-time — HQ vehicle sits at `slot.spawnPos` (HQ pad) when `DeployPlayer` + `ForcePlayerToSeat` fire, Forward/Air vehicle has already been Teleported to the forward/air point pre-seat. Engine likely applies vehicle loadout via proximity to the player's deploy origin. Proposed fix (unimplemented): delay the Forward/Air vehicle Teleport until AFTER `ForcePlayerToSeat`, not pre-seat. Risk: Teleport on aircraft with player aboard may strip seating or desync physics — needs probe.
+- `CQ_Bug_Air_Deploy_Jet_Position_Regression`: **Open** (v1.331 probe regressed jets — reverted v1.332). v1.331 Phase A probe (skip post-bind Teleport for jets) left jets birthed at the primary spawner's last position rather than `nextAirPos`. Confirms `SetObjectTransform` on a persistent `VehicleSpawner` does not reliably propagate position updates to `ForceVehicleSpawnerSpawn` at altitude — the post-bind `mod.Teleport` is what delivers Air Deploy position for both heli and jet. v1.332 restores the yaw-only Teleport path. Jet pitch (rotPlane.X=-45°) remains lost; sister-spawner plan at `~/.claude/plans/sleepy-juggling-thunder.md` Phase B is the documented path. Phase B depends on the same `SetObjectTransform`-at-altitude hypothesis that just failed for Phase A; deferred until a separate probe verifies sibling-spawner position updates at y≈1000.
+- `CQ_Bug_RemoveEquipment_JS_Error`: **Open (observed v1.332, no repro yet)**. Error log reads `Error reported by RemoveEquipment when running JS Script`. Suspected trigger: opening the gadget locker menu. No repro steps captured; needs a targeted playtest with error-log capture. Deferred to the polish phase.
 - `CQ_Feat_Pregame_Countdown_Delay_Lines`: Resolved (v1.208–v1.209 — staggered 3-line reveal of the round-start delay info at 0/+3s/+6s above the pregame countdown, Y raised to -420/-380/-340. Cache-preservation fix in `ensureCountdownUIAndGetWidget` so `delayLineWidgets` survives per-tick recreation and the lines actually hide on LIVE!)
 - `CQ_Feat_Round_Start_Gadget_Delay`: Resolved (v1.210–v1.211 — new `roundStartGadgetDelay` MapConfig (Firestorm default 60). 4th pregame countdown line at Y=-300 staggered in with the forward-deploy line at -6s. Gadget locker menu opens pre-LIVE + during delay with preview/stats visible, all tiles forced disabled via `gadgetBlocked`, yellow status header counts down. Two string variants: `twl.countdown.delayGadgets` pre-LIVE, `twl.countdown.delayGadgetsLive` post-LIVE)
 - `CQ_Bug_Loading_Gate_Invariants`: Closed-by-audit (v1.214 shipped GATE_INV_1/2/3 asserts, v1.222 reverted them — world-log channel is transient/unreliable for verification; dual-guard in code closes the race. Diagnostic recipe documented for future reintroduction as persistent HUD plate if needed)
@@ -93,6 +96,9 @@ Last Tested Build: `v1.313` — Phase 6 HQ Deploy remains functional (both deplo
   - v1.289: zero redeploy timer (`SetRedeployTime=0`) around `UndeployPlayer` so the on-foot flow is not blocked by post-death countdown.
   Durable design constraints: never teleport player before `ForcePlayerToSeat`; `ForcePlayerToSeat` only reliable inside `OnPlayerDeployed`; no code copied from the deleted fulfillment/reservations modules.)
 - `CQ_Polish_Respawn_Redeploy_Timer_Audit`: **Open** — late-joiner `SetRedeployTime(HUD_WARM_REDEPLOY_BLOCK_SECONDS)` in `holdPlayerAtDeploy` may be applying globally rather than per-player; `SetRedeployTime(0)` persistence (one-shot vs persistent) not empirically verified. Deferred to polish phase. See memory `project_respawn_redeploy_timer_polish.md`.
+- `CQ_Feat_ReadyDialog_Config_Checkboxes_UI_Seed`: Resolved for UI-only scope (v1.314 — ready-dialog center column reworked. Configuration header removed; Game Mode stepper moved into the reclaimed header row and relabeled to `Game Mode Configuration:`; Vehicle Deploy stepper removed. Replaced with 5 checkboxes in a left sub-column: Vanilla Deploy, HQ Deploy, Air Deploy (indented), Forward Deploy (indented), Supply Boxes. Vanilla/HQ are a radio pair backed by the existing `vehicleDeployMethod` enum; Air/Forward/SupplyBoxes are new optional booleans (`airDeployEnabled`, `forwardDeployEnabled`, `supplyBoxesEnabled`) on `ReadyDialogModeConfig` that persist through Apply/Reset/preset-apply but are not yet read by any downstream consumer. Clicking Air or Forward while Vanilla is on auto-switches to HQ. Right sub-column reserved empty for future checkboxes. Wiring of Air/Forward into the spawn path and Supply Boxes into the ammo-resupply interactable remains TODO.)
+  - v1.328 (Forward Deploy wired): see `CQ_Feat_Forward_Deploy_Reintroduction` below.
+  - v1.325 (Supply Boxes wired): the `supplyBoxesEnabled` flag is now read at three call sites in `src/interaction/world-interactables.ts`: (1) VFX spawn loop skips supply-box configs when disabled, (2) `shouldEnableWorldInteractableAuthoredInteractPoint` returns false for supply-box configs when disabled, (3) `shouldAllowWorldInteractableActivationForPlayer` returns `isSupplyBoxesEnabled()` for the `open_ammo_resupply_menu` branch. Apply-time resync `refreshSupplyBoxInteractableStateFromConfirmedConfig()` runs at the tail of `confirmReadyDialogModeConfig` to reconcile already-spawned VFX + InteractPoint state and to force-close any open ammo-resupply menus via `closeArmMenu(pid)` when Supply Boxes flips off. Default remains true. Air Deploy and Forward Deploy wiring are still UI-only and remain TODO. See `design_doc/supply_boxes_wiring_plan_2026-04-19.md` for full rationale.
 
 ## CQ_Bug_42
 Title: CountOf Called With Invalid/Undefined Array Argument During Gameplay
@@ -2510,3 +2516,98 @@ Status: **Resolved** at v1.313. Regression surfaces to watch on future playtests
 Related:
 - `CQ_Polish_Launcher_Ammo_Per_Launcher_Cap` (still open; per-launcher reserve cap not consulted in `giveRocketCharge`).
 - Memory: `project_engineer_supply_crate_enum.md`.
+
+## CQ_Feat_Forward_Deploy_Reintroduction (v1.328)
+Title: Reintroduce Forward Deploy on the v1.258 vehicle infra
+
+Context:
+- Forward Deploy existed in the v1.200-series (pre-v1.259) but was deleted wholesale in the vehicle-infra rewrite. The old path (`deploy-fulfillment.ts`, `reservations.ts`, `spawner-sequence.ts`) had accumulated too many race guards (CQ_Bug_39/49/52/54/55 + `CQ_Bug_ActiveSpawnSingletonMPRace`).
+- HQ Deploy has been stable on the new single-spawner-per-slot infra since v1.277–v1.289. v1.314 added the `forwardDeployEnabled` checkbox to the ready-dialog (UI-only seed; no runtime consumers). v1.325–v1.327 shipped Supply Boxes on the same checkbox pattern. v1.328 wires the Forward Deploy checkbox into the spawn path.
+
+Design (fresh-build, no code ported from `reference_conquest_attempt_b` or any pre-v1.259 file):
+- Forward Deploy reuses the existing `slot.spawner` via `mod.SetObjectTransform` — one persistent spawner per slot, relocated to the forward point at dispatch time and restored to `slot.spawnPos` post-seat. Keeps the persistent `VehicleSpawner` count at today's ~28–32 baseline; no per-slot second spawner. A 40-spawner budget audit (`auditSpawnerBudgetAtRoundStart` in `src/vehicles/spawner-budget.ts`) warns if the count ever drifts to the threshold.
+- New `src/vehicles/forward-spawn-volume.ts` supplies pure sampling helpers: triangle-split + barycentric sample of a 4-corner quad in X/Z, weighted by triangle area. Re-reads the already-authored `team{N}TankSpawnVolumes` via `getVehicleSpawnVolumesForTeam(teamId, "tank")`; no new map-config type.
+- `VehicleSpawnerSlot` extended with `nextForwardPos` / `nextForwardRot` fields. Seeded by `seedNextForwardTransformForSlot` at slot init (`addVanillaSpawnerSlot`) and at countdown-reset (`resetVehicleSlotsAtCountdownStart`) — so the first forward click of a round is as instant as HQ: one `SetObjectTransform` + `ForceVehicleSpawnerSpawn`.
+- New `requestForwardVehicleSpawn` in `src/vehicles/hq-deploy.ts` mirrors `requestHqVehicleSpawn` validation, rejects aircraft slots + missing-volume cases, flags the slot with `pendingSpawnMode = "forward"`, and dispatches through the same serial `spawnMutex`.
+- Dispatch branch in `forceSpawnAndAwaitBind` (`src/vehicles/vanilla-spawner.ts`) relocates `slot.spawner` to `nextForwardPos`/`Rot` before `ForceVehicleSpawnerSpawn` when `pendingSpawnMode === "forward"`. `doDispatch`'s post-bind Teleport uses the forward point instead of `slot.spawnPos` for forward dispatches.
+- Post-seat hook `onForwardSpawnSuccess` (called from `onHqSeatPendingPlayerDeployed` and from the claim-timeout cleanup in `scheduleHqClaimTimeout`): restores `slot.spawner` to `slot.spawnPos` via `SetObjectTransform` + re-seeds the next forward point. Ordering — relocate-back happens *after* seat completes — preserves a safety margin against the pre-v1.259 "engine snaps vehicle back to spawner" behavior; if that behavior reappears, a fresh per-slot suppress flag gets added at that point (not ported from the old flag).
+- UI: `deploy-timer-ui.ts` re-gates `forwardDeployAllowed` on `confirmedMethod >= HQ && forwardDeployEnabled === true`. The spawn-button click ("air" widget id) routes to `requestForwardVehicleSpawn` when the slot is non-aircraft, or `requestHqVehicleSpawn` otherwise. Pregame-countdown delay line at `src/ready-dialog/countdown-flow.ts:106` now gates on the checkbox instead of the legacy `HQ_FORWARD` enum tier.
+
+Lessons carried forward from the deleted v1.200-series implementation (as constraints, not source):
+- Never `mod.SpawnObject(RuntimeSpawn_Common.VehicleSpawner, ...)` per click — caused CQ_Bug_49 / CQ_Bug_54 / CQ_Bug_ActiveSpawnSingletonMPRace.
+- Never globally track "the currently spawning slot" — per-slot `pendingSpawnMode` / `pendingSpawnOwnerPid` are the discipline.
+- Never `mod.Teleport` a player before `ForcePlayerToSeat` — broke in v1.106–v1.108 and v1.151–v1.154.
+- Spawner count growth is a perf concern (memory: `project_*_spawner_budget`); new designs must pool, not multiply.
+
+Files touched:
+- `src/vehicles/forward-spawn-volume.ts` — new, sampling helpers.
+- `src/vehicles/spawner-budget.ts` — new, 40-spawner audit.
+- `src/state/runtime-types.ts` — `nextForwardPos` / `nextForwardRot` on `VehicleSpawnerSlot`.
+- `src/vehicles/vanilla-spawner.ts` — seed-on-init, seed-on-countdown-reset, relocate-dispatch branch, budget audit call.
+- `src/vehicles/hq-deploy.ts` — `isForwardDeployEnabled`, `requestForwardVehicleSpawn`, `onForwardSpawnSuccess`, seat-path and timeout-path hooks.
+- `src/vehicles/deploy-timer-ui.ts` — checkbox-based `forwardDeployAllowed`, click-router branch for non-aircraft rows.
+- `src/ready-dialog/countdown-flow.ts` — pregame-delay line gated on checkbox.
+- `src/index.ts` — register the two new modules.
+- `design_doc/forward_deploy_wiring_plan_2026-04-19.md` — historical copy of the approved plan.
+
+Status: **Resolved** at v1.328 (pending playtest). Verification matrix is in the plan doc.
+
+Related:
+- Memory: `feedback_plans_are_not_instructions_to_execute.md` (plan approval gate).
+- `CQ_Feat_ReadyDialog_Config_Checkboxes_UI_Seed` (v1.314 introduced the checkbox; this wires it).
+- `CQ_Feat_Phase6_HQ_Deploy` (v1.277–v1.289 — the infra this rides on).
+
+## CQ_Feat_Air_Deploy_Reintroduction (v1.329)
+Title: Reintroduce Air Deploy on the v1.258 vehicle infra
+
+Context:
+- Air Deploy existed in the pre-v1.259 vehicle stack and was deleted wholesale in the rewrite; `CQ_Bug_53` captures the old path's end-of-life. Since v1.328 shipped Forward Deploy as a checkbox-gated sibling of HQ Deploy, Air Deploy is the near-mechanical mirror for aircraft slots: same single-spawner reuse, same serial dispatch, same bind path, same request-only respawn contract. The `airDeployEnabled` checkbox has lived in `modeConfig` / `modeConfig.confirmed` since v1.314 (UI-only); this pass wires it into the spawn path.
+
+Design (fresh-build, no code ported from `reference_conquest_attempt_b` or any pre-v1.259 file — altitude semantics mirror `reference_conquest_attempt_b/src/vehicles/spawner-bind.ts:96-114` in behavior only):
+- New `src/vehicles/air-spawn-volume.ts` supplies pure sampling helpers against the existing `team{N}AircraftSpawnVolumes` via `getVehicleSpawnVolumesForTeam(teamId, "aircraft")`. Floor X/Z come from a triangle-split + barycentric sample of the authored quad (weighted by surface area across multiple enabled volumes); altitude is additive on top of the floor Y: jets sample uniformly in `[floorY + jetSpawnFloor, floorY + jetSpawnCeiling]`, helis sample uniformly in `[floorY, floorY + heliSpawnCeiling]`. Rotation: jets use `volume.rotPlane` (X/Y/Z — pitch preserved); helis use `volume.rotHeli`. Both fall back to zero vector if unset.
+- `VehicleSpawnerSlot` extended with `nextAirPos` / `nextAirRot` fields. Seeded by `seedNextAirTransformForSlot` at slot init (`addVanillaSpawnerSlot`) and at countdown-reset (`resetVehicleSlotsAtCountdownStart`) — no-op for non-aircraft slots and for maps without an authored aircraft volume.
+- New `requestAirVehicleSpawn` in `src/vehicles/hq-deploy.ts` mirrors `requestForwardVehicleSpawn`: same cooldown / claim-in-flight / team / slot-disabled / occupancy / busy / respawn-cooldown guards, plus `isAircraftVehicleType(slot.vehicleType)` and `slot.nextAirPos` presence checks. Flags the slot with `pendingSpawnMode = "air"` and dispatches through the same serial `spawnMutex`. Gates on `isHqDeployMode()` + `isAirDeployEnabled()` + `!isRoundStartAirDeployDelayActive()` + `!isRoundStartAirDelayActive()`.
+- Dispatch branch in `forceSpawnAndAwaitBind` (`src/vehicles/vanilla-spawner.ts`) relocates `slot.spawner` to `nextAirPos` / `nextAirRot` via `SetObjectTransform` before `ForceVehicleSpawnerSpawn` when `pendingSpawnMode === "air"`. `doDispatch`'s post-bind placement uses `mod.SetObjectTransform(vehicle, CreateTransform(nextAirPos, nextAirRot))` — not the yaw-only `mod.Teleport` used for ground/forward — so the jet's authored pitch (e.g. Firestorm `rotPlane.X = -45°`) survives the post-bind correction.
+- Post-seat hook `onAirSpawnSuccess` (called from `onHqSeatPendingPlayerDeployed` and from the claim-timeout cleanup in `scheduleHqClaimTimeout`): restores `slot.spawner` to `slot.spawnPos` via `SetObjectTransform` + re-seeds the next air point. Same ordering rationale as forward: relocate-back happens after seat completes.
+- UI: `deploy-timer-ui.ts` re-gates `airDeployAllowed` on `hqDeployAllowed && airDeployEnabled === true` (replacing the legacy `confirmedMethod === HQ_FORWARD_AIR` check), plus a new `hasEnabledAircraftSpawnVolumesForTeam(teamId)` volume-presence gate paralleling the tank one. The spawn-button click router now resolves three cases: aircraft rows → `requestAirVehicleSpawn`, non-aircraft forward-eligible rows → `requestForwardVehicleSpawn`, else → `requestHqVehicleSpawn`.
+- Pregame-countdown delay line in `src/ready-dialog/countdown-flow.ts` now gates the air-delay text (line 1) on the checkbox instead of the legacy `HQ_FORWARD_AIR` enum tier.
+- Spawner count: zero new persistent spawners. Relocate-in-place on the existing `slot.spawner`. `auditSpawnerBudgetAtRoundStart` unchanged; count remains at today's ~28–32 baseline; 40-spawner warn threshold intact.
+
+Lessons carried forward (banned patterns — same as Forward Deploy):
+- Never `mod.SpawnObject(RuntimeSpawn_Common.VehicleSpawner, ...)` per click.
+- Never globally track "the currently spawning slot".
+- Never `mod.Teleport` a player before `ForcePlayerToSeat`.
+- If post-bind snap-to-spawner behavior reappears on occupied aircraft, add a fresh per-slot suppress flag against the current bind path — do not port old code.
+
+Files touched:
+- `src/vehicles/air-spawn-volume.ts` — new, sampling helpers (triangle + altitude math, jet-vs-heli rotation).
+- `src/state/runtime-types.ts` — `nextAirPos` / `nextAirRot` on `VehicleSpawnerSlot`.
+- `src/vehicles/vanilla-spawner.ts` — air-branch seed on slot init + countdown reset; air-branch `SetObjectTransform` on spawner (pre-spawn) and on vehicle (post-bind).
+- `src/vehicles/hq-deploy.ts` — `isAirDeployEnabled`, `requestAirVehicleSpawn`, `onAirSpawnSuccess`; seat-path and timeout-path 3-way branches (`wasAir` / `wasForward` / neither).
+- `src/vehicles/deploy-timer-ui.ts` — checkbox-based `airDeployAllowed`, `hasEnabledAircraftSpawnVolumesForTeam`, click-router aircraft branch.
+- `src/ready-dialog/countdown-flow.ts` — pregame delay line (air) gated on checkbox.
+- `src/index.ts` — register the new module.
+
+Status: **Resolved** at v1.329 (pending playtest). Verification matrix is in the plan doc at `~/.claude/plans/sleepy-juggling-thunder.md`.
+
+Related:
+- `CQ_Feat_Forward_Deploy_Reintroduction` (v1.328 — direct template).
+- `CQ_Feat_ReadyDialog_Config_Checkboxes_UI_Seed` (v1.314 introduced the checkbox).
+- `CQ_Feat_Phase6_HQ_Deploy` (v1.277–v1.289 — the infra this rides on).
+- `CQ_Bug_53` (historical air-deploy path, obsolete by v1.259 rewrite).
+
+## CQ_Bug_Loadout_Not_Respected
+Title: Player's chosen loadout not always applied on deploy
+
+Observed:
+- Intermittently, the class/loadout the player selected in the class menu is not the loadout they actually spawn with. Frequency and trigger are not yet characterized — reported anecdotally during v1.328 playtest.
+
+Reproduction:
+- Not yet reliable. Needs a controlled test: flip class in the deploy UI, immediately deploy, verify the primary/secondary/gadgets against the selection across several deploy cycles, HQ and Vanilla modes, with and without Forward Deploy.
+
+Candidate directions (unconfirmed):
+- Class-selection state at the moment the engine seats the player vs. at the moment the player confirmed the class.
+- Interaction with HQ Deploy / Forward Deploy seating flows (`beginHqSeatFlow` → `DeployPlayer` → `ForcePlayerToSeat`) — the deploy happens inside `OnPlayerDeployed`, and the class menu update timing may race with the deploy event.
+- Kit pickup / gadget locker touching slots (`src/interaction/ammo-resupply-menu.ts`) before the first deploy.
+
+Status: **Open — needs repro.** No code change attempted yet. Log here to remind future passes to verify fix candidates against a real repro.

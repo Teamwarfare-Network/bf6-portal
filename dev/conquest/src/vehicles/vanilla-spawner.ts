@@ -201,6 +201,11 @@ async function startVanillaVehicleSpawnerSystem(): Promise<void> {
     applySpawnerEnablementForMatchup(State.round.matchupPresetIndex, false);
     revealVehicleSpawnerUiAfterStartup();
 
+    // Guardrail: warn once if persistent VehicleSpawner count has drifted past the 40 budget
+    // (forward-deploy reuses slot.spawner rather than adding a parallel spawner; this audit
+    // catches any regression that would reintroduce per-slot spawner multiplication).
+    try { auditSpawnerBudgetAtRoundStart(); } catch {}
+
     // Round-start fleet dispatch is Vanilla-only. HQ mode keeps pads empty at match start;
     // vehicles come from player-driven requests via hq-deploy.
     if (isVanillaDeployMode()) {
@@ -264,9 +269,18 @@ function addVanillaSpawnerSlot(
         suppressNextBindSpawnTransformCorrection: false,
         freshAirRuntimeSpawner: undefined,
         respawnClock: undefined,
+        nextForwardPos: undefined,
+        nextForwardRot: undefined,
+        nextAirPos: undefined,
+        nextAirRot: undefined,
     };
 
     State.vehicles.slots.push(slot);
+    // Pre-sample forward + air deploy transforms so the first respective click is instant.
+    // Forward is a no-op for aircraft slots; air is a no-op for non-aircraft slots. Both are
+    // no-ops when the map has no authored volume for the slot's team.
+    try { seedNextForwardTransformForSlot(slot); } catch {}
+    try { seedNextAirTransformForSlot(slot); } catch {}
     return State.vehicles.slots.length - 1;
 }
 
@@ -293,6 +307,20 @@ async function doDispatch(slot: VehicleSpawnerSlot, slotIndex: number): Promise<
 
     const vehicle = findVehicleById(vehicleObjId);
     if (!vehicle) return;
+    // Forward Deploy: skip pre-seat Teleport. Vehicle stays at HQ pad so the engine applies
+    // the player's chosen vehicle loadout during DeployPlayer -> ForcePlayerToSeat (HQ Deploy
+    // respects loadout; Forward/Air did not until this change). Post-seat Teleport in
+    // onHqSeatPendingPlayerDeployed relocates vehicle + seated player to the forward point
+    // after loadout is locked in.
+    if (slot.pendingSpawnMode === "forward" && slot.nextForwardPos && slot.nextForwardRot) {
+        return;
+    }
+    // Air Deploy: mirror the forward branch. Skip pre-seat Teleport so the engine applies the
+    // player's chosen vehicle loadout during DeployPlayer -> ForcePlayerToSeat; post-seat
+    // Teleport in onHqSeatPendingPlayerDeployed lifts vehicle + seated player to the air point.
+    if (slot.pendingSpawnMode === "air" && slot.nextAirPos && slot.nextAirRot) {
+        return;
+    }
     const yawDeg = mod.YComponentOf(slot.spawnRot) + VEHICLE_SPAWN_YAW_OFFSET_DEG;
     const yawRad = yawDeg * (Math.PI / 180);
     try { mod.Teleport(vehicle, slot.spawnPos, yawRad); } catch {}
@@ -304,6 +332,26 @@ async function doDispatch(slot: VehicleSpawnerSlot, slotIndex: number): Promise<
 async function forceSpawnAndAwaitBind(slot: VehicleSpawnerSlot, slotIndex: number): Promise<number> {
     currentlyExpectingSlotIndex = slotIndex;
     const bindPromise = new Promise<number>((resolve) => { currentSpawnResolve = resolve; });
+
+    // Forward / Air Deploy: relocate slot.spawner to the pre-sampled point before firing. The
+    // spawner is restored to slot.spawnPos post-seat in onForwardSpawnSuccess / onAirSpawnSuccess
+    // so subsequent HQ clicks stay instant. SetObjectTransform on a VehicleSpawner has no
+    // AutoSpawn race (AutoSpawn=false is configured at bootstrap and never re-toggled here).
+    if (slot.pendingSpawnMode === "forward" && slot.nextForwardPos && slot.nextForwardRot) {
+        try {
+            mod.SetObjectTransform(
+                slot.spawner,
+                mod.CreateTransform(slot.nextForwardPos, slot.nextForwardRot)
+            );
+        } catch {}
+    } else if (slot.pendingSpawnMode === "air" && slot.nextAirPos && slot.nextAirRot) {
+        try {
+            mod.SetObjectTransform(
+                slot.spawner,
+                mod.CreateTransform(slot.nextAirPos, slot.nextAirRot)
+            );
+        } catch {}
+    }
 
     try { mod.ForceVehicleSpawnerSpawn(slot.spawner); } catch {}
 
@@ -547,6 +595,14 @@ async function resetVehicleSlotsAtCountdownStart(): Promise<void> {
     // Destroy each bound vehicle via the canonical wrapper (sinks to y=-1000 preserving
     // X/Z, then DealDamage after 500ms so explosions aren't audible at the pad).
     for (const entry of vehiclesToKill) sinkAndDestroyVehicle(entry.vehicle, entry.fallbackPos);
+
+    // Re-seed forward + air deploy transforms per slot so the first respective click of the
+    // round fires an instant relocate + ForceVehicleSpawnerSpawn with no round-start sampling.
+    for (const slot of State.vehicles.slots) {
+        if (!slot) continue;
+        try { seedNextForwardTransformForSlot(slot); } catch {}
+        try { seedNextAirTransformForSlot(slot); } catch {}
+    }
 
     // Phase C -- enqueue fresh dispatches. Vanilla-only: HQ mode leaves pads empty until
     // a player-driven request fires via hq-deploy. The destroy pass above still runs in

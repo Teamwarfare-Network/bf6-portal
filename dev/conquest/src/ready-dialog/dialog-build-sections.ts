@@ -17,7 +17,7 @@ function buildReadyDialogHeaderAndMapSection(
     addReadyDialogText(
         readyHeaderId,
         -11,
-        -5,
+        7,
         900,
         22,
         mod.UIAnchor.TopLeft,
@@ -33,7 +33,7 @@ function buildReadyDialogHeaderAndMapSection(
     addReadyDialogText(
         readyHeader2Id,
         -11,
-        19,
+        31,
         900,
         20,
         mod.UIAnchor.TopLeft,
@@ -49,7 +49,7 @@ function buildReadyDialogHeaderAndMapSection(
     addReadyDialogText(
         readyHeader3Id,
         -11,
-        39,
+        51,
         900,
         20,
         mod.UIAnchor.TopLeft,
@@ -65,7 +65,7 @@ function buildReadyDialogHeaderAndMapSection(
     addReadyDialogText(
         readyHeader4Id,
         -11,
-        59,
+        71,
         900,
         20,
         mod.UIAnchor.TopLeft,
@@ -81,7 +81,7 @@ function buildReadyDialogHeaderAndMapSection(
     addReadyDialogText(
         readyHeader5Id,
         -11,
-        79,
+        91,
         900,
         20,
         mod.UIAnchor.TopLeft,
@@ -97,7 +97,7 @@ function buildReadyDialogHeaderAndMapSection(
     addReadyDialogText(
         readyHeader6Id,
         -11,
-        99,
+        111,
         900,
         20,
         mod.UIAnchor.TopLeft,

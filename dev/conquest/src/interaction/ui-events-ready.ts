@@ -49,13 +49,6 @@ function handleReadyDialogGridKnobClick(
         setReadyDialogGameModeIndex(State.round.modeConfig.gameModeIndex + delta, true, eventPlayer);
         return true;
     }
-    if (knobKey === READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY) {
-        setReadyDialogVehicleDeployMethod(State.round.modeConfig.vehicleDeployMethod + delta, eventPlayer);
-        return true;
-    }
-    if (knobKey === READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY) {
-        return true;
-    }
     if (knobKey === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) {
         setAutoStartMinActivePlayers(State.round.modeConfig.autoStartMinActivePlayers + delta, eventPlayer);
         return true;
@@ -128,6 +121,24 @@ function tryHandleReadyDialogButtonEvent(
     if (gridIncKnobKey !== undefined) {
         if (!tryConsumeReadyDialogPrimaryClickEvent(playerId, widgetName, eventUIButtonEvent)) return true;
         return handleReadyDialogGridKnobClick(eventPlayer, gridIncKnobKey, 1);
+    }
+
+    const checkboxKey = tryParseGridKnobKey(UI_READY_DIALOG_CONFIG_CHECKBOX_BOX_ID);
+    if (checkboxKey !== undefined) {
+        if (!tryConsumeReadyDialogPrimaryClickEvent(playerId, widgetName, eventUIButtonEvent)) return true;
+        if (isMatchLive()) return true;
+        if (checkboxKey === READY_DIALOG_CONFIG_CHECKBOX_VANILLA_KEY) {
+            toggleReadyDialogVanillaDeployCheckbox(eventPlayer);
+        } else if (checkboxKey === READY_DIALOG_CONFIG_CHECKBOX_HQ_KEY) {
+            toggleReadyDialogHqDeployCheckbox(eventPlayer);
+        } else if (checkboxKey === READY_DIALOG_CONFIG_CHECKBOX_AIR_KEY) {
+            toggleReadyDialogAirDeployCheckbox(eventPlayer);
+        } else if (checkboxKey === READY_DIALOG_CONFIG_CHECKBOX_FORWARD_KEY) {
+            toggleReadyDialogForwardDeployCheckbox(eventPlayer);
+        } else if (checkboxKey === READY_DIALOG_CONFIG_CHECKBOX_SUPPLY_BOXES_KEY) {
+            toggleReadyDialogSupplyBoxesCheckbox(eventPlayer);
+        }
+        return true;
     }
 
     const cancelHandled = tryHandleReadyDialogPrimaryAction(

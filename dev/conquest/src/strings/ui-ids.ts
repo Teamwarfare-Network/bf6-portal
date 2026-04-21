@@ -68,6 +68,12 @@ const UI_READY_DIALOG_MODE_GRID_KNOB_DEC_LABEL_ID = "UI_READY_DIALOG_MODE_GRID_K
 const UI_READY_DIALOG_MODE_GRID_KNOB_INC_ID = "UI_READY_DIALOG_MODE_GRID_KNOB_INC_";
 const UI_READY_DIALOG_MODE_GRID_KNOB_INC_LABEL_ID = "UI_READY_DIALOG_MODE_GRID_KNOB_INC_LABEL_";
 const UI_READY_DIALOG_MODE_GRID_SUPPORT_ID = "UI_READY_DIALOG_MODE_GRID_SUPPORT_";
+// v1.314: config-column checkbox block widget ID prefixes (suffix: <checkboxKey>_<playerId>).
+// BOX_ID names the clickable outlined button; BOX_TEXT_ID is the "X"/blank glyph; LABEL_ID is the
+// right-side label. Kept separate from the KNOB_* prefixes so caches don't collide.
+const UI_READY_DIALOG_CONFIG_CHECKBOX_BOX_ID = "UI_READY_DIALOG_CONFIG_CHECKBOX_BOX_";
+const UI_READY_DIALOG_CONFIG_CHECKBOX_BOX_TEXT_ID = "UI_READY_DIALOG_CONFIG_CHECKBOX_BOX_TEXT_";
+const UI_READY_DIALOG_CONFIG_CHECKBOX_LABEL_ID = "UI_READY_DIALOG_CONFIG_CHECKBOX_LABEL_";
 
 // Admin/Tester UI - Widget ID bases (per-player IDs append viewer playerId).
 const UI_TEST_HEADER_LABEL_ID = "UI_TEST_HEADER_LABEL_";

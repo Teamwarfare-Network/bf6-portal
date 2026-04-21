@@ -3,6 +3,27 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.334: Phase 2b loadout fix: defer Air Deploy vehicle Teleport until after ForcePlayerToSeat so the engine applies vehicle loadout; vehicle + seated player relocate together post-seat, matching the Forward Deploy path
+// v1.333: loadout fix probe (Phase 2a): defer Forward Deploy vehicle Teleport until after ForcePlayerToSeat so engine applies vehicle loadout
+// v1.332: revert v1.331 probe: restore yaw-only Teleport for jets on Air Deploy (probe confirmed birth rotation does not propagate)
+// v1.331: probe: skip post-bind Teleport for jet Air Deploy so spawner birth pitch survives
+// v1.330: fix Air Deploy: post-bind Teleport on vehicle (SetObjectTransform is a no-op on Vehicles, aircraft stayed at HQ)
+// v1.329: wire Air Deploy: checkbox-gated, pre-sampled altitude+rotation per click, single-spawner relocate
+// v1.328: wire Forward Deploy: single-spawner relocate on click, pre-sampled random forward point, checkbox-gated
+// v1.327: ready dialog: repaint content from canonical state on every open; force-unready the applier on Apply so the ready button turns red
+// v1.326: hide pregame-countdown gadgets delay line when Supply Boxes is disabled
+// v1.325: wire Supply Boxes checkbox to gadget VFX + InteractPoint + menu; force-close open menus on Apply-disable
+// v1.324: ready-dialog pull top border down 6px - now 12px extension total; all compensations retuned to keep inner content fixed
+// v1.323: ready-dialog raise top edge 18px with direct values - container height 718, pos -9, each inner section Y bumped individually
+// v1.322: ready-dialog revert top-border raise - container change moved inner content; will redo without shifting children
+// v1.321: ready-dialog raise top border another 6px (total 18 above original)
+// v1.320: ready-dialog raise top border 12px bottom fixed, shift checkbox block down 3px
+// v1.319: ready-dialog config column: reorder to Mode Config → Players → Checkboxes; align Players to row-0 with 30px stepper gutter
+// v1.318: ready-dialog: align Players stepper with vehicle-column row 3 (Heli 2 line)
+// v1.317: ready-dialog config column: widen checkbox sub-col for Forward Deploy, tighten indent, pack rows tighter, lift stack upward
+// v1.316: ready-dialog config column: widen checkbox sub-col for Forward Deploy, tighten indent, pack rows tighter, lift stack upward
+// v1.315: ready-dialog: replace vehicle-deploy stepper with checkboxes; seed Air/Forward/SupplyBoxes toggles (UI-only)
+// v1.314: ready-dialog: replace vehicle-deploy stepper with checkboxes; seed Air/Forward/SupplyBoxes toggles (UI-only)
 // v1.313: gadget-locker: persist slot toggle preference across close/reopen (only wipe probed contents)
 // v1.312: gadget-locker: remove ambiguous 'launcher' inference from probeSlot; Supply Crate loaded===1 was false-positive making slotWithLauncher wrong (toggle ignored, Launcher Ammo enabled without launcher)
 // v1.311: gadget-locker: add Deployable_Vehicle_Supply_Crate to engineer probe candidates; Class_Supply_Bag alone missed the default Supply Crate and it was removed-not-restored

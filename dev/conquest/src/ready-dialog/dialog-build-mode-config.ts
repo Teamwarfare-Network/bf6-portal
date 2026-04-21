@@ -170,16 +170,151 @@ function buildReadyDialogGridKnobRow(
     }
 }
 
+// v1.314: builds one checkbox row inside the config column's left sub-column. The outlined
+// button is the clickable hit target; centered glyph text inside holds "X" (checked) or " "
+// (unchecked), and the label text sits to the right. Widget names follow
+// <BOX_ID | BOX_TEXT_ID | LABEL_ID> + checkboxKey + "_" + playerId so the readout path and the
+// click dispatcher can locate them by key.
+function buildReadyDialogConfigCheckboxRow(
+    eventPlayer: mod.Player,
+    containerBase: mod.UIWidget,
+    playerId: number,
+    checkboxKey: string,
+    labelKey: number,
+    subColX: number,
+    rowY: number,
+    subColWidth: number,
+    indent: number
+): void {
+    const boxSize = 14;
+    const textGap = 4;
+    const boxX = subColX + indent;
+    const boxY = rowY;
+    const labelX = boxX + boxSize + textGap;
+    const labelW = subColWidth - indent - boxSize - textGap;
+
+    const boxId = UI_READY_DIALOG_CONFIG_CHECKBOX_BOX_ID + checkboxKey + "_" + playerId;
+    const boxTextId = UI_READY_DIALOG_CONFIG_CHECKBOX_BOX_TEXT_ID + checkboxKey + "_" + playerId;
+    const labelId = UI_READY_DIALOG_CONFIG_CHECKBOX_LABEL_ID + checkboxKey + "_" + playerId;
+
+    const boxBorder = addOutlinedButton(
+        boxId,
+        boxX,
+        boxY,
+        boxSize,
+        boxSize,
+        mod.UIAnchor.TopLeft,
+        containerBase,
+        eventPlayer
+    );
+    addReadyDialogCenteredText(
+        boxTextId,
+        boxSize,
+        boxSize,
+        mod.Message(mod.stringkeys.twl.ui.checkMarkEmpty),
+        eventPlayer,
+        boxBorder ?? containerBase,
+        12
+    );
+
+    buildReadyDialogGridText(
+        labelId,
+        labelX,
+        boxY + 1,
+        labelW,
+        boxSize,
+        mod.UIAnchor.TopLeft,
+        mod.UIAnchor.CenterLeft,
+        mod.Message(labelKey),
+        12,
+        eventPlayer,
+        containerBase
+    );
+}
+
+// v1.314: builds the config (center) column: Game Mode stepper in the reclaimed header slot,
+// the 5-row checkbox block in the left sub-column, and the Players stepper below. Leaves the
+// right sub-column intentionally empty as reserved space for future checkboxes.
+function buildReadyDialogConfigColumn(
+    eventPlayer: mod.Player,
+    containerBase: mod.UIWidget,
+    playerId: number,
+    columnX: number,
+    columnWidth: number,
+    buttonSizeX: number,
+    buttonSizeY: number,
+    gameModeRowY: number,
+    playersRowY: number,
+    checkboxStartY: number
+): void {
+    const leftSubColX = columnX;
+    // v1.316: widened left sub-col from 104→120 so "Forward Deploy" (14 chars @ font 12) fits on
+    // one line. Indent tightened 20→10 for a gentler hierarchy visual. Rows packed tighter (18 px
+    // step). Right sub-col is now 216-120-8=88 px — still ample for future checkboxes.
+    // v1.319: checkboxStartY is now passed by the caller; the block sits below the Players stepper.
+    const leftSubColW = 120;
+    const indentChild = 10;
+    const rowCheckboxHeightStep = 18;
+
+    buildReadyDialogGridKnobRow(
+        eventPlayer,
+        containerBase,
+        playerId,
+        READY_DIALOG_CONFIG_GAME_KNOB_KEY,
+        mod.stringkeys.twl.readyDialog.gameModeConfigurationLabel,
+        columnX,
+        gameModeRowY,
+        columnWidth,
+        buttonSizeX,
+        buttonSizeY
+    );
+
+    const checkboxRows: { key: string; labelKey: number; indent: number }[] = [
+        { key: READY_DIALOG_CONFIG_CHECKBOX_VANILLA_KEY, labelKey: mod.stringkeys.twl.readyDialog.vanillaDeployCheckboxLabel, indent: 0 },
+        { key: READY_DIALOG_CONFIG_CHECKBOX_HQ_KEY, labelKey: mod.stringkeys.twl.readyDialog.hqDeployCheckboxLabel, indent: 0 },
+        { key: READY_DIALOG_CONFIG_CHECKBOX_AIR_KEY, labelKey: mod.stringkeys.twl.readyDialog.airDeployCheckboxLabel, indent: indentChild },
+        { key: READY_DIALOG_CONFIG_CHECKBOX_FORWARD_KEY, labelKey: mod.stringkeys.twl.readyDialog.forwardDeployCheckboxLabel, indent: indentChild },
+        { key: READY_DIALOG_CONFIG_CHECKBOX_SUPPLY_BOXES_KEY, labelKey: mod.stringkeys.twl.readyDialog.supplyBoxesCheckboxLabel, indent: 0 },
+    ];
+    for (let r = 0; r < checkboxRows.length; r++) {
+        const spec = checkboxRows[r];
+        buildReadyDialogConfigCheckboxRow(
+            eventPlayer,
+            containerBase,
+            playerId,
+            spec.key,
+            spec.labelKey,
+            leftSubColX,
+            checkboxStartY + (r * rowCheckboxHeightStep),
+            leftSubColW,
+            spec.indent
+        );
+    }
+
+    buildReadyDialogGridKnobRow(
+        eventPlayer,
+        containerBase,
+        playerId,
+        READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY,
+        mod.stringkeys.twl.readyDialog.playersLabel,
+        columnX,
+        playersRowY,
+        columnWidth,
+        buttonSizeX,
+        buttonSizeY
+    );
+}
+
 function buildReadyDialogModeConfigSection(
     eventPlayer: mod.Player,
     containerBase: mod.UIWidget,
     playerId: number
 ): void {
-    const gridTopY = -6;
+    const gridTopY = 6;
     const headerHeight = 18;
     const knobBlockHeight = 30;
     const supportRowHeight = 12;
-    const buttonRowY = 144;
+    const buttonRowY = 156;
     const columnGap = 6;
     const buttonSizeX = READY_DIALOG_SMALL_BUTTON_WIDTH;
     const buttonSizeY = READY_DIALOG_SMALL_BUTTON_HEIGHT;
@@ -194,35 +329,64 @@ function buildReadyDialogModeConfigSection(
     for (let i = 0; i < columns.length; i++) {
         const column = columns[i];
         const headerId = UI_READY_DIALOG_MODE_GRID_COLUMN_HEADER_ID + column.key + "_" + playerId;
+        const isConfigColumn = column.key === "config";
 
-        buildReadyDialogGridText(
-            headerId,
-            columnX,
-            gridTopY,
-            column.width,
-            headerHeight,
-            mod.UIAnchor.TopLeft,
-            mod.UIAnchor.Center,
-            getReadyDialogModeGridColumnHeaderMessage(column),
-            14,
-            eventPlayer,
-            containerBase
-        );
+        // v1.314: config column has no "Configuration" header — Game Mode occupies the header row
+        // (see buildReadyDialogConfigColumn below). Creating and hiding a header widget here would
+        // leave a stale placeholder alive in the cache, so skip creation entirely for config.
+        if (!isConfigColumn) {
+            buildReadyDialogGridText(
+                headerId,
+                columnX,
+                gridTopY,
+                column.width,
+                headerHeight,
+                mod.UIAnchor.TopLeft,
+                mod.UIAnchor.Center,
+                getReadyDialogModeGridColumnHeaderMessage(column),
+                14,
+                eventPlayer,
+                containerBase
+            );
+        }
 
-        for (let row = 0; row < column.knobSpecs.length; row++) {
-            const rowY = gridTopY + headerHeight + 2 + (row * knobBlockHeight);
-            buildReadyDialogGridKnobRow(
+        if (isConfigColumn) {
+            // v1.319: stack order is Mode Config → Players → Checkboxes. Players now sits on row-0
+            // of the vehicle columns (Tank 1 / Jet 1 / Transport 1 line). Mode Config sits one
+            // knobBlockHeight above Players so the stepper-to-stepper gutter matches the vehicle
+            // columns' knob-row spacing (30 px). Checkboxes start one knobBlockHeight below
+            // Players (row-1 line of vehicle columns) and use their own tighter 18 px step.
+            const playersRowY = gridTopY + headerHeight + 2;
+            const gameModeRowY = playersRowY - knobBlockHeight;
+            const checkboxStartY = playersRowY + knobBlockHeight + 3;
+            buildReadyDialogConfigColumn(
                 eventPlayer,
                 containerBase,
                 playerId,
-                column.knobSpecs[row].key,
-                column.knobSpecs[row].labelKey,
                 columnX,
-                rowY,
                 column.width,
                 buttonSizeX,
-                buttonSizeY
+                buttonSizeY,
+                gameModeRowY,
+                playersRowY,
+                checkboxStartY
             );
+        } else {
+            for (let row = 0; row < column.knobSpecs.length; row++) {
+                const rowY = gridTopY + headerHeight + 2 + (row * knobBlockHeight);
+                buildReadyDialogGridKnobRow(
+                    eventPlayer,
+                    containerBase,
+                    playerId,
+                    column.knobSpecs[row].key,
+                    column.knobSpecs[row].labelKey,
+                    columnX,
+                    rowY,
+                    column.width,
+                    buttonSizeX,
+                    buttonSizeY
+                );
+            }
         }
 
         const supportId = UI_READY_DIALOG_MODE_GRID_SUPPORT_ID + column.key + "_" + playerId;
@@ -231,7 +395,7 @@ function buildReadyDialogModeConfigSection(
             supportId,
             supportInsidePlayersPanel ? columnX + buttonSizeX : columnX,
             supportInsidePlayersPanel
-                ? gridTopY + headerHeight + 2 + (3 * knobBlockHeight) + 17
+                ? gridTopY + headerHeight + 2 + 17
                 : gridTopY + headerHeight + 2 + (4 * knobBlockHeight) - 4,
             supportInsidePlayersPanel ? column.width - (buttonSizeX * 2) : column.width,
             supportInsidePlayersPanel ? 8 : supportRowHeight,

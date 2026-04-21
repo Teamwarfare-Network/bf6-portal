@@ -55,10 +55,11 @@ const READY_DIALOG_MODE_GRID_COLUMN_SPECS: ReadyDialogGridColumnSpec[] = [
         key: "config",
         width: 216,
         supportVisible: true,
+        // v1.314: dropped modeSettings placeholder and the Vehicle Deploy stepper knob. The center
+        // column now renders Game Mode + Players as knob rows and 5 deploy/feature checkboxes in
+        // dialog-build-mode-config. The "Configuration" header slot is reclaimed for Game Mode.
         knobSpecs: [
-            { key: READY_DIALOG_CONFIG_GAME_KNOB_KEY, labelKey: mod.stringkeys.twl.readyDialog.gameModeLabel },
-            { key: READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY, labelKey: mod.stringkeys.twl.readyDialog.modeSettingsLabel },
-            { key: READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY, labelKey: mod.stringkeys.twl.readyDialog.vehicleDeployLabel },
+            { key: READY_DIALOG_CONFIG_GAME_KNOB_KEY, labelKey: mod.stringkeys.twl.readyDialog.gameModeConfigurationLabel },
             { key: READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY, labelKey: mod.stringkeys.twl.readyDialog.playersLabel },
         ],
     },
@@ -123,6 +124,10 @@ function getReadyDialogModeGridColumnHeaderMessage(column: ReadyDialogGridColumn
         case "team2Air":
             return mod.Message(mod.stringkeys.twl.readyDialog.columnAirFormat, getTeamNameKey(column.teamId ?? TeamID.Team1));
         case "config":
+            // v1.314: config column no longer renders a "Configuration" header — the Game Mode
+            // stepper now occupies the header row. Return a blank message; the build path also
+            // skips the header widget entirely so no placeholder widget exists to update.
+            return mod.Message(mod.stringkeys.twl.system.genericCounter, " ");
         default:
             return mod.Message(mod.stringkeys.twl.readyDialog.configurationColumnLabel);
     }

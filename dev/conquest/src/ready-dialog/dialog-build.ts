@@ -112,6 +112,11 @@ function showReadyDialogUI(eventPlayer: mod.Player): mod.UIWidget | undefined {
     const dialogRoot = ensureReadyDialogUiBuiltHidden(eventPlayer);
     if (!dialogRoot) return undefined;
     refreshReadyDialogSectionsWhileHidden(eventPlayer, playerId, dialogRoot as mod.UIWidget);
+    // Repaint roster / ready-button / mode-config / map-label from canonical state on every open.
+    // Draft is shared across players, so another player's apply (or an earlier-closed edit) can
+    // leave the viewer's cached widget colors out of date; this is the single repaint that makes
+    // reopen reflect the current confirmed vs draft diff correctly.
+    refreshReadyDialogSectionsForWarmPrime(eventPlayer, playerId);
     State.players.readyDialogData[playerId].dialogVisible = true;
     finalizeReadyDialogVisibility(eventPlayer, playerId, dialogRoot as mod.UIWidget, true);
     markReadyDialogLayoutBuilt(playerId);
@@ -193,14 +198,14 @@ function createReadyDialogUI(eventPlayer: mod.Player, reveal: boolean = true) {
     const CONTAINER_BORDER_THICKNESS = 2;
     const CONTAINER_BORDER_OVERLAP = 2;
     const CONTAINER_WIDTH = READY_DIALOG_CONTAINER_WIDTH;
-    const CONTAINER_HEIGHT = 700;
+    const CONTAINER_HEIGHT = 712;
 
     const BUTTON_CANCEL_ID = UI_READY_DIALOG_BUTTON_CANCEL_ID + playerId;
     const BUTTON_CANCEL_LABEL_ID = UI_READY_DIALOG_BUTTON_CANCEL_LABEL_ID + playerId;
 
     mod.AddUIContainer(
         CONTAINER_BASE_ID,
-        mod.CreateVector(0, 0, 0),
+        mod.CreateVector(0, -6, 0),
         mod.CreateVector(CONTAINER_WIDTH, CONTAINER_HEIGHT, 0),
         mod.UIAnchor.Center,
         mod.GetUIRoot(),
@@ -303,7 +308,7 @@ function createReadyDialogUI(eventPlayer: mod.Player, reveal: boolean = true) {
 
     //#endregion ----------------- Ready Dialog (Roster UI) -  (header + team rosters) --------------------
 
-    
+
 
     buildReadyDialogBottomButtonsSection(
         eventPlayer,

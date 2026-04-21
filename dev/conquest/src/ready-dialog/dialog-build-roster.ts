@@ -45,7 +45,7 @@ function buildReadyDialogRosterSection(
         laneLeftX +
         Math.floor((readyRosterTotalWidth - ((readyRosterPanelWidth * 2) + readyRosterPanelGap)) / 2) +
         READY_DIALOG_ROSTER_VISUAL_OFFSET_X;
-    const readyRosterPanelY = 175;
+    const readyRosterPanelY = 187;
 
     // Left and right roster containers (children are parented to these containers).
     const t1ContainerId = UI_READY_DIALOG_TEAM1_CONTAINER_ID + playerId;

@@ -7,6 +7,19 @@ const WORLD_INTERACTABLE_DEPLOY_BLUE = mod.CreateVector(0 / 255, 110 / 255, 255 
 const WORLD_INTERACTABLE_READY_GREEN = mod.CreateVector(0 / 255, 155 / 255, 38 / 255);
 const WORLD_INTERACTABLE_ZERO_ROT = mod.CreateVector(0, 0, 0);
 
+// A "supply box" interactable is any world interactable whose action opens the ammo resupply
+// menu. This is the discriminator used to gate spawning/interacting based on the Supply Boxes
+// checkbox from the ready dialog.
+function isSupplyBoxWorldInteractable(config: WorldInteractableConfig): boolean {
+    return config.action === "open_ammo_resupply_menu";
+}
+
+// Reads the confirmed Supply Boxes toggle state. Defaults true so first-match spawn (before any
+// Apply has happened) behaves as if checked.
+function isSupplyBoxesEnabled(): boolean {
+    return State.round.modeConfig.confirmed.supplyBoxesEnabled ?? true;
+}
+
 function getWorldInteractableRuntimeIconTextKey(config: WorldInteractableConfig): number | undefined {
     switch (config.action) {
         case "open_ready_dialog":
@@ -55,6 +68,7 @@ function hideAuthoredWorldInteractableIconPresentation(config: WorldInteractable
 }
 
 function shouldEnableWorldInteractableAuthoredInteractPoint(config: WorldInteractableConfig): boolean {
+    if (isSupplyBoxWorldInteractable(config) && !isSupplyBoxesEnabled()) return false;
     return true;
 }
 
@@ -91,7 +105,7 @@ function shouldShowWorldInteractableRuntimeIconForPlayer(player: mod.Player, con
 // (ready dialog, vehicle spawn menu) still requires the player to be inside their own main base.
 function shouldAllowWorldInteractableActivationForPlayer(player: mod.Player, config: WorldInteractableConfig): boolean {
     if (config.action === "open_ammo_resupply_menu") {
-        return true;
+        return isSupplyBoxesEnabled();
     }
     return shouldShowWorldInteractableRuntimeIconForPlayer(player, config);
 }
@@ -205,6 +219,7 @@ function spawnWorldInteractableVfxForActiveConfigs(): void {
     for (let i = 0; i < ACTIVE_WORLD_INTERACTABLE_CONFIGS.length; i++) {
         const config = ACTIVE_WORLD_INTERACTABLE_CONFIGS[i];
         if (!config.vfx || !config.iconAnchorPos) continue;
+        if (isSupplyBoxWorldInteractable(config) && !isSupplyBoxesEnabled()) continue;
         if (cache[config.objId]) continue;
         try {
             const spawned = mod.SpawnObject(
@@ -234,6 +249,68 @@ function cleanupWorldInteractableVfx(): void {
             try { mod.UnspawnObject(vfx); } catch {}
         }
         delete cache[key];
+    }
+}
+
+// Despawns a single cached VFX by objId (partial counterpart of cleanupWorldInteractableVfx).
+function despawnWorldInteractableVfxForObjId(objId: number): void {
+    const cache = State.conquest.worldInteractableVfxHandleByObjId;
+    const vfx = cache[objId];
+    if (!vfx) return;
+    try { mod.UnspawnObject(vfx); } catch {}
+    delete cache[objId];
+}
+
+// Spawns VFX for a single config if not already cached. Shares logic with the bulk spawner and
+// is guarded by the Supply Boxes gate so it no-ops when supply boxes are disabled.
+function ensureWorldInteractableVfxForConfig(config: WorldInteractableConfig): void {
+    if (isSupplyBoxWorldInteractable(config) && !isSupplyBoxesEnabled()) return;
+    if (!config.vfx || !config.iconAnchorPos) return;
+    const cache = State.conquest.worldInteractableVfxHandleByObjId;
+    if (cache[config.objId]) return;
+    try {
+        const spawned = mod.SpawnObject(
+            config.vfx,
+            config.iconAnchorPos,
+            config.vfxRot ?? WORLD_INTERACTABLE_ZERO_ROT
+        );
+        if (mod.IsType(spawned, mod.Types.VFX)) {
+            const vfx = spawned as mod.VFX;
+            mod.EnableVFX(vfx, true);
+            mod.SetVFXScale(vfx, 1);
+            cache[config.objId] = vfx;
+        }
+    } catch {}
+}
+
+// Called after confirmReadyDialogModeConfig to reflect the newly-confirmed Supply Boxes state on
+// already-present gadgets: re-evaluates InteractPoint enablement, syncs VFX to match, and if
+// disabling, force-closes any ammo-resupply menu a player currently has open.
+function refreshSupplyBoxInteractableStateFromConfirmedConfig(): void {
+    const enabled = isSupplyBoxesEnabled();
+    for (let i = 0; i < ACTIVE_WORLD_INTERACTABLE_CONFIGS.length; i++) {
+        const config = ACTIVE_WORLD_INTERACTABLE_CONFIGS[i];
+        if (!isSupplyBoxWorldInteractable(config)) continue;
+        applyWorldInteractableAuthoredInteractPointState(config);
+        if (enabled) {
+            ensureWorldInteractableVfxForConfig(config);
+        } else {
+            despawnWorldInteractableVfxForObjId(config.objId);
+        }
+    }
+    if (!enabled) forceCloseAllOpenSupplyBoxMenus();
+}
+
+// When Supply Boxes is disabled at Apply time, boot any player who has the ammo-resupply menu
+// open back to normal play. closeArmMenu no-ops for PIDs without an open menu, so the sweep is
+// safe even if the cache lists stale PIDs.
+function forceCloseAllOpenSupplyBoxMenus(): void {
+    const cache = State.hudCache.ammoResupplyMenuCache;
+    if (!cache) return;
+    for (const key in cache) {
+        const pid = Number(key);
+        if (!isArmOpen(pid)) continue;
+        try { closeArmMenu(pid); } catch {}
     }
 }
 

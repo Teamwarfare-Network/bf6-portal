@@ -41,6 +41,18 @@ function isHqDeployMode(): boolean {
     return confirmed >= VEHICLE_DEPLOY_METHOD_HQ;
 }
 
+// Forward deploy is an orthogonal checkbox (confirmed state) layered on top of HQ mode.
+// The enum tier (HQ_FORWARD) stays wired for legacy reads but the checkbox is authoritative.
+function isForwardDeployEnabled(): boolean {
+    return State.round.modeConfig.confirmed.forwardDeployEnabled === true;
+}
+
+// Air deploy is orthogonal to HQ mode too (own checkbox). The enum tier
+// (HQ_FORWARD_AIR) is retained for historical reads but the checkbox is authoritative.
+function isAirDeployEnabled(): boolean {
+    return State.round.modeConfig.confirmed.airDeployEnabled === true;
+}
+
 //#endregion ----------------- Mode Gate --------------------
 
 
@@ -132,10 +144,113 @@ async function scheduleHqClaimTimeout(slotIndex: number, pid: number, requestedA
         const v = findVehicleById(slot.vehicleId);
         if (v) sinkAndDestroyVehicle(v, slot.spawnPos);
     }
+    const wasForward = slot.pendingSpawnMode === "forward";
+    const wasAir = slot.pendingSpawnMode === "air";
     slot.pendingSpawnOwnerPid = undefined;
     slot.pendingSpawnMode = undefined;
     slot.hqSource = undefined;
+    // Forward/Air claim expired: restore the spawner back to HQ and re-seed so the next click
+    // doesn't fire from the now-stale forward/air point (where the orphan vehicle was destroyed).
+    if (wasForward) onForwardSpawnSuccess(slot);
+    if (wasAir) onAirSpawnSuccess(slot);
     try { updateVehicleDeployTimerHudForAllPlayers(); } catch {}
+}
+
+// Forward deploy request: same validation shape as requestHqVehicleSpawn, but flags the slot
+// with pendingSpawnMode="forward" so the dispatch branch in vanilla-spawner relocates the
+// spawner to slot.nextForwardPos before ForceVehicleSpawnerSpawn. Ground vehicles only;
+// aircraft slots take the HQ path. No auto-respawn on forward -- each click re-randomizes
+// the landing point (seeded by seedNextForwardTransformForSlot after every success).
+function requestForwardVehicleSpawn(player: mod.Player, pid: number, rowIndex: number, source: "deploy_menu" | "on_foot" = "deploy_menu"): HqRequestResult {
+    if (!isHqDeployMode()) return { ok: false, reason: "not_hq_mode" };
+    if (!isForwardDeployEnabled()) return { ok: false, reason: "forward_disabled" };
+    if (isRoundStartForwardDeployDelayActive()) return { ok: false, reason: "forward_delay" };
+    if (!player || !mod.IsPlayerValid(player)) return { ok: false, reason: "invalid_player" };
+
+    const playerTeamId = safeGetTeamNumberFromPlayer(player, 0);
+    if (playerTeamId !== TeamID.Team1 && playerTeamId !== TeamID.Team2) return { ok: false, reason: "bad_team" };
+
+    const nowSeconds = mod.GetMatchTimeElapsed();
+    const lastRequestAt = State.hqDeploy.lastRequestAtSecondsByPid[pid] ?? -999;
+    if (nowSeconds - lastRequestAt < HQ_DEPLOY_REQUEST_COOLDOWN_SECONDS) return { ok: false, reason: "cooldown" };
+
+    if (findSlotForHqClaim(pid)) return { ok: false, reason: "claim_in_flight" };
+
+    const visibleSlots = getVehicleDeployVisibleSlotsForPlayer(player);
+    const slot = visibleSlots[rowIndex];
+    if (!slot) return { ok: false, reason: "no_slot" };
+    if (slot.teamId !== playerTeamId) return { ok: false, reason: "team_mismatch" };
+    if (!slot.enabled) return { ok: false, reason: "slot_disabled" };
+    if (slot.vehicleId !== -1) return { ok: false, reason: "slot_occupied" };
+    if (slot.pendingSpawnOwnerPid !== undefined) return { ok: false, reason: "slot_claimed" };
+    if (slot.expectingSpawn || slot.respawnRunning || slot.spawnRetryScheduled) return { ok: false, reason: "slot_busy" };
+    if (slot.respawnClock) return { ok: false, reason: "respawn_cooldown" };
+    if (isAircraftVehicleType(slot.vehicleType)) return { ok: false, reason: "aircraft_slot" };
+    if (!slot.nextForwardPos || !slot.nextForwardRot) return { ok: false, reason: "no_forward_volume" };
+
+    const slotIndex = State.vehicles.slots.indexOf(slot);
+    if (slotIndex < 0) return { ok: false, reason: "no_slot_index" };
+
+    slot.pendingSpawnOwnerPid = pid;
+    slot.pendingSpawnMode = "forward";
+    slot.hqSource = source;
+    State.hqDeploy.lastRequestAtSecondsByPid[pid] = nowSeconds;
+
+    void scheduleHqClaimTimeout(slotIndex, pid, nowSeconds);
+
+    enqueueDispatch(slotIndex);
+
+    try { updateVehicleDeployTimerHudForAllPlayers(); } catch {}
+    return { ok: true };
+}
+
+// Air deploy request: same validation shape as the forward variant, but flags the slot with
+// pendingSpawnMode="air" so the dispatch branch in vanilla-spawner relocates the spawner to
+// slot.nextAirPos before ForceVehicleSpawnerSpawn. Aircraft slots only (helis + jets); ground
+// slots take the forward/HQ paths. No auto-respawn on air -- each click re-randomizes the sky
+// point (seeded by seedNextAirTransformForSlot after every success).
+function requestAirVehicleSpawn(player: mod.Player, pid: number, rowIndex: number, source: "deploy_menu" | "on_foot" = "deploy_menu"): HqRequestResult {
+    if (!isHqDeployMode()) return { ok: false, reason: "not_hq_mode" };
+    if (!isAirDeployEnabled()) return { ok: false, reason: "air_disabled" };
+    if (isRoundStartAirDeployDelayActive()) return { ok: false, reason: "air_delay" };
+    if (isRoundStartAirDelayActive()) return { ok: false, reason: "air_delay_full" };
+    if (!player || !mod.IsPlayerValid(player)) return { ok: false, reason: "invalid_player" };
+
+    const playerTeamId = safeGetTeamNumberFromPlayer(player, 0);
+    if (playerTeamId !== TeamID.Team1 && playerTeamId !== TeamID.Team2) return { ok: false, reason: "bad_team" };
+
+    const nowSeconds = mod.GetMatchTimeElapsed();
+    const lastRequestAt = State.hqDeploy.lastRequestAtSecondsByPid[pid] ?? -999;
+    if (nowSeconds - lastRequestAt < HQ_DEPLOY_REQUEST_COOLDOWN_SECONDS) return { ok: false, reason: "cooldown" };
+
+    if (findSlotForHqClaim(pid)) return { ok: false, reason: "claim_in_flight" };
+
+    const visibleSlots = getVehicleDeployVisibleSlotsForPlayer(player);
+    const slot = visibleSlots[rowIndex];
+    if (!slot) return { ok: false, reason: "no_slot" };
+    if (slot.teamId !== playerTeamId) return { ok: false, reason: "team_mismatch" };
+    if (!slot.enabled) return { ok: false, reason: "slot_disabled" };
+    if (slot.vehicleId !== -1) return { ok: false, reason: "slot_occupied" };
+    if (slot.pendingSpawnOwnerPid !== undefined) return { ok: false, reason: "slot_claimed" };
+    if (slot.expectingSpawn || slot.respawnRunning || slot.spawnRetryScheduled) return { ok: false, reason: "slot_busy" };
+    if (slot.respawnClock) return { ok: false, reason: "respawn_cooldown" };
+    if (!isAircraftVehicleType(slot.vehicleType)) return { ok: false, reason: "not_aircraft" };
+    if (!slot.nextAirPos || !slot.nextAirRot) return { ok: false, reason: "no_air_volume" };
+
+    const slotIndex = State.vehicles.slots.indexOf(slot);
+    if (slotIndex < 0) return { ok: false, reason: "no_slot_index" };
+
+    slot.pendingSpawnOwnerPid = pid;
+    slot.pendingSpawnMode = "air";
+    slot.hqSource = source;
+    State.hqDeploy.lastRequestAtSecondsByPid[pid] = nowSeconds;
+
+    void scheduleHqClaimTimeout(slotIndex, pid, nowSeconds);
+
+    enqueueDispatch(slotIndex);
+
+    try { updateVehicleDeployTimerHudForAllPlayers(); } catch {}
+    return { ok: true };
 }
 
 //#endregion ----------------- Request Validation + Dispatch --------------------
@@ -223,6 +338,19 @@ function onHqSeatPendingPlayerDeployed(player: mod.Player, pid: number): void {
     if (slot.vehicleId === -1) return;  // still spawn_pending; nothing to seat into
     const vehicle = findVehicleById(slot.vehicleId);
 
+    // Capture forward/air-mode flags before we clear them so the post-seat restore runs below.
+    const wasForward = slot.pendingSpawnMode === "forward";
+    const wasAir = slot.pendingSpawnMode === "air";
+
+    // Snapshot relocation targets BEFORE onForwardSpawnSuccess / onAirSpawnSuccess run --
+    // those hooks re-seed nextForwardPos / nextAirPos for the next click. Used by the
+    // post-seat Teleport branch below so Forward/Air vehicle + seated player arrive at the
+    // forward/air point only after the engine has applied vehicle loadout.
+    const forwardTargetPos = wasForward ? slot.nextForwardPos : undefined;
+    const forwardTargetRot = wasForward ? slot.nextForwardRot : undefined;
+    const airTargetPos = wasAir ? slot.nextAirPos : undefined;
+    const airTargetRot = wasAir ? slot.nextAirRot : undefined;
+
     // Clear the claim regardless of ForcePlayerToSeat outcome. On verify failure the player
     // lands on foot at the pad and can press E to enter manually -- no retry loop.
     slot.pendingSpawnOwnerPid = undefined;
@@ -231,11 +359,64 @@ function onHqSeatPendingPlayerDeployed(player: mod.Player, pid: number): void {
 
     if (!vehicle) {
         try { updateVehicleDeployTimerHudForAllPlayers(); } catch {}
+        if (wasForward) onForwardSpawnSuccess(slot);
+        if (wasAir) onAirSpawnSuccess(slot);
         return;
     }
 
     try { mod.ForcePlayerToSeat(player, vehicle, -1); } catch {}
+
+    // Post-seat relocate: Forward/Air Deploy vehicle sat at HQ through the seat call so the
+    // engine applied vehicle loadout; now that the player is seated, move vehicle + occupant
+    // together to the target point. Yaw-only per the established placement contract (pitch
+    // on jets remains a separate polish item tracked via the sister-spawner probe).
+    if (wasForward && forwardTargetPos && forwardTargetRot) {
+        const fwdYawDeg = mod.YComponentOf(forwardTargetRot) + VEHICLE_SPAWN_YAW_OFFSET_DEG;
+        const fwdYawRad = fwdYawDeg * (Math.PI / 180);
+        try { mod.Teleport(vehicle, forwardTargetPos, fwdYawRad); } catch {}
+    }
+    if (wasAir && airTargetPos && airTargetRot) {
+        const airYawDeg = mod.YComponentOf(airTargetRot) + VEHICLE_SPAWN_YAW_OFFSET_DEG;
+        const airYawRad = airYawDeg * (Math.PI / 180);
+        try { mod.Teleport(vehicle, airTargetPos, airYawRad); } catch {}
+    }
+
+    if (wasForward) onForwardSpawnSuccess(slot);
+    if (wasAir) onAirSpawnSuccess(slot);
     try { updateVehicleDeployTimerHudForAllPlayers(); } catch {}
+}
+
+// After a forward-spawned player is seated, restore slot.spawner to the HQ pad so the next
+// HQ click is instant, then re-sample the next forward landing point. Ordering matters:
+// relocate the spawner only AFTER the player is bound to the vehicle (ForcePlayerToSeat has
+// fired). Observed in the pre-v1.259 implementation: relocating the spawner mid-bind could
+// cause the engine to snap the freshly-spawned vehicle back toward the spawner's transform.
+// If that behavior reappears on the current engine build, leaving the spawner at the forward
+// point until after seat completes means any correction lands at the forward point (no-op).
+function onForwardSpawnSuccess(slot: VehicleSpawnerSlot | undefined): void {
+    if (!slot?.spawner) return;
+    try {
+        mod.SetObjectTransform(
+            slot.spawner,
+            mod.CreateTransform(slot.spawnPos, slot.spawnRot)
+        );
+    } catch {}
+    try { seedNextForwardTransformForSlot(slot); } catch {}
+}
+
+// Mirror of onForwardSpawnSuccess for air-deploy: restore slot.spawner to the HQ pad after
+// the pilot is seated and re-sample the next sky point. Same ordering rationale applies --
+// the relocate-back happens after seat completes so any engine post-bind correction (if the
+// old snap-to-spawner behavior reappears) lands at the air point (no-op) rather than HQ.
+function onAirSpawnSuccess(slot: VehicleSpawnerSlot | undefined): void {
+    if (!slot?.spawner) return;
+    try {
+        mod.SetObjectTransform(
+            slot.spawner,
+            mod.CreateTransform(slot.spawnPos, slot.spawnRot)
+        );
+    } catch {}
+    try { seedNextAirTransformForSlot(slot); } catch {}
 }
 
 //#endregion ----------------- Post-Bind -> Seat Flow (Phase 4) --------------------

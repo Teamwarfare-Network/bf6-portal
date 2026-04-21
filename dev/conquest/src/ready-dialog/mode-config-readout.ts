@@ -221,6 +221,9 @@ function buildReadyDialogModeConfigSignature(pid: number): string {
     const viewerTeam = safeGetTeamNumberFromPlayer(viewer, TeamID.Team1);
     let signature = `${pid}|team:${viewerTeam}|live:${isMatchLive() ? 1 : 0}|mode:${cfg.gameMode}|players:${counts.left},${counts.right},${counts.total}`;
     signature += `|deploy:${cfg.vehicleDeployMethod ?? 0}|confirmedDeploy:${cfg.confirmed.vehicleDeployMethod ?? 0}`;
+    signature += `|air:${cfg.airDeployEnabled ? 1 : 0}|confirmedAir:${cfg.confirmed.airDeployEnabled ? 1 : 0}`;
+    signature += `|fwd:${cfg.forwardDeployEnabled ? 1 : 0}|confirmedFwd:${cfg.confirmed.forwardDeployEnabled ? 1 : 0}`;
+    signature += `|supply:${(cfg.supplyBoxesEnabled ?? true) ? 1 : 0}|confirmedSupply:${(cfg.confirmed.supplyBoxesEnabled ?? true) ? 1 : 0}`;
     signature += `|confirmedMode:${cfg.confirmed.gameMode}|confirmedPlayers:${getReadyDialogConfirmedAutoStartMinActivePlayers()}`;
 
     for (const knobKey of READY_DIALOG_ALL_VEHICLE_KNOB_KEYS) {
@@ -283,15 +286,6 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
                         knob.key,
                         isReadyDialogModeConfigDirtyForKnobKey(knob.key, diff) ? COLOR_NOT_READY_RED : COLOR_READY_GREEN
                     );
-                } else if (knob.key === READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY) {
-                    const idx = cfg.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT;
-                    const labelKey = READY_DIALOG_VEHICLE_DEPLOY_METHOD_OPTIONS[idx] ?? READY_DIALOG_VEHICLE_DEPLOY_METHOD_OPTIONS[0];
-                    updateReadyDialogGridKnobValueForPid(pid, knob.key, mod.Message(labelKey));
-                    setReadyDialogGridKnobValueColorForPid(
-                        pid,
-                        knob.key,
-                        isReadyDialogModeConfigDirtyForKnobKey(knob.key, diff) ? COLOR_NOT_READY_RED : COLOR_READY_GREEN
-                    );
                 } else if (knob.key === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) {
                     updateReadyDialogGridKnobValueForPid(pid, knob.key, getReadyDialogPlayersValueMessage());
                     setReadyDialogGridKnobValueColorForPid(
@@ -331,9 +325,52 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
         }
     }
 
+    updateReadyDialogConfigCheckboxesForPid(pid, diff);
     syncReadyDialogModeActionWidgetsForPid(pid, diff);
 
     state.lastModeConfigSignature = signature;
+}
+
+// v1.314: paint the 5 config-column checkboxes — X glyph when the underlying field is on, blank
+// when off, and the label gets the dirty-red tint when live diverges from confirmed. No visual
+// distinction between "HQ child active" and "HQ child inactive while Vanilla is on"; per user
+// directive, the X is the only cue.
+function isReadyDialogConfigCheckboxChecked(checkboxKey: string): boolean {
+    const cfg = State.round.modeConfig;
+    if (checkboxKey === READY_DIALOG_CONFIG_CHECKBOX_VANILLA_KEY) {
+        return (cfg.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT) === VEHICLE_DEPLOY_METHOD_VANILLA;
+    }
+    if (checkboxKey === READY_DIALOG_CONFIG_CHECKBOX_HQ_KEY) {
+        return (cfg.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT) === VEHICLE_DEPLOY_METHOD_HQ;
+    }
+    if (checkboxKey === READY_DIALOG_CONFIG_CHECKBOX_AIR_KEY) {
+        return cfg.airDeployEnabled === true;
+    }
+    if (checkboxKey === READY_DIALOG_CONFIG_CHECKBOX_FORWARD_KEY) {
+        return cfg.forwardDeployEnabled === true;
+    }
+    if (checkboxKey === READY_DIALOG_CONFIG_CHECKBOX_SUPPLY_BOXES_KEY) {
+        return cfg.supplyBoxesEnabled ?? true;
+    }
+    return false;
+}
+
+function updateReadyDialogConfigCheckboxesForPid(pid: number, diff: ReadyDialogModeConfigDiffState): void {
+    for (const checkboxKey of READY_DIALOG_CONFIG_CHECKBOX_KEYS) {
+        const boxTextWidget = safeFind(UI_READY_DIALOG_CONFIG_CHECKBOX_BOX_TEXT_ID + checkboxKey + "_" + pid);
+        const labelWidget = safeFind(UI_READY_DIALOG_CONFIG_CHECKBOX_LABEL_ID + checkboxKey + "_" + pid);
+        const checked = isReadyDialogConfigCheckboxChecked(checkboxKey);
+        if (boxTextWidget) {
+            safeSetUITextLabel(
+                boxTextWidget,
+                mod.Message(checked ? mod.stringkeys.twl.ui.checkMarkChecked : mod.stringkeys.twl.ui.checkMarkEmpty)
+            );
+        }
+        if (labelWidget) {
+            const dirty = isReadyDialogModeConfigDirtyForKnobKey(checkboxKey, diff);
+            mod.SetUITextColor(labelWidget, dirty ? COLOR_NOT_READY_RED : COLOR_WHITE);
+        }
+    }
 }
 
 // Updates mode-config readouts for players with an actively visible Ready Dialog.

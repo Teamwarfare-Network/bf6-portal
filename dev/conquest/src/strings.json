@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.313)",
+        "title": "teamwarfare . net | TWL Conquest (v1.335)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
@@ -130,6 +130,12 @@
       "header6": "Change match settings to the right, then confirm to initiate setup and game mode start.",
       "mapLabel": "Map:",
       "gameModeLabel": "Game Mode:",
+      "gameModeConfigurationLabel": "Game Mode Configuration:",
+      "vanillaDeployCheckboxLabel": "Vanilla Deploy",
+      "hqDeployCheckboxLabel": "HQ Deploy",
+      "airDeployCheckboxLabel": "Air Deploy",
+      "forwardDeployCheckboxLabel": "Forward Deploy",
+      "supplyBoxesCheckboxLabel": "Supply Boxes",
       "modeSettingsLabel": "Mode Settings:",
       "vehiclesCountLabel": "Vehicles:",
       "playersLabel": "Players:",
@@ -280,6 +286,8 @@
       "minus": "-",
       "left": "<",
       "right": ">",
+      "checkMarkChecked": "X",
+      "checkMarkEmpty": " ",
       "gadgetSlotLabel": "Gadget Slot {0}",
       "loading": "SCRIPT LOADING",
       "customScriptsLoading": "Custom Experience Engaging...",

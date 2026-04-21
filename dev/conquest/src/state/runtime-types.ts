@@ -39,6 +39,19 @@ type VehicleSpawnerSlot = {
     activeOwnerPid?: number;
     suppressNextBindSpawnTransformCorrection?: boolean;
     freshAirRuntimeSpawner?: mod.VehicleSpawner;
+    // Forward Deploy: pre-sampled random point + rotation inside the team's forward volume.
+    // Consumed by the dispatch branch in vanilla-spawner when pendingSpawnMode === "forward"
+    // (SetObjectTransform relocates slot.spawner here before ForceVehicleSpawnerSpawn), then
+    // re-seeded in onForwardSpawnSuccess so the next forward click is ready.
+    nextForwardPos?: mod.Vector;
+    nextForwardRot?: mod.Vector;
+    // Air Deploy: pre-sampled random sky point + rotation inside the team's aircraft volume.
+    // Consumed by the dispatch branch in vanilla-spawner when pendingSpawnMode === "air" and
+    // re-seeded in onAirSpawnSuccess. Rotation is rotPlane for jets (may include pitch) or
+    // rotHeli for helis; Y is sampled on top of the quad floor per the volume's heli/jet
+    // altitude bands.
+    nextAirPos?: mod.Vector;
+    nextAirRot?: mod.Vector;
     // v1.258 rewrite: Clocks-backed respawn countdown. Active only while counting down;
     // cleared on bind, slot-disable, type-change, or matchup re-apply.
     respawnClock?: Clocks.CountDownClock;

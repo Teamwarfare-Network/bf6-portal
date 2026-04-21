@@ -657,10 +657,16 @@ function applyMapConfig(mapKey: MapKey): void {
     State.round.modeConfig.autoStartMinActivePlayers = defaultPlayersPerSide;
     State.round.modeConfig.vehicleSelectionIndexByKey = { ...defaultVehicleSelections };
     State.round.modeConfig.vehicleDeployMethod = VEHICLE_DEPLOY_METHOD_DEFAULT;
+    State.round.modeConfig.airDeployEnabled = false;
+    State.round.modeConfig.forwardDeployEnabled = false;
+    State.round.modeConfig.supplyBoxesEnabled = true;
     State.round.modeConfig.confirmed.gameMode = defaultGameMode;
     State.round.modeConfig.confirmed.autoStartMinActivePlayers = defaultPlayersPerSide;
     State.round.modeConfig.confirmed.vehicleSelectionIndexByKey = { ...defaultVehicleSelections };
     State.round.modeConfig.confirmed.vehicleDeployMethod = VEHICLE_DEPLOY_METHOD_DEFAULT;
+    State.round.modeConfig.confirmed.airDeployEnabled = false;
+    State.round.modeConfig.confirmed.forwardDeployEnabled = false;
+    State.round.modeConfig.confirmed.supplyBoxesEnabled = true;
     refreshSelectedVehicleSpawnPoolsFromModeConfig(true);
     refreshVehicleSpawnSpecsFromModeConfig();
     VEHICLE_SPAWN_YAW_OFFSET_DEG = ACTIVE_MAP_CONFIG.vehicleSpawnYawOffsetDeg;

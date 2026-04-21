@@ -220,6 +220,11 @@ function hasEnabledTankSpawnVolumesForTeam(teamId: TeamID): boolean {
     return volumes.length > 0;
 }
 
+function hasEnabledAircraftSpawnVolumesForTeam(teamId: TeamID): boolean {
+    const volumes = getVehicleSpawnVolumesForTeam(teamId, "aircraft");
+    return volumes.length > 0;
+}
+
 function deleteVehicleDeployTimerHudArtifactsForPid(pid: number): void {
     deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerHudRoot", pid));
     deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerLivePanelBorder", pid));
@@ -1512,11 +1517,18 @@ function renderVehicleDeployTimerRow(
     const forwardDelayActive = isRoundStartForwardDeployDelayActive();
     const confirmedMethod = State.round.modeConfig.confirmed.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT;
     const hqDeployAllowed = confirmedMethod >= VEHICLE_DEPLOY_METHOD_HQ;
-    const forwardDeployAllowed = confirmedMethod >= VEHICLE_DEPLOY_METHOD_HQ_FORWARD;
-    const airDeployAllowed = confirmedMethod === VEHICLE_DEPLOY_METHOD_HQ_FORWARD_AIR;
+    // v1.328 forward-deploy wiring: the HQ_FORWARD enum tier is retained for historical reads,
+    // but the orthogonal `forwardDeployEnabled` checkbox is authoritative. Forward deploy is
+    // meaningful only in HQ mode; the checkbox is ignored in Vanilla.
+    const forwardDeployAllowed = hqDeployAllowed && State.round.modeConfig.confirmed.forwardDeployEnabled === true;
+    // v1.329 air-deploy wiring: mirrors the v1.328 forward treatment. The HQ_FORWARD_AIR enum
+    // tier is retained for historical reads, but the orthogonal `airDeployEnabled` checkbox
+    // is authoritative. Air deploy is meaningful only in HQ mode; the checkbox is ignored in
+    // Vanilla. Volume-presence gate keeps the button hidden on maps without aircraft volumes.
+    const airDeployAllowed = hqDeployAllowed && State.round.modeConfig.confirmed.airDeployEnabled === true;
     // Spawn button (air/forward): blocked during all applicable round-start delays; gated by deploy method.
     const showSpawnButton = slotReadyForButtons && slot.deployFlowTracked && isMatchLive() && (
-        (isAirType && airDeployAllowed && !airDelayActive && !airDeployDelayActive)
+        (isAirType && airDeployAllowed && hasEnabledAircraftSpawnVolumesForTeam(slotTeamId) && !airDelayActive && !airDeployDelayActive)
         || (isForwardType && forwardDeployAllowed && hasEnabledTankSpawnVolumesForTeam(slotTeamId) && !forwardDelayActive)
     );
     // Ground/HQ button: aircraft blocked during full airDelay; always blocked during countdown; gated by deploy method.
@@ -1837,8 +1849,30 @@ function tryHandleVehicleDeployTimerButtonEvent(
     // dispatch through requestHqVehicleSpawn -- the `source` param selects the seat path
     // inside beginHqSeatFlow ("on_foot" triggers undeploy->redeploy; "deploy_menu" deploys
     // directly). Vanilla mode takes the no-op branch (rejection reason "not_hq_mode").
+    //
+    // v1.328 / v1.329: the "air" button label is shared across Air Deploy (aircraft rows) and
+    // Forward Deploy (non-aircraft rows). Route aircraft clicks to requestAirVehicleSpawn
+    // (pendingSpawnMode="air", spawner relocates to the pre-sampled sky point) and non-aircraft
+    // clicks to requestForwardVehicleSpawn (pendingSpawnMode="forward", relocates to the
+    // pre-sampled ground point). The "ground" button (HQ Deploy) always takes the HQ path.
     const source = liveTerminalOpen ? "on_foot" : "deploy_menu";
-    requestHqVehicleSpawn(eventPlayer, pid, rowIndex, source);
+    if (mode === "air") {
+        const visibleSlots = getVehicleDeployVisibleSlotsForPlayer(eventPlayer);
+        const targetSlot = visibleSlots[rowIndex];
+        const isAircraftRow = targetSlot && doesVehicleTypeSupportAirDeploy(targetSlot.vehicleType);
+        const isForwardRow = targetSlot
+            && !isAircraftRow
+            && doesVehicleTypeSupportForwardDeploy(targetSlot.vehicleType);
+        if (isAircraftRow) {
+            requestAirVehicleSpawn(eventPlayer, pid, rowIndex, source);
+        } else if (isForwardRow) {
+            requestForwardVehicleSpawn(eventPlayer, pid, rowIndex, source);
+        } else {
+            requestHqVehicleSpawn(eventPlayer, pid, rowIndex, source);
+        }
+    } else {
+        requestHqVehicleSpawn(eventPlayer, pid, rowIndex, source);
+    }
     updateVehicleDeployTimerHudForPlayer(eventPlayer);
     return true;
 }

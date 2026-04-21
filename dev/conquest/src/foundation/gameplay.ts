@@ -101,6 +101,13 @@ type ReadyDialogModeConfig = {
     gameMode: number;
     gameSettings: number;
     vehicleDeployMethod: number;
+    // v1.314: new deploy/feature checkbox toggles seeded alongside vehicleDeployMethod (UI-only).
+    // airDeployEnabled / forwardDeployEnabled are orthogonal children of HQ deploy; they only
+    // take effect when vehicleDeployMethod === VEHICLE_DEPLOY_METHOD_HQ. supplyBoxesEnabled is
+    // independent of deploy mode. Nothing reads these booleans downstream yet; wiring lands later.
+    airDeployEnabled: boolean;
+    forwardDeployEnabled: boolean;
+    supplyBoxesEnabled: boolean;
     confirmed: {
         gameMode: number;
         gameSettings: number;
@@ -109,6 +116,9 @@ type ReadyDialogModeConfig = {
         autoStartMinActivePlayers: number;
         vehicleSelectionIndexByKey: Record<string, number>;
         vehicleDeployMethod: number;
+        airDeployEnabled: boolean;
+        forwardDeployEnabled: boolean;
+        supplyBoxesEnabled: boolean;
     };
 };
 
@@ -217,6 +227,20 @@ const READY_DIALOG_CONFIG_GAME_KNOB_KEY = "configGameMode";
 const READY_DIALOG_CONFIG_MODE_SETTINGS_KNOB_KEY = "configModeSettings";
 const READY_DIALOG_CONFIG_VEHICLES_KNOB_KEY = "configVehicles";
 const READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY = "configPlayers";
+// v1.314: per-checkbox keys for the new config-column checkbox block. These are used both as
+// widget-name suffixes and as dirty-tracking keys in mode-config-readout / mode-config-presets.
+const READY_DIALOG_CONFIG_CHECKBOX_VANILLA_KEY = "vanilla";
+const READY_DIALOG_CONFIG_CHECKBOX_HQ_KEY = "hq";
+const READY_DIALOG_CONFIG_CHECKBOX_AIR_KEY = "air";
+const READY_DIALOG_CONFIG_CHECKBOX_FORWARD_KEY = "forward";
+const READY_DIALOG_CONFIG_CHECKBOX_SUPPLY_BOXES_KEY = "supplyBoxes";
+const READY_DIALOG_CONFIG_CHECKBOX_KEYS = [
+    READY_DIALOG_CONFIG_CHECKBOX_VANILLA_KEY,
+    READY_DIALOG_CONFIG_CHECKBOX_HQ_KEY,
+    READY_DIALOG_CONFIG_CHECKBOX_AIR_KEY,
+    READY_DIALOG_CONFIG_CHECKBOX_FORWARD_KEY,
+    READY_DIALOG_CONFIG_CHECKBOX_SUPPLY_BOXES_KEY,
+] as const;
 const READY_DIALOG_ALL_VEHICLE_KNOB_KEYS = [
     ...READY_DIALOG_TEAM1_JET_KNOB_KEYS,
     ...READY_DIALOG_TEAM2_JET_KNOB_KEYS,

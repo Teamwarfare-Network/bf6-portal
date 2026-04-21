@@ -45,6 +45,11 @@ type ReadyDialogPresetPackage = {
     playersPerSide: number;
     vehicleSelectionByKey: Record<string, mod.VehicleList | undefined>;
     vehicleDeployMethod?: number;
+    // v1.314: optional preset seeds for the new config-column checkbox block. When omitted, the
+    // preset applies defaults (air/forward off, supplyBoxes on) consistent with a fresh round.
+    airDeployEnabled?: boolean;
+    forwardDeployEnabled?: boolean;
+    supplyBoxesEnabled?: boolean;
 };
 
 // Describes one gadget slot in the locker menu (assault items, medic items, recon items).
