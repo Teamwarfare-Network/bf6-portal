@@ -1,11 +1,9 @@
 ## Flat ObjId List
 
-- `500`: Team 2 main-base trigger
-- `501`: Team 1 main-base trigger
-- `502`: Team 2 main-base buffer trigger
-- `503`: Team 1 main-base buffer trigger
-- `550`: Team 2 vehicle-deploy spawn point
-- `551`: Team 1 vehicle-deploy spawn point
+- `500`: Team 1 main-base trigger
+- `501`: Team 2 main-base trigger
+- `502`: Team 1 main-base buffer trigger
+- `503`: Team 2 main-base buffer trigger
 - `600`: capture point `A`
 - `601`: capture point `B`
 - `602`: capture point `C`
@@ -26,10 +24,6 @@ Purpose:
 - `500-549`: boundary trigger ids
   - Use for main-base triggers, main-base-buffer triggers, and ground-combat-zone triggers.
   - These ids should be authored in `MapConfig`, not hardcoded in gameplay handlers.
-
-- `550-599`: direct vehicle-deploy `SpawnPoint` ids
-  - Use for authored per-team vehicle-deploy spawn points only.
-  - Keep these separate from the `500-549` boundary-trigger family.
 
 - `600-699`: Conquest capture-point ids
   - Use for objective/capture-point objects only.
@@ -73,12 +67,10 @@ Purpose:
 
 ## Current Firestorm Occupancy
 
-- `500`: Team 2 main-base trigger
-- `501`: Team 1 main-base trigger
-- `502`: Team 2 / East main-base buffer trigger
-- `503`: Team 1 / West main-base buffer trigger
-- `550`: Team 2 vehicle-deploy spawn point
-- `551`: Team 1 vehicle-deploy spawn point
+- `500`: Team 1 / West main-base trigger
+- `501`: Team 2 / East main-base trigger
+- `502`: Team 1 / West main-base buffer trigger
+- `503`: Team 2 / East main-base buffer trigger
 - `600`: capture point `A`
 - `601`: capture point `B`
 - `602`: capture point `C`
@@ -86,9 +78,7 @@ Purpose:
 
 ## Firestorm Layout Note
 
-- Firestorm now separates boundary triggers and vehicle-deploy spawn points cleanly:
-  - `500-503` and `666` for boundary ownership
-  - `550-551` for vehicle-deploy spawn points
+- Firestorm uses the `500-503` + `666` boundary-trigger family.
 
 ## Authoring Rules
 
@@ -100,6 +90,5 @@ Purpose:
   - one logical terminal job
 - If an id is used for a trigger, do not reuse it for a spawn point, interactable, or capture point.
 - Boundary-trigger ids belong in the `500-549` family.
-- Vehicle-deploy spawn-point ids belong in the `550-599` family.
 - Capture points stay in the `600-699` family.
 - Future world interactables should use the reserved `1000-1049` / `1050-1099` ranges instead of mixing into active boundary/capture families.

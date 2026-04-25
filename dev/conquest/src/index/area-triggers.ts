@@ -69,42 +69,37 @@ function onPlayerExitCapturePointImpl(eventPlayer: mod.Player, eventCapturePoint
     }
 }
 
-// Main-base enter updates per-player base-state used by pre-live UI gating.
+// Routes every area-trigger enter to the boundary single-update path. The own-HQ branch
+// fires UI-side refreshes (ready dialog, world interactable icons) when applicable; all
+// boundary-flag writes are owned by updateZoneStateOnTriggerTransition (called via
+// onPlayerEnterBoundaryAreaTrigger below) so this handler never touches inMainBaseByPid.
 function onPlayerEnterAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger) {
     try {
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
 
+        onPlayerEnterBoundaryAreaTrigger(eventPlayer, eventAreaTrigger);
+
         if (IsPlayerInOwnMainBase(eventPlayer, eventAreaTrigger)) {
-            // track per-player main base state for UI display (authoritative gating comes later).
-            const pid = safeGetPlayerId(eventPlayer);
-            if (pid !== undefined) {
-                State.players.inMainBaseByPid[pid] = true;
-            }
-            refreshPlayerBoundaryState(eventPlayer);
             refreshReadyStatusForAllBuiltReadyDialogs();
             renderReadyDialogForAllVisibleViewers();
             syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
         }
-
-        onPlayerEnterBoundaryAreaTrigger(eventPlayer, eventAreaTrigger);
     } catch {
         return;
     }
 }
 
-// Main-base exit enforces pre-live "not ready" behavior when a player leaves base.
-// Main-base flag is cleared unconditionally so undeploy/death inside base cannot leave stale state.
+// Routes every area-trigger exit to the boundary single-update path, then handles the pre-live
+// own-HQ violation side-effects (notePreliveMainBaseViolation + ready-dialog refresh) for the
+// own-HQ trigger only. Boundary-flag writes are owned by updateZoneStateOnTriggerTransition.
 function onPlayerExitAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger) {
     try {
         if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
 
-        // Always clear main-base flag regardless of deploy/alive state so it cannot go stale.
+        onPlayerExitBoundaryAreaTrigger(eventPlayer, eventAreaTrigger);
+
         if (IsPlayerInOwnMainBase(eventPlayer, eventAreaTrigger)) {
-            const pid = safeGetPlayerId(eventPlayer);
-            if (pid !== undefined) {
-                State.players.inMainBaseByPid[pid] = false;
-                syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
-            }
+            syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
         }
 
         if (!isPlayerDeployed(eventPlayer)) return;
@@ -117,12 +112,9 @@ function onPlayerExitAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: 
                     notePreliveMainBaseViolation(eventPlayer, pid);
                 }
             }
-            refreshPlayerBoundaryState(eventPlayer);
             refreshReadyStatusForAllBuiltReadyDialogs();
             renderReadyDialogForAllVisibleViewers();
         }
-
-        onPlayerExitBoundaryAreaTrigger(eventPlayer, eventAreaTrigger);
     } catch {
         return;
     }

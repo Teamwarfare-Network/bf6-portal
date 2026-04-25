@@ -1,33 +1,5 @@
 ﻿// @ts-nocheck
 
-// Classifies whether a freshly-deployed player should start with HQ World Icons visible.
-// Explicit short-circuits for the direct-spawn deploy buttons are preserved so per-map tuning
-// can override the spatial rule in the future (some maps may need a wider air-deploy exclusion
-// or a ground-deploy that lands outside the HQ radius). Everything else falls back to a spatial
-// radius check against the player's own-team HQ anchor — covers spawn-point clicks, squad
-// spawns, and flag spawns without needing to distinguish which path the engine used.
-function classifyDeployInOwnMainBase(
-    player: mod.Player,
-    pendingDirectSpawnMode: VehicleDirectSpawnMode | undefined,
-    consumedDirectSpawn: boolean
-): boolean {
-    if (consumedDirectSpawn && pendingDirectSpawnMode === "ground") return true;
-    if (consumedDirectSpawn && (pendingDirectSpawnMode === "air" || pendingDirectSpawnMode === "forward")) return false;
-
-    const teamId = safeGetTeamNumberFromPlayer(player, 0);
-    const anchor = teamId === TeamID.Team1
-        ? MAIN_BASE_TEAM1_POS
-        : teamId === TeamID.Team2
-            ? MAIN_BASE_TEAM2_POS
-            : undefined;
-    if (!anchor) return false;
-
-    const pos = safeGetSoldierStateVector(player, mod.SoldierStateVector.GetPosition);
-    if (!pos) return false;
-
-    return mod.DistanceBetween(pos, anchor) <= DEPLOY_MAIN_BASE_RADIUS_METERS;
-}
-
 async function deferForcedUndeploy(player: mod.Player, reason: string): Promise<void> {
     try {
         await mod.Wait(0.1);
@@ -90,12 +62,24 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     State.players.deployedByPid[pid] = true;
     invalidateVehicleDeployTimerHudViewerCache(pid);
     updateHudTeamSwapButtonVisibilityForPid(pid);
-    State.players.posDebugTransformSourceByPid[pid] = "soldier";
+    // Sense the actual seated state at deploy -- critical for Air Deploy, where the player
+    // spawns directly inside a vehicle without an OnPlayerEnterVehicle event. Without this,
+    // safeGetVehicleFromPlayer returns undefined and classifies an aircraft pilot as on-foot.
     delete State.players.posDebugVehicleObjIdByPid[pid];
+    State.players.posDebugTransformSourceByPid[pid] = "soldier";
+    try {
+        const deployedVehicle = mod.GetVehicleFromPlayer(eventPlayer);
+        if (deployedVehicle) {
+            State.players.posDebugVehicleObjIdByPid[pid] = getObjId(deployedVehicle);
+            State.players.posDebugTransformSourceByPid[pid] = "vehicle";
+        }
+    } catch {}
     State.conquest.debug.teamSwapHudResetPendingByPid[pid] = false;
     State.players.readyByPid[pid] = false;
     delete State.players.readyNeedsReconfirmByPid[pid];
-    State.players.inMainBaseByPid[pid] = true;
+    // resetPlayerBoundaryStateOnDeploy drops zoneStateByPid + sets inMainBaseByPid=false +
+    // stamps deployedAtSecondsByPid for the grace window. The synchronous HQ trigger enter
+    // event for HQ-deploy spawns flips the matching flag to true via updateZoneStateOnTriggerTransition.
     resetPlayerBoundaryStateOnDeploy(eventPlayer, pid);
     setMatchStateTextForPid(pid);
     updateHelpTextVisibilityForPid(pid);
@@ -107,27 +91,17 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
         ensureTopHudShellForPlayer(eventPlayer);
     }
     renderCriticalHudForReveal(eventPlayer, pid);
-    const pendingDirectSpawnMode = undefined;
-    const directSpawnDeployResult = { consumedDeploy: false };
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    // Overwrite the optimistic inMainBaseByPid=true seed (line 69) with the real classifier
-    // result now that fulfillment has finalized the player's world position. The optimistic
-    // seed preserved v1.015's boundary-enforcement protection during the fulfillment await;
-    // here we replace it with ground-truth so HQ icons reflect where the player actually is.
-    State.players.inMainBaseByPid[pid] = classifyDeployInOwnMainBase(
-        eventPlayer,
-        pendingDirectSpawnMode,
-        directSpawnDeployResult.consumedDeploy
-    );
+    // inMainBaseByPid is owned by updateZoneStateOnTriggerTransition (mirrored from inOwnHQ)
+    // and was reset to false by resetPlayerBoundaryStateOnDeploy above. The synchronous HQ
+    // trigger enter event for HQ-deploy spawns flips it back to true; non-HQ spawns leave it
+    // false. Do not write here -- distance-based classification was the v1.358-v1.359 bug.
     syncWorldInteractableRuntimeIconsForPlayer(eventPlayer);
     refreshWorldInteractableVfx();
     if (!State.players.kpiByPid[pid]) {
         kpiInitWithBaselineForPlayer(eventPlayer, pid);
     }
     updateScoreboardForPlayer(eventPlayer);
-    if (directSpawnDeployResult.consumedDeploy) {
-        return;
-    }
     // HQ Deploy seat hook (Phase 4): if a pending HQ claim is seat_pending for this pid,
     // call mod.ForcePlayerToSeat inside the OnPlayerDeployed event chain (BountyHunter
     // context -- the only reliable one for ForcePlayerToSeat on freshly-deployed players).

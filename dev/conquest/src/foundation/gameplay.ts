@@ -58,8 +58,9 @@ const VEHICLE_SPAWNER_KEEP_ALIVE_SPAWNER_RADIUS = 50;
 
 // Main base trigger fallback ids.
   // These remain only as compatibility defaults until every map owns its main-base trigger ids in MapConfig.
-  const TEAM1_MAIN_BASE_TRIGGER_ID = 501;
-  const TEAM2_MAIN_BASE_TRIGGER_ID = 500;
+  // Values mirror the current Conquest16 Firestorm spatial: Team 1 = 500, Team 2 = 501.
+  const TEAM1_MAIN_BASE_TRIGGER_ID = 500;
+  const TEAM2_MAIN_BASE_TRIGGER_ID = 501;
   
   // Ready-up auto-start gating:
 // Decoupled from matchup presets; default starts at the solo 1v0 special-case and is user-adjustable in the Ready dialog.

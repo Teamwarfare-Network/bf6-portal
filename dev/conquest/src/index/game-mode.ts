@@ -26,6 +26,7 @@ async function onGameModeStartedImpl(): Promise<void> {
     if (detectedMapKey) {
         applyMapConfig(detectedMapKey);
     }
+    enableBoundaryAreaTriggers();
     spawnWorldInteractableVfxForActiveConfigs();
     State.vehicles.configReady = true;
     initializeConquestPhase1Scaffold();
@@ -107,7 +108,6 @@ async function onGameModeStartedImpl(): Promise<void> {
             beginTickContext();
             const nowElapsed = mod.GetMatchTimeElapsed();
             const nowSecondBoundary = Math.floor(nowElapsed);
-            let clockUpdatedThisLoop = false;
             const _pd = FEATURE_PERF_DIAG && State.admin.perfDiagEnabled;
             let _t = 0;
 
@@ -138,31 +138,25 @@ async function onGameModeStartedImpl(): Promise<void> {
                 flushPregameDirtyFlags();
             }
 
-            if (shouldClockUseCriticalFlashSubtick()) {
-                if (_pd) _t = perfDiagBeginSection();
-                updateAllPlayersClock();
-                if (_pd) perfDiagEndSection(6, _t);
-                clockUpdatedThisLoop = true;
-            }
+            // Clock paint is now driven by Clocks.CountDownClock.onSecond (see clock/state.ts).
+            // Explicit first-paint calls still live in conquest-flow.ts (startMatch / triggerFreshMatchSetup)
+            // and admin-panel/events.ts (match-length adjust) for paused previews that don't tick.
 
             if (nowSecondBoundary !== lastSecondBoundary) {
                 lastSecondBoundary = nowSecondBoundary;
 
                 // Scoreboard sync runs once per second, not per-subtick.
                 scoreboardSyncTick();
-
-                // Push the initial clock display so every HUD shows the same starting time.
-                if (!clockUpdatedThisLoop) {
-                    if (_pd) _t = perfDiagBeginSection();
-                    updateAllPlayersClock();
-                    if (_pd) perfDiagEndSection(6, _t);
-                }
                 if (_pd) _t = perfDiagBeginSection();
                 ensureActiveWorldInteractablesReady();
                 if (_pd) perfDiagEndSection(7, _t);
                 if (_pd) _t = perfDiagBeginSection();
                 checkTakeoffLimitForAllPlayers();
                 if (_pd) perfDiagEndSection(8, _t);
+                // Per-second boundary refresh picks up state changes that don't trigger
+                // an area-trigger event -- specifically the on-foot Y-ceiling check after
+                // a player bails from an aircraft above AIRCRAFT_BAIL_CEILING_Y.
+                tickBoundaryEnforcement();
                 if (State.match.isEnded) {
                     clearActiveBoundaryViolationsForAllPlayers();
                 }

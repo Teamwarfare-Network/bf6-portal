@@ -91,6 +91,8 @@ function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number,
     updateReadyDialogModeConfigForAllHiddenBuiltCaches();
     updateReadyToggleButtonsForAllBuiltReadyDialogs();
     State.round.clock.expiryFired = true;
+    // Stop the countdown so onSecond no longer fires into a tearing-down UI.
+    try { State.round.clock.countdown?.pause(); } catch {}
 
     mod.EnableAllPlayerDeploy(true);
 

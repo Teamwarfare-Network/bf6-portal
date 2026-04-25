@@ -78,6 +78,30 @@ type VehicleSlotAvailabilityPhase =
 type ConquestLifecyclePhase = "NOT_READY" | "COUNTDOWN" | "PRE_MATCH" | "LIVE_MATCH" | "POST_MATCH" | "RESET";
 type PositionDebugTransformSource = "soldier" | "vehicle";
 
+// Per-player polygon-membership snapshot for the five boundary AreaTriggers used by the
+// custom GCZ enforcement. Owned exclusively by updateZoneStateOnTriggerTransition; consumed
+// only by getDesiredBoundaryViolationKind. Default-false for every field on a fresh deploy
+// so the trigger enter event for whatever zone the player spawns inside flips the matching
+// flag to true synchronously. inOwnHQ is mirrored to State.players.inMainBaseByPid for
+// downstream consumers (world-interactables, takeoff-gating).
+//
+// seatKind tracks whether the player is currently on foot, in a ground vehicle, or in an
+// aircraft. Owned exclusively by setPlayerSeatKind (called from OnPlayerEnter/ExitVehicle and
+// the deploy seed). The boundary classifier reads this directly -- no engine queries at
+// classification time -- because per-tick mod.GetVehicleFromPlayer + mod.CompareVehicleName
+// chains have documented reliability gaps on this Portal runtime (CQ_Bug_43, Air Deploy
+// timing race). Cache once at the event boundary, read everywhere else.
+type SeatKind = "on_foot" | "ground_vehicle" | "aircraft";
+
+type PlayerZoneState = {
+    inOwnHQ: boolean;
+    inOwnBuffer: boolean;
+    inGCZ: boolean;
+    inEnemyHQ: boolean;
+    inEnemyBuffer: boolean;
+    seatKind: SeatKind;
+};
+
 type ConquestCapturePointRuntimeState = {
     objId: number;
     label: string;
@@ -279,6 +303,9 @@ interface GameState {
         modeConfig: ReadyDialogModeConfig;
         phase: MatchPhase;
         clock: {
+            // Authoritative time source (v1.338+). Shadow fields below stay in sync
+            // for external consumers that read State.round.clock.* directly.
+            countdown?: Clocks.CountDownClock;
             durationSeconds: number;
             matchLengthSeconds: number;
             matchStartElapsedSeconds?: number;
@@ -309,9 +336,8 @@ interface GameState {
             vehicleStates: Record<number, AircraftCeilingVehicleState>;
         };
         boundary: {
-            inEnemyMainBaseCoreByPid: Record<number, boolean>;
-            inEnemyMainBaseBufferByPid: Record<number, boolean>;
-            inGroundCombatZoneByPid: Record<number, boolean>;
+            // Single source of truth for boundary-trigger polygon membership. See PlayerZoneState.
+            zoneStateByPid: Record<number, PlayerZoneState>;
             activeViolationByPid: Record<number, BoundaryViolationState>;
             alarmHandle?: any;
             alarmReady: boolean;
@@ -424,6 +450,10 @@ interface GameState {
             };
         }>;
         deployedByPid: Record<number, boolean>;
+        // Match-time seconds at which the player most recently transitioned to deployed. Used by
+        // the boundary classifier to suppress GCZ violations during a short grace window after
+        // deploy, covering the rare case where an expected trigger enter event doesn't fire.
+        deployedAtSecondsByPid: Record<number, number>;
         disconnectedByPid: Record<number, boolean>;
         uiInputEnabledByPid: Record<number, boolean>;
         liveVehicleDeployMenuVisibleByPid: Record<number, boolean>;

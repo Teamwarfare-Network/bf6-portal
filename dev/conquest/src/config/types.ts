@@ -70,6 +70,7 @@ type GadgetLockerLauncherConfig = {
     labelKey: number;        // Display name string key
     gadget: number;          // mod.Gadgets launcher enum
     name?: string;           // Stable key for widget/state lookup (falls back to index when omitted)
+    maxAmmo?: number;        // Per-launcher cap on loaded + magazine ammo (RPG=6, AT4=5, Stinger=6); omit to skip cap.
     pool?: {
         maxCount: number;        // Team/player pool size
         rechargeSeconds: number; // Per-charge drip interval (refills one charge at a time)
@@ -98,10 +99,7 @@ type MapConfig = {
     team2MainBaseTriggerId?: number;
     team1MainBaseBufferTriggerId?: number;
     team2MainBaseBufferTriggerId?: number;
-    groundCombatZoneTriggerId?: number;
-    groundCombatZoneCeilingY?: number; // Y ceiling of the GroundCombatVolume polygon (from spatial); used for vehicle-exit boundary recheck.
-    team1VehicleDeploySpawnPointId?: number;
-    team2VehicleDeploySpawnPointId?: number;
+    groundCombatZoneTriggerId?: number; // Ground combat zone AreaTrigger ObjId (XZ-clipped play area); used for custom script OOB of foot + non-aircraft vehicles.
     mainBaseInteractableObjIds?: number[]; // Phase 7 main-base interactables; even ids map to ready dialog, odd ids map to vehicle menu.
     mainBaseInteractableAnchors?: WorldInteractableAnchorConfig[]; // Explicit Phase 7 terminal marker anchors used for per-player runtime icon spawning.
     gadgetInteractableObjIds?: number[]; // Phase 7 gadget/ammo interactables; all ids map to ammo resupply menu.

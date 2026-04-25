@@ -9,14 +9,11 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
                                    //posX      posY      posZ 
         team1Base: mod.CreateVector(-761.869,  133.091,  223.038), team1Name: mod.stringkeys.twl.teams.WEST,
         team2Base: mod.CreateVector( 570.692,  110.205, -232.341), team2Name: mod.stringkeys.twl.teams.EAST,
-        team1MainBaseTriggerId: 501, 
-        team2MainBaseTriggerId: 500, 
-        team1MainBaseBufferTriggerId: 503,
-        team2MainBaseBufferTriggerId: 502, 
-        groundCombatZoneTriggerId: 666, 
-        groundCombatZoneCeilingY: 200, // GroundCombatVolume: points y=100 (floor) + height=100
-        team1VehicleDeploySpawnPointId: 551, 
-        team2VehicleDeploySpawnPointId: 550,
+        team1MainBaseTriggerId: 500, 
+        team2MainBaseTriggerId: 501, 
+        team1MainBaseBufferTriggerId: 502,
+        team2MainBaseBufferTriggerId: 503,
+        groundCombatZoneTriggerId: 666,
         mainBaseInteractableObjIds: [1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015],
         mainBaseInteractableAnchors: [
             { objId: 1000, ownerTeamId: TeamID.Team2, pos: mod.CreateVector(543.660, 114.503, -222.605), vfx: VFX_GREEN_SMOKE, rot: mod.CreateVector(-90, 0, 0) },

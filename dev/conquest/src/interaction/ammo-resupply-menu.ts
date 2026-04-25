@@ -64,9 +64,9 @@ const DEFAULT_GADGET_LOCKER_CONFIG: GadgetLockerConfig = {
         { name: "AssaultLadder", labelKey: STR_UI_ASSAULT_LADDER,   gadget: mod.Gadgets.Misc_Assault_Ladder,         slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 480, teamShared: true, maxCount: 1, iconSize: 36, iconY: IY },
     ],
     launchers: [
-        { name: "RPG",     labelKey: STR_UI_RPG,     gadget: mod.Gadgets.Launcher_Unguided_Rocket },
-        { name: "AT4",     labelKey: STR_UI_AT4,     gadget: mod.Gadgets.Launcher_Aim_Guided, pool: { maxCount: 4, rechargeSeconds: 180, teamShared: true } },
-        { name: "Stinger", labelKey: STR_UI_STINGER, gadget: mod.Gadgets.Launcher_Air_Defense },
+        { name: "RPG",     labelKey: STR_UI_RPG,     gadget: mod.Gadgets.Launcher_Unguided_Rocket, maxAmmo: 6 },
+        { name: "AT4",     labelKey: STR_UI_AT4,     gadget: mod.Gadgets.Launcher_Aim_Guided,      maxAmmo: 5, pool: { maxCount: 4, rechargeSeconds: 180, teamShared: true } },
+        { name: "Stinger", labelKey: STR_UI_STINGER, gadget: mod.Gadgets.Launcher_Air_Defense,     maxAmmo: 6 },
     ],
     launcherCooldownSeconds: 180,
     ammoCooldownSeconds: 60,
@@ -854,6 +854,17 @@ const ALL_LAUNCHER_VARIANTS: number[] = [
 // then updated on every grant/replace we ourselves service. Replaces the per-click
 // buildLockerSnapshot that flip-flopped across launcher variants. See the plan file
 // sleepy-juggling-thunder for the full rationale.
+// Cheap emptiness precheck: a slot reads 0/0 ammo and is not active. Calling RemoveEquipment
+// on a genuinely empty slot is the most common trigger for the engine "RemoveEquipment" warning
+// (#85 class). Used by every slot-based give* helper to skip the destructive call when the slot
+// is already empty.
+function isSlotEmpty(player: mod.Player, slot: mod.InventorySlots): boolean {
+    let loaded = 0, mag = 0, active = false;
+    try { loaded = mod.GetInventoryAmmo(player, slot); } catch {}
+    try { mag = mod.GetInventoryMagazineAmmo(player, slot); } catch {}
+    try { active = mod.IsInventorySlotActive(player, slot); } catch {}
+    return loaded <= 0 && mag <= 0 && !active;
+}
 function probeSlot(player: mod.Player, slot: mod.InventorySlots): { kind: "unknown" | "empty" | "launcher" | "gadget"; source: "probed" } {
     // Never infer "launcher" from ammo here -- a Supply Crate with 1 charge has loaded===1 and
     // would be falsely labelled as launcher, which then fooled slotWithLauncher/launcherSlotKnown
@@ -905,12 +916,37 @@ function probeLauncherSlot(player: mod.Player): {
         if (owned) { ownedLauncher = L; break; }
     }
     if (ownedLauncher === undefined) return { slot: undefined, gadget: undefined };
-    // Skip when either gadget slot is wielded -- removing the active slot causes a visible
-    // hand-animation glitch. Rare at locker-open since the player usually has primary wielded.
+    // Snapshot which slot the player is wielding so we can ForceSwitchInventory back after the
+    // destructive probe. Removing GadgetOne while it's the active slot auto-switches the player;
+    // the previous "skip if either gadget wielded" bail avoided that animation glitch but left
+    // locker state without kind="launcher", breaking swap-in-place (#90) and ammo lookup (#78).
+    let activeSlotToRestore: mod.InventorySlots | undefined = undefined;
     let g1Active = false, g2Active = false;
     try { g1Active = mod.IsInventorySlotActive(player, mod.InventorySlots.GadgetOne); } catch {}
     try { g2Active = mod.IsInventorySlotActive(player, mod.InventorySlots.GadgetTwo); } catch {}
-    if (g1Active || g2Active) return { slot: undefined, gadget: undefined };
+    if (g1Active) activeSlotToRestore = mod.InventorySlots.GadgetOne;
+    else if (g2Active) activeSlotToRestore = mod.InventorySlots.GadgetTwo;
+    // Short-circuit when we can prove slot 1 is empty WITHOUT confusing it with a launcher
+    // that simply has 0 ammo. A launcher with 0 ammo also reads 0/0/inactive, so the previous
+    // "slot1 empty -> launcher must be in slot 2" inference clobbered the wrong slot when the
+    // launcher was actually in slot 1 with no ammo (last shot fired). Discriminator: if slot 2
+    // is populated (any ammo) or active, slot 2 is holding the launcher and slot 1 is genuinely
+    // empty -> safe short-circuit. If both slots read empty/inactive, the launcher (at 0 ammo)
+    // could be in either slot -- only the destructive probe can tell.
+    let slot1Loaded = 0, slot1Mag = 0;
+    try { slot1Loaded = mod.GetInventoryAmmo(player, mod.InventorySlots.GadgetOne); } catch {}
+    try { slot1Mag = mod.GetInventoryMagazineAmmo(player, mod.InventorySlots.GadgetOne); } catch {}
+    const slot1Empty = slot1Loaded <= 0 && slot1Mag <= 0 && !g1Active;
+    if (slot1Empty) {
+        let slot2Loaded = 0, slot2Mag = 0;
+        try { slot2Loaded = mod.GetInventoryAmmo(player, mod.InventorySlots.GadgetTwo); } catch {}
+        try { slot2Mag = mod.GetInventoryMagazineAmmo(player, mod.InventorySlots.GadgetTwo); } catch {}
+        const slot2Populated = slot2Loaded > 0 || slot2Mag > 0 || g2Active;
+        if (slot2Populated) {
+            return { slot: mod.InventorySlots.GadgetTwo, gadget: ownedLauncher };
+        }
+        // Both slots read empty -- launcher must be in one with 0 ammo. Fall through to probe.
+    }
     const before: { gadget: number; had: boolean }[] = [];
     for (let i = 0; i < ENGINEER_GADGET_CANDIDATES.length; i++) {
         const g = ENGINEER_GADGET_CANDIDATES[i];
@@ -919,6 +955,9 @@ function probeLauncherSlot(player: mod.Player): {
         before.push({ gadget: g, had });
     }
     try { mod.RemoveEquipment(player, mod.InventorySlots.GadgetOne); } catch {
+        if (activeSlotToRestore !== undefined) {
+            try { mod.ForceSwitchInventory(player, activeSlotToRestore); } catch {}
+        }
         return { slot: undefined, gadget: undefined };
     }
     let removedFromSlot1: number | undefined = undefined;
@@ -937,11 +976,23 @@ function probeLauncherSlot(player: mod.Player): {
     // so downstream falls back to the heuristic rather than trust wrong authoritative state.
     if (multipleFlips) {
         try { mod.AddEquipment(player, ownedLauncher, mod.InventorySlots.GadgetOne); } catch {}
+        try { mod.SetInventoryAmmo(player, mod.InventorySlots.GadgetOne, slot1Loaded); } catch {}
+        try { mod.SetInventoryMagazineAmmo(player, mod.InventorySlots.GadgetOne, slot1Mag); } catch {}
+        if (activeSlotToRestore !== undefined) {
+            try { mod.ForceSwitchInventory(player, activeSlotToRestore); } catch {}
+        }
         return { slot: undefined, gadget: undefined };
     }
     // Restore the removed gadget to slot 1. If nothing flipped, slot 1 was empty -- no restore.
+    // AddEquipment seeds default ammo, so re-apply the pre-probe ammo snapshot to avoid
+    // silently topping the player off (RPG with 2 ammo would otherwise come back with 3).
     if (removedFromSlot1 !== undefined) {
         try { mod.AddEquipment(player, removedFromSlot1, mod.InventorySlots.GadgetOne); } catch {}
+        try { mod.SetInventoryAmmo(player, mod.InventorySlots.GadgetOne, slot1Loaded); } catch {}
+        try { mod.SetInventoryMagazineAmmo(player, mod.InventorySlots.GadgetOne, slot1Mag); } catch {}
+    }
+    if (activeSlotToRestore !== undefined) {
+        try { mod.ForceSwitchInventory(player, activeSlotToRestore); } catch {}
     }
     // Launcher vanished from slot 1 -> launcher was in slot 1. Otherwise it must be in slot 2.
     const launcherSlot = removedFromSlot1 === ownedLauncher
@@ -989,6 +1040,16 @@ function slotWithLauncher(slotsState: any): mod.InventorySlots | undefined {
     if (!slotsState) return undefined;
     if (slotsState.g1.kind === "launcher") return mod.InventorySlots.GadgetOne;
     if (slotsState.g2.kind === "launcher") return mod.InventorySlots.GadgetTwo;
+    return undefined;
+}
+// Returns the per-launcher ammo cap (loaded + magazine) for the gadget id, or undefined if
+// no cap is configured. Used to dim the launcher ammo tile when the player is at max.
+function launcherMaxAmmoFor(gadgetId: number | undefined): number | undefined {
+    if (gadgetId === undefined) return undefined;
+    const launchers = ACTIVE_GADGET_CONFIG.launchers;
+    for (let i = 0; i < launchers.length; i++) {
+        if (launchers[i].gadget === gadgetId) return launchers[i].maxAmmo;
+    }
     return undefined;
 }
 function ownedByLockerState(slotsState: any, gadgetId: number): boolean {
@@ -1083,15 +1144,57 @@ function giveLauncher(eventPlayer: mod.Player, gadget: number, pid: number, fall
     // a Supply Crate in the sibling slot) so the previous launcher-id sweep is removed. The
     // probe at menu-open keeps `targetSlot` pointed at the real launcher slot, so this
     // slot-based remove clears the existing launcher without touching the sibling slot.
-    try { mod.RemoveEquipment(eventPlayer, targetSlot); } catch {}
+    if (!isSlotEmpty(eventPlayer, targetSlot)) {
+        try { mod.RemoveEquipment(eventPlayer, targetSlot); } catch {}
+    }
     try {
         mod.AddEquipment(eventPlayer, gadget, targetSlot);
     } catch {
         return false;
     }
-    try { mod.SetInventoryAmmo(eventPlayer, targetSlot, preserveLoaded); } catch {}
-    try { mod.SetInventoryMagazineAmmo(eventPlayer, targetSlot, preserveMag); } catch {}
-    recordPlacement(pid, targetSlot, gadget, "launcher");
+    // Verify the give actually landed. If a different launcher is still equipped, the slot-based
+    // RemoveEquipment above silently failed (Portal API can no-op without throwing) and the new
+    // launcher ended up in the sibling slot, leaving us with two launchers (#90). Sweep stale
+    // launchers by id and re-record state from a fresh probe so swap-in-place stays accurate.
+    let verified = false;
+    try { verified = mod.HasEquipment(eventPlayer, gadget); } catch {}
+    if (!verified) return false;
+    // Sweep stale launcher variants by id. The slot-based RemoveEquipment above may have
+    // silently no-op'd, leaving a prior launcher in the sibling slot.
+    for (let i = 0; i < ALL_LAUNCHER_VARIANTS.length; i++) {
+        const L = ALL_LAUNCHER_VARIANTS[i];
+        if (L === gadget) continue;
+        let stillHas = false;
+        try { stillHas = mod.HasEquipment(eventPlayer, L); } catch {}
+        if (!stillHas) continue;
+        try { mod.RemoveEquipment(eventPlayer, L); } catch {}
+    }
+    // Pre-write a sentinel ammo value on targetSlot so the probe's slot-1-empty short-circuit
+    // does not mis-fire on a freshly added launcher whose magazine read may be 0. The real
+    // preserveLoaded value overwrites this after the probe identifies the authoritative slot.
+    try { mod.SetInventoryAmmo(eventPlayer, targetSlot, 1); } catch {}
+    // Re-probe to learn the authoritative slot the launcher actually landed in. The sweep
+    // above (or the original RemoveEquipment no-op) can leave the launcher in the sibling
+    // slot; we must SetInventoryAmmo on the slot that actually holds the launcher, not the
+    // slot we asked AddEquipment to use.
+    let actualSlot: mod.InventorySlots = targetSlot;
+    const fresh = probeLauncherSlot(eventPlayer);
+    if (fresh.slot !== undefined) {
+        actualSlot = fresh.slot;
+    }
+    try { mod.SetInventoryAmmo(eventPlayer, actualSlot, preserveLoaded); } catch {}
+    try { mod.SetInventoryMagazineAmmo(eventPlayer, actualSlot, preserveMag); } catch {}
+    recordPlacement(pid, actualSlot, gadget, "launcher");
+    // Downgrade the sibling slot if state still flags it as a launcher -- the swap-source slot
+    // may now be empty after the sweep.
+    const slotsAfter = State.players.lockerSlots[pid];
+    if (slotsAfter) {
+        const sibling = actualSlot === mod.InventorySlots.GadgetOne ? slotsAfter.g2 : slotsAfter.g1;
+        if (sibling.kind === "launcher") {
+            sibling.kind = sibling.gadget ? "gadget" : "unknown";
+            sibling.source = "probed";
+        }
+    }
     return true;
 }
 function giveMedicSmoke(eventPlayer: mod.Player): boolean {
@@ -1103,9 +1206,9 @@ function giveMedicSmoke(eventPlayer: mod.Player): boolean {
     } catch {}
     if (hasSmoke) return false;
     // Callins slot -- not modelled in lockerSlots state; HasEquipment is canonical here.
-    try {
-        mod.RemoveEquipment(eventPlayer, mod.InventorySlots.Callins);
-    } catch {}
+    if (!isSlotEmpty(eventPlayer, mod.InventorySlots.Callins)) {
+        try { mod.RemoveEquipment(eventPlayer, mod.InventorySlots.Callins); } catch {}
+    }
     try {
         mod.AddEquipment(eventPlayer, smokeGadget, mod.InventorySlots.Callins);
     } catch {}
@@ -1143,10 +1246,14 @@ function giveAssaultItem(
     // Gadget-id sweep: removes any existing copy in any slot before we place. Mirrors the
     // launcher-variant sweep in giveLauncher. Intended to catch class-loadout gadgets that
     // HasEquipment can't see (e.g. class C4 in GadgetOne while tile targets GadgetTwo).
-    try { mod.RemoveEquipment(eventPlayer, gadget); } catch {}
-    try {
-        mod.RemoveEquipment(eventPlayer, targetSlot);
-    } catch {}
+    let hasGadget = false;
+    try { hasGadget = mod.HasEquipment(eventPlayer, gadget); } catch {}
+    if (hasGadget) {
+        try { mod.RemoveEquipment(eventPlayer, gadget); } catch {}
+    }
+    if (!isSlotEmpty(eventPlayer, targetSlot)) {
+        try { mod.RemoveEquipment(eventPlayer, targetSlot); } catch {}
+    }
     try {
         mod.AddEquipment(eventPlayer, gadget, targetSlot);
     } catch {
@@ -1184,10 +1291,14 @@ function giveReconItem(
     // Gadget-id sweep: removes any existing copy in any slot before we place. Mirrors the
     // launcher-variant sweep in giveLauncher -- class C4 / Drone in the non-target slot would
     // otherwise produce a double-equip when HasEquipment misses the class variant.
-    try { mod.RemoveEquipment(eventPlayer, gadget); } catch {}
-    try {
-        mod.RemoveEquipment(eventPlayer, targetSlot);
-    } catch {}
+    let hasGadget = false;
+    try { hasGadget = mod.HasEquipment(eventPlayer, gadget); } catch {}
+    if (hasGadget) {
+        try { mod.RemoveEquipment(eventPlayer, gadget); } catch {}
+    }
+    if (!isSlotEmpty(eventPlayer, targetSlot)) {
+        try { mod.RemoveEquipment(eventPlayer, targetSlot); } catch {}
+    }
     try {
         mod.AddEquipment(eventPlayer, gadget, targetSlot);
     } catch {
@@ -1224,20 +1335,34 @@ function giveRocketCharge(eventPlayer: mod.Player, pid: number): boolean {
     try {
         magAmmo = Math.max(0, mod.GetInventoryMagazineAmmo(eventPlayer, slot));
     } catch {}
-    if (ammo <= 0) {
-        try {
-            mod.SetInventoryAmmo(eventPlayer, slot, 1);
-        } catch {
-            return false;
-        }
-        return true;
+    // Cap defense: belt-and-braces against a click that races the UI refresh's atCap gate.
+    const launcherGadget = slot === mod.InventorySlots.GadgetOne ? slotsState.g1.gadget : slotsState.g2.gadget;
+    const maxAmmo = launcherMaxAmmoFor(launcherGadget);
+    if (maxAmmo !== undefined && (ammo + magAmmo) >= maxAmmo) return false;
+    const totalBefore = ammo + magAmmo;
+    const usedChamberPath = ammo <= 0;
+    if (usedChamberPath) {
+        try { mod.SetInventoryAmmo(eventPlayer, slot, 1); } catch { return false; }
+    } else {
+        try { mod.SetInventoryMagazineAmmo(eventPlayer, slot, magAmmo + 1); } catch { return false; }
     }
-    try {
-        mod.SetInventoryMagazineAmmo(eventPlayer, slot, magAmmo + 1);
-    } catch {
-        return false;
+    // Read-back verify: the launcher API can silently no-op a chamber/magazine write right
+    // after a fire or probe (engine auto-reload races with our write). If the total didn't
+    // move, retry via the other path once. Cap-safe because the up-front gate ensures
+    // totalBefore + 1 <= maxAmmo.
+    let verifyLoaded = 0, verifyMag = 0;
+    try { verifyLoaded = Math.max(0, mod.GetInventoryAmmo(eventPlayer, slot)); } catch {}
+    try { verifyMag = Math.max(0, mod.GetInventoryMagazineAmmo(eventPlayer, slot)); } catch {}
+    if (verifyLoaded + verifyMag > totalBefore) return true;
+    if (usedChamberPath) {
+        try { mod.SetInventoryMagazineAmmo(eventPlayer, slot, verifyMag + 1); } catch {}
+    } else {
+        try { mod.SetInventoryAmmo(eventPlayer, slot, verifyLoaded + 1); } catch {}
     }
-    return true;
+    let finalLoaded = 0, finalMag = 0;
+    try { finalLoaded = Math.max(0, mod.GetInventoryAmmo(eventPlayer, slot)); } catch {}
+    try { finalMag = Math.max(0, mod.GetInventoryMagazineAmmo(eventPlayer, slot)); } catch {}
+    return (finalLoaded + finalMag) > totalBefore;
 }
 function updateArmMenu(eventPlayer: mod.Player): void {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
@@ -1945,12 +2070,21 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     const toggleState = State.players.lockerSlotToggle[pid];
     if (cache.st && toggleState) {
         const currentClassIdx = getPlayerClassHdrIndex(eventPlayer);
+        const launcherSlot = slotWithLauncher(slotsState);
+        const launcherSlotNumber = launcherSlot === mod.InventorySlots.GadgetOne ? 1 : 2;
         for (let i = 0; i < 4; i++) {
             const row = cache.st[i];
             if (!row) continue;
             const choice = toggleState.slotByClass[i];
-            safeSetUITextLabel(row.label, mod.Message(STR_UI_GADGET_SLOT_LABEL, choice));
-            const enabled = i === currentClassIdx;
+            // Engineer row locks to "Launcher in Slot N" once a launcher is equipped -- visual
+            // confirmation that probe-based slot detection is authoritative and the slot is fixed.
+            const lockedByLauncher = i === 1 && launcherSlot !== undefined;
+            if (lockedByLauncher) {
+                safeSetUITextLabel(row.label, mod.Message(STR_UI_LAUNCHER_IN_SLOT, launcherSlotNumber));
+            } else {
+                safeSetUITextLabel(row.label, mod.Message(STR_UI_GADGET_SLOT_LABEL, choice));
+            }
+            const enabled = i === currentClassIdx && !lockedByLauncher;
             const btnAlpha = enabled ? BUTTON_OPACITY_BASE : DIS_A;
             const borderAlpha = enabled ? BUTTON_BORDER_OPACITY : DIS_A;
             if (row.prev) {
@@ -2147,10 +2281,25 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     }
     const ammoCount = Math.max(0, Math.min(cfg.ammoMaxCharges, launch.aC));
     const ammoRemaining = Math.max(0, launch.aN - now);
+    // Per-launcher cap gate: when the launcher slot is at max ammo (loaded + magazine), dim the
+    // tile so charges aren't wasted on no-op increments. Caps are configured per-launcher in
+    // ACTIVE_GADGET_CONFIG (RPG=6, AT4=5, Stinger=6); omitting maxAmmo skips the gate.
+    let atCap = false;
+    if (launcherSlotKnown) {
+        const launcherSlot = slotWithLauncher(slotsState)!;
+        const launcherGadget = launcherSlot === mod.InventorySlots.GadgetOne ? slotsState.g1.gadget : slotsState.g2.gadget;
+        const maxAmmo = launcherMaxAmmoFor(launcherGadget);
+        if (maxAmmo !== undefined) {
+            let loaded = 0, mag = 0;
+            try { loaded = Math.max(0, mod.GetInventoryAmmo(eventPlayer, launcherSlot)); } catch {}
+            try { mag = Math.max(0, mod.GetInventoryMagazineAmmo(eventPlayer, launcherSlot)); } catch {}
+            atCap = (loaded + mag) >= maxAmmo;
+        }
+    }
     // Ammo enabled only when state says a launcher slot exists. giveRocketCharge refuses when
     // slotWithLauncher is undefined, so we must not render a "ready" tile that would consume
     // a charge for nothing.
-    const ammoEnabled = isEngineerClass && ammoCount > 0 && launcherSlotKnown && !gadgetBlocked;
+    const ammoEnabled = isEngineerClass && ammoCount > 0 && launcherSlotKnown && !gadgetBlocked && !atCap;
     const ammoOverlayMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, ammoCount);
     {
         const sig = [

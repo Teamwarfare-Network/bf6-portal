@@ -111,7 +111,8 @@ if (eofFooter) {
 }
 
 // 10. Strip full-line comments from the emitted bundle to preserve headroom.
-src = src.replace(/^[ \t]*\/\/.*\n/gm, "");
+//     Preserve TS directive comments (@ts-nocheck / @ts-ignore / @ts-expect-error).
+src = src.replace(/^[ \t]*\/\/(?!\s*@ts-(?:nocheck|ignore|expect-error)\b).*\n/gm, "");
 src = src.replace(/\n{3,}/g, "\n\n");
 
 // 10b. Dead-code strip: remove code guarded by false compile-time flags.
@@ -235,19 +236,7 @@ if (fs.existsSync(footerSourcePath)) {
   const footerMatch = footerSource.match(/^\/\/ EOF version: .+$/m);
   footerVersionLine = footerMatch ? footerMatch[0] : "";
 }
-let modlibIgnoreLine = "";
-if (fs.existsSync(modlibSourcePath)) {
-  const modlibSource = fs.readFileSync(modlibSourcePath, "utf8").replace(/\r\n/g, "\n");
-  const modlibIgnoreMatch = modlibSource.match(/^\/\/ @ts-ignore - ignores error on Portal webclient with importing modlib$/m);
-  modlibIgnoreLine = modlibIgnoreMatch ? modlibIgnoreMatch[0] : "";
-}
 src = `${headerVersionLine ? `${headerVersionLine}\n` : ""}${src.replace(/^\n+/, "")}`;
-if (modlibIgnoreLine) {
-  src = src.replace(
-    /^import \* as modlib from "modlib";$/m,
-    `${modlibIgnoreLine}\nimport * as modlib from "modlib";`
-  );
-}
 if (footerVersionLine) {
   src = src.replace(/\n+$/, "\n") + footerVersionLine + "\n";
 }

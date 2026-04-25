@@ -32,9 +32,42 @@ interface ClockWidgetCacheEntry {
     lastDisplayedSeconds?: number;
 }
 
+// Drives HUD repaint from the countdown's drift-corrected integer-second tick.
+// Keeps pausedRemainingSeconds shadow in sync for external readers (capture-tickets
+// viewmodel, interaction/actions local render path).
+function onClockSecond(currentSeconds: number): void {
+    try {
+        if (State.round.clock.isPaused) {
+            State.round.clock.pausedRemainingSeconds = Math.max(0, Math.floor(currentSeconds));
+        }
+        updateAllPlayersClock();
+    } catch {}
+}
+
+// Fires registered expiry handlers exactly once when the countdown reaches zero.
+// endMatch() sets expiryFired=true directly to prevent re-entry during match end.
+function onClockComplete(): void {
+    try {
+        if (State.round.clock.expiryFired) return;
+        State.round.clock.expiryFired = true;
+        for (let i = 0; i < State.round.clock.expiryHandlers.length; i++) {
+            try { State.round.clock.expiryHandlers[i](); } catch {}
+        }
+        updateAllPlayersClock();
+    } catch {}
+}
+
 // Resets live clock runtime to the provided duration and clears pause/expiry markers.
+// Allocates a fresh Clocks.CountDownClock and starts it; onSecond drives per-player paint.
 function resetMatchClock(seconds: number): void {
     const clampedSeconds = Math.max(0, Math.floor(seconds));
+
+    State.round.clock.countdown = new Clocks.CountDownClock(clampedSeconds, {
+        onSecond: onClockSecond,
+        onComplete: onClockComplete,
+    });
+    State.round.clock.countdown.start();
+
     State.round.clock.durationSeconds = clampedSeconds;
     State.round.clock.matchLengthSeconds = clampedSeconds;
     State.round.clock.matchStartElapsedSeconds = Math.floor(mod.GetMatchTimeElapsed());
@@ -47,9 +80,16 @@ function resetMatchClock(seconds: number): void {
     State.round.clock.lastLowTimeState = undefined;
 }
 
-// Sets a paused pre-live clock preview without starting elapsed-time tracking.
+// Sets a paused pre-live clock preview. Allocates a countdown but does NOT start it;
+// isPaused=!isRunning&&!isComplete returns true, and .seconds returns the full duration.
 function setMatchClockPreview(seconds: number): void {
     const clampedSeconds = clampMatchLengthSeconds(seconds);
+
+    State.round.clock.countdown = new Clocks.CountDownClock(clampedSeconds, {
+        onSecond: onClockSecond,
+        onComplete: onClockComplete,
+    });
+
     State.round.clock.durationSeconds = clampedSeconds;
     State.round.clock.matchLengthSeconds = clampedSeconds;
     State.round.clock.matchStartElapsedSeconds = undefined;
@@ -60,16 +100,16 @@ function setMatchClockPreview(seconds: number): void {
     State.round.clock.lastLowTimeState = undefined;
 }
 
-// Returns current remaining seconds from paused state or live elapsed-time state.
+// Returns current remaining seconds as integer (floor) from the countdown.
+// Falls back to paused shadow for early-boot state where countdown is not yet initialized.
 function getRemainingSeconds(): number {
+    const countdown = State.round.clock.countdown;
+    if (countdown) return Math.max(0, Math.floor(countdown.seconds));
+
     if (State.round.clock.isPaused) {
         return Math.max(0, State.round.clock.pausedRemainingSeconds !== undefined ? State.round.clock.pausedRemainingSeconds : 0);
     }
-
-    if (State.round.clock.matchStartElapsedSeconds === undefined) return 0;
-
-    const elapsed = Math.floor(mod.GetMatchTimeElapsed()) - State.round.clock.matchStartElapsedSeconds;
-    return Math.max(0, State.round.clock.durationSeconds - elapsed);
+    return 0;
 }
 
 // Final-minute color pulse is second-boundary based, so sub-second clock updates are unnecessary.
@@ -82,15 +122,35 @@ function isClockCriticalColorPulseLowAtRemaining(remainingSeconds: number): bool
     return (Math.floor(remainingSeconds) % 2) === 0;
 }
 
-// Applies an admin delta to clock duration/remaining values and refresh markers.
+// Applies an admin delta to clock remaining time.
+// CountDownClock.addSeconds(n) increases remaining; subtractSeconds(n) decreases it.
+// If the countdown already completed and we're adding time, re-prime via setDuration+reset+start.
 function adjustMatchClockBySeconds(deltaSeconds: number): void {
     const delta = Math.floor(deltaSeconds);
+    const countdown = State.round.clock.countdown;
 
-    if (State.round.clock.isPaused) {
-        const current = State.round.clock.pausedRemainingSeconds !== undefined ? State.round.clock.pausedRemainingSeconds : 0;
-        State.round.clock.pausedRemainingSeconds = Math.max(0, current + delta);
-        State.round.clock.durationSeconds = Math.max(0, State.round.clock.durationSeconds + delta);
+    if (countdown) {
+        if (countdown.isComplete && delta > 0) {
+            countdown.setDuration(delta);
+            countdown.reset();
+            if (!State.round.clock.isPaused) countdown.start();
+            State.round.clock.durationSeconds = delta;
+        } else if (delta > 0) {
+            countdown.addSeconds(delta);
+            State.round.clock.durationSeconds = Math.max(0, State.round.clock.durationSeconds + delta);
+        } else if (delta < 0) {
+            countdown.subtractSeconds(-delta);
+            State.round.clock.durationSeconds = Math.max(0, State.round.clock.durationSeconds + delta);
+        }
+
+        if (State.round.clock.isPaused) {
+            State.round.clock.pausedRemainingSeconds = Math.max(0, Math.floor(countdown.seconds));
+        }
     } else {
+        if (State.round.clock.isPaused) {
+            const current = State.round.clock.pausedRemainingSeconds !== undefined ? State.round.clock.pausedRemainingSeconds : 0;
+            State.round.clock.pausedRemainingSeconds = Math.max(0, current + delta);
+        }
         State.round.clock.durationSeconds = Math.max(0, State.round.clock.durationSeconds + delta);
     }
 
@@ -119,18 +179,13 @@ function resetMatchClockToDefault(): void {
  */
 
 function updateAllPlayersClock(): void {
-    const fallbackRemaining = (
-        State.round.clock.isPaused || State.round.clock.matchStartElapsedSeconds !== undefined
-    )
-        ? getRemainingSeconds()
+    // Expiry is driven by Clocks.CountDownClock.onComplete (see onClockComplete); no
+    // in-loop expiry trigger is needed. Use countdown.seconds if present, else fall
+    // back to configured match length for early-boot paints before any reset/preview.
+    const countdown = State.round.clock.countdown;
+    const fallbackRemaining = countdown
+        ? Math.max(0, Math.floor(countdown.seconds))
         : getConfiguredMatchLengthSeconds();
-
-    if (!State.round.clock.expiryFired && fallbackRemaining <= 0) {
-        State.round.clock.expiryFired = true;
-        for (let i = 0; i < State.round.clock.expiryHandlers.length; i++) {
-            State.round.clock.expiryHandlers[i]();
-        }
-    }
 
     const fallbackLowTime = fallbackRemaining < LOW_TIME_THRESHOLD_SECONDS;
     const displayRemaining = Math.max(0, Math.floor(fallbackRemaining));
@@ -146,6 +201,13 @@ function updateAllPlayersClock(): void {
     const clockColorIsLow = shouldFlash
         ? isClockCriticalColorPulseLowAtRemaining(displayRemaining)
         : fallbackLowTime;
+
+    if (
+        State.round.clock.lastDisplayedSeconds === displayRemaining &&
+        State.round.clock.lastLowTimeState === clockColorIsLow
+    ) {
+        return;
+    }
 
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);

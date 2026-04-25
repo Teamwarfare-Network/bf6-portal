@@ -1,12 +1,12 @@
 # TWL Conquest Design and Implementation Plan
 
-Last updated: 2026-04-18 (v1.289)
+Last updated: 2026-04-20 (v1.334)
 Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
 
 ## Current Status
 
 - This is the authoritative master design document for TWL Conquest.
-- Accepted current implementation baseline (as of v1.289, 2026-04-18):
+- Accepted current implementation baseline (as of v1.334, 2026-04-20):
   - Phase 1: completed
   - Phase 2A: completed
   - Phase 2B: completed (remaining future validation deferred to Phase 10)
@@ -15,13 +15,17 @@ Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
   - Phase 5A–5G: completed. **The v1.258–v1.259 Vanilla spawner rewrite replaces the Phase 5 deploy-fulfillment / reservations / spawner-sequence modules with one persistent `VehicleSpawner` per slot, a serial `spawnMutex`, event-driven bind via `OnVehicleSpawned`, and `Clocks.CountDownClock` respawn.** All non-Vanilla deploy paths (legacy air-deploy, forward-deploy, HQ-forward, HQ-forward-air) were removed. Remaining polish tracked in Phase 10.
   - Phase 6 (design doc nomenclature): Boundary system completed (functional; remaining tuning in Phase 10).
   - Phase 6 (runtime feature nomenclature — opt-in HQ Deploy mode): completed v1.277–v1.289. `VEHICLE_DEPLOY_METHOD_HQ` selectable from the ready-dialog knob. Player-triggered per-slot spawns with seating via the `OnPlayerDeployed` BountyHunter pattern. On-foot live-terminal seating via undeploy→redeploy (Option C). See `CQ_Feat_Phase6_HQ_Deploy` in `conquest_issues.md` and `src/vehicles/hq-deploy.ts`. **Note:** this runtime-feature label overlaps with the design doc's canonical Phase 6 = Boundary; resolve any ambiguity by context.
+  - **Forward Deploy (v1.328, reintroduction):** checkbox-gated sibling of HQ Deploy. Fresh-build against the single-persistent-spawner pattern; no code ported from pre-v1.259. Spawner relocates via `SetObjectTransform` pre-spawn, vehicle Teleports to ground sample post-seat (see **Post-Seat Vehicle Teleport Pattern** below). Volume sampling in `src/vehicles/forward-spawn-volume.ts`.
+  - **Air Deploy (v1.329, reintroduction):** aircraft mirror of Forward Deploy. Volume sampling with jet/heli altitude split in `src/vehicles/air-spawn-volume.ts`. Yaw preserved via post-bind `mod.Teleport`; **jet pitch (rotPlane.X) is currently lost** — documented polish item. Sister-spawner plan deferred (v1.331 probe disproved spawner-relocate-at-altitude propagation).
+  - **Phase 2a/2b Loadout Fix (v1.333/v1.334):** Forward Deploy and Air Deploy now defer the vehicle `mod.Teleport` until **after** `ForcePlayerToSeat` completes, mirroring HQ Deploy's vehicle-at-pad condition at `DeployPlayer` time. Validated for Forward Deploy at v1.333 playtest (user-confirmed). Air Deploy v1.334 playtest verification pending. See "Post-Seat Vehicle Teleport Pattern" note below the Phase 6 HQ Deploy section.
   - Phase 7: completed (pre-game countdown, staggered delay-line reveals at Y=-420/-380/-340/-300, 4th line for gadget-delay; victory dialog with ticket scoreboard/crown/result line; endMatch winner inference; remaining polish in Phase 10).
   - Phase 8: active — `src/interaction/spawn-selector.ts` + `PlayerSpawner` / `SpawnPlayerFromSpawnPoint` pattern confirmed per memory `project_phase8_spawn_pattern.md`. Authored-spawn + fallback chain work tracked under Phase 8.
   - Phase 9: Custom tab scoreboard + KPI tracking active in `src/kpi/` (kpi-state.ts, scoreboard-tab.ts) with team-equality friendly-fire guard (v1.212, CQ_Bug_56). Score formula CF-38 live.
 - Current open Conquest bug status:
   - See `design_doc/conquest_issues.md` for the active issue list.
   - The 2026-04-18 pass marked CQ_Bug_49 / 52 / 53 / 54 / 55 / `ActiveSpawnSingletonMPRace` as **Obsolete (v1.259 rewrite)** — underlying code paths were deleted wholesale.
-  - Newly added: `CQ_Refactor_Vanilla_Vehicle_Spawner_Rewrite`, `CQ_Refactor_Vehicle_Destroy_Consolidation`, `CQ_Feat_Phase6_HQ_Deploy`, `CQ_Bug_Abrams_Substitution_Transport_Slot_Regression` (open), `CQ_Polish_Respawn_Redeploy_Timer_Audit` (open, deferred to polish).
+  - Newly added (v1.289 cycle): `CQ_Refactor_Vanilla_Vehicle_Spawner_Rewrite`, `CQ_Refactor_Vehicle_Destroy_Consolidation`, `CQ_Feat_Phase6_HQ_Deploy`, `CQ_Bug_Abrams_Substitution_Transport_Slot_Regression` (open), `CQ_Polish_Respawn_Redeploy_Timer_Audit` (open, deferred to polish).
+  - Newly added (v1.290–v1.334 cycle): `CQ_Feat_Forward_Deploy_Reintroduction` (v1.328, resolved pending MP validation), `CQ_Feat_Air_Deploy_Reintroduction` (v1.329, resolved pending MP validation), `CQ_Bug_Air_Deploy_Jet_Position_Regression` (v1.331, resolved by v1.332 revert), `CQ_Bug_Loadout_Not_Respected` (Forward resolved at v1.333, Air resolved-pending-playtest at v1.334), `CQ_Polish_Jet_Pitch_On_Air_Deploy` (deferred polish), `CQ_Bug_RemoveEquipment_JS_Error` (open, polish).
 - Active companion documents:
   - `design_doc/api_checklist.md`
   - `design_doc/conquest_issues.md`
@@ -2423,7 +2427,7 @@ Godot/map prerequisites:
 - current first-pass trigger ids to record in map config:
   - main-base buffer East: `502`
   - main-base buffer West: `503`
-  - ground combat zone: `666`
+  - ground combat zone: `666` (reserved; **not enforced by script as of v1.351** — see Ground combat zone section below)
 - current Firestorm support ids now separate boundary and deploy ownership cleanly:
   - Team 2 vehicle-deploy spawn point: `550`
   - Team 1 vehicle-deploy spawn point: `551`
@@ -2449,20 +2453,35 @@ Boundary / zone contract:
     - show a warning prompt telling the player to leave within `3` seconds
     - if the player remains inside after `3` seconds, kill the player
   - exact warning-prompt UI is deferred for later design, but the timer/kill rule is locked here
-- Ground combat zone:
-  - this is new and must be added to map config per map
-  - its first-pass area-trigger id is `666`
-  - grounded classification rule:
-    - if a player is not in an aircraft, the player is `grounded`
-    - grounded includes on-foot players and players in non-aircraft vehicles
-    - aircraft means helicopter or plane; this should reuse the same authoritative aircraft-type list already used by the vehicle spawn/bind code so the classification does not drift
-    - skydiving still counts as grounded
-  - Godot-authored trigger geometry owns the vertical containment for the ground combat area
-  - grounded players must remain inside the ground combat zone at all times
-  - on leaving or remaining outside the ground combat zone while grounded:
-    - show a warning prompt telling the player to return within `10` seconds
-    - if the player remains outside after `10` seconds, kill the player
-  - warning-prompt behavior is now specified in `design_doc/phase6_boundary_prompt_spec.md`; the timer/kill rule remains locked here
+- Ground combat zones (v1.370 — single-source-of-truth zone + seat tracker):
+  - **Live-play safe ground zone for foot + ground vehicles = own HQ UNION own buffer UNION GroundCombatVolume.** HQ and ground polygons do NOT overlap; buffer overlaps with the ground polygon. Aircraft are exempt from the script GCZ entirely.
+  - Spatial geometry:
+    - `CombatArea.CombatVolume` = `AirCombatVolume` (large air polygon). The engine's vanilla "Leaving Combat Area" grey-zone applies only at the **outer** edge of AirCombatVolume — the aircraft OOB fence.
+    - `GroundAreaTrigger` (ObjId `666`) wraps `GroundCombatVolume` (small ground play polygon).
+    - Own HQ triggers (Firestorm, after the v1.364 swap to match the spatial): `500` (T1 / West), `501` (T2 / East). Buffer triggers: `502` (T1 / West), `503` (T2 / East). Authoritative source is the map config in `src/config/maps/operation-firestorm.ts`; gameplay reads via `getMainBaseTriggerIdForTeam` / `getMainBaseBufferTriggerIdForTeam` getters.
+    - **AreaTriggers must be enabled** at game-mode start via `mod.EnableAreaTrigger(trigger, true)` (CQ_Feat_AreaTrigger_Enable, v1.367). Without this the engine does not deliver enter/exit events. `enableBoundaryAreaTriggers()` in `boundary/enforcement.ts` handles this for all five boundary triggers.
+  - **Foot players** outside the safe ground zone → custom "YOU ARE OUT OF BOUNDS; RETURN NOW!" HUD + alarm + 10s kill countdown. Same treatment for foot players above `AIRCRAFT_BAIL_CEILING_Y` (Y=200), since trigger 666 is XZ-clipped.
+  - **Non-aircraft vehicle occupants** (tanks, bradleys, CV90, Marauder, jeeps, bikes, quads, IFVs, naval) outside the safe ground zone → same custom OOB.
+  - **Aircraft occupants** → exempt from script GCZ via `state.seatKind === "aircraft"`. They operate freely across the full `CombatArea/AirCombatVolume`. The engine grey-zone at that polygon's outer edge is the only OOB they see.
+  - **Per-player state — `PlayerZoneState`** at `State.round.boundary.zoneStateByPid[pid]`: five zone booleans (`inOwnHQ`, `inOwnBuffer`, `inGCZ`, `inEnemyHQ`, `inEnemyBuffer`) plus a `seatKind: "on_foot" | "ground_vehicle" | "aircraft"` field. Single writer per slice:
+    - Zone booleans owned exclusively by `updateZoneStateOnTriggerTransition` (called from `OnPlayerEnter/ExitAreaTrigger`). `inOwnHQ` is mirrored to legacy `State.players.inMainBaseByPid` for downstream consumers (`world-interactables.ts`, `takeoff-gating.ts`).
+    - `seatKind` owned exclusively by `setPlayerSeatKind` (called from `OnPlayerEnterVehicle` / `OnPlayerExitVehicle`, plus the deploy seed). Vehicle classification at the event boundary uses `classifyVehicleSeatKind(vehicle)` — looks up `slot.vehicleType` via `vehicleToSlot` and routes to the pure-JS `isAircraftVehicleType(enum)` switch in `vehicles/vehicle-classification.ts`. **Does NOT use `mod.CompareVehicleName`** (documented unreliable per CQ_Bug_43).
+  - **Classifier `getDesiredBoundaryViolationKind` is a pure read** of zone state + seatKind. The only remaining engine call is `safeGetSoldierStateVector` for the on-foot Y-ceiling check.
+  - Spawn-time seed (`resetPlayerBoundaryStateOnDeploy` → `seedZoneStateFromSpawnContext`):
+    1. **Slot-claim deploy** (HQ / Forward / Air buttons) — read `slot.pendingSpawnMode` + `slot.vehicleType`. Set zones and seatKind directly.
+    2. **No slot, on-foot or pax-seat** — one-shot `mod.GetSoldierState(IsInVehicle)` probe → if seated, `classifyVehicleSeatKind`; otherwise `seatKind = "on_foot"`.
+    3. **Squad spawn (v1.370)** — find nearest deployed teammate within `SQUAD_SPAWN_PROXIMITY_RADIUS_METERS` (25m) via `tryInheritZonesFromNearbyTeammate`. Copy `inOwnBuffer` / `inGCZ` / `inEnemyHQ` / `inEnemyBuffer` from teammate's cached state. Skip if teammate still in own deploy grace window.
+    4. **HQ anchor probe** — `inOwnHQ` is always set by `isPlayerWithinOwnMainBaseAnchorRadius` (independent reliable signal; not inherited from teammate to avoid HQ-edge mismatch).
+  - 1.5s grace window via `deployedAtSecondsByPid` covers any settle period after deploy.
+  - Deploy scenarios (post-grace):
+    - HQ deploy (on foot): inOwnHQ=true → safe (own-HQ short-circuit, even if outside trigger 666).
+    - HQ Deploy slot (heli): seatKind=aircraft → exempt regardless of zone.
+    - Forward deploy (vehicle): seatKind=ground_vehicle, inOwnBuffer=true and inGCZ=true → safe.
+    - Air deploy (in aircraft): seatKind=aircraft → exempt regardless of zone.
+    - Squad spawn (foot): inherits zone flags from nearest deployed teammate within 25m.
+  - HQ-back-walk: trigger 500/501 exit event sets `inOwnHQ=false`; classifier returns `"ground_combat_zone"` (live) or `"prelive_main_base"` (pre-live) within 1s.
+  - Pilot bail outside GCZ: `OnPlayerExitVehicle` fires → `setPlayerSeatKind(player, "on_foot")` → classifier reaches the safe-ground check, returns `"ground_combat_zone"`.
+  - Historical context: SDK `Set*AllowedInSurroundingArea` v1.345–v1.356 did not exempt aircraft on this runtime (`design_doc/custom_gcz_restore_plan_2026-04-24.md`). v1.358–v1.359 patches failed because boundary state was scattered (`design_doc/zone_tracker_refactor_plan_2026-04-25.md` — v1.360 refactor). v1.367 enabled the AreaTriggers (`CQ_Feat_AreaTrigger_Enable`). v1.369 cached seatKind at events (`design_doc/event_driven_seat_state_plan_2026-04-25.md`). v1.370 added squad-spawn zone inheritance (`design_doc/squad_spawn_zone_inheritance_plan_2026-04-25.md`).
 - Phase-state hooks:
   - before the match is live:
     - players may not leave their own main base
@@ -3179,7 +3198,7 @@ Algorithm:
 
 ##### Main Base Spawns
 
-**Low priority for first pass.** Main base spawns currently use the engine's default spawn behavior, which is acceptable for V1. The existing `team1VehicleDeploySpawnPointId` / `team2VehicleDeploySpawnPointId` in map config handle vehicle direct-spawn deployment.
+**Low priority for first pass.** Main base spawns currently use the engine's default spawn behavior, which is acceptable for V1. (Note: `team1/2VehicleDeploySpawnPointId` map-config fields and the `getVehicleDeploySpawnPointIdForTeam` getter were dead since v1.152 and removed in v1.363 — the v1.259 Vanilla spawner rewrite no longer uses spawn-point forcing.)
 
 If main base spawn control becomes needed later, the same pattern applies: author PlayerSpawner objects in main base, add IDs to map config, and route through `conquestSelectSpawnPoint` with a `"main_base"` flag type.
 
@@ -3740,24 +3759,24 @@ None
 
 ## Codebase Reference Map
 
-Last updated: v1.289 (2026-04-18)
+Last updated: v1.334 (2026-04-20)
 
 ### Project Stats
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.289 |
-| Source files | 119 .ts files + 1 .json |
-| Total source lines | 29,447 |
-| Bundle size (script) | 968,479 bytes |
-| Bundle size (strings) | 20,816 bytes |
+| Version | 1.370 |
+| Source files | 121 .ts files + 1 .json |
+| Bundle size (script) | **1,032,490 bytes** |
+| Bundle size (strings) | ~20,900 bytes |
 | Bundle limit | 1,048,576 bytes (1 MiB) — applies to script only |
-| Headroom | 80,097 bytes (7.64%) |
-| Entry point | `src/index.ts` -> 22 Portal event handlers |
+| Headroom | **16,086 bytes (1.53%)** |
+| Headroom with FEATURE_ADMIN_PANEL=true (last measured v1.334) | **−3,536 bytes (OVER cap)** — likely worse now given +9K added since v1.334 |
+| Entry point | `src/index.ts` -> 20 Portal event handlers |
 | Build pipeline | `prebuild.js` -> `bf6-portal-bundler` -> `postbuild.js` -> `verify.js` |
 | Build output | `dist/bundle.ts` + `dist/bundle.strings.json` |
 
-Net size trend: v1.221 was 998,868 bytes (49,708 / 4.74% headroom). The v1.259 spawner rewrite, which deleted `deploy-fulfillment.ts` / `reservations.ts` / `spawner-sequence.ts` / `spawner-bind.ts` / `spawner-slots.ts` / `spawner-bootstrap.ts` (~50K source) and substituted `vanilla-spawner.ts` (~25K) + `hq-deploy.ts` (~13K) accounts for most of the subsequent reclaim. Flipping `FEATURE_ADMIN_PANEL` to `false` removed another ~20–25K.
+Net size trend: v1.289 was 968,479 bytes (7.64% headroom). The v1.290–v1.370 feature arc consumed ~64K: gadget locker + launcher-slot probe (v1.290–v1.313), Forward Deploy + Air Deploy (v1.328/v1.329, ~15K), Phase 2a/2b loadout fix (v1.333/v1.334), match-clock migration to `Clocks.CountDownClock` (v1.337/v1.338, +1.3K), zone-state architecture (v1.358–v1.370, ~+5K net after deletions). Headroom is now at **1.53%** — well below the v1.010 floor of 2.2%. **Bundle pressure is critical** — new features must offset by deletion. Admin Panel re-enable remains blocked. See `design_doc/conquest_optimization_analysis.md` for reclaim levers (note: that doc is itself stale at v1.338 baseline; refresh pending).
 
 #### Compile-Time Feature Flags
 
@@ -3770,7 +3789,7 @@ Feature flags in `src/config/conquest-constants.ts` control file-level bundle ex
 | `FEATURE_JOIN_PROMPT` | `false` | 3 stub files | ~0 | Future tip/prompt features |
 | `FEATURE_POSITION_DEBUG` | `false` | `hud/position-debug.ts` | ~18.6K source | Coordinate display (standalone file) |
 
-All feature flags are currently `false` in the shipped v1.289 bundle. Flip back to `true` for live admin/diagnostic tuning as needed. The loading overlay (`src/ready-dialog/loading-overlay.ts`) is always included regardless of flags. `FEATURE_JOIN_PROMPT` controls only future tip/prompt extensions.
+All feature flags are currently `false` in the shipped v1.334 bundle. Flip back to `true` for live admin/diagnostic tuning as needed. The loading overlay (`src/ready-dialog/loading-overlay.ts`) is always included regardless of flags. `FEATURE_JOIN_PROMPT` controls only future tip/prompt extensions. **NOTE (v1.334):** empirical measurement confirmed `FEATURE_ADMIN_PANEL=true` costs +28,635 bundle bytes; with current v1.334 baseline this exceeds the 1 MiB cap by 3,536 bytes. Re-enabling admin panel requires offsetting reclaims — see `design_doc/conquest_optimization_analysis.md`.
 
 #### Bundle Size Notes
 
@@ -3899,10 +3918,12 @@ src/
     registration.ts           -- Vehicle team registry, base team inference (2.3K)
     ownership.ts              -- Seat-to-player ownership tracking (2.7K)
     timers.ts                 -- Vehicle respawn timer tracking (shared helpers used by vanilla-spawner) (1.0K)
-    vanilla-spawner.ts        -- Vanilla mode spawner (v1.258–v1.259 rewrite). One persistent VehicleSpawner per slot; serial spawnMutex dispatches ForceVehicleSpawnerSpawn; OnVehicleSpawned bind via bindSpawnedVehicleToExpectingSlot; Clocks.CountDownClock respawn; canonical sinkAndDestroyVehicle destroy wrapper (v1.276). (~565 lines | 25.2K)
-    hq-deploy.ts              -- Phase 6 HQ Deploy (v1.277–v1.289). Opt-in VEHICLE_DEPLOY_METHOD_HQ. requestHqVehicleSpawn reserves + enqueues; post-bind hook transitions claim spawn_pending → seat_pending; beginHqSeatFlow + OnPlayerDeployed seat via ForcePlayerToSeat (BountyHunter pattern). On-foot Option C: undeploy → redeploy → seat with SetRedeployTime(0) bypass. (~12.7K)
+    vanilla-spawner.ts        -- Vanilla mode spawner (v1.258–v1.259 rewrite, updated v1.328/v1.329/v1.333/v1.334). One persistent VehicleSpawner per slot; serial spawnMutex dispatches ForceVehicleSpawnerSpawn; OnVehicleSpawned bind via bindSpawnedVehicleToExpectingSlot; Clocks.CountDownClock respawn; canonical sinkAndDestroyVehicle destroy wrapper (v1.276). Dispatch branches: ground default uses post-bind Teleport; `pendingSpawnMode === "forward"` / `"air"` skip pre-seat Teleport (v1.333/v1.334 loadout fix). (~600 lines | 27K)
+    hq-deploy.ts              -- Phase 6 HQ Deploy (v1.277–v1.289, extended v1.328/v1.329/v1.333/v1.334). Opt-in VEHICLE_DEPLOY_METHOD_HQ. requestHqVehicleSpawn / requestForwardVehicleSpawn / requestAirVehicleSpawn reserve + enqueue; post-bind hook transitions claim spawn_pending → seat_pending; beginHqSeatFlow + OnPlayerDeployed seat via ForcePlayerToSeat. On-foot Option C: undeploy → redeploy → seat with SetRedeployTime(0) bypass. Post-seat vehicle Teleport (v1.333/v1.334) snapshots `nextForwardPos/Rot` + `nextAirPos/Rot` BEFORE success hooks re-seed them, then relocates vehicle + seated player after ForcePlayerToSeat. (~14K)
+    forward-spawn-volume.ts   -- Forward Deploy volume sampling (v1.328). Triangle-split + barycentric point sampling against authored ground volumes; yaw-only rotation. Pure helpers.
+    air-spawn-volume.ts       -- Air Deploy volume sampling (v1.329). Triangle-split XZ sampling + altitude additive (jets: [floorY + jetFloor, floorY + jetCeiling]; helis: [floorY, floorY + heliCeiling]); jet uses rotPlane (includes pitch), heli uses rotHeli.
     deploy-live-menu.ts       -- Live deploy menu UI for spawn selection (3.3K)
-    deploy-timer-ui.ts        -- Vehicle spawn timer HUD display; round-start delay HUD loop; per-slot HQ button wiring; pending-state SPAWNING/DEPLOYING header (v1.286) (2,026 lines | 90.4K)
+    deploy-timer-ui.ts        -- Vehicle spawn timer HUD display; round-start delay HUD loop; per-slot HQ button wiring; pending-state SPAWNING/DEPLOYING header (v1.286). Click router (v1.329): aircraft → requestAirVehicleSpawn, non-aircraft forward-eligible → requestForwardVehicleSpawn, else → requestHqVehicleSpawn. (2,026 lines | 90.4K)
     array-helpers.ts          -- Vehicle array manipulation helpers (0.9K)
 
   # Removed in v1.258–v1.259 rewrite (historical reference only):
@@ -4143,5 +4164,52 @@ UI Caches Cold: 0 Avg; Invalid: 0 Avg (0 High)
 | `config/maps/operation-firestorm.ts` | 308 | Firestorm map spawn/capture config |
 
 The three 2K-line mega-files (`capture-tickets.ts`, `deploy-timer-ui.ts`, `ammo-resupply-menu.ts`) remain the dominant files and are flagged in `conquest_optimization_analysis.md` as split candidates. `Changelog.ts` is large as source but stripped to ~0 bundle bytes.
+
+---
+
+## Appendix: Post-Seat Vehicle Teleport Pattern (v1.333 / v1.334)
+
+This section appends a design record for the vehicle-deploy Teleport architecture as it stands at v1.334. It does **not** replace any Phase 5/6 spec — those describe the single-persistent-spawner pattern and the BountyHunter seat contract. This is the Teleport timing refinement layered on top.
+
+### Problem
+
+All three player-triggered deploy paths (HQ, Forward, Air) share one seat code path (`onHqSeatPendingPlayerDeployed` → `mod.ForcePlayerToSeat(player, vehicle, -1)` inside `OnPlayerDeployed`). Pre-v1.333, only HQ Deploy respected the player's vehicle loadout (e.g., TOW on AH-6M). Forward and Air dropped it.
+
+The structural difference: HQ Deploy's vehicle sat at `slot.spawnPos` (the HQ pad) when `DeployPlayer` fired. Forward/Air called `mod.Teleport(vehicle, nextForwardPos | nextAirPos, yawRad)` **pre-seat** in `doDispatch`, between bind and seat. That Teleport inside the bind→DeployPlayer→seat window is what broke loadout application.
+
+The mechanism is empirically indistinguishable from script — position-gate, timing, or engine handle invalidation on Teleport are all plausible (see `design_doc/air_deploy_jet_pitch_investigation_2026-04-20.md`). The fix targets all of them at once.
+
+### Pattern
+
+**Phase 2a (v1.333) — Forward Deploy:** In `doDispatch`, the `pendingSpawnMode === "forward"` branch early-returns (no pre-seat Teleport). Vehicle stays at HQ pad through the 0.5s settle + `DeployPlayer` chain. In `onHqSeatPendingPlayerDeployed`, the forward target is **snapshotted into local refs before** `onForwardSpawnSuccess` re-seeds `nextForwardPos/Rot` for the next click. After `mod.ForcePlayerToSeat(...)` completes, `mod.Teleport(vehicle, forwardTargetPos, fwdYawRad)` relocates the vehicle (with the seated player aboard) to the forward point.
+
+**Phase 2b (v1.334) — Air Deploy:** Identical pattern symmetrical for aircraft. `pendingSpawnMode === "air"` branch early-returns in `doDispatch`. `airTargetPos/Rot` snapshotted in `onHqSeatPendingPlayerDeployed` before `onAirSpawnSuccess` re-seeds. Post-seat Teleport uses `mod.YComponentOf(airTargetRot) + VEHICLE_SPAWN_YAW_OFFSET_DEG`.
+
+### Validated properties (v1.333 playtest)
+
+- **Vehicle loadout applied correctly** on Forward Deploy post-v1.333. User-confirmed 2026-04-20.
+- **`mod.Teleport(vehicle, ...)` carries the seated occupant.** This was the plan's primary risk — that the Teleport would strip the player onto the HQ pad on foot while the vehicle alone relocated. Did not manifest. User confirmed: "all seatings always occur in all instances in testing."
+- **No visible pop** during the 0.5s HQ-pad occupancy window. The player is in the deploy UI, not the 3D world, during that window — the HQ pad presence is occluded.
+- **`onForwardSpawnSuccess` / `onAirSpawnSuccess` must run AFTER the post-seat Teleport** (they restore `slot.spawner` to `slot.spawnPos` and re-seed the next target — the relocate-spawner-to-HQ step reflects final state).
+
+### Remaining risk (v1.334 playtest gate)
+
+Air Deploy Teleport with a seated occupant at altitude (~1000m) has not yet been playtested. The heli case (hover-stable, rotor re-spins on seat) is lower risk; the jet case could produce a momentary stall if the engine reads zero velocity + non-zero altitude as a falling state. If observed, consider `mod.SetLinearVelocity` (if exposed) post-Teleport.
+
+### Banned patterns reaffirmed
+
+- **Never `mod.Teleport(player, ...)` immediately before `ForcePlayerToSeat`.** The pre-seat player-Teleport has broken twice (v1.106–v1.108 and v1.151–v1.154). Memory: `project_teleport_vehicle_spawn_mystery.md`.
+- The post-seat **vehicle**-Teleport is a different pattern and is not covered by that ban. v1.333 is the validation.
+
+### Orthogonal open item
+
+Jet pitch (`rotPlane.X = -45°` on Firestorm F-16 spawn) is lost on Air Deploy regardless of Teleport timing — `mod.Teleport` has no pitch/roll signature, and `mod.SetObjectTransform` is a no-op on `Vehicle` objects on the current engine build. The sister-spawner proposal (per-jet-slot sibling `VehicleSpawner` born with pitch) was deferred in v1.332 after the v1.331 probe disproved the weaker form of its core assumption (spawner-relocate-at-altitude does not reliably propagate position). See `CQ_Polish_Jet_Pitch_On_Air_Deploy` in `conquest_issues.md`.
+
+### File map for this pattern
+
+- `src/vehicles/vanilla-spawner.ts` — `doDispatch` early-return branches for `pendingSpawnMode === "forward" | "air"`.
+- `src/vehicles/hq-deploy.ts` — `onHqSeatPendingPlayerDeployed` captures targets before success hooks and Teleports post-seat.
+- `src/vehicles/forward-spawn-volume.ts` / `src/vehicles/air-spawn-volume.ts` — samplers (re-seeded by the success hooks).
+- `src/state/runtime-types.ts` — `VehicleSpawnerSlot.pendingSpawnMode: "ground" | "forward" | "air"`, `nextForwardPos/Rot`, `nextAirPos/Rot`.
 
 

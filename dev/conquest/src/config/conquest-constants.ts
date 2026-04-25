@@ -8,6 +8,11 @@ const FEATURE_POSITION_DEBUG = false;
 const FEATURE_ADMIN_PANEL = false;
 const FEATURE_JOIN_PROMPT = false;
 
+// When a player bails from an aircraft with world-Y above this threshold they are killed
+// instantly. Vanilla engine only XZ-clips CombatVolume, so foot players above the
+// GroundCombatVolume ceiling would otherwise drift without grey-zone enforcement.
+const AIRCRAFT_BAIL_CEILING_Y = 200;
+
 const CONQUEST_STARTING_TICKETS = 350;
 const CONQUEST_CAPTURE_TIME_SECONDS = 10;
 const CONQUEST_NEUTRALIZATION_TIME_SECONDS = 15;

@@ -334,8 +334,6 @@ function buildMapConfigObjIdValidationEntries(cfg: MapConfig): MapConfigObjIdVal
         { label: "team1MainBaseBufferTriggerId", objId: cfg.team1MainBaseBufferTriggerId, required: true },
         { label: "team2MainBaseBufferTriggerId", objId: cfg.team2MainBaseBufferTriggerId, required: true },
         { label: "groundCombatZoneTriggerId", objId: cfg.groundCombatZoneTriggerId, required: true },
-        { label: "team1VehicleDeploySpawnPointId", objId: cfg.team1VehicleDeploySpawnPointId, required: true },
-        { label: "team2VehicleDeploySpawnPointId", objId: cfg.team2VehicleDeploySpawnPointId, required: true },
     ];
 
     const capturePoints = cfg.capturePoints ?? [];
@@ -635,9 +633,6 @@ function applyMapConfig(mapKey: MapKey): void {
     MAIN_BASE_BUFFER_TRIGGER_ID_TEAM1 = ACTIVE_MAP_CONFIG.team1MainBaseBufferTriggerId;
     MAIN_BASE_BUFFER_TRIGGER_ID_TEAM2 = ACTIVE_MAP_CONFIG.team2MainBaseBufferTriggerId;
     GROUND_COMBAT_ZONE_TRIGGER_ID = ACTIVE_MAP_CONFIG.groundCombatZoneTriggerId;
-    GROUND_COMBAT_ZONE_CEILING_Y = ACTIVE_MAP_CONFIG.groundCombatZoneCeilingY;
-    VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM1 = ACTIVE_MAP_CONFIG.team1VehicleDeploySpawnPointId;
-    VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM2 = ACTIVE_MAP_CONFIG.team2VehicleDeploySpawnPointId;
     TEAM1_AIRCRAFT_SPAWN_VOLUMES = resolveVehicleSpawnVolumes(ACTIVE_MAP_CONFIG.team1AircraftSpawnVolumes);
     TEAM2_AIRCRAFT_SPAWN_VOLUMES = resolveVehicleSpawnVolumes(ACTIVE_MAP_CONFIG.team2AircraftSpawnVolumes);
     TEAM1_TANK_SPAWN_VOLUMES = resolveVehicleSpawnVolumes(ACTIVE_MAP_CONFIG.team1TankSpawnVolumes);
@@ -680,18 +675,6 @@ function applyMapConfig(mapKey: MapKey): void {
     replayActiveMapValidationWarningsToAllPlayers();
 }
 
-function getVehicleDeploySpawnPointIdForTeam(teamId: TeamID): number | undefined {
-    const spawnPointId = teamId === TeamID.Team1
-        ? VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM1
-        : teamId === TeamID.Team2
-            ? VEHICLE_DEPLOY_SPAWN_POINT_ID_TEAM2
-            : undefined;
-    if (spawnPointId === undefined) return undefined;
-    if (!Number.isFinite(spawnPointId)) return undefined;
-    if (spawnPointId <= 0) return undefined;
-    return Math.floor(spawnPointId);
-}
-
 function getMainBaseTriggerIdForTeam(teamId: TeamID): number | undefined {
     const triggerId = teamId === TeamID.Team1
         ? MAIN_BASE_TRIGGER_ID_TEAM1
@@ -716,17 +699,13 @@ function getMainBaseBufferTriggerIdForTeam(teamId: TeamID): number | undefined {
     return Math.floor(triggerId);
 }
 
+// Returns the ground-combat-zone AreaTrigger ObjId (ObjId 666 on Firestorm) used by the custom
+// script GCZ enforcement for foot players and non-aircraft vehicles.
 function getGroundCombatZoneTriggerId(): number | undefined {
     if (GROUND_COMBAT_ZONE_TRIGGER_ID === undefined) return undefined;
     if (!Number.isFinite(GROUND_COMBAT_ZONE_TRIGGER_ID)) return undefined;
     if (GROUND_COMBAT_ZONE_TRIGGER_ID <= 0) return undefined;
     return Math.floor(GROUND_COMBAT_ZONE_TRIGGER_ID);
-}
-
-function getGroundCombatZoneCeilingY(): number | undefined {
-    if (GROUND_COMBAT_ZONE_CEILING_Y === undefined) return undefined;
-    if (!Number.isFinite(GROUND_COMBAT_ZONE_CEILING_Y)) return undefined;
-    return GROUND_COMBAT_ZONE_CEILING_Y;
 }
 
 function getVehicleSpawnVolumesForTeam(teamId: TeamID, volumeClass: VehicleSpawnVolumeClass): VehicleSpawnVolumeSpec[] {

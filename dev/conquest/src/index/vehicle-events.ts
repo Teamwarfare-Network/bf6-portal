@@ -11,6 +11,11 @@ function onPlayerEnterVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Veh
         State.players.posDebugVehicleObjIdByPid[pid] = getObjId(eventVehicle);
     }
 
+    // Cache seatKind at the event boundary -- the boundary classifier reads this directly
+    // instead of querying mod.GetVehicleFromPlayer / mod.CompareVehicleName per tick.
+    // setPlayerSeatKind triggers refreshPlayerBoundaryState on transition.
+    setPlayerSeatKind(eventPlayer, classifyVehicleSeatKind(eventVehicle));
+
     const teamNum = getTeamNumber(mod.GetTeam(eventPlayer));
     if (teamNum !== TeamID.Team1 && teamNum !== TeamID.Team2) return;
 
@@ -28,22 +33,6 @@ function onPlayerEnterVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Veh
     }
 }
 
-// Boundary re-evaluation after exiting an aircraft. Above-ceiling exit forces the player
-// outside the ground combat zone volume; in-zone landings self-heal via the next area-trigger event.
-function recheckBoundaryAfterAircraftExit(player: mod.Player, pid: number): void {
-    const ceilingY = getGroundCombatZoneCeilingY();
-    if (ceilingY === undefined) return;
-    try {
-        const pos = safeGetSoldierStateVector(player, mod.SoldierStateVector.GetPosition);
-        if (!pos) return;
-        const soldierY = mod.YComponentOf(pos);
-        if (soldierY > ceilingY) {
-            State.round.boundary.inGroundCombatZoneByPid[pid] = false;
-            refreshPlayerBoundaryState(player);
-        }
-    } catch {}
-}
-
 function onPlayerExitVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Vehicle) {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     const vehicleObjId = getObjId(eventVehicle);
@@ -52,16 +41,19 @@ function onPlayerExitVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Vehi
     if (pid !== undefined) {
         State.players.posDebugTransformSourceByPid[pid] = "soldier";
         delete State.players.posDebugVehicleObjIdByPid[pid];
-        if (isAircraftVehicleInstance(eventVehicle)) {
-            recheckBoundaryAfterAircraftExit(eventPlayer, pid);
+    }
+
+    // Cache the seat transition -- triggers refreshPlayerBoundaryState so OOB fires immediately
+    // when a pilot bails outside the GCZ.
+    setPlayerSeatKind(eventPlayer, "on_foot");
+
+    if (slotIndex !== undefined) {
+        const slot = State.vehicles.slots[slotIndex];
+        if (slot && pid !== undefined && slot.activeOwnerPid === pid) {
+            slot.activeOwnerPid = undefined;
+            updateVehicleDeployTimerHudForAllPlayers();
         }
     }
-    if (slotIndex === undefined) return;
-    const slot = State.vehicles.slots[slotIndex];
-    if (!slot || pid === undefined) return;
-    if (slot.activeOwnerPid !== pid) return;
-    slot.activeOwnerPid = undefined;
-    updateVehicleDeployTimerHudForAllPlayers();
 }
 
 //#endregion -------------------- Exported Event Handlers - Vehicle Entry + Exit --------------------

@@ -1,7 +1,9 @@
 # Conquest Issues
 
-Last Updated: 2026-04-20 (v1.332)
-Last Tested Build: `v1.313` — Phase 6 HQ Deploy remains functional (both deploy-menu and on-foot live-terminal surfaces). Gadget locker rework (v1.290–v1.313) completed: per-launcher team pools, tuned durations, authoritative per-player slot state, slot-based `HasEquipment`-diff probe, per-class slot-toggle row with preference persistence. Vanilla regression path remains byte-identical to the v1.276 baseline. v1.314 reworks the ready-dialog config column to checkbox seeds (UI-only; Air/Forward/SupplyBoxes wiring pending). Outstanding: late-joiner redeploy-timer investigation deferred to the polish phase (see memory `project_respawn_redeploy_timer_polish.md`).
+Last Updated: 2026-04-21 (v1.338)
+Last Tested Build: `v1.313` — Phase 6 HQ Deploy remains functional (both deploy-menu and on-foot live-terminal surfaces). Gadget locker rework (v1.290–v1.313) completed: per-launcher team pools, tuned durations, authoritative per-player slot state, slot-based `HasEquipment`-diff probe, per-class slot-toggle row with preference persistence. Vanilla regression path remains byte-identical to the v1.276 baseline. v1.314 reworks the ready-dialog config column to checkbox seeds (Supply Boxes wired v1.325; Forward Deploy wired v1.328; Air Deploy wired v1.329). v1.333/v1.334 move Forward/Air Deploy vehicle Teleport to post-seat to fix loadout drop. v1.337–v1.338 migrate the match clock to `Clocks.CountDownClock`, retiring the prior hot path. Outstanding: late-joiner redeploy-timer investigation deferred to the polish phase (see memory `project_respawn_redeploy_timer_polish.md`).
+
+**Cross-reference:** for the numbered, named, at-a-glance index of all 90 issues (status table + per-issue executive summary), see [`conquest_issues_summary.md`](./conquest_issues_summary.md). This doc holds the full body — history, investigation notes, timelines. The summary is the authoritative numeric index.
 
 **Architecture note (v1.258–v1.259 rewrite).** The Vanilla vehicle spawner was rewritten around one persistent `VehicleSpawner` per slot, a serial `spawnMutex` dispatching via `ForceVehicleSpawnerSpawn`, event-driven bind via `OnVehicleSpawned`, and `Clocks.CountDownClock`-driven respawn. Files `src/vehicles/deploy-fulfillment.ts`, `src/vehicles/reservations.ts`, and `src/vehicles/spawner-sequence.ts` were deleted. All non-Vanilla deploy paths (legacy air-deploy, forward-deploy, HQ-forward) were removed. Any bug entry below whose root cause lived in those files is flagged **Obsolete (v1.259 rewrite)** — the underlying code no longer exists.
 
@@ -99,6 +101,13 @@ Last Tested Build: `v1.313` — Phase 6 HQ Deploy remains functional (both deplo
 - `CQ_Feat_ReadyDialog_Config_Checkboxes_UI_Seed`: Resolved for UI-only scope (v1.314 — ready-dialog center column reworked. Configuration header removed; Game Mode stepper moved into the reclaimed header row and relabeled to `Game Mode Configuration:`; Vehicle Deploy stepper removed. Replaced with 5 checkboxes in a left sub-column: Vanilla Deploy, HQ Deploy, Air Deploy (indented), Forward Deploy (indented), Supply Boxes. Vanilla/HQ are a radio pair backed by the existing `vehicleDeployMethod` enum; Air/Forward/SupplyBoxes are new optional booleans (`airDeployEnabled`, `forwardDeployEnabled`, `supplyBoxesEnabled`) on `ReadyDialogModeConfig` that persist through Apply/Reset/preset-apply but are not yet read by any downstream consumer. Clicking Air or Forward while Vanilla is on auto-switches to HQ. Right sub-column reserved empty for future checkboxes. Wiring of Air/Forward into the spawn path and Supply Boxes into the ammo-resupply interactable remains TODO.)
   - v1.328 (Forward Deploy wired): see `CQ_Feat_Forward_Deploy_Reintroduction` below.
   - v1.325 (Supply Boxes wired): the `supplyBoxesEnabled` flag is now read at three call sites in `src/interaction/world-interactables.ts`: (1) VFX spawn loop skips supply-box configs when disabled, (2) `shouldEnableWorldInteractableAuthoredInteractPoint` returns false for supply-box configs when disabled, (3) `shouldAllowWorldInteractableActivationForPlayer` returns `isSupplyBoxesEnabled()` for the `open_ammo_resupply_menu` branch. Apply-time resync `refreshSupplyBoxInteractableStateFromConfirmedConfig()` runs at the tail of `confirmReadyDialogModeConfig` to reconcile already-spawned VFX + InteractPoint state and to force-close any open ammo-resupply menus via `closeArmMenu(pid)` when Supply Boxes flips off. Default remains true. Air Deploy and Forward Deploy wiring are still UI-only and remain TODO. See `design_doc/supply_boxes_wiring_plan_2026-04-19.md` for full rationale.
+- `CQ_Feat_SDK_Surrounding_Area_Ground_Vehicles`: Implemented (v1.345 — adopted SDK 1.2.3 `SetVehicleCategoryAllowedInSurroundingArea(Ground_All, false)` to block ground vehicles at the vanilla map-authored Surrounding Area boundary. Call site: `index/game-mode.ts` `onGameModeStartedImpl` after the baseline engine setters, gated by `VEHICLE_SURROUNDING_AREA_GROUND_ALL_BARRED` in `config/conquest-constants.ts`. Script GCZ exemption in `boundary/enforcement.ts::isPlayerGroundCombatZoneExempt` widened from aircraft-only to any seated-vehicle occupant; foot-player GCZ enforcement unchanged. Known geographic asymmetry: tanks are bounded by the vanilla SA polygon (typically larger than our GCZ trigger), foot players remain bounded by the custom GCZ polygon — documented in `TWL_Conquest_Design.md`. Plan archive: `design_doc/ground_vehicle_surrounding_area_plan_2026-04-23.md`.)
+- `CQ_Feat_Hybrid_Boundary_Engine_Plus_Custom_OOB`: Implemented (v1.351 — supersedes v1.345 approach. After empirical testing (v1.346–v1.350) showed aircraft kept getting grey-zoned despite various SDK call combinations, the solution was re-authoring the spatial (`MP_TWL_Conquest14_FireStorm.spatial.json`) to let the engine own the CombatArea geometry and reducing the script to Andy's reference pattern: one `SetVehicleCategoryAllowedInSurroundingArea(Air_All, true)` call at round start, custom script OOB only for pre-live main-base (500/501) and live enemy-buffer (502/503) violations. Fully removed: `ground_combat_zone` BoundaryPromptKind, `isPlayerGroundCombatZoneExempt`, `recheckBoundaryAfterAircraftExit`, `inGroundCombatZoneByPid`, `groundCombatZoneTriggerId`/`groundCombatZoneCeilingY` map-config fields, orphan `STR_BOUNDARY_GROUND_COMBAT_ZONE_*` constants. `VEHICLE_SURROUNDING_AREA_GROUND_ALL_BARRED` constant was removed in v1.348. The spatial's `GroundAreaCeilingTrigger` (ObjId 666) remains reserved but unconsumed by script. Plan archive: `design_doc/boundary_hybrid_plan_2026-04-24.md`.)
+- `CQ_Feat_Custom_GCZ_Restored`: Implemented (v1.357 — supersedes v1.351 hybrid approach. After v1.354–v1.356 exhaustive SDK Surrounding Area testing (global allow, per-category Air_All/Air_Heli/Air_Plane, per-vehicle for all 10 aircraft `VehicleList` members) failed to exempt aircraft from the engine grey-zone on Conquest14/15 spatials, the SDK route was abandoned. User re-authored the spatial at `MP_TWL_Conquest16_FireStorm.spatial.json` to bind `CombatArea.CombatVolume = AirCombatVolume` (aircraft bound only by the outer air polygon) and retained `GroundAreaTrigger` ObjId 666 for custom script enforcement. Restored: `inGroundCombatZoneByPid` state, trigger-666 enter/exit wiring in `onPlayerEnter/ExitBoundaryAreaTrigger`, `groundCombatZoneTriggerId` map-config field and getter, deploy-default `true` flag init. Added: synchronous `refreshPlayerBoundaryState` call on `onPlayerEnter/ExitVehicleImpl` so GCZ classification flips immediately on seat change. `getDesiredBoundaryViolationKind` now returns `"ground_combat_zone"` when (a) on-foot outside trigger 666, (b) on-foot above Y=200, or (c) in a non-aircraft vehicle outside trigger 666. Aircraft occupants (`isAircraftVehicleInstance`) are exempt. Fully removed: all `Set*AllowedInSurroundingArea` calls from `index/game-mode.ts`. Plan archive: `design_doc/custom_gcz_restore_plan_2026-04-24.md`.)
+- `CQ_Feat_Zone_Tracker_Refactor`: Implemented (v1.360 — structural fix for two surviving v1.358–v1.359 bugs: HQ-back-walk (player exits trigger 500/501 toward the back of HQ, away from buffer + GCZ — should be OOB but `inMainBaseByPid` stayed stuck `true`) and bail-from-aircraft (Air-deployed pilot bails outside GCZ — should be OOB but flag stays exempting). Root cause: boundary state spread across five independently-written booleans with multiple writers (`area-triggers.ts` direct write via `IsPlayerInOwnMainBase`, `enforcement.ts` enter/exit branches, `player-deploy.ts::classifyDeployInOwnMainBase` 100m distance-check setter that overrode v1.359's removal of the unconditional `=true` setter). Fix: single `PlayerZoneState` record at `State.round.boundary.zoneStateByPid[pid]` (`inOwnHQ` / `inOwnBuffer` / `inGCZ` / `inEnemyHQ` / `inEnemyBuffer`); single writer `updateZoneStateOnTriggerTransition` that maps any of the five tracked AreaTriggers to exactly one boolean and mirrors `inOwnHQ` to legacy `inMainBaseByPid` for downstream consumers; classifier `getDesiredBoundaryViolationKind` becomes a pure read with no fallback flags or distance checks. Added 1.5s `GCZ_DEPLOY_GRACE_SECONDS` post-deploy grace window via new `deployedAtSecondsByPid` field to cover rare missed enter events. Removed: `inGroundCombatZoneByPid`, `inEnemyMainBaseCoreByPid`, `inEnemyMainBaseBufferByPid`, `classifyDeployInOwnMainBase`, `getEnemyMainBaseTriggerIdForPlayerTeam`/`getEnemyMainBaseBufferTriggerIdForPlayerTeam`, `isPlayerInEnemyProtectedZone`, `isPlayerProtectedByOwnMainBaseState`. Bundle decreased 2,167 bytes vs v1.359. Plan archive: `design_doc/zone_tracker_refactor_plan_2026-04-25.md`.)
+- `CQ_Feat_AreaTrigger_Enable`: Implemented (v1.367 — root cause for the v1.358–v1.366 OOB bug class: `mod.EnableAreaTrigger` was never called anywhere in the codebase, and AreaTriggers do not fire `OnPlayerEnter/ExitAreaTrigger` events until explicitly enabled per the SDK doc. Every "main base" signal across all prior versions came from the deploy-time distance probe, NOT from real trigger events. Added `enableBoundaryAreaTriggers()` in `boundary/enforcement.ts` that resolves the five trigger IDs via `mod.GetAreaTrigger` and calls `mod.EnableAreaTrigger(trigger, true)` on each; called from `onGameModeStartedImpl` after `applyMapConfig`. With this in place, HQ-back-walk and other physical-crossing OOB scenarios fire correctly.)
+- `CQ_Feat_Squad_Spawn_Zone_Inheritance`: Implemented (v1.370 — closes the last seed gap left open by `CQ_Feat_Event_Driven_Seat_State`. Squad spawn (no slot claim, IsInVehicle probe handles seatKind) previously left zone flags all-false except `inOwnHQ` (anchor probe). A foot squad-spawn deep inside the GCZ would post-grace flag OOB until the player physically crossed a trigger boundary. Fix: at deploy time, find the nearest deployed teammate within `SQUAD_SPAWN_PROXIMITY_RADIUS_METERS = 25` (engine doesn't expose authoritative squad-spawn target — proximity is the proxy); copy `inOwnBuffer`/`inGCZ`/`inEnemyHQ`/`inEnemyBuffer` from their cached state. `inOwnHQ` is NOT inherited — anchor probe owns it (independent reliable signal that may legitimately disagree with a squadmate at the HQ trigger edge). Skip inheritance when the teammate is still inside their own deploy grace window. One-shot at deploy, no per-tick cost. Helpers: `findNearestDeployedTeammatePid`, `tryInheritZonesFromNearbyTeammate`. Plan archive: `design_doc/squad_spawn_zone_inheritance_plan_2026-04-25.md`. Edge cases (squadmate near trigger boundary, inheriting OOB-state from a teammate currently in enemy buffer countdown) accepted and documented in the plan.)
+- `CQ_Feat_Event_Driven_Seat_State`: Implemented (v1.369 — structural fix for the v1.367–v1.368 aircraft OOB false-positive bug. After AreaTriggers were enabled in v1.367, ground/foot OOB worked, but aircraft occupants kept getting flagged when flying outside the GCZ. v1.368 attempted a fix by bypassing `safeGetVehicleFromPlayer`'s cache gate and adding a slot-binding fallback for `isAircraftVehicleInstance`; did not work. Root cause matches `CQ_Feat_Zone_Tracker_Refactor` (v1.360): per-tick engine queries (`mod.GetVehicleFromPlayer`, `mod.CompareVehicleName`, `safeGetPlayerVehicleSeat`) are unreliable on this Portal runtime — `safeGetVehicleFromPlayer`'s `posDebugVehicleObjIdByPid` cache lags reality at deploy time (Air Deploy timing race), and `CompareVehicleName` has documented enum-swap reliability gaps (CQ_Bug_43). Fix: add `seatKind: "on_foot" | "ground_vehicle" | "aircraft"` to `PlayerZoneState`, owned exclusively by `setPlayerSeatKind` (called from `onPlayerEnterVehicleImpl`, `onPlayerExitVehicleImpl`, and the deploy-mode seed). Vehicle classification at the event boundary uses `classifyVehicleSeatKind(vehicle)` which looks up `slot.vehicleType` via `vehicleToSlot` and routes to the existing pure-JS `isAircraftVehicleType(enum)` switch — no `mod.CompareVehicleName` calls. The boundary classifier's vehicle block is now a pure read of `state.seatKind`. Non-slot deploys (squad/flag spawn) get a one-shot `mod.GetSoldierState(IsInVehicle)` probe in `seedZoneStateFromSpawnContext` (Andy's reference pattern; reliable). NO per-tick polling — drift after deploy is owned by the OnPlayerEnter/ExitVehicle events. Removed: `isPlayerSeatedInAircraftForBoundary` (v1.368). Plan archive: `design_doc/event_driven_seat_state_plan_2026-04-25.md`. Squad-spawn zone seeding deferred — see plan "Future considerations".)
 
 ## CQ_Bug_42
 Title: CountOf Called With Invalid/Undefined Array Argument During Gameplay
@@ -2459,6 +2468,13 @@ Related:
 
 Status: **Open.** Deferred to polish phase per user direction at v1.289 closeout.
 
+Latest findings (2026-04-21):
+- Merged scope for the v1.338+ polish pass now includes three respawn-timer tweaks raised by the user:
+  1. Respawn time after a normal death.
+  2. Respawn time after an HQ deploy seat (whether the `SetRedeployTime(0)` override leaks into the next life).
+  3. Respawn timing during a live-connection / late-join transition (the `HUD_WARM_REDEPLOY_BLOCK_SECONDS` suspected-global behavior above).
+- All three need MP playtest evidence before the fix direction is chosen. Treat them as one investigation bucket — they share the same `SetRedeployTime` call-site cluster in `src/interaction/actions.ts` and `src/vehicles/hq-deploy.ts`.
+
 ## CQ_Polish_Launcher_Ammo_Per_Launcher_Cap
 Title: `giveRocketCharge` Consumes a Charge at Max Launcher Ammo
 
@@ -2474,8 +2490,15 @@ Candidate experiments (polish phase):
 Related:
 - v1.300 authoritative per-player slot state: `src/interaction/ammo-resupply-menu.ts::giveRocketCharge` (uses `slotWithLauncher(slotsState)` to pick the target slot).
 - Plan: `C:\Users\Soldat\.claude\plans\sleepy-juggling-thunder.md` (scope explicitly excluded per-launcher caps).
+- `CQ_Bug_Launcher_Slot2_Double_Give` (#90) — the adjacent launcher-slot regression captured 2026-04-21.
 
 Status: **Open.** Deferred to polish phase per user direction at v1.300 closeout.
+
+Latest findings (2026-04-21):
+- Observation: the Launcher Ammo tile is not giving second-slot ammo on AT4. Two possibilities to diagnose together:
+  1. `slotWithLauncher` returns the wrong slot for AT4 (probe / kind classification gap — see #90 for the sibling regression in `giveLauncher`).
+  2. The engine cap clamp is hitting *before* the increment lands, so `mag + 1` writes but reads back the prior value; same underlying cap issue already described here.
+- Suggested polish-phase probe: read `GetInventoryMagazineAmmo(slot)` both before and after the `SetInventoryMagazineAmmo` call and log the delta per launcher id; correlate with the probe's reported `kind`/`gadget` for that slot. Same telemetry run can feed both #78 and #90.
 
 ## CQ_Refactor_Gadget_Locker_v1.290_to_v1.313
 Title: Gadget Locker Authoritative Slot State + Slot-Based Probe + Preference Persistence
@@ -2600,14 +2623,152 @@ Related:
 Title: Player's chosen loadout not always applied on deploy
 
 Observed:
-- Intermittently, the class/loadout the player selected in the class menu is not the loadout they actually spawn with. Frequency and trigger are not yet characterized — reported anecdotally during v1.328 playtest.
+- v1.328 playtest: reported anecdotally, intermittent.
+- v1.332 playtest (controlled): the player's **vehicle loadout** (e.g. TOW on AH-6M) is dropped on **Forward Deploy** and **Air Deploy**. **HQ Deploy respects it.** All three paths route through `onHqSeatPendingPlayerDeployed` → `mod.ForcePlayerToSeat(player, vehicle, -1)`, so the seat API itself is not the differentiator.
 
-Reproduction:
-- Not yet reliable. Needs a controlled test: flip class in the deploy UI, immediately deploy, verify the primary/secondary/gadgets against the selection across several deploy cycles, HQ and Vanilla modes, with and without Forward Deploy.
+Root cause (inferred):
+- HQ Deploy vehicle sits at `slot.spawnPos` when `DeployPlayer` fires. Forward / Air Deploy vehicles had already been `mod.Teleport`-ed to the forward/air target **pre-seat** in `doDispatch`. That pre-seat Teleport inside the bind → DeployPlayer → seat window is what broke loadout application.
+- Mechanism indistinguishable from script (position gate, timing, or engine handle invalidation on Teleport — see `design_doc/air_deploy_jet_pitch_investigation_2026-04-20.md` for the four candidate hypotheses). Fix targets all of them by removing the pre-seat Teleport.
 
-Candidate directions (unconfirmed):
-- Class-selection state at the moment the engine seats the player vs. at the moment the player confirmed the class.
-- Interaction with HQ Deploy / Forward Deploy seating flows (`beginHqSeatFlow` → `DeployPlayer` → `ForcePlayerToSeat`) — the deploy happens inside `OnPlayerDeployed`, and the class menu update timing may race with the deploy event.
-- Kit pickup / gadget locker touching slots (`src/interaction/ammo-resupply-menu.ts`) before the first deploy.
+Resolution:
+- **v1.333 (Phase 2a):** Forward Deploy vehicle Teleport moved from pre-seat (`doDispatch`) to post-seat (`onHqSeatPendingPlayerDeployed`, after `ForcePlayerToSeat`). Forward target is captured into locals **before** `onForwardSpawnSuccess` re-seeds `nextForwardPos/Rot` for the next click. **Playtest confirmed working by user (2026-04-20).**
+- **v1.334 (Phase 2b):** Air Deploy mirror of Phase 2a. Same capture-before-success-hook pattern; symmetric post-seat `mod.Teleport(vehicle, nextAirPos, yawRad + offset)`. **User reported: "air deploy loadout on choppers is not respected" — v1.334 is the fix probe. Playtest verification pending.**
 
-Status: **Open — needs repro.** No code change attempted yet. Log here to remind future passes to verify fix candidates against a real repro.
+Validated side-effects of the post-seat Teleport:
+- **Seated player travels with the vehicle.** User playtest confirmation: "all seatings always occur in all instances in testing" — the primary risk flagged in the plan (`~/.claude/plans/sleepy-juggling-thunder.md`) that `mod.Teleport(vehicle, ...)` would strip the occupant did **not** manifest on Phase 2a. Phase 2b inherits that validation for helis; jet altitude teleport with occupant is the remaining empirical gap.
+- No visible pop observed on the 0.5s HQ-pad occupancy window (the player is in the deploy UI, not the 3D world, during that window).
+
+Files touched:
+- `src/vehicles/vanilla-spawner.ts` — `doDispatch`: `pendingSpawnMode === "forward"` and `"air"` branches early-return (skip pre-seat Teleport). Ground default branch unchanged.
+- `src/vehicles/hq-deploy.ts` — `onHqSeatPendingPlayerDeployed`: snapshot `forwardTargetPos/Rot` + `airTargetPos/Rot` before success hooks; post-`ForcePlayerToSeat` Teleport to captured target.
+
+Status: **Forward Deploy resolved at v1.333 (user-confirmed). Air Deploy resolved at v1.334, pending playtest.** If v1.334 fails, the fallback is to accept loadout drop on Air Deploy; the alternative architecture (spawn vehicle at HQ, seat, then relocate vehicle) would need a different Teleport-carries-occupant property we cannot currently probe.
+
+Related:
+- `CQ_Feat_Forward_Deploy_Reintroduction` (v1.328), `CQ_Feat_Air_Deploy_Reintroduction` (v1.329).
+- `CQ_Bug_Air_Deploy_Jet_Position_Regression` (v1.331).
+- `design_doc/air_deploy_jet_pitch_investigation_2026-04-20.md` — historical four-hypothesis record.
+
+## CQ_Bug_Air_Deploy_Jet_Position_Regression (v1.331)
+Title: v1.331 Phase A probe regressed jets — they stayed at HQ instead of reaching the sampled sky point
+
+Context:
+- v1.329 shipped Air Deploy using `mod.SetObjectTransform(vehicle, ...)` post-bind to preserve jet pitch (`rotPlane.X = -45°` on Firestorm). Regression: vehicles landed near HQ with engine-default rotation — `SetObjectTransform` is a no-op on `Vehicle` objects on the current engine build.
+- v1.330 reverted to the Forward-Deploy heli-equivalent path: yaw-only `mod.Teleport(vehicle, nextAirPos, yawRad)` post-bind. Position + yaw correct for both jets and helis; jet pitch discarded (pilots pitch manually after seat).
+- v1.331 Phase A probe: skip the post-bind Teleport for jets on the theory that the pre-spawn `SetObjectTransform(spawner, nextAirPos)` might propagate rotation at birth time. **Regression: jets birthed at the spawner's last authoritative position (HQ), not at `nextAirPos`.** Confirmed empirically that `SetObjectTransform` on a persistent `VehicleSpawner` does not reliably propagate position updates to `ForceVehicleSpawnerSpawn` at altitude. The post-bind `mod.Teleport` is load-bearing for Air Deploy position delivery.
+
+Resolution:
+- **v1.332:** Reverted v1.331 probe. Jets back on the heli-equivalent path (yaw-only post-bind Teleport). Position + yaw correct; pitch lost.
+
+Files touched (v1.331 → v1.332 revert):
+- `src/vehicles/vanilla-spawner.ts` — removed the jet-branch early-return in `doDispatch`; reinstated the yaw-only `mod.Teleport` for aircraft.
+
+Status: **Resolved at v1.332 by revert.** Jet pitch on Air Deploy remains an **open polish item** — see `CQ_Polish_Jet_Pitch_On_Air_Deploy` below.
+
+Related:
+- `CQ_Feat_Air_Deploy_Reintroduction` (v1.329).
+- `design_doc/air_deploy_jet_pitch_investigation_2026-04-20.md` — durable lessons on `SetObjectTransform` no-op on Vehicle, spawner-relocate non-propagation at altitude, and `mod.Teleport` having no pitch/roll signature.
+
+## CQ_Polish_Jet_Pitch_On_Air_Deploy
+Title: Jet pitch (`rotPlane.X`) lost on Air Deploy — pilot must pitch down manually after seat
+
+Scope:
+- Air Deploy spawns jets with engine-default pitch (flat) regardless of the authored `volume.rotPlane.X`. Yaw is preserved via the post-bind `mod.Teleport`; pitch has no argument in `mod.Teleport` and `mod.SetObjectTransform` is a no-op on `Vehicle`.
+- Sister-spawner plan (per-jet-slot sibling `VehicleSpawner` born with `rotPlane`, relocated per click) was deferred in v1.332: its core assumption is spawner-relocate propagates at altitude, which v1.331 disproved for position. Reviving the plan requires a **narrow probe**: create a runtime `VehicleSpawner` at ground level with non-zero pitch, fire `ForceVehicleSpawnerSpawn` without relocation, observe whether the birthed vehicle inherits the pitch. If yes, the sibling pattern's upper bound is "pitched vehicle at HQ pad" — still a net loss without position. If no, birth-rotation is engine-determined and the sibling pattern cannot help.
+
+Status: **Deferred polish.** Pilots pitch manually after seat. Not a blocker for the MP playtest.
+
+## CQ_Bug_RemoveEquipment_JS_Error
+Title: `mod.RemoveEquipment` JS error log — scope and repro unconfirmed
+
+Status: **Open, polish-phase.** Needs controlled repro. Out of scope for the MP playtest; logged for the polish pass.
+
+## v1.333 / v1.334 / MP Playtest Readiness Summary
+
+Consolidated status for the MP playtest window (2026-04-22):
+
+- **v1.333** — Forward Deploy loadout fix (Phase 2a). User-confirmed working.
+- **v1.334** — Air Deploy loadout fix (Phase 2b). Pending playtest on helis (reported broken in user testing before v1.334) and jets.
+- Bundle: **1,023,477 bytes** at v1.334 / **25,099 bytes headroom (2.39%)** under the 1,048,576 cap. Trend: up (+55K vs v1.289 baseline 968,479) across v1.290–v1.334 feature arc (gadget locker refactor, Forward Deploy, Air Deploy).
+- Admin panel re-enable blocked: flipping `FEATURE_ADMIN_PANEL=true` produces a **1,052,112 byte** bundle (+28,635 bytes delta), exceeding the cap by **3,536 bytes**. Verification fails. Re-enable requires ~3.5K of offsetting cuts before the playtest; see `design_doc/conquest_optimization_analysis.md` for dead-code candidates.
+
+Open non-polish bugs carrying into the playtest:
+- `CQ_Bug_Loadout_Not_Respected` — Air Deploy half pending v1.334 playtest.
+- `CQ_Bug_Abrams_Substitution_Transport_Slot_Regression` — Open; transport-slot wrong-vehicle on heli/ground knob toggle. No repro steps recently refreshed.
+- `CQ_Polish_Respawn_Redeploy_Timer_Audit` — `SetRedeployTime` may apply globally to late joiners; `SetRedeployTime(0)` persistence not empirically verified. Could affect perceived deploy UX under 64-player churn.
+
+Known polish-phase items (do not block playtest but should be logged):
+- `CQ_Polish_Jet_Pitch_On_Air_Deploy`
+- `CQ_Polish_Launcher_Ammo_Per_Launcher_Cap`
+- `CQ_Bug_RemoveEquipment_JS_Error`
+
+## CQ_Feat_Victory_Screen_Unify_Settings (#86)
+Title: Unify Victory screen XvY settings across all presets/surfaces
+
+Observed (2026-04-21):
+- The Victory screen (end-of-round summary) and the various XvY preset surfaces (ready-dialog, admin panel, HQ terminal) carry divergent copies of the same "matchup size" configuration. Changes in one place do not reliably reflect in the others.
+
+Intent:
+- Consolidate to a single source of truth for the XvY selection so the Victory screen, ready-dialog preset picker, and any admin-side surfaces all render from the same value.
+
+Status: **Open.** Scoped for the polish phase; not a playtest blocker.
+
+## CQ_Bug_Border_OutOfBounds_Rework (#87)
+Title: Border bug rework + out-of-bounds handling aligned with new Godot settings
+
+Observed (2026-04-21):
+- Border-enforcement logic and out-of-bounds kill-volume behavior need a rework to align with the new Godot map-authoring settings. Current script-side boundary logic is tuned to the pre-Godot-refresh map geometry.
+
+Intent:
+- Re-tune `src/boundary/enforcement.ts` (and any related kill-volume paths) against the new Godot-authored playable-area bounds. Map-side + script-side coordination required.
+
+Status: **Open.** Scoped for a dedicated boundary pass once map geometry is settled.
+
+Related:
+- `CQ_Bug_41` (self-terminating loops for boundary enforcement — the enforcement cadence is already event-driven; this is about the geometry, not the poll).
+
+## CQ_Bug_Oil_Tanker_In_Ground_B (#88)
+Title: Oil tanker at flag B clips into the ground
+
+Observed (2026-04-21):
+- The authored oil-tanker prop at flag B sits partially sunk into the terrain on the current Godot build.
+
+Resolution path:
+- Map-side fix: reposition the oil tanker in Godot. Not a code issue; no script change required.
+
+Status: **Open.** Map-side TODO.
+
+## CQ_Polish_Vehicle_Spawn_Messaging_To_Admin_Panel (#89)
+Title: Relegate "Vehicle spawned at X/Z" world-log messaging to admin-panel
+
+Observed (2026-04-21):
+- The "Vehicle spawned at X/Z" diagnostic toasts / world-log lines fire during normal play. Noise level is fine in SP / small-scale testing but will spam a 64-player playtest.
+
+Intent:
+- Gate the messaging behind an admin-panel button/toggle so it stays available for diagnostics (the info is genuinely useful when debugging spawn-transform regressions like #82) but does not emit during normal play. Implementation options: wrap the emitter in a `FEATURE_SPAWN_POS_LOG` flag; or route it through a per-session admin-panel toggle.
+
+Status: **Open.** Polish phase; bundle impact near-zero.
+
+Related:
+- `CQ_Bug_Air_Deploy_Jet_Position_Regression` (#82) — the kind of regression these messages help catch.
+- `CQ_Refactor_Vehicle_Destroy_Consolidation` (#74) — the destroy-side already gates its diag under `FEATURE_PERF_DIAG`; the spawn-side is the remaining exposed path.
+
+## CQ_Bug_Launcher_Slot2_Double_Give (#90)
+Title: RPG-then-AT4 double-gives a launcher instead of slot-swapping
+
+Observed (2026-04-21):
+- Repro: equip RPG via the gadget-locker launcher row (lands in the toggled slot — typically slot 2 by default, or slot 1 after toggle). Then click AT4 from the same row. The AT4 lands in a fresh slot instead of replacing the RPG in the existing slot — player ends up with both launchers simultaneously.
+
+Suspected root cause:
+- The v1.308–v1.313 gadget-locker rework added slot-based `RemoveEquipment(player, InventorySlots.GadgetOne/Two)` for slot-targeted swaps. The `slotWithLauncher(slotsState)` helper that resolves the swap target may be returning an empty slot when the probed `State.players.lockerSlots[pid]` has not yet been re-probed after the first RPG placement. Second click then hits the "give to empty slot" branch instead of the "swap same slot" branch.
+- Alternative hypothesis: the `probeLauncherSlot` call between the two clicks is classifying the RPG slot as `kind: "gadget"` (post-v1.312 disambiguation fix removed `loaded === 1 → launcher` inference) — which would now cause `slotWithLauncher` to return `null` even though a launcher is present.
+
+Intent:
+- Diagnose whether the bug is in the probe (slot kind misclassified) or in the `slotWithLauncher` lookup (correct probe, wrong consumer). Candidate fix: re-probe both slots immediately before `giveLauncher` resolves its target slot, or maintain a `kind: "launcher"` marker that survives the probe (reintroduced via a non-ammo signal, e.g. the known engineer launcher-enum set from `#77`'s `ENGINEER_GADGET_CANDIDATES`).
+
+Status: **Open.** Polish phase; related to #78 (per-launcher ammo cap investigation — same file, adjacent call paths).
+
+Related:
+- `CQ_Refactor_Gadget_Locker_v1.290_to_v1.313` (#77) — v1.312 probe-disambiguation fix is the likely regression surface.
+- `CQ_Polish_Launcher_Ammo_Per_Launcher_Cap` (#78) — AT4 second-slot ammo gap is adjacent.
+- Memory: `project_engineer_supply_crate_enum.md`.

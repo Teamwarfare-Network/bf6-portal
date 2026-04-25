@@ -34,6 +34,7 @@ const State: GameState = {
         },
         phase: MatchPhase.NotReady,
         clock: {
+            countdown: undefined,
             durationSeconds: ROUND_CLOCK_DEFAULT_SECONDS,
             matchLengthSeconds: ROUND_CLOCK_DEFAULT_SECONDS,
             matchStartElapsedSeconds: undefined,
@@ -63,9 +64,7 @@ const State: GameState = {
             vehicleStates: {},
         },
         boundary: {
-            inEnemyMainBaseCoreByPid: {},
-            inEnemyMainBaseBufferByPid: {},
-            inGroundCombatZoneByPid: {},
+            zoneStateByPid: {},
             activeViolationByPid: {},
             alarmHandle: undefined,
             alarmReady: false,
@@ -217,6 +216,7 @@ const State: GameState = {
         lockerSlotToggle: {},
         uiCachePerfByPid: {},
         deployedByPid: {},
+        deployedAtSecondsByPid: {},
         disconnectedByPid: {},
         uiInputEnabledByPid: {},
         liveVehicleDeployMenuVisibleByPid: {},

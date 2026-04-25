@@ -3,6 +3,36 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.370: Squad spawn zone inheritance: at deploy, copy inOwnBuffer/inGCZ/inEnemyHQ/inEnemyBuffer from nearest deployed teammate within 25m; inOwnHQ stays anchor-probe-driven; one-shot at deploy, no per-tick cost
+// v1.369: Event-driven seat state: cache seatKind at OnPlayerEnter/ExitVehicle + spawn-mode seed; classifier reads pre-computed flag instead of querying mod.GetVehicleFromPlayer per tick (fixes aircraft OOB false-positives)
+// v1.368: Fix aircraft OOB false-positives: bypass safeGetVehicleFromPlayer cache gate (lags reality on Air Deploy timing race) and add slot-binding fallback for isAircraftVehicleInstance (CompareVehicleName has documented reliability gaps - CQ_Bug_43)
+// v1.367: Enable boundary AreaTriggers via mod.EnableAreaTrigger at game-mode start (off by default; explains why trigger enter/exit events never fired and HQ-back-walk OOB persisted across multiple architectural rewrites)
+// v1.364: Update HQ trigger fallback constants and OBJ_ID_RUBRIC.md to match current Firestorm spatial (Team 1 = 500, Team 2 = 501); spatial swapped from prior layout, getter call sites already correct
+// v1.363: Remove dead VehicleDeploySpawnPoint config: team1/team2 spawn-point ids, runtime lets, validation entries, and orphan getVehicleDeploySpawnPointIdForTeam (deprecated since v1.152 spawn-point forcing strip)
+// v1.362: Spawn-mode-aware zone seed: read slot.pendingSpawnMode at deploy to force inOwnHQ for HQ Deploy, inGCZ+inOwnBuffer for Forward Deploy, all-false for Air Deploy; standard on-foot deploy falls back to HQ anchor distance probe
+// v1.361: Fix HQ-deploy ready-up: seed inOwnHQ at deploy via distance check (engine does not fire trigger enter events on spawn-inside-trigger); trigger exit remains sole clearer for HQ-back-walk OOB
+// v1.360: Refactor boundary state to single PlayerZoneState; one update path; classifier is pure read; fixes HQ-back-walk and bail-from-chopper false negatives
+// v1.359: Fix Air Deploy: don't unconditionally set inMainBaseByPid=true on deploy (wrongly exempted bailed pilots); sense actual seated vehicle at deploy to populate posDebug cache (fixes aircraft misclassified as on-foot); clear inMainBaseByPid on undeploy to avoid stale-true
+// v1.358: GCZ safe zone = own-HQ UNION GroundCombatVolume; change deploy-default inGroundCombatZoneByPid to false so HQ-to-direct-OOB walk fires correctly
+// v1.357: Revert SDK SurroundingArea; restore custom script GCZ for foot + non-aircraft vehicles outside trigger 666; aircraft exempt by isAircraftVehicleInstance; sync-refresh boundary on vehicle seat change
+// v1.356: Replace SetVehicleCategoryAllowedInSurroundingArea (VehicleCategories enum missing from installed mod-types) with SetVehicleAllowedInSurroundingArea per-aircraft (VehicleList enum is present); keep SetAllVehiclesAllowedInSurroundingArea(true) global
+// v1.355: Wire tickBoundaryEnforcement into per-second loop -- previously orphan, so on-foot Y>200 check never fired without an area-trigger event
+// v1.354: Restore Y=200 ground_combat_zone BoundaryViolation (tick-polled, custom HUD); add SetAllVehiclesAllowedInSurroundingArea(true) global before per-category aircraft exempt calls
+// v1.353: Try Air_Heli/Air_Plane explicit SA exempt (belt-and-braces); add AIRCRAFT_BAIL_CEILING_Y=200 foot-player insta-kill on aircraft bail above ceiling
+// v1.352: Unwrap SetVehicleCategoryAllowedInSurroundingArea(Air_All, true) from try/catch so any runtime error surfaces
+// v1.351: Decouple script GCZ (trigger 666); rely on engine vanilla CombatArea for ground/foot; keep Air_All SDK exempt and custom pre-live+enemy-buffer OOB
+// v1.350: Match Andy's SA pattern: drop Ground_All=false call; revert GCZ exempt to aircraft-only so tanks stay bounded by script
+// v1.349: postbuild: drop redundant modlib @ts-ignore re-insert (preserve-directive regex already keeps source line)
+// v1.348: Surrounding Area: explicit per-category Air_All=true/Ground_All=false; drop global-allow + gate constant
+// v1.345: Adopt SDK 1.2.3 SetVehicleCategoryAllowedInSurroundingArea(Ground_All, false) at round start to block ground vehicles at the vanilla Surrounding Area (engine-level cutout). Widened isPlayerGroundCombatZoneExempt to cover any seated-vehicle occupant (was aircraft-only) so tanks no longer get script-killed for leaving our custom GCZ polygon. Foot players still governed by the custom GCZ. Gated by new VEHICLE_SURROUNDING_AREA_GROUND_ALL_BARRED constant in config/conquest-constants.ts; flip to false to revert to v1.344 behavior. Geographic asymmetry (vanilla SA larger than custom GCZ) documented in TWL_Conquest_Design.md.
+// v1.344: Fix probeLauncherSlot misidentifying slot when launcher has 0 ammo: a launcher with 0 ammo reads 0/0/inactive, identical to an empty slot, so the slot-1-empty short-circuit returned slot 2 even when launcher was actually in slot 1. Now uses sibling-slot populated/active state as discriminator; only short-circuits when slot 2 has ammo or is active. When both slots read empty, falls through to the destructive probe to disambiguate. Likely also fixes intermittent ammo button (state's slot was wrong post-misprobe, so writes hit the wrong slot).
+// v1.343: Supply Box launcher ammo: read-back verify after SetInventoryAmmo / SetInventoryMagazineAmmo, retry the other path once if the write silently no-op'd (fixes intermittent 'click did nothing' on the launcher ammo button)
+// v1.342: Supply Box menu probe: preserve slot-1 launcher ammo across the destructive probe (RPG with 2 ammo no longer comes back with default 3)
+// v1.341: Supply Box menu: gate every slot-based RemoveEquipment (giveLauncher, giveAssaultItem, giveReconItem, giveMedicSmoke) behind isSlotEmpty precheck, and gate by-id sweeps behind HasEquipment, to silence the engine RemoveEquipment warning on empty-slot calls
+// v1.340: Supply Box menu polish: stepper locks to 'Launcher in Slot N' when launcher equipped; reorder giveLauncher so re-probe runs before SetInventoryAmmo (fixes ammo landing on wrong slot after RPG->AT4 swap); per-launcher max ammo cap (RPG=6, AT4=5, Stinger=6) dims the launcher ammo tile when at cap
+// v1.339: Supply Box menu launcher fixes (#78, #85, #90): remove wielded bail in probeLauncherSlot with ForceSwitchInventory restore; short-circuit probe when slot 1 is empty; verify giveLauncher landed and sweep stale launchers
+// v1.338: clock: migrate match clock to Clocks.CountDownClock (drift-corrected, onSecond-driven paint, onComplete expiry)
+// v1.337: clock: early-return gate when per-player paint is a no-op; retires 64-player per-second hot path
 // v1.334: Phase 2b loadout fix: defer Air Deploy vehicle Teleport until after ForcePlayerToSeat so the engine applies vehicle loadout; vehicle + seated player relocate together post-seat, matching the Forward Deploy path
 // v1.333: loadout fix probe (Phase 2a): defer Forward Deploy vehicle Teleport until after ForcePlayerToSeat so engine applies vehicle loadout
 // v1.332: revert v1.331 probe: restore yaw-only Teleport for jets on Air Deploy (probe confirmed birth rotation does not propagate)
