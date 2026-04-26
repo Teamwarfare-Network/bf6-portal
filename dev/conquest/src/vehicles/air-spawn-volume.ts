@@ -1,62 +1,23 @@
 // @ts-nocheck
-// Module: vehicles/air-spawn-volume -- pure sampling helpers for the air-deploy volume.
+// Module: vehicles/air-spawn-volume -- air-deploy volume picker + altitude/rotation sampler.
 //
 // Reads the existing authored `team{N}AircraftSpawnVolumes` (accessed via
 // getVehicleSpawnVolumesForTeam(..., "aircraft")) and returns a random sky point plus
 // the volume-authored rotation. Jet rotation = volume.rotPlane (may include pitch);
 // heli rotation = volume.rotHeli. Altitude is additive on top of the quad floor Y:
 // jets sample uniformly in [floorY + jetSpawnFloor, floorY + jetSpawnCeiling]; helis
-// sample uniformly in [floorY, floorY + heliSpawnCeiling]. Altitude range mirrors the
-// behavior in reference_conquest_attempt_b/src/vehicles/spawner-bind.ts:96-114 but is
-// written fresh against the current infra — no code ported.
+// sample uniformly in [floorY, floorY + heliSpawnCeiling].
+//
+// Floor sampling math (`triangleAreaXZ`, `samplePointInTriangle`, `volumeQuadAreaXZ`,
+// `sampleRandomFloorPointInVolume`) lives in `spawn-volume-math.ts` and is shared with
+// the forward-deploy sampler.
 //
 // No state mutation, no mod.* side effects beyond mod.CreateVector — call freely per click.
 
-//#region -------------------- Triangle Sampling (air) --------------------
-
-function airTriangleAreaXZ(a: mod.Vector, b: mod.Vector, c: mod.Vector): number {
-    const ax = mod.XComponentOf(a);
-    const az = mod.ZComponentOf(a);
-    const bx = mod.XComponentOf(b);
-    const bz = mod.ZComponentOf(b);
-    const cx = mod.XComponentOf(c);
-    const cz = mod.ZComponentOf(c);
-    const cross = (bx - ax) * (cz - az) - (bz - az) * (cx - ax);
-    return Math.abs(cross) * 0.5;
-}
-
-function airSamplePointInTriangle(a: mod.Vector, b: mod.Vector, c: mod.Vector): mod.Vector {
-    const r1 = Math.random();
-    const r2 = Math.random();
-    const sqrtR1 = Math.sqrt(r1);
-    const u = 1 - sqrtR1;
-    const v = sqrtR1 * (1 - r2);
-    const w = sqrtR1 * r2;
-    const x = u * mod.XComponentOf(a) + v * mod.XComponentOf(b) + w * mod.XComponentOf(c);
-    const y = u * mod.YComponentOf(a) + v * mod.YComponentOf(b) + w * mod.YComponentOf(c);
-    const z = u * mod.ZComponentOf(a) + v * mod.ZComponentOf(b) + w * mod.ZComponentOf(c);
-    return mod.CreateVector(x, y, z);
-}
-
-function airVolumeQuadAreaXZ(volume: VehicleSpawnVolumeSpec): number {
-    const [a, b, c, d] = volume.floorCorners;
-    return airTriangleAreaXZ(a, b, c) + airTriangleAreaXZ(a, c, d);
-}
-
-function sampleRandomFloorPointInAirVolume(volume: VehicleSpawnVolumeSpec): mod.Vector {
-    const [a, b, c, d] = volume.floorCorners;
-    const area1 = airTriangleAreaXZ(a, b, c);
-    const area2 = airTriangleAreaXZ(a, c, d);
-    const total = area1 + area2;
-    if (total <= 0) return airSamplePointInTriangle(a, b, c);
-    const pick = Math.random() * total;
-    return pick < area1
-        ? airSamplePointInTriangle(a, b, c)
-        : airSamplePointInTriangle(a, c, d);
-}
+//#region -------------------- Altitude Layering --------------------
 
 function sampleRandomPointInAirVolume(volume: VehicleSpawnVolumeSpec, vehicleType: mod.VehicleList): mod.Vector {
-    const floor = sampleRandomFloorPointInAirVolume(volume);
+    const floor = sampleRandomFloorPointInVolume(volume);
     const isJet = isJetVehicleType(vehicleType);
     const minH = isJet ? Math.max(0, volume.jetSpawnFloor ?? 0) : 0;
     const maxH = isJet
@@ -70,7 +31,7 @@ function sampleRandomPointInAirVolume(volume: VehicleSpawnVolumeSpec, vehicleTyp
     );
 }
 
-//#endregion ----------------- Triangle Sampling (air) --------------------
+//#endregion ----------------- Altitude Layering --------------------
 
 
 
@@ -91,7 +52,7 @@ function pickAirVolumeForTeam(teamId: TeamID): VehicleSpawnVolumeSpec | undefine
     let totalArea = 0;
     const areas: number[] = [];
     for (const v of enabled) {
-        const a = airVolumeQuadAreaXZ(v);
+        const a = volumeQuadAreaXZ(v);
         areas.push(a);
         totalArea += a;
     }

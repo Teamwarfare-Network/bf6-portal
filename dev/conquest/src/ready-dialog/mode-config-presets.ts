@@ -3,6 +3,11 @@
 
 //#region -------------------- Ready Dialog - Mode Presets + Confirm --------------------
 
+// Seconds the "Cannot apply: N still loading" message remains in the dialog's unsavedLabel
+// slot after the late-joiner-warm guard refuses an Apply. After this duration elapses, the
+// label reverts to its normal "Unsaved changes!" / live-locked state via a deferred refresh.
+const APPLY_BLOCKED_LABEL_DURATION_SECONDS = 5;
+
 type ReadyDialogModeConfigDiffState = {
     hasUnsavedChanges: boolean;
     gameModeDirty: boolean;
@@ -292,6 +297,33 @@ function toggleReadyDialogSupplyBoxesCheckbox(changedBy?: mod.Player): void {
 }
 
 function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
+    // Guard: refuse to apply while any player has a UI warm-prime in flight (#105). Apply
+    // Config's per-player widget rebuild paths (deploy-timer HUD, world-interactable icons,
+    // vehicle slot retype) iterate over all players via forEachValidPlayer. A late-joiner
+    // mid-warm-prime has a partially-populated UI cache; a parallel rebuild on top of that
+    // produces hard server crashes (engine-level invalid-handle operations on a half-built
+    // widget tree). The dialog state remains "Unsaved changes" so the user can press Apply
+    // again once the loaders settle. The flag is set in prebuildAllUiFamiliesHidden and
+    // cleared in a finally block + the player-leave cleanup, so a disconnect mid-warm cannot
+    // permanently block applies.
+    //
+    // v1.382 (#105): block message rendered inline in the dialog's unsavedLabel slot
+    // (replacing world-log notification from v1.381). Sets a timestamp + count, refreshes
+    // visible viewers, then schedules a deferred clear after APPLY_BLOCKED_LABEL_DURATION_SECONDS
+    // so the label reverts to its normal "Unsaved changes!" / live-locked state.
+    const activeWarmCount = Object.keys(State.players.warmPrimeActiveByPid).length;
+    if (activeWarmCount > 0) {
+        State.round.modeConfig.applyBlockedAtSeconds = mod.GetMatchTimeElapsed();
+        State.round.modeConfig.applyBlockedCount = activeWarmCount;
+        updateReadyDialogModeConfigForAllVisibleViewers();
+        void (async () => {
+            await mod.Wait(APPLY_BLOCKED_LABEL_DURATION_SECONDS);
+            State.round.modeConfig.applyBlockedAtSeconds = undefined;
+            State.round.modeConfig.applyBlockedCount = undefined;
+            updateReadyDialogModeConfigForAllVisibleViewers();
+        })().catch(() => {});
+        return;
+    }
     const cfg = State.round.modeConfig;
     const prevGameMode = cfg.confirmed.gameMode;
     const confirmedPlayers = Math.floor(cfg.autoStartMinActivePlayers);

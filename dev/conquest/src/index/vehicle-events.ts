@@ -78,15 +78,22 @@ async function onVehicleSpawnedImpl(eventVehicle: mod.Vehicle): Promise<void> {
     vehicleSpawnBaseTeamByObjId[vehicleObjId] = slot.teamId;
     clearLastDriverByVehicleObjId(vehicleObjId);
 
-    const teamNameKey = getTeamNameKey(slot.teamId);
-    const x = Math.floor(mod.XComponentOf(pos));
-    const z = Math.floor(mod.ZComponentOf(pos));
-    sendHighlightedWorldLogMessage(
-        mod.Message(mod.stringkeys.twl.messages.vehicleSpawned, teamNameKey, x, z),
-        true,
-        undefined,
-        mod.stringkeys.twl.messages.vehicleSpawned
-    );
+    // Spawn-position diagnostic message. Gated behind FEATURE_PERF_DIAG (compile-time strip in
+    // production) AND the admin's runtime toggle State.admin.perfDiagEnabled (matches the
+    // destroy-side pattern). Useful when debugging spawn-transform regressions like the v1.331
+    // jet-position one (#82) but spammy for normal play and a 64p match. Toggle on via the
+    // perfDiag admin button when needed (admin-panel/events.ts:161).
+    if (FEATURE_PERF_DIAG && State.admin.perfDiagEnabled) {
+        const teamNameKey = getTeamNameKey(slot.teamId);
+        const x = Math.floor(mod.XComponentOf(pos));
+        const z = Math.floor(mod.ZComponentOf(pos));
+        sendHighlightedWorldLogMessage(
+            mod.Message(mod.stringkeys.twl.messages.vehicleSpawned, teamNameKey, x, z),
+            true,
+            undefined,
+            mod.stringkeys.twl.messages.vehicleSpawned
+        );
+    }
 }
 
 // Routes destroyed vehicle back to vanilla-spawner, which clears the slot bind and

@@ -253,6 +253,16 @@ function getDesiredBoundaryViolationKind(player: mod.Player): BoundaryPromptKind
         try {
             const pos = safeGetSoldierStateVector(player, mod.SoldierStateVector.GetPosition);
             if (pos && mod.YComponentOf(pos) > AIRCRAFT_BAIL_CEILING_Y) {
+                // Safety-net: OnPlayerEnterVehicle may have missed (engine reliability gap,
+                // same family as CQ_Bug_43 CompareVehicleName). Re-probe engine; if actually
+                // in a vehicle at ceiling, self-correct seatKind via the single writer and
+                // exempt this tick. setPlayerSeatKind triggers a recursive refresh that
+                // terminates at the aircraft early-return above.
+                const inVehicle = safeGetSoldierStateBool(player, mod.SoldierStateBool.IsInVehicle, false);
+                if (inVehicle) {
+                    setPlayerSeatKind(player, "aircraft");
+                    return undefined;
+                }
                 return "ground_combat_zone";
             }
         } catch {}
@@ -451,13 +461,26 @@ function seedZoneStateFromSpawnContext(player: mod.Player, pid: number, state: P
     }
     // No slot -- standard on-foot HQ deploy OR squad/flag spawn. seatKind via IsInVehicle probe.
     state.seatKind = probeSeatKindFromEngineState(player);
-    // Squad-spawn proxy: copy non-HQ zone flags from the nearest deployed teammate so a player
-    // spawning deep inside GCZ / own buffer / enemy zones inherits the correct flags without
-    // waiting for a physical trigger crossing. inOwnHQ is NOT inherited -- the anchor probe is
-    // an independent reliable signal that may legitimately disagree with a squadmate near the
-    // HQ trigger edge. See design_doc/squad_spawn_zone_inheritance_plan_2026-04-25.md.
-    tryInheritZonesFromNearbyTeammate(player, pid, state);
+    // Standard on-foot HQ deploy is caught by the anchor probe; if so, the player is already
+    // in-bounds via inOwnHQ and no further seeding is needed.
     state.inOwnHQ = isPlayerWithinOwnMainBaseAnchorRadius(player);
+    if (state.inOwnHQ) return;
+    // Squad-spawn proxy: inherit non-HQ zone flags from the nearest deployed teammate within
+    // SQUAD_SPAWN_PROXIMITY_RADIUS_METERS. This is the ONLY path that delivers definitive
+    // OOB-on-spawn proof (e.g., spawning on a teammate currently in the enemy buffer should
+    // inherit that OOB state). Returns false when no teammate is in range or the teammate is
+    // still in their own deploy grace window. See design_doc/squad_spawn_zone_inheritance_plan_2026-04-25.md.
+    const inheritedFromTeammate = tryInheritZonesFromNearbyTeammate(player, pid, state);
+    if (inheritedFromTeammate) return;
+    // Default-in-bounds fallback: no slot, not at HQ, no teammate signal. The engine does NOT
+    // fire OnPlayerEnterAreaTrigger on spawn-inside-trigger -- so flag-spawns and solo spawns
+    // would otherwise leave all zones false and the classifier would trip the GCZ violation
+    // 1.5s after deploy. Per design policy (2026-04-25, #98): the deploy-time default is
+    // in-bounds; we only flag OOB when we have definitive proof (teammate inheritance above).
+    // Captured flags are by definition inside safe ground, so seeding inGCZ=true is the safe
+    // assumption. Trigger exit events still flip flags as the player moves -- the default seed
+    // is the starting state only, not a permanent override.
+    state.inGCZ = true;
 }
 
 // Scans deployed teammates and returns the closest one within SQUAD_SPAWN_PROXIMITY_RADIUS_METERS

@@ -121,6 +121,14 @@ type ReadyDialogModeConfig = {
         forwardDeployEnabled: boolean;
         supplyBoxesEnabled: boolean;
     };
+    // v1.382 (#105): Apply Configuration block message rendering. When the late-joiner-warm
+    // guard refuses Apply, applyBlockedAtSeconds is set to the rejection timestamp and
+    // applyBlockedCount captures the warm count at the time of the block. The dialog's
+    // unsavedLabel slot renders the "Cannot apply: N still loading" message instead of
+    // "Unsaved changes!" while the timestamp is recent (within APPLY_BLOCKED_LABEL_DURATION_SECONDS).
+    // Both fields are cleared after the duration expires via a deferred refresh.
+    applyBlockedAtSeconds?: number;
+    applyBlockedCount?: number;
 };
 
 type ReadyDialogVehicleOption = {
@@ -261,13 +269,23 @@ const READY_DIALOG_JET_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortSu57, vehicle: VEHICLE_SU57 },
 ];
 
-const READY_DIALOG_HELI_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
+// Per-team heli menus. Apache + Euro Tiger are shared (attack helis are usable by either side
+// per design). LittleBird (AH-6M) and BlackHawk (UH-60) are faction-locked: NATO variants on
+// Team 1, PAX variants on Team 2. The shared READY_DIALOG_HELI_VEHICLE_OPTIONS was retired
+// at v1.379; the dispatcher in map-runtime.ts routes by knob-key prefix.
+const READY_DIALOG_TEAM1_HELI_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortNoSpawn, vehicle: undefined },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortApache, vehicle: VEHICLE_AH64 },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortEuro, vehicle: VEHICLE_EUROCOPTER },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortLittleBird, vehicle: VEHICLE_AH6M },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortLittleBirdPax, vehicle: VEHICLE_AH6M_PAX },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawk, vehicle: VEHICLE_UH60 },
+];
+
+const READY_DIALOG_TEAM2_HELI_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortNoSpawn, vehicle: undefined },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortApache, vehicle: VEHICLE_AH64 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortEuro, vehicle: VEHICLE_EUROCOPTER },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortLittleBirdPax, vehicle: VEHICLE_AH6M_PAX },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawkPax, vehicle: VEHICLE_UH60_PAX },
 ];
 
@@ -281,15 +299,24 @@ const READY_DIALOG_GROUND_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortGepard, vehicle: VEHICLE_CHEETAH },  // Engine enum "Cheetah" actually spawns the GE-26 PAX (Gepard)
 ];
 
-const READY_DIALOG_FAST_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
+// Per-team Fast (slots 1/2) menus — ground-only transport (no helis, those go in slots 3/4).
+// NATO variants on Team 1, PAX variants on Team 2. Quadbike and GolfCart are neutral and
+// appear on both teams. The shared READY_DIALOG_FAST_VEHICLE_OPTIONS was retired at v1.379.
+const READY_DIALOG_TEAM1_FAST_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
     { label: mod.stringkeys.twl.readyDialog.vehicleShortNoSpawn, vehicle: undefined },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauder, vehicle: VEHICLE_MARAUDER },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauderPax, vehicle: VEHICLE_MARAUDER_PAX },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortDirtBike, vehicle: VEHICLE_DIRTBIKE },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortDirtBikePax, vehicle: VEHICLE_DIRTBIKE_PAX },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortQuadbike, vehicle: VEHICLE_QUADBIKE },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortGolfCart, vehicle: VEHICLE_GOLFCART },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortFlyer60, vehicle: VEHICLE_FLYER60 },
+];
+
+const READY_DIALOG_TEAM2_FAST_VEHICLE_OPTIONS: ReadyDialogVehicleOption[] = [
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortNoSpawn, vehicle: undefined },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortMarauderPax, vehicle: VEHICLE_MARAUDER_PAX },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortDirtBikePax, vehicle: VEHICLE_DIRTBIKE_PAX },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortQuadbike, vehicle: VEHICLE_QUADBIKE },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortGolfCart, vehicle: VEHICLE_GOLFCART },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortVector, vehicle: VEHICLE_VECTOR },
 ];
 
@@ -309,7 +336,7 @@ const READY_DIALOG_TEAM2_TRANSPORT_SLOT_VEHICLE_OPTIONS: ReadyDialogVehicleOptio
     { label: mod.stringkeys.twl.readyDialog.vehicleShortDirtBikePax, vehicle: VEHICLE_DIRTBIKE_PAX },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortQuadbike, vehicle: VEHICLE_QUADBIKE },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortGolfCart, vehicle: VEHICLE_GOLFCART },
-    { label: mod.stringkeys.twl.readyDialog.vehicleShortFlyer60, vehicle: VEHICLE_FLYER60 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleShortVector, vehicle: VEHICLE_VECTOR },
     { label: mod.stringkeys.twl.readyDialog.vehicleShortBlackHawkPax, vehicle: VEHICLE_UH60_PAX },
 ];
 

@@ -27,7 +27,6 @@ type VehicleSpawnerSlot = {
     lastDestroyedAtSeconds: number;
     lastMissingAtSeconds: number;
     respawnRunning: boolean;
-    spawnRetryScheduled: boolean;
     spawnCategory: VehicleSlotSpawnCategory;
     deployFlowTracked: boolean;
     availabilityPhase: VehicleSlotAvailabilityPhase;
@@ -37,8 +36,6 @@ type VehicleSpawnerSlot = {
     // (alive, live-terminal). Drives the beginHqSeatFlow branch selection.
     hqSource?: "deploy_menu" | "on_foot";
     activeOwnerPid?: number;
-    suppressNextBindSpawnTransformCorrection?: boolean;
-    freshAirRuntimeSpawner?: mod.VehicleSpawner;
     // Forward Deploy: pre-sampled random point + rotation inside the team's forward volume.
     // Consumed by the dispatch branch in vanilla-spawner when pendingSpawnMode === "forward"
     // (SetObjectTransform relocates slot.spawner here before ForceVehicleSpawnerSpawn), then
@@ -390,6 +387,16 @@ interface GameState {
         armO: Record<number, boolean>;
         armI: Record<number, number>;
         armT: Record<number, number>;
+        // Currently-focused tile key per pid in the Supply Box (arm) menu, for the
+        // disabled-focused border indicator. Cleared on FocusOut, menu close, and player leave.
+        armFocusedTileKeyByPid: Record<number, string>;
+        // True while a player's UI warm-prime is in flight (entry to exit of
+        // prebuildAllUiFamiliesHidden). Read by confirmReadyDialogModeConfig (Apply Config) to
+        // refuse-with-feedback while any warm is mid-flight, preventing the v1.380 hard-crash
+        // case where Apply Config's per-player widget rebuild collides with a late-joiner's
+        // partially-populated UI cache. Cleared in a finally block (covers throw/early-return)
+        // and in the player-leave cleanup path (covers disconnect-during-warm).
+        warmPrimeActiveByPid: Record<number, boolean>;
         armG: Record<number, {
             n: number;
             s: number;

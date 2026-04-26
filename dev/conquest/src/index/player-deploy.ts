@@ -62,18 +62,12 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     State.players.deployedByPid[pid] = true;
     invalidateVehicleDeployTimerHudViewerCache(pid);
     updateHudTeamSwapButtonVisibilityForPid(pid);
-    // Sense the actual seated state at deploy -- critical for Air Deploy, where the player
-    // spawns directly inside a vehicle without an OnPlayerEnterVehicle event. Without this,
-    // safeGetVehicleFromPlayer returns undefined and classifies an aircraft pilot as on-foot.
-    delete State.players.posDebugVehicleObjIdByPid[pid];
-    State.players.posDebugTransformSourceByPid[pid] = "soldier";
-    try {
-        const deployedVehicle = mod.GetVehicleFromPlayer(eventPlayer);
-        if (deployedVehicle) {
-            State.players.posDebugVehicleObjIdByPid[pid] = getObjId(deployedVehicle);
-            State.players.posDebugTransformSourceByPid[pid] = "vehicle";
-        }
-    } catch {}
+    // posDebugVehicleObjIdByPid cache is owned by OnPlayerEnter/ExitVehicle events
+    // (vehicle-events.ts). The deploy-time GetVehicleFromPlayer seed was removed at v1.374
+    // because the cache is consumed only by FEATURE_POSITION_DEBUG-gated code (off in
+    // production for 80+ versions) and the engine call produced "invalid value" log spam
+    // during deploy timing races (#93). Boundary classification is event-driven via seatKind
+    // (v1.369) and does not depend on this cache.
     State.conquest.debug.teamSwapHudResetPendingByPid[pid] = false;
     State.players.readyByPid[pid] = false;
     delete State.players.readyNeedsReconfirmByPid[pid];

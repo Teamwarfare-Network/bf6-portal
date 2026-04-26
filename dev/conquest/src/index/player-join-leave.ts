@@ -157,6 +157,8 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.armO[pid];
     delete State.players.armI[pid];
     delete State.players.armT[pid];
+    delete State.players.armFocusedTileKeyByPid[pid];
+    delete State.players.warmPrimeActiveByPid[pid];
     delete State.players.armS[pid];
     delete State.players.armG[pid];
     delete State.players.armL[pid];

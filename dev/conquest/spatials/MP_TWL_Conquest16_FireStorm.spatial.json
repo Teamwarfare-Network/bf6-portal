@@ -2809,7 +2809,7 @@
         },
         {
             "name": "VehicleSpawner B",
-            "VehicleType": "Vector",
+            "VehicleType": "Quadbike",
             "P_AutoSpawnEnabled": true,
             "P_DefaultRespawnTime": 120,
             "type": "VehicleSpawner",
@@ -2842,9 +2842,9 @@
             "P_DefaultRespawnTime": 120,
             "type": "VehicleSpawner",
             "right": {
-                "x": -0.985079,
+                "x": -0.676169,
                 "y": 0,
-                "z": 0.172101
+                "z": 0.736746
             },
             "up": {
                 "x": 0,
@@ -2852,9 +2852,9 @@
                 "z": 0
             },
             "front": {
-                "x": -0.172101,
+                "x": -0.736746,
                 "y": 0,
-                "z": -0.985079
+                "z": -0.676169
             },
             "position": {
                 "x": -93.51521,
@@ -6157,24 +6157,24 @@
             "P_AbandonVehiclesOutOfCombatArea": false,
             "type": "StationaryEmplacementSpawner",
             "right": {
-                "x": 0.931739,
-                "y": -0.244351,
-                "z": 0.268616
+                "x": 1,
+                "y": 0,
+                "z": 0
             },
             "up": {
-                "x": 0.251264,
-                "y": 0.967878,
-                "z": 0.00889753
+                "x": 0,
+                "y": 1,
+                "z": 0
             },
             "front": {
-                "x": -0.262162,
-                "y": 0.0592034,
-                "z": 0.963206
+                "x": 0,
+                "y": 0,
+                "z": 1
             },
             "position": {
-                "x": 555.536,
-                "y": 112.248,
-                "z": -200.234
+                "x": 538.605,
+                "y": 112.371,
+                "z": -229.258
             },
             "id": "StationaryEmplacementSpawner13"
         },

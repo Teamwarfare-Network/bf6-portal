@@ -3,6 +3,19 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.383: safety-net engine re-probe: detect missing OnPlayerEnterVehicle when on_foot+Y>200 about to OOB; self-correct seatKind to aircraft via single writer (#106)
+// v1.382: render Apply-blocked message inline in dialog's unsavedLabel slot instead of world-log (#105 follow-up)
+// v1.381: guard Apply Configuration against concurrent late-joiner warm-prime to prevent hard server crash (#105); refuses with 'Cannot apply: N player(s) still loading' world-log when warmPrimeActiveByPid is non-empty
+// v1.380: gate 'Vehicle spawned at X/Z' world-log behind FEATURE_PERF_DIAG + admin runtime toggle (#89); off in production by default, toggleable via existing perfDiag admin button
+// v1.379: Per-team vehicle menus: split shared HELI + FAST slot1/2 menus into Team1 (NATO) / Team2 (PAX) variants; Apache + Euro Tiger + Jets remain shared per design; Flyer60 removed from Team 2 transport. Ground vehicles unchanged (no _Pax variants in code)
+// v1.378: Operation Firestorm: Team 2 (PAX) Fast slot 2 default flipped Flyer60 -> Vector across 8/10/12/16 matchup presets; Vector added to Team 2 transport-slot dropdown menu so the default is reachable in the knob
+// v1.377: team names: add 8 NATO/PAX combo entries to twl.teams; default Firestorm to WEST_NATO + EAST_PAX (#102)
+// v1.376: boundary seed: default-in-bounds when no teammate inheritance signal; fixes flag-spawn false-positive OOB (#98)
+// v1.375: supply box menu: disabled-focused border indicator (cool blue-white) for console controller navigation; +1 state field, +1 color constant, FocusOut events wired (#97)
+// v1.374: delete dead GetVehicleFromPlayer cache seed in onPlayerDeployedImpl; cache consumed only by FEATURE_POSITION_DEBUG=false code (#93)
+// v1.373: uniform 3-rocket launcher cap with at-cap 'Full' label; +1-ammo non-destructive probe replaces v1.344 short-circuit for 0-ammo launcher slot ID (#95, #96)
+// v1.372: Tier 2 cleanup: remove three dead VehicleSpawnerSlot fields - spawnRetryScheduled (4 read sites in busy gates - field never set true, all reads always false), freshAirRuntimeSpawner (zero reads), suppressNextBindSpawnTransformCorrection (zero reads since v1.259 rewrite). Behavior preserved (false || X === X).
+// v1.371: Tier 1 cleanup: remove no-op clearAllVehicleReservations + endMatch callsite; remove zero-caller getDesiredSpawnerCountsForPreset; consolidate triangle/quad sampling math into shared spawn-volume-math.ts (forward + air sampler import shared helpers)
 // v1.370: Squad spawn zone inheritance: at deploy, copy inOwnBuffer/inGCZ/inEnemyHQ/inEnemyBuffer from nearest deployed teammate within 25m; inOwnHQ stays anchor-probe-driven; one-shot at deploy, no per-tick cost
 // v1.369: Event-driven seat state: cache seatKind at OnPlayerEnter/ExitVehicle + spawn-mode seed; classifier reads pre-computed flag instead of querying mod.GetVehicleFromPlayer per tick (fixes aircraft OOB false-positives)
 // v1.368: Fix aircraft OOB false-positives: bypass safeGetVehicleFromPlayer cache gate (lags reality on Air Deploy timing race) and add slot-binding fallback for isAircraftVehicleInstance (CompareVehicleName has documented reliability gaps - CQ_Bug_43)

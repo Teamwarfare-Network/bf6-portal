@@ -80,6 +80,7 @@ const STR_UI_LINE_INTERCEPT = mod.stringkeys.twl.ui.lineIntercept;
 const STR_UI_LINE_MISSILE = mod.stringkeys.twl.ui.lineMissile;
 const STR_UI_SPAWN = mod.stringkeys.twl.ui.spawn;
 const STR_UI_READY = mod.stringkeys.twl.ui.ready;
+const STR_UI_LAUNCHER_AT_CAP = mod.stringkeys.twl.ui.atCap;
 const STR_UI_HELP_EMPTY = mod.stringkeys.twl.ui.helpEmpty;
 const STR_UI_HELP_ARTILLERY_STRIKE = mod.stringkeys.twl.ui.helpArtilleryStrike;
 const STR_UI_HELP_SPAWN_BEACON = mod.stringkeys.twl.ui.helpSpawnBeacon;

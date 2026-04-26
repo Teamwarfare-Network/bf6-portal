@@ -1,9 +1,9 @@
 # Conquest Issues
 
-Last Updated: 2026-04-21 (v1.338)
-Last Tested Build: `v1.313` — Phase 6 HQ Deploy remains functional (both deploy-menu and on-foot live-terminal surfaces). Gadget locker rework (v1.290–v1.313) completed: per-launcher team pools, tuned durations, authoritative per-player slot state, slot-based `HasEquipment`-diff probe, per-class slot-toggle row with preference persistence. Vanilla regression path remains byte-identical to the v1.276 baseline. v1.314 reworks the ready-dialog config column to checkbox seeds (Supply Boxes wired v1.325; Forward Deploy wired v1.328; Air Deploy wired v1.329). v1.333/v1.334 move Forward/Air Deploy vehicle Teleport to post-seat to fix loadout drop. v1.337–v1.338 migrate the match clock to `Clocks.CountDownClock`, retiring the prior hot path. Outstanding: late-joiner redeploy-timer investigation deferred to the polish phase (see memory `project_respawn_redeploy_timer_polish.md`).
+Last Updated: 2026-04-25 (v1.375)
+Last Tested Build: `v1.375` — single-player verified for v1.373 launcher cap + at-cap label, v1.374 GetVehicleFromPlayer error-log cleanup (user-confirmed via error-log inspection at v1.374), and v1.375 Supply Box disabled-focused indicator (user-confirmed via in-menu navigation). MP confirmation pending. Phase 6 HQ Deploy remains functional. Gadget locker rework (v1.290–v1.313) and the v1.339–v1.344 launcher probe + ammo polish stand. Vanilla regression path remains byte-identical to the v1.276 baseline. v1.314 reworks the ready-dialog config column to checkbox seeds (Supply Boxes wired v1.325; Forward Deploy wired v1.328; Air Deploy wired v1.329). v1.333/v1.334 move Forward/Air Deploy vehicle Teleport to post-seat to fix loadout drop. v1.337–v1.338 migrate the match clock to `Clocks.CountDownClock`. v1.358–v1.370 stabilized the boundary architecture (single-zone-state, event-driven seatKind, squad-spawn inheritance, `mod.EnableAreaTrigger` wired). v1.371–v1.372 shipped Tier 1+2 cleanup. v1.373 unified launcher caps to 3 + non-destructive +1-ammo slot probe (#95, #96). v1.374 deleted dead `GetVehicleFromPlayer` cache seed (#93) — completes v1.369 design intent. v1.375 added Supply Box disabled-focused border indicator (#97). Outstanding: late-joiner redeploy-timer investigation deferred to polish phase; #94 `GetInventoryAmmo` error log noted as not-recently-observed (review pending).
 
-**Cross-reference:** for the numbered, named, at-a-glance index of all 90 issues (status table + per-issue executive summary), see [`conquest_issues_summary.md`](./conquest_issues_summary.md). This doc holds the full body — history, investigation notes, timelines. The summary is the authoritative numeric index.
+**Cross-reference:** for the numbered, named, at-a-glance index of all 105 issues (status table + per-issue executive summary), see [`conquest_issues_summary.md`](./conquest_issues_summary.md). This doc holds the full body — history, investigation notes, timelines. The summary is the authoritative numeric index.
 
 **Architecture note (v1.258–v1.259 rewrite).** The Vanilla vehicle spawner was rewritten around one persistent `VehicleSpawner` per slot, a serial `spawnMutex` dispatching via `ForceVehicleSpawnerSpawn`, event-driven bind via `OnVehicleSpawned`, and `Clocks.CountDownClock`-driven respawn. Files `src/vehicles/deploy-fulfillment.ts`, `src/vehicles/reservations.ts`, and `src/vehicles/spawner-sequence.ts` were deleted. All non-Vanilla deploy paths (legacy air-deploy, forward-deploy, HQ-forward) were removed. Any bug entry below whose root cause lived in those files is flagged **Obsolete (v1.259 rewrite)** — the underlying code no longer exists.
 
@@ -12,7 +12,7 @@ Last Tested Build: `v1.313` — Phase 6 HQ Deploy remains functional (both deplo
 ## Current Snapshot
 - `CQ_Bug_1`: Resolved
 - `CQ_Bug_2`: Resolved
-- `CQ_Bug_3`: Open (Phase 10 polish)
+- `CQ_Bug_3`: **Open — still reproducing at v1.372** (user confirmation 2026-04-25). Phase 10 polish; instrumented team-switch cleanup pending.
 - `CQ_Bug_4`: Resolved
 - `CQ_Bug_5`: Resolved
 - `CQ_Bug_6`: Resolved
@@ -26,10 +26,10 @@ Last Tested Build: `v1.313` — Phase 6 HQ Deploy remains functional (both deplo
 - `CQ_Bug_14`: Resolved
 - `CQ_Bug_15`: Resolved
 - `CQ_Bug_16`: Open (Phase 10 polish)
-- `CQ_Bug_17`: Open (Phase 10 polish)
+- `CQ_Bug_17`: Likely resolved — not observed since the v1.328+ Forward/Air Deploy reintroduction refactor (user confirmation 2026-04-25). Needs MP confirmation under load before final close.
 - `CQ_Bug_18`: Resolved
-- `CQ_Bug_19`: Open (Phase 10 investigation)
-- `CQ_Bug_20`: Open (Phase 10 polish)
+- `CQ_Bug_19`: **Not reproducing in v1.372 testing** (user confirmation 2026-04-25). Closing pending re-observation under 64p MP load. The 5–10 min late-match deploy-button-disappear symptom has not recurred since the v1.358–v1.370 boundary architecture stabilization. Re-open if the symptom returns.
+- `CQ_Bug_20`: Likely resolved — not observed since the recent ready-dialog refresh fix (user confirmation 2026-04-25). Needs MP confirmation before final close.
 - `CQ_Bug_21`: Likely resolved (believed fixed by v1.013 loading gate rearchitecture; needs confirmation)
 - `CQ_Bug_22`: Resolved
 - `CQ_Bug_23`: Resolved
@@ -37,7 +37,7 @@ Last Tested Build: `v1.313` — Phase 6 HQ Deploy remains functional (both deplo
 - `CQ_Bug_25`: Resolved (single-player confirmed v1.064. v1.158 shipped a temporary `FEATURE_WORLD_ICON_DIAG` MP telemetry counter; removed v1.213 after user moved past the world-icon debugging path to smoke-based signalling. Pre-game HQ World Icons continue to render normally — only the diagnostic counter + state fields were removed)
 - `CQ_Bug_26`: Likely resolved (believed fixed by vehicle HUD polish passes; needs confirmation)
 - `CQ_Bug_27`: Resolved (fixed in vehicle HUD render passes)
-- `CQ_Bug_28`: Open (Phase 10 — vehicle-specific, only some vehicles affected; needs investigation)
+- `CQ_Bug_28`: Likely resolved — not observed since the v1.328+ Forward/Air Deploy reintroduction refactor and the v1.333/v1.334 post-seat Teleport pattern (user confirmation 2026-04-25). Needs MP confirmation across all aircraft slots.
 - `CQ_Bug_29`: Open (Phase 10 — needs repro)
 - `CQ_Bug_30`: Likely resolved (believed fixed by loading gate rearchitecture and UI cache polish; needs confirmation)
 - `CQ_Bug_31`: Likely obsolete (v1.308–v1.313 reworked the gadget locker slot-probe path wholesale; the v1.306 by-id probe that could destroy gadgets has been removed. Deploy path also substantially changed in v1.258–v1.289. Re-observe under v1.313 before acting — original symptom may no longer reproduce.)
@@ -68,7 +68,7 @@ Last Tested Build: `v1.313` — Phase 6 HQ Deploy remains functional (both deplo
 - `CQ_Bug_56`: Resolved (v1.212 — Kills counter incremented on friendly kills when team damage was on. `onPlayerEarnedKillImpl` now compares killer/victim team via `safeGetTeamNumberFromPlayer(..., 0)` and skips the increment when teams match; fails open on unassigned team (team 0) rather than silently dropping)
 - `CQ_Bug_Loadout_Not_Respected`: **Open — scope confirmed (v1.332 playtest)**. Forward Deploy and Air Deploy do NOT respect the player's loadout (e.g. TOW on AH-6M); HQ Deploy does. Same `ForcePlayerToSeat` call site (`onHqSeatPendingPlayerDeployed`); suspected cause is vehicle position at deploy-time — HQ vehicle sits at `slot.spawnPos` (HQ pad) when `DeployPlayer` + `ForcePlayerToSeat` fire, Forward/Air vehicle has already been Teleported to the forward/air point pre-seat. Engine likely applies vehicle loadout via proximity to the player's deploy origin. Proposed fix (unimplemented): delay the Forward/Air vehicle Teleport until AFTER `ForcePlayerToSeat`, not pre-seat. Risk: Teleport on aircraft with player aboard may strip seating or desync physics — needs probe.
 - `CQ_Bug_Air_Deploy_Jet_Position_Regression`: **Open** (v1.331 probe regressed jets — reverted v1.332). v1.331 Phase A probe (skip post-bind Teleport for jets) left jets birthed at the primary spawner's last position rather than `nextAirPos`. Confirms `SetObjectTransform` on a persistent `VehicleSpawner` does not reliably propagate position updates to `ForceVehicleSpawnerSpawn` at altitude — the post-bind `mod.Teleport` is what delivers Air Deploy position for both heli and jet. v1.332 restores the yaw-only Teleport path. Jet pitch (rotPlane.X=-45°) remains lost; sister-spawner plan at `~/.claude/plans/sleepy-juggling-thunder.md` Phase B is the documented path. Phase B depends on the same `SetObjectTransform`-at-altitude hypothesis that just failed for Phase A; deferred until a separate probe verifies sibling-spawner position updates at y≈1000.
-- `CQ_Bug_RemoveEquipment_JS_Error`: **Open (observed v1.332, no repro yet)**. Error log reads `Error reported by RemoveEquipment when running JS Script`. Suspected trigger: opening the gadget locker menu. No repro steps captured; needs a targeted playtest with error-log capture. Deferred to the polish phase.
+- `CQ_Bug_RemoveEquipment_JS_Error`: Likely resolved — not observed since the v1.341 RemoveEquipment `isSlotEmpty` precheck gate (user confirmation 2026-04-25, no recent error-log occurrence). Needs MP confirmation before final close.
 - `CQ_Feat_Pregame_Countdown_Delay_Lines`: Resolved (v1.208–v1.209 — staggered 3-line reveal of the round-start delay info at 0/+3s/+6s above the pregame countdown, Y raised to -420/-380/-340. Cache-preservation fix in `ensureCountdownUIAndGetWidget` so `delayLineWidgets` survives per-tick recreation and the lines actually hide on LIVE!)
 - `CQ_Feat_Round_Start_Gadget_Delay`: Resolved (v1.210–v1.211 — new `roundStartGadgetDelay` MapConfig (Firestorm default 60). 4th pregame countdown line at Y=-300 staggered in with the forward-deploy line at -6s. Gadget locker menu opens pre-LIVE + during delay with preview/stats visible, all tiles forced disabled via `gadgetBlocked`, yellow status header counts down. Two string variants: `twl.countdown.delayGadgets` pre-LIVE, `twl.countdown.delayGadgetsLive` post-LIVE)
 - `CQ_Bug_Loading_Gate_Invariants`: Closed-by-audit (v1.214 shipped GATE_INV_1/2/3 asserts, v1.222 reverted them — world-log channel is transient/unreliable for verification; dual-guard in code closes the race. Diagnostic recipe documented for future reintroduction as persistent HUD plate if needed)
@@ -84,7 +84,7 @@ Last Tested Build: `v1.313` — Phase 6 HQ Deploy remains functional (both deplo
 - `CQ_Bug_Global_SetTimeout_Sandbox`: Resolved (v1.261 — `setTimeout` does not exist in the Portal sandbox and rejected the first `doDispatch` promise, poisoning the mutex `.then()` chain and preventing subsequent slot dispatches. Switched to `Timers.setTimeout`; wrapped `Promise.race` in try/catch; every mutex enqueue now routes through `enqueueDispatch()` which appends `.catch(() => {})`.)
 - `CQ_Refactor_Live_Start_Fleet_Reset_Sink`: Resolved (v1.262 — live-start pre-live vehicles sunk to y=-1000 then DealDamage; avoids audible explosions at pads and `UnspawnObject` engine-side error path. Also added vehicle types: `DirtBike`, `DirtBike_Pax`, `AH6M_Pax` across classification, deploy-timer labels, ready-dialog knob options, strings. Firestorm presets replaced `Quadbike` → `DirtBike`/`DirtBike_Pax` and swapped Team2 AH6M → AH6M_Pax across all matchup sizes.)
 - `CQ_Refactor_Vehicle_Reset_Moved_To_Countdown_Start`: Resolved (v1.263–v1.265 — fleet reset moved from LIVE-start to countdown-start so fresh spawns complete during countdown and there is no jumble at LIVE!. Sink → 0.5s wait → `DealDamage`. Removed dead `destroyAllTrackedVehicles` helper.)
-- `CQ_Bug_Abrams_Substitution_Transport_Slot_Regression`: **Open** — v1.266–v1.269 attempted a fix via `relocateSlotSpawner` + Phase C re-configure + Abrams-reject guard and reverted after multiple regressions (5 of 8 slots failing to spawn; audible explosions on retries). Current v1.289 behavior: wrong vehicle may be visible at countdown start on transport slots after heli/ground knob toggles, but no slots stay empty. Fresh diagnostic pass required before the next attempt. v1.271 mitigates by waiting 2s for engine init before `relocateSlotSpawner` configure.
+- `CQ_Bug_Abrams_Substitution_Transport_Slot_Regression`: Likely resolved — not observed since the v1.328+ Forward/Air Deploy reintroduction refactor (user confirmation 2026-04-25). Needs MP confirmation under heli/ground knob-toggle scenarios. Original v1.266–v1.269 fix attempts reverted; v1.271 2s init-wait mitigation remains in place.
 - `CQ_Refactor_Vehicle_Destroy_Consolidation`: Resolved (v1.270–v1.276 — fix passes culminating in the single `sinkAndDestroyVehicle` wrapper. Preserves X/Z, teleports to y=-1000, damages after ~500–1500ms. Replaces 4 duplicated inline sites. v1.283/v1.285 re-confirmed the `slot.spawnPos`-priority fallback — `GetObjectPosition` returns bad X/Z at Vanilla→HQ countdown reset. See memory `project_getobjectposition_unreliable_on_destroy.md`.)
 - `CQ_Feat_Phase6_HQ_Deploy`: Resolved (v1.277–v1.289 — opt-in `VEHICLE_DEPLOY_METHOD_HQ` deploy mode. Six implementation phases:
   - v1.277: ready-dialog knob option (no behavior).
@@ -2475,6 +2475,8 @@ Latest findings (2026-04-21):
   3. Respawn timing during a live-connection / late-join transition (the `HUD_WARM_REDEPLOY_BLOCK_SECONDS` suspected-global behavior above).
 - All three need MP playtest evidence before the fix direction is chosen. Treat them as one investigation bucket — they share the same `SetRedeployTime` call-site cluster in `src/interaction/actions.ts` and `src/vehicles/hq-deploy.ts`.
 
+Status update (2026-04-25, v1.376): user reaffirmed all three scope items remain on the punch list. Investigation still pending MP repro / `FEATURE_PERF_DIAG=true` playtest data.
+
 ## CQ_Polish_Launcher_Ammo_Per_Launcher_Cap
 Title: `giveRocketCharge` Consumes a Charge at Max Launcher Ammo
 
@@ -2711,7 +2713,7 @@ Observed (2026-04-21):
 Intent:
 - Consolidate to a single source of truth for the XvY selection so the Victory screen, ready-dialog preset picker, and any admin-side surfaces all render from the same value.
 
-Status: **Open.** Scoped for the polish phase; not a playtest blocker.
+Status: **Open.** Scoped for the polish phase; not a playtest blocker. Reaffirmed on punch list 2026-04-25 (v1.376).
 
 ## CQ_Bug_Border_OutOfBounds_Rework (#87)
 Title: Border bug rework + out-of-bounds handling aligned with new Godot settings
@@ -2719,13 +2721,15 @@ Title: Border bug rework + out-of-bounds handling aligned with new Godot setting
 Observed (2026-04-21):
 - Border-enforcement logic and out-of-bounds kill-volume behavior need a rework to align with the new Godot map-authoring settings. Current script-side boundary logic is tuned to the pre-Godot-refresh map geometry.
 
-Intent:
-- Re-tune `src/boundary/enforcement.ts` (and any related kill-volume paths) against the new Godot-authored playable-area bounds. Map-side + script-side coordination required.
+Resolution (2026-04-25):
+- User confirmed the boundary rework was completed across the v1.358–v1.370 architecture pass: `CQ_Feat_Custom_GCZ_Restored` (v1.357), `CQ_Feat_Zone_Tracker_Refactor` (v1.360), `CQ_Feat_AreaTrigger_Enable` (v1.367), `CQ_Feat_Event_Driven_Seat_State` (v1.369), and `CQ_Feat_Squad_Spawn_Zone_Inheritance` (v1.370). Map-side spatial was re-authored at `MP_TWL_Conquest16_FireStorm.spatial.json` to bind aircraft to the outer air polygon while retaining trigger 666 for ground/foot enforcement.
 
-Status: **Open.** Scoped for a dedicated boundary pass once map geometry is settled.
+Status: **Resolved (v1.370).** Boundary architecture is event-driven and event-stable. Re-tuning was effectively the boundary architecture pass; no separate "boundary geometry refresh" plan needed.
 
 Related:
-- `CQ_Bug_41` (self-terminating loops for boundary enforcement — the enforcement cadence is already event-driven; this is about the geometry, not the poll).
+- `CQ_Feat_Zone_Tracker_Refactor` (v1.360) — single PlayerZoneState owner.
+- `CQ_Feat_AreaTrigger_Enable` (v1.367) — explained the missing-events root cause.
+- `CQ_Feat_Event_Driven_Seat_State` (v1.369) — fixed aircraft OOB false-positives.
 
 ## CQ_Bug_Oil_Tanker_In_Ground_B (#88)
 Title: Oil tanker at flag B clips into the ground
@@ -2745,9 +2749,14 @@ Observed (2026-04-21):
 - The "Vehicle spawned at X/Z" diagnostic toasts / world-log lines fire during normal play. Noise level is fine in SP / small-scale testing but will spam a 64-player playtest.
 
 Intent:
-- Gate the messaging behind an admin-panel button/toggle so it stays available for diagnostics (the info is genuinely useful when debugging spawn-transform regressions like #82) but does not emit during normal play. Implementation options: wrap the emitter in a `FEATURE_SPAWN_POS_LOG` flag; or route it through a per-session admin-panel toggle.
+- Gate the messaging behind an admin-panel button/toggle so it stays available for diagnostics (the info is genuinely useful when debugging spawn-transform regressions like #82) but does not emit during normal play.
 
-Status: **Open.** Polish phase; bundle impact near-zero.
+Resolution shipped at v1.380:
+- Wrapped the emitter at [`index/vehicle-events.ts:84-95`](../src/index/vehicle-events.ts#L84) in `if (FEATURE_PERF_DIAG && State.admin.perfDiagEnabled) { ... }`. This matches the destroy-side gating pattern (referenced in the original issue) and the global game-loop diag pattern at [`index/game-mode.ts:111`](../src/index/game-mode.ts#L111).
+- In production (`FEATURE_PERF_DIAG = false` per [`config/conquest-constants.ts:6`](../src/config/conquest-constants.ts#L6)), the entire block — including the `mod.Message` construction and `sendHighlightedWorldLogMessage` call — is stripped by `postbuild.js` dead-code elimination. Bundle delta v1.379 → v1.380: **−362 bytes**.
+- In dev / diag builds (`FEATURE_PERF_DIAG = true`), the existing perfDiag admin button at [`admin-panel/events.ts:161`](../src/admin-panel/events.ts#L161) toggles `State.admin.perfDiagEnabled` runtime, which controls whether the messaging emits.
+
+Status: **Resolved (v1.380).**
 
 Related:
 - `CQ_Bug_Air_Deploy_Jet_Position_Regression` (#82) — the kind of regression these messages help catch.
@@ -2766,9 +2775,598 @@ Suspected root cause:
 Intent:
 - Diagnose whether the bug is in the probe (slot kind misclassified) or in the `slotWithLauncher` lookup (correct probe, wrong consumer). Candidate fix: re-probe both slots immediately before `giveLauncher` resolves its target slot, or maintain a `kind: "launcher"` marker that survives the probe (reintroduced via a non-ammo signal, e.g. the known engineer launcher-enum set from `#77`'s `ENGINEER_GADGET_CANDIDATES`).
 
-Status: **Open.** Polish phase; related to #78 (per-launcher ammo cap investigation — same file, adjacent call paths).
+Status: Likely resolved (user confirmation 2026-04-25 — not observed since the v1.339–v1.344 launcher probe + ammo-write polish passes). Needs MP confirmation. The v1.339 wielded-bail removal in `probeLauncherSlot`, the v1.342 launcher-ammo preservation across destructive probes, the v1.343 read-back/retry on ammo writes, and the v1.344 sibling-slot disambiguation likely closed this together.
 
 Related:
 - `CQ_Refactor_Gadget_Locker_v1.290_to_v1.313` (#77) — v1.312 probe-disambiguation fix is the likely regression surface.
 - `CQ_Polish_Launcher_Ammo_Per_Launcher_Cap` (#78) — AT4 second-slot ammo gap is adjacent.
 - Memory: `project_engineer_supply_crate_enum.md`.
+
+## CQ_Audit_Engine_Enable_Calls (Tier 3.1, v1.372)
+Title: Engine-object `Enable*` SDK call audit — generalize the v1.367 EnableAreaTrigger lesson
+
+Audit scope (per [tier_1_2_3_cleanup_plan_2026-04-25.md](./tier_1_2_3_cleanup_plan_2026-04-25.md) §3.1):
+- Every `mod.Enable*` SDK function in [reference_bf6_core/mod/functions/](../../reference_bf6_core/mod/functions/) was enumerated. For each engine-object enable function, every call site in [src/](../src/) was located, and every object-creation/get site for that object type was traced to confirm whether the engine's default state requires an explicit script call to flip.
+- Capture points are out of scope (separate audit `CQ_Audit_CapturePoint_HotPath_State` below).
+
+SDK enumeration:
+- **Engine-object enables** (in scope): `EnableAreaTrigger`, `EnableInteractPoint`, `EnableSpatialObject`, `EnableHQ`, `EnableGameModeObjective`, `EnableVFX`, `EnableWorldIconImage`, `EnableWorldIconText`, `EnableCapturePointDeploying`.
+- **Player-state controls** (out of scope): `EnablePlayerDeploy`, `EnableAllPlayerDeploy`, `EnableInputRestriction`, `EnableAllInputRestrictions`, `EnableUIButtonEvent`, `EnableUIInputMode`, `EnableScreenEffect`.
+
+Findings — per object type:
+
+| Object type | Used? | Enable wired? | Where |
+|---|---|---|---|
+| `AreaTrigger` | yes (boundary triggers via `mod.GetAreaTrigger`) | YES | [boundary/enforcement.ts:114](../src/boundary/enforcement.ts#L114) `enableBoundaryAreaTriggers()` called from `onGameModeStartedImpl` ([index/game-mode.ts:29](../src/index/game-mode.ts#L29)). The v1.367 lesson. |
+| `InteractPoint` (authored) | yes (world interactables: ready, vehicle spawn, ammo resupply) | YES | [interaction/world-interactables.ts:79](../src/interaction/world-interactables.ts#L79) `applyWorldInteractableAuthoredInteractPointState`, called from `configureActiveWorldInteractables` ([:399](../src/interaction/world-interactables.ts#L399)) which runs from `applyMapConfig` ([config/map-runtime.ts:644](../src/config/map-runtime.ts#L644)) at game-mode start. Per-second retry via `ensureActiveWorldInteractablesReady` ([index/game-mode.ts:151](../src/index/game-mode.ts#L151)) covers the case where authored objects are not queryable on the first pass. |
+| `InteractPoint` (runtime-spawned, ready dialog) | yes (per-player) | YES | [interaction/interact-point.ts:44](../src/interaction/interact-point.ts#L44) on spawn; disabled at [:105](../src/interaction/interact-point.ts#L105) on cleanup. |
+| `WorldIcon` (authored) | yes (HQ icons) | YES (intentionally disabled) | [interaction/world-interactables.ts:64-65](../src/interaction/world-interactables.ts#L64) — authored icons are explicitly hidden via `EnableWorldIconImage(false)` + `EnableWorldIconText(false)` so per-player runtime clones own presentation (per AGENTS.md `mod.AddUIIcon is Non-Functional` and memory `feedback_adduiicon_broken.md`). |
+| `WorldIcon` (runtime-spawned) | yes (per-team HQ clones) | YES | [interaction/world-interactables.ts:168-169](../src/interaction/world-interactables.ts#L168) — clones spawn DISABLED, must call image+text enable after `SetWorldIconImage`/`SetWorldIconColor`/`SetWorldIconText`/`SetWorldIconOwner`. Documented constraint per memory `feedback_adduiicon_broken.md` ("Spawned WorldIcons start with image/text DISABLED"). |
+| `VFX` (runtime-spawned smoke markers) | yes (yellow gadget anchors, team-coloured HQ markers) | YES | [interaction/world-interactables.ts:232,279](../src/interaction/world-interactables.ts#L232) — VFX handles return DISABLED from `mod.SpawnObject` for `FX_*` prefabs; explicit `mod.EnableVFX(vfx, true)` is the load-bearing step (the v1.166 lesson). |
+| `HQ` | read-only (`mod.GetHQ(1/2)` for map detection) | n/a — no enable required for read-only `mod.GetObjectPosition` access | [config/map-runtime.ts:731-732](../src/config/map-runtime.ts#L731) — used in `detectMapKeyFromHqs()`. We never need the HQ-as-objective behavior `EnableHQ` controls. |
+| `SpatialObject` | NO usage anywhere in src | n/a | grep returned zero `mod.GetSpatialObject`, zero `as mod.SpatialObject`, zero `EnableSpatialObject`. No latent risk. |
+| `GameModeObjective` | NO usage anywhere in src | n/a | grep returned zero hits. We do not register custom objectives. |
+| `MCOM` / `Sector` | NO usage anywhere in src | n/a | Not part of conquest game-mode surface. |
+| `CapturePoint` (read access) | yes (`mod.GetCapturePoint`, `GetCurrentOwnerTeam`, etc.) | n/a — `EnableCapturePointDeploying` controls *deploying-on-point*, not the event/read surface we use | We rely on engine-vanilla CapturePoint event firing (`OnPlayerEnter/ExitCapturePoint`, `OngoingCapturePoint`, `OnCapturePointCaptured/Lost`). 90+ versions of working capture mechanics confirm no enable miss. |
+
+Conclusion: **Clean.** Every engine-object type whose `Enable*` SDK call governs core functionality is properly wired at game-mode start. The v1.367 EnableAreaTrigger lesson does NOT generalize to a hidden bug — the same pattern (explicit enable call required because the engine's default state is "off") is already learned and applied for `VFX` (v1.166), `WorldIcon` (v1.064), and `AreaTrigger` (v1.367). No latent enable misses on object types we currently use.
+
+Latent risk noted (NOT a defect, but worth documenting):
+- The authored-`InteractPoint` enable path runs from `applyMapConfig` ([config/map-runtime.ts:644](../src/config/map-runtime.ts#L644)) which only fires when `detectMapKeyFromHqs()` returns a known map key. On an unknown map (or a startup tick before HQs are queryable), `applyMapConfig` is skipped entirely and no authored InteractPoints get enabled. Mitigated by the per-second `ensureActiveWorldInteractablesReady()` retry at [index/game-mode.ts:151](../src/index/game-mode.ts#L151), which calls `configureActiveWorldInteractables()` once `worldInteractablePresentationConfigured === false`. If a future map adds InteractPoints whose default-disabled state would manifest as "interaction does nothing for one second after game-mode start", the retry already covers it. No code change needed.
+
+Status: **Resolved (audit clean).** No follow-up plan required. If a new engine-object type is added (e.g. a custom `Sector` or `MCOM` for an alternate game mode), revisit this audit and add the corresponding `Enable*` call site.
+
+Related:
+- v1.367 wiring change: `mod.EnableAreaTrigger` ([Changelog.ts:11](../src/Changelog.ts#L11)).
+- v1.166 wiring change: `mod.EnableVFX` ([Changelog.ts:186](../src/Changelog.ts#L186)).
+- AGENTS.md `mod.AddUIIcon is Non-Functional` (records the WorldIcon enable contract).
+- Memory: `feedback_adduiicon_broken.md`.
+
+## CQ_Audit_CapturePoint_HotPath_State (Tier 3.2, v1.372)
+Title: Capture-point engagement-state hot-path audit — apply v1.369 cache-at-events principle to capture polling
+
+Audit scope (per [tier_1_2_3_cleanup_plan_2026-04-25.md](./tier_1_2_3_cleanup_plan_2026-04-25.md) §3.2):
+- Every read of `State.conquest.capture.engagedObjIdByPid[pid]` and `State.conquest.capture.byObjId[objId]` was traced for whether it's a pure cache read or triggers an engine query underneath.
+- Every `mod.GetCapture*` / `mod.GetPlayersOnPoint` call was traced for cadence (event-driven vs per-tick polling) and for whether the result could be cached at events.
+- Reference pattern: v1.358–v1.369 boundary refactor, where per-tick `mod.GetVehicleFromPlayer` was replaced by event-driven `seatKind` cached at `OnPlayerEnter/ExitVehicle` + spawn-mode seed. The general principle is "cache at events, read pure state on the hot path."
+
+Inventory of engine queries against capture-point objects:
+
+| File:line | Call | Cadence | Notes |
+|---|---|---|---|
+| [index/area-triggers.ts:8,18](../src/index/area-triggers.ts#L8) | `OngoingCapturePoint` → `conquestPhase2AOnCapturePointTick` and `OnCapturePointCaptured/Lost` edges | event-driven | These are the engine's per-point callbacks. Already correct. |
+| [index/area-triggers.ts:32,54](../src/index/area-triggers.ts#L32) | `OnPlayerEnter/ExitCapturePoint` → updates `engagedObjIdByPid[pid]`, fires `conquestPhase2AOnCapturePointTick` immediately, marks HUD dirty | event-driven | This is the cache-at-events pathway for engage-HUD ownership. Authoritative. |
+| [index/capture-tickets.ts:1751,1756,1761,1769](../src/index/capture-tickets.ts#L1751) | Inside `conquestPhase2AOnCapturePointTick`: `GetCurrentOwnerTeam`, `GetOwnerProgressTeam`, `GetCaptureProgress`, `GetPlayersOnPoint` (all per-call) | event-driven OR polled (depending on caller) | Each call is ~one engine query per mapped point per invocation. |
+| [index/capture-tickets.ts:2058,2070,2075](../src/index/capture-tickets.ts#L2058) | `conquestPhase2ASyncMappedCapturePointsFromEngine` per-subtick: for each mapped point, `mod.GetCapturePoint(objId)` + `conquestPhase2AOnCapturePointTick(cp)` | **per-subtick (~8.3 Hz)** | Called from `conquestPhase2ARefreshLiveCaptureStateSubtick` ([index/game-mode.ts:118](../src/index/game-mode.ts#L118)) inside the live game-mode loop. |
+| [index/player-kpi-events.ts:51](../src/index/player-kpi-events.ts#L51) | `mod.GetPlayersOnPoint` inside `OnCapturePointCaptured` → KPI capture credit | event-driven (one call per capture event) | Correct. |
+| [index/capture-tickets.ts:1548](../src/index/capture-tickets.ts#L1548) | `mod.GetCapturePoint(objId)` inside `conquestPhase2AApplyCaptureTimingForMappedPoints` | one-shot at live-state reset | Correct. |
+
+Per-subtick cost arithmetic:
+- 3 mapped capture points × 4 engine queries (`GetCapturePoint` + `GetCurrentOwnerTeam` + `GetOwnerProgressTeam` + `GetCaptureProgress` + `GetPlayersOnPoint` + array iteration) at 0.12s subtick (~8.3 Hz) = **~100 capture-point engine queries per second**, regardless of actual capture activity.
+- For comparison, the v1.358–v1.369 boundary work eliminated `mod.GetVehicleFromPlayer` × N players × per-second tick (~64 queries/sec at 64p) which was deemed worth fixing.
+
+Why the polling exists (load-bearing, do NOT blindly remove):
+- Comment at [index/capture-tickets.ts:2052-2056](../src/index/capture-tickets.ts#L2052): "OngoingCapturePoint callbacks can miss the exact neutralization-edge sample on some clients. If that final sample is missed, the previous contested frame can keep an old owner border visible. Live polling guarantees the visual FSM receives authoritative owner/progress updates at least once per tick."
+- The polling is a correctness backstop, not an arbitrary tick. Removing it risks reintroducing the missed-edge contested-border bug. Cadence (per-subtick vs per-second) is a deliberate design tradeoff for sub-second HUD fill/percent responsiveness — calling out per the comment at [index/game-mode.ts:103](../src/index/game-mode.ts#L103).
+
+Findings — actionable optimizations (none playtest-blocking):
+
+1. **`mod.GetPlayersOnPoint` inside the per-subtick polling could be replaced with a cached set fed by `OnPlayerEnter/ExitCapturePoint` events.** The enter/exit handlers at [index/area-triggers.ts:32,54](../src/index/area-triggers.ts#L32) already maintain `engagedObjIdByPid[pid]` authoritatively. A reverse index `State.conquest.capture.byObjId[objId].onPointPids: Set<number>` (or array) maintained at the same enter/exit edges would let `conquestPhase2AOnCapturePointTick` derive `onPointTeam1` / `onPointTeam2` from the cache instead of re-querying the engine + iterating an allocated array. Saves ~25 engine queries/sec + 25 array allocations/sec at 3 mapped points. Owner/progress queries must remain (they exist precisely to plug missed `OngoingCapturePoint` events). Estimated cost: medium effort (the cache must stay consistent across deploy/undeploy/disconnect, all of which already touch `engagedObjIdByPid`); medium reward (smaller absolute savings than the v1.358 boundary fix because per-point-per-tick is smaller than per-player-per-tick).
+
+2. **Cadence reduction is NOT recommended.** Dropping the polling from per-subtick to per-second would halve the HUD fill/percent update rate — the comment explicitly cites "sub-second cadence to keep fill/percent updates responsive" as the reason for the current design.
+
+3. **Owner/progress queries remain necessary.** `GetCurrentOwnerTeam` / `GetOwnerProgressTeam` / `GetCaptureProgress` cannot be cached at events because the events themselves can be missed (the failure mode the polling exists to backstop).
+
+Conclusion: **Clean for correctness. One actionable optimization deferred.** The capture-point polling is intentional, documented, and load-bearing. It does not exhibit the v1.358 anti-pattern of "per-tick engine query when an event-driven cache would do" for the owner/progress fields, because the polling specifically exists to compensate for missed events. The one applicable v1.369 lesson — replace `GetPlayersOnPoint` with an event-driven cache — is logged as a low-priority optimization, not a bug.
+
+Status: **Resolved (audit clean).** Optional follow-up: cache `onPointPids` at enter/exit events and read the cached set inside `conquestPhase2AOnCapturePointTick` instead of calling `mod.GetPlayersOnPoint`. Defer until a 64-player playtest with `FEATURE_PERF_DIAG=true` confirms the per-subtick cost is measurable on the section-1 timer.
+
+Related:
+- v1.358–v1.369 boundary refactor (cache-at-events principle generalized from this work).
+- AGENTS.md "Combat HUD Dirty-Flag Contract" (the dirty-flag system that gates per-subtick HUD writes; capture-point sync feeds this gate).
+- `CQ_Perf_TickContext_AllPlayers_Cache` (#65) — companion cache pattern.
+
+## CQ_Bug_GetVehicleFromPlayer_Boundary_ForwardDeploy (#93)
+Title: `GetVehicleFromPlayer` engine error log spam during Forward Deploy boundary check
+
+Observed (2026-04-25, v1.372B error-log capture at [reference_design_documentation/testing_images/20260425101723_1.jpg](../reference_design_documentation/testing_images/20260425101723_1.jpg)):
+- Error log shows 5 rapid-fire occurrences of `Error reported by GetVehicleFromPlayer while running JS Script — Failed to perform operation as invalid value encountered.`
+- User-reported trigger: spawning with a vehicle from Forward Deploy. Suspected origin: boundary checks running before the vehicle handle is valid for the freshly-deployed player.
+
+Suspected root cause:
+- Single remaining `mod.GetVehicleFromPlayer` call site is at [src/boundary/enforcement.ts:530](../src/boundary/enforcement.ts#L530) (inside the boundary classifier helper, called from per-second `tickBoundaryEnforcement` and from synchronous `refreshPlayerBoundaryState` on enter/exit-vehicle events). The deploy-time / Forward-Deploy seating handoff fires `OnPlayerDeployed` → `ForcePlayerToSeat` → post-seat vehicle Teleport (Phase 2a/2b loadout fix). Boundary tick can fall in the brief window where the player is reported as deployed but `GetVehicleFromPlayer` still returns invalid (the engine-level handle lags).
+- v1.368 deliberately bypassed `safeGetVehicleFromPlayer`'s `posDebugVehicleObjIdByPid` cache gate to fix aircraft OOB false-positives; v1.369 then moved per-tick reads to a cached `seatKind` flag. The remaining direct call at enforcement.ts:530 (and at [player-deploy.ts:71](../src/index/player-deploy.ts#L71)) is the residual surface for this error class.
+- Pattern matches the engine-logs-before-JS-catch family (`CQ_Bug_38` / `CQ_Bug_39`): the `try { vehicle = mod.GetVehicleFromPlayer(player); } catch {}` swallows the exception in JS, but the engine still emits the error log line before JS catches.
+
+Impact:
+- Cosmetic / log-noise only at present. No observed gameplay regression. Risk amplifier under 64p where Forward/Air Deploy + boundary tick contention is denser.
+
+Proposed fix paths (one of):
+1. Gate the `GetVehicleFromPlayer` call at [enforcement.ts:530](../src/boundary/enforcement.ts#L530) behind the cached `state.seatKind` flag — if `seatKind === "on_foot"`, skip the engine call entirely; if vehicle, the cached flag is already authoritative for the boundary classifier (per the v1.369 design, the only remaining engine call inside the classifier is `safeGetSoldierStateVector` for the foot-Y-ceiling check). Investigate whether the line 530 read is even needed once seatKind drives classification.
+2. Add a deploy-grace window check before the boundary tick reads vehicle state for a freshly-deployed player (mirror the `GCZ_DEPLOY_GRACE_SECONDS` pattern from v1.360).
+3. Replace the direct `mod.GetVehicleFromPlayer` with the existing `safeGetVehicleFromPlayer` at [id-helpers.ts:34](../src/state/id-helpers.ts#L34) which already wraps in try/catch and caches by pid — but the cache lag was the v1.368 bug, so this only papers over the issue.
+
+Status: **Resolved (v1.374) pending MP confirmation.**
+
+Call-site audit revealed three sites in [src/](../src/) call `mod.GetVehicleFromPlayer`:
+1. [`index/player-deploy.ts:71`](../src/index/player-deploy.ts#L71) inside `onPlayerDeployedImpl` — fires every `OnPlayerDeployed` event. **Dominant fire path.**
+2. [`boundary/enforcement.ts:530`](../src/boundary/enforcement.ts#L530) inside `probeSeatKindFromEngineState` — fires only on non-slot deploys (squad/flag spawn into vehicle). Skipped on Forward/HQ/Air slot-based deploys via the slot-claim branch at [:438](../src/boundary/enforcement.ts#L438).
+3. [`state/id-helpers.ts:43`](../src/state/id-helpers.ts#L43) inside `safeGetVehicleFromPlayer` wrapper — wrapper has zero callers; effectively dead.
+
+The cache `posDebugVehicleObjIdByPid` that site #1 seeds is consumed only by `FEATURE_POSITION_DEBUG`-gated code in [`hud/position-debug.ts:187`](../src/hud/position-debug.ts#L187). The flag has been `false` since v1.190 (80+ versions); the consumer is stripped from production bundles. The two `safe*` wrappers that gate on the cache (`safeGetVehicleFromPlayer`, `safeGetPlayerVehicleSeat`) have effectively zero production callers. Net: seeding a dead cache and paying for engine error logs on every deploy timing race.
+
+**Fix shipped in v1.374:** deleted lines 65-76 of `player-deploy.ts`:
+```ts
+// Removed:
+// delete State.players.posDebugVehicleObjIdByPid[pid];
+// State.players.posDebugTransformSourceByPid[pid] = "soldier";
+// try {
+//     const deployedVehicle = mod.GetVehicleFromPlayer(eventPlayer);
+//     if (deployedVehicle) { ... }
+// } catch {}
+```
+Replaced with a comment block documenting the cache ownership (now exclusively `OnPlayerEnter/ExitVehicle` events at [`vehicle-events.ts:10-12`](../src/index/vehicle-events.ts#L10) for normal entries; Air Deploy's no-enter-event case loses cache initialization, which is the position-debug feature's problem to solve if `FEATURE_POSITION_DEBUG` is ever re-enabled — boundary classification doesn't depend on it).
+
+Boundary-side probe at `enforcement.ts:530` left as-is per Fix F: rare edge case (squad-spawn-into-aircraft passenger seat), already gated by `IsInVehicle` returning true, genuinely needed for boundary correctness, and any error there would be a real signal worth seeing.
+
+Bundle delta v1.373 → v1.374: **−418 bytes** (1.71% headroom).
+
+Verification (single-player playtest):
+1. Forward Deploy a vehicle → confirm zero `GetVehicleFromPlayer` engine errors in admin error log.
+2. HQ Deploy a vehicle → same.
+3. Air Deploy an aircraft → same.
+4. Vanilla deploy + walk-into-vehicle → same.
+5. On-foot deploy (no vehicle) → same.
+6. Boundary regression: Forward Deploy ground vehicle, drive outside GCZ → OOB warning fires correctly. Air Deploy aircraft, fly outside GCZ at altitude → no false-positive OOB. Bail from heli at altitude → ceiling-Y kill fires.
+7. Squad-spawn smoke: teammate in heli passenger seat, squad-spawn onto them → boundary classifies as aircraft. If `enforcement.ts:530` ever logs an error in this path, that's expected and acceptable.
+
+Related:
+- `CQ_Bug_38` / `CQ_Bug_37` — v1.076 vehicle-occupancy cache fix for the same error class (different call site).
+- `CQ_Feat_Event_Driven_Seat_State` (v1.369) — eliminated per-tick `GetVehicleFromPlayer` from the boundary classifier; this fix completes the v1.369 design intent by removing the last per-deploy seed call whose cache is no longer consumed in production.
+- v1.368 changelog ([Changelog.ts:10](../src/Changelog.ts#L10)) — bypass of `safeGetVehicleFromPlayer` cache gate for Air Deploy timing race.
+- Memory `project_force_player_to_seat_unreliable.md`.
+- Plan: [`design_doc/get_vehicle_from_player_fix_plan_2026-04-25.md`](./get_vehicle_from_player_fix_plan_2026-04-25.md).
+
+## CQ_Bug_GetInventoryAmmo_SupplyBox_OpenMenu (#94)
+Title: `GetInventoryAmmo` / `GetInventoryMagazineAmmo` engine error log on Supply Box menu open
+
+Observed (2026-04-25, v1.372B error-log capture at [reference_design_documentation/testing_images/20260425101723_1.jpg](../reference_design_documentation/testing_images/20260425101723_1.jpg)):
+- Error log shows one occurrence each of `Error reported by GetInventoryAmmo while running JS Script — Failed to return ammo amount due to an invalid player or inventory item.` and `Error reported by GetInventoryMagazineAmmo while running JS Script — Failed to return ammo amount due to an invalid player or inventory item.`
+- User-reported trigger: opening the gadget Supply Box (ammo-resupply) menu, possibly while playing as Assault.
+
+Suspected root cause:
+- The Supply Box menu's slot-probe path in [src/interaction/ammo-resupply-menu.ts](../src/interaction/ammo-resupply-menu.ts) calls `mod.GetInventoryAmmo` and `mod.GetInventoryMagazineAmmo` against `mod.InventorySlots.GadgetOne` / `GadgetTwo` to classify slot contents. Calls at lines 1135/1139 and 1333/1336 are NOT wrapped in try/catch (others at 863-876, 937-943, 1354-1364, 2294-2295 are wrapped). When the player has no item in a probed slot — or when the slot holds a class-loadout item the probe is not expecting — the engine reports an invalid-inventory-item error.
+- "As Assault" is consistent: the Assault class has no launcher and may have a different default gadget loadout from the engineer probe path's expectations. Probing for a launcher slot on a class that has no launcher would land on an empty-or-non-launcher slot and trigger the invalid-item error.
+- Pattern matches `CQ_Polish_Launcher_Ammo_Per_Launcher_Cap` (#78) and the v1.341 `RemoveEquipment` fix, where slot-targeted SDK calls without an `isSlotEmpty` / `HasEquipment` precheck produce engine error spam.
+
+Impact:
+- Cosmetic / log-noise only at present. No observed gameplay regression. Could mask other Supply Box menu issues if the error log fills up.
+
+Proposed fix:
+1. Audit every `mod.GetInventoryAmmo` / `mod.GetInventoryMagazineAmmo` call site in [ammo-resupply-menu.ts](../src/interaction/ammo-resupply-menu.ts). Confirm every call is either (a) wrapped in `try { ... } catch {}` (which still emits the engine log but prevents JS exceptions) AND (b) gated behind a `mod.HasEquipment(player, slot)` / `isSlotEmpty(slot)` precheck so the engine never sees an invalid-item call in the first place.
+2. Specifically: lines 1135/1139 and 1333/1336 are unwrapped — wrap them at minimum, and add the precheck where the surrounding logic doesn't already establish that the slot has a launcher.
+3. Mirror the v1.341 pattern for `RemoveEquipment` ("gate every slot-based RemoveEquipment behind isSlotEmpty precheck") and the v1.343 read-back/retry pattern for `SetInventoryAmmo`.
+
+Status: **Open** — repro captured (the v1.372B screenshot). Estimated effort: low (15–30 min for the audit + precheck additions). Bundle impact near-zero. Verify by reproducing the menu-open as Assault and confirming the log lines no longer appear.
+
+Related:
+- `CQ_Polish_Launcher_Ammo_Per_Launcher_Cap` (#78) — same call-family, adjacent issue.
+- `CQ_Bug_Launcher_Slot2_Double_Give` (#90) — same file, recently iterated on.
+- `CQ_Bug_RemoveEquipment_JS_Error` (#84) — same engine-logs-before-JS-catch family. v1.341 precheck pattern is the prior art.
+- v1.343 changelog ([Changelog.ts:31](../src/Changelog.ts#L31)) — read-back verify after `SetInventoryAmmo`/`SetInventoryMagazineAmmo`.
+
+## CQ_Polish_SupplyBox_DisabledFocused_Indicator (#97)
+Title: Supply Box menu — disabled-but-focused tiles now show a distinct border indicator for console / controller navigation
+
+Observed (2026-04-25, design feedback):
+- Many tiles in the Supply Box (gadget) menu start disabled (wrong class, gadget cooldown active, ammo at cap, gadget round-start delay, etc.).
+- Console / controller players have no visual cue when navigating across disabled tiles — the engine fires `FocusIn` events on disabled buttons (already consumed at [ammo-resupply-menu.ts:2596](../src/interaction/ammo-resupply-menu.ts#L2596) for help-text updates) but the tile's disabled visual fully wins, so players can be "selecting" a button without knowing it.
+
+Resolution shipped at v1.375:
+- New per-pid state field `armFocusedTileKeyByPid: Record<number, string>` ([runtime-types.ts:390](../src/state/runtime-types.ts#L390), [runtime-state.ts:212](../src/state/runtime-state.ts#L212)) tracks which tile the player has focus on. Cleared on FocusOut, on `setArmOpen(pid, false)` (menu close), in `resetArmState` (round/state reset), and in the player-leave handler.
+- New color constant `COLOR_BUTTON_BORDER_DISABLED_FOCUSED = COLOR_WHITE_LOW` ([ui-layout.ts:194](../src/foundation/ui-layout.ts#L194)) — cool blue-white (`#D5EBF9`), per design direction (no yellow).
+- `FocusOut` events wired alongside the existing `FocusIn` at the two tile-button-creation sites ([:626](../src/interaction/ammo-resupply-menu.ts#L626), [:1635](../src/interaction/ammo-resupply-menu.ts#L1635)).
+- `setTileVis` and `setActVis` ([:803](../src/interaction/ammo-resupply-menu.ts#L803), [:817](../src/interaction/ammo-resupply-menu.ts#L817)) accept a new `focused` parameter (default false). When `!enabled && focused`, paint the border with `COLOR_BUTTON_BORDER_DISABLED_FOCUSED` at full opacity AND lift the button background from `COLOR_GRAY_DARK` to `COLOR_GRAY` for additional contrast.
+- `refreshArmMenu` reads `focusedKey` once at the top ([:2046](../src/interaction/ammo-resupply-menu.ts#L2046)) and passes `focused = (focusedKey === thisTileKey)` to every `setTileVis`/`setActVis` call. Per-tile signatures appended a `focused ? 1 : 0` field so the existing dirty-detection re-renders both the prev-focused and new-focused tiles when focus moves.
+- `handleArmMenuEvt` derives a stable `tileKey` from the widget-name parsing already in place (assault → `"a:N"`, medic-smoke → `"m"`, medic-items → `"x:N"`, launcher rows → `"row:N"`, launcher-ammo → `"e"`, recon → `"q:N"`). FocusIn writes `armFocusedTileKeyByPid[pid] = tileKey` and triggers `refreshArmMenu(force=true)`. FocusOut clears the key only if it still matches the leaving tile (guards out-of-order events) and forces a refresh. Close button is intentionally excluded from focus tracking — it is always enabled, so the disabled-focused state is unreachable.
+
+Bundle delta v1.374 → v1.375: **+2,776 bytes** (1.71% → 1.44% headroom — within budget).
+
+Verification (single-player playtest, controller / keyboard navigation):
+1. Open Supply Box menu. Confirm currently-focused tile shows the new cool blue-white border ring + slightly brighter background when disabled.
+2. Navigate to an enabled tile. Confirm the existing engine focus visual continues to apply (no regression).
+3. Navigate back to disabled. Confirm border ring re-appears on the focused tile.
+4. Class swap mid-menu: confirm focus visual stays on the same widget and updates if its enabled state flips.
+5. Round-start gadget delay: open menu pre-LIVE; navigate; confirm every tile shows the disabled-focused indicator on its turn.
+6. Close menu while a tile is focused; reopen. Confirm focus state from previous session does not leak.
+7. Mouse hover regression: hover a disabled tile with mouse — disabled-focused visual may or may not fire (FocusIn vs HoverIn engine behavior); acceptable either way (controller is the primary target).
+
+Status: **Resolved (v1.375) pending MP confirmation.**
+
+Out of scope:
+- Other menus (Ready Dialog, Vehicle Deploy, etc.) — same pattern could be extracted into a shared utility if/when extended. User explicitly scoped to Supply Box only for this iteration.
+- Migration to SDK button-state primitives (`SetUIButtonColor{Base,Disabled,Focused,Hover,Pressed}`) — larger refactor; would replace the `safeSetUIWidgetBgColor` pattern. Captured as a future cleanup option; not needed for this fix.
+- HoverIn / HoverOut explicit wiring — engine likely conflates with FocusIn for mouse, untested.
+
+Related:
+- Plan: [`design_doc/supply_box_disabled_focus_indicator_plan_2026-04-25.md`](./supply_box_disabled_focus_indicator_plan_2026-04-25.md).
+
+## CQ_Bug_Launcher_Ammo_Cap_Below_Designed (#95)
+Title: Launcher ammo button caps below configured `maxAmmo`; observed RPG=4 / AT4=3 / Stinger=4 vs. configured 6 / 5 / 6
+
+Observed (2026-04-25, user report):
+- Per-launcher `maxAmmo` is configured at [interaction/ammo-resupply-menu.ts:67-69](../src/interaction/ammo-resupply-menu.ts#L67) as RPG=6, AT4=5, Stinger=6 (loaded + magazine total).
+- Real cap experienced by clicking the Launcher Ammo tile to refusal: RPG=4, AT4=3, Stinger=4.
+- Pattern is uniform: every launcher caps at exactly **2 below** its configured `maxAmmo` (RPG 6→4, AT4 5→3, Stinger 6→4).
+
+Root-cause hypothesis (engine-side reserve clamp):
+- `giveRocketCharge` at [ammo-resupply-menu.ts:1324](../src/interaction/ammo-resupply-menu.ts#L1324) writes via `mod.SetInventoryAmmo` (chamber path) when chamber is empty, otherwise via `mod.SetInventoryMagazineAmmo` (mag path) with the absolute new value `magAmmo + 1`.
+- BF6 launcher class loadouts deploy with **chamber=1 + reserve=N** for some N less than (`maxAmmo − 1`). Engineer's RPG default appears to be 1 chamber + 3 reserve = 4 total. AT4 looks like 1 + 2 = 3. Stinger 1 + 3 = 4.
+- Each click of the Launcher Ammo tile takes the chamber-fresh path on the first call, then the mag path on subsequent calls (chamber stays at 1). The mag path writes `magAmmo + 1` absolute, but the **engine silently clamps** any write above its per-launcher reserve maximum (the v1.343 changelog already noted "the launcher API can silently no-op a chamber/magazine write"). The cap-defense gate at [:1341](../src/interaction/ammo-resupply-menu.ts#L1341) never trips because our configured `maxAmmo` is higher than the engine's actual reserve max — so we keep accepting clicks while the engine drops the writes.
+- The v1.343 read-back-verify at [:1354-1365](../src/interaction/ammo-resupply-menu.ts#L1354) catches the no-op on a per-click basis (returns false, charge NOT consumed) — but the UI's `atCap` recompute at [:2287-2297](../src/interaction/ammo-resupply-menu.ts#L2287) compares `loaded + mag` to our configured `maxAmmo` and stays false, so the tile never grays out and the player keeps spamming clicks to no effect.
+
+Diagnostic quick-test (one playtest run, optional, to confirm the hypothesis before changing the design):
+1. Spawn engineer with each launcher in turn.
+2. Note `loaded` + `mag` at spawn (probably 1 + N, where N is the engine reserve cap minus 1).
+3. Click Launcher Ammo until clicks no longer change ammo (use `FEATURE_PERF_DIAG=true` admin panel ammo readout or temporary world-log). Confirm clicks return false (no charge consumed) once cap is hit.
+4. Verify the cap matches engine-default reserve — this validates the hypothesis and tells us the SDK's clamp is the source of truth, not our config.
+
+Design change (per user direction, 2026-04-25):
+- Move from per-launcher caps (6 / 5 / 6) to a **uniform 3-rocket cap** for any launcher.
+- When the cap is reached, the Launcher Ammo tile must visibly indicate "not available" (gray header, gray countdown, optional message) so the player knows further clicks won't help.
+
+Implementation sketch:
+1. Update each entry at [ammo-resupply-menu.ts:67-69](../src/interaction/ammo-resupply-menu.ts#L67) to `maxAmmo: 3` (RPG, AT4, Stinger).
+2. The existing `atCap` gate at [:2287-2297](../src/interaction/ammo-resupply-menu.ts#L2287) and the `ammoEnabled` evaluation at [:2302](../src/interaction/ammo-resupply-menu.ts#L2302) already wire `atCap` into `ammoEnabled = ... && !atCap`. Tile header color flips to `COLOR_GRAY` via the existing branch at [:2313](../src/interaction/ammo-resupply-menu.ts#L2313) when `ammoEnabled === false && isEngineerClass === true`.
+3. Add an explicit "at cap" copy variant: extend the `cd` countdown label at [:2317-2319](../src/interaction/ammo-resupply-menu.ts#L2317) so when `atCap === true`, label reads (e.g.) `STR_UI_LAUNCHER_AT_CAP` ("Full") instead of `STR_UI_READY` ("Ready"). Requires a new string-key (player-facing — needs human approval per AGENTS.md `String Change Authorization Policy`).
+4. The `giveRocketCharge` cap-defense gate at [:1341](../src/interaction/ammo-resupply-menu.ts#L1341) automatically follows because it reads `launcherMaxAmmoFor(gadgetId)` from the same config.
+5. **Caveat:** because the engine still clamps below 3 for some launchers (e.g., AT4 caps at 3 total naturally via 1 chamber + 2 reserve), the user will hit the engine cap *before* our configured cap of 3 in some cases. That is acceptable per the user's design intent — "cap the player at 3 rockets maximum" — and the read-back verify at [:1354-1365](../src/interaction/ammo-resupply-menu.ts#L1354) will refund charges that the engine drops. UI will show `atCap === false` until our `maxAmmo` cap is hit, but those interim clicks no-op and don't cost charges. Acceptable.
+
+Test plan:
+1. Engineer spawn → menu open. Confirm Launcher Ammo tile is enabled, tile header green, countdown "Ready" (or appropriate variant).
+2. Click Launcher Ammo. Confirm ammo total goes 1→2→3 (reaching our new cap). Charges decrement on each successful click.
+3. At total=3, click again. Confirm tile grays out (header `COLOR_GRAY`, countdown `COLOR_GRAY`, label "Full" or equivalent), charge NOT consumed, ammo stays 3.
+4. Fire a rocket → total drops to 2. Confirm tile re-enables.
+5. Repeat with each launcher type (RPG, AT4, Stinger) and each toggled slot (slot 1 vs slot 2).
+
+Status: **Resolved (v1.373) pending MP confirmation.** Implementation:
+- All three `launchers[]` entries at [ammo-resupply-menu.ts:67-69](../src/interaction/ammo-resupply-menu.ts#L67) now `maxAmmo: 3`.
+- New `STR_UI_LAUNCHER_AT_CAP` constant ([foundation/string-keys.ts:83](../src/foundation/string-keys.ts#L83)) sourcing `twl.ui.atCap` = "FULL" ([strings.json:350](../src/strings.json#L350)). User-approved 2026-04-25.
+- Cd label + color branches at [:2314-2326](../src/interaction/ammo-resupply-menu.ts#L2314) extended: when `atCap === true`, label = "FULL" in `COLOR_GRAY`. Otherwise existing `STR_UI_READY` / clock / `STR_UI_NO_LAUNCHER` precedence preserved.
+- Existing `atCap` gate at [:2287-2297](../src/interaction/ammo-resupply-menu.ts#L2287) drives `ammoEnabled === false` at cap; tile signature already factors `ammoEnabled` so re-render fires when atCap flips.
+- Bundle delta v1.372 → v1.373: −1,409 bytes (combined with #96; the v1.344 short-circuit removal in #96 dominated).
+
+Verification (single-player playtest, Engineer class, Firestorm):
+1. Spawn with each launcher in turn. Open Supply Box menu. Confirm Launcher Ammo tile is enabled (green header), countdown reads "READY" (or current cooldown).
+2. Click Launcher Ammo. Confirm ammo total goes 1→2→3 (verify via admin position-debug or temporary log).
+3. At total = 3, click again. Confirm tile grays out: header = `COLOR_GRAY`, countdown = "FULL" in `COLOR_GRAY`. Charge NOT consumed.
+4. Fire one rocket → total drops to 2. Confirm tile re-enables on next menu refresh tick.
+
+Related:
+- v1.340 changelog ([Changelog.ts:34](../src/Changelog.ts#L34)) — original per-launcher cap rollout (RPG=6, AT4=5, Stinger=6).
+- v1.343 changelog ([Changelog.ts:31](../src/Changelog.ts#L31)) — read-back-verify pattern that already protects against engine clamp ammo loss.
+- `CQ_Polish_Launcher_Ammo_Per_Launcher_Cap` (#78) — original investigation thread; this issue supersedes the per-launcher-cap design with the uniform cap.
+- Plan: [`design_doc/launcher_ammo_fixes_plan_2026-04-25.md`](./launcher_ammo_fixes_plan_2026-04-25.md).
+
+## CQ_Bug_Launcher_Slot_Identification_Zero_Ammo (#96)
+Title: Launcher slot identification fails (or risks clobbering other gadgets) when launcher reads 0/0 — engineer cold-spawn or post-fire-empty case
+
+Observed (2026-04-25, user report):
+- When an engineer holds a launcher with 0 ammo (cold-spawn with empty default, or fired the last rocket), `slotWithLauncher` returns undefined and the Supply Box menu's Launcher Ammo tile cannot resolve the target slot.
+- The current v1.344 mitigation at [probeLauncherSlot:929-948](../src/interaction/ammo-resupply-menu.ts#L929) short-circuits *only* when slot 2 is populated (any ammo) or active. When BOTH slots read 0/0/inactive (the cold-spawn case), the function falls through to the destructive probe at [:950-1001](../src/interaction/ammo-resupply-menu.ts#L950).
+- The destructive probe calls `RemoveEquipment(player, GadgetOne)` and uses a `HasEquipment` before/after diff to identify what was removed, then re-adds it. Failure modes that can clobber other gadgets:
+  - If the engine's `AddEquipment` restore at [:990](../src/interaction/ammo-resupply-menu.ts#L990) silently fails or restores to the wrong slot, the gadget that was in slot 1 is permanently lost.
+  - If the slot-1 gadget is a non-launcher engineer item (Supply Crate / AV Mine / EOD Bot) and the launcher was actually in slot 2, the probe destructively removes a non-launcher to learn nothing useful (it then restores; but every probe is a destructive round-trip on slot 1).
+  - The `multipleFlips` branch at [:977-985](../src/interaction/ammo-resupply-menu.ts#L977) bails with `slot: undefined` if more than one gadget disappears from the HasEquipment list — which can happen if the engine's removal cascades (e.g., class-loadout-linked gadgets).
+
+SDK constraints (verified 2026-04-25):
+- `mod.HasEquipment(player, gadget)` is **not slot-aware** — it returns boolean for the player's whole inventory. There is no `mod.HasEquipmentInSlot(player, slot, gadget)` in [reference_bf6_core/mod/functions/](../../reference_bf6_core/mod/functions/).
+- The only non-destructive slot probes are `IsInventorySlotActive(player, slot)`, `GetInventoryAmmo(player, slot)`, `GetInventoryMagazineAmmo(player, slot)`. None of them tell us *which gadget id* is in a given slot — only its activity / ammo state.
+- Therefore: when launcher reads 0/0/inactive, there is **no non-destructive SDK path** to learn which slot it occupies from a cold start. The destructive RemoveEquipment + diff is the only mechanism the SDK exposes.
+
+Recommended resolution (defense-in-depth: cache aggressively at every reliable signal; defer destructive probe to explicit user intent; add safe fallbacks):
+
+1. **Cache the launcher slot at every reliable signal we already have.** Each of these is a moment where the slot is unambiguous and we should write to `State.players.lockerSlots[pid].g{1,2}.kind = "launcher"` + `.gadget = <id>`:
+   - `OnPlayerDeployed` for engineer class: snapshot `mod.IsInventorySlotActive(GadgetOne)` and `(GadgetTwo)` immediately. If exactly one is active at deploy and the player owns a launcher (HasEquipment positive on any `ALL_LAUNCHER_VARIANTS`), assume the active slot holds the wielded launcher. Engineer default loadout almost always wields the launcher at deploy.
+   - First non-zero ammo read: when `GetInventoryAmmo + GetInventoryMagazineAmmo > 0` for a slot AND the player owns a launcher (HasEquipment), and `slotsState.g{n}.kind` is not yet "launcher", set kind=launcher for that slot. (This catches the post-resupply or post-pickup case before the player clicks Launcher Ammo a second time.)
+   - User-driven slot toggle: the per-class slot-toggle row added in v1.304 already lets the user choose where future launchers go — when they do, persist that as `lockerSlots[pid].launcherSlotPreference` and trust it for subsequent placements.
+   - `OnPlayerEarnedKill` with a launcher weapon kill: the killing weapon is a strong slot signal (active slot at kill time). Worth catching opportunistically.
+
+2. **Defer the destructive probe to explicit user click intent.** Today, `probeLauncherSlot` is called from menu refresh paths ([:1181](../src/interaction/ammo-resupply-menu.ts#L1181), [:2421](../src/interaction/ammo-resupply-menu.ts#L2421)) — every menu-open or refresh runs the destructive probe if the cache is cold. Change this so the probe only fires when the player has explicitly clicked the Launcher Ammo button AND the cache is still uncertain (i.e., we are about to commit a write that requires knowing the slot). Until then, render the Launcher Ammo tile as DISABLED with a help hint ("Pick up ammo at a Supply Box to resupply") — degraded UX but no clobber risk.
+
+3. **Pre-probe safety check on the destructive path.** Before `RemoveEquipment(GadgetOne)`, snapshot `slot1Loaded`, `slot1Mag`, `slot1Active` AND a `HasEquipment` snapshot of every `ENGINEER_GADGET_CANDIDATES` entry. If the snapshot disagrees with what we expect (e.g., player owns a non-launcher candidate and slot 1 reads non-empty in any way other than "launcher with 0 ammo"), abort the probe and disable the tile. This narrows the probe to only the case it's designed for.
+
+4. **Sticky cache after first successful probe.** Once `probeLauncherSlot` returns a definitive `{slot, gadget}`, write it to `lockerSlots[pid].g{n}.kind="launcher"` and never re-probe within the same life. Re-probe only on `OnPlayerDeployed` (new spawn) or `OnPlayerUndeploy` (death) — both of which already fire deploy-snapshot logic per recommendation #1.
+
+5. **Class-default fallback when destructive probe is impossible.** If we are forced into the destructive branch and either `multipleFlips` triggers or the AddEquipment restore appears to fail (post-restore HasEquipment for the removed gadget is false), fall back to assuming the launcher is in `lockerSlots[pid].launcherSlotPreference` (user toggle), or if no preference set, **GadgetTwo** (engineer default in BF6 vanilla). This trades correctness for non-clobbering behavior — better to occasionally write to the wrong slot's empty state and let the user observe than to permanently lose their EOD Bot.
+
+6. **(Stretch) Replace destructive probe with a non-destructive heuristic when the player owns exactly one non-launcher engineer gadget.** If `HasEquipment(launcher) === true` AND exactly one of `[Supply Crate, AV Mine variants, EOD Bot]` returns true, AND we know the player has both slots populated (one active, one not), then the launcher must be in the slot opposite the non-launcher. We don't have a non-destructive way to learn which slot the *non-launcher* is in either — but in practice, BF6's class-loadout config places the player's loadout-configured gadget in slot 1 and the launcher in slot 2 by default. Testable hypothesis: spawn engineer with EOD Bot + RPG, check `IsInventorySlotActive` immediately, see whether we can infer from spawn-time defaults. Worth a 30-min probe before trusting this as a code path.
+
+Combined with the #95 design change (uniform 3-rocket cap + at-cap visibility), the user's likely interaction frequency drops — there's less reason to spam the Launcher Ammo button. That makes a degraded "tile disabled, pick up Supply Box to resupply" UX more palatable when the cache is cold.
+
+Status: **Resolved (v1.373) pending MP confirmation.** User rejected the cache-at-events approach (kit pickup mid-life invalidates pre-menu cache) in favor of a non-destructive +1-ammo probe. Implementation summary:
+
+- Replaced the v1.344 short-circuit block at `probeLauncherSlot` with a two-stage non-destructive probe:
+  - **Step B2 — cheap-positive populated check:** a slot with `loaded > 0 || mag > 0 || active` is populated; no write. Generalizes the v1.344 "slot 2 populated" short-circuit per-slot.
+  - **Step B3 — +1-ammo disambiguation:** for slots reading 0/0/inactive, write `loaded + 1` via `SetInventoryAmmo` and read back. Populated iff the +1 took. Empty slot's write silently no-ops (no item to write to) so it stays at the original 0.
+- Branched on the four populated combinations:
+  - `(populated, !populated)` → return `GadgetOne` (skip destructive probe)
+  - `(!populated, populated)` → return `GadgetTwo` (skip destructive probe)
+  - `(populated, populated)` → run existing destructive RemoveEquipment + HasEquipment-diff (operates on post-+1 state)
+  - `(!populated, !populated)` → bail with `undefined` (contradiction; player owns launcher per HasEquipment but neither slot accepted +1)
+- Hoisted ammo snapshots (`slot1Loaded/Mag`, `slot2Loaded/Mag`) and the `before[]` HasEquipment cache to the top of the function so they're available to every branch.
+- Centralized restore via `restoreOriginalState()` helper that writes back original loaded+mag for both slots and `ForceSwitchInventory` to the original wielded slot. Called on every exit branch.
+
+Combat-interruption guarantees:
+- All synchronous JS (no `mod.Wait`, no async window). Probe completes in ~microseconds.
+- Player cannot close the menu mid-probe; cannot pick up a different kit mid-probe. JS doesn't yield.
+- Probe runs at exactly two call sites: `openArmMenu` ([:2421](../src/interaction/ammo-resupply-menu.ts#L2421)) and `tryPlaceLauncher` ([:1181](../src/interaction/ammo-resupply-menu.ts#L1181)). Not on refresh ticks.
+- Restore is unconditional — the player's pre-probe loadout state (active slot + ammo on both slots) is fully reinstated before return.
+
+Bundle delta v1.372 → v1.373: −1,409 bytes (combined with #95). The +1 probe replaces ~20 lines (v1.344 short-circuit) with ~70 lines but the consolidated `restoreOriginalState` helper + minifier produced a net reduction.
+
+Test plan (single-player, Engineer class, Firestorm):
+1. Engineer cold-spawn, immediately open Supply Box menu without firing. Confirm Launcher Ammo tile state matches deploy-time slot snapshot (enabled if launcher placed via class default, with correct slot known).
+2. Engineer spawn → fire all rockets to 0 → open Supply Box menu. Confirm tile shows correct slot from sticky cache (set during deploy snapshot). No destructive probe runs.
+3. Engineer spawn with no launcher in default loadout → open menu → click Launcher row to place launcher. Confirm cache writes happen at the placement event, no destructive probe needed afterward.
+4. Engineer spawn → toggle slot preference via per-class row → place launcher → fire to 0 → open menu. Confirm tile shows preference-respected slot.
+5. Re-deploy after death. Confirm cache resets and re-snapshots fresh on the new life.
+6. Cross-class test: switch to Assault → switch back to Engineer. Confirm cache invalidates correctly across class swaps (per existing `lockerSlots[pid]` lifecycle).
+
+Related:
+- `CQ_Refactor_Gadget_Locker_v1.290_to_v1.313` (#77) — authoritative per-player slot-state foundation.
+- v1.344 changelog ([Changelog.ts:30](../src/Changelog.ts#L30)) — short-circuit + sibling-slot discriminator (the partial fix this issue supersedes).
+- v1.339 changelog ([Changelog.ts:35](../src/Changelog.ts#L35)) — wielded-bail removal that opened the door for the destructive probe to run more often.
+- `CQ_Bug_Launcher_Slot2_Double_Give` (#90) — adjacent slot-resolution issue; same `probeLauncherSlot` rewrite path.
+- Plan: [`design_doc/launcher_ammo_fixes_plan_2026-04-25.md`](./launcher_ammo_fixes_plan_2026-04-25.md).
+
+## CQ_Bug_FlagSpawn_FalsePositive_OOB (#98)
+Title: Solo flag-spawn falsely flagged as out-of-bounds (`ground_combat_zone` violation) when no teammate is within squad-spawn-inheritance range
+
+Observed (2026-04-25, user report):
+- A player who deploys onto a captured CapturePoint (flag spawn) with no teammate within `SQUAD_SPAWN_PROXIMITY_RADIUS_METERS` (25m) is incorrectly flagged as out-of-bounds shortly after spawn. The `ground_combat_zone` warning fires, the 10-second OOB countdown begins, and the player is killed if they don't move.
+- Trigger conditions: first player to spawn on a freshly-captured flag, OR last player on a flag after squadmates have died/left.
+
+Root cause (architectural):
+- The boundary system tracks zone membership via 5 booleans (`inOwnHQ` / `inOwnBuffer` / `inGCZ` / `inEnemyHQ` / `inEnemyBuffer`) on `State.round.boundary.zoneStateByPid[pid]`. These flip via engine `OnPlayerEnter/ExitAreaTrigger` events.
+- The engine **does NOT fire trigger enter events on spawn-inside-trigger** — only on physical boundary crossings ([enforcement.ts:404-407](../src/boundary/enforcement.ts#L404)). So a player who spawns inside the GCZ trigger has `inGCZ = false` until they physically cross out and back in.
+- `seedZoneStateFromSpawnContext` ([enforcement.ts:436](../src/boundary/enforcement.ts#L436)) handles seeding for non-slot deploys via two branches: (1) HQ-anchor distance probe (sets `inOwnHQ=true` if at HQ) and (2) `tryInheritZonesFromNearbyTeammate` (copies zone flags from nearest deployed teammate within 25m).
+- **The flag-spawn case falls through both branches** when the player is solo: not at HQ, no teammate within 25m. All zones default to `false`. The `GCZ_DEPLOY_GRACE_SECONDS = 1.5s` window expires, then the classifier hits `state.inGCZ || state.inOwnBuffer = false` and returns `"ground_combat_zone"`.
+
+Design policy violation:
+- Per user direction (2026-04-25): **the deploy-time default must be in-bounds**, not out-of-bounds. The current architecture assumes "absence of zone-membership signal" = OOB, which is wrong for the spawn case where the engine architecturally cannot deliver the signal. The correct policy is: only flag OOB on spawn when we have **definitive proof** (either via slot-claim metadata or via inheritance from a teammate whose own zone state is settled and OOB). When no proof exists, assume the player landed in safe ground.
+
+Status: **Resolved (v1.376) pending MP confirmation.**
+
+Implementation shipped at v1.376 — restructured `seedZoneStateFromSpawnContext` ([enforcement.ts:436-472](../src/boundary/enforcement.ts#L436)) non-slot branch into three guarded steps:
+
+```ts
+// Step 1: anchor probe — standard on-foot HQ deploy
+state.inOwnHQ = isPlayerWithinOwnMainBaseAnchorRadius(player);
+if (state.inOwnHQ) return;
+// Step 2: squad-spawn inheritance — only OOB-on-spawn proof path
+const inheritedFromTeammate = tryInheritZonesFromNearbyTeammate(player, pid, state);
+if (inheritedFromTeammate) return;
+// Step 3: default-in-bounds fallback (NEW) — no slot, not at HQ, no teammate signal
+state.inGCZ = true;
+```
+
+Key behavioral changes:
+- Solo flag-spawn (no teammate within 25m) → previously left all zones false → false-positive OOB after grace; now defaults to `inGCZ=true` → in-bounds. **Bug fixed.**
+- Squad-spawn during teammate's grace window → previously also left all zones false → false-positive OOB; now defaults in-bounds. Acceptable per policy.
+- Squad-spawn onto OOB teammate → unchanged. Inheritance fires, copies OOB flag, classifier fires OOB on next refresh. Legitimate OOB-on-spawn case **preserved**.
+- All slot-based deploy paths (HQ / Forward / Air) unchanged — slot-claim seed remains authoritative.
+- Trigger enter / exit events still flip flags as the player moves. The default seed is the starting state only, not a permanent override; players who walk OUT of the GCZ trigger from a default-in-bounds spawn correctly fire OOB via `OnPlayerExitAreaTrigger`.
+
+Bundle delta v1.375 → v1.376: **+124 bytes** (1.43% headroom).
+
+Verification (single-player playtest, Firestorm):
+1. **Bug-fix:** Live match, capture flag B, die, click flag B on deploy screen → spawn at flag, no OOB warning, no kill timer. Repeat for flags A, C.
+2. **HQ deploy regression:** standard on-foot deploy → `inOwnHQ=true`, no OOB.
+3. **Forward deploy regression:** ground slot Forward Deploy → `inGCZ + inOwnBuffer` set via slot-claim, no OOB.
+4. **Air deploy regression:** aircraft slot → seatKind=aircraft exemption, no OOB.
+5. **Vanilla deploy regression:** walk into HQ-pad ground vehicle → seatKind=ground_vehicle, classifier exempts.
+6. **Pre-live regression:** pre-live, walk out of HQ → `prelive_main_base` violation fires correctly.
+7. **HQ-back-walk regression:** live, walk to back of HQ to exit trigger 500/501 → `ground_combat_zone` violation fires correctly.
+8. **GCZ exit regression:** live, drive ground vehicle out of trigger 666 → exit event flips `inGCZ=false`, OOB fires.
+9. **Squad-spawn-on-OOB-teammate edge case:** A walks into enemy buffer, B squad-spawns on A → B inherits OOB.
+10. **Squad-spawn-during-grace edge case:** A flag-spawns (in-bounds, in grace), B squad-spawns on A within those 1.5s → both in-bounds.
+
+Plan: [`design_doc/flag_spawn_oob_default_inbounds_plan_2026-04-25.md`](./flag_spawn_oob_default_inbounds_plan_2026-04-25.md).
+
+Related:
+- `CQ_Feat_Zone_Tracker_Refactor` (v1.360) — single PlayerZoneState foundation; this fix lives in the seed function.
+- `CQ_Feat_AreaTrigger_Enable` (v1.367) — wired enter/exit events; explained why spawn-inside-trigger remains unfixed (it's an engine-design choice, not a wiring bug).
+- `CQ_Feat_Squad_Spawn_Zone_Inheritance` (v1.370) — the partial fix this issue supersedes; teammate inheritance still applies as the OOB-proof path, but the no-teammate fallback flips polarity to in-bounds.
+
+## CQ_Polish_GadgetSlot_Selector_Top_Row_Focus_Highlights (#99)
+Title: Extend the disabled-focused border indicator (#97) to the top-row gadget slot selector controls
+
+Observed (2026-04-25, user punch list):
+- v1.375 added a disabled-focused border indicator for the gadget tile buttons in the Supply Box menu (#97), but the same pattern needs to apply to the **top-row gadget slot selector controls** (the prev / next slot-toggle buttons that select which gadget slot to target — `SlotTogglePrev` / `SlotToggleNext` widgets per [ammo-resupply-menu.ts:2552-2556](../src/interaction/ammo-resupply-menu.ts#L2552)). Console / controller players currently get the same lack-of-feedback problem on those rows: when navigating to a disabled prev/next selector (e.g., a class that has no gadgets in that slot), no visible focus indicator paints.
+
+Implementation direction:
+- Mirror the v1.375 pattern: each prev/next slot-toggle button gets `FocusIn` + `FocusOut` event wiring; `setActVis` already accepts the `focused` param so existing call sites can pass through the focus state. The widget-name parsing at the top of `handleArmMenuEvt` already detects `toggleClassIdx >= 0` for the slot-toggle widgets — extend the `tileKey` resolver to emit a stable key for these (e.g., `"slotToggle:<class>:<dir>"`) and pass it through the same focus-tracking + per-tile-sig pipeline.
+- Estimated effort: small (~30–60 min). Bundle impact: ~+200–300 bytes.
+
+Status: **Open.** Punch-list polish 2026-04-25.
+
+Related:
+- `CQ_Polish_SupplyBox_DisabledFocused_Indicator` (#97) — original v1.375 fix; this extends scope to the top-row selectors that were not in the v1.375 plan.
+- Plan reference: [`design_doc/supply_box_disabled_focus_indicator_plan_2026-04-25.md`](./supply_box_disabled_focus_indicator_plan_2026-04-25.md) noted "Out of scope: Other menus" — top-row slot selectors are within the same Supply Box surface and should ride the same pattern.
+
+## CQ_Bug_FlagB_Spawn_Failure (#100)
+Title: Cannot spawn on flag B — suspected Godot spatial / CapturePoint configuration bug
+
+Observed (2026-04-25, user punch list):
+- Players unable to deploy onto flag B from the deploy screen. Symptom: clicking flag B on the deploy screen does not produce a spawn at the flag (or spawns at a fallback location instead).
+- Suspected origin: Godot spatial configuration for the flag B `CapturePoint` object — possibly a misconfigured spawn-point reference or a missing/disabled `PlayerSpawner` association on the captured-by-team state of that point. Could also be a script-side issue where flag B's objId is misconfigured in [`config/maps/operation-firestorm.ts`](../src/config/maps/operation-firestorm.ts) capture-point list.
+- Needs repro: capture flag B (confirm capture animation + ticket bleed engages), then attempt to flag-spawn onto B from the deploy screen.
+
+Investigation notes:
+- Compare flag B's spatial entry against flag A and flag C in `MP_TWL_Conquest16_FireStorm.spatial.json` for any structural diff (associated SpawnPoint binding, blueprint, etc.).
+- Cross-check `getActiveCapturePointConfigByObjId` returns a valid config for B's objId — if the config is missing, the script-side `isMappedConquestCapturePointObjId` filter would suppress B from the spawn-eligible list.
+- The recently-shipped #98 (flag-spawn default-in-bounds) only fixed the post-spawn OOB path; it does not affect the spawn-mechanism itself. So B's failure is a separate root cause.
+
+Status: **Open — needs repro and root-cause classification (map-side vs script-side).** May overlap with #88 oil-tanker-in-ground (also flag B, also Godot-side).
+
+Related:
+- `CQ_Bug_FlagSpawn_FalsePositive_OOB` (#98) — adjacent flag-spawn bug; resolved at v1.376. Different root cause from this issue.
+- `CQ_Bug_Oil_Tanker_In_Ground_B` (#88) — also at flag B, also Godot-side. Worth investigating together.
+
+## CQ_Tweak_Vehicle_Display_Name_Defaults (#101)
+Title: Update default vehicle display names — add faction tags to Flyer and Vector
+
+Observed (2026-04-25, user punch list):
+- Default vehicle display names in [`strings.json`](../src/strings.json) currently use bare model names: `Flyer 60`, `Vector`. User direction: tag these with faction affiliation — Flyer 60 → NATO variant, Vector → PAX variant.
+- Affects ready-dialog vehicle column display, deploy-timer HUD vehicle labels, and any world-log messages that reference vehicle short names.
+
+Proposed string changes (player-facing — needs explicit user approval per AGENTS.md `String Change Authorization Policy`):
+- `twl.readyDialog.vehicleShortFlyer60`: `"Flyer 60"` → `"Flyer 60 NATO"` (or similar)
+- `twl.readyDialog.vehicleShortVector`: `"Vector"` → `"Vector PAX"` (or similar)
+
+Implementation: pure string update in `strings.json`. No code change. Bundle impact: ~+10 bytes.
+
+Status: **Open — pending approved string copy from user.**
+
+Related:
+- `CQ_Tweak_Team_Names_Add_Faction` (#102) — companion: append PAX/NATO suffix to the team names, same faction-affiliation rationale.
+
+## CQ_Tweak_Team_Names_Add_Faction (#102)
+Title: Append PAX / NATO faction suffix to team names
+
+Observed (2026-04-25, user punch list):
+- Current team names in [`strings.json`](../src/strings.json) are bare directional strings: `WEST`, `EAST`, `NORTH`, `SOUTH` (under `twl.teams`). User direction: append the faction (PAX or NATO) so team identity is unambiguous in HUD/log output.
+
+Resolution shipped at v1.377:
+- Added 8 new combo entries to `twl.teams` in [`strings.json:60-73`](../src/strings.json#L60), keeping the original 4 bare directionals: total 12 selectable team-name keys.
+  - Combos: `WEST_NATO`, `WEST_PAX`, `EAST_NATO`, `EAST_PAX`, `NORTH_NATO`, `NORTH_PAX`, `SOUTH_NATO`, `SOUTH_PAX` — each rendered as e.g. `"WEST / NATO"` (user-approved format with spaces around the slash).
+  - The 4 bare entries (`WEST`, `EAST`, `NORTH`, `SOUTH`) are preserved so a map can opt out of the faction tag entirely.
+- Updated Firestorm map config at [`config/maps/operation-firestorm.ts:10-11`](../src/config/maps/operation-firestorm.ts#L10) to default to `WEST_NATO` (Team 1) + `EAST_PAX` (Team 2). Easy to flip to any other combo per-map.
+- Existing consumers ([`id-helpers.ts:129-130`](../src/state/id-helpers.ts#L129)) read `ACTIVE_MAP_CONFIG?.team1Name` / `.team2Name` and resolve via `mod.Message(key)` — no code change required since the field is `number` (string-key id) and any of the 12 keys is valid.
+- The pre-composed approach was chosen over runtime composition because `mod.Message` format args accept `string | number | Player` only (no nested `mod.Message` objects per AGENTS.md), so composing direction + faction at runtime would require either passing literal strings (loses any future i18n hook) or a `mod.Message` rewrite at every consumer site. Pre-composed entries keep the existing `team1Name: number` shape and let map authors pick from a fixed menu.
+
+Bundle delta v1.376 → v1.377: **+9 bytes** (1.43% headroom — strings live in the bundled `dist/bundle.strings.json`, not the script bundle, so the cost is near-zero).
+
+To change a map's team faction:
+- Pick any of the 12 keys: `mod.stringkeys.twl.teams.WEST` / `WEST_NATO` / `WEST_PAX` / `EAST` / `EAST_NATO` / ... etc.
+- Set in the map config's `team1Name` / `team2Name` fields. Per-team independence: Team 1 can be NATO while Team 2 is PAX, or both same faction, or both bare directionals.
+
+Status: **Resolved (v1.377) pending MP confirmation.**
+
+Related:
+- `CQ_Tweak_Vehicle_Display_Name_Defaults` (#101) — companion faction-tagging on vehicle names; same string-approval policy applies; not yet implemented.
+
+## CQ_Tweak_Bleed_Rate_Mancours_Calibration (#103)
+Title: Recalibrate ticket bleed rates against Mancours-style reference rates
+
+Observed (2026-04-25, user punch list):
+- Current ticket bleed configuration (in [`config/conquest-constants.ts`](../src/config/conquest-constants.ts) — see `BLEED_*` / ticket constants) is a first-cut tuning. User direction: align rates against Mancours reference values to produce a more recognizable / classic Conquest pacing.
+
+Investigation steps:
+1. Capture current bleed parameters (rate per second, asymmetric thresholds, multiplier on differential ownership).
+2. Source Mancours reference rates (presumably from a known Battlefield community-tuned config).
+3. Map Mancours values onto our tick / scoring model.
+4. Playtest to feel-check.
+
+Implementation: parameter-tuning only (numeric constants in `config/conquest-constants.ts`). No structural change.
+
+Open question: design — TBD. Specific Mancours target values not yet sourced.
+
+Status: **Open — design TBD; needs reference-rate sourcing.**
+
+Related:
+- Existing bleed system: `conquestPhase2AApplyBleedTick` in [`index/capture-tickets.ts`](../src/index/capture-tickets.ts). Per-second tick gated to live-match. Tunable via `BLEED_*` constants.
+- `design_doc/bleed_tuning.md` — historical bleed tuning notes (review for prior calibration baselines).
+
+## CQ_Audit_Weapon_Gadget_Bans (#104)
+Title: Re-review the current weapon / gadget ban list against current design intent
+
+Observed (2026-04-25, user punch list):
+- Tip 7 in the join prompt currently states: *"All gadgets except torch and supply crates are banned."* This was set early in the design and may no longer reflect current intent (the v1.290–v1.313 gadget locker rework, plus the v1.325 Supply Boxes wiring, plus v1.328 Forward Deploy / v1.329 Air Deploy reintroductions, all expand the gameplay surface beyond "torch + supply crates only").
+- User wants a fresh review of which weapons / gadgets are allowed vs banned, and whether the join-prompt copy is still accurate.
+
+Investigation steps:
+1. Enumerate currently-banned weapons / gadgets (likely in `config/conquest-constants.ts` or a similar feature-flag block).
+2. Cross-check against the gadget locker offerings (assault / medic / engineer / recon trays — see `ACTIVE_GADGET_CONFIG` in [`interaction/ammo-resupply-menu.ts`](../src/interaction/ammo-resupply-menu.ts)) and the launcher rows.
+3. Identify discrepancies: gadgets the locker offers that the ban list says are forbidden, or vice versa.
+4. Update Tip 7 copy to match (player-facing string — needs approval per AGENTS.md).
+
+Status: **Open — needs audit + design pass.**
+
+Related:
+- `CQ_Refactor_Gadget_Locker_v1.290_to_v1.313` (#77) — the gadget locker rewrite that expanded the offered surface.
+- `CQ_Feat_Round_Start_Gadget_Delay` (#59) — gadget round-start delay implementation; orthogonal but related to the gadget surface design.
+
+## CQ_Bug_HardCrash_LateJoiner_ApplyConfig (#105)
+Title: Hard server-process crash during late-joiner + Apply Configuration + team-swap combo
+
+Observed (2026-04-26, v1.380):
+- User-reported hard server crash (whole server process died, all players disconnected, game ended). No visible error log captured before the crash. Pre-LIVE phase (Apply Configuration was legal). Scenario: one or more players joining the server for the first time **while** another player applied map configuration changes and/or swapped teams.
+- User intuition: "we're changing the configuration out from under the late joiner while they load or cache the UI."
+
+Theory of the crash:
+- Apply Configuration's per-player rebuild paths — `prebuildAndRevealVehicleDeployTimerHudForAllPlayers` ([deploy-timer-ui.ts:2042](../src/vehicles/deploy-timer-ui.ts#L2042)), `cleanupActiveWorldInteractableRuntimeIconsForAllPlayers` ([world-interactables.ts:349](../src/interaction/world-interactables.ts#L349)), `applyVehicleSpawnSpecsToExistingSlots` ([map-runtime.ts:589](../src/config/map-runtime.ts#L589)) — all iterate over every connected pid via `forEachValidPlayer` and operate on per-player UI cache state.
+- A late-joiner whose own `prebuildAllUiFamiliesHidden` is mid-flight has a partially-populated UI cache (some widget handles cached, others uninitialized).
+- When Apply Config's parallel rebuild operates on the late-joiner's pid, the two parallel widget-tree mutations collide. Engine-level invalid-handle operations on a half-built widget tree (or `mod.UnspawnObject` on a half-wired runtime spawn) are the documented hard-crash pattern in BF6 Portal — the script try/catch does not catch engine faults.
+- The hard-process death + pre-LIVE phase + no-error-log signature is most consistent with this theory.
+
+Resolution shipped at v1.381:
+- New per-pid state field `State.players.warmPrimeActiveByPid: Record<number, boolean>` ([runtime-types.ts](../src/state/runtime-types.ts), [runtime-state.ts](../src/state/runtime-state.ts)).
+- `prebuildAllUiFamiliesHidden` ([interaction/actions.ts:264](../src/interaction/actions.ts#L264)) wrapped in an outer `try { warmPrimeActiveByPid[pid] = true; ...existing body... } finally { delete warmPrimeActiveByPid[pid]; }`. The flag is set at function entry (covering the lock-wait phase) and cleared in the outer `finally` so disconnect / throw / early-return all guarantee the flag clears.
+- `confirmReadyDialogModeConfig` ([ready-dialog/mode-config-presets.ts:294](../src/ready-dialog/mode-config-presets.ts#L294)) now refuses Apply with a player-visible world-log message when any pid has `warmPrimeActiveByPid[pid] === true`. The dialog state remains "Unsaved changes" so the user can press Apply again once loaders settle.
+- New player-facing string `twl.readyDialog.applyBlockedLoading` = `"Cannot apply: {0} player(s) still loading"` (user-approved 2026-04-26).
+- `player-join-leave.ts` cleanup path also `delete`s the flag so a disconnect mid-warm cannot permanently block applies.
+- Bundle delta v1.380 → v1.381: **+668 bytes** (1.31% headroom).
+
+What this does NOT cover (followup-eligible):
+- A late-joiner whose warm-prime starts AFTER Apply Configuration begins. If a join lands during the ~1-2 second window where Apply Config's rebuild iterations are running, the guard does not protect. If the crash recurs, the symmetric guard would be: have the warm-prime path also check `applyConfigInFlight` and yield/wait. Capture as a follow-up if needed.
+- Team-swap mid-Apply collisions. Same logic could extend to refuse team-swap-during-Apply, but the user's reported crash specifically called out late-joiner.
+- Generic instrumentation. No diagnostic world-log sentinels added in this iteration.
+
+Status: **Resolved (v1.382) pending MP confirmation.**
+
+v1.382 follow-up: moved the rejection message from `sendHighlightedWorldLogMessage` (world-log overlay) to the dialog's inline `unsavedLabel` red-text slot — same widget that normally renders "Unsaved changes! Press 'Apply Configuration' to save" / "Round live. Config locked." Added `applyBlockedAtSeconds` + `applyBlockedCount` fields to `ReadyDialogModeConfig` ([foundation/gameplay.ts:124](../src/foundation/gameplay.ts#L124)) and `APPLY_BLOCKED_LABEL_DURATION_SECONDS = 5` constant. `confirmReadyDialogModeConfig`'s guard branch now sets the timestamp + count, calls `updateReadyDialogModeConfigForAllVisibleViewers()`, and schedules a deferred clear after 5s. `syncReadyDialogModeActionWidgetsForPid` ([ready-dialog/mode-config-readout.ts:167](../src/ready-dialog/mode-config-readout.ts#L167)) checks the timestamp first and renders the block message before falling through to live/unsaved logic. Rationale: world-log message was easy to miss; the dialog slot is where the user is already looking when they press Apply.
+
+Verification:
+1. Build clean (v1.381). Typecheck exit 0.
+2. **No-regression (single-player):** Open Ready Dialog. Press Apply. Apply succeeds — no false "Cannot apply" message.
+3. **Bug-fix path (multiplayer):** Two players. Player A joins (mid-warm). Within the warm window, Player B presses Apply. Confirm world-log shows "Cannot apply: 1 player(s) still loading"; Apply does NOT mutate state; "Unsaved changes" indicator remains. Player A finishes warm. Player B presses Apply again. Confirm Apply succeeds.
+4. **Repro the original 64p+ scenario** (multiple late joiners + Apply + team swaps). Confirm no hard server crash.
+5. **Disconnect resilience:** Player A joins, gets stuck mid-warm (force a network drop). Confirm `warmPrimeActiveByPid[A]` clears via the player-leave cleanup OR the `finally` block. Apply by Player B is not permanently blocked.
+
+Related:
+- Plan: [`design_doc/apply_config_late_joiner_guard_plan_2026-04-26.md`](./apply_config_late_joiner_guard_plan_2026-04-26.md).
+- `CQ_Bug_40` (#40, v1.104) — earlier serialization-lock fix for concurrent first-join `prebuildAllUiFamiliesHidden`. The `_prebuildBusy` lock prevents concurrent join-vs-join collisions; #105 closes the join-vs-Apply-Config collision left open by that fix.
+- `CQ_Feat_Phase6_HQ_Deploy` (#75) — earlier example of cross-player state mutation that needed careful sequencing.
+
+## CQ_Bug_HighSev_Y200_OOB_HeliSlot2_SeatKindStale (#106)
+Title: Players in AH-6M (heli slot 2) marked OOB at Y=200 ceiling — `seatKind` cache stuck at `on_foot`
+
+Observed (2026-04-26, v1.382):
+- Three different players walked into the AH-6M heli on heli slot 2 during a live round, flew up, and were marked out-of-bounds at the Y=200 aircraft-bail ceiling. None squad-spawned directly into the chopper — all entered on foot from outside.
+- Y=200 OOB check at [enforcement.ts:252-258](../src/boundary/enforcement.ts#L252-L258) only fires when `state.seatKind === "on_foot"` (line 252). For three players in the heli to hit the OOB, all three must have had `seatKind = "on_foot"` cached while physically in the aircraft.
+
+Root cause theory:
+- `seatKind` is owned by `setPlayerSeatKind` ([enforcement.ts:159](../src/boundary/enforcement.ts#L159)). The three writers are: `OnPlayerEnterVehicle` ([index.ts:170](../src/index.ts#L170) → [vehicle-events.ts:6](../src/index/vehicle-events.ts#L6)) which classifies via `classifyVehicleSeatKind`, `OnPlayerExitVehicle` ([vehicle-events.ts:36](../src/index/vehicle-events.ts#L36)) which sets back to `on_foot`, and the deploy-time seed `seedZoneStateFromSpawnContext` (only fires on fresh deploy, not on walk-in).
+- `classifyVehicleSeatKind` defaults to `"ground_vehicle"` on a slot-binding miss — that would NOT trigger the on_foot Y=200 path. So this is not a binding gap; `seatKind` was actually `"on_foot"`.
+- Most likely cause: `OnPlayerEnterVehicle` did not fire when the players entered the AH-6M heli slot 2. Engine-side event reliability gap in the same family as `CQ_Bug_43` (`mod.CompareVehicleName` returning unreliable results). Less likely: phantom `OnPlayerExitVehicle` mid-flight, or stale engine read at deploy seed.
+
+Resolution shipped at v1.383 (Resolved (v1.383) pending MP confirmation):
+- Safety-net engine re-probe in `getDesiredBoundaryViolationKind` ([enforcement.ts:252-265](../src/boundary/enforcement.ts#L252-L265)). When the on_foot Y>200 branch is about to fire OOB, re-probe `mod.SoldierStateBool.IsInVehicle`. If the engine reports the player IS in a vehicle, self-correct the cache via `setPlayerSeatKind(player, "aircraft")` and exempt this tick. The corrected cache means the aircraft early-return at line 247 short-circuits future ticks, so the re-probe runs at most once per missed enter event.
+- Single-writer paradigm preserved: the safety-net calls the same `setPlayerSeatKind` writer used by the enter/exit events. The recursive `refreshPlayerBoundaryState` call from inside the classifier terminates immediately on the aircraft early-return — safe but a one-deep recursion.
+
+What this does NOT cover:
+- Does not address the root cause (missing `OnPlayerEnterVehicle` event). If the safety-net trips repeatedly in MP, recommend Phase A: add a one-shot diagnostic world-log when the safety-net fires, capturing pid + vehicle objId + slot, to identify which slot/vehicle types the engine is missing on.
+- Symmetric concern (`OnPlayerExitVehicle` missing → cache stuck at `aircraft` for an on-foot player) not addressed by this fix. Less dangerous because the worst case is a player escaping OOB enforcement, not a false-positive OOB.
+
+Verification:
+1. Build clean. Typecheck exit 0.
+2. **No-regression:** legitimate on-foot bail above Y=200 (player exits aircraft mid-flight) still triggers OOB. The re-probe returns false in that case (engine confirms not in vehicle), so the original `return "ground_combat_zone"` path runs.
+3. **Bug-fix path (MP repro):** repro the original AH-6M heli slot 2 walk-in scenario. Confirm players are no longer OOB'd at Y=200 while inside the heli.
+
+Status: **Resolved (v1.383) pending MP confirmation.** Leave open until manual MP repro confirms players in heli slot 2 no longer hit Y=200 OOB.
+
+Related:
+- `CQ_Bug_43` — `mod.CompareVehicleName` engine reliability gap. Same family of engine-side reliability issue.
+- `CQ_Bug_AircraftBail_OOB` — original Y=200 ceiling enforcement design. This fix adds a safety-net to that mechanism without changing the policy.

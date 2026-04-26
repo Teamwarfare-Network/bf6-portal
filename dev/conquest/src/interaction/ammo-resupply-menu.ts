@@ -64,9 +64,9 @@ const DEFAULT_GADGET_LOCKER_CONFIG: GadgetLockerConfig = {
         { name: "AssaultLadder", labelKey: STR_UI_ASSAULT_LADDER,   gadget: mod.Gadgets.Misc_Assault_Ladder,         slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 480, teamShared: true, maxCount: 1, iconSize: 36, iconY: IY },
     ],
     launchers: [
-        { name: "RPG",     labelKey: STR_UI_RPG,     gadget: mod.Gadgets.Launcher_Unguided_Rocket, maxAmmo: 6 },
-        { name: "AT4",     labelKey: STR_UI_AT4,     gadget: mod.Gadgets.Launcher_Aim_Guided,      maxAmmo: 5, pool: { maxCount: 4, rechargeSeconds: 180, teamShared: true } },
-        { name: "Stinger", labelKey: STR_UI_STINGER, gadget: mod.Gadgets.Launcher_Air_Defense,     maxAmmo: 6 },
+        { name: "RPG",     labelKey: STR_UI_RPG,     gadget: mod.Gadgets.Launcher_Unguided_Rocket, maxAmmo: 3 },
+        { name: "AT4",     labelKey: STR_UI_AT4,     gadget: mod.Gadgets.Launcher_Aim_Guided,      maxAmmo: 3, pool: { maxCount: 4, rechargeSeconds: 180, teamShared: true } },
+        { name: "Stinger", labelKey: STR_UI_STINGER, gadget: mod.Gadgets.Launcher_Air_Defense,     maxAmmo: 3 },
     ],
     launcherCooldownSeconds: 180,
     ammoCooldownSeconds: 60,
@@ -217,6 +217,8 @@ function setArmOpen(pid: number, visible: boolean): void {
         return;
     }
     delete State.players.armO[pid];
+    // Drop focus tracking on close so a stale tile key cannot leak into the next session.
+    delete State.players.armFocusedTileKeyByPid[pid];
 }
 function setArmObj(pid: number, objId: number | undefined): void {
     if (typeof objId === "number") {
@@ -251,6 +253,7 @@ function resetArmState(pid: number): void {
     delete State.players.armO[pid];
     delete State.players.armI[pid];
     delete State.players.armT[pid];
+    delete State.players.armFocusedTileKeyByPid[pid];
 }
 function ensArmG(pid: number): {
     n: number;
@@ -621,7 +624,10 @@ function buildTile(
         1
     );
     cacheEntry.button = safeFind(buttonId);
-    if (cacheEntry.button) mod.EnableUIButtonEvent(cacheEntry.button, mod.UIButtonEvent.FocusIn, true);
+    if (cacheEntry.button) {
+        mod.EnableUIButtonEvent(cacheEntry.button, mod.UIButtonEvent.FocusIn, true);
+        mod.EnableUIButtonEvent(cacheEntry.button, mod.UIButtonEvent.FocusOut, true);
+    }
     const parent = buildTileContentRoot(
         ammoResupplyMenuName(`${namePrefix}Content`, pid),
         posX,
@@ -797,24 +803,31 @@ function armInitVisible(cache: AmmoResupplyMenuCacheEntry): void {
     safeSetUIWidgetVisible(cache.et, false);
     safeSetUIWidgetVisible(cache.rt, false);
 }
+// When focused=true and enabled=false, paints the border with a distinct color so console
+// players see where their cursor is on a tile that won't accept a click. The button itself
+// also lifts from COLOR_GRAY_DARK to COLOR_GRAY for additional contrast.
 function setActVis(
     row: AmmoResupplyMenuActionRowCacheEntry,
-    enabled: boolean
+    enabled: boolean,
+    focused: boolean = false
 ): void {
-    safeSetUIWidgetBgColor(row.button, enabled ? COLOR_BUTTON_BASE : COLOR_GRAY_DARK);
+    const disabledFocused = !enabled && focused;
+    safeSetUIWidgetBgColor(row.button, enabled ? COLOR_BUTTON_BASE : disabledFocused ? COLOR_GRAY : COLOR_GRAY_DARK);
     safeSetUIWidgetBgAlpha(row.button, enabled ? BUTTON_OPACITY_BASE : DIS_A);
-    safeSetUIWidgetBgColor(row.bb, enabled ? COLOR_BUTTON_BORDER : COLOR_GRAY_DARK);
-    safeSetUIWidgetBgAlpha(row.bb, enabled ? BUTTON_BORDER_OPACITY : DIS_A);
+    safeSetUIWidgetBgColor(row.bb, disabledFocused ? COLOR_BUTTON_BORDER_DISABLED_FOCUSED : enabled ? COLOR_BUTTON_BORDER : COLOR_GRAY_DARK);
+    safeSetUIWidgetBgAlpha(row.bb, disabledFocused ? BUTTON_BORDER_OPACITY : enabled ? BUTTON_BORDER_OPACITY : DIS_A);
     if (row.button) mod.SetUIButtonEnabled(row.button, enabled);
 }
 function setTileVis(
     charge: AmmoResupplyMenuChargeCacheEntry,
-    enabled: boolean
+    enabled: boolean,
+    focused: boolean = false
 ): void {
-    safeSetUIWidgetBgColor(charge.button, enabled ? COLOR_BUTTON_BASE : COLOR_GRAY_DARK);
+    const disabledFocused = !enabled && focused;
+    safeSetUIWidgetBgColor(charge.button, enabled ? COLOR_BUTTON_BASE : disabledFocused ? COLOR_GRAY : COLOR_GRAY_DARK);
     safeSetUIWidgetBgAlpha(charge.button, enabled ? BUTTON_OPACITY_BASE : DIS_A);
-    safeSetUIWidgetBgColor(charge.bb, enabled ? COLOR_BUTTON_BORDER : COLOR_GRAY_DARK);
-    safeSetUIWidgetBgAlpha(charge.bb, enabled ? BUTTON_BORDER_OPACITY : DIS_A);
+    safeSetUIWidgetBgColor(charge.bb, disabledFocused ? COLOR_BUTTON_BORDER_DISABLED_FOCUSED : enabled ? COLOR_BUTTON_BORDER : COLOR_GRAY_DARK);
+    safeSetUIWidgetBgAlpha(charge.bb, disabledFocused ? BUTTON_BORDER_OPACITY : enabled ? BUTTON_BORDER_OPACITY : DIS_A);
     if (charge.button) mod.SetUIButtonEnabled(charge.button, enabled);
 }
 function refreshOpenArm(teamId: TeamID | 0 = 0, force: boolean = false): void {
@@ -896,11 +909,17 @@ const ENGINEER_GADGET_CANDIDATES: number[] = [
     mod.Gadgets.Deployable_Vehicle_Supply_Crate,
     mod.Gadgets.Class_Supply_Bag,
 ];
-// Slot-based remove probe: removes whatever is in GadgetOne (by slot, not by id), uses a
-// HasEquipment before/after diff to identify the exact gadget that was removed, then restores
-// it via AddEquipment. If the launcher flipped, it was in slot 1; otherwise the launcher is in
-// slot 2 (it survived the slot-1 probe). Shortcut: no launcher owned means no probe runs and
-// the toggle drives the next launcher placement.
+// Identifies which gadget slot holds the player's launcher. Two-stage probe:
+//   1. Cheap-positive: a slot with ammo > 0 OR active wield is populated; skip writes there.
+//   2. +1-ammo disambiguation: for any slot reading 0/0/inactive, write +1 ammo and re-read.
+//      An empty slot's write silently no-ops (no item to write to) so it stays at 0. A slot
+//      holding a 0-ammo launcher accepts the +1 -> reads as 1. This non-destructive test
+//      replaces the v1.344 fall-through-to-destructive-probe path for the cold-spawn case.
+//   3. Destructive RemoveEquipment + HasEquipment-diff fallback fires only when BOTH slots
+//      are populated (one has the launcher, one has a non-launcher gadget). Restores the
+//      removed gadget via AddEquipment + ammo snapshot.
+// Always restores both slots' original ammo + active wield slot before returning.
+// Shortcut: no launcher owned means no probe runs and the toggle drives the next placement.
 function probeLauncherSlot(player: mod.Player): {
     slot: mod.InventorySlots | undefined;
     gadget: number | undefined;
@@ -926,27 +945,17 @@ function probeLauncherSlot(player: mod.Player): {
     try { g2Active = mod.IsInventorySlotActive(player, mod.InventorySlots.GadgetTwo); } catch {}
     if (g1Active) activeSlotToRestore = mod.InventorySlots.GadgetOne;
     else if (g2Active) activeSlotToRestore = mod.InventorySlots.GadgetTwo;
-    // Short-circuit when we can prove slot 1 is empty WITHOUT confusing it with a launcher
-    // that simply has 0 ammo. A launcher with 0 ammo also reads 0/0/inactive, so the previous
-    // "slot1 empty -> launcher must be in slot 2" inference clobbered the wrong slot when the
-    // launcher was actually in slot 1 with no ammo (last shot fired). Discriminator: if slot 2
-    // is populated (any ammo) or active, slot 2 is holding the launcher and slot 1 is genuinely
-    // empty -> safe short-circuit. If both slots read empty/inactive, the launcher (at 0 ammo)
-    // could be in either slot -- only the destructive probe can tell.
+    // Snapshot ammo on both slots up front so every branch can restore to original.
     let slot1Loaded = 0, slot1Mag = 0;
+    let slot2Loaded = 0, slot2Mag = 0;
     try { slot1Loaded = mod.GetInventoryAmmo(player, mod.InventorySlots.GadgetOne); } catch {}
     try { slot1Mag = mod.GetInventoryMagazineAmmo(player, mod.InventorySlots.GadgetOne); } catch {}
-    const slot1Empty = slot1Loaded <= 0 && slot1Mag <= 0 && !g1Active;
-    if (slot1Empty) {
-        let slot2Loaded = 0, slot2Mag = 0;
-        try { slot2Loaded = mod.GetInventoryAmmo(player, mod.InventorySlots.GadgetTwo); } catch {}
-        try { slot2Mag = mod.GetInventoryMagazineAmmo(player, mod.InventorySlots.GadgetTwo); } catch {}
-        const slot2Populated = slot2Loaded > 0 || slot2Mag > 0 || g2Active;
-        if (slot2Populated) {
-            return { slot: mod.InventorySlots.GadgetTwo, gadget: ownedLauncher };
-        }
-        // Both slots read empty -- launcher must be in one with 0 ammo. Fall through to probe.
-    }
+    try { slot2Loaded = mod.GetInventoryAmmo(player, mod.InventorySlots.GadgetTwo); } catch {}
+    try { slot2Mag = mod.GetInventoryMagazineAmmo(player, mod.InventorySlots.GadgetTwo); } catch {}
+    // Cached HasEquipment scan over the engineer candidate set. Used both as the destructive
+    // probe's `before[]` baseline AND (implicitly via ownedLauncher above at line 911-918) as
+    // the proof that some launcher exists. Hoisted to top so we pay the ~7-call cost once per
+    // probe regardless of which branch runs.
     const before: { gadget: number; had: boolean }[] = [];
     for (let i = 0; i < ENGINEER_GADGET_CANDIDATES.length; i++) {
         const g = ENGINEER_GADGET_CANDIDATES[i];
@@ -954,10 +963,64 @@ function probeLauncherSlot(player: mod.Player): {
         try { had = mod.HasEquipment(player, g); } catch {}
         before.push({ gadget: g, had });
     }
-    try { mod.RemoveEquipment(player, mod.InventorySlots.GadgetOne); } catch {
+    // Restore helper: write original loaded+mag back to a slot, and force-switch back to the
+    // pre-probe wielded slot. Called at every exit branch (success or bail) to leave the
+    // player in their pre-probe state. Note this also undoes any +1 write applied in step B3.
+    const restoreOriginalState = () => {
+        try { mod.SetInventoryAmmo(player, mod.InventorySlots.GadgetOne, slot1Loaded); } catch {}
+        try { mod.SetInventoryMagazineAmmo(player, mod.InventorySlots.GadgetOne, slot1Mag); } catch {}
+        try { mod.SetInventoryAmmo(player, mod.InventorySlots.GadgetTwo, slot2Loaded); } catch {}
+        try { mod.SetInventoryMagazineAmmo(player, mod.InventorySlots.GadgetTwo, slot2Mag); } catch {}
         if (activeSlotToRestore !== undefined) {
             try { mod.ForceSwitchInventory(player, activeSlotToRestore); } catch {}
         }
+    };
+    // Step B2 — cheap-positive populated check (no writes): a slot with any ammo or active
+    // wield state must hold a gadget. v1.344 short-circuit logic, generalized per-slot.
+    let slot1Populated = slot1Loaded > 0 || slot1Mag > 0 || g1Active;
+    let slot2Populated = slot2Loaded > 0 || slot2Mag > 0 || g2Active;
+    // Step B3 — +1 ammo disambiguation for slots reading 0/0/inactive. A slot accepts a +1
+    // write iff a gadget exists there; an empty slot's write is silently dropped (no item to
+    // write to) and the read-back stays at 0. We test both ambiguous slots and decide
+    // populated state from the read-back. This is the non-destructive disambiguator that
+    // replaces the v1.344 fall-through-to-probe path for the cold-spawn 0-ammo launcher case.
+    if (!slot1Populated) {
+        try { mod.SetInventoryAmmo(player, mod.InventorySlots.GadgetOne, slot1Loaded + 1); } catch {}
+        let slot1After = 0;
+        try { slot1After = mod.GetInventoryAmmo(player, mod.InventorySlots.GadgetOne); } catch {}
+        slot1Populated = slot1After > slot1Loaded;
+    }
+    if (!slot2Populated) {
+        try { mod.SetInventoryAmmo(player, mod.InventorySlots.GadgetTwo, slot2Loaded + 1); } catch {}
+        let slot2After = 0;
+        try { slot2After = mod.GetInventoryAmmo(player, mod.InventorySlots.GadgetTwo); } catch {}
+        slot2Populated = slot2After > slot2Loaded;
+    }
+    // Step C — branch on the four populated combinations. Three of four avoid the destructive
+    // probe entirely; only both-populated requires it (we know exactly one slot has the
+    // launcher and one has a non-launcher gadget; need the diff to identify which is which).
+    if (slot1Populated && !slot2Populated) {
+        // Only slot 1 has a gadget -> launcher is in slot 1.
+        restoreOriginalState();
+        return { slot: mod.InventorySlots.GadgetOne, gadget: ownedLauncher };
+    }
+    if (!slot1Populated && slot2Populated) {
+        // Only slot 2 has a gadget -> launcher is in slot 2.
+        restoreOriginalState();
+        return { slot: mod.InventorySlots.GadgetTwo, gadget: ownedLauncher };
+    }
+    if (!slot1Populated && !slot2Populated) {
+        // Player owns a launcher per HasEquipment but neither slot accepted +1. Contradiction;
+        // bail with undefined so the caller falls back to the slot-toggle preference rather
+        // than trust wrong authoritative state. Edge case — narrow class-loadout pickup race
+        // window where HasEquipment lags slot state.
+        restoreOriginalState();
+        return { slot: undefined, gadget: undefined };
+    }
+    // Step D — both slots populated. Run the destructive probe to identify which slot held
+    // the launcher (the +1 writes have already executed, but Step E restores original ammo).
+    try { mod.RemoveEquipment(player, mod.InventorySlots.GadgetOne); } catch {
+        restoreOriginalState();
         return { slot: undefined, gadget: undefined };
     }
     let removedFromSlot1: number | undefined = undefined;
@@ -972,28 +1035,23 @@ function probeLauncherSlot(player: mod.Player): {
             removedFromSlot1 = b.gadget;
         }
     }
-    // API surprise: more than one gadget disappeared. Best-effort restore the launcher and bail
-    // so downstream falls back to the heuristic rather than trust wrong authoritative state.
+    // API surprise: more than one gadget disappeared. Best-effort restore the launcher and
+    // bail so downstream falls back to the heuristic rather than trust wrong authoritative
+    // state.
     if (multipleFlips) {
         try { mod.AddEquipment(player, ownedLauncher, mod.InventorySlots.GadgetOne); } catch {}
-        try { mod.SetInventoryAmmo(player, mod.InventorySlots.GadgetOne, slot1Loaded); } catch {}
-        try { mod.SetInventoryMagazineAmmo(player, mod.InventorySlots.GadgetOne, slot1Mag); } catch {}
-        if (activeSlotToRestore !== undefined) {
-            try { mod.ForceSwitchInventory(player, activeSlotToRestore); } catch {}
-        }
+        restoreOriginalState();
         return { slot: undefined, gadget: undefined };
     }
-    // Restore the removed gadget to slot 1. If nothing flipped, slot 1 was empty -- no restore.
-    // AddEquipment seeds default ammo, so re-apply the pre-probe ammo snapshot to avoid
-    // silently topping the player off (RPG with 2 ammo would otherwise come back with 3).
+    // Restore the removed gadget to slot 1. If nothing flipped, slot 1 was empty post-+1 (we
+    // shouldn't reach here in that case — Step C handled it — but be defensive). AddEquipment
+    // seeds default ammo, so the Step E restore call below re-applies the pre-probe snapshot
+    // to avoid silently topping the player off.
     if (removedFromSlot1 !== undefined) {
         try { mod.AddEquipment(player, removedFromSlot1, mod.InventorySlots.GadgetOne); } catch {}
-        try { mod.SetInventoryAmmo(player, mod.InventorySlots.GadgetOne, slot1Loaded); } catch {}
-        try { mod.SetInventoryMagazineAmmo(player, mod.InventorySlots.GadgetOne, slot1Mag); } catch {}
     }
-    if (activeSlotToRestore !== undefined) {
-        try { mod.ForceSwitchInventory(player, activeSlotToRestore); } catch {}
-    }
+    // Step E — restore both slots to original ammo + active wield state.
+    restoreOriginalState();
     // Launcher vanished from slot 1 -> launcher was in slot 1. Otherwise it must be in slot 2.
     const launcherSlot = removedFromSlot1 === ownedLauncher
         ? mod.InventorySlots.GadgetOne
@@ -1585,7 +1643,10 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
         );
         cache.rows[i].button = safeFind(buttonId);
         const rowBtn = cache.rows[i].button;
-        if (rowBtn) mod.EnableUIButtonEvent(rowBtn, mod.UIButtonEvent.FocusIn, true);
+        if (rowBtn) {
+            mod.EnableUIButtonEvent(rowBtn, mod.UIButtonEvent.FocusIn, true);
+            mod.EnableUIButtonEvent(rowBtn, mod.UIButtonEvent.FocusOut, true);
+        }
         const rowParent = buildTileContentRoot(
             ammoResupplyMenuName("ActionContent", pid, i),
             EX,
@@ -1985,6 +2046,9 @@ function destroyArmMenu(pid: number): void {
 function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResupplyMenuCacheEntry, force: boolean = false): void {
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
+    // Currently-focused tile key drives the disabled-focused border indicator. Read once at the
+    // top of the refresh so each tile site can do an O(1) identity check.
+    const focusedKey = State.players.armFocusedTileKeyByPid[pid];
     const cfg = ACTIVE_GADGET_CONFIG;
     const assaultGroup = ensArmG(pid);
     const state = ensArm(pid);
@@ -2143,6 +2207,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         const enabled = isAssaultClass && assaultGroupRemaining <= 0 && ready && !gadgetBlocked && !alreadyHas;
         const showSelectedAssaultTimer = isAssaultClass && assaultGroupRemaining > 0 && assaultGroup.s === i;
         const hideAssaultTimer = isAssaultClass && assaultGroupRemaining > 0 && assaultGroup.s !== i;
+        const focused = focusedKey === `a:${i}`;
         const sig = [
             enabled ? 1 : 0,
             count,
@@ -2152,6 +2217,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             isAssaultClass ? 1 : 0,
             assaultGroupRemaining > 0 ? 1 : 0,
             alreadyHas ? 1 : 0,
+            focused ? 1 : 0,
         ].join("|");
         if (tile.sig !== sig) {
             const overlayMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, count);
@@ -2177,7 +2243,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             safeSetUITextColor(tile.s, remaining > 0 ? COLOR_NOT_READY_RED : COLOR_GRAY);
             safeSetUITextColor(tile.cs, COLOR_DARK_BLACK);
             safeSetUITextColor(tile.ct, count > 0 ? COLOR_WHITE : COLOR_GRAY);
-            setTileVis(tile, enabled);
+            setTileVis(tile, enabled, focused);
             if (tile.i) {
                 mod.SetUIImageColor(tile.i, enabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
             }
@@ -2185,6 +2251,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         }
     }
     {
+        const focused = focusedKey === "m";
         const sig = [
             smokeEnabled ? 1 : 0,
             smokeCount,
@@ -2192,6 +2259,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             isMedicClass ? 1 : 0,
             smokeReady ? 1 : 0,
             smokeAlreadyHas ? 1 : 0,
+            focused ? 1 : 0,
         ].join("|");
         if (cache.m.sig !== sig) {
             setTileHeaderWidgets(cache.m, STR_UI_SMOKE_SCREEN, smokeEnabled ? COLOR_READY_GREEN : isMedicClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
@@ -2202,7 +2270,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             safeSetUITextColor(cache.m.s, smokeRemaining > 0 ? COLOR_NOT_READY_RED : COLOR_GRAY);
             safeSetUITextColor(cache.m.cs, COLOR_DARK_BLACK);
             safeSetUITextColor(cache.m.ct, smokeCount > 0 ? COLOR_WHITE : COLOR_GRAY);
-            setTileVis(cache.m, smokeEnabled);
+            setTileVis(cache.m, smokeEnabled, focused);
             if (cache.m.i) {
                 mod.SetUIImageColor(cache.m.i, smokeEnabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
             }
@@ -2216,6 +2284,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         const enabled = isMedicClass && medicReady && !gadgetBlocked && !medicAlreadyHas;
         const count = medicReady ? medicItem.maxCount : 0;
         const showSelectedMedicTimer = isMedicClass && medicRemaining > 0 && state.mS === i;
+        const focused = focusedKey === `x:${i}`;
         const sig = [
             enabled ? 1 : 0,
             count,
@@ -2223,6 +2292,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             showSelectedMedicTimer ? 1 : 0,
             isMedicClass ? 1 : 0,
             medicAlreadyHas ? 1 : 0,
+            focused ? 1 : 0,
         ].join("|");
         if (tile.sig !== sig) {
             setTileHeaderWidgets(tile, medicItem.labelKey, enabled ? COLOR_READY_GREEN : isMedicClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
@@ -2234,7 +2304,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             safeSetUITextColor(tile.s, COLOR_GRAY);
             safeSetUITextColor(tile.cs, COLOR_DARK_BLACK);
             safeSetUITextColor(tile.ct, count > 0 ? COLOR_WHITE : COLOR_GRAY);
-            setTileVis(tile, enabled);
+            setTileVis(tile, enabled, focused);
             if (tile.i) mod.SetUIImageColor(tile.i, enabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
             tile.sig = sig;
         }
@@ -2251,6 +2321,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         const launcherEnabled = isEngineerClass && launcherReady && poolReady && !gadgetBlocked && !launcherAlreadyHas;
         const launcherCount = pool ? poolCount : (launcherReady ? 1 : 0);
         const showSelectedLauncherTimer = isEngineerClass && launcherRemaining > 0 && launch.s === i;
+        const focused = focusedKey === `row:${i}`;
         const sig = [
             launcherEnabled ? 1 : 0,
             launcherCount,
@@ -2260,6 +2331,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             isEngineerClass ? 1 : 0,
             pool ? 1 : 0,
             launcherAlreadyHas ? 1 : 0,
+            focused ? 1 : 0,
         ].join("|");
         if (row.sig !== sig) {
             setTileHeaderWidgets(row, launcherItem.labelKey, launcherEnabled ? COLOR_READY_GREEN : isEngineerClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
@@ -2270,7 +2342,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             safeSetUITextLabel(row.ct, mod.Message(mod.stringkeys.twl.system.genericCounter, launcherCount));
             safeSetUITextColor(row.cs, COLOR_DARK_BLACK);
             safeSetUITextColor(row.ct, launcherCount > 0 ? COLOR_WHITE : COLOR_GRAY);
-            setActVis(row, launcherEnabled);
+            setActVis(row, launcherEnabled, focused);
             const rowButtonIcon = row.i;
             if (rowButtonIcon) {
                 mod.SetUIImageColor(rowButtonIcon, launcherEnabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
@@ -2302,12 +2374,15 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     const ammoEnabled = isEngineerClass && ammoCount > 0 && launcherSlotKnown && !gadgetBlocked && !atCap;
     const ammoOverlayMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, ammoCount);
     {
+        const focused = focusedKey === "e";
         const sig = [
             ammoEnabled ? 1 : 0,
             ammoCount,
             ammoRemaining > 0 ? Math.ceil(ammoRemaining) : 0,
             isEngineerClass ? 1 : 0,
             hasLauncher ? 1 : 0,
+            atCap ? 1 : 0,
+            focused ? 1 : 0,
         ].join("|");
         if (cache.e.sig !== sig) {
             setTileHeaderWidgets(cache.e, STR_UI_LAUNCHER_AMMO, ammoEnabled ? COLOR_READY_GREEN : isEngineerClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
@@ -2315,18 +2390,24 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
                 cache.e.cd,
                 !isEngineerClass || !hasLauncher
                     ? mod.Message(STR_UI_NO_LAUNCHER)
-                    : (ammoRemaining > 0 ? fmtClock(ammoRemaining) : mod.Message(STR_UI_READY))
+                    : (ammoRemaining > 0
+                        ? fmtClock(ammoRemaining)
+                        : (atCap ? mod.Message(STR_UI_LAUNCHER_AT_CAP) : mod.Message(STR_UI_READY)))
             );
             safeSetUITextColor(
                 cache.e.cd,
-                !isEngineerClass || !hasLauncher || !launcherSlotKnown ? COLOR_GRAY : (ammoRemaining > 0 ? COLOR_WARNING_YELLOW : COLOR_READY_GREEN)
+                !isEngineerClass || !hasLauncher || !launcherSlotKnown
+                    ? COLOR_GRAY
+                    : (ammoRemaining > 0
+                        ? COLOR_WARNING_YELLOW
+                        : (atCap ? COLOR_GRAY : COLOR_READY_GREEN))
             );
             safeSetUITextLabel(cache.e.cs, ammoOverlayMessage);
             safeSetUITextLabel(cache.e.ct, ammoOverlayMessage);
             safeSetUITextColor(cache.e.s, COLOR_GRAY);
             safeSetUITextColor(cache.e.cs, COLOR_DARK_BLACK);
             safeSetUITextColor(cache.e.ct, ammoEnabled || ammoCount > 0 ? COLOR_WHITE : COLOR_GRAY);
-            setTileVis(cache.e, ammoEnabled);
+            setTileVis(cache.e, ammoEnabled, focused);
             if (cache.e.i) {
                 mod.SetUIImageColor(cache.e.i, ammoEnabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
             }
@@ -2342,6 +2423,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         const enabled = isReconClass && ready && !gadgetBlocked && !reconAlreadyHas;
         const count = ready ? reconItem.maxCount : 0;
         const showSelectedReconTimer = i > 0 && isReconClass && reconSharedRemaining > 0 && state.rgS === i;
+        const focused = focusedKey === `q:${i}`;
         const sig = [
             enabled ? 1 : 0,
             count,
@@ -2350,6 +2432,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             isReconClass ? 1 : 0,
             i,
             reconAlreadyHas ? 1 : 0,
+            focused ? 1 : 0,
         ].join("|");
         if (tile.sig !== sig) {
             setTileHeaderWidgets(tile, reconItem.labelKey, enabled ? COLOR_READY_GREEN : isReconClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
@@ -2361,7 +2444,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             safeSetUITextColor(tile.s, COLOR_GRAY);
             safeSetUITextColor(tile.cs, COLOR_DARK_BLACK);
             safeSetUITextColor(tile.ct, count > 0 ? COLOR_WHITE : COLOR_GRAY);
-            setTileVis(tile, enabled);
+            setTileVis(tile, enabled, focused);
             if (tile.i) {
                 mod.SetUIImageColor(tile.i, enabled ? COLOR_NOT_READY_RED : COLOR_GRAY);
             }
@@ -2513,7 +2596,19 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
         if (widgetName === buttonName || widgetName === `${buttonName}_BORDER`) { actionIndex = i; break; }
     }
     if (!isCloseWidget && !isMedicWidget && !isChargeWidget && medicTileIndex < 0 && assaultTileIndex < 0 && reconTileIndex < 0 && actionIndex < 0) return false;
-    // FocusIn fires when a button is navigated-to (controller/keyboard) or hovered (mouse) — update help text before press.
+    // Stable per-tile key used by refreshArmMenu's per-tile sig + the disabled-focused border
+    // indicator (see setTileVis / setActVis). Close button is intentionally excluded — it's
+    // always enabled, so the disabled-focused state is never reachable.
+    let tileKey: string | undefined;
+    if (isMedicWidget) tileKey = "m";
+    else if (isChargeWidget) tileKey = "e";
+    else if (assaultTileIndex >= 0) tileKey = `a:${assaultTileIndex}`;
+    else if (medicTileIndex >= 0) tileKey = `x:${medicTileIndex}`;
+    else if (actionIndex >= 0) tileKey = `row:${actionIndex}`;
+    else if (reconTileIndex >= 0) tileKey = `q:${reconTileIndex}`;
+    // FocusIn fires when a button is navigated-to (controller/keyboard) or hovered (mouse) —
+    // update help text and track the focused tile so the next refresh paints the disabled-
+    // focused border indicator on it (and clears it from the previous focused tile).
     if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.FocusIn)) {
         const cache = State.hudCache.ammoResupplyMenuCache[pid];
         if (cache?.helpText) {
@@ -2525,6 +2620,26 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
             else if (isChargeWidget) helpKey = STR_UI_HELP_LAUNCHER_AMMO;
             else if (reconTileIndex >= 0) helpKey = HELP_KEY_MAP[cfg.recon[reconTileIndex].name];
             if (helpKey) safeSetUITextLabel(cache.helpText, mod.Message(helpKey));
+        }
+        if (tileKey !== undefined) {
+            const objId = getArmObj(pid);
+            if (cache && objId !== undefined && State.players.armFocusedTileKeyByPid[pid] !== tileKey) {
+                State.players.armFocusedTileKeyByPid[pid] = tileKey;
+                refreshArmMenu(eventPlayer, objId, cache, true);
+            }
+        }
+        return true;
+    }
+    // FocusOut clears the focus indicator when the player navigates away from a tile (only if
+    // the leaving tile is still the one we have tracked — guards against out-of-order events).
+    if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.FocusOut)) {
+        if (tileKey !== undefined && State.players.armFocusedTileKeyByPid[pid] === tileKey) {
+            const objId = getArmObj(pid);
+            const cache = State.hudCache.ammoResupplyMenuCache[pid];
+            delete State.players.armFocusedTileKeyByPid[pid];
+            if (cache && objId !== undefined) {
+                refreshArmMenu(eventPlayer, objId, cache, true);
+            }
         }
         return true;
     }

@@ -1,12 +1,12 @@
 # TWL Conquest Design and Implementation Plan
 
-Last updated: 2026-04-20 (v1.334)
+Last updated: 2026-04-25 (v1.375)
 Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
 
 ## Current Status
 
 - This is the authoritative master design document for TWL Conquest.
-- Accepted current implementation baseline (as of v1.334, 2026-04-20):
+- Accepted current implementation baseline (as of v1.375, 2026-04-25):
   - Phase 1: completed
   - Phase 2A: completed
   - Phase 2B: completed (remaining future validation deferred to Phase 10)
@@ -25,7 +25,8 @@ Audience: Implementers and maintainers working in `bf6-portal/dev/conquest/src`
   - See `design_doc/conquest_issues.md` for the active issue list.
   - The 2026-04-18 pass marked CQ_Bug_49 / 52 / 53 / 54 / 55 / `ActiveSpawnSingletonMPRace` as **Obsolete (v1.259 rewrite)** — underlying code paths were deleted wholesale.
   - Newly added (v1.289 cycle): `CQ_Refactor_Vanilla_Vehicle_Spawner_Rewrite`, `CQ_Refactor_Vehicle_Destroy_Consolidation`, `CQ_Feat_Phase6_HQ_Deploy`, `CQ_Bug_Abrams_Substitution_Transport_Slot_Regression` (open), `CQ_Polish_Respawn_Redeploy_Timer_Audit` (open, deferred to polish).
-  - Newly added (v1.290–v1.334 cycle): `CQ_Feat_Forward_Deploy_Reintroduction` (v1.328, resolved pending MP validation), `CQ_Feat_Air_Deploy_Reintroduction` (v1.329, resolved pending MP validation), `CQ_Bug_Air_Deploy_Jet_Position_Regression` (v1.331, resolved by v1.332 revert), `CQ_Bug_Loadout_Not_Respected` (Forward resolved at v1.333, Air resolved-pending-playtest at v1.334), `CQ_Polish_Jet_Pitch_On_Air_Deploy` (deferred polish), `CQ_Bug_RemoveEquipment_JS_Error` (open, polish).
+  - Newly added (v1.290–v1.334 cycle): `CQ_Feat_Forward_Deploy_Reintroduction` (v1.328, resolved pending MP validation), `CQ_Feat_Air_Deploy_Reintroduction` (v1.329, resolved pending MP validation), `CQ_Bug_Air_Deploy_Jet_Position_Regression` (v1.331, resolved by v1.332 revert), `CQ_Bug_Loadout_Not_Respected` (Forward resolved at v1.333, Air resolved-pending-playtest at v1.334), `CQ_Polish_Jet_Pitch_On_Air_Deploy` (deferred polish), `CQ_Bug_RemoveEquipment_JS_Error` (likely resolved v1.341 precheck gate; pending MP confirm).
+  - Newly added (v1.335–v1.375 cycle): boundary architecture stabilized via `CQ_Feat_Custom_GCZ_Restored` (v1.357), `CQ_Feat_Zone_Tracker_Refactor` (v1.360), `CQ_Feat_AreaTrigger_Enable` (v1.367), `CQ_Feat_Event_Driven_Seat_State` (v1.369), `CQ_Feat_Squad_Spawn_Zone_Inheritance` (v1.370). Tier 1+2 cleanup at v1.371–v1.372. Tier 3 audit (`CQ_Audit_Engine_Enable_Calls`, `CQ_Audit_CapturePoint_HotPath_State`) clean. Recent fixes: `CQ_Bug_Launcher_Ammo_Cap_Below_Designed` (#95, v1.373 — uniform 3-rocket cap + "FULL" at-cap label), `CQ_Bug_Launcher_Slot_Identification_Zero_Ammo` (#96, v1.373 — non-destructive +1-ammo probe), `CQ_Bug_GetVehicleFromPlayer_Boundary_ForwardDeploy` (#93, v1.374 — deleted dead cache seed), `CQ_Polish_SupplyBox_DisabledFocused_Indicator` (#97, v1.375 — cool blue-white border ring on disabled-focused tiles). Open: `CQ_Bug_PostSwap_Engage_HUD_FirstEntry` (#3, still reproducing), `CQ_Bug_GetInventoryAmmo_SupplyBox_OpenMenu` (#94, not recently observed — review pending), `CQ_Polish_Respawn_Redeploy_Timer_Audit` (#76, deferred polish).
 - Active companion documents:
   - `design_doc/api_checklist.md`
   - `design_doc/conquest_issues.md`
@@ -3759,24 +3760,24 @@ None
 
 ## Codebase Reference Map
 
-Last updated: v1.334 (2026-04-20)
+Last updated: v1.375 (2026-04-25)
 
 ### Project Stats
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.370 |
+| Version | 1.375 |
 | Source files | 121 .ts files + 1 .json |
-| Bundle size (script) | **1,032,490 bytes** |
+| Bundle size (script) | **1,033,439 bytes** |
 | Bundle size (strings) | ~20,900 bytes |
 | Bundle limit | 1,048,576 bytes (1 MiB) — applies to script only |
-| Headroom | **16,086 bytes (1.53%)** |
-| Headroom with FEATURE_ADMIN_PANEL=true (last measured v1.334) | **−3,536 bytes (OVER cap)** — likely worse now given +9K added since v1.334 |
+| Headroom | **15,137 bytes (1.44%)** |
+| Headroom with FEATURE_ADMIN_PANEL=true (last measured v1.334) | **−3,536 bytes (OVER cap)** — likely worse now given ~+10K added since v1.334 |
 | Entry point | `src/index.ts` -> 20 Portal event handlers |
 | Build pipeline | `prebuild.js` -> `bf6-portal-bundler` -> `postbuild.js` -> `verify.js` |
 | Build output | `dist/bundle.ts` + `dist/bundle.strings.json` |
 
-Net size trend: v1.289 was 968,479 bytes (7.64% headroom). The v1.290–v1.370 feature arc consumed ~64K: gadget locker + launcher-slot probe (v1.290–v1.313), Forward Deploy + Air Deploy (v1.328/v1.329, ~15K), Phase 2a/2b loadout fix (v1.333/v1.334), match-clock migration to `Clocks.CountDownClock` (v1.337/v1.338, +1.3K), zone-state architecture (v1.358–v1.370, ~+5K net after deletions). Headroom is now at **1.53%** — well below the v1.010 floor of 2.2%. **Bundle pressure is critical** — new features must offset by deletion. Admin Panel re-enable remains blocked. See `design_doc/conquest_optimization_analysis.md` for reclaim levers (note: that doc is itself stale at v1.338 baseline; refresh pending).
+Net size trend: v1.289 was 968,479 bytes (7.64% headroom). The v1.290–v1.370 feature arc consumed ~64K: gadget locker + launcher-slot probe (v1.290–v1.313), Forward Deploy + Air Deploy (v1.328/v1.329, ~15K), Phase 2a/2b loadout fix (v1.333/v1.334), match-clock migration to `Clocks.CountDownClock` (v1.337/v1.338, +1.3K), zone-state architecture (v1.358–v1.370, ~+5K net after deletions). v1.371–v1.374 reclaimed −1.8K via Tier 1+2 cleanup, dead-helper removal, and the `GetVehicleFromPlayer` cache-seed deletion. v1.375 added +2.8K for the Supply Box disabled-focused indicator. Net headroom **1.44%** at v1.375 — below the v1.010 floor of 2.2%; bundle pressure remains critical and new features must offset by deletion. Admin Panel re-enable remains blocked. See `design_doc/conquest_optimization_analysis.md` (refreshed v1.375).
 
 #### Compile-Time Feature Flags
 

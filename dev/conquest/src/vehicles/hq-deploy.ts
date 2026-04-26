@@ -92,7 +92,7 @@ function requestHqVehicleSpawn(player: mod.Player, pid: number, rowIndex: number
     if (!slot.enabled) return { ok: false, reason: "slot_disabled" };
     if (slot.vehicleId !== -1) return { ok: false, reason: "slot_occupied" };
     if (slot.pendingSpawnOwnerPid !== undefined) return { ok: false, reason: "slot_claimed" };
-    if (slot.expectingSpawn || slot.respawnRunning || slot.spawnRetryScheduled) return { ok: false, reason: "slot_busy" };
+    if (slot.expectingSpawn || slot.respawnRunning) return { ok: false, reason: "slot_busy" };
     // 120s post-destroy cooldown (matches Vanilla respawn delay). Prevents instant
     // re-request after a vehicle is destroyed; the HUD countdown surfaces the remaining time.
     if (slot.respawnClock) return { ok: false, reason: "respawn_cooldown" };
@@ -183,7 +183,7 @@ function requestForwardVehicleSpawn(player: mod.Player, pid: number, rowIndex: n
     if (!slot.enabled) return { ok: false, reason: "slot_disabled" };
     if (slot.vehicleId !== -1) return { ok: false, reason: "slot_occupied" };
     if (slot.pendingSpawnOwnerPid !== undefined) return { ok: false, reason: "slot_claimed" };
-    if (slot.expectingSpawn || slot.respawnRunning || slot.spawnRetryScheduled) return { ok: false, reason: "slot_busy" };
+    if (slot.expectingSpawn || slot.respawnRunning) return { ok: false, reason: "slot_busy" };
     if (slot.respawnClock) return { ok: false, reason: "respawn_cooldown" };
     if (isAircraftVehicleType(slot.vehicleType)) return { ok: false, reason: "aircraft_slot" };
     if (!slot.nextForwardPos || !slot.nextForwardRot) return { ok: false, reason: "no_forward_volume" };
@@ -232,7 +232,7 @@ function requestAirVehicleSpawn(player: mod.Player, pid: number, rowIndex: numbe
     if (!slot.enabled) return { ok: false, reason: "slot_disabled" };
     if (slot.vehicleId !== -1) return { ok: false, reason: "slot_occupied" };
     if (slot.pendingSpawnOwnerPid !== undefined) return { ok: false, reason: "slot_claimed" };
-    if (slot.expectingSpawn || slot.respawnRunning || slot.spawnRetryScheduled) return { ok: false, reason: "slot_busy" };
+    if (slot.expectingSpawn || slot.respawnRunning) return { ok: false, reason: "slot_busy" };
     if (slot.respawnClock) return { ok: false, reason: "respawn_cooldown" };
     if (!isAircraftVehicleType(slot.vehicleType)) return { ok: false, reason: "not_aircraft" };
     if (!slot.nextAirPos || !slot.nextAirRot) return { ok: false, reason: "no_air_volume" };

@@ -59,26 +59,12 @@ function findVehicleById(vehicleId: number): mod.Vehicle | undefined {
     return undefined;
 }
 
-// Resolves desired enabled-spawner counts per team for the selected matchup preset.
-function getDesiredSpawnerCountsForPreset(presetIndex: number): { team1: number; team2: number } {
-    const preset = MATCHUP_PRESETS[presetIndex] ?? MATCHUP_PRESETS[0];
-    return {
-        team1: Math.max(1, Math.floor(preset.leftPlayers)),
-        team2: Math.max(1, Math.floor(preset.rightPlayers)),
-    };
-}
-
 // Gate helper — true only when the confirmed deploy method is Vanilla. All auto-dispatch
 // sites (round-start fleet, countdown-reset fleet, post-destroy respawn) check this so HQ
 // mode leaves the pads empty and owned by player-driven requests (see hq-deploy module).
 function isVanillaDeployMode(): boolean {
     const confirmed = State.round.modeConfig.confirmed.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT;
     return confirmed === VEHICLE_DEPLOY_METHOD_VANILLA;
-}
-
-// Kept as no-op for endMatch call-site compatibility. Reservations are gone.
-function clearAllVehicleReservations(): void {
-    // no-op (v1.258): reservation system removed; Vanilla slots have no reservation state.
 }
 
 function clearVehicleReservationForPid(_pid: number): void {
@@ -257,7 +243,6 @@ function addVanillaSpawnerSlot(
         lastDestroyedAtSeconds: -1,
         lastMissingAtSeconds: -1,
         respawnRunning: false,
-        spawnRetryScheduled: false,
         spawnCategory: "other",
         // v1.279: HQ wiring — flip to true so button visibility can light up when HQ mode is active.
         // Downstream visibility still gates on hqDeployAllowed, so Vanilla stays unaffected.
@@ -266,8 +251,6 @@ function addVanillaSpawnerSlot(
         pendingSpawnOwnerPid: undefined,
         pendingSpawnMode: undefined,
         activeOwnerPid: undefined,
-        suppressNextBindSpawnTransformCorrection: false,
-        freshAirRuntimeSpawner: undefined,
         respawnClock: undefined,
         nextForwardPos: undefined,
         nextForwardRot: undefined,

@@ -50,6 +50,7 @@ import './vehicles/vehicle-classification';
 import './vehicles/ownership';
 import './vehicles/registration';
 import './vehicles/timers';
+import './vehicles/spawn-volume-math';
 import './vehicles/forward-spawn-volume';
 import './vehicles/air-spawn-volume';
 import './vehicles/spawner-budget';

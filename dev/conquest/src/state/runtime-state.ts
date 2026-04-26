@@ -31,6 +31,8 @@ const State: GameState = {
                 forwardDeployEnabled: false,
                 supplyBoxesEnabled: true,
             },
+            applyBlockedAtSeconds: undefined,
+            applyBlockedCount: undefined,
         },
         phase: MatchPhase.NotReady,
         clock: {
@@ -209,6 +211,8 @@ const State: GameState = {
         armO: {},
         armI: {},
         armT: {},
+        armFocusedTileKeyByPid: {},
+        warmPrimeActiveByPid: {},
         armG: {},
         armL: {},
         armS: {},

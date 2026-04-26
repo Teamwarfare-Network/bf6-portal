@@ -42,16 +42,26 @@ const VEHICLE_PACKAGE_SLOT_BASE_GROUND = 5;
 const VEHICLE_PACKAGE_SLOT_BASE_FAST = 9;
 
 function getReadyDialogVehicleOptionsForKnobKey(knobKey: string): ReadyDialogVehicleOption[] {
+    // Fast slots 3/4 (heli-capable transport) — per-team menus.
     if (knobKey === READY_DIALOG_TEAM1_FAST_KNOB_KEYS[2] || knobKey === READY_DIALOG_TEAM1_FAST_KNOB_KEYS[3]) {
         return READY_DIALOG_TEAM1_TRANSPORT_SLOT_VEHICLE_OPTIONS;
     }
     if (knobKey === READY_DIALOG_TEAM2_FAST_KNOB_KEYS[2] || knobKey === READY_DIALOG_TEAM2_FAST_KNOB_KEYS[3]) {
         return READY_DIALOG_TEAM2_TRANSPORT_SLOT_VEHICLE_OPTIONS;
     }
+    // Fast slots 1/2 (ground-only transport) — per-team. NATO variants on Team 1, PAX on Team 2.
+    if (knobKey.indexOf("team1Fast") >= 0) return READY_DIALOG_TEAM1_FAST_VEHICLE_OPTIONS;
+    if (knobKey.indexOf("team2Fast") >= 0) return READY_DIALOG_TEAM2_FAST_VEHICLE_OPTIONS;
+    // Heli slots — per-team. Apache + Euro Tiger shared (attack helis usable by either side);
+    // LittleBird + BlackHawk faction-locked to their PAX/NATO variants.
+    if (knobKey.indexOf("team1Heli") >= 0) return READY_DIALOG_TEAM1_HELI_VEHICLE_OPTIONS;
+    if (knobKey.indexOf("team2Heli") >= 0) return READY_DIALOG_TEAM2_HELI_VEHICLE_OPTIONS;
+    // Jets — shared per design (both sides can pick any of F16 / F22 / JAS39 / SU57).
     if (knobKey.indexOf("Jet") >= 0) return READY_DIALOG_JET_VEHICLE_OPTIONS;
-    if (knobKey.indexOf("Heli") >= 0) return READY_DIALOG_HELI_VEHICLE_OPTIONS;
+    // Ground — shared. No explicit _Pax variants exist for ground vehicles in mod.VehicleList,
+    // and the user has not yet directed a per-team split for the Abrams/Leopard/Bradley/CV90/
+    // Cheetah/Gepard set. Revisit if a per-team ground filter is requested.
     if (knobKey.indexOf("Ground") >= 0) return READY_DIALOG_GROUND_VEHICLE_OPTIONS;
-    if (knobKey.indexOf("Fast") >= 0) return READY_DIALOG_FAST_VEHICLE_OPTIONS;
     return [];
 }
 

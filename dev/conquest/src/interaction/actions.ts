@@ -263,6 +263,13 @@ let _prebuildStaggerIndex = 0;
 // Serialized via _prebuildBusy lock so concurrent player joins don't stack heavy sync work in one frame.
 async function prebuildAllUiFamiliesHidden(eventPlayer: mod.Player, pid: number): Promise<void> {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    // Mark warm-prime in flight for this pid. Read by confirmReadyDialogModeConfig (Apply
+    // Config) to refuse-with-feedback while any warm is mid-flight, preventing the v1.380
+    // hard-crash where Apply Config's per-player widget rebuild collides with a late-joiner's
+    // partially-populated UI cache (#105). Cleared in the outer finally so disconnect /
+    // throw / early-return paths all guarantee the flag clears.
+    State.players.warmPrimeActiveByPid[pid] = true;
+    try {
     // Acquire serialization lock — yield until free.
     while (_prebuildBusy) {
         await mod.Wait(0.05);
@@ -326,6 +333,9 @@ async function prebuildAllUiFamiliesHidden(eventPlayer: mod.Player, pid: number)
         if (FEATURE_ADMIN_PANEL) prebuildAdminPanelWhileHidden(eventPlayer, pid);
     } finally {
         _prebuildBusy = false;
+    }
+    } finally {
+        delete State.players.warmPrimeActiveByPid[pid];
     }
 }
 

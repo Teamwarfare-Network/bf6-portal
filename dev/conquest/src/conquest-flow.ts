@@ -63,7 +63,6 @@ function startMatch(_triggerPlayer?: mod.Player): void {
 // Ends the current round using one authoritative post-match transition and winner snapshot.
 function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number, overrideWinnerTeamNum?: TeamID | 0): void {
     State.round.liveStartedAtSeconds = undefined;
-    clearAllVehicleReservations();
     // Determine winner: use explicit override if provided, otherwise infer from ticket counts.
     let winner: TeamID | 0;
     if (overrideWinnerTeamNum === TeamID.Team1 || overrideWinnerTeamNum === TeamID.Team2) {

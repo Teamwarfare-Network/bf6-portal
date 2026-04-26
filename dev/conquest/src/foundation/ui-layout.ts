@@ -191,6 +191,11 @@ const BUTTON_OPACITY_PRESSED = 0.75;
 const COLOR_BUTTON_BORDER = COLOR_GRAY;
 const BUTTON_BORDER_OPACITY = 0.50;
 const BUTTON_BORDER_PADDING = 0;
+// Border color for a disabled tile that is currently focused (controller / keyboard
+// navigation). Distinct from COLOR_BUTTON_BORDER (enabled-default gray) and COLOR_GRAY_DARK
+// (disabled-default) so console players see where the cursor is on a tile that won't accept
+// a click. Cool blue-white per design direction (no yellow).
+const COLOR_BUTTON_BORDER_DISABLED_FOCUSED = COLOR_WHITE_LOW;
 
 // Ready Dialog
 const READY_DIALOG_SMALL_BUTTON_WIDTH = 26;

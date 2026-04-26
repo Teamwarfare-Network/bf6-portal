@@ -184,7 +184,6 @@ function isVehicleDeploySlotReadyForSpawnButton(slot: VehicleSpawnerSlot | undef
         && slot.pendingSpawnOwnerPid === undefined
         && !slot.expectingSpawn
         && !slot.respawnRunning
-        && !slot.spawnRetryScheduled
         && getVehicleSlotRespawnRemainingSeconds(slot) <= 0;
 }
 

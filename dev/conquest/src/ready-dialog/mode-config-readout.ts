@@ -165,16 +165,34 @@ function syncReadyDialogModeActionWidgetsForPid(pid: number, diff: ReadyDialogMo
     }
 
     if (unsavedLabel) {
-        mod.SetUIWidgetVisible(unsavedLabel, live || hasUnsavedChanges);
-        safeSetUITextLabel(
-            unsavedLabel,
-            mod.Message(
-                live
-                    ? mod.stringkeys.twl.readyDialog.liveConfigLockedLabel
-                    : mod.stringkeys.twl.readyDialog.unsavedChangesLabel
-            )
-        );
-        mod.SetUITextColor(unsavedLabel, COLOR_NOT_READY_RED);
+        // Apply-blocked state takes priority over live / unsaved labels (#105). When the
+        // late-joiner-warm guard refuses an Apply, applyBlockedAtSeconds is set; the dialog
+        // shows "Cannot apply: N still loading" inline for APPLY_BLOCKED_LABEL_DURATION_SECONDS
+        // before reverting via the deferred clear in confirmReadyDialogModeConfig.
+        const blockedAt = State.round.modeConfig.applyBlockedAtSeconds;
+        const blockedCount = State.round.modeConfig.applyBlockedCount ?? 0;
+        const blockedActive = blockedAt !== undefined
+            && blockedCount > 0
+            && (mod.GetMatchTimeElapsed() - blockedAt) < APPLY_BLOCKED_LABEL_DURATION_SECONDS;
+        if (blockedActive) {
+            mod.SetUIWidgetVisible(unsavedLabel, true);
+            safeSetUITextLabel(
+                unsavedLabel,
+                mod.Message(mod.stringkeys.twl.readyDialog.applyBlockedLoading, blockedCount)
+            );
+            mod.SetUITextColor(unsavedLabel, COLOR_NOT_READY_RED);
+        } else {
+            mod.SetUIWidgetVisible(unsavedLabel, live || hasUnsavedChanges);
+            safeSetUITextLabel(
+                unsavedLabel,
+                mod.Message(
+                    live
+                        ? mod.stringkeys.twl.readyDialog.liveConfigLockedLabel
+                        : mod.stringkeys.twl.readyDialog.unsavedChangesLabel
+                )
+            );
+            mod.SetUITextColor(unsavedLabel, COLOR_NOT_READY_RED);
+        }
     }
 }
 
