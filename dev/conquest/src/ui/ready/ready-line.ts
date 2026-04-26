@@ -6,8 +6,12 @@ type ConquestTopCenterAuxLayout = {
     helpContainerY: number;
     helpContainerWidth: number;
     helpContainerHeight: number;
+    helpText3OffsetY: number;
+    helpText3Height: number;
     helpTextOffsetY: number;
     helpTextHeight: number;
+    helpText2OffsetY: number;
+    helpText2Height: number;
     readyContainerX: number;
     readyContainerY: number;
     readyContainerWidth: number;
@@ -42,7 +46,9 @@ function buildConquestTopCenterAuxWidgets(
     // Build-path cleanup: ensure stale aux roots from failed/partial rebuilds cannot shadow the active widgets.
     deleteAllTopCenterAuxWidgetsByName(wn("ConquestTopCenterAuxRoot", pid));
     deleteAllTopCenterAuxWidgetsByName(wn("Container_HelpText", pid));
+    deleteAllTopCenterAuxWidgetsByName(wn("HelpText3", pid));
     deleteAllTopCenterAuxWidgetsByName(wn("HelpText", pid));
+    deleteAllTopCenterAuxWidgetsByName(wn("HelpText2", pid));
     deleteAllTopCenterAuxWidgetsByName(wn("Container_ReadyStatus", pid));
     deleteAllTopCenterAuxWidgetsByName(wn("ReadyStatusText", pid));
 
@@ -72,6 +78,23 @@ function buildConquestTopCenterAuxWidgets(
                 bgFill: mod.UIBgFill.Solid,
                 children: [
                     {
+                        name: wn("HelpText3", pid),
+                        type: "Text",
+                        position: [0, layout.helpText3OffsetY],
+                        size: [layout.helpContainerWidth, layout.helpText3Height],
+                        anchor: mod.UIAnchor.TopLeft,
+                        visible: true,
+                        padding: 0,
+                        bgColor: [0.2, 0.2, 0.2],
+                        bgAlpha: 1,
+                        bgFill: mod.UIBgFill.None,
+                        textLabel: mod.Message(mod.stringkeys.twl.hud.helpText3),
+                        textColor: [0.251, 0.0941, 0.0667],
+                        textAlpha: 1,
+                        textSize: 12,
+                        textAnchor: mod.UIAnchor.Center,
+                    },
+                    {
                         name: wn("HelpText", pid),
                         type: "Text",
                         position: [0, layout.helpTextOffsetY],
@@ -83,6 +106,23 @@ function buildConquestTopCenterAuxWidgets(
                         bgAlpha: 1,
                         bgFill: mod.UIBgFill.None,
                         textLabel: mod.Message(mod.stringkeys.twl.hud.helpText),
+                        textColor: [0.251, 0.0941, 0.0667],
+                        textAlpha: 1,
+                        textSize: 12,
+                        textAnchor: mod.UIAnchor.Center,
+                    },
+                    {
+                        name: wn("HelpText2", pid),
+                        type: "Text",
+                        position: [0, layout.helpText2OffsetY],
+                        size: [layout.helpContainerWidth, layout.helpText2Height],
+                        anchor: mod.UIAnchor.TopLeft,
+                        visible: true,
+                        padding: 0,
+                        bgColor: [0.2, 0.2, 0.2],
+                        bgAlpha: 1,
+                        bgFill: mod.UIBgFill.None,
+                        textLabel: mod.Message(mod.stringkeys.twl.hud.helpText2),
                         textColor: [0.251, 0.0941, 0.0667],
                         textAlpha: 1,
                         textSize: 12,

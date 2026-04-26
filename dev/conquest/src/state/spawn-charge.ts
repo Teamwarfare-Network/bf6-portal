@@ -10,6 +10,7 @@ function conquestPhase2BNewReasonCounterState(): ConquestSpawnChargeReasonCounte
         admin_move: 0,
         phase_transition: 0,
         reconnect: 0,
+        vehicle_deploy: 0,
     };
 }
 
@@ -28,7 +29,8 @@ function conquestPhase2BGetReasonCode(reason: ConquestSpawnChargeReason): number
     if (reason === "team_switch") return 3;
     if (reason === "admin_move") return 4;
     if (reason === "phase_transition") return 5;
-    return 6; // reconnect
+    if (reason === "reconnect") return 6;
+    return 7; // vehicle_deploy
 }
 
 // Computes total count across all reason buckets in a counter map.
@@ -38,7 +40,8 @@ function conquestPhase2BGetReasonCounterTotal(counters: ConquestSpawnChargeReaso
         + counters.team_switch
         + counters.admin_move
         + counters.phase_transition
-        + counters.reconnect;
+        + counters.reconnect
+        + counters.vehicle_deploy;
 }
 
 // Emits gated debug-world-log snapshots (using existing debug format keys, no new strings).
@@ -205,6 +208,10 @@ function conquestPhase2BOnPlayerDeployed(eventPlayer: mod.Player, wasAlreadyDepl
 
     const reason = conquestPhase2BResolvePendingReason(pid);
     conquestPhase2BIncrementReasonCounter(State.conquest.spawnCharge.deployCountByReason, reason);
+
+    // Exempt voluntary UX-driven redeploys: alive-on-foot vehicle deploy and team-swap.
+    // Death-respawn / forced-redeploy / admin-move / phase-transition / reconnect still charge.
+    if (reason === "vehicle_deploy" || reason === "team_switch") return;
 
     if (wasAlreadyDeployed) {
         // Duplicate deploy event for a still-deployed player; track suspicion and avoid double-charge.

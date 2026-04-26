@@ -3,24 +3,6 @@
 
 //#region -------------------- Aircraft Ceiling (Hard Enforcement) --------------------
 
-// Engine limiter expects a world-Y scale; convert HUD ceiling using the map's HUD floor/max offsets.
-function applyCustomAircraftCeilingHardLimiter(): void {
-    const floorY = Math.floor(State.round.aircraftCeiling.hudFloorY);
-    const baseHud = Math.max(1, Math.floor(State.round.aircraftCeiling.hudMaxY));
-    const targetHud = Math.max(1, Math.floor(State.round.modeConfig.confirmed.aircraftCeiling));
-    // Convert HUD ceiling to world Y using the map-specific HUD floor offset.
-    const baseWorldY = Math.max(1, floorY + baseHud);
-    const targetWorldY = Math.max(1, floorY + targetHud);
-    const scale = targetWorldY / baseWorldY;
-    mod.SetMaxVehicleHeightLimitScale(scale);
-}
-
-// Enables custom ceiling runtime state without applying a limiter until confirm path runs.
-function enableCustomAircraftCeiling(): void {
-    State.round.aircraftCeiling.customEnabled = true;
-    State.round.aircraftCeiling.vehicleStates = {};
-}
-
 // Disables custom ceiling, restores map-default settings, and resets engine limiter scale.
 function disableCustomAircraftCeilingAndRestoreDefault(): void {
     State.round.aircraftCeiling.customEnabled = false;

@@ -3370,3 +3370,76 @@ Status: **Resolved (v1.383) pending MP confirmation.** Leave open until manual M
 Related:
 - `CQ_Bug_43` — `mod.CompareVehicleName` engine reliability gap. Same family of engine-side reliability issue.
 - `CQ_Bug_AircraftBail_OOB` — original Y=200 ceiling enforcement design. This fix adds a safety-net to that mechanism without changing the policy.
+
+## CQ_Tweak_SpawnCharge_Exempt_Vehicle_And_TeamSwitch (#107)
+Title: Exempt voluntary UX redeploys from Phase 2B spawn-charge ticket cost
+
+Observed (2026-04-26, v1.392):
+- During pre-playtest bleed-rate calibration discussion (#103), surfaced that vehicle HQ-Deploy / Forward-Deploy / Air-Deploy from on-foot was firing a chargeable redeploy event despite the player not having died. The player was alive, voluntarily grabbed a vehicle, and lost a ticket from their team. Same gap applied to pre-game and live team-swaps — the team_switch reason was wired but still charged tickets.
+- Phase 2B spawn-charge model ([spawn-charge.ts:197 `conquestPhase2BOnPlayerDeployed`](../src/state/spawn-charge.ts#L197)) charged on every deploy event with no per-reason exempt mechanism. All 6 reasons (`deploy`, `forced_redeploy`, `team_switch`, `admin_move`, `phase_transition`, `reconnect`) charged equally.
+
+Resolution shipped at v1.393:
+- Added `"vehicle_deploy"` as a 7th reason in the `ConquestSpawnChargeReason` union ([runtime-types.ts:139-146](../src/state/runtime-types.ts#L139-L146)).
+- Updated all 4 reason-counter initializers (`runtime-state.ts`, `conquest-scaffold.ts`, `spawn-charge.ts:NewReasonCounterState`) and the reason-code/total enumerations.
+- In `conquestPhase2BOnPlayerDeployed`, after `IncrementReasonCounter` (so diagnostic counts still track the deploy) but before the charge logic, early-return when `reason === "vehicle_deploy" || reason === "team_switch"`.
+- In `hq-deploy.ts:289-295` on-foot branch, added `conquestPhase2BMarkNextDeployReason(pid, "vehicle_deploy")` before `mod.SetRedeployTime` / `mod.UndeployPlayer`. The `team_switch` reason was already wired at [actions.ts:752](../src/interaction/actions.ts#L752) — no marker change needed there, only the exempt-set in the charge function picks it up.
+- Bundle delta v1.392 → v1.393: **+397 bytes** (slightly above the ~140-200 estimate due to expanded counter initializers across 4 files).
+
+Behavior change matrix:
+
+| Action | v1.392 | v1.393 |
+|---|---|---|
+| Death → on-foot respawn | 1 ticket | 1 ticket |
+| Voluntary suicide → respawn | 1 ticket | 1 ticket |
+| Alive on-foot → HQ Deploy a vehicle | 1 ticket | **0 tickets** |
+| Alive on-foot → Forward Deploy | 1 ticket | **0 tickets** |
+| Alive on-foot → Air Deploy | 1 ticket | **0 tickets** |
+| Pre-game / live team-swap | 1 ticket | **0 tickets** |
+| Forced admin redeploy | 1 ticket | 1 ticket |
+| Reconnect after disconnect | 1 ticket | 1 ticket |
+
+Diagnostic preservation: `deployCountByReason.vehicle_deploy` still increments for every vehicle deploy event (and `team_switch` was already counted), so admin perfDiag tracking is complete. Only `chargedCountByReason` reflects actual ticket impact, which is unchanged for charged reasons.
+
+What this does NOT cover:
+- Death → vehicle deploy from the `slot.hqSource === "deploy_menu"` branch (player was dead and selected vehicle from the deploy screen) still charges 1 ticket. Correct behavior — the player consumed a death-respawn anyway.
+- The `forced_redeploy`, `admin_move`, `phase_transition`, `reconnect` reasons remain charged. These represent involuntary or death-equivalent events.
+
+Status: **Resolved (v1.393) pending MP confirmation.** Watch playtest for any unintended 0-ticket deploys (e.g., a deploy_menu path mis-marked as vehicle_deploy).
+
+Related:
+- Plan: [`design_doc/spawn_charge_exempt_reasons_plan_2026-04-26.md`](./spawn_charge_exempt_reasons_plan_2026-04-26.md).
+- `#103 CQ_Tweak_Bleed_Rate_Mancours_Calibration` — companion playtest tuning. Bleed math + spawn-charge math together determine match length.
+- Plan companion: [`design_doc/bleed_rate_mancours_calibration_plan_2026-04-26.md`](./bleed_rate_mancours_calibration_plan_2026-04-26.md).
+
+## CQ_Tweak_HQ_SupplyBox_Disable_OnLive (#108)
+Title: HQ supply boxes auto-disable when match goes LIVE; non-HQ boxes remain available
+
+Observed (2026-04-26, v1.393):
+- All 8 supply boxes on Operation Firestorm were equally available pre-LIVE and during LIVE. Two of those (objIds 1056 at Team1 HQ, 1057 at Team2 HQ) sit inside each team's main base. User wants players to leave their HQ for resupply during live play — that means hiding the in-HQ resupply convenience once the match starts.
+- All 8 boxes share `ownerTeamId: 0` and `vfx: VFX_YELLOW_SMOKE`; HQ ones are differentiated only by position (~35-40m from each team-base anchor). No existing classifier for "HQ supply box" in the config.
+
+Resolution shipped at v1.394:
+- New optional flag `disableOnLive?: boolean` on `WorldInteractableAnchorConfig` and `WorldInteractableConfig` ([config/types.ts](../src/config/types.ts)). Generic by design — any future map can mark any interactable with this flag.
+- Set `disableOnLive: true` on the two HQ supply box anchors (objIds 1056, 1057) in [`config/maps/operation-firestorm.ts`](../src/config/maps/operation-firestorm.ts). Other 6 anchors (1050-1055, at flags / between flags) unchanged.
+- `buildWorldInteractableConfigsFromMapConfig` ([config/map-runtime.ts](../src/config/map-runtime.ts)) now carries `disableOnLive` from anchor → runtime config.
+- New helper `isWorldInteractableDisabledByLive(config)` in [`interaction/world-interactables.ts`](../src/interaction/world-interactables.ts) — returns true when `config.disableOnLive === true && isMatchLive()`. Integrated at three gate sites: `shouldEnableWorldInteractableAuthoredInteractPoint`, `spawnWorldInteractableVfxForActiveConfigs`, `ensureWorldInteractableVfxForConfig`.
+- New `refreshDisableOnLiveInteractableStateForLiveTransition()` iterates active configs and immediately disables interact-point + despawns VFX for every flagged entry. Called from `startMatch` ([conquest-flow.ts:33](../src/conquest-flow.ts#L33)) right after `cleanupMainBaseTeamWorldIconsForLiveTransition()` so the transition is snappy (<frame), not gated on the per-second refresh cadence.
+- Bundle delta v1.393 → v1.394: **+1,160 bytes** (above the ~250-byte estimate; helper + 3 gate sites + refresh function + carry-through compounded more than projected).
+
+What this does NOT cover:
+- **Re-enable on match end.** When a match ends and resets to NotReady, the existing per-second refresh paths will pick up the new `!isMatchLive()` state and re-enable. May need an explicit refresh call at match-end if there's a visible delay; defer to playtest.
+- **Other maps.** Only Firestorm has `disableOnLive: true` set today. New maps choose their own flagging.
+- **Visual polish.** VFX unspawns instantly at the live transition (no fade/dissolve). If jarring, add `mod.EnableVFX(vfx, false)` followed by a delayed unspawn in a follow-up.
+
+Status: **Resolved (v1.394) pending MP confirmation.**
+
+Verification (pre-playtest):
+1. Build clean. Typecheck exit 0.
+2. Pre-LIVE: open Ready Dialog, do not start. All 8 supply boxes have yellow smoke and are interactable.
+3. Match-live transition: start match. Within 1s of LIVE, smoke disappears at HQ (1056, 1057); interact prompt no longer appears at the HQ boxes.
+4. Non-HQ unchanged: confirm the 6 flag/between-flag boxes (1050-1055) still have smoke and remain interactable during LIVE.
+5. End match → next pre-LIVE phase: HQ supply boxes re-appear.
+6. Apply Config + Supply Boxes toggle interaction: toggle Supply Boxes off → all 8 disappear; toggle on → all 8 reappear pre-LIVE; start match → only 6 remain. Verifies orthogonality of the two gates.
+
+Related:
+- Plan: [`design_doc/hq_supply_box_disable_on_live_plan_2026-04-26.md`](./hq_supply_box_disable_on_live_plan_2026-04-26.md).

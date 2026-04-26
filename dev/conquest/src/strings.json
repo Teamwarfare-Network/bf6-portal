@@ -2,10 +2,12 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.383)",
+        "title": "teamwarfare . net | TWL Conquest (v1.395)",
         "subtitle": "Experience Code: - - - -"
       },
+      "helpText3": "The game is NOT Live and you are NOT Ready yet...",
       "helpText": "Stand still, then triple tap your interact keybind to 'Ready Up' or configure Match Settings",
+      "helpText2": "... or alternatively, use any of the green smoke static interact points!",
       "readyText": "YOU ARE READY",
       "labels": {},
       "roundStateLive": "LIVE",
@@ -299,8 +301,8 @@
       "checkMarkEmpty": " ",
       "gadgetSlotLabel": "Gadget Slot {0}",
       "launcherInSlot": "Launcher in Slot {0}",
-      "loading": "SCRIPT LOADING",
-      "customScriptsLoading": "Custom Experience Engaging...",
+      "loading": "PLEASE WAIT! - SCRIPT LOADING...",
+      "customScriptsLoading": "Custom Experience Cooking...",
       "assault": "ASSAULT",
       "artilleryStrike": "ARTILLERY\nCALL-IN",
       "airStrike": "AIR STRIKE",
@@ -350,7 +352,8 @@
       "duration8m": "8m",
       "duration10m": "10m",
       "duration15m": "15m",
-      "spawn": "DEPLOY",
+      "duration25m": "25m",
+      "spawn": "VEHICLES",
       "airDeploy": "AIR DEPLOY",
       "groundDeploy": "GROUND DEPLOY",
       "hqDeploy": "HQ DEPLOY",
@@ -388,11 +391,11 @@
       "clockFormat": "{0}:{1}{2}",
       "go": "GO!",
       "live": "LIVE!",
-      "delayAircraftHq": "Aircraft can HQ Ground Deploy {0}s after match is Live",
-      "delayAircraftAir": "Aircraft can Air Deploy {0}s after match is Live",
-      "delayForward": "Vehicles can Forward Deploy {0}s after match is Live",
-      "delayGadgets": "Gadgets at the Supply Boxes (Yellow Smoke) are available {0}s after match is Live",
-      "delayGadgetsLive": "Gadgets at the Supply Boxes (Yellow Smoke) will be available in {0}s"
+      "delayAircraftHq": "Aircraft can HQ Ground Deploy {0}s after the match is Live (Purple Smoke)",
+      "delayAircraftAir": "Aircraft can Air Deploy {0}s after the match is Live (Purple Smoke)",
+      "delayForward": "Vehicles can Forward Ground Deploy {0}s after the match is Live (Purple Smoke)",
+      "delayGadgets": "Gadgets at the Supply Boxes are available {0}s after the match is Live (Yellow Smoke)",
+      "delayGadgetsLive": "Gadgets at this Supply Box will be available in {0}s..."
     },
     "debug": {
       "adminPos": "ADMIN POS X:{0} Y:{1} Z:{2}",

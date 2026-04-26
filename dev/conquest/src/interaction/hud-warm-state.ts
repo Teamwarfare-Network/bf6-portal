@@ -84,7 +84,6 @@ function beginUiLoadSessionForPid(pid: number, reason: UiLoadReason): number | u
     state.readyDialogHotReady = false;
     state.gadgetMenuHotReady = false;
     state.gateStartTime = 0;
-    state.safetyFloorTriggered = false;
     state.safetyTimeoutTriggered = false;
     return state.uiLoadSessionId;
 }
@@ -254,28 +253,11 @@ function getGateStartTimeForPid(pid: number): number {
     return getReadyDialogStateForPid(pid)?.gateStartTime ?? 0;
 }
 
-// Marks that the safety floor held release beyond the readiness-ready point for this session.
-function setSafetyFloorTriggeredForPid(pid: number, triggered: boolean): void {
-    const state = getReadyDialogStateForPid(pid);
-    if (!state) return;
-    state.safetyFloorTriggered = triggered;
-}
-
-// Returns true if the safety floor held the gate beyond when UI was already warm this session.
-function isSafetyFloorTriggeredForPid(pid: number): boolean {
-    return getReadyDialogStateForPid(pid)?.safetyFloorTriggered === true;
-}
-
 // Marks that the safety timeout forced release before UI was fully warm this session.
 function setSafetyTimeoutTriggeredForPid(pid: number, triggered: boolean): void {
     const state = getReadyDialogStateForPid(pid);
     if (!state) return;
     state.safetyTimeoutTriggered = triggered;
-}
-
-// Returns true if the safety timeout force-released the gate this session.
-function isSafetyTimeoutTriggeredForPid(pid: number): boolean {
-    return getReadyDialogStateForPid(pid)?.safetyTimeoutTriggered === true;
 }
 
 //#endregion ----------------- HUD Warm State --------------------

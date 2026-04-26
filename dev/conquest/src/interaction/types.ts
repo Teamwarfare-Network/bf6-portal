@@ -58,7 +58,6 @@ interface readyDialogData_t {
     gadgetMenuHotReady: boolean;
     // Unified gate timing: set when beginLoadingGate starts, used by runLoadingGateUntilReady for floor/timeout checks.
     gateStartTime: number;
-    safetyFloorTriggered: boolean;
     safetyTimeoutTriggered: boolean;
     lastButtonSignature: string;
     lastRosterSignature: string;

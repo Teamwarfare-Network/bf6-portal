@@ -74,10 +74,6 @@ function isReadyDialogModeConfigDirtyForKnobKey(
     return diff.vehicleDirtyByKey[knobKey] === true;
 }
 
-function isReadyDialogGameModeVanilla(gameModeKey: number): boolean {
-    return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeConquest10v10;
-}
-
 function isReadyDialogGameModeCustom(gameModeKey: number): boolean {
     return gameModeKey === READY_DIALOG_GAME_MODE_CUSTOM_KEY;
 }

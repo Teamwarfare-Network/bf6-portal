@@ -22,10 +22,22 @@ function updateHelpTextVisibilityForPid(pid: number): void {
         safeSetUIWidgetVisible(helpContainer, showHelp);
     }
 
+    const helpText3 = safeFind(wn("HelpText3", pid));
+    if (helpText3) {
+        safeSetUIWidgetVisible(helpText3, showHelp);
+        safeSetUITextLabel(helpText3, mod.Message(mod.stringkeys.twl.hud.helpText3));
+    }
+
     const helpText = safeFind(wn("HelpText", pid));
     if (helpText) {
         safeSetUIWidgetVisible(helpText, showHelp);
         safeSetUITextLabel(helpText, mod.Message(mod.stringkeys.twl.hud.helpText));
+    }
+
+    const helpText2 = safeFind(wn("HelpText2", pid));
+    if (helpText2) {
+        safeSetUIWidgetVisible(helpText2, showHelp);
+        safeSetUITextLabel(helpText2, mod.Message(mod.stringkeys.twl.hud.helpText2));
     }
 
     // Round-state and players-ready line visibility are owned by hud/status.ts.

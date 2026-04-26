@@ -67,8 +67,18 @@ function hideAuthoredWorldInteractableIconPresentation(config: WorldInteractable
     }
 }
 
+// Returns true when the world-interactable is flagged disableOnLive in the map config AND the
+// match is currently LIVE. Generic gate -- works for any interactable type that carries the flag.
+// Immediate use: HQ supply boxes (objIds 1056/1057 on Firestorm) hidden during live play to push
+// players out of their main base for resupply.
+function isWorldInteractableDisabledByLive(config: WorldInteractableConfig): boolean {
+    if (config.disableOnLive !== true) return false;
+    return isMatchLive();
+}
+
 function shouldEnableWorldInteractableAuthoredInteractPoint(config: WorldInteractableConfig): boolean {
     if (isSupplyBoxWorldInteractable(config) && !isSupplyBoxesEnabled()) return false;
+    if (isWorldInteractableDisabledByLive(config)) return false;
     return true;
 }
 
@@ -220,6 +230,7 @@ function spawnWorldInteractableVfxForActiveConfigs(): void {
         const config = ACTIVE_WORLD_INTERACTABLE_CONFIGS[i];
         if (!config.vfx || !config.iconAnchorPos) continue;
         if (isSupplyBoxWorldInteractable(config) && !isSupplyBoxesEnabled()) continue;
+        if (isWorldInteractableDisabledByLive(config)) continue;
         if (cache[config.objId]) continue;
         try {
             const spawned = mod.SpawnObject(
@@ -252,6 +263,18 @@ function cleanupWorldInteractableVfx(): void {
     }
 }
 
+// Immediately disables every disableOnLive-flagged world-interactable (interact point + VFX) on
+// match-live transition. Without this, the natural per-second refresh would still pick up the new
+// state but with up to ~1s of stale VFX visible after match start. Called from startMatch().
+function refreshDisableOnLiveInteractableStateForLiveTransition(): void {
+    for (let i = 0; i < ACTIVE_WORLD_INTERACTABLE_CONFIGS.length; i++) {
+        const config = ACTIVE_WORLD_INTERACTABLE_CONFIGS[i];
+        if (config.disableOnLive !== true) continue;
+        applyWorldInteractableAuthoredInteractPointState(config);
+        despawnWorldInteractableVfxForObjId(config.objId);
+    }
+}
+
 // Despawns a single cached VFX by objId (partial counterpart of cleanupWorldInteractableVfx).
 function despawnWorldInteractableVfxForObjId(objId: number): void {
     const cache = State.conquest.worldInteractableVfxHandleByObjId;
@@ -265,6 +288,7 @@ function despawnWorldInteractableVfxForObjId(objId: number): void {
 // is guarded by the Supply Boxes gate so it no-ops when supply boxes are disabled.
 function ensureWorldInteractableVfxForConfig(config: WorldInteractableConfig): void {
     if (isSupplyBoxWorldInteractable(config) && !isSupplyBoxesEnabled()) return;
+    if (isWorldInteractableDisabledByLive(config)) return;
     if (!config.vfx || !config.iconAnchorPos) return;
     const cache = State.conquest.worldInteractableVfxHandleByObjId;
     if (cache[config.objId]) return;

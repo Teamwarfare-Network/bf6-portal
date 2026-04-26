@@ -59,9 +59,9 @@ const AMMO_RESUPPLY_SLOT_TOGGLE_LABEL_W = 90;
 // Default gadget locker layout matching the original hardcoded items.
 const DEFAULT_GADGET_LOCKER_CONFIG: GadgetLockerConfig = {
     assault: [
-        { name: "Artillery",     labelKey: STR_UI_ARTILLERY_STRIKE, gadget: mod.Gadgets.CallIn_Artillery_Strike,     slot: mod.InventorySlots.Callins,   cooldownSeconds: 600, teamShared: true, maxCount: 1, iconSize: 56, iconY: IY },
+        { name: "Artillery",     labelKey: STR_UI_ARTILLERY_STRIKE, gadget: mod.Gadgets.CallIn_Artillery_Strike,     slot: mod.InventorySlots.Callins,   cooldownSeconds: 1500, teamShared: true, maxCount: 1, iconSize: 56, iconY: IY },
         { name: "SpawnBeacon",   labelKey: STR_UI_SPAWN_BEACON,     gadget: mod.Gadgets.Deployable_Deploy_Beacon,    slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 900, teamShared: true, maxCount: 1, iconSize: 36, iconY: IY },
-        { name: "AssaultLadder", labelKey: STR_UI_ASSAULT_LADDER,   gadget: mod.Gadgets.Misc_Assault_Ladder,         slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 480, teamShared: true, maxCount: 1, iconSize: 36, iconY: IY },
+        { name: "AssaultLadder", labelKey: STR_UI_ASSAULT_LADDER,   gadget: mod.Gadgets.Misc_Assault_Ladder,         slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 600, teamShared: true, maxCount: 1, iconSize: 36, iconY: IY },
     ],
     launchers: [
         { name: "RPG",     labelKey: STR_UI_RPG,     gadget: mod.Gadgets.Launcher_Unguided_Rocket, maxAmmo: 3 },
@@ -75,7 +75,7 @@ const DEFAULT_GADGET_LOCKER_CONFIG: GadgetLockerConfig = {
         { name: "MedicGrenadeIntercept", labelKey: STR_UI_GRENADE_INTERCEPT, gadget: mod.Gadgets.Deployable_Grenade_Intercept_System, slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 180, teamShared: false, maxCount: 1, iconSize: 36, iconY: IY },
         { name: "MedicMissileIntercept", labelKey: STR_UI_MISSILE_INTERCEPT, gadget: mod.Gadgets.Deployable_Missile_Intercept_System, slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 180, teamShared: false, maxCount: 1, iconSize: 36, iconY: IY },
     ],
-    medicSmoke: { name: "MedicSmoke", labelKey: STR_UI_SMOKE_SCREEN, gadget: mod.Gadgets.CallIn_Smoke_Screen, slot: mod.InventorySlots.Callins, cooldownSeconds: 420, teamShared: true, maxCount: 1 },
+    medicSmoke: { name: "MedicSmoke", labelKey: STR_UI_SMOKE_SCREEN, gadget: mod.Gadgets.CallIn_Smoke_Screen, slot: mod.InventorySlots.Callins, cooldownSeconds: 360, teamShared: true, maxCount: 1 },
     recon: [
         { name: "ReconDrone", labelKey: STR_UI_DRONE,                gadget: mod.Gadgets.Deployable_Recon_Drone,         slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 300, teamShared: false, maxCount: 1, iconSize: 30, iconY: IY },
         { name: "ReconC4",    labelKey: STR_UI_C4,                   gadget: mod.Gadgets.Misc_Demolition_Charge,         slot: mod.InventorySlots.GadgetTwo, cooldownSeconds: 180, teamShared: false, maxCount: 1, iconSize: 40, iconY: IY },
@@ -145,6 +145,7 @@ const DURATION_LABEL_MAP: Record<number, number> = {
     480: mod.stringkeys.twl.ui.duration8m,
     600: mod.stringkeys.twl.ui.duration10m,
     900: mod.stringkeys.twl.ui.duration15m,
+    1500: mod.stringkeys.twl.ui.duration25m,
 };
 function armDur(seconds: number): mod.Message {
     return mod.Message(DURATION_LABEL_MAP[seconds] ?? STR_UI_READY);

@@ -440,13 +440,6 @@ function startRespawnCountdown(slot: VehicleSpawnerSlot, slotIndex: number): voi
     slot.respawnClock.start();
 }
 
-// HUD read path. Returns seconds remaining, or undefined if no countdown is active.
-function getVanillaSlotRespawnRemainingSeconds(slot: VehicleSpawnerSlot | undefined): number | undefined {
-    if (!slot || !slot.respawnClock) return undefined;
-    const seconds = slot.respawnClock.seconds;
-    return Math.ceil(seconds);
-}
-
 //#endregion ----------------- Respawn Countdown --------------------
 
 

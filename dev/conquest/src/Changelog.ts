@@ -3,6 +3,16 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.395: tickets 450->400 starting (#103 calibration tweak)
+// v1.394: disable HQ supply boxes (interact point + yellow smoke VFX) when match goes LIVE; new disableOnLive map-config flag, gate at interact-point + VFX-spawn, immediate refresh in startMatch (#108)
+// v1.393: spawn-charge: exempt vehicle_deploy (new reason) and team_switch from ticket cost; alive on-foot vehicle deploys + team-swaps no longer consume tickets
+// v1.392: bleed calibration Option B (Mancours-style): tickets 350->450, capture 10s->20s, neutral 15s->20s (#103)
+// v1.390: widen pre-game team-swap HUD button by another 10 units (200->210)
+// v1.389: widen pre-game team-swap HUD button by 10 units (190->200), extending right edge only
+// v1.387: add helpText3 above helpText ('The game is NOT Live and you are NOT Ready')
+// v1.386: add helpText2 second line under top-center help tooltip ('Alternatively, use any of the green smoke static interact points')
+// v1.385: gadget cooldown tuning: Artillery 600s->1500s (25m), Smoke 420s->360s (6m), Assault Ladder 480s->600s (10m); add duration25m string
+// v1.384: remove 9 verified-dead functions + dead safetyFloorTriggered field; reclassify Phase 1 spawn-selector scaffold as intentional
 // v1.383: safety-net engine re-probe: detect missing OnPlayerEnterVehicle when on_foot+Y>200 about to OOB; self-correct seatKind to aircraft via single writer (#106)
 // v1.382: render Apply-blocked message inline in dialog's unsavedLabel slot instead of world-log (#105 follow-up)
 // v1.381: guard Apply Configuration against concurrent late-joiner warm-prime to prevent hard server crash (#105); refuses with 'Cannot apply: N player(s) still loading' world-log when warmPrimeActiveByPid is non-empty

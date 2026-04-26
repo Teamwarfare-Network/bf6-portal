@@ -6,8 +6,12 @@ type ConquestTopHudShellLayout = {
     helpContainerY: number;
     helpContainerWidth: number;
     helpContainerHeight: number;
+    helpText3OffsetY: number;
+    helpText3Height: number;
     helpTextOffsetY: number;
     helpTextHeight: number;
+    helpText2OffsetY: number;
+    helpText2Height: number;
     readyContainerX: number;
     readyContainerY: number;
     readyContainerWidth: number;
@@ -21,8 +25,12 @@ const CONQUEST_TOP_HUD_SHELL_LAYOUT: ConquestTopHudShellLayout = {
     helpContainerY: 81.10,
     helpContainerWidth: 561.77,
     helpContainerHeight: 38.31,
+    helpText3OffsetY: -2,
+    helpText3Height: 18,
     helpTextOffsetY: 10,
     helpTextHeight: 18,
+    helpText2OffsetY: 22,
+    helpText2Height: 18,
     readyContainerX: -905.00,
     readyContainerY: 81.10 + CONQUEST_HUD_NON_CLOCK_SHIFT_Y,
     readyContainerWidth: 200.0,
@@ -32,7 +40,7 @@ const CONQUEST_TOP_HUD_SHELL_LAYOUT: ConquestTopHudShellLayout = {
 };
 
 // HUD Team Swap Button layout (pre-game only, to right of red team name label).
-const TWL_HUD_TEAM_SWAP_BUTTON_WIDTH = 190;
+const TWL_HUD_TEAM_SWAP_BUTTON_WIDTH = 210;
 const TWL_HUD_TEAM_SWAP_BUTTON_HEIGHT = 32;
 const TWL_HUD_TEAM_SWAP_BUTTON_GAP_X = 3;
 const TWL_HUD_TEAM_SWAP_BUTTON_TEXT_SIZE = 16;

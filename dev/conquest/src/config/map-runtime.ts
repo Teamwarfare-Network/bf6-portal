@@ -331,6 +331,7 @@ function buildWorldInteractableConfigsFromMapConfig(cfg: MapConfig): WorldIntera
             iconAnchorPos: anchor?.pos,
             vfx: anchor?.vfx,
             vfxRot: anchor?.rot,
+            disableOnLive: anchor?.disableOnLive,
         });
     }
 

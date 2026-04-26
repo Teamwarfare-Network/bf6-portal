@@ -1,22 +1,22 @@
 # TWL Conquest Optimization Analysis
 
-Last updated: v1.383 (2026-04-26) — boundary seatKind safety-net (#106) + Apply Configuration warm-prime guard (#105) + per-team vehicle menus (#102, #79) + assorted bug fixes shipped since v1.375. Boundary architecture remains event-driven (zone tracker → AreaTrigger enable → event-driven seatKind → squad-spawn inheritance, v1.360–v1.370). Tier 1+2 cleanup confirmed shipped (v1.371 triangle-math consolidation; v1.371–v1.372 dead-helper + dead VehicleSpawnerSlot field removal). Tier 3 audit (engine-enable + capture-point hot-path) was logged in `conquest_issues.md`. Earlier baseline (v1.334): match clock H2 resolved; H1 downgraded post-measurement; Category 1.1 / 1.2 estimates corrected; Admin Panel reclaim arithmetic retired. Carried forward where still accurate.
+Last updated: v1.390 (2026-04-26) — pre-playtest tuning ships: gadget cooldown retune (v1.385), 3-line help tooltip (v1.386–v1.387), team-swap button width 190→210 (v1.389–v1.390), strings.json polish pass (v1.388). Net **+2,596 bytes** since v1.384 cleanup baseline; bundle now 1,035,351 / 13,225 byte headroom / **1.26%** — back near v1.383 levels but still above the v1.10 / v1.110 floors. Boundary architecture remains event-driven (v1.360–v1.370). Tier 1+2 cleanup shipped (v1.371–v1.372). v1.384 Category 6 cleanup retired 10 dead functions + `safetyFloorTriggered` field for −3,495 bytes. Earlier baseline (v1.334): match clock H2 resolved; H1 downgraded post-measurement; Category 1.1 / 1.2 estimates corrected; Admin Panel reclaim arithmetic retired. Carried forward where still accurate.
 
 Companion to: `TWL_Conquest_Design.md` (see "Codebase Reference Map" for file/function index) and `conquest_issues.md`.
 
 ---
 
-## TL;DR (v1.383)
+## TL;DR (v1.390)
 
-1. **Bundle headroom at 1.18% — TIGHT and trending down.** v1.383 emits **1,036,250 bytes** against the 1,048,576-byte cap — **12,326 bytes of headroom.** v1.375 was 1,033,439 bytes (1.44%); v1.376–v1.383 added net **+2,811 bytes** over 8 versions despite multiple resolved-bug ships. The trend is downward — at the current rate (~350 bytes/version), the bundle hits the cap in ~35 versions without active offsets. **Any new feature must come with a deletion offset.**
+1. **Bundle at 1,035,351 / 1.26% headroom — TIGHT but stable.** v1.384 cleanup pushed headroom to 1.51%; v1.385–v1.390 pre-playtest tuning consumed 2,596 bytes (mostly the +2 help-text widgets at v1.386/v1.387 = ~2,550 bytes combined). **Burn rate over the v1.385–v1.390 range: ~430 bytes/version** — slightly worse than the historical ~350. Cat 7 (`VehicleSpawnerSlot` write-only fields, ~700 bytes) remains the next defensive lever if pressure resumes.
 2. **Boundary architecture remains event-driven, single-source-of-truth for both zone state and seat state.** v1.383 added a safety-net engine re-probe inside `getDesiredBoundaryViolationKind` for the on_foot Y>200 branch (#106) — does not change the per-tick cost shape (still O(1) per player on the read side; safety-net runs at most once per missed `OnPlayerEnterVehicle` event).
 3. **AreaTriggers required explicit enabling** — `mod.EnableAreaTrigger(trigger, true)` was never called pre-v1.367, which silently broke trigger enter/exit events for ~50 versions. Now wired in `enableBoundaryAreaTriggers()` from `onGameModeStartedImpl`. Same lesson generalizes: **engine objects with explicit enable calls should be audited at game-mode start**.
 4. **No remaining runtime HIGH hot paths.** H1 cleanup (consume TickContext at `pipeline.ts:125`) is still open as low-priority cleanup. H2 retired in v1.338. H3 (boundary tick) reshaped — see Category 2; classifier is now O(1) per player on the read side.
 5. **Admin Panel accepted off indefinitely.** Last measurement at v1.334 was −3,536 bytes over cap when enabled (+28,635 byte panel delta). Bundle has grown +12.7K since then; gap is now ~−16.5K over cap. Re-enabling requires trimming `src/admin-panel/*` directly.
-6. **Dead code inventory has DEEPENED post-v1.371/v1.372 cleanup.** New audit (v1.383) finds:
-   - **~10 zero-call-site functions** in production-bundle scope (~3K source / ~2K bundle bytes).
-   - **11 write-only state fields** on `VehicleSpawnerSlot` (~600 bytes type defs + scattered init writes).
-   - **~73 dead string keys** in `strings.json` (~5,889 raw bytes / ~8.8K JSON impact in `bundle.strings.json`, which is **separate from the 1,048,576-byte script cap**).
+6. **Dead code inventory partially cleaned in v1.384.** Categories 6/7/8 status:
+   - **Category 6 (functions):** 10 of 11 verified-dead functions removed in v1.384 (−3,495 bytes). 1 retained as intentional Phase 1 scaffold (`conquestSelectSpawnPoint`). Plus 1 cascading dead state field (`safetyFloorTriggered`) removed.
+   - **Category 7 (state fields):** 11 write-only `VehicleSpawnerSlot` fields still present (~700 bundle bytes + ~1.4 KB runtime memory). **Open — recommended next lever.**
+   - **Category 8 (strings):** ~73 dead string keys in `strings.json` (~5,889 raw bytes / ~8.8K JSON impact in `bundle.strings.json`, which is **separate from the 1,048,576-byte script cap**). Open.
    - **0 dead `if`/`switch` branches** — control flow is clean.
    See Categories 6, 7, 8 below.
 
@@ -28,8 +28,8 @@ Companion to: `TWL_Conquest_Design.md` (see "Codebase Reference Map" for file/fu
 
 **Important context for future analyzers:**
 
-- `dist/bundle.ts` (the script bundle, 1,036,250 bytes at v1.383) is governed by the 1,048,576-byte (1 MiB) hard cap enforced by `scripts/verify.js`. **This is the playtest-blocking cap.**
-- `dist/bundle.strings.json` (21,813 bytes at v1.383) is a **separate** runtime asset and is **NOT counted** against the 1 MiB script cap. Strings come out of a different pool.
+- `dist/bundle.ts` (the script bundle, 1,035,351 bytes at v1.390) is governed by the 1,048,576-byte (1 MiB) hard cap enforced by `scripts/verify.js`. **This is the playtest-blocking cap.**
+- `dist/bundle.strings.json` (22,050 bytes at v1.390 — up from ~21,813 at v1.384 due to helpText2/3 + duration25m + v1.388 polish) is a **separate** runtime asset and is **NOT counted** against the 1 MiB script cap. Strings come out of a different pool.
 - `FEATURE_*` flags (`FEATURE_ADMIN_PANEL`, `FEATURE_PERF_DIAG`, `FEATURE_POSITION_DEBUG`, `FEATURE_JOIN_PROMPT`) gate **TS code only**, via `prebuild.js` import scrub + `postbuild.js` dead-code strip. **They do NOT gate strings.json keys.** A flag-conditional feature like the join-prompt has its TS code stripped at `false` but its **strings remain bundled** in `bundle.strings.json` regardless.
 
 **Implication:** dead strings in `strings.json` are runtime memory bloat (and translation maintenance overhead), not script-bundle pressure. Cleaning them would shrink `bundle.strings.json` by ~40% but would not move the script-bundle cap needle.
@@ -91,9 +91,16 @@ Companion to: `TWL_Conquest_Design.md` (see "Codebase Reference Map" for file/fu
 | v1.380 | — | — | small | Vehicle-spawned world-log gated behind perfDiag (#89). |
 | v1.381 | 1,034,107 | 14,469 (1.38%) | +668 | Apply Config warm-prime guard (#105) + new player-facing string. |
 | v1.382 | 1,036,032 | 12,544 (1.20%) | +1,925 | Apply-blocked message moved to dialog inline `unsavedLabel` (#105 follow-up). |
-| **v1.383** | **1,036,250** | **12,326 (1.18%)** | +218 | Y=200 OOB safety-net engine re-probe (#106). |
+| v1.383 | 1,036,250 | 12,326 (1.18%) | +218 | Y=200 OOB safety-net engine re-probe (#106). |
+| v1.384 | 1,032,755 | 15,821 (1.51%) | −3,495 | **Category 6 cleanup.** Removed 10 verified-dead functions + dead `safetyFloorTriggered` field. |
+| v1.385 | 1,032,801 | 15,775 (1.50%) | +46 | Gadget cooldown retune (Artillery 25m, Smoke 6m, Assault Ladder 10m). Added `duration25m` string. |
+| v1.386 | 1,034,076 | 14,500 (1.38%) | +1,275 | helpText2 second line under help tooltip ("Alternatively, use any of the green smoke..."). |
+| v1.387 | 1,035,351 | 13,225 (1.26%) | +1,275 | helpText3 third line above help tooltip ("The game is NOT Live..."). |
+| v1.388 | 1,035,351 | 13,225 (1.26%) | 0 | Strings polish: tooltip text edits (loading messages, "DEPLOY"→"VEHICLES", help-text wording). No code changes. |
+| v1.389 | 1,035,351 | 13,225 (1.26%) | 0 | Team-swap HUD button widened 190→200 (right edge only). Single int constant. |
+| **v1.390** | **1,035,351** | **13,225 (1.26%)** | **0** | Team-swap HUD button widened 200→210 (right edge only). Single int constant. |
 
-**Direction:** **DOWN-TRENDING.** Headroom shrinking ~350 bytes/version on average. Cleanup levers at hand (Categories 6/7/8 below) total ~3K main-bundle savings + ~9K strings.json savings — would buy ~9 versions of runway at the current burn rate.
+**Direction:** **STABLE.** v1.385–v1.390 was tuning, not feature growth. The two help-text widgets at v1.386/v1.387 account for nearly all the ~2.6KB consumption since v1.384. The 3-line help tooltip is now load-bearing UI for the playtest; not a candidate for removal. Remaining levers (Cat 7 + Cat 8.1) total ~700 bundle bytes + ~5.2 KB strings.json — modest reclaim if needed. **strings.json grew to 22,050 bytes** (helpText2/3 + duration25m + the v1.388 polish edits), still well below the script-bundle pressure that matters.
 
 ---
 
@@ -105,7 +112,7 @@ Companion to: `TWL_Conquest_Design.md` (see "Codebase Reference Map" for file/fu
 | 2 | Emitted comment / JSDoc audit (residual) | **Open — LOW priority.** ~100–300 bytes. `scripts/postbuild.js:114` already strips full-line `//`. Residual: inline trailing `//`, `/* */` blocks (9 in source, 13 in bundle), and 4 `/** */` JSDoc blocks across mega-files. |
 | 3 | Consolidate duplicate triangle-sampling helpers | **Resolved (v1.371).** Moved to `src/vehicles/spawn-volume-math.ts`. ~1,000 bundle bytes reclaimed. |
 | 4 | Remove 2 verified-dead vehicle-path helpers | **Resolved (v1.371).** `clearAllVehicleReservations` + `getDesiredSpawnerCountsForPreset` deleted. ~300 bundle bytes. |
-| 5 | Audit `VehicleSpawnerSlot` for write-only/unread fields | **Partially resolved (v1.372)** — 3 fields removed. **Re-opened (v1.383)** — Category 7 below identifies **11 additional dead fields** missed in the v1.372 sweep. |
+| 5 | Audit `VehicleSpawnerSlot` for write-only/unread fields | **Partially resolved (v1.372)** — 3 fields removed. **Re-opened (v1.383 audit, still open at v1.384)** — Category 7 below identifies **11 additional dead fields** missed in the v1.372 sweep. Recommended as next reclaim lever. |
 | 6 | Three 2K-line mega-files — split for navigability only | **Open — carry-over.** 0 bundle bytes; review readability only. |
 | 7 | Post-v1.259 dead-module import scrub | **Resolved (v1.289 audit).** Confirmed clean. |
 
@@ -123,7 +130,7 @@ Bundler concatenates — splits are for review readability, not bundle size. Pri
 
 ## Category 2: Per-Tick and Recurring Hot Paths — Updated for 64-Player MP
 
-Audit context: 29 `mod.AllPlayers()` call sites across 21 files. TickContext caches per-subtick. Combat HUD dirty-flag gating active. Verified at v1.383.
+Audit context: 29 `mod.AllPlayers()` call sites across 21 files. TickContext caches per-subtick. Combat HUD dirty-flag gating active. Verified at v1.384.
 
 ### HIGH severity (playtest-blocking if a spike shows up)
 
@@ -252,35 +259,52 @@ Properties verified during implementation:
 
 ---
 
-## Category 6: Dead Functions (NEW — v1.383 audit)
+## Category 6: Dead Functions — RESOLVED v1.384
 
-Functions in production-bundle scope (i.e. NOT in `admin-panel/*`, `hud/perf-diag.ts`, `hud/position-debug.ts`, `hud/deploy-diagnostic.ts`) with **zero call sites in the entire `src/` tree** (definition line is the only occurrence). Verified via `grep -n '\b<symbol>\b'` across `src/`.
+Original v1.383 audit identified 11 zero-call-site functions in production-bundle scope. After hard verification (looking for engine-callable patterns, type re-exports, indirect dispatch):
 
-### HIGH confidence (zero call sites, production-bundle scope)
+### Removed in v1.384 (9 functions + 1 cascading state field)
 
-| File:line | Symbol | Lines | Notes |
-|-----------|--------|-------|-------|
-| `src/vehicles/vanilla-spawner.ts:444` | `getVanillaSlotRespawnRemainingSeconds` | ~6 | HUD read-path returning `Math.ceil(remainingSeconds)`. Defined but never called. |
-| `src/state/ui-helpers.ts:259` | `addRightAlignedLabel` | ~35 | Right-aligned label widget builder. Likely UI-refactor leftover. |
-| `src/clock/state.ts:128` | `adjustMatchClockBySeconds` | ~30 | **Called from `admin-panel/events.ts:47, :62` only** — flag-conditional, NOT bundle-dead. (Postbuild strips it when `FEATURE_ADMIN_PANEL=false`.) Listed here for clarity; do not delete unless admin-panel removed. |
-| `src/ready-dialog/mode-config-aircraft-ceiling.ts:7` | `applyCustomAircraftCeilingHardLimiter` | ~10 | Engine hard-limiter applier. Zero callers. |
-| `src/ready-dialog/mode-config-aircraft-ceiling.ts:19` | `enableCustomAircraftCeiling` | ~3 | Flag setter. Zero callers. |
-| `src/ready-dialog/mode-config-presets.ts:77` | `isReadyDialogGameModeVanilla` | ~3 | Mode classifier. Zero callers. |
-| `src/interaction/spawn-selector.ts:28` | `conquestSelectSpawnPoint` | ~8 | Stub returning `denied: true`. Phase 1 scaffolding. |
-| `src/interaction/hud-warm-state.ts:265` | `isSafetyFloorTriggeredForPid` | ~2 | Boolean getter. Zero callers. |
-| `src/interaction/hud-warm-state.ts:277` | `isSafetyTimeoutTriggeredForPid` | ~2 | Boolean getter. Zero callers. |
-| `src/vehicles/registration.ts:31` | `inferBaseTeamFromPosition` | ~12 | Team detector from vehicle position. Zero callers. |
-| `src/interaction/actions.ts:97` | `isCriticalHudReadyForPlayer` | ~6 | HUD readiness check. Zero callers. |
+| File | Symbol | Reason removed |
+|------|--------|----------------|
+| `vehicles/vanilla-spawner.ts` | `getVanillaSlotRespawnRemainingSeconds` | Dead duplicate of live `getVehicleSlotRespawnRemainingSeconds` in `vehicles/timers.ts:10`. |
+| `state/ui-helpers.ts` | `addRightAlignedLabel` | Orphan widget builder, no readers. |
+| `ready-dialog/mode-config-presets.ts` | `isReadyDialogGameModeVanilla` | Dead twin of live `isReadyDialogGameModeCustom` (5 callers). |
+| `interaction/hud-warm-state.ts` | `setSafetyFloorTriggeredForPid` | Dead writer. |
+| `interaction/hud-warm-state.ts` | `isSafetyFloorTriggeredForPid` | Dead reader. |
+| `interaction/hud-warm-state.ts` | `isSafetyTimeoutTriggeredForPid` | Dead reader. (`set` retained — it has callers in `actions.ts:617, :643` from gate-timeout fallback logic, even though the field it writes is now technically write-only. Field retained too as a safe-no-op reservation for future telemetry.) |
+| `vehicles/registration.ts` | `inferBaseTeamFromPosition` | Orphan from base-team detection refactor. |
+| `interaction/actions.ts` | `isCriticalHudReadyForPlayer` | Explicitly superseded per its own comment by `isAllUiFamiliesReadyForRelease`. |
+| `ready-dialog/mode-config-aircraft-ceiling.ts` | `applyCustomAircraftCeilingHardLimiter` | User-confirmed: custom aircraft ceiling not needed. The engine-side hard-limiter never engaged anyway — `customEnabled` was write-only across the whole codebase. |
+| `ready-dialog/mode-config-aircraft-ceiling.ts` | `enableCustomAircraftCeiling` | Same — user removed custom aircraft ceiling. |
+| (cascading) `interaction/types.ts:61` + 2 init sites | `safetyFloorTriggered` field | Field had zero readers; only the dead floor-flag setter wrote to it. Removed cleanly. |
 
-**HIGH-confidence subtotal: ~117 source lines / ~3.5K source bytes / ~2.5K post-minification bundle bytes.**
+**Reclaim: −3,495 bundle bytes.** (Estimate was 1.5–1.8 KB; actual nearly 2× because helper-call chains and minifier opportunities surfaced.)
 
-The Explore agent reported ~32 zero-call-site functions; the 11 above are the verified production-bundle subset. The remaining ~21 candidates are flag-conditional (`admin-panel/*` callers) and would not move the bundle when removed unless admin-panel itself is also touched.
+### Retained — intentional scaffold
+
+| File | Symbol | Why kept |
+|------|--------|----------|
+| `interaction/spawn-selector.ts:28` | `conquestSelectSpawnPoint` | File comment is explicit: *"Phase 1 seam for future conquest spawn selection policy. Custom selection is intentionally deferred to later phases."* Module is registered via `index.ts:73`. Placeholder for planned feature, not dead code. |
+
+### Cascading dead retained — touch-risk-not-justified
+
+| File | Symbol | Why retained |
+|------|--------|--------------|
+| `interaction/hud-warm-state.ts` | `setSafetyTimeoutTriggeredForPid` | Has 2 callers in `actions.ts:617, :643` inside the gate-timeout fallback logic (`CQ_Bug_35/40` territory). Removing means editing the gate-timeout fallback, which is sensitive. Field-write is a safe no-op; cost is ~50 bytes for full safety. |
+| `interaction/types.ts:62` | `safetyTimeoutTriggered` field | Same — kept for the live writer. |
 
 ### Verified clean
 
-- **No `if (false)` / `if (true)` dead branches** anywhere in `src/`. Control flow is clean.
-- **No code after unconditional `return`/`throw`** patterns surfaced.
-- **3 TODO/FIXME markers total** across the codebase — mature.
+- **No `if (false)` / `if (true)` dead branches** anywhere in `src/`.
+- **No code after unconditional `return`/`throw`** patterns.
+- **3 TODO/FIXME markers total** across the codebase.
+
+### Lessons from this pass
+
+- **Automated grep over-reported.** The Explore agent flagged `vehicleId` as dead (32 occurrences but reported "never read") — manual verification proved it's the most-read field on `VehicleSpawnerSlot`. Future audits must split `\.<field>\b` reads vs `<field>:` writes.
+- **`conquestSelectSpawnPoint`** would have been incorrectly removed without reading the file header. Always read context before removing functions.
+- **Aircraft ceiling was a half-wired feature, not dead code.** The agent's "zero callers" was technically correct but missed the broader context (UI input configures a value that never reaches the engine). User decision required to disambiguate "delete" vs "fix the wiring."
 
 ---
 
@@ -377,8 +401,8 @@ v1.377 added 8 NATO/PAX combos but only 4 are exercised by the current matchup-p
 
 Beyond the categorized findings, the audit surfaced these systemic concerns:
 
-### R1. Bundle-headroom burn rate is unsustainable without active offsets
-Headroom went from 15,137 bytes (v1.375, 1.44%) to 12,326 bytes (v1.383, 1.18%) over 8 versions = **−351 bytes/version average.** At this rate the cap is hit in ~35 versions. The v1.371/v1.372 cleanup was the last major reclaim (~1.4K). Categories 6/7 above offer **~3.2K reclaim** — would push headroom back to ~1.5K above v1.375 and buy ~9 versions. **Recommendation:** schedule a v1.384–v1.388 dead-code sweep before the next feature ship.
+### R1. Bundle-headroom burn rate without active offsets
+Pre-cleanup trend: headroom went from 15,137 bytes (v1.375, 1.44%) to 12,326 bytes (v1.383, 1.18%) over 8 versions = **−351 bytes/version average.** v1.384 Category 6 cleanup reclaimed −3,495 bytes — pushed headroom back to 15,821 (1.51%). At the prior burn rate, this buys ~10 versions of runway. **Recommendation if headroom shrinks below 1.3% again:** ship Category 7 (~700 bytes, zero risk) as the next defensive reclaim, then mega-file end-to-end orphan reads.
 
 ### R2. Strings.json is a hidden runtime cost
 `bundle.strings.json` is 21,813 bytes at v1.383 — and ~40% (~8.8 KB) is dead weight from disabled features (join prompt + UI cache + unused map names). Strings are loaded once at game-mode start and held forever. Trim is straightforward but requires playtesting to confirm no dynamic lookups via computed paths. **No FEATURE_* flag gates strings.json.**
@@ -390,7 +414,7 @@ Headroom went from 15,137 bytes (v1.375, 1.44%) to 12,326 bytes (v1.383, 1.18%) 
 The `warmPrimeActiveByPid` guard refuses Apply Config when **a warm-prime is already in flight at Apply time**. It does NOT protect against **a late-joiner whose warm-prime starts AFTER Apply Config begins** (the symmetric race). If the hard-crash recurs in MP testing, the symmetric guard (have warm-prime path also check `applyConfigInFlight` and yield) is the next defensive layer. Capture if it fires.
 
 ### R5. Mega-files breed hidden dead code
-Three 2,000+ line files (`capture-tickets.ts`, `deploy-timer-ui.ts`, `ammo-resupply-menu.ts`) host the bulk of newly-found Category 6 dead functions. Cognitive overhead of these files makes orphan helpers hard to spot in review. Mega-file splits (Category 1.6) are 0 bundle impact but would catch this class of bug at PR time.
+Three 2,000+ line files (`capture-tickets.ts`, `deploy-timer-ui.ts`, `ammo-resupply-menu.ts`) hosted the bulk of removed Category 6 dead functions. Cognitive overhead of these files makes orphan helpers hard to spot in review. Mega-file splits (Category 1.6) are 0 bundle impact but would catch this class of bug at PR time. **Probability there are MORE undiscovered orphans inside these files is HIGH** — the v1.384 audit was symbol-grep based and would miss orphan code that's only reachable through removed callers.
 
 ### R6. `vehicleId` was almost reported as dead by automated grep
 The v1.383 Explore-agent dead-variable sweep flagged `vehicleId` as dead (32 occurrences but reported "never read anywhere"). Manual verification proved it's the most-read field on `VehicleSpawnerSlot` (slot occupancy marker, `slot.vehicleId !== -1`). **Lesson:** automated dead-variable sweeps must distinguish read patterns (`obj.field`) from declaration patterns (`field:`); raw symbol grep over-reports. Future audits should use targeted `\.<field>\b` reads vs `<field>:` writes split.
@@ -403,38 +427,36 @@ The v1.383 Explore-agent dead-variable sweep flagged `vehicleId` as dead (32 occ
 
 ---
 
-## Implementation Priority (v1.384+)
+## Implementation Priority (v1.385+)
 
-Headroom at 1.18% is **CRITICAL** (well below the v1.010 floor of 2.2%). No runtime hot path is currently flagged HIGH. Bundle pressure dominates.
+Headroom recovered to 1.51% via v1.384 Category 6 cleanup. Above the v1.010 floor of 2.2% would still be ideal but no longer urgent. No runtime hot path is currently flagged HIGH.
 
 ### Playtest-blocking
-*None at runtime.* Architecture is MP-stable. **Bundle headroom is the constraint.**
+*None at runtime.* Architecture is MP-stable.
 
-### High-leverage cleanup (recommended before next feature ship)
+### Remaining bundle-reclaim levers (ordered by ROI)
 
-1. **Category 7 — Remove 11 dead `VehicleSpawnerSlot` fields.** ~700 bundle bytes + ~1.4 KB runtime memory. Zero risk (verified write-only). ~30 min.
-2. **Category 6 — Remove 11 verified-dead production-scope functions.** ~2.5 KB bundle bytes. Zero risk. ~30 min.
-3. **Combined: ~3.2 KB bundle reclaim** = headroom back to ~1.48% (above v1.375 baseline). Buys ~9 versions of runway.
+| # | Lever | Bundle reclaim | Strings.json | Effort | Risk | Notes |
+|---|-------|---------------|---------------|--------|------|-------|
+| 1 | **Cat 7** — Remove 11 write-only `VehicleSpawnerSlot` fields | **~700 bytes** + ~1.4 KB runtime memory | 0 | ~30 min | **Zero** (verified write-only) | Best next ship if headroom needs help. |
+| 2 | **Cat 1.1 + 1.2 + R7** — Inline widget-name wrappers, strip JSDoc/`/* */`, trailing `//` | ~300–1,000 bytes combined | 0 | ~1 hr | Low | Diminishing returns; bundle together. |
+| 3 | **Mega-file orphan re-read** — Read `capture-tickets.ts`, `deploy-timer-ui.ts`, `ammo-resupply-menu.ts` end-to-end for dead helpers grep missed | ~1–3 KB est. | 0 | ~2 hrs | Low (per-symbol grep verify before delete) | Symbol-grep audits miss code reachable only through previously-removed callers. |
+| 4 | **Cat 8.1** — Trim 28 join-prompt strings | 0 (different cap) | **~5.2 KB** | ~15 min | None if FEATURE_JOIN_PROMPT permanently off | Runtime memory only. |
+| 5 | **Cat 8.2–8.7** — Trim ~45 other dead string keys | 0 (different cap) | ~3.5 KB | ~30 min | Low (Cat 8.4 needs UI verification first) | Runtime memory only. |
+| 6 | **Cat 4 items 1 & 2** — Migrate capture-sound + capture-VO to `Timers.*` | ~50–150 bytes (helper consolidation) | 0 | ~1 hr | Low | Architectural tidiness, near-zero direct savings. |
+| 7 | **Admin Panel trim audit** | up to ~10–15 KB if `FEATURE_ADMIN_PANEL` is re-enabled later | 0 | ~3 hrs | Med | Only relevant if re-enabling admin panel becomes a goal. |
+| 8 | **`FEATURE_PERF_DIAG` runtime profile pass** | Unknown — could surface big or zero | 0 | ~2 hrs | Low | H1/H2 were overstated when measured. Grep-based hot-path list may have other false positives or hidden true positives. |
 
-### Low-risk follow-ups
+**Combined practical reclaim (#1–#3, no admin-panel work): ~2–4.5 KB bundle bytes** = headroom up to ~1.7–1.9% if all shipped.
 
-4. **Category 8.1 — Trim 28 join-prompt strings if `FEATURE_JOIN_PROMPT` is permanently retired.** ~5.2 KB out of `bundle.strings.json`. Confirm with user that join prompt is not coming back. (Strings.json is separate from main bundle cap — runtime memory only.)
-5. **Category 1.1 / 1.2 residuals** — only if those files get touched for other reasons. Not worth a dedicated pass.
-6. **R3 — Symmetric `OnPlayerExitVehicle` safety-net** if MP playtest shows aircraft-state-stuck symptom.
-7. **R4 — Symmetric Apply Config in-flight guard** if hard crash recurs.
+### Pending stability / polish (not bundle-related)
 
-### Post-playtest stability / polish
-
-8. **Category 5 Item 8** — Late-joiner `SetRedeployTime` audit. Tracked in `CQ_Polish_Respawn_Redeploy_Timer_Audit`.
-9. **`CQ_Bug_Abrams_Substitution_Transport_Slot_Regression`** — open in `conquest_issues.md`.
-10. **Category 4 items 1 & 2** — capture-sound / capture-VO migration to `Timers.*`. Architectural tidiness.
-
-### Investigations (conditional)
-
-11. **Admin Panel trim audit** — only if re-enabling becomes a goal. Audit `src/admin-panel/*` for bloat.
-12. **Fresh `FEATURE_PERF_DIAG` profile pass** — Both H1 and H2 turned out overstated once measured. The current hot-path list is inferred from grep, not runtime profiling. A 10-player stress test with `perf-diag.ts` enabled could surface the real cost driver.
-13. **R5 — Mega-file split** — opportunistic; readability only.
-14. **R8 — Plan-file archival** — `design_doc/archive/` cleanup pass.
+- **Category 5 Item 8** — Late-joiner `SetRedeployTime` audit. Tracked in `CQ_Polish_Respawn_Redeploy_Timer_Audit`.
+- **`CQ_Bug_Abrams_Substitution_Transport_Slot_Regression`** — open in `conquest_issues.md`.
+- **R3 — Symmetric `OnPlayerExitVehicle` safety-net** — only if MP playtest shows aircraft-state-stuck symptom.
+- **R4 — Symmetric Apply Config in-flight guard** — only if hard crash recurs.
+- **R5 — Mega-file split** — readability only, 0 bundle impact.
+- **R8 — Plan-file archival** — `design_doc/archive/` cleanup pass for analyzer hygiene.
 
 ---
 

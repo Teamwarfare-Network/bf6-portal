@@ -27,19 +27,5 @@ function clearSpawnBaseTeamCache(): void {
     for (const k of Object.keys(vehicleSpawnBaseTeamByObjId)) delete vehicleSpawnBaseTeamByObjId[Number(k)];
 }
 
-// Infers a vehicle base team from nearest main-base anchor within bind radius.
-function inferBaseTeamFromPosition(pos: mod.Vector): TeamID | 0 {
-    const d1 = mod.DistanceBetween(pos, MAIN_BASE_TEAM1_POS); // Distance from vehicle to Team 1 base anchor.
-    const d2 = mod.DistanceBetween(pos, MAIN_BASE_TEAM2_POS); // Distance from vehicle to Team 2 base anchor.
-    const best = d1 <= d2 ? TeamID.Team1 : TeamID.Team2; // Pick the nearer base as the inferred team.
-    const bestDist = d1 <= d2 ? d1 : d2; // Track the distance to that nearest base.
-
-    if (bestDist > MAIN_BASE_BIND_RADIUS_METERS) { // Outside bind radius: treat as unassigned.
-        return 0;
-    }
-
-    return best; // Within radius: return the inferred team id.
-}
-
 //#endregion ----------------- Vehicle Registration (team arrays) --------------------
 

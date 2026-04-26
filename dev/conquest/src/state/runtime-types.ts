@@ -142,7 +142,8 @@ type ConquestSpawnChargeReason =
     | "team_switch"
     | "admin_move"
     | "phase_transition"
-    | "reconnect";
+    | "reconnect"
+    | "vehicle_deploy";
 
 type ConquestSpawnChargeTxnState = {
     deploySeq: number;

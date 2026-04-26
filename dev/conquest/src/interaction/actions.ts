@@ -94,15 +94,7 @@ function isCriticalVehicleDeployHudReadyForPid(pid: number): boolean {
     return isVehicleDeployTimerHudCacheUsable(State.hudCache.vehicleDeployTimerCache[pid]);
 }
 
-function isCriticalHudReadyForPlayer(eventPlayer: mod.Player, pid: number): boolean {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
-    return isCriticalTopHudReadyForPid(pid)
-        && isCriticalCombatHudReadyForPid(pid)
-        && isCriticalVehicleDeployHudReadyForPid(pid);
-}
-
 // Unified readiness gate: all six UI families must be warm and cache-usable before the gate releases.
-// This replaces the old staged critical-first / deferred-second check.
 function isAllUiFamiliesReadyForRelease(eventPlayer: mod.Player, pid: number): boolean {
     if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
     return isCriticalTopHudReadyForPid(pid)

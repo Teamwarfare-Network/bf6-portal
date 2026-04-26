@@ -255,43 +255,6 @@ function addReadyDialogCenteredText(
     );
 }
 
-// Creates a right-aligned label and applies Ready Dialog text color defaults.
-function addRightAlignedLabel(
-    labelId: string,
-    posX: number,
-    posY: number,
-    sizeX: number,
-    sizeY: number,
-    anchor: mod.UIAnchor,
-    label: mod.Message,
-    player: mod.Player,
-    parent: mod.UIWidget,
-    textSize: number
-): mod.UIWidget | undefined {
-    const widget = safeParseUI({
-        name: labelId,
-        type: "Text",
-        playerId: player,
-        position: [posX, posY],
-        size: [sizeX, sizeY],
-        anchor: anchor,
-        visible: true,
-        padding: 0,
-        bgAlpha: 0,
-        bgFill: mod.UIBgFill.None,
-        textLabel: label,
-        textColor: [1, 1, 1],
-        textAlpha: 1,
-        textSize: textSize,
-        textAnchor: mod.UIAnchor.CenterRight,
-    });
-    if (widget) {
-        mod.SetUIWidgetParent(widget, parent);
-        applyReadyDialogLabelTextColor(widget);
-    }
-    return widget;
-}
-
 // Applies the default Ready Dialog label color when the widget exists.
 function applyReadyDialogLabelTextColor(widget?: mod.UIWidget): void {
     if (widget) mod.SetUITextColor(widget, READY_DIALOG_LABEL_TEXT_COLOR);

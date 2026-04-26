@@ -181,7 +181,6 @@ function initReadyDialogData(eventPlayer: mod.Player) {
         readyDialogHotReady: false,
         gadgetMenuHotReady: false,
         gateStartTime: 0,
-        safetyFloorTriggered: false,
         safetyTimeoutTriggered: false,
         lastButtonSignature: "",
         lastRosterSignature: "",

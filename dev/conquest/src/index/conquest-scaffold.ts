@@ -25,6 +25,7 @@ function initializeConquestPhase1Scaffold(): void {
         admin_move: 0,
         phase_transition: 0,
         reconnect: 0,
+        vehicle_deploy: 0,
     };
     State.conquest.spawnCharge.chargedCountByReason = {
         deploy: 0,
@@ -33,6 +34,7 @@ function initializeConquestPhase1Scaffold(): void {
         admin_move: 0,
         phase_transition: 0,
         reconnect: 0,
+        vehicle_deploy: 0,
     };
     State.conquest.spawnCharge.duplicateChargeSuspicionCount = 0;
     State.conquest.spawnCharge.sessionIdentityResetCount = 0;

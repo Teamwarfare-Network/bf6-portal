@@ -31,6 +31,7 @@ type WorldInteractableAnchorConfig = {
     ownerTeamId: TeamID | 0;
     vfx?: any;
     rot?: mod.Vector;
+    disableOnLive?: boolean; // When true, this interactable's interact point + VFX are disabled for the duration of the live phase.
 };
 type WorldInteractableConfig = {
     objId: number;
@@ -40,6 +41,7 @@ type WorldInteractableConfig = {
     iconAnchorPos?: mod.Vector;
     vfx?: any;
     vfxRot?: mod.Vector;
+    disableOnLive?: boolean; // Carried through from the source anchor; gates interact-point + VFX while isMatchLive().
 };
 type ReadyDialogPresetPackage = {
     playersPerSide: number;

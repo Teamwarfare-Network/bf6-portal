@@ -30,6 +30,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     lifecycleSetLiveBaseline("pregame-start-match");
     State.round.liveStartedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
     cleanupMainBaseTeamWorldIconsForLiveTransition();
+    refreshDisableOnLiveInteractableStateForLiveTransition();
     clearActiveBoundaryViolationsForAllPlayers();
     updateReadyDialogModeConfigForAllHiddenBuiltCaches();
     updateReadyToggleButtonsForAllBuiltReadyDialogs();
