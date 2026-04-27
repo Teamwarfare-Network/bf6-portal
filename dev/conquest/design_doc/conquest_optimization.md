@@ -1,0 +1,92 @@
+## Goals
+
+**Performance (mission critical)** — minimize per-tick work; maximize player FPS; avoid frame-time spikes that breach the Mod Evaluator's per-frame eval budget.
+
+**Memory (mission critical)** — operate within the Mod Evaluator's JS heap limit at full player counts; every per-pid allocation has a paired deallocation reachable from `onPlayerLeaveGameImpl`; no monotonic growth across join/leave cycles.
+
+**Design (nice to have)** — code stays clean, readable, intuitive, maintainable. Subordinate to the two above; don't sacrifice memory or performance for elegance.
+
+## Files
+
+**`conquest_optimization_state.md`** — the *facts*:
+
+- **Compile-Time Feature Flags** — which `FEATURE_*` flags strip which files at build.
+- **Project Stats** — version, file counts, bundle bytes, headroom.
+- **File Map** — every `.ts` file: lines, bytes, in-bundle status, PPM column.
+- **Function Inventory** — every callable with one-line purpose and usage tag.
+- **Lifecycle Map** — every per-pid state field with allocator + deallocator + status.
+- **Naming Economy** — identifier counts, length distribution, top expensive symbols, anti-pattern symbol list.
+- **How to keep this file accurate** — maintenance rules.
+
+**`conquest_optimization_analysis.md`** — the *reasoning*:
+
+- **TL;DR** — current snapshot in 6 bullets.
+- **Why memory, not bytes** — heap-vs-bundle constraint analysis.
+- **Per-player multipliers (M1–M15)** — allocator ranking with scale buckets.
+- **One-time overhead (O1–O5)** — non-per-player cost categories.
+- **Reclaim ladder (Tiers A–F)** — concrete levers, ranked by ROI.
+- **Why per-PID UI is non-negotiable** — architectural rule.
+- **Verified safe operations (no-go list)** — what reclaim must not do.
+- **Open questions** — decisions waiting on user input.
+- **Verification plan** — how to confirm a fix.
+
+## Ratings
+
+### Per-player multipliers — `M1` … `M15`
+
+Allocators that scale with connected player count, ranked by retained heap at 16 players. **`M1` = worst, `M15` = least.** The ID *is* the rank.
+
+Each `Mn` carries a **scale bucket**:
+
+| Bucket | Approx. retained at 16p |
+|--------|-------------------------|
+| `XL` | >1,500 widget refs / objects |
+| `L` | 200–1,500 |
+| `M` | 50–200 |
+| `S` | 10–50 |
+| `XS` | <10, or feature-flagged off |
+| `Churn` | per-tick allocations (GC pressure, not retained) |
+| `Variable` | hard to estimate (closure capture) |
+
+State doc's File Map cites `Mn` in its PPM column.
+
+### Reclaim ladder — Tier `A` … `F`
+
+Each tier is a category of memory/heap lever, ordered by ROI per effort:
+
+| Tier | Category |
+|------|----------|
+| `A` | Per-player widget cache thinning (highest priority — directly attacks the multiplier) |
+| `B` | Module-level constant inlining (one-time, cumulatively large) |
+| `C` | Dead code + dead strings (confirmed-zero readers) |
+| `D` | Closure / continuation hygiene |
+| `E` | Opportunistic / readability (zero memory impact) |
+| `F` | Naming economy |
+
+Within a tier, items are numbered (`A1`, `A2`, …) with heap impact, bundle impact, effort, risk, and approval status per row.
+
+### Function usage tags
+
+Every entry in the Function Inventory ends with one of:
+
+| Tag | Meaning |
+|-----|---------|
+| `(N)` | Plain integer — static call-site count from `src/`. Higher = wider blast radius. `(0)` = delete candidate. |
+| `(XL~N)` | Hot path: runs every game-loop subtick (~8/sec), often per-player. |
+| `(L~N)` | Per-second cadence. |
+| `(M~N)` | Per common gameplay event (deploy, vehicle entry, capture edge, kill). |
+| `(S~N)` | Per rare gameplay event (match start/end, team swap, join, leave). |
+| `(XS~N)` | Once or near-once (mode startup, scaffold init). |
+| `(engine)` | Portal-fired callback in `src/index.ts`; no script-side callers. |
+
+The `~N` tail is the static call count; the tier prefix tells you the runtime cadence amplifies that count.
+
+### Lifecycle status
+
+Every per-pid state field is marked:
+
+| Status | Meaning |
+|--------|---------|
+| `✓` | Allocator + deallocator paired; deletion reachable from `onPlayerLeaveGameImpl`. |
+| `⚠` | Paired in normal flow with a known edge case (team swap, mid-warm disconnect, deferred path). Verify before shipping new code on top. |
+| `❌` | Leak suspect — write sites exist, no `delete` reachable from leave. Fix or document why immortal-by-design. |

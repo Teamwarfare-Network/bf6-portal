@@ -138,6 +138,7 @@ function runBuild() {
 // Additive to the changelog entry already produced above — this points the human
 // at the "How to keep this file accurate" contract in conquest_optimization_state.md.
 function printPostBumpDocReminder(targetVersion, hasChangelogComment) {
+  const guideRel = "design_doc/conquest_optimization.md";
   const stateRel = "design_doc/conquest_optimization_state.md";
   const analysisRel = "design_doc/conquest_optimization_analysis.md";
   console.log("");
@@ -150,7 +151,8 @@ function printPostBumpDocReminder(targetVersion, hasChangelogComment) {
     console.log("[1] Changelog entry — landed (see above).");
   }
   console.log("");
-  console.log(`[2] Optimization state file — ${stateRel}`);
+  console.log(`[2] Optimization docs — see ${guideRel} for the reader's guide.`);
+  console.log(`    State file — ${stateRel}`);
   console.log("    Open the file and follow the 'How to keep this file accurate' section");
   console.log("    at the bottom. In particular, refresh:");
   console.log("    - Project Stats (bundle bytes, headroom)");

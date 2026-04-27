@@ -106,6 +106,8 @@ Each tier estimates **runtime heap reduction** and **expected effort**. The user
 | A3 | Consolidate `armG`/`armL`/`armS`/`armO`/`armI`/`armT`/`armFocusedTileKeyByPid` into one `armState[pid]` (targets **M10**) | [state/runtime-state.ts:213-220](../src/state/runtime-state.ts#L213), [interaction/ammo-resupply-menu.ts:187-258](../src/interaction/ammo-resupply-menu.ts#L187) | One per-pid object instead of seven; same fields under one parent | Saves 6 × 16 = **96 small allocations** + 6 record headers. Same field count overall but one parent allocation per pid instead of 7 | Slight increase (+200 bytes for the type + accessor refactor) | Low — mechanical refactor | Pending |
 | A4 | Strip `posDebugTransformSourceByPid` + `posDebugVehicleObjIdByPid` from production bundle (subset of **M7**) | [state/runtime-types.ts:468-469](../src/state/runtime-types.ts#L468) | Both unused when `FEATURE_POSITION_DEBUG = false` (current). Type and init still live | 2 records × 16 = **32 entries** at lobby fill | −small | Zero — gated feature is off, has been for 80+ versions | Pending |
 | A5 | Drop `uiCachePerfByPid` from production scope when `FEATURE_PERF_DIAG = false` (targets **M13**) | [state/runtime-types.ts:440-459](../src/state/runtime-types.ts#L440), [state/runtime-state.ts:223](../src/state/runtime-state.ts#L223) | Same shape: type + init resident but never written | 1 record × 12 fields × 16 = **192 fields** when populated | −small | Zero — the `mod.AllPlayers` perf counter increment sites are already feature-flag-gated and stripped | Pending |
+| **A6** | **Plug `ammoResupplyMenuCache[pid]` leak on player disconnect (Lifecycle Map finding — targets M2)** | [index/player-join-leave.ts:126-183](../src/index/player-join-leave.ts#L126) `onPlayerLeaveGameImpl` + [interaction/ammo-resupply-menu.ts:2035](../src/interaction/ammo-resupply-menu.ts#L2035) `destroyArmMenu` | Add `destroyArmMenu(pid)` after `resetArmState(pid)` in `onPlayerLeaveGameImpl`. Currently the cache (~100–180 widget refs per pid — M2) is leaked when a player who opened the gadget locker once disconnects. Long sessions accumulate stale caches. | Per leak: 100–180 widget refs. Cumulative across N joins/leaves: unbounded. | ~0 (one extra function call) | **Zero** — `destroyArmMenu` is the canonical cache-delete path, already called on join | **Pending — recommend ship-first** |
+| **A7** | **Plug `hqDeploy.lastRequestAtSecondsByPid` leak on player disconnect (Lifecycle Map finding)** | [state/runtime-types.ts:493](../src/state/runtime-types.ts#L493), [index/player-join-leave.ts:126-183](../src/index/player-join-leave.ts#L126) | Add `delete State.hqDeploy.lastRequestAtSecondsByPid[pid];` to `onPlayerLeaveGameImpl`. No `delete` site exists anywhere in `src/`; field grows monotonically across sessions. | Per leak: 1 number per pid. Cumulative: 1 entry per unique pid the server has ever seen. Tiny per-leak but unbounded over time. | ~0 | **Zero** — additive `delete` only | **Pending — recommend ship-first** |
 
 ### Tier B — Module-level constant inlining (one-time but cumulatively large)
 
@@ -140,6 +142,45 @@ Each tier estimates **runtime heap reduction** and **expected effort**. The user
 | E2 | One-liner comment audit — replace multi-line block comments with single-line `//` per AGENTS.md "Function Comment Readability Policy". Postbuild strips full-line `//` cleanly (v1.397/v1.398). | 0 bundle (strip), positive readability | |
 | E3 | Empty directory cleanup — `src/loaders/`, `src/team-switch/` are present but empty. Cosmetic. | 0 | |
 
+### Tier F — Naming economy (modest memory, large code-clarity)
+
+Identifier text is **66.3% of the bundle** at v1.406 — 577,898 of 872,014 bytes — across 4,991 unique identifiers and 51,626 occurrences. Average function name is **28.6 chars** (1,027 functions, 128,566 bundle bytes). See `conquest_optimization_state.md` "Naming Economy" section for the raw measurements and top-20 expensive identifiers.
+
+**Why this is its own tier.** Renaming doesn't compress the per-PID multiplier (Tier A target), it doesn't strip dead code (Tier C), it doesn't change scope (no-go list). What it does:
+
+- **Bundle bytes:** direct savings, 4KB to 180KB depending on aggression level. Bundle has 176KB headroom currently, so this is *relief, not blocking*.
+- **Runtime heap:** identifier strings get interned by the JS runtime. Savings is roughly `unique_name_count × avg_shorten` (paid once per unique name, not per call). Modest — likely 5–20KB heap relief depending on policy.
+- **Code review hygiene:** large. Long phase-prefixed names hurt comprehension and pull-request review; this is the actual win.
+
+**Phase-prefix anti-pattern.** 114 unique symbols carry `conquestPhase[2A|2B|3|4|4B]*` prefixes. The prefixes describe *when* the function was written (Phase 2A capture work, Phase 2B spawn-charge, Phase 3 HUD derivation, Phase 4/4B sound/VO queues), not *what* it does. Examples:
+
+| Current name | Intended meaning | Better |
+|--------------|-----------------|--------|
+| `conquestPhase3MarkHudDirty` (16 calls × 26 chars = 416 bundle bytes) | "mark the HUD as dirty so the next render fires" | `markHudDirty` |
+| `conquestPhase2AApplyBleedTick` | "apply one bleed tick to ticket counts" | `applyBleedTick` |
+| `conquestPhase2ASyncMappedCapturePointsFromEngine` | "sync mapped capture points from engine state" | `syncMappedCapturePointsFromEngine` |
+| `conquestPhase4FlushCaptureSoundQueue` | "flush the queued capture-tick sound events" | `flushCaptureSoundQueue` |
+| `conquestPhase4BEnsureObjectiveState` | "ensure VO state for objective exists" | `ensureObjectiveVoState` |
+
+Note: `lifecyclePhase` and `ConquestLifecyclePhase` describe a runtime *state value* ("we are in PRE_MATCH phase right now"), not implementation work — those stay.
+
+| # | Lever | Bundle saved (est.) | Heap saved (est.) | Effort | Risk |
+|---|-------|--------------------:|------------------:|--------|------|
+| F1 | Strip `conquestPhase[2A|2B|3|4|4B]` prefix from 114 symbols, leaving the descriptive remainder | ~4,400 bytes | ~1–2 KB | **2–4 hours** mechanical: 114 finds × ~5 call sites each = ~600 edits. Bundled per-file via TS rename refactor; typecheck runs catch misses. | **Low.** Pure rename, no semantic change. Test plan = compile + 16-player playtest. |
+| F2 | F1 + cap remaining function names at 24 chars where the shorter form stays self-explanatory (e.g. `updateConquestCombatHudForAllPlayers` (36c) → `renderCombatHud` (15c) since `*ForAllPlayers` is implied by the codebase pattern) | ~24,000 bytes | ~6–10 KB | **1–2 days.** Per-symbol judgment call; needs naming review per file. ~700 functions evaluated, maybe 200–400 actually renamed. | **Medium.** Some renames change cognitive shape of code; need pull-request review. |
+| F3 | F1 + F2 + audit shared variable names in mega-files (e.g. `ammoResupplyMenuCache` could be `armCache`, already done in some places — make consistent) | ~50,000 bytes | ~12–20 KB | **2–3 days.** Per-file pass over the four mega-files + state types. | **Medium.** Touches widely-imported names; large diff. |
+| F4 | Aggressive cap-everything-at-16-chars rewrite | ~122,000 bytes | ~25–40 KB | **1+ week.** Pervasive churn across every file. | **High.** Names lose meaning; review burden enormous; high regression risk. **Not recommended.** |
+
+**Recommendation:** ship F1 first. It's the highest-confidence-per-effort lever — pure cleanup of an actual anti-pattern, low risk, ~4 hour pass, makes future PRs cleaner. F2 piggybacks on F1 only if naming review during F1 surfaces obvious wins. F3 is conditional on F2 producing clean diffs. F4 is documented for completeness but is **not advised** — names are how humans read code, and squeezing them past readability for ~120KB bundle relief that we don't need is a bad trade.
+
+**Naming standard going forward** (informs new code and any rename pass):
+
+1. **Name for what, not when or why.** `markHudDirty`, not `conquestPhase3MarkHudDirty`. `flushCaptureSoundQueue`, not `conquestPhase4FlushCaptureSoundQueue`. The phase context belongs in the changelog and module-header comment, not in the identifier.
+2. **Keep names human-readable and intuitive.** `armCache` is fine; `arSpb_lck_chx_x` isn't. Reasonable shorthand is OK when it's *project conventional* (`pid` for player ID, `vid` for vehicle ID, `obj` for object) but never invent new shorthand for one-off use.
+3. **Drop suffixes implied by context.** `*ForAllPlayers` adds no information when every renderer in the file iterates all players. Drop it where the file's intent is unambiguous.
+4. **Reserve long names for unambiguous semantics.** If a function does something *exactly* as named by `safeSetUITextLabel`, that's a fine 18-char name — it tells you precisely what it does without surprise.
+5. **Type-state names stay explicit.** `lifecyclePhase`, `ConquestLifecyclePhase`, `ConquestFlagVisualPhase` — these describe runtime state, not implementation phases. Keep them.
+
 ---
 
 ## Justification rules (what counts as "necessary")
@@ -160,6 +201,21 @@ Applying these to `foundation/ui-layout.ts` as a sample: many `*_OFFSET_X`, `*_O
 
 ---
 
+## Why per-PID UI is non-negotiable
+
+The temptation when looking at the per-player multiplier table is to ask "what if we made it per-team?" — that would collapse 16 widget trees to 2 and solve the problem. **It can't be done.** Per-PID UI is locked in by two principles:
+
+1. **Interactivity.** When a player hovers, focuses, or clicks a widget, the visual reaction is for that player only. Team- or globally-scoped widgets cause cross-player visual clashes — one player's hover state lights up the button for everyone, one player's focus indicator is everyone's. Gameplay UX breaks.
+2. **Responsivity.** When a player connects (initial join, late join, team swap, reconnect), the UI state must be contextual to **them** — their team perspective coloring, their cooldowns, their button-enable state, their engage HUD, their boundary prompts. Without PID scope, a late-joiner inherits whatever stale shared state existed and can't get a contextual view of the match.
+
+These two principles produce the architecture as observed: PID-suffixed widget names (`wn(name, pid)`), per-PID generation tokens for stale-ref invalidation (`combatHudGenerationByPid`), per-PID warm/reveal sequence in the loading gate, per-PID destroy-rebuild for recovery, per-PID-scoped HUD ownership added in `CQ_Bug_9` to fix cross-player clash. None of those are over-engineering — they fall out of the two principles above.
+
+**The implication for memory reclaim:** the per-PID heap multiplier at 16 players is the **inherent cost of doing the UI right**, not waste. The reclaim plan must trim **inside** the per-PID model — drop dead fields, consolidate fragmented small allocations into single parents, remove diff-cache mirrors that the engine can absorb cheaply — not try to widen scope.
+
+The one possible exception is the match clock (M5): it's purely passive, has no interactive elements, and its content is genuinely identical for all viewers. *Maybe* a candidate for global scope, but only if the late-joiner contextual-state path stays correct under team-swap and reconnect. Worth investigating but not assumed.
+
+Everything else stays per-PID. Reclaim works within that constraint.
+
 ## Verified safe operations (explicit no-go list)
 
 The reclaim pass must NOT:
@@ -173,6 +229,7 @@ The reclaim pass must NOT:
 - Touch the v1.259 vanilla-spawner architecture (single-persistent-spawner + spawnMutex).
 - Skip `bumpVersion` when shipping a code change.
 - Increase per-player allocations for any reason short of a user-approved feature add.
+- **Convert any interactive or responsivity-dependent widget surface from per-PID to per-team or global scope.** See "Why per-PID UI is non-negotiable" above. The match clock is a possible narrow exception; everything else stays per-PID.
 
 ---
 
@@ -204,7 +261,7 @@ The 16-player playtest is the single source of truth. No engine telemetry exists
 1. Apply approved Tier A items first (highest ROI per player, lowest risk).
 2. `npm run bumpVersion -- -c "<entry>"` and `npm run build`. Confirm bundle still under cap.
 3. Run a 16-player playtest. **Pass criteria:** match starts to victory dialog without script termination.
-4. If pass: continue with Tier B–E approved items.
+4. If pass: continue with Tier B–E approved items, plus Tier F1 (phase-prefix strip) which is independent and low-risk.
 5. If fail: capture termination time + connected pid count. Implement next-tier reclaim. Re-test.
 
 The runtime budget is opaque, so progress is measured only by "does the script terminate?" — bisect by tier accordingly.

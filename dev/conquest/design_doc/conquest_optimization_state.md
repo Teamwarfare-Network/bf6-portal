@@ -20,7 +20,7 @@ Source: [`config/conquest-constants.ts`](../src/config/conquest-constants.ts).
 
 | Flag | Current value | Files excluded when `false` | Bundle impact |
 |------|---------------|----------------------------|--------------|
-| `FEATURE_PERF_DIAG` | `false` | `hud/perf-diag.ts`, `hud/ui-cache-perf.ts` | ~8–10K source stripped |
+| `FEATURE_PERF_DIAG` | `false` (and **non-functional even when `true`**) | `hud/perf-diag.ts`, `hud/ui-cache-perf.ts` | ~8–10K source stripped |
 | `FEATURE_ADMIN_PANEL` | `false` | `admin-panel/build.ts`, `admin-panel/events.ts`, `admin-panel/visibility.ts`, `ui/admin/action-counter.ts` | ~28K source stripped (per v1.334 measurement; stale) |
 | `FEATURE_JOIN_PROMPT` | `false` | (3 stub files no longer present on disk) | ~0 |
 | `FEATURE_POSITION_DEBUG` | `false` | `hud/position-debug.ts` | ~18K source stripped |
@@ -103,7 +103,7 @@ Legend:
 | `hud/conquest-scaffold.ts` | 9 | 306 | Y | — | Phase 1 HUD seam (no-op placeholder). |
 | `hud/deploy-diagnostic.ts` | 218 | 10,334 | N (orphan) | — | Not imported in `index.ts`; references undeclared `FEATURE_DEPLOY_DIAGNOSTIC`. Candidate for delete. |
 | `hud/help-visibility.ts` | 57 | 2,410 | Y | — | Top-center help/ready text visibility. |
-| `hud/perf-diag.ts` | 345 | 14,768 | N (FEATURE_PERF_DIAG) | — | Performance diagnostic HUD. |
+| `hud/perf-diag.ts` | 345 | 14,768 | N (FEATURE_PERF_DIAG) | — | Performance diagnostic HUD. **Currently non-functional even when flag is enabled** — confirmed 2026-04-27. Do not propose using this for live profiling. |
 | `hud/position-debug.ts` | 359 | 18,321 | N (FEATURE_POSITION_DEBUG) | — | Coordinate display HUD. |
 | `hud/status.ts` | 564 | 21,890 | Y | — | Top-left status dock + 32 internal helpers. |
 | `hud/ui-cache-perf.ts` | 35 | 1,540 | N (FEATURE_PERF_DIAG) | — | UI cache counter infrastructure. |
@@ -1181,6 +1181,265 @@ Module: serial dispatch + Clocks-based respawn (v1.258 rewrite)
 
 ---
 
+## Lifecycle Map — per-PID state allocator/deallocator pairing (v1.406 audit)
+
+**Why this section exists.** Per-PID state grows on player join and must shrink on player leave; if a field is set on join (or deploy, or first interaction) and never `delete`d on leave, server memory grows monotonically across the join/leave churn of a long-running session. This section pairs every per-PID state field with its allocator and deallocator events, flagging suspects where the pair is missing or fragile.
+
+**Audit methodology.** Each field below was checked by:
+1. Locating the field declaration in `src/state/runtime-types.ts`.
+2. Grepping for write sites (`State.<path>[pid] = ...`) — the allocator surface.
+3. Grepping for delete sites (`delete State.<path>[pid]`) — the deallocator surface.
+4. Walking the call graph from `onPlayerLeaveGameImpl` to verify each delete actually fires on player disconnect.
+
+**Status legend:**
+- ✓ **Paired** — set on a known event, deleted on player leave (or earlier explicit cleanup).
+- ⚠ **Partial** — paired in normal flow, but with a known edge case (e.g., team swap, mid-warm disconnect, error path).
+- ❌ **Leak suspect** — write sites exist; no `delete` site reachable from `onPlayerLeaveGameImpl`. Verify and fix or document why immortal-by-design.
+
+### Per-PID state inventory
+
+#### `State.players.*`
+
+| Field | Allocator | Deallocator | Status |
+|-------|-----------|-------------|:------:|
+| `readyDialogData[pid]` | `initReadyDialogData` (on join) | `onPlayerLeaveGameImpl:173` | ✓ |
+| `readyByPid[pid]` | Ready toggle / reset paths | `onPlayerLeaveGameImpl:152` | ✓ |
+| `readyNeedsReconfirmByPid[pid]` | Config change handlers | `onPlayerLeaveGameImpl:153` | ✓ |
+| `readyMessageCooldownByPid[pid]` | Ready broadcast throttle | `onPlayerLeaveGameImpl:154` | ✓ |
+| `inMainBaseByPid[pid]` | Boundary trigger transitions | `onPlayerLeaveGameImpl:170` | ✓ |
+| `worldInteractableIconByPidByObjId[pid]` | `ensureMainBaseTeamIconForPlayer` (per WorldIcon) | `cleanupWorldInteractableRuntimeIconsForPid` (called from `onPlayerLeaveGameImpl:138`) | ✓ |
+| `armO[pid]` / `armI[pid]` / `armT[pid]` | Gadget menu open paths | `onPlayerLeaveGameImpl:157-159` + `resetArmState` | ✓ |
+| `armFocusedTileKeyByPid[pid]` | FocusIn handler | `onPlayerLeaveGameImpl:160` + `setArmOpen(pid, false)` | ✓ |
+| `warmPrimeActiveByPid[pid]` | `prebuildAllUiFamiliesHidden` entry | `onPlayerLeaveGameImpl:161` + `finally` block in prebuild (#105 fix) | ✓ |
+| `armG[pid]` / `armL[pid]` / `armS[pid]` | Gadget cooldown ensure helpers | `onPlayerLeaveGameImpl:162-164` + `resetArmTimers(pid)` | ✓ |
+| `lockerSlots[pid]` | `probeLauncherSlot` first call | `closeArmMenu` (`ammo-resupply-menu.ts:2474`) — fires on menu close, NOT explicit on leave | ⚠ |
+| `lockerSlotToggle[pid]` | First locker open | **No deallocator** found in `src/`. Persists by design (player preference across menu reopen) | ❌ |
+| `uiCachePerfByPid[pid]` | `resetUiCachePerfCountersForPid` | `onPlayerLeaveGameImpl:165` | ✓ (also Tier A5 strip candidate) |
+| `deployedByPid[pid]` | `onPlayerDeployedImpl` / `onPlayerUndeployImpl` | `onPlayerLeaveGameImpl:171` | ✓ |
+| `deployedAtSecondsByPid[pid]` | `onPlayerDeployedImpl` | `resetPlayerBoundaryStateOnUndeployOrReset` (boundary/enforcement.ts:577, called from `onPlayerLeaveGameImpl:141`) | ✓ |
+| `disconnectedByPid[pid]` | `onPlayerLeaveGameImpl:135` (set on leave) | `onPlayerJoinGameImpl:100` (cleared on rejoin) | ✓ — intentional reconnect tracker |
+| `uiInputEnabledByPid[pid]` | UI input mode helpers | `onPlayerLeaveGameImpl:155` | ✓ |
+| `liveVehicleDeployMenuVisibleByPid[pid]` | `setVehicleDeployLiveMenuVisibleForPid` | `onPlayerLeaveGameImpl:156` + `resetVehicleDeployLiveMenuStateForPid` | ✓ |
+| `posDebugTransformSourceByPid[pid]` | Position-debug toggle | `onPlayerLeaveGameImpl:167` | ✓ (also Tier A4 strip candidate) |
+| `posDebugVehicleObjIdByPid[pid]` | Vehicle-enter cache seed | `onPlayerLeaveGameImpl:168` | ✓ (also Tier A4 strip candidate) |
+| `kpiByPid[pid]` | `kpiInitForPid` / `kpiInitWithBaselineForPlayer` | `kpiCleanupForPid` (called from `onPlayerLeaveGameImpl:169`) | ✓ |
+
+#### `State.conquest.debug.*`
+
+| Field | Allocator | Deallocator | Status |
+|-------|-----------|-------------|:------:|
+| `hudGenerationByPid[pid]` | First HUD render | `cleanupHudForPid` (`player-join-leave.ts:80`) | ✓ |
+| `combatHudGenerationByPid[pid]` | First combat-HUD render | `cleanupHudForPid:81` | ✓ |
+| `teamSwapRefreshTokenByPid[pid]` | Team-swap dispatch | `cleanupHudForPid:82` (also reset on join `:104`) | ✓ |
+| `teamSwapHudResetPendingByPid[pid]` | Team-swap dispatch | `cleanupHudForPid:83` | ✓ |
+| `perspectiveTeamByPid[pid]` | Join handler `:111` | `cleanupHudForPid:84` | ✓ |
+| `teamSwapPerspectiveLockUntilByPid[pid]` | Team-swap dispatch | `cleanupHudForPid:85` | ✓ |
+| `engageHiddenUntilDeployByPid[pid]` | Join handler `:105` | `cleanupHudForPid:86` | ✓ |
+| `hudStatusVmByPid[pid]` | `conquestPhase3RefreshTopHudDerivedSlicesForAllPlayers` | `cleanupHudForPid:87` | ✓ (also M11 churn — rebuilt every dirty tick) |
+| `hudHelpReadyVmByPid[pid]` | Same | `cleanupHudForPid:88` | ✓ (M11 churn) |
+| `hudClockVmByPid[pid]` | Same | `cleanupHudForPid:89` | ✓ (M11 churn) |
+
+#### `State.conquest.capture.*`
+
+| Field | Allocator | Deallocator | Status |
+|-------|-----------|-------------|:------:|
+| `engagedObjIdByPid[pid]` | `onPlayerEnterCapturePointImpl` | `onPlayerExitCapturePointImpl`, `onPlayerDeployedImpl`, `onPlayerUndeployImpl`, `cleanupConquestHudForTeamSwap`, `runTeamSwapLoadingGate`, HUD pipeline recovery — **6 delete sites**. **Not deleted explicitly in `onPlayerLeaveGameImpl`** but preceding `cleanupHudForPid` chain may handle it via team-swap path. | ⚠ |
+
+#### `State.conquest.spawnCharge.*`
+
+| Field | Allocator | Deallocator | Status |
+|-------|-----------|-------------|:------:|
+| `firstLiveSpawnExemptByPid[pid]` | `conquestPhase2BOnMatchLiveStart` | `conquestPhase2BClearPidSessionState` (called from `conquestPhase2BOnPlayerLeave` ← `onPlayerLeaveGameImpl:172`) | ✓ |
+| `deployTxnByPid[pid]` | `conquestPhase2BEnsureDeployTxn` (lazy on first deploy) | Same path | ✓ |
+| `pendingReasonByPid[pid]` | `conquestPhase2BMarkNextDeployReason` | Same path + cleared at deploy time | ✓ |
+
+#### `State.conquest.vo.*`
+
+| Field | Allocator | Deallocator | Status |
+|-------|-----------|-------------|:------:|
+| `runtimeHandleByPid[pid]` | `conquestPhase4BEnsureVoiceOverRuntimeForPid` | `conquestPhase4BOnPlayerLeaveOrResetPid` (`capture-vo.ts:82`) ← `onPlayerLeaveGameImpl:143` | ✓ |
+| `handlesReadyByPid[pid]` | Same path | `capture-vo.ts:83` | ✓ |
+| `recentActiveObjIdByPid[pid]` | `conquestPhase4BMarkRecentObjectivePresence` | `capture-vo.ts:84` | ✓ |
+| `recentActiveAtSecondsByPid[pid]` | Same | `capture-vo.ts:85` | ✓ |
+
+#### `State.round.boundary.*`
+
+| Field | Allocator | Deallocator | Status |
+|-------|-----------|-------------|:------:|
+| `zoneStateByPid[pid]` | `getOrInitZoneStateForPid`, trigger enter handlers, `seedZoneStateFromSpawnContext` | `resetPlayerBoundaryStateOnUndeployOrReset` (`enforcement.ts:425, :576`) called from `onPlayerLeaveGameImpl:141` | ✓ |
+| `activeViolationByPid[pid]` | `refreshPlayerBoundaryState` (when violation begins) | `clearBoundaryViolationForPid` (`enforcement.ts:303`) called from undeploy/leave paths | ✓ |
+
+#### `State.hudCache.*`
+
+| Field | Allocator | Deallocator | Status |
+|-------|-----------|-------------|:------:|
+| `topHudShellByPid[pid]` | `ensureTopHudShellForPlayer` | `cleanupHudForPid:79` | ✓ |
+| `clockWidgetCache[pid]` | `ensureClockUIAndGetCache` | `cleanupHudForPid:76` | ✓ |
+| `countdownWidgetCache[pid]` | `ensureCountdownUIAndGetWidget` | `cleanupHudForPid:77` | ✓ |
+| `vehicleDeployTimerCache[pid]` | First viewer render | `cleanupHudForPid:78` (also `resetUiForPlayerOnJoin:35` defensively) | ✓ |
+| `ammoResupplyMenuCache[pid]` | `mkArmCache` on first menu open | `destroyArmMenu` (`ammo-resupply-menu.ts:2045`) called from `resetUiForPlayerOnJoin:18` (on join) and `closeArmMenu` (on close). **NOT called from `onPlayerLeaveGameImpl`** — only `resetArmState` is, which clears `armO/I/T/Focused` but not the cache itself. | ❌ **Leak suspect on player leave** (M2 — largest after M1) |
+| `boundaryPromptCache[pid]` | `ensureBoundaryPromptUiForPlayer` | `destroyBoundaryPromptUiForPid` (`prompt-ui.ts:475`) called from `cleanupHudForPid:73` | ✓ |
+
+#### `State.hqDeploy.*`
+
+| Field | Allocator | Deallocator | Status |
+|-------|-----------|-------------|:------:|
+| `lastRequestAtSecondsByPid[pid]` | HQ deploy request rate-limit | **No `delete` found anywhere in `src/`** | ❌ **Leak — every HQ deploy request leaks an entry; no cleanup on leave** |
+
+### Findings — leak suspects to fix
+
+Two confirmed gaps surfaced by this audit:
+
+1. **`State.hudCache.ammoResupplyMenuCache[pid]` (M2 — XL scale).** On player leave, `resetArmState(pid)` clears the small per-pid arm-state booleans but does NOT call `destroyArmMenu(pid)`, which is the only path that deletes `ammoResupplyMenuCache[pid]`. A player who opens the gadget locker once and then leaves leaves their full menu cache (~100–180 widget refs) resident. With 16 players cycling through joins/leaves over a long session, this leaks the largest-after-M1 widget cache.
+   **Fix:** add `destroyArmMenu(pid)` to `onPlayerLeaveGameImpl`, after `resetArmState(pid)` and before `cleanupHudForPid`. ~2 lines. Verify no double-destroy issues if both `resetUiForPlayerOnJoin` and the leave path fire on a fast reconnect.
+
+2. **`State.hqDeploy.lastRequestAtSecondsByPid[pid]`.** Field exists, written on every HQ-deploy request, never deleted anywhere. Small payload (one number per pid), but unbounded growth in a server that sees many distinct pids over time.
+   **Fix:** add `delete State.hqDeploy.lastRequestAtSecondsByPid[pid]` to `onPlayerLeaveGameImpl`. 1 line.
+
+Both should be added to `conquest_optimization_analysis.md` reclaim ladder as Tier A items (zero-risk, leak-prevention, immediate ship candidates).
+
+### Findings — partial / intentional immortals to verify
+
+- **`State.players.lockerSlotToggle[pid]`** — no leave-time delete, but the design intent is "player preference persists across menu close/reopen." Should it persist across player leave too? If a player disconnects and rejoins, do they get their old slot toggle or a fresh one? Verify with user; if reset-on-leave is desired, add a delete to `onPlayerLeaveGameImpl`.
+- **`State.conquest.capture.engagedObjIdByPid[pid]`** — 6 delete sites cover deploy, undeploy, exit-capture-point, team-swap cleanup. Probably no leak in practice (the player is undeployed before `onPlayerLeaveGameImpl` clears state, which would have already cleared engagement). But no defense-in-depth delete on the leave handler. Consider adding for robustness.
+
+### Slot-keyed lifecycle (one-line audit)
+
+`State.vehicles.slots[]` entries are NOT per-pid — they're indexed by slot number, which is bounded by map config (~16 on Firestorm). They have their own lifecycle (created at `applyMapConfig`, never deleted; mutated by spawner state machine). Not a leak axis. The `activeOwnerPid` field within a slot IS player-keyed and gets cleared in `onPlayerLeaveGameImpl:147-150`. ✓
+
+### Maintenance contract for this section
+
+Whenever a `Record<number, T>` per-PID state field is added or removed:
+1. Update the inventory table above with allocator + deallocator + status.
+2. If status would be ❌ **Leak suspect**, do not ship the field without a `delete` in `onPlayerLeaveGameImpl` (or a documented `⚠ Partial` justification with explicit cleanup hook on undeploy/team-swap).
+3. Cross-reference to the Mn ID (or note "not in M ranking") for runtime cost context.
+4. Trace the full path from `onPlayerLeaveGameImpl` to the delete — don't accept "probably gets cleared somewhere"; verify.
+
+---
+
+## Naming Economy (v1.406 measurement)
+
+Identifier text — function names, variable names, type names — accounts for **577,898 bytes of the 872,014-byte bundle (~66%)**. That's the inherent cost of having descriptive names; the question is whether the names are *over*-descriptive.
+
+### Bundle-wide identifier facts
+
+| Metric | Value |
+|--------|------:|
+| Bundle bytes | 872,014 |
+| Unique identifiers (excl. JS reserved) | **4,991** |
+| Total identifier occurrences | 51,626 |
+| Bytes occupied by identifier text | **577,898** (66.3% of bundle) |
+| Unique function declarations | **1,027** |
+| Avg function name length | **28.6 chars** |
+| Total function-name bytes (decl + calls) | **128,566** |
+
+### Identifier length distribution (unique names, all kinds)
+
+Most identifiers cluster between 7–22 chars. The right tail past ~30 chars contains the costly ones — when those have many call sites, they dominate.
+
+```
+len  1-10:  1,346 unique  (cheap helpers, common locals)
+len 11-20:  1,640 unique  (typical names)
+len 21-30:    974 unique  (verbose; many phase-prefixed)
+len 31-40:    711 unique  (over-described)
+len 41-50:    268 unique  (very long)
+len 51+:      41 unique   (extreme — should be reviewed)
+extremes:   62, 69, 72-char single names exist
+```
+
+### Top 20 most expensive identifiers (length × occurrences)
+
+| Bundle bytes | Uses × len | Identifier |
+|-------------:|:----------|------------|
+| 10,653 | 3551 × 3 | `mod` |
+| 8,030 | 730 × 11 | `eventPlayer` |
+| 7,414 | 337 × 22 | `safeSetUIWidgetVisible` |
+| 6,189 | 2063 × 3 | `pid` |
+| 5,525 | 1105 × 5 | `State` |
+| 3,888 | 324 × 12 | `CreateVector` |
+| 3,830 | 383 × 10 | `stringkeys` |
+| 3,710 | 742 × 5 | `cache` |
+| 3,630 | 605 × 6 | `player` |
+| 3,360 | 420 × 8 | `conquest` |
+| 3,072 | 384 × 8 | `UIWidget` |
+| 2,736 | 342 × 8 | `UIAnchor` |
+| 2,289 | 327 × 7 | `players` |
+| 2,240 | 320 × 7 | `widgets` |
+| 2,120 | 265 × 8 | `playerId` |
+| 2,112 | 264 × 8 | `safeFind` |
+| 2,106 | 117 × 18 | `safeSetUITextLabel` |
+| 2,054 | 158 × 13 | `isValidPlayer` |
+| 1,866 | 311 × 6 | `Player` |
+| 1,785 | 51 × 35 | `deleteAllReusableTimerWidgetsByName` |
+
+**Reading the table:** the top entries are mostly names that are already short or are SDK-fixed (`mod`, `pid`, `State`, `Player`, `UIWidget`). Below them are heavily-used helpers we own — `safeSetUIWidgetVisible` (22 chars × 337 uses = 7.4KB), `safeSetUITextLabel` (18 × 117), `isValidPlayer` (13 × 158). And single-use long names like `deleteAllReusableTimerWidgetsByName` (35 × 51 = 1.8KB).
+
+### Phase-named anti-pattern
+
+Functions and variables prefixed with `conquestPhaseN[A-D]` were named for the implementation phase they belonged to (Phase 2A capture work, Phase 2B spawn-charge, Phase 3 HUD, Phase 4/4B sound/VO), not for what they do.
+
+| Metric | Value |
+|--------|------:|
+| Unique phase-named symbols | **114** |
+| Bundle bytes occupied by phase names | **11,736** |
+| Avg phase prefix length | 13.5 chars |
+| Bytes saved if prefix stripped (no other rename) | ~4,436 |
+
+Top 15 by total bundle bytes (these are the renames with the highest payoff):
+
+| Bytes | Uses × len | Symbol |
+|------:|:----------|--------|
+| 416 | 16 × 26 | `conquestPhase3MarkHudDirty` |
+| 282 | 6 × 47 | `conquestPhase2AShouldCountPlayerAsActiveOnPoint` |
+| 225 | 5 × 45 | `conquestPhase2ACaptureTimingConfiguredByObjId` |
+| 225 | 5 × 45 | `conquestPhase2AConfigureCaptureTimingForPoint` |
+| 210 | 5 × 42 | `conquestPhase3CreateDefaultFlagVisualState` |
+| 210 | 6 × 35 | `conquestPhase3EnsureFlagVisualState` |
+| 190 | 5 × 38 | `conquestPhase4BOnPlayerLeaveOrResetPid` |
+| 185 | 5 × 37 | `conquestPhase2BMaybeEmitDebugSnapshot` |
+| 185 | 5 × 37 | `conquestPhase4OnPlayerLeaveOrResetPid` |
+| 184 | 4 × 46 | `conquestPhase3PublishTopHudDerivedSlicesForPid` |
+| 175 | 5 × 35 | `conquestPhase2BMarkNextDeployReason` |
+| 175 | 5 × 35 | `conquestPhase4BEnsureObjectiveState` |
+| 168 | 12 × 14 | `lifecyclePhase` (kept — semantic, not implementation-phase) |
+| 164 | 4 × 41 | `conquestPhase2AMirrorTicketsToEngineScore` |
+| 156 | 4 × 39 | `conquestPhase4BTransitionObjectiveState` |
+
+The full list of 114 symbols lives in `src/index/capture-tickets.ts`, `src/index/capture-sound.ts`, `src/index/capture-vo.ts`, and `src/state/spawn-charge.ts`. They share four prefix stems:
+
+- `conquestPhase2A*` — capture/ticket work in [`index/capture-tickets.ts`](../src/index/capture-tickets.ts)
+- `conquestPhase2B*` — spawn-charge work in [`state/spawn-charge.ts`](../src/state/spawn-charge.ts)
+- `conquestPhase3*` — HUD derivation/dispatch in [`index/capture-tickets.ts`](../src/index/capture-tickets.ts)
+- `conquestPhase4*` / `conquestPhase4B*` — sound/VO queues in [`index/capture-sound.ts`](../src/index/capture-sound.ts), [`index/capture-vo.ts`](../src/index/capture-vo.ts)
+
+### Hypothetical shortening savings
+
+| Approach | Bundle bytes saved | Identifiers affected |
+|----------|-------------------:|---------------------:|
+| Cap all names at 12 chars | 176,729 (~20% bundle) | 3,253 |
+| Cap all names at 16 chars | 122,216 (~14%) | 2,576 |
+| Cap all names at 20 chars | 83,166 (~10%) | 2,033 |
+| Cap all names at 24 chars | 54,859 (~6%) | 1,614 |
+| Cap all names at 30 chars | 25,093 (~3%) | 1,039 |
+| Cap function names only at 16 chars | 51,163 | 900 |
+| Cap function names only at 20 chars | 36,208 | 824 |
+| Cap function names only at 24 chars | 24,061 | 701 |
+| Cap function names only at 30 chars | 10,918 | 456 |
+| Strip `conquestPhaseNX` prefix only | 4,436 | 114 |
+
+**Reading these:** "Cap at N" is purely hypothetical — it assumes every long name could shorten to N chars while staying unique and intuitive, which isn't true. The realistic policy (see analysis doc Tier F) lands between "Strip phase prefix only" and "Cap function names only at 24 chars" depending on how aggressive we want the rename pass.
+
+### What this saves at runtime (vs. bundle)
+
+Two budgets, two effects:
+
+- **Bundle bytes (upload cap):** direct savings as above. Bundle is currently 872KB / 1MB cap = 176KB headroom, so this is *relief, not blocking*.
+- **Runtime heap (Mod Evaluator memory):** identifier strings are typically interned by the JS runtime — paid once per unique string regardless of call count. Estimated savings is ~ **(unique-name × avg-shorten) ÷ 2** because of interning amortization. For "Cap function names only at 24 chars": ~12KB heap savings, not 24KB. Modest.
+
+The honest takeaway: **renaming is mostly a code-clarity win, with bundle-byte and modest heap upside**. It's not a load-bearing memory reclaim like Tier A, but it pairs cleanly with the per-PID-cache thinning since the names *of* per-pid widget-cache fields are themselves part of the bundle.
+
+---
+
 ## How to keep this file accurate
 
 1. **After every `bumpVersion`:** refresh the Project Stats row, the bundle bytes/headroom in the file map, and update Lines/Bytes for any file that grew or shrank by ≥5%.
@@ -1189,6 +1448,7 @@ Module: serial dispatch + Clocks-based respawn (v1.258 rewrite)
    - For hot-path entry points (a function called from the 0.12s game-loop body, the per-second second-boundary section, or a Portal event handler), prefix with the cadence tier: `(XL~N)`, `(L~N)`, `(M~N)`, `(S~N)`, or `(XS~N)`.
    - For engine-fired Portal callbacks in `src/index.ts`, use `(engine)`.
    When a function moves between hot and cold (added or removed call sites in `index/game-mode.ts`), re-evaluate the tier prefix.
-3. **After any `state/*` field add/remove that scales per-pid:** update the PPM column on the file map and add/remove an `Mn` entry in [`conquest_optimization_analysis.md`](./conquest_optimization_analysis.md). Cross-reference both directions.
-4. **After any feature-flag flip:** update the Compile-Time Feature Flags table and the `In bundle` column for the affected files.
-5. **Scope discipline:** files NOT in the bundle (excluded by feature flags or orphaned) belong on the file map but should NOT have function-inventory sections. Their callable surface is irrelevant to runtime memory.
+3. **After any `state/*` field add/remove that scales per-pid:** update the PPM column on the file map AND add/remove an entry in the **Lifecycle Map** above (allocator + deallocator + status). Add/remove an `Mn` entry in [`conquest_optimization_analysis.md`](./conquest_optimization_analysis.md) if it scales per-pid. Cross-reference all three.
+4. **No new per-PID `Record<number, T>` field ships without a `delete` site reachable from `onPlayerLeaveGameImpl`.** If the field is intentionally immortal across leaves (e.g. a reconnect tracker), document the rationale on the Lifecycle Map row with status ⚠.
+5. **After any feature-flag flip:** update the Compile-Time Feature Flags table and the `In bundle` column for the affected files.
+6. **Scope discipline:** files NOT in the bundle (excluded by feature flags or orphaned) belong on the file map but should NOT have function-inventory sections. Their callable surface is irrelevant to runtime memory.
