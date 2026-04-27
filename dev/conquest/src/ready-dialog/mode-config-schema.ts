@@ -116,28 +116,28 @@ function getReadyDialogModeGridColumnHeaderMessage(column: ReadyDialogGridColumn
     switch (column.key) {
         case "team1Fast":
         case "team2Fast":
-            return mod.Message(mod.stringkeys.twl.readyDialog.columnFastFormat, getTeamNameKey(column.teamId ?? TeamID.Team1));
+            return msg(mod.stringkeys.twl.readyDialog.columnFastFormat, getTeamNameKey(column.teamId ?? TeamID.Team1));
         case "team1Ground":
         case "team2Ground":
-            return mod.Message(mod.stringkeys.twl.readyDialog.columnGroundFormat, getTeamNameKey(column.teamId ?? TeamID.Team1));
+            return msg(mod.stringkeys.twl.readyDialog.columnGroundFormat, getTeamNameKey(column.teamId ?? TeamID.Team1));
         case "team1Air":
         case "team2Air":
-            return mod.Message(mod.stringkeys.twl.readyDialog.columnAirFormat, getTeamNameKey(column.teamId ?? TeamID.Team1));
+            return msg(mod.stringkeys.twl.readyDialog.columnAirFormat, getTeamNameKey(column.teamId ?? TeamID.Team1));
         case "config":
             // v1.314: config column no longer renders a "Configuration" header — the Game Mode
             // stepper now occupies the header row. Return a blank message; the build path also
             // skips the header widget entirely so no placeholder widget exists to update.
-            return mod.Message(mod.stringkeys.twl.system.genericCounter, " ");
+            return msg(STR_SYS_COUNTER, " ");
         default:
-            return mod.Message(mod.stringkeys.twl.readyDialog.configurationColumnLabel);
+            return msg(mod.stringkeys.twl.readyDialog.configurationColumnLabel);
     }
 }
 
 function getReadyDialogModeGridSupportPlaceholder(column: ReadyDialogGridColumnSpec): mod.Message {
     if (column.key === "config") {
-        return mod.Message(mod.stringkeys.twl.readyDialog.minPlayersToStartFormat, 0);
+        return msg(mod.stringkeys.twl.readyDialog.minPlayersToStartFormat, 0);
     }
-    return mod.Message(mod.stringkeys.twl.system.genericCounter, " ");
+    return msg(STR_SYS_COUNTER, " ");
 }
 
 function getReadyDialogModeGridAllKnobKeys(): string[] {

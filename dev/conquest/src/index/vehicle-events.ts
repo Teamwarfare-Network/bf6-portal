@@ -34,7 +34,7 @@ function onPlayerEnterVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Veh
 }
 
 function onPlayerExitVehicleImpl(eventPlayer: mod.Player, eventVehicle: mod.Vehicle) {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
     const vehicleObjId = getObjId(eventVehicle);
     const slotIndex = State.vehicles.vehicleToSlot[vehicleObjId];
     const pid = safeGetPlayerId(eventPlayer);
@@ -88,7 +88,7 @@ async function onVehicleSpawnedImpl(eventVehicle: mod.Vehicle): Promise<void> {
         const x = Math.floor(mod.XComponentOf(pos));
         const z = Math.floor(mod.ZComponentOf(pos));
         sendHighlightedWorldLogMessage(
-            mod.Message(mod.stringkeys.twl.messages.vehicleSpawned, teamNameKey, x, z),
+            msg(mod.stringkeys.twl.messages.vehicleSpawned, teamNameKey, x, z),
             true,
             undefined,
             mod.stringkeys.twl.messages.vehicleSpawned

@@ -12,7 +12,7 @@ function getVehicleDeployTimerAdminToggleLabelKey(pid: number): number {
 function syncVehicleDeployTimerAdminToggleLabelForPid(pid: number): void {
     const label = safeFind(UI_TEST_DEPLOY_TIMERS_TOGGLE_TEXT_ID + pid);
     if (!label) return;
-    safeSetUITextLabel(label, mod.Message(getVehicleDeployTimerAdminToggleLabelKey(pid)));
+    safeSetUITextLabel(label, msg(getVehicleDeployTimerAdminToggleLabelKey(pid)));
 }
 
 function getVehicleDeployTimerLabelKey(vehicleType: mod.VehicleList): number {
@@ -67,7 +67,7 @@ function getVehicleDeployTimerLabelKey(vehicleType: mod.VehicleList): number {
         case mod.VehicleList.RHIB:
             return mod.stringkeys.twl.readyDialog.vehicleShortRhib;
         default:
-            return mod.stringkeys.twl.system.unknownPlayer;
+            return STR_SYS_UNKNOWN_PLAYER;
     }
 }
 
@@ -133,7 +133,7 @@ function getVehicleDeployRenderSlotsForPlayer(player: mod.Player): VehicleSpawne
 function shouldShowVehicleDeployTimersForPid(pid: number): boolean {
     if (isPidDisconnected(pid)) return false;
     const player = safeFindPlayer(pid);
-    if (!player || !mod.IsPlayerValid(player)) return false;
+    if (!isValidPlayer(player)) return false;
     return getVehicleDeployVisibleSlotsForPlayer(player).length > 0;
 }
 
@@ -419,7 +419,7 @@ function ensureVehicleDeployCenteredText(
             padding: 0,
             bgAlpha: 0,
             bgFill: mod.UIBgFill.None,
-            textLabel: mod.Message(mod.stringkeys.twl.system.unknownPlayer),
+            textLabel: msg(STR_SYS_UNKNOWN_PLAYER),
             textColor: shadow ? [0, 0, 0] : [1, 1, 1],
             textAlpha: shadow ? VEHICLE_DEPLOY_TIMER_INFO_TEXT_SHADOW_ALPHA : 1,
             textSize,
@@ -593,8 +593,8 @@ function ensureVehicleDeployActionButtonWidgets(
     const text = border
         ? ensureVehicleDeployCenteredText(textName, player, border, width, height, false, VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_TEXT_SIZE)
         : undefined;
-    safeSetUITextLabel(textShadow, mod.Message(labelKey));
-    safeSetUITextLabel(text, mod.Message(labelKey));
+    safeSetUITextLabel(textShadow, msg(labelKey));
+    safeSetUITextLabel(text, msg(labelKey));
     safeSetUITextColor(text, COLOR_WHITE);
     safeSetUITextColor(textShadow, COLOR_DARK_BLACK);
     safeSetUIWidgetVisible(border, false);
@@ -793,8 +793,8 @@ function ensureVehicleDeployCloseButtonWidgets(
     const text = border
         ? ensureVehicleDeployCenteredText(textName, player, border, width, height, false, VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_TEXT_SIZE)
         : undefined;
-    safeSetUITextLabel(textShadow, mod.Message(mod.stringkeys.twl.teamSwitch.buttons.cancel));
-    safeSetUITextLabel(text, mod.Message(mod.stringkeys.twl.teamSwitch.buttons.cancel));
+    safeSetUITextLabel(textShadow, msg(mod.stringkeys.twl.teamSwitch.buttons.cancel));
+    safeSetUITextLabel(text, msg(mod.stringkeys.twl.teamSwitch.buttons.cancel));
     safeSetUITextColor(text, COLOR_WHITE);
     safeSetUITextColor(textShadow, COLOR_DARK_BLACK);
     safeSetUIWidgetVisible(border, false);
@@ -1025,12 +1025,12 @@ function layoutVehicleDeployRowForState(
 function getVehicleDeployActiveOwnerNameMessage(slot: VehicleSpawnerSlot): mod.Message | undefined {
     if (slot.vehicleId === -1) return undefined;
     const vehicle = findVehicleById(slot.vehicleId);
-    if (!vehicle) return mod.Message(getVehicleDeployIdleLabelKey());
+    if (!vehicle) return msg(getVehicleDeployIdleLabelKey());
     const ownerPid = slot.activeOwnerPid;
     if (ownerPid !== undefined && !isPidDisconnected(ownerPid)) {
         return getUiSafePlayerPidMessage(ownerPid);
     }
-    return mod.Message(getVehicleDeployIdleLabelKey());
+    return msg(getVehicleDeployIdleLabelKey());
 }
 
 function setVehicleDeployTimerNameVisible(row: VehicleDeployTimerRowCacheEntry | undefined, visible: boolean): void {
@@ -1120,7 +1120,7 @@ function clearVehicleDeployCloseButtonState(cache: VehicleDeployTimerHudCacheEnt
 }
 
 function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeployTimerHudCacheEntry | undefined {
-    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    if (!isValidPlayer(player)) return undefined;
     const pid = mod.GetObjId(player);
     const priorCache = State.hudCache.vehicleDeployTimerCache[pid];
     if (isVehicleDeployTimerHudCacheUsable(priorCache)) {
@@ -1393,7 +1393,7 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
 
 // Ensures the cached vehicle HUD tree exists and is fully hidden/offscreen before hidden prebuild work.
 function prepareVehicleDeployTimerHudForHiddenPrebuild(player: mod.Player): VehicleDeployTimerHudCacheEntry | undefined {
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return;
     const cache = ensureVehicleDeployTimerHudForPlayer(player);
@@ -1540,13 +1540,13 @@ function renderVehicleDeployTimerRow(
     const spawnLabel = isAirType
         ? mod.stringkeys.twl.ui.airDeploy
         : mod.stringkeys.twl.ui.forwardDeploy;
-    safeSetUITextLabel(row.vehicleShadow, mod.Message(getVehicleDeployTimerLabelKey(slot.vehicleType)));
-    safeSetUITextLabel(row.vehicleText, mod.Message(getVehicleDeployTimerLabelKey(slot.vehicleType)));
+    safeSetUITextLabel(row.vehicleShadow, msg(getVehicleDeployTimerLabelKey(slot.vehicleType)));
+    safeSetUITextLabel(row.vehicleText, msg(getVehicleDeployTimerLabelKey(slot.vehicleType)));
     safeSetUITextColor(row.vehicleText, COLOR_WHITE);
-    safeSetUITextLabel(row.spawnButtonTextShadow, mod.Message(spawnLabel));
-    safeSetUITextLabel(row.spawnButtonText, mod.Message(spawnLabel));
-    safeSetUITextLabel(row.groundButtonTextShadow, mod.Message(mod.stringkeys.twl.ui.hqDeploy));
-    safeSetUITextLabel(row.groundButtonText, mod.Message(mod.stringkeys.twl.ui.hqDeploy));
+    safeSetUITextLabel(row.spawnButtonTextShadow, msg(spawnLabel));
+    safeSetUITextLabel(row.spawnButtonText, msg(spawnLabel));
+    safeSetUITextLabel(row.groundButtonTextShadow, msg(mod.stringkeys.twl.ui.hqDeploy));
+    safeSetUITextLabel(row.groundButtonText, msg(mod.stringkeys.twl.ui.hqDeploy));
     safeSetUITextColor(row.spawnButtonText, COLOR_WHITE);
     safeSetUITextColor(row.spawnButtonTextShadow, COLOR_DARK_BLACK);
     safeSetUITextColor(row.groundButtonText, COLOR_WHITE);
@@ -1571,19 +1571,19 @@ function renderVehicleDeployTimerRow(
     // misleading "READY" fallback with a distinct SPAWNING/DEPLOYING signal in yellow.
     const hqClaimActive = slot.pendingSpawnOwnerPid !== undefined;
     if (slot.vehicleId !== -1 && hqClaimActive) {
-        setReusableTimerStatus(row.timer, "deploying", mod.Message(mod.stringkeys.twl.ui.deploying), COLOR_WARNING_YELLOW);
+        setReusableTimerStatus(row.timer, "deploying", msg(mod.stringkeys.twl.ui.deploying), COLOR_WARNING_YELLOW);
     } else if (slot.vehicleId !== -1) {
-        setReusableTimerStatus(row.timer, "active", mod.Message(mod.stringkeys.twl.ui.active), COLOR_LOW_TIME);
+        setReusableTimerStatus(row.timer, "active", msg(mod.stringkeys.twl.ui.active), COLOR_LOW_TIME);
     } else if (hqClaimActive) {
-        setReusableTimerStatus(row.timer, "spawning", mod.Message(mod.stringkeys.twl.ui.spawning), COLOR_WARNING_YELLOW);
+        setReusableTimerStatus(row.timer, "spawning", msg(mod.stringkeys.twl.ui.spawning), COLOR_WARNING_YELLOW);
     } else if (showSpawnButton || showGroundButton) {
-        setReusableTimerStatus(row.timer, "ready", mod.Message(mod.stringkeys.twl.ui.ready), COLOR_READY_GREEN);
+        setReusableTimerStatus(row.timer, "ready", msg(mod.stringkeys.twl.ui.ready), COLOR_READY_GREEN);
     } else if (isAirType && airDelayActive) {
         // Round-start air delay: show countdown until aircraft deployment unlocks.
         setReusableTimerColor(row.timer, COLOR_WHITE);
         setReusableTimerSeconds(row.timer, getRoundStartAirDelayRemainingSeconds());
     } else if (getVehicleSlotRespawnRemainingSeconds(slot) <= 0) {
-        setReusableTimerStatus(row.timer, "ready", mod.Message(mod.stringkeys.twl.ui.ready), COLOR_READY_GREEN);
+        setReusableTimerStatus(row.timer, "ready", msg(mod.stringkeys.twl.ui.ready), COLOR_READY_GREEN);
     } else {
         setReusableTimerColor(row.timer, COLOR_WHITE);
         setReusableTimerSeconds(row.timer, getVehicleSlotRespawnRemainingSeconds(slot));
@@ -1679,7 +1679,7 @@ function tryHandleVehicleDeployTimerButtonEvent(
     eventUIWidget: mod.UIWidget,
     eventUIButtonEvent: mod.UIButtonEvent
 ): boolean {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    if (!isValidPlayer(eventPlayer)) return false;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return false;
 
@@ -1880,7 +1880,7 @@ function tryHandleVehicleDeployTimerButtonEvent(
 // This always ensures the HUD shell exists while hidden/offscreen so later reveal never pays widget creation.
 // If row content is not ready yet, the hidden pass still caches the shell and keeps the family hidden.
 function prebuildVehicleDeployTimerHudHiddenForPlayer(player: mod.Player): boolean {
-    if (!player || !mod.IsPlayerValid(player)) return false;
+    if (!isValidPlayer(player)) return false;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return false;
 
@@ -1896,7 +1896,7 @@ function prebuildVehicleDeployTimerHudHiddenForPlayer(player: mod.Player): boole
 // Owner-only reveal path for the vehicle HUD family.
 // Contract: content must already be safe to reveal; this path owns the final visible state.
 function revealVehicleDeployTimerHudForPlayer(player: mod.Player): boolean {
-    if (!player || !mod.IsPlayerValid(player)) return false;
+    if (!isValidPlayer(player)) return false;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return false;
     if (FEATURE_PERF_DIAG && !isVehicleDeployTimerHudCacheUsable(State.hudCache.vehicleDeployTimerCache[pid])) {
@@ -1918,7 +1918,7 @@ function revealVehicleDeployTimerHudForPlayer(player: mod.Player): boolean {
 }
 
 function refreshVehicleDeployTimersForPlayerPreservingVisibility(player: mod.Player): boolean {
-    if (!player || !mod.IsPlayerValid(player)) return false;
+    if (!isValidPlayer(player)) return false;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return false;
     // Fix A: Skip refresh while loading gate owns this player's UI state.
@@ -1995,7 +1995,7 @@ function updateVehicleDeployTimerHudForViewers(): void {
         if (!cache || cache.lastVisibleState !== true) continue;
         const pid = Number(pidKey);
         const player = safeFindPlayer(pid);
-        if (!player || !mod.IsPlayerValid(player)) continue;
+        if (!isValidPlayer(player)) continue;
         refreshVehicleDeployTimersForPlayerPreservingVisibility(player);
     }
 }

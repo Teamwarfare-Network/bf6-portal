@@ -31,7 +31,7 @@ function isMappedConquestCapturePointObjId(objId: number): boolean {
 // Capture-point enter is authoritative for engage HUD ownership.
 function onPlayerEnterCapturePointImpl(eventPlayer: mod.Player, eventCapturePoint: mod.CapturePoint): void {
     try {
-        if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+        if (!isValidPlayer(eventPlayer)) return;
         if (!eventCapturePoint) return;
         const pid = safeGetPlayerId(eventPlayer);
         if (pid === undefined) return;
@@ -53,7 +53,7 @@ function onPlayerEnterCapturePointImpl(eventPlayer: mod.Player, eventCapturePoin
 // Capture-point exit clears engage HUD ownership for the exiting objective.
 function onPlayerExitCapturePointImpl(eventPlayer: mod.Player, eventCapturePoint: mod.CapturePoint): void {
     try {
-        if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+        if (!isValidPlayer(eventPlayer)) return;
         const pid = safeGetPlayerId(eventPlayer);
         if (pid === undefined) return;
         const currentObjId = State.conquest.capture.engagedObjIdByPid[pid];
@@ -75,7 +75,7 @@ function onPlayerExitCapturePointImpl(eventPlayer: mod.Player, eventCapturePoint
 // onPlayerEnterBoundaryAreaTrigger below) so this handler never touches inMainBaseByPid.
 function onPlayerEnterAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger) {
     try {
-        if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+        if (!isValidPlayer(eventPlayer)) return;
 
         onPlayerEnterBoundaryAreaTrigger(eventPlayer, eventAreaTrigger);
 
@@ -94,7 +94,7 @@ function onPlayerEnterAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger:
 // own-HQ trigger only. Boundary-flag writes are owned by updateZoneStateOnTriggerTransition.
 function onPlayerExitAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger) {
     try {
-        if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+        if (!isValidPlayer(eventPlayer)) return;
 
         onPlayerExitBoundaryAreaTrigger(eventPlayer, eventAreaTrigger);
 

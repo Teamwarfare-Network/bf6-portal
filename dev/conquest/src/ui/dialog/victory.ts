@@ -42,7 +42,7 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
     // Per-player update for the match-end victory modal.
     // This is called once per second while the victory dialog is active.
     // Determine the target player id; dialog widgets are keyed per-player.
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     const pid = safeGetPlayerId(player);
     if (pid === undefined || isPidDisconnected(pid)) return;
     // Look up cached UI references for this player (if missing, this update becomes a no-op).
@@ -64,7 +64,7 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
         let displaySeconds = Math.floor(remainingSeconds);
         if (displaySeconds < 0) displaySeconds = 0;
         if (displaySeconds > MATCH_END_DELAY_SECONDS) displaySeconds = 0;
-        safeSetUITextLabel(refs.victoryRestartText, mod.Message(mod.stringkeys.twl.victory.restartInFormat, displaySeconds));
+        safeSetUITextLabel(refs.victoryRestartText, msg(mod.stringkeys.twl.victory.restartInFormat, displaySeconds));
     }
     const parts = getElapsedHmsParts(State.match.endElapsedSecondsSnapshot);
     const hours = Math.min(99, Math.max(0, Math.floor(parts.hours)));
@@ -78,12 +78,12 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
     const sT = Math.floor(seconds / 10);
     const sO = seconds % 10;
 
-    if (refs.victoryTimeHoursTens) safeSetUITextLabel(refs.victoryTimeHoursTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, hT));
-    if (refs.victoryTimeHoursOnes) safeSetUITextLabel(refs.victoryTimeHoursOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, hO));
-    if (refs.victoryTimeMinutesTens) safeSetUITextLabel(refs.victoryTimeMinutesTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, mT));
-    if (refs.victoryTimeMinutesOnes) safeSetUITextLabel(refs.victoryTimeMinutesOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, mO));
-    if (refs.victoryTimeSecondsTens) safeSetUITextLabel(refs.victoryTimeSecondsTens, mod.Message(mod.stringkeys.twl.hud.clock.digit, sT));
-    if (refs.victoryTimeSecondsOnes) safeSetUITextLabel(refs.victoryTimeSecondsOnes, mod.Message(mod.stringkeys.twl.hud.clock.digit, sO));
+    if (refs.victoryTimeHoursTens) safeSetUITextLabel(refs.victoryTimeHoursTens, msg(STR_HUD_CLOCK_DIGIT, hT));
+    if (refs.victoryTimeHoursOnes) safeSetUITextLabel(refs.victoryTimeHoursOnes, msg(STR_HUD_CLOCK_DIGIT, hO));
+    if (refs.victoryTimeMinutesTens) safeSetUITextLabel(refs.victoryTimeMinutesTens, msg(STR_HUD_CLOCK_DIGIT, mT));
+    if (refs.victoryTimeMinutesOnes) safeSetUITextLabel(refs.victoryTimeMinutesOnes, msg(STR_HUD_CLOCK_DIGIT, mO));
+    if (refs.victoryTimeSecondsTens) safeSetUITextLabel(refs.victoryTimeSecondsTens, msg(STR_HUD_CLOCK_DIGIT, sT));
+    if (refs.victoryTimeSecondsOnes) safeSetUITextLabel(refs.victoryTimeSecondsOnes, msg(STR_HUD_CLOCK_DIGIT, sO));
 
     if (refs.victoryAdminActionsText) {
         const actionCount = Math.max(0, Math.floor(State.admin.actionCount));
@@ -91,7 +91,7 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
         if (actionCount > 0) {
             safeSetUITextLabel(
                 refs.victoryAdminActionsText,
-                mod.Message(mod.stringkeys.twl.adminPanel.actionCountVictoryFormat, actionCount)
+                msg(mod.stringkeys.twl.adminPanel.actionCountVictoryFormat, actionCount)
             );
             safeSetUITextColor(refs.victoryAdminActionsText, COLOR_WARNING_YELLOW);
         }
@@ -105,16 +105,16 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
         const winner = snap.winnerTeam;
 
         if (refs.victoryLeftTicketText) {
-            safeSetUITextLabel(refs.victoryLeftTicketText, mod.Message(mod.stringkeys.twl.system.genericCounter, t1));
+            safeSetUITextLabel(refs.victoryLeftTicketText, msg(STR_SYS_COUNTER, t1));
         }
         if (refs.victoryRightTicketText) {
-            safeSetUITextLabel(refs.victoryRightTicketText, mod.Message(mod.stringkeys.twl.system.genericCounter, t2));
+            safeSetUITextLabel(refs.victoryRightTicketText, msg(STR_SYS_COUNTER, t2));
         }
         if (refs.victoryLeftTeamNameText) {
-            safeSetUITextLabel(refs.victoryLeftTeamNameText, mod.Message(getTeamNameKey(TeamID.Team1)));
+            safeSetUITextLabel(refs.victoryLeftTeamNameText, msg(getTeamNameKey(TeamID.Team1)));
         }
         if (refs.victoryRightTeamNameText) {
-            safeSetUITextLabel(refs.victoryRightTeamNameText, mod.Message(getTeamNameKey(TeamID.Team2)));
+            safeSetUITextLabel(refs.victoryRightTeamNameText, msg(getTeamNameKey(TeamID.Team2)));
         }
         if (refs.victoryLeftCrown) {
             setWidgetVisible(refs.victoryLeftCrown, winner === TeamID.Team1);
@@ -126,10 +126,10 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
             setWidgetVisible(refs.victoryResultText, true);
             if (winner === TeamID.Team1 || winner === TeamID.Team2) {
                 const margin = Math.abs(t1 - t2);
-                safeSetUITextLabel(refs.victoryResultText, mod.Message(mod.stringkeys.twl.victory.winsResultFormat, getTeamNameKey(winner), margin));
+                safeSetUITextLabel(refs.victoryResultText, msg(mod.stringkeys.twl.victory.winsResultFormat, getTeamNameKey(winner), margin));
                 safeSetUITextColor(refs.victoryResultText, mod.CreateVector(0, 1, 0));
             } else {
-                safeSetUITextLabel(refs.victoryResultText, mod.Message(mod.stringkeys.twl.victory.drawResultFormat, t1, t2));
+                safeSetUITextLabel(refs.victoryResultText, msg(mod.stringkeys.twl.victory.drawResultFormat, t1, t2));
                 safeSetUITextColor(refs.victoryResultText, mod.CreateVector(1, 0, 0));
             }
         }

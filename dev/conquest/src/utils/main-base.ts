@@ -4,7 +4,7 @@
 //#region -------------------- Main Base Restock (area triggers) --------------------
 
 function IsPlayerInOwnMainBase(player: mod.Player, areaTrigger: mod.AreaTrigger): boolean {
-    if (!player || !mod.IsPlayerValid(player)) return false;
+    if (!isValidPlayer(player)) return false;
     const triggerId = mod.GetObjId(areaTrigger);
     const teamId = mod.GetObjId(mod.GetTeam(player));
     const team1TriggerId = getMainBaseTriggerIdForTeam(TeamID.Team1) ?? TEAM1_MAIN_BASE_TRIGGER_ID;

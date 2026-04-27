@@ -45,7 +45,7 @@ function addOutlinedButton(
 
     mod.AddUIButton(
         buttonId,
-        mod.CreateVector(0, 0, 0),
+        VEC_ZERO,
         mod.CreateVector(sizeX, sizeY, 0),
         mod.UIAnchor.Center,
         buttonParent,
@@ -95,9 +95,9 @@ function normalizeParseUITextConfigNode(node: any): any {
     if (node.type === "Text") {
         const label = node.textLabel;
         if (label === undefined || label === null) {
-            node.textLabel = mod.Message(mod.stringkeys.twl.hud.readyText);
+            node.textLabel = msg(mod.stringkeys.twl.hud.readyText);
         } else if (typeof label === "number") {
-            node.textLabel = mod.Message(label);
+            node.textLabel = msg(label);
         }
     }
 
@@ -138,7 +138,7 @@ function addCenteredButtonText(
         padding: 0,
         bgAlpha: 0,
         bgFill: mod.UIBgFill.None,
-        textLabel: typeof label === "number" ? mod.Message(label) : label,
+        textLabel: typeof label === "number" ? msg(label) : label,
         textColor: READY_DIALOG_BUTTON_TEXT_COLOR_RGB,
         textAlpha: 1,
         textAnchor: mod.UIAnchor.Center,
@@ -152,7 +152,7 @@ function addCenteredButtonText(
     const widget = safeFind(labelId);
     if (widget) {
         mod.SetUIWidgetParent(widget, parent);
-        mod.SetUIWidgetPosition(widget, mod.CreateVector(0, 0, 0));
+        mod.SetUIWidgetPosition(widget, VEC_ZERO);
         if (typeof textSize === "number") {
             mod.SetUITextSize(widget, textSize);
         }
@@ -189,7 +189,7 @@ function addReadyDialogText(
             padding: 0,
             bgAlpha: 0,
             bgFill: mod.UIBgFill.None,
-            textLabel: typeof label === "number" ? mod.Message(label) : label,
+            textLabel: typeof label === "number" ? msg(label) : label,
             textColor: [1, 1, 1],
             textAlpha: 1,
             textAnchor,
@@ -210,7 +210,7 @@ function addReadyDialogText(
     safeSetUIWidgetPosition(widget, mod.CreateVector(posX, posY, 0));
     safeSetUIWidgetSize(widget, mod.CreateVector(sizeX, sizeY, 0));
     if (existed) {
-        safeSetUITextLabel(widget, typeof label === "number" ? mod.Message(label) : label);
+        safeSetUITextLabel(widget, typeof label === "number" ? msg(label) : label);
     }
     try {
         mod.SetUITextAnchor(widget, textAnchor);
@@ -297,7 +297,7 @@ function refreshReadyDialogButtonTextForPid(player: mod.Player, pid: number, bas
         }
         const existing = safeFind(labelId);
         if (existing) {
-            safeSetUITextLabel(existing, typeof label === "number" ? mod.Message(label) : label);
+            safeSetUITextLabel(existing, typeof label === "number" ? msg(label) : label);
             mod.SetUIWidgetVisible(existing, true);
             if (typeof textSize === "number") {
                 mod.SetUITextSize(existing, textSize);

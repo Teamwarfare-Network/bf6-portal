@@ -5,6 +5,10 @@
 
 // Core gameplay tuning defaults (safe to edit).
 // Units: seconds unless otherwise noted.
+
+// Bundle-saving: shared zero vector used at 23+ call sites for origin / no-rotation args.
+const VEC_ZERO = mod.CreateVector(0, 0, 0);
+
 const ROUND_START_SECONDS = 25 * 60; // Initial match clock duration before the live phase starts.
 const MATCH_END_DELAY_SECONDS = 45; // Victory dialog duration before match end.
 const READY_UP_MESSAGE_COOLDOWN_SECONDS = 2.0; // Throttle ready-up broadcast spam per player.

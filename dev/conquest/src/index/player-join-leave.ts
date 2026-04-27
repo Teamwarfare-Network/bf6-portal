@@ -4,7 +4,7 @@
 //#region -------------------- Exported Event Handlers - Player Join + Leave --------------------
 
 function resetUiForPlayerOnJoin(player: mod.Player): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return;
 

@@ -151,7 +151,7 @@ function applyReadyDialogModePresetForGameMode(gameModeKey: number): boolean {
     State.round.modeConfig.supplyBoxesEnabled = presetPackage?.supplyBoxesEnabled ?? true;
     State.round.modeConfig.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
     State.round.modeConfig.aircraftCeilingOverridePending = false;
-    State.round.modeConfig.gameSettings = mod.stringkeys.twl.system.genericCounter;
+    State.round.modeConfig.gameSettings = STR_SYS_COUNTER;
     suppressReadyDialogModeAutoSwitch = false;
 
     updateReadyDialogModeConfigForAllVisibleViewers();
@@ -172,7 +172,7 @@ function resetReadyDialogModeConfigToDefaults(changedBy?: mod.Player): void {
     State.round.modeConfig.supplyBoxesEnabled = true;
     State.round.modeConfig.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
     State.round.modeConfig.aircraftCeilingOverridePending = false;
-    State.round.modeConfig.gameSettings = mod.stringkeys.twl.system.genericCounter;
+    State.round.modeConfig.gameSettings = STR_SYS_COUNTER;
     suppressReadyDialogModeAutoSwitch = false;
 
     requireReadyReconfirmAfterConfigChange(changedBy);

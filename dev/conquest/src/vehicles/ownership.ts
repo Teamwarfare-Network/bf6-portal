@@ -9,7 +9,7 @@ function getVehicleId(v: mod.Vehicle): number { return getObjId(v); }
 
 // Records the most recent valid player driver for a vehicle id.
 function setLastDriver(vehicle: mod.Vehicle, player: mod.Player): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     const vid = getVehicleId(vehicle);
     // Update existing entry if this vehicle is already tracked.
     for (let i = 0; i < vehIds.length; i++) {

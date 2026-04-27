@@ -24,7 +24,7 @@ function twlConquestHudProcessPlayerFrame(
     player: mod.Player,
     now: number
 ): boolean {
-    if (!player || !mod.IsPlayerValid(player)) return false;
+    if (!isValidPlayer(player)) return false;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return false;
 
@@ -93,7 +93,7 @@ function twlConquestHudProcessPlayerFrame(
 
 function twlConquestHudPrimePlayerFrame(player: mod.Player): void {
     try {
-        if (!player || !mod.IsPlayerValid(player)) return;
+        if (!isValidPlayer(player)) return;
         const now = mod.GetMatchTimeElapsed();
         const didProcess = twlConquestHudProcessPlayerFrame(player, now);
         if (!didProcess) return;
@@ -126,7 +126,7 @@ function twlConquestHudTickFrame(force?: boolean): void {
         const count = mod.CountOf(players);
         for (let i = 0; i < count; i++) {
             const player = mod.ValueInArray(players, i) as mod.Player;
-            if (!player || !mod.IsPlayerValid(player)) continue;
+            if (!isValidPlayer(player)) continue;
             const pid = safeGetPlayerId(player);
             if (pid === undefined) continue;
             seenByPid[pid] = true;

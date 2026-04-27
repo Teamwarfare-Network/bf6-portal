@@ -115,13 +115,6 @@ if (eofFooter) {
 src = src.replace(/^[ \t]*\/\/(?!\s*@ts-(?:nocheck|ignore|expect-error)\b).*\n/gm, "");
 src = src.replace(/\n{3,}/g, "\n\n");
 
-// 10a. Strip standalone /* ... */ block comments (single-line and multi-line).
-//      Only matches blocks where /* is at line start (with optional leading whitespace) AND
-//      */ is at line end (with optional trailing whitespace before the newline).
-//      Inline blocks that share a line with code (e.g. `() => { /* swallow */ }`) are
-//      preserved by the at-line-start + at-line-end constraints.
-src = src.replace(/^[ \t]*\/\*[\s\S]*?\*\/[ \t]*\n/gm, "");
-
 // 10b. Dead-code strip: remove code guarded by false compile-time flags.
 // The Portal compiler does not evaluate const-false branches, so references inside
 // `if (false) foo()` still produce "Cannot find name" errors. Strip them here.
@@ -140,7 +133,7 @@ src = src.replace(/^[ \t]*\/\*[\s\S]*?\*\/[ \t]*\n/gm, "");
 
   function collectAllFalseConsts(code, seeds) {
     const consts = new Set(seeds);
-    // After inline replacements, scan for any `const <id> = false;` that match known patterns
+    // After inline replacements, scan for any `const <id> = false` that match known patterns
     const regex = /\bconst\s+(_pd)\s*=\s*false\s*;/gm;
     let m;
     while ((m = regex.exec(code)) !== null) consts.add(m[1]);
@@ -233,15 +226,15 @@ src = src.replace(/^[ \t]*\/\*[\s\S]*?\*\/[ \t]*\n/gm, "");
 }
 
 // 10c. Strip leading whitespace (indentation) from every line.
-//      BF6 Portal engine ignores indentation; removing it reclaims ~150 KB of bundle headroom.
-//      Applied after comment stripping and dead-code elimination so those steps don't leave
-//      behind indentation-whitespace on now-blank lines.
-//      Safe because the bundle has no multi-line template literals or string literals whose
-//      content depends on leading whitespace.
+//     BF6 Portal engine ignores indentation; removing it reclaims ~150 KB of bundle headroom.
+//     Applied after comment stripping and dead-code elimination so those steps don't leave
+//     behind indentation-whitespace on now-blank lines.
+//     Safe because the bundle has no multi-line template literals or string literals
+//     whose content depends on leading whitespace.
 src = src.replace(/^[ \t]+/gm, "");
 
 // 10d. Collapse consecutive blank lines to a single blank line.
-//      After stripping comments, dead code, and indentation, many blank-line runs accumulate.
+//     After stripping comments, dead code, and indentation, many blank-line runs accumulate.
 src = src.replace(/\n{3,}/g, "\n\n");
 
 let headerVersionLine = "";

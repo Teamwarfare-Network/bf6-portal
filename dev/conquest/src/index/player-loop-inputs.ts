@@ -5,7 +5,7 @@ const UI_LOADING_GATE_UNDEPLOY_RETRY_SECONDS = 0.2;
 // Only applies input restrictions and undeploy when the player is actually deployed (engine-side),
 // preventing CQ_Bug_35 (EnableAllInputRestrictions spam) and CQ_Bug_36 (UndeployPlayer on undeployed).
 function enforceUiLoadingGateWhileDeployed(eventPlayer: mod.Player): boolean {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    if (!isValidPlayer(eventPlayer)) return false;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return false;
     const state = State.players.readyDialogData[pid];
@@ -33,7 +33,7 @@ function enforceUiLoadingGateWhileDeployed(eventPlayer: mod.Player): boolean {
 // Throttled: the gate loop already reasserts periodically. OngoingPlayer only needs to catch external state nudges,
 // so we only reassert once per loading session (first call) then let the gate loop own subsequent reassertion.
 function maintainUiLoadingGateWhileUnreleased(eventPlayer: mod.Player): void {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     const state = State.players.readyDialogData[pid];
@@ -45,7 +45,7 @@ function maintainUiLoadingGateWhileUnreleased(eventPlayer: mod.Player): void {
 }
 
 function ongoingPlayerImpl(eventPlayer: mod.Player): void {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
     maintainUiLoadingGateWhileUnreleased(eventPlayer);
     if (enforceUiLoadingGateWhileDeployed(eventPlayer)) return;
     if (!isPlayerDeployed(eventPlayer)) return;

@@ -117,7 +117,7 @@ const ARM_SFX_AMPLITUDE = 50;
 // Lazy-spawns the gadget selection sound handle on first use.
 function primeArmSfx(): void {
     if (State.round.armSfx.ready) return;
-    const zero = mod.CreateVector(0, 0, 0);
+    const zero = VEC_ZERO;
     try {
         State.round.armSfx.handle = mod.SpawnObject(ARM_SFX_PREFAB, zero, zero);
     } catch { State.round.armSfx.handle = undefined; }
@@ -125,16 +125,16 @@ function primeArmSfx(): void {
 }
 // Plays the gadget selection SFX for a specific player.
 function playArmSfx(player: mod.Player): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     primeArmSfx();
     if (!State.round.armSfx.ready) return;
     try { mod.PlaySound(State.round.armSfx.handle, ARM_SFX_AMPLITUDE, player); } catch {}
 }
 function armScope(isTeamShared: boolean): mod.Message {
-    return mod.Message(isTeamShared ? STR_UI_ONE_PER_TEAM : STR_UI_ONE_PER_PLAYER);
+    return msg(isTeamShared ? STR_UI_ONE_PER_TEAM : STR_UI_ONE_PER_PLAYER);
 }
 function armChoose(): mod.Message {
-    return mod.Message(STR_UI_CHOOSE_ONLY_ONE);
+    return msg(STR_UI_CHOOSE_ONLY_ONE);
 }
 const DURATION_LABEL_MAP: Record<number, number> = {
     60: mod.stringkeys.twl.ui.duration1m,
@@ -148,7 +148,7 @@ const DURATION_LABEL_MAP: Record<number, number> = {
     1500: mod.stringkeys.twl.ui.duration25m,
 };
 function armDur(seconds: number): mod.Message {
-    return mod.Message(DURATION_LABEL_MAP[seconds] ?? STR_UI_READY);
+    return msg(DURATION_LABEL_MAP[seconds] ?? STR_UI_READY);
 }
 function armGH(count: number): number {
     return AMMO_RESUPPLY_TILE_SIZE + ((Math.max(1, count) - 1) * DY) + (TILE_GROUP_PAD_Y * 2);
@@ -425,7 +425,7 @@ function syncSmk(
     }
 }
 function isCls(eventPlayer: mod.Player, soldierClass: mod.SoldierClass): boolean {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    if (!isValidPlayer(eventPlayer)) return false;
     try {
         return mod.IsSoldierClass(eventPlayer, soldierClass);
     } catch {
@@ -434,14 +434,14 @@ function isCls(eventPlayer: mod.Player, soldierClass: mod.SoldierClass): boolean
 }
 function fmtClock(secondsRemaining: number): mod.Message {
     if (secondsRemaining <= 0) {
-        return mod.Message(STR_UI_READY);
+        return msg(STR_UI_READY);
     }
     const whole = Math.max(0, Math.ceil(secondsRemaining));
     const minutes = Math.floor(whole / 60);
     const seconds = whole % 60;
     const secondTens = Math.floor(seconds / 10);
     const secondOnes = seconds % 10;
-    return mod.Message(
+    return msg(
         mod.stringkeys.twl.countdown.clockFormat,
         minutes,
         secondTens,
@@ -524,7 +524,7 @@ function buildTileContentRoot(
         root,
         true,
         0,
-        mod.CreateVector(0, 0, 0),
+        VEC_ZERO,
         0,
         mod.UIBgFill.None,
         mod.UIDepth.AboveGameUI,
@@ -570,7 +570,7 @@ function buildTileHeaderWidgets(
             TILE_LABEL_LINE_HEIGHT,
             mod.UIAnchor.TopCenter,
             mod.UIAnchor.TopCenter,
-            lines[i] ?? mod.Message(STR_UI_READY),
+            lines[i] ?? msg(STR_UI_READY),
             eventPlayer,
             parent,
             TILE_LABEL_SIZE,
@@ -669,7 +669,7 @@ function buildTile(
         24,
         mod.UIAnchor.Center,
         mod.UIAnchor.Center,
-        mod.Message(STR_UI_READY),
+        msg(STR_UI_READY),
         eventPlayer,
         parent,
         TILE_TIMER_SIZE,
@@ -699,7 +699,7 @@ function buildTile(
         CB,
         mod.UIAnchor.Center,
         mod.UIAnchor.Center,
-        mod.Message(mod.stringkeys.twl.system.genericCounter, defaultCount),
+        msg(STR_SYS_COUNTER, defaultCount),
         eventPlayer,
         parent,
         CSZ,
@@ -714,7 +714,7 @@ function buildTile(
         CB,
         mod.UIAnchor.Center,
         mod.UIAnchor.Center,
-        mod.Message(mod.stringkeys.twl.system.genericCounter, defaultCount),
+        msg(STR_SYS_COUNTER, defaultCount),
         eventPlayer,
         parent,
         CSZ,
@@ -836,7 +836,7 @@ function refreshOpenArm(teamId: TeamID | 0 = 0, force: boolean = false): void {
         if (State.players.armO[Number(pidKey)] !== true) continue;
         const pid = Number(pidKey);
         const player = safeFindPlayer(pid);
-        if (!player || !mod.IsPlayerValid(player)) continue;
+        if (!isValidPlayer(player)) continue;
         if (teamId !== 0 && safeGetTeamNumberFromPlayer(player, 0) !== teamId) continue;
         if (!force) {
             updateArmMenu(player);
@@ -925,7 +925,7 @@ function probeLauncherSlot(player: mod.Player): {
     slot: mod.InventorySlots | undefined;
     gadget: number | undefined;
 } {
-    if (!player || !mod.IsPlayerValid(player)) return { slot: undefined, gadget: undefined };
+    if (!isValidPlayer(player)) return { slot: undefined, gadget: undefined };
     if (!isCls(player, mod.SoldierClass.Engineer)) return { slot: undefined, gadget: undefined };
     if (safeGetSoldierStateBool(player, mod.SoldierStateBool.IsInVehicle, false)) return { slot: undefined, gadget: undefined };
     let ownedLauncher: number | undefined = undefined;
@@ -1153,7 +1153,7 @@ function reprobeSiblingGadgetSlot(pid: number, placedSlot: mod.InventorySlots, p
 // Returns the HDR_KEYS-order class index (0=Assault,1=Engineer,2=Medic,3=Recon) for the player,
 // or undefined if the class isn't one of the four.
 function getPlayerClassHdrIndex(player: mod.Player): number | undefined {
-    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    if (!isValidPlayer(player)) return undefined;
     if (isCls(player, mod.SoldierClass.Assault)) return 0;
     if (isCls(player, mod.SoldierClass.Engineer)) return 1;
     if (isCls(player, mod.SoldierClass.Support)) return 2;
@@ -1178,7 +1178,7 @@ function slotFromToggle(pid: number, classHdrIndex: number): mod.InventorySlots 
 // whichever slot currently holds a launcher (per state). Only when no launcher exists in
 // either slot do we fall back to GadgetTwo. Ammo is preserved across the swap.
 function giveLauncher(eventPlayer: mod.Player, gadget: number, pid: number, fallbackSlot: mod.InventorySlots): boolean {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    if (!isValidPlayer(eventPlayer)) return false;
     const slotsState = State.players.lockerSlots[pid];
     if (!slotsState) return false;
     if (ownedByLockerState(slotsState, gadget)) return false; // dup -> silent reject
@@ -1257,7 +1257,7 @@ function giveLauncher(eventPlayer: mod.Player, gadget: number, pid: number, fall
     return true;
 }
 function giveMedicSmoke(eventPlayer: mod.Player): boolean {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    if (!isValidPlayer(eventPlayer)) return false;
     const smokeGadget = ACTIVE_GADGET_CONFIG.medicSmoke.gadget;
     let hasSmoke = false;
     try {
@@ -1292,7 +1292,7 @@ function giveAssaultItem(
     forceSwitch: boolean,
     pid: number
 ): boolean {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    if (!isValidPlayer(eventPlayer)) return false;
     const slotsState = State.players.lockerSlots[pid];
     if (inventorySlot === mod.InventorySlots.GadgetOne || inventorySlot === mod.InventorySlots.GadgetTwo) {
         if (ownedByLockerState(slotsState, gadget)) return false;
@@ -1337,7 +1337,7 @@ function giveReconItem(
     inventorySlot: mod.InventorySlots,
     pid: number
 ): boolean {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    if (!isValidPlayer(eventPlayer)) return false;
     const slotsState = State.players.lockerSlots[pid];
     if (inventorySlot === mod.InventorySlots.GadgetOne || inventorySlot === mod.InventorySlots.GadgetTwo) {
         if (ownedByLockerState(slotsState, gadget)) return false;
@@ -1381,7 +1381,7 @@ function giveReconItem(
 // Refills launcher ammo. Targets whichever slot state reports as holding a launcher.
 // Returns false (and consumes no charge) when no launcher slot is tracked.
 function giveRocketCharge(eventPlayer: mod.Player, pid: number): boolean {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    if (!isValidPlayer(eventPlayer)) return false;
     const slotsState = State.players.lockerSlots[pid];
     if (!slotsState) return false;
     const slot = slotWithLauncher(slotsState);
@@ -1424,7 +1424,7 @@ function giveRocketCharge(eventPlayer: mod.Player, pid: number): boolean {
     return (finalLoaded + finalMag) > totalBefore;
 }
 function updateArmMenu(eventPlayer: mod.Player): void {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     if (!isArmOpen(pid)) return;
@@ -1442,7 +1442,7 @@ async function runArmMenuRefreshLoop(pid: number, token: number): Promise<void> 
         if (State.players.armT[pid] !== token) return;
         if (!isArmOpen(pid)) return;
         const player = safeFindPlayer(pid);
-        if (!player || !mod.IsPlayerValid(player)) return;
+        if (!isValidPlayer(player)) return;
         const objId = getArmObj(pid);
         if (objId === undefined) return;
         const cache = State.hudCache.ammoResupplyMenuCache[pid];
@@ -1451,7 +1451,7 @@ async function runArmMenuRefreshLoop(pid: number, token: number): Promise<void> 
     }
 }
 function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry | undefined {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return undefined;
+    if (!isValidPlayer(eventPlayer)) return undefined;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return undefined;
     let cache = State.hudCache.ammoResupplyMenuCache[pid];
@@ -1482,7 +1482,7 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
         mod.GetUIRoot(),
         false,
         10,
-        mod.CreateVector(0, 0, 0),
+        VEC_ZERO,
         0.995,
         mod.UIBgFill.Blur,
         mod.UIDepth.AboveGameUI,
@@ -1530,7 +1530,7 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
         28,
         mod.UIAnchor.Center,
         mod.UIAnchor.Center,
-        mod.Message(STR_UI_HELP_EMPTY),
+        msg(STR_UI_HELP_EMPTY),
         eventPlayer,
         root,
         22,
@@ -1547,7 +1547,7 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
         30,
         mod.UIAnchor.Center,
         mod.UIAnchor.Center,
-        mod.Message(mod.stringkeys.twl.countdown.delayGadgets, 0),
+        msg(mod.stringkeys.twl.countdown.delayGadgets, 0),
         eventPlayer,
         root,
         22,
@@ -1564,7 +1564,7 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
             32,
             mod.UIAnchor.Center,
             mod.UIAnchor.Center,
-            mod.Message(HDR_KEYS[i]),
+            msg(HDR_KEYS[i]),
             eventPlayer,
             root,
             22,
@@ -1674,7 +1674,7 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
             mod.UIAnchor.Center,
             mod.UIAnchor.Center,
             launcherItem.pool?.teamShared
-                ? mod.Message(STR_UI_N_PER_TEAM, launcherItem.pool.maxCount)
+                ? msg(STR_UI_N_PER_TEAM, launcherItem.pool.maxCount)
                 : armScope(false),
             eventPlayer,
             rowParent,
@@ -1690,7 +1690,7 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
             28,
             mod.UIAnchor.Center,
             mod.UIAnchor.Center,
-            mod.Message(STR_UI_READY),
+            msg(STR_UI_READY),
             eventPlayer,
             rowParent,
             TILE_TIMER_SIZE,
@@ -1720,7 +1720,7 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
             CB,
             mod.UIAnchor.Center,
             mod.UIAnchor.Center,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, 1),
+            msg(STR_SYS_COUNTER, 1),
             eventPlayer,
             rowParent,
             CSZ,
@@ -1735,7 +1735,7 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
             CB,
             mod.UIAnchor.Center,
             mod.UIAnchor.Center,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, 1),
+            msg(STR_SYS_COUNTER, 1),
             eventPlayer,
             rowParent,
             CSZ,
@@ -1815,7 +1815,7 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
         22,
         mod.UIAnchor.Center,
         mod.UIAnchor.Center,
-        mod.Message(STR_UI_READY),
+        msg(STR_UI_READY),
         eventPlayer,
         root,
         ASSAULT_GROUP_TIMER_SIZE,
@@ -1854,7 +1854,7 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
         22,
         mod.UIAnchor.Center,
         mod.UIAnchor.Center,
-        mod.Message(STR_UI_READY),
+        msg(STR_UI_READY),
         eventPlayer,
         root,
         ASSAULT_GROUP_TIMER_SIZE,
@@ -1893,7 +1893,7 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
         22,
         mod.UIAnchor.Center,
         mod.UIAnchor.Center,
-        mod.Message(STR_UI_READY),
+        msg(STR_UI_READY),
         eventPlayer,
         root,
         ASSAULT_GROUP_TIMER_SIZE,
@@ -1932,7 +1932,7 @@ function buildArmMenuHidden(eventPlayer: mod.Player): AmmoResupplyMenuCacheEntry
         22,
         mod.UIAnchor.Center,
         mod.UIAnchor.Center,
-        mod.Message(STR_UI_READY),
+        msg(STR_UI_READY),
         eventPlayer,
         root,
         ASSAULT_GROUP_TIMER_SIZE,
@@ -1991,7 +1991,7 @@ function buildSlotToggleRow(
         prevLabelName,
         buttonW,
         buttonH,
-        mod.Message(mod.stringkeys.twl.ui.left),
+        msg(mod.stringkeys.twl.ui.left),
         eventPlayer,
         prevBorder ?? root,
         14
@@ -2004,7 +2004,7 @@ function buildSlotToggleRow(
         buttonH,
         mod.UIAnchor.Center,
         mod.UIAnchor.Center,
-        mod.Message(STR_UI_GADGET_SLOT_LABEL, 2),
+        msg(STR_UI_GADGET_SLOT_LABEL, 2),
         eventPlayer,
         root,
         14,
@@ -2016,7 +2016,7 @@ function buildSlotToggleRow(
         nextLabelName,
         buttonW,
         buttonH,
-        mod.Message(mod.stringkeys.twl.ui.right),
+        msg(mod.stringkeys.twl.ui.right),
         eventPlayer,
         nextBorder ?? root,
         14
@@ -2073,7 +2073,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
                 const key = gadgetLive
                     ? mod.stringkeys.twl.countdown.delayGadgetsLive
                     : mod.stringkeys.twl.countdown.delayGadgets;
-                safeSetUITextLabel(cache.gadgetDelayStatus, mod.Message(key, Math.ceil(gadgetRemaining)));
+                safeSetUITextLabel(cache.gadgetDelayStatus, msg(key, Math.ceil(gadgetRemaining)));
                 safeSetUIWidgetVisible(cache.gadgetDelayStatus, true);
             } else {
                 safeSetUIWidgetVisible(cache.gadgetDelayStatus, false);
@@ -2120,8 +2120,8 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     const smokeReady = smokeRemaining <= 0;
     const smokeAlreadyHas = tileOwned(eventPlayer, slotsState, cfg.medicSmoke.gadget, cfg.medicSmoke.slot);
     const smokeEnabled = isMedicClass && smokeCount > 0 && smokeReady && !gadgetBlocked && !smokeAlreadyHas;
-    const smokeMessage = smokeRemaining > 0 ? fmtClock(smokeRemaining) : mod.Message(STR_UI_READY);
-    const smokeOverlayMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, smokeCount);
+    const smokeMessage = smokeRemaining > 0 ? fmtClock(smokeRemaining) : msg(STR_UI_READY);
+    const smokeOverlayMessage = msg(STR_SYS_COUNTER, smokeCount);
     const medicRemaining = Math.max(0, (state.mN ?? 0) - now);
     const medicReady = medicRemaining <= 0;
     const reconDroneRemaining = Math.max(0, state.rdN - now);
@@ -2145,9 +2145,9 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             // confirmation that probe-based slot detection is authoritative and the slot is fixed.
             const lockedByLauncher = i === 1 && launcherSlot !== undefined;
             if (lockedByLauncher) {
-                safeSetUITextLabel(row.label, mod.Message(STR_UI_LAUNCHER_IN_SLOT, launcherSlotNumber));
+                safeSetUITextLabel(row.label, msg(STR_UI_LAUNCHER_IN_SLOT, launcherSlotNumber));
             } else {
-                safeSetUITextLabel(row.label, mod.Message(STR_UI_GADGET_SLOT_LABEL, choice));
+                safeSetUITextLabel(row.label, msg(STR_UI_GADGET_SLOT_LABEL, choice));
             }
             const enabled = i === currentClassIdx && !lockedByLauncher;
             const btnAlpha = enabled ? BUTTON_OPACITY_BASE : DIS_A;
@@ -2221,13 +2221,13 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             focused ? 1 : 0,
         ].join("|");
         if (tile.sig !== sig) {
-            const overlayMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, count);
+            const overlayMessage = msg(STR_SYS_COUNTER, count);
             setTileHeaderWidgets(tile, item.labelKey, enabled ? COLOR_READY_GREEN : isAssaultClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
             safeSetUITextLabel(
                 tile.cd,
                 showSelectedAssaultTimer
                     ? fmtClock(assaultGroupRemaining)
-                    : (remaining > 0 ? fmtClock(remaining) : mod.Message(STR_UI_READY))
+                    : (remaining > 0 ? fmtClock(remaining) : msg(STR_UI_READY))
             );
             safeSetUITextColor(
                 tile.cd,
@@ -2297,11 +2297,11 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         ].join("|");
         if (tile.sig !== sig) {
             setTileHeaderWidgets(tile, medicItem.labelKey, enabled ? COLOR_READY_GREEN : isMedicClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
-            safeSetUITextLabel(tile.cd, medicRemaining > 0 ? fmtClock(medicRemaining) : mod.Message(STR_UI_READY));
+            safeSetUITextLabel(tile.cd, medicRemaining > 0 ? fmtClock(medicRemaining) : msg(STR_UI_READY));
             safeSetUITextColor(tile.cd, isMedicClass ? (showSelectedMedicTimer ? COLOR_GRAY : (medicReady ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW)) : COLOR_GRAY);
             safeSetUIWidgetVisible(tile.cd, !isMedicClass || medicRemaining <= 0 || showSelectedMedicTimer);
-            safeSetUITextLabel(tile.cs, mod.Message(mod.stringkeys.twl.system.genericCounter, count));
-            safeSetUITextLabel(tile.ct, mod.Message(mod.stringkeys.twl.system.genericCounter, count));
+            safeSetUITextLabel(tile.cs, msg(STR_SYS_COUNTER, count));
+            safeSetUITextLabel(tile.ct, msg(STR_SYS_COUNTER, count));
             safeSetUITextColor(tile.s, COLOR_GRAY);
             safeSetUITextColor(tile.cs, COLOR_DARK_BLACK);
             safeSetUITextColor(tile.ct, count > 0 ? COLOR_WHITE : COLOR_GRAY);
@@ -2336,11 +2336,11 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         ].join("|");
         if (row.sig !== sig) {
             setTileHeaderWidgets(row, launcherItem.labelKey, launcherEnabled ? COLOR_READY_GREEN : isEngineerClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
-            safeSetUITextLabel(row.cd, launcherRemaining > 0 ? launcherMessage : mod.Message(STR_UI_READY));
+            safeSetUITextLabel(row.cd, launcherRemaining > 0 ? launcherMessage : msg(STR_UI_READY));
             safeSetUITextColor(row.cd, isEngineerClass ? (showSelectedLauncherTimer ? COLOR_GRAY : launcherColor) : COLOR_GRAY);
             safeSetUIWidgetVisible(row.cd, !isEngineerClass || launcherRemaining <= 0 || showSelectedLauncherTimer);
-            safeSetUITextLabel(row.cs, mod.Message(mod.stringkeys.twl.system.genericCounter, launcherCount));
-            safeSetUITextLabel(row.ct, mod.Message(mod.stringkeys.twl.system.genericCounter, launcherCount));
+            safeSetUITextLabel(row.cs, msg(STR_SYS_COUNTER, launcherCount));
+            safeSetUITextLabel(row.ct, msg(STR_SYS_COUNTER, launcherCount));
             safeSetUITextColor(row.cs, COLOR_DARK_BLACK);
             safeSetUITextColor(row.ct, launcherCount > 0 ? COLOR_WHITE : COLOR_GRAY);
             setActVis(row, launcherEnabled, focused);
@@ -2373,7 +2373,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     // slotWithLauncher is undefined, so we must not render a "ready" tile that would consume
     // a charge for nothing.
     const ammoEnabled = isEngineerClass && ammoCount > 0 && launcherSlotKnown && !gadgetBlocked && !atCap;
-    const ammoOverlayMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, ammoCount);
+    const ammoOverlayMessage = msg(STR_SYS_COUNTER, ammoCount);
     {
         const focused = focusedKey === "e";
         const sig = [
@@ -2390,10 +2390,10 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             safeSetUITextLabel(
                 cache.e.cd,
                 !isEngineerClass || !hasLauncher
-                    ? mod.Message(STR_UI_NO_LAUNCHER)
+                    ? msg(STR_UI_NO_LAUNCHER)
                     : (ammoRemaining > 0
                         ? fmtClock(ammoRemaining)
-                        : (atCap ? mod.Message(STR_UI_LAUNCHER_AT_CAP) : mod.Message(STR_UI_READY)))
+                        : (atCap ? msg(STR_UI_LAUNCHER_AT_CAP) : msg(STR_UI_READY)))
             );
             safeSetUITextColor(
                 cache.e.cd,
@@ -2437,11 +2437,11 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         ].join("|");
         if (tile.sig !== sig) {
             setTileHeaderWidgets(tile, reconItem.labelKey, enabled ? COLOR_READY_GREEN : isReconClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
-            safeSetUITextLabel(tile.cd, remaining > 0 ? fmtClock(remaining) : mod.Message(STR_UI_READY));
+            safeSetUITextLabel(tile.cd, remaining > 0 ? fmtClock(remaining) : msg(STR_UI_READY));
             safeSetUITextColor(tile.cd, isReconClass ? (showSelectedReconTimer ? COLOR_GRAY : (ready ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW)) : COLOR_GRAY);
             safeSetUIWidgetVisible(tile.cd, !isReconClass || i === 0 || reconSharedRemaining <= 0 || showSelectedReconTimer);
-            safeSetUITextLabel(tile.cs, mod.Message(mod.stringkeys.twl.system.genericCounter, count));
-            safeSetUITextLabel(tile.ct, mod.Message(mod.stringkeys.twl.system.genericCounter, count));
+            safeSetUITextLabel(tile.cs, msg(STR_SYS_COUNTER, count));
+            safeSetUITextLabel(tile.ct, msg(STR_SYS_COUNTER, count));
             safeSetUITextColor(tile.s, COLOR_GRAY);
             safeSetUITextColor(tile.cs, COLOR_DARK_BLACK);
             safeSetUITextColor(tile.ct, count > 0 ? COLOR_WHITE : COLOR_GRAY);
@@ -2482,7 +2482,7 @@ function closeArmMenu(eventPlayer: mod.Player | number): void {
     }
 }
 function openArmMenu(eventPlayer: mod.Player, objId: number): boolean {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    if (!isValidPlayer(eventPlayer)) return false;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return false;
     if (isUiInteractionBlockedForPid(pid)) return false;
@@ -2620,7 +2620,7 @@ function handleArmMenuEvt(eventPlayer: mod.Player, eventUIWidget: mod.UIWidget, 
             else if (actionIndex >= 0) helpKey = ENG_HELP_KEYS[actionIndex];
             else if (isChargeWidget) helpKey = STR_UI_HELP_LAUNCHER_AMMO;
             else if (reconTileIndex >= 0) helpKey = HELP_KEY_MAP[cfg.recon[reconTileIndex].name];
-            if (helpKey) safeSetUITextLabel(cache.helpText, mod.Message(helpKey));
+            if (helpKey) safeSetUITextLabel(cache.helpText, msg(helpKey));
         }
         if (tileKey !== undefined) {
             const objId = getArmObj(pid);

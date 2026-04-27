@@ -38,7 +38,7 @@ async function spawnReadyDialogInteractPoint(eventPlayer: mod.Player) {
         const interactPoint: mod.InteractPoint = mod.SpawnObject(
             mod.RuntimeSpawn_Common.InteractPoint,
             interactPointPosition,
-            mod.CreateVector(0, 0, 0)
+            VEC_ZERO
         );
 
         mod.EnableInteractPoint(interactPoint, true);

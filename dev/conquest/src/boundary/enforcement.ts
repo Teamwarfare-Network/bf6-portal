@@ -61,7 +61,7 @@ function cleanupBoundaryAlarmRuntime(): void {
 
 function primeBoundaryAlarmRuntime(): void {
     if (State.round.boundary.alarmReady && hasValidBoundaryAlarmHandle(State.round.boundary.alarmHandle)) return;
-    const zero = mod.CreateVector(0, 0, 0);
+    const zero = VEC_ZERO;
     if (!hasValidBoundaryAlarmHandle(State.round.boundary.alarmHandle)) {
         try {
             State.round.boundary.alarmHandle = mod.SpawnObject(
@@ -77,7 +77,7 @@ function primeBoundaryAlarmRuntime(): void {
 }
 
 function playBoundaryAlarmForPlayer(player: mod.Player, violation: BoundaryViolationState): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     if (violation.alarmPlayed) return;
     primeBoundaryAlarmRuntime();
     if (!State.round.boundary.alarmReady || !hasValidBoundaryAlarmHandle(State.round.boundary.alarmHandle)) return;
@@ -157,7 +157,7 @@ function classifyVehicleSeatKind(vehicle: mod.Vehicle): "ground_vehicle" | "airc
 // transition, refreshes the boundary classifier so OOB/clear edges fire synchronously with the
 // seat change rather than waiting for the next tick.
 function setPlayerSeatKind(player: mod.Player, kind: SeatKind): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return;
     const state = getOrInitZoneStateForPid(pid);
@@ -174,7 +174,7 @@ function setPlayerSeatKind(player: mod.Player, kind: SeatKind): void {
 // to boundary enforcement (capture-point triggers, etc) so it can be called unconditionally
 // from area-trigger event handlers.
 function updateZoneStateOnTriggerTransition(player: mod.Player, triggerObjId: number, entered: boolean): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return;
     const teamId = safeGetTeamNumberFromPlayer(player, 0);
@@ -221,7 +221,7 @@ function updateZoneStateOnTriggerTransition(player: mod.Player, triggerObjId: nu
 //    AND own buffer (those two together form the live-play safe ground area). On-foot above
 //    AIRCRAFT_BAIL_CEILING_Y also fires GCZ (belt-and-braces against bail above ceiling).
 function getDesiredBoundaryViolationKind(player: mod.Player): BoundaryPromptKind | undefined {
-    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    if (!isValidPlayer(player)) return undefined;
     if (!isPlayerDeployed(player)) return undefined;
     if (!isPlayerAliveForBoundary(player)) return undefined;
     if (State.match.isEnded) return undefined;
@@ -286,7 +286,7 @@ function notePreliveMainBaseViolation(player: mod.Player, pid: number): void {
 }
 
 function tryKillBoundaryPlayer(player: mod.Player): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     try {
         const modAny = mod as any;
         if (typeof modAny.Kill === "function") {
@@ -309,7 +309,7 @@ function clearBoundaryViolationForPid(pid: number, destroyUi: boolean = false): 
 }
 
 function refreshPlayerBoundaryState(player: mod.Player): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
 
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return;
@@ -373,7 +373,7 @@ async function runBoundaryViolationEnforcementLoop(pid: number, token: number): 
         const violation = State.round.boundary.activeViolationByPid[pid];
         if (!violation || violation.enforcementToken !== token) return;
         const player = safeFindPlayer(pid);
-        if (!player || !mod.IsPlayerValid(player)) {
+        if (!isValidPlayer(player)) {
             clearBoundaryViolationForPid(pid);
             return;
         }
@@ -425,7 +425,7 @@ function resetPlayerBoundaryStateOnDeploy(player: mod.Player, pid: number): void
     delete State.round.boundary.zoneStateByPid[pid];
     State.players.deployedAtSecondsByPid[pid] = mod.GetMatchTimeElapsed();
     clearBoundaryViolationForPid(pid);
-    if (!player || !mod.IsPlayerValid(player)) {
+    if (!isValidPlayer(player)) {
         State.players.inMainBaseByPid[pid] = false;
         return;
     }

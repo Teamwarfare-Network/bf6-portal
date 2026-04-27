@@ -214,7 +214,7 @@ function updateAllPlayersClock(): void {
 
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
+        if (!isValidPlayer(player)) continue;
         const pid = safeGetPlayerId(player);
         if (pid === undefined) continue;
         // Ensure each player's clock widgets exist and get cached refs for efficient updates.

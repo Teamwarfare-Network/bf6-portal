@@ -84,7 +84,7 @@ function buildReadyDialogGridKnobRow(
         labelHeight,
         mod.UIAnchor.TopLeft,
         mod.UIAnchor.Center,
-        hideLabel ? mod.Message(mod.stringkeys.twl.system.genericCounter, " ") : mod.Message(labelKey),
+        hideLabel ? msg(STR_SYS_COUNTER, " ") : msg(labelKey),
         11,
         eventPlayer,
         containerBase
@@ -108,7 +108,7 @@ function buildReadyDialogGridKnobRow(
         decLabelId,
         buttonSizeX,
         buttonSizeY,
-        mod.Message(mod.stringkeys.twl.ui.left),
+        msg(mod.stringkeys.twl.ui.left),
         eventPlayer,
         decBorder ?? containerBase,
         14
@@ -122,7 +122,7 @@ function buildReadyDialogGridKnobRow(
         valueHeight,
         mod.UIAnchor.TopLeft,
         mod.UIAnchor.Center,
-        mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
+        msg(STR_SYS_COUNTER, " "),
         12,
         eventPlayer,
         containerBase
@@ -142,7 +142,7 @@ function buildReadyDialogGridKnobRow(
         incLabelId,
         buttonSizeX,
         buttonSizeY,
-        mod.Message(mod.stringkeys.twl.ui.right),
+        msg(mod.stringkeys.twl.ui.right),
         eventPlayer,
         incBorder ?? containerBase,
         14
@@ -211,7 +211,7 @@ function buildReadyDialogConfigCheckboxRow(
         boxTextId,
         boxSize,
         boxSize,
-        mod.Message(mod.stringkeys.twl.ui.checkMarkEmpty),
+        msg(mod.stringkeys.twl.ui.checkMarkEmpty),
         eventPlayer,
         boxBorder ?? containerBase,
         12
@@ -225,7 +225,7 @@ function buildReadyDialogConfigCheckboxRow(
         boxSize,
         mod.UIAnchor.TopLeft,
         mod.UIAnchor.CenterLeft,
-        mod.Message(labelKey),
+        msg(labelKey),
         12,
         eventPlayer,
         containerBase
@@ -437,7 +437,7 @@ function buildReadyDialogModeConfigSection(
         modeResetLabelId,
         READY_DIALOG_RESET_BUTTON_WIDTH,
         READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.Message(mod.stringkeys.twl.readyDialog.resetSettingsLabel),
+        msg(mod.stringkeys.twl.readyDialog.resetSettingsLabel),
         eventPlayer,
         resetBorder ?? containerBase,
         12
@@ -457,7 +457,7 @@ function buildReadyDialogModeConfigSection(
         modeConfirmLabelId,
         READY_DIALOG_CONFIRM_BUTTON_WIDTH,
         READY_DIALOG_SMALL_BUTTON_HEIGHT,
-        mod.Message(mod.stringkeys.twl.readyDialog.confirmSettingsLabel),
+        msg(mod.stringkeys.twl.readyDialog.confirmSettingsLabel),
         eventPlayer,
         confirmBorder ?? containerBase,
         12
@@ -471,7 +471,7 @@ function buildReadyDialogModeConfigSection(
         READY_DIALOG_SMALL_BUTTON_HEIGHT,
         mod.UIAnchor.TopLeft,
         mod.UIAnchor.CenterLeft,
-        mod.Message(mod.stringkeys.twl.readyDialog.unsavedChangesLabel),
+        msg(mod.stringkeys.twl.readyDialog.unsavedChangesLabel),
         eventPlayer,
         containerBase,
         12,

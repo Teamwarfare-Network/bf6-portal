@@ -35,7 +35,7 @@ function getPregameCountdownDelayValueForIndex(index: number): number {
 
 // Ensures per-player countdown text exists and returns a cached widget handle.
 function ensureCountdownUIAndGetWidget(player: mod.Player): mod.UIWidget | undefined {
-    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    if (!isValidPlayer(player)) return undefined;
     const pid = mod.GetObjId(player);
     const rootName = "PregameCountdownText_" + pid;
 
@@ -62,7 +62,7 @@ function ensureCountdownUIAndGetWidget(player: mod.Player): mod.UIWidget | undef
         bgColor: [0, 0, 0],
         bgAlpha: 0,
         bgFill: mod.UIBgFill.Solid,
-        textLabel: mod.Message(mod.stringkeys.twl.countdown.format, PREGAME_COUNTDOWN_START_NUMBER),
+        textLabel: msg(mod.stringkeys.twl.countdown.format, PREGAME_COUNTDOWN_START_NUMBER),
         textColor: [1, 1, 1],
         textAlpha: PREGAME_ALERT_TEXT_ALPHA,
         textSize: PREGAME_COUNTDOWN_SIZE_DIGIT_START,
@@ -100,8 +100,8 @@ function setPregameCountdownVisualForAllPlayers(
         mod.SetUIWidgetVisible(w, visible);
         if (visible) {
             const message = (labelValue !== undefined)
-                ? mod.Message(labelKey, labelValue)
-                : mod.Message(labelKey);
+                ? msg(labelKey, labelValue)
+                : msg(labelKey);
             safeSetUITextLabel(w, message);
             mod.SetUITextColor(w, color);
             mod.SetUITextSize(w, size);
@@ -125,7 +125,7 @@ function invalidateCountdownWidgetCacheForAllPlayers(): void {
 
 // Ensures per-player delay info lines exist above the countdown and returns their widget handles.
 function ensurePregameCountdownDelayLineWidgetsForPlayer(player: mod.Player): Array<mod.UIWidget | undefined> {
-    if (!player || !mod.IsPlayerValid(player)) return [];
+    if (!isValidPlayer(player)) return [];
     const pid = mod.GetObjId(player);
     let entry = State.hudCache.countdownWidgetCache[pid];
     if (!entry) {
@@ -159,7 +159,7 @@ function ensurePregameCountdownDelayLineWidgetsForPlayer(player: mod.Player): Ar
             bgColor: [0, 0, 0],
             bgAlpha: 0,
             bgFill: mod.UIBgFill.Solid,
-            textLabel: mod.Message(PREGAME_COUNTDOWN_DELAY_LINE_KEYS[i], 0),
+            textLabel: msg(PREGAME_COUNTDOWN_DELAY_LINE_KEYS[i], 0),
             textColor: [1, 1, 1],
             textAlpha: PREGAME_ALERT_TEXT_ALPHA,
             textSize: PREGAME_COUNTDOWN_DELAY_LINE_TEXT_SIZE,
@@ -187,7 +187,7 @@ function showPregameCountdownDelayLineForAllPlayers(idx: number): void {
             mod.SetUIWidgetVisible(w, false);
             return;
         }
-        safeSetUITextLabel(w, mod.Message(PREGAME_COUNTDOWN_DELAY_LINE_KEYS[idx], seconds));
+        safeSetUITextLabel(w, msg(PREGAME_COUNTDOWN_DELAY_LINE_KEYS[idx], seconds));
         mod.SetUIWidgetVisible(w, true);
     });
 }

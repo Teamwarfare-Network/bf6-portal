@@ -113,7 +113,7 @@ function revealVehicleSpawnerUiAfterStartup(): void {
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
+        if (!isValidPlayer(player)) continue;
         const pid = safeGetPlayerId(player);
         if (pid === undefined) continue;
         if (State.players.deployedByPid[pid]) continue;
@@ -139,7 +139,7 @@ async function startVanillaVehicleSpawnerSystem(): Promise<void> {
     const team1Specs = [...TEAM1_VEHICLE_SLOT_INVENTORY_SPECS].sort((a, b) => a.slotNumber - b.slotNumber);
     const team2Specs = [...TEAM2_VEHICLE_SLOT_INVENTORY_SPECS].sort((a, b) => a.slotNumber - b.slotNumber);
 
-    const zeroRot = mod.CreateVector(0, 0, 0);
+    const zeroRot = VEC_ZERO;
     for (const spec of team1Specs) {
         addVanillaSpawnerSlot(TeamID.Team1, spec.slotNumber, spec.pos, spec.rot, spec.vehicle, zeroRot);
     }

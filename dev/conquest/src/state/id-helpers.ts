@@ -3,6 +3,14 @@
 
 //#region -------------------- Shared ID helpers --------------------
 
+// Bundle-saving guard: !isValidPlayer(p) replaces the 154-site pattern
+// `!p || !mod.IsPlayerValid(p)` while preserving the exact same boolean semantics.
+// Declared as a TS type predicate (`p is mod.Player`) so callers get the same
+// post-guard narrowing the inline check used to provide.
+function isValidPlayer(p: mod.Player | null | undefined): p is mod.Player {
+    return !!p && mod.IsPlayerValid(p);
+}
+
 // Fast object-id lookup for call sites that already control validity.
 function getObjId(obj: any): number {
     return mod.GetObjId(obj);
@@ -20,7 +28,7 @@ function safeGetObjId(obj: any): number | undefined {
 
 // Guarded pid resolution for disconnect race windows in hot paths.
 function safeGetPlayerId(player: mod.Player | null | undefined): number | undefined {
-    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    if (!isValidPlayer(player)) return undefined;
     try {
         return mod.GetObjId(player);
     } catch {
@@ -32,7 +40,7 @@ function safeGetPlayerId(player: mod.Player | null | undefined): number | undefi
 // Uses vehicle occupancy cache (set on enter, cleared on exit/undeploy) to avoid engine
 // calls during death/transition windows where the engine rejects the query (CQ_Bug_37/38).
 function safeGetVehicleFromPlayer(player: mod.Player | null | undefined): mod.Vehicle | undefined {
-    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    if (!isValidPlayer(player)) return undefined;
     if (!isPlayerDeployed(player)) return undefined;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return undefined;
@@ -49,7 +57,7 @@ function safeGetVehicleFromPlayer(player: mod.Player | null | undefined): mod.Ve
 // Guarded player seat lookup for transition windows where the engine briefly rejects the query.
 // Skips the engine call entirely when the player has no cached vehicle (CQ_Bug_37).
 function safeGetPlayerVehicleSeat(player: mod.Player | null | undefined, fallback: number = -1): number {
-    if (!player || !mod.IsPlayerValid(player)) return fallback;
+    if (!isValidPlayer(player)) return fallback;
     if (!isPlayerDeployed(player)) return fallback;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return fallback;
@@ -78,7 +86,7 @@ function safeGetTeamNumberFromPlayer(
     player: mod.Player | null | undefined,
     fallback: TeamID | 0 = 0
 ): TeamID | 0 {
-    if (!player || !mod.IsPlayerValid(player)) return fallback;
+    if (!isValidPlayer(player)) return fallback;
     try {
         return getTeamNumber(mod.GetTeam(player));
     } catch {
@@ -88,7 +96,7 @@ function safeGetTeamNumberFromPlayer(
 
 // Returns deployed-state truth from script runtime for this player.
 function isPlayerDeployed(player: mod.Player): boolean {
-    if (!player || !mod.IsPlayerValid(player)) return false;
+    if (!isValidPlayer(player)) return false;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return false;
     return !!State.players.deployedByPid[pid];
@@ -96,7 +104,7 @@ function isPlayerDeployed(player: mod.Player): boolean {
 
 // Safe GetSoldierState wrappers: avoid engine errors during undeploy/cleanup and keep deploy state in sync.
 function safeGetSoldierStateBool(player: mod.Player, stateKey: any, fallback: boolean = false): boolean {
-    if (!player || !mod.IsPlayerValid(player)) return fallback;
+    if (!isValidPlayer(player)) return fallback;
     if (!isPlayerDeployed(player)) return fallback;
     try {
         return !!mod.GetSoldierState(player, stateKey);
@@ -111,7 +119,7 @@ function safeGetSoldierStateBool(player: mod.Player, stateKey: any, fallback: bo
 
 // Guarded vector soldier-state lookup that also clears deployed flag on engine access failures.
 function safeGetSoldierStateVector(player: mod.Player, stateKey: any): mod.Vector | undefined {
-    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    if (!isValidPlayer(player)) return undefined;
     if (!isPlayerDeployed(player)) return undefined;
     try {
         return mod.GetSoldierState(player, stateKey) as unknown as mod.Vector;
@@ -128,21 +136,21 @@ function safeGetSoldierStateVector(player: mod.Player, stateKey: any): mod.Vecto
 function getTeamNameKey(teamNum: TeamID | 0): number {
     if (teamNum === TeamID.Team1) return ACTIVE_MAP_CONFIG?.team1Name ?? mod.stringkeys.twl.teams.WEST;
     if (teamNum === TeamID.Team2) return ACTIVE_MAP_CONFIG?.team2Name ?? mod.stringkeys.twl.teams.EAST;
-    return mod.stringkeys.twl.system.unknownPlayer;
+    return STR_SYS_UNKNOWN_PLAYER;
 }
 
 // Player-name message helper for UI text paths.
 // CQ_Bug_18 ended up being a ready-dialog reveal-path problem, not the Player-backed message itself,
 // so player-facing UI should use the actual player name again.
 function getUiSafePlayerPidMessage(pid: number | undefined): mod.Message {
-    if (pid === undefined) return mod.Message(mod.stringkeys.twl.system.unknownPlayer);
+    if (pid === undefined) return msg(STR_SYS_UNKNOWN_PLAYER);
     const player = safeFindPlayer(pid);
-    if (!player) return mod.Message(mod.stringkeys.twl.system.unknownPlayer);
+    if (!player) return msg(STR_SYS_UNKNOWN_PLAYER);
     return mod.Message(player);
 }
 
 function getUiSafePlayerMessage(player: mod.Player | null | undefined): mod.Message {
-    if (!player || !mod.IsPlayerValid(player)) return mod.Message(mod.stringkeys.twl.system.unknownPlayer);
+    if (!isValidPlayer(player)) return msg(STR_SYS_UNKNOWN_PLAYER);
     return mod.Message(player);
 }
 

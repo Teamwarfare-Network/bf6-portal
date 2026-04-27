@@ -5,7 +5,7 @@
 
 // Returns the Ready-dialog display stringkey for the current map.
 function getMapNameKey(mapKey: MapKey): number {
-    return MAP_NAME_STRINGKEYS[mapKey] ?? mod.stringkeys.twl.system.unknownPlayer;
+    return MAP_NAME_STRINGKEYS[mapKey] ?? STR_SYS_UNKNOWN_PLAYER;
 }
 
 // Builds a fallback helicopter spawn list from tank spawn positions when no map-specific heli list exists.
@@ -71,9 +71,9 @@ function isTransportHeliVehicleType(vehicle: mod.VehicleList | undefined): boole
 
 function getReadyDialogVehicleSelectionLabelKey(knobKey: string, selectionIndex: number): number {
     const options = getReadyDialogVehicleOptionsForKnobKey(knobKey);
-    if (options.length <= 0) return mod.stringkeys.twl.system.unknownPlayer;
+    if (options.length <= 0) return STR_SYS_UNKNOWN_PLAYER;
     const clamped = ((selectionIndex % options.length) + options.length) % options.length;
-    return options[clamped]?.label ?? mod.stringkeys.twl.system.unknownPlayer;
+    return options[clamped]?.label ?? STR_SYS_UNKNOWN_PLAYER;
 }
 
 function getReadyDialogVehicleSelectionCount(knobKey: string): number {
@@ -432,15 +432,15 @@ function syncActiveMapValidationWarnings(mapKey: MapKey, cfg: MapConfig): void {
 }
 
 function replayActiveMapValidationWarningsToPlayer(player: mod.Player): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     const warnings = State.round.boundary.validationWarnings;
     if (!warnings || warnings.length <= 0) return;
     for (let i = 0; i < warnings.length; i++) {
         sendHighlightedWorldLogMessage(
-            mod.Message(mod.stringkeys.twl.system.genericCounter, warnings[i]),
+            msg(STR_SYS_COUNTER, warnings[i]),
             false,
             player,
-            mod.stringkeys.twl.system.genericCounter
+            STR_SYS_COUNTER
         );
     }
 }
@@ -452,7 +452,7 @@ function replayActiveMapValidationWarningsToAllPlayers(): void {
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
+        if (!isValidPlayer(player)) continue;
         replayActiveMapValidationWarningsToPlayer(player);
     }
 }

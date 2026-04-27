@@ -92,7 +92,7 @@ function conquestPhase4BEnsureVoiceOverRuntimeForPid(pid: number): any {
         State.conquest.vo.handlesReadyByPid[pid] = true;
         return existing;
     }
-    const zero = mod.CreateVector(0, 0, 0);
+    const zero = VEC_ZERO;
     try {
         State.conquest.vo.runtimeHandleByPid[pid] = mod.SpawnObject(
             CONQUEST_CAPTURE_VO_RUNTIME_PREFAB,
@@ -167,7 +167,7 @@ function conquestPhase4BRefreshRecentPresence(now: number): void {
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
+        if (!isValidPlayer(player)) continue;
         const pid = safeGetPlayerId(player);
         if (pid === undefined || isPidDisconnected(pid)) continue;
         const engagedObjId = State.conquest.capture.engagedObjIdByPid[pid];
@@ -190,7 +190,7 @@ function conquestPhase4BGetRecipientsForEvent(event: ConquestQueuedVoEvent, now:
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
+        if (!isValidPlayer(player)) continue;
         const pid = safeGetPlayerId(player);
         if (pid === undefined || isPidDisconnected(pid)) continue;
         const engagedObjId = State.conquest.capture.engagedObjIdByPid[pid];
@@ -342,7 +342,7 @@ function conquestPhase4BFlushCaptureVoiceOverQueue(): void {
 
         for (let r = 0; r < recipients.length; r++) {
             const recipient = recipients[r];
-            if (!recipient || !mod.IsPlayerValid(recipient)) continue;
+            if (!isValidPlayer(recipient)) continue;
             const recipientPid = safeGetPlayerId(recipient);
             if (recipientPid === undefined) continue;
             if (!event.terminal) {

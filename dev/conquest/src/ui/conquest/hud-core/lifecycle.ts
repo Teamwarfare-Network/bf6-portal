@@ -281,7 +281,7 @@ function twlConquestHudDestroyAllPlayers(): void {
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
+        if (!isValidPlayer(player)) continue;
         const pid = safeGetPlayerId(player);
         if (pid === undefined) continue;
         twlConquestHudDestroyPlayer(pid);

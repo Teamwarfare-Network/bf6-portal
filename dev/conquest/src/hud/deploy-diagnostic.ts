@@ -41,7 +41,7 @@ function deployDiagLabelKeyForRow(row: number): number {
 
 function deployDiagEnsureWidgets(player: mod.Player): number | undefined {
     if (!FEATURE_DEPLOY_DIAGNOSTIC) return undefined;
-    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    if (!isValidPlayer(player)) return undefined;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return undefined;
     const cid = DD_C + pid;
@@ -52,7 +52,7 @@ function deployDiagEnsureWidgets(player: mod.Player): number | undefined {
     }
     const container = safeFind(cid);
     if (!container) return undefined;
-    const pending = mod.Message(mod.stringkeys.twl.deployDiag.pending);
+    const pending = msg(mod.stringkeys.twl.deployDiag.pending);
     for (let i = 0; i < 8; i++) {
         const y = i * 18;
         const lid = "UI_DEPLOY_DIAG_L_" + i + "_" + pid;
@@ -63,7 +63,7 @@ function deployDiagEnsureWidgets(player: mod.Player): number | undefined {
                 position: [4, y], size: [86, 18],
                 anchor: mod.UIAnchor.TopLeft, visible: true,
                 padding: 0, bgAlpha: 0, bgFill: mod.UIBgFill.None,
-                textLabel: mod.Message(deployDiagLabelKeyForRow(i)),
+                textLabel: msg(deployDiagLabelKeyForRow(i)),
                 textColor: [0.6, 0.85, 1], textAlpha: 1, textSize: 12,
                 textAnchor: mod.UIAnchor.CenterLeft,
             });
@@ -91,7 +91,7 @@ function deployDiagSet(player: mod.Player, row: number, messageKey: number): voi
     if (!FEATURE_DEPLOY_DIAGNOSTIC) return;
     const pid = deployDiagEnsureWidgets(player);
     if (pid === undefined) return;
-    safeSetUITextLabel(safeFind(DD_V[row] + pid), mod.Message(messageKey));
+    safeSetUITextLabel(safeFind(DD_V[row] + pid), msg(messageKey));
 }
 
 function deployDiagBroadcast(row: number, messageKey: number): void {

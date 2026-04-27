@@ -1,14 +1,14 @@
 ﻿// @ts-nocheck
 
 function setUIInputModeForPlayer(player: mod.Player, enabled: boolean): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     mod.EnableUIInputMode(enabled, player);
     State.players.uiInputEnabledByPid[mod.GetObjId(player)] = enabled;
 }
 
 // Applies full movement/fire/look input restriction for one player during short loading/finalize windows.
 function setAllInputRestrictionsForPlayer(player: mod.Player, restricted: boolean): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     const pid = safeGetPlayerId(player);
     if (pid !== undefined) {
         recordUiLoadInputRestrictedForPid(pid, restricted);
@@ -76,7 +76,7 @@ function hasPlayersOnTeam(team: mod.Team): boolean {
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
+        if (!isValidPlayer(p)) continue;
         if (mod.Equals(mod.GetTeam(p), team)) return true;
     }
     return false;
@@ -93,7 +93,7 @@ function sendHighlightedWorldLogMessage(message: mod.Message, isGameplay: boolea
         }
         if (mod.IsType(target, mod.Types.Player)) {
             const playerTarget = target as mod.Player;
-            if (!playerTarget || !mod.IsPlayerValid(playerTarget)) return;
+            if (!isValidPlayer(playerTarget)) return;
             mod.DisplayHighlightedWorldLogMessage(message, playerTarget);
             return;
         }

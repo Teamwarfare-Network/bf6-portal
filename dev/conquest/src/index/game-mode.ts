@@ -55,13 +55,13 @@ async function onGameModeStartedImpl(): Promise<void> {
     clearSpawnBaseTeamCache();
 
     sendHighlightedWorldLogMessage(
-        mod.Message(mod.stringkeys.twl.messages.init),
+        msg(mod.stringkeys.twl.messages.init),
         false,
         mod.GetTeam(TeamID.Team1),
         mod.stringkeys.twl.messages.init
     );
     sendHighlightedWorldLogMessage(
-        mod.Message(mod.stringkeys.twl.messages.init),
+        msg(mod.stringkeys.twl.messages.init),
         false,
         mod.GetTeam(TeamID.Team2),
         mod.stringkeys.twl.messages.init
@@ -78,7 +78,7 @@ async function onGameModeStartedImpl(): Promise<void> {
         const count = mod.CountOf(players);
         for (let i = 0; i < count; i++) {
             const p = mod.ValueInArray(players, i) as mod.Player;
-            if (!p || !mod.IsPlayerValid(p)) continue;
+            if (!isValidPlayer(p)) continue;
             // Startup baseline: clear inherited redeploy delay so connected players are not held by stale forced timers.
             mod.SetRedeployTime(p, 0);
             // Build/rebuild the player's HUD (widgets) and immediately reflect current authoritative state.

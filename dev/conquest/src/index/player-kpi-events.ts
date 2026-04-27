@@ -15,8 +15,8 @@ function onPlayerEarnedKillImpl(
     _eventDeathType: mod.DeathType,
     _eventWeaponUnlock: mod.WeaponUnlock
 ): void {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    if (!eventOtherPlayer || !mod.IsPlayerValid(eventOtherPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
+    if (!isValidPlayer(eventOtherPlayer)) return;
     if (mod.Equals(eventPlayer, eventOtherPlayer)) return;
     const killerTeam = safeGetTeamNumberFromPlayer(eventPlayer, 0);
     const victimTeam = safeGetTeamNumberFromPlayer(eventOtherPlayer, 0);
@@ -32,7 +32,7 @@ function onPlayerEarnedKillAssistImpl(
     eventPlayer: mod.Player,
     _eventOtherPlayer: mod.Player
 ): void {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     kpiInitForPid(pid);
@@ -52,7 +52,7 @@ function onCapturePointCapturedKpiImpl(eventCapturePoint: mod.CapturePoint): voi
         const count = mod.CountOf(playersOnPoint);
         for (let i = 0; i < count; i++) {
             const player = mod.ValueInArray(playersOnPoint, i) as mod.Player;
-            if (!player || !mod.IsPlayerValid(player)) continue;
+            if (!isValidPlayer(player)) continue;
             const pid = safeGetPlayerId(player);
             if (pid === undefined) continue;
             // CF-77: must be on the capturing team

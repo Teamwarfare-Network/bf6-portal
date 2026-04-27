@@ -11,7 +11,7 @@ function conquestPhase2AClamp01(value: number): number {
 // Returns true when a player should count toward live capture-point engage state.
 // Dead, man-down, undeployed, or invalid soldiers are treated the same as leaving the point.
 function conquestPhase2AShouldCountPlayerAsActiveOnPoint(player: mod.Player | undefined): boolean {
-    if (!player || !mod.IsPlayerValid(player)) return false;
+    if (!isValidPlayer(player)) return false;
     if (!isPlayerDeployed(player)) return false;
     if (!safeGetSoldierStateBool(player, mod.SoldierStateBool.IsAlive, false)) return false;
     if (safeGetSoldierStateBool(player, mod.SoldierStateBool.IsDead, false)) return false;
@@ -437,9 +437,9 @@ function deriveConquestHudEngageViewModel(
 
     return {
         visible: true,
-        friendlyCountLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, engageDisplay.friendlyCount),
-        enemyCountLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, engageDisplay.enemyCount),
-        statusLabel: mod.Message(engageDisplay.statusKey),
+        friendlyCountLabel: msg(STR_SYS_COUNTER, engageDisplay.friendlyCount),
+        enemyCountLabel: msg(STR_SYS_COUNTER, engageDisplay.enemyCount),
+        statusLabel: msg(engageDisplay.statusKey),
         friendlyWidth,
         enemyWidth,
     };
@@ -586,7 +586,7 @@ function deriveConquestHudFlagsViewModel(
                 : CONQUEST_HUD_FLAG_FILL_INSET_Y + (CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT - fillHeight),
             fillHeight,
             labelVisible: true,
-            labelMessage: mod.Message(labelKey),
+            labelMessage: msg(labelKey),
             labelColor: visual.labelColor,
             percentVisible: percentVisual.visible && !fullyOwned,
             percentColor: percentVisual.color,
@@ -594,7 +594,7 @@ function deriveConquestHudFlagsViewModel(
         if (percentVisual.visible && percentVisual.color) {
             const roundedPercent = Math.max(0, Math.min(100, Math.round(percentVisual.value01 * 100)));
             const percentValue = fullyOwned ? 100 : Math.min(99, roundedPercent);
-            slotVm.percentMessage = mod.Message(STR_SYSTEM_GENERIC_PERCENT, percentValue);
+            slotVm.percentMessage = msg(STR_SYSTEM_GENERIC_PERCENT, percentValue);
         }
         if (engagedObjId && cp.objId === engagedObjId) {
             slotVm.slotBgColor = visualState.ownerTeam === friendlyTeam
@@ -718,7 +718,7 @@ function deriveConquestHudActiveFlagPopoutViewModel(
             : CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_INSET_Y + (CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_MAX_HEIGHT - fillHeight),
         fillHeight,
         labelVisible: true,
-        labelMessage: mod.Message(labelKey),
+        labelMessage: msg(labelKey),
         labelColor: visual.labelColor,
         percentVisible: popoutPercentVisible,
         percentColor: popoutPercentColor,
@@ -726,7 +726,7 @@ function deriveConquestHudActiveFlagPopoutViewModel(
     if (popoutPercentVisible) {
         const roundedPercent = Math.max(0, Math.min(100, Math.round(popoutPercentValue01 * 100)));
         const percentValue = fullyOwned ? 100 : Math.min(99, roundedPercent);
-        popoutVm.percentMessage = mod.Message(STR_SYSTEM_GENERIC_PERCENT, percentValue);
+        popoutVm.percentMessage = msg(STR_SYSTEM_GENERIC_PERCENT, percentValue);
     }
     return popoutVm;
 }
@@ -781,8 +781,8 @@ function deriveHudViewModelForPlayer(
             enemyTeam: perspective.enemyTeam,
             friendlyTickets,
             enemyTickets,
-            friendlyTicketLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, friendlyTickets),
-            enemyTicketLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, enemyTickets),
+            friendlyTicketLabel: msg(STR_SYS_COUNTER, friendlyTickets),
+            enemyTicketLabel: msg(STR_SYS_COUNTER, enemyTickets),
             leaderTeam: conquestPhase3GetTicketLeaderTeam(),
             bleedLeftCount: bleedCounts.leftCount,
             bleedRightCount: bleedCounts.rightCount,
@@ -1771,7 +1771,7 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
         const playerCount = mod.CountOf(playersOnPoint);
         for (let i = 0; i < playerCount; i++) {
             const pointPlayer = mod.ValueInArray(playersOnPoint, i) as mod.Player;
-            if (!pointPlayer || !mod.IsPlayerValid(pointPlayer)) continue;
+            if (!isValidPlayer(pointPlayer)) continue;
             const pointPid = safeGetPlayerId(pointPlayer);
             // pointPlayer from GetPlayersOnPoint is the live engine reference — no need
             // to re-lookup via safeFindPlayer(pid) + AllPlayers() iteration (BUG-A8 perf fix).

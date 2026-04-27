@@ -76,8 +76,8 @@ function sampleAirSpawnTransformForSlot(slot: VehicleSpawnerSlot | undefined): {
     const pos = sampleRandomPointInAirVolume(volume, slot.vehicleType);
     const isJet = isJetVehicleType(slot.vehicleType);
     const rot = isJet
-        ? (volume.rotPlane ?? mod.CreateVector(0, 0, 0))
-        : (volume.rotHeli ?? mod.CreateVector(0, 0, 0));
+        ? (volume.rotPlane ?? VEC_ZERO)
+        : (volume.rotHeli ?? VEC_ZERO);
     return { pos, rot };
 }
 

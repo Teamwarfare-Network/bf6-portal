@@ -163,7 +163,7 @@ function perfDiagUpdateHudForPid(
     if (!header) return;
 
     // Header: current tick rate, worst tick rate since enable, player count.
-    safeSetUITextLabel(header, mod.Message(mod.stringkeys.twl.debug.perfHeader, tickRate, a.perfDiagMinTickRate, playerCount));
+    safeSetUITextLabel(header, msg(mod.stringkeys.twl.debug.perfHeader, tickRate, a.perfDiagMinTickRate, playerCount));
     // Color-code header by current tick rate: green >= 7, yellow 5-6, red < 5.
     if (tickRate >= PERF_DIAG_HEALTHY_TICK_RATE) {
         safeSetUITextColor(header, COLOR_GREEN);
@@ -176,12 +176,12 @@ function perfDiagUpdateHudForPid(
     // Cache lines (always visible, slots 0-1): avg per player and max outlier.
     const cacheBuiltW = safeFind(UI_PERF_DIAG_SECTION_ID + pid + "_0");
     if (cacheBuiltW) {
-        safeSetUITextLabel(cacheBuiltW, mod.Message(mod.stringkeys.twl.hud.uiCacheBuiltRebuiltFormat, cache.avgBuilt, cache.avgRebuilt, cache.maxRebuilt));
+        safeSetUITextLabel(cacheBuiltW, msg(mod.stringkeys.twl.hud.uiCacheBuiltRebuiltFormat, cache.avgBuilt, cache.avgRebuilt, cache.maxRebuilt));
         safeSetUITextColor(cacheBuiltW, cache.maxRebuilt > 0 ? COLOR_WARNING_YELLOW : COLOR_GREEN);
     }
     const cacheColdW = safeFind(UI_PERF_DIAG_SECTION_ID + pid + "_1");
     if (cacheColdW) {
-        safeSetUITextLabel(cacheColdW, mod.Message(mod.stringkeys.twl.hud.uiCacheColdInvalidFormat, cache.avgCold, cache.avgInvalid, cache.maxInvalid));
+        safeSetUITextLabel(cacheColdW, msg(mod.stringkeys.twl.hud.uiCacheColdInvalidFormat, cache.avgCold, cache.avgInvalid, cache.maxInvalid));
         safeSetUITextColor(cacheColdW, cache.maxInvalid > 0 ? COLOR_WARNING_YELLOW : COLOR_GREEN);
     }
 
@@ -193,7 +193,7 @@ function perfDiagUpdateHudForPid(
         if (slot < visibleSpikes) {
             const sId = spikeSections[slot];
             const maxMs = Math.round((a.perfDiagSectionMax[sId] ?? 0) * 1000);
-            safeSetUITextLabel(w, mod.Message(mod.stringkeys.twl.debug.perfSection, sId, maxMs, a.perfDiagSectionHits[sId] ?? 0));
+            safeSetUITextLabel(w, msg(mod.stringkeys.twl.debug.perfSection, sId, maxMs, a.perfDiagSectionHits[sId] ?? 0));
             safeSetUIWidgetVisible(w, true);
         } else {
             safeSetUIWidgetVisible(w, false);
@@ -257,7 +257,7 @@ function buildPerfDiagWidgetsForPlayer(player: mod.Player): void {
         padding: 0,
         bgAlpha: 0,
         bgFill: mod.UIBgFill.None,
-        textLabel: mod.Message(mod.stringkeys.twl.debug.perfHeader, 8, 8, 1),
+        textLabel: msg(mod.stringkeys.twl.debug.perfHeader, 8, 8, 1),
         textColor: [1, 1, 1],
         textAlpha: 1,
         textSize: 10,
@@ -282,7 +282,7 @@ function buildPerfDiagWidgetsForPlayer(player: mod.Player): void {
             padding: 0,
             bgAlpha: 0,
             bgFill: mod.UIBgFill.None,
-            textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
+            textLabel: msg(STR_SYS_COUNTER, " "),
             textColor: isCacheLine ? [0.6784, 0.9922, 0.5255] : [1, 0.7, 0.3],
             textAlpha: 1,
             textSize: 9,
@@ -323,7 +323,7 @@ function setPerfDiagEnabled(enabled: boolean): void {
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
+        if (!isValidPlayer(p)) continue;
         if (enabled) {
             buildPerfDiagWidgetsForPlayer(p);
         } else {

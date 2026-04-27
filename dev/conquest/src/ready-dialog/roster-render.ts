@@ -108,7 +108,7 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
     const t2Players = roster.team2;
 
     const maxRowsPerTeam = TEAM_ROSTER_MAX_ROWS;
-    const emptyMsg = mod.Message(mod.stringkeys.twl.system.genericCounter, " ");
+    const emptyMsg = msg(STR_SYS_COUNTER, " ");
     for (let row = 0; row < maxRowsPerTeam; row++) {
         const t1NameId = UI_READY_DIALOG_T1_ROW_NAME_ID + viewerPlayerId + "_" + row;
         const t1ReadyId = UI_READY_DIALOG_T1_ROW_READY_ID + viewerPlayerId + "_" + row;
@@ -146,16 +146,16 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
             t1Ready,
             hasP1
                 ? (p1
-                    ? (State.players.readyByPid[mod.GetObjId(p1)] ? mod.Message(mod.stringkeys.twl.readyDialog.status.ready) : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
-                    : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
+                    ? (State.players.readyByPid[mod.GetObjId(p1)] ? msg(mod.stringkeys.twl.readyDialog.status.ready) : msg(mod.stringkeys.twl.readyDialog.status.notReady))
+                    : msg(mod.stringkeys.twl.readyDialog.status.notReady))
                 : emptyMsg
         );
         safeSetUITextLabel(
             t1Base,
             hasP1
                 ? (p1
-                    ? (isPlayerInMainBaseForReady(mod.GetObjId(p1)) ? mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.in) : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out))
-                    : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out))
+                    ? (isPlayerInMainBaseForReady(mod.GetObjId(p1)) ? msg(mod.stringkeys.twl.readyDialog.baseStatus.in) : msg(mod.stringkeys.twl.readyDialog.baseStatus.out))
+                    : msg(mod.stringkeys.twl.readyDialog.baseStatus.out))
                 : emptyMsg
         );
         if (p1) {
@@ -177,16 +177,16 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
             t2Ready,
             hasP2
                 ? (p2
-                    ? (State.players.readyByPid[mod.GetObjId(p2)] ? mod.Message(mod.stringkeys.twl.readyDialog.status.ready) : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
-                    : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
+                    ? (State.players.readyByPid[mod.GetObjId(p2)] ? msg(mod.stringkeys.twl.readyDialog.status.ready) : msg(mod.stringkeys.twl.readyDialog.status.notReady))
+                    : msg(mod.stringkeys.twl.readyDialog.status.notReady))
                 : emptyMsg
         );
         safeSetUITextLabel(
             t2Base,
             hasP2
                 ? (p2
-                    ? (isPlayerInMainBaseForReady(mod.GetObjId(p2)) ? mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.in) : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out))
-                    : mod.Message(mod.stringkeys.twl.readyDialog.baseStatus.out))
+                    ? (isPlayerInMainBaseForReady(mod.GetObjId(p2)) ? msg(mod.stringkeys.twl.readyDialog.baseStatus.in) : msg(mod.stringkeys.twl.readyDialog.baseStatus.out))
+                    : msg(mod.stringkeys.twl.readyDialog.baseStatus.out))
                 : emptyMsg
         );
         if (p2) {
@@ -217,8 +217,8 @@ function syncReadyToggleButtonWidgetsForPid(viewerPlayerId: number): void {
     const needsReconfirm = State.players.readyNeedsReconfirmByPid[viewerPlayerId] === true;
     const live = isMatchLive();
     const labelMsg = isReady
-        ? mod.Message(mod.stringkeys.twl.readyDialog.buttons.notReady)
-        : mod.Message(mod.stringkeys.twl.readyDialog.buttons.ready);
+        ? msg(mod.stringkeys.twl.readyDialog.buttons.notReady)
+        : msg(mod.stringkeys.twl.readyDialog.buttons.ready);
 
     safeSetUITextLabel(labelWidget, labelMsg);
 
@@ -259,7 +259,7 @@ function refreshReadyStatusForAllBuiltReadyDialogs(): void {
         const state = State.players.readyDialogData[pid];
         if (!state || !state.uiBuilt) continue;
         const viewer = safeFindPlayer(pid);
-        if (!viewer || !mod.IsPlayerValid(viewer)) continue;
+        if (!isValidPlayer(viewer)) continue;
         refreshReadyDialogRosterForViewer(viewer, pid);
         syncReadyToggleButtonWidgetsForPid(pid);
     }

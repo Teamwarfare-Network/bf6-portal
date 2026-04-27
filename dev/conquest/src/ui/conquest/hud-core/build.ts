@@ -196,7 +196,7 @@ function twlConquestHudEnsureImage(
 }
 
 function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlayerEntry | undefined {
-    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    if (!isValidPlayer(player)) return undefined;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return undefined;
 
@@ -308,7 +308,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_TICKET_COUNT_WIDTH,
         TWL_CONQUEST_HUD_TICKET_COUNT_HEIGHT,
         TWL_CONQUEST_HUD_TICKET_COUNT_TEXT_SIZE,
-        mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+        msg(STR_SYS_COUNTER, 0),
         CONQUEST_HUD_TEXT_FRIENDLY_RGB,
         TWL_CONQUEST_HUD_COLOR_BLUE
     );
@@ -324,7 +324,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_TICKET_COUNT_WIDTH,
         TWL_CONQUEST_HUD_TICKET_COUNT_HEIGHT,
         TWL_CONQUEST_HUD_TICKET_COUNT_TEXT_SIZE,
-        mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+        msg(STR_SYS_COUNTER, 0),
         CONQUEST_HUD_TEXT_ENEMY_RGB,
         TWL_CONQUEST_HUD_COLOR_RED
     );
@@ -340,7 +340,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_WIDTH,
         TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_HEIGHT,
         TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_TEXT_SIZE,
-        mod.Message(getTeamNameKey(TeamID.Team1)),
+        msg(getTeamNameKey(TeamID.Team1)),
         TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_TEAM_LABEL,
         mod.UIAnchor.CenterRight
     );
@@ -356,7 +356,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_WIDTH,
         TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_HEIGHT,
         TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_TEXT_SIZE,
-        mod.Message(getTeamNameKey(TeamID.Team1)),
+        msg(getTeamNameKey(TeamID.Team1)),
         CONQUEST_HUD_TEXT_FRIENDLY_RGB,
         TWL_CONQUEST_HUD_COLOR_BLUE,
         mod.UIAnchor.CenterRight
@@ -373,7 +373,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_WIDTH,
         TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_HEIGHT,
         TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_TEXT_SIZE,
-        mod.Message(getTeamNameKey(TeamID.Team2)),
+        msg(getTeamNameKey(TeamID.Team2)),
         TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_TEAM_LABEL,
         mod.UIAnchor.CenterLeft
     );
@@ -389,7 +389,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_WIDTH,
         TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_HEIGHT,
         TWL_CONQUEST_HUD_TICKET_TEAM_LABEL_TEXT_SIZE,
-        mod.Message(getTeamNameKey(TeamID.Team2)),
+        msg(getTeamNameKey(TeamID.Team2)),
         CONQUEST_HUD_TEXT_ENEMY_RGB,
         TWL_CONQUEST_HUD_COLOR_RED,
         mod.UIAnchor.CenterLeft
@@ -406,7 +406,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_TICKET_SLASH_WIDTH,
         TWL_CONQUEST_HUD_TICKET_SLASH_HEIGHT,
         TWL_CONQUEST_HUD_TICKET_SLASH_TEXT_SIZE,
-        mod.Message(mod.stringkeys.twl.system.slash),
+        msg(mod.stringkeys.twl.system.slash),
         CONQUEST_HUD_TEXT_NEUTRAL_RGB,
         TWL_CONQUEST_HUD_COLOR_WHITE
     );
@@ -568,7 +568,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH,
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT,
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_TEXT_SIZE,
-            mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT),
+            msg(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT),
             TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_CHEVRON
         );
         if (!leftChevronShadowRing) return undefined;
@@ -582,7 +582,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH,
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT,
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_TEXT_SIZE,
-            mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT),
+            msg(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT),
             CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB,
             TWL_CONQUEST_HUD_COLOR_BLUE
         );
@@ -600,7 +600,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH,
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT,
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_TEXT_SIZE,
-            mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT),
+            msg(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT),
             TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_CHEVRON
         );
         if (!rightChevronShadowRing) return undefined;
@@ -614,7 +614,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_WIDTH,
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT,
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_TEXT_SIZE,
-            mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT),
+            msg(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT),
             CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB,
             TWL_CONQUEST_HUD_COLOR_RED
         );
@@ -698,7 +698,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
             TWL_CONQUEST_HUD_OBJECTIVE_SLOT_WIDTH,
             TWL_CONQUEST_HUD_OBJECTIVE_SLOT_HEIGHT,
             TWL_CONQUEST_HUD_OBJECTIVE_LABEL_TEXT_SIZE,
-            mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN),
+            msg(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN),
             TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_OBJECTIVE_LABEL
         );
         if (!slotLabelShadowRing) return undefined;
@@ -712,7 +712,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
             TWL_CONQUEST_HUD_OBJECTIVE_SLOT_WIDTH,
             TWL_CONQUEST_HUD_OBJECTIVE_SLOT_HEIGHT,
             TWL_CONQUEST_HUD_OBJECTIVE_LABEL_TEXT_SIZE,
-            mod.Message("?"),
+            msg(mod.stringkeys.twl.hud.conquest.flagLetters.unknown),
             CONQUEST_HUD_TEXT_NEUTRAL_RGB,
             TWL_CONQUEST_HUD_COLOR_WHITE
         );
@@ -733,7 +733,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
             TWL_CONQUEST_HUD_OBJECTIVE_PERCENT_WIDTH,
             TWL_CONQUEST_HUD_OBJECTIVE_PERCENT_HEIGHT,
             TWL_CONQUEST_HUD_OBJECTIVE_PERCENT_TEXT_SIZE,
-            mod.Message(STR_SYSTEM_GENERIC_PERCENT, 0),
+            msg(STR_SYSTEM_GENERIC_PERCENT, 0),
             TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_PERCENT
         );
         if (!slotPercentShadowRing) return undefined;
@@ -747,7 +747,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
             TWL_CONQUEST_HUD_OBJECTIVE_PERCENT_WIDTH,
             TWL_CONQUEST_HUD_OBJECTIVE_PERCENT_HEIGHT,
             TWL_CONQUEST_HUD_OBJECTIVE_PERCENT_TEXT_SIZE,
-            mod.Message(STR_SYSTEM_GENERIC_PERCENT, 0),
+            msg(STR_SYSTEM_GENERIC_PERCENT, 0),
             CONQUEST_HUD_TEXT_NEUTRAL_RGB,
             TWL_CONQUEST_HUD_COLOR_WHITE
         );
@@ -835,7 +835,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_POPOUT_SLOT_WIDTH,
         TWL_CONQUEST_HUD_POPOUT_SLOT_HEIGHT,
         TWL_CONQUEST_HUD_POPOUT_LABEL_TEXT_SIZE,
-        mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN),
+        msg(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN),
         TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_POPOUT_LABEL
     );
     if (!popoutLabelShadowRing) return undefined;
@@ -849,7 +849,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_POPOUT_SLOT_WIDTH,
         TWL_CONQUEST_HUD_POPOUT_SLOT_HEIGHT,
         TWL_CONQUEST_HUD_POPOUT_LABEL_TEXT_SIZE,
-        mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN),
+        msg(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN),
         CONQUEST_HUD_TEXT_NEUTRAL_RGB,
         TWL_CONQUEST_HUD_COLOR_WHITE
     );
@@ -865,7 +865,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_POPOUT_PERCENT_WIDTH,
         TWL_CONQUEST_HUD_POPOUT_PERCENT_HEIGHT,
         TWL_CONQUEST_HUD_POPOUT_PERCENT_TEXT_SIZE,
-        mod.Message(STR_SYSTEM_GENERIC_PERCENT, 0),
+        msg(STR_SYSTEM_GENERIC_PERCENT, 0),
         TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_POPOUT_PERCENT
     );
     if (!popoutPercentShadowRing) return undefined;
@@ -879,7 +879,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_POPOUT_PERCENT_WIDTH,
         TWL_CONQUEST_HUD_POPOUT_PERCENT_HEIGHT,
         TWL_CONQUEST_HUD_POPOUT_PERCENT_TEXT_SIZE,
-        mod.Message(STR_SYSTEM_GENERIC_PERCENT, 0),
+        msg(STR_SYSTEM_GENERIC_PERCENT, 0),
         CONQUEST_HUD_TEXT_NEUTRAL_RGB,
         TWL_CONQUEST_HUD_COLOR_WHITE
     );
@@ -956,7 +956,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_ENGAGE_COUNT_WIDTH,
         TWL_CONQUEST_HUD_ENGAGE_COUNT_HEIGHT,
         TWL_CONQUEST_HUD_ENGAGE_COUNT_TEXT_SIZE,
-        mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+        msg(STR_SYS_COUNTER, 0),
         TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_ENGAGE_COUNT
     );
     if (!engageFriendlyCountShadowRing) return undefined;
@@ -970,7 +970,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_ENGAGE_COUNT_WIDTH,
         TWL_CONQUEST_HUD_ENGAGE_COUNT_HEIGHT,
         TWL_CONQUEST_HUD_ENGAGE_COUNT_TEXT_SIZE,
-        mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+        msg(STR_SYS_COUNTER, 0),
         CONQUEST_HUD_TEXT_FRIENDLY_RGB,
         TWL_CONQUEST_HUD_COLOR_BLUE
     );
@@ -993,7 +993,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_ENGAGE_COUNT_WIDTH,
         TWL_CONQUEST_HUD_ENGAGE_COUNT_HEIGHT,
         TWL_CONQUEST_HUD_ENGAGE_COUNT_TEXT_SIZE,
-        mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+        msg(STR_SYS_COUNTER, 0),
         TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_ENGAGE_COUNT
     );
     if (!engageEnemyCountShadowRing) return undefined;
@@ -1007,7 +1007,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_ENGAGE_COUNT_WIDTH,
         TWL_CONQUEST_HUD_ENGAGE_COUNT_HEIGHT,
         TWL_CONQUEST_HUD_ENGAGE_COUNT_TEXT_SIZE,
-        mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
+        msg(STR_SYS_COUNTER, 0),
         CONQUEST_HUD_TEXT_ENEMY_RGB,
         TWL_CONQUEST_HUD_COLOR_RED
     );
@@ -1030,7 +1030,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_ENGAGE_STATUS_WIDTH,
         TWL_CONQUEST_HUD_ENGAGE_STATUS_HEIGHT,
         TWL_CONQUEST_HUD_ENGAGE_STATUS_TEXT_SIZE,
-        mod.Message(STR_HUD_CONQUEST_CAPTURE_STATUS_DEFEND),
+        msg(STR_HUD_CONQUEST_CAPTURE_STATUS_DEFEND),
         TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_ENGAGE_STATUS
     );
     if (!engageStatusShadowRing) return undefined;
@@ -1044,7 +1044,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
         TWL_CONQUEST_HUD_ENGAGE_STATUS_WIDTH,
         TWL_CONQUEST_HUD_ENGAGE_STATUS_HEIGHT,
         TWL_CONQUEST_HUD_ENGAGE_STATUS_TEXT_SIZE,
-        mod.Message(STR_HUD_CONQUEST_CAPTURE_STATUS_DEFEND),
+        msg(STR_HUD_CONQUEST_CAPTURE_STATUS_DEFEND),
         CONQUEST_HUD_TEXT_NEUTRAL_RGB,
         TWL_CONQUEST_HUD_COLOR_WHITE
     );

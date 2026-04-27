@@ -1,4 +1,21 @@
 ﻿// @ts-nocheck
+// Message helper: short alias for mod.Message(keyId, ...args). Bundle-saving wrapper used
+// at every player-facing label site. Args (string | number | mod.Player) match Portal's
+// documented mod.Message contract; the `as any` cast bypasses TS overload-resolution which
+// can't unify the spread-args call with the discrete (keyId), (keyId, arg1), etc. overloads.
+// For the special Player-as-name overload (`mod.Message(player)` with no key id), call
+// `mod.Message(player)` directly -- msg() is for key-based messages only.
+function msg(keyId: number, ...args: any[]): mod.Message {
+    return (mod.Message as any)(keyId, ...args);
+}
+
+// High-frequency stringkey aliases: each path appears 8-63 times in the bundle. Aliasing
+// trims ~15-27 bytes per callsite vs. the long `mod.stringkeys.twl.<path>` form.
+const STR_SYS_COUNTER = mod.stringkeys.twl.system.genericCounter;
+const STR_HUD_CLOCK_DIGIT = mod.stringkeys.twl.hud.clock.digit;
+const STR_SYS_UNKNOWN_PLAYER = mod.stringkeys.twl.system.unknownPlayer;
+const STR_RD_VEHICLE_NO_SPAWN = mod.stringkeys.twl.readyDialog.vehicleShortNoSpawn;
+
 const STR_READYUP_RETURN_TO_BASE_NOT_LIVE = mod.stringkeys.twl.notifications.readyupReturnToBaseNotLive;
 const STR_PLAYER_READIED_UP = mod.stringkeys.twl.notifications.playerReadiedUp;
 const STR_BOUNDARY_WARNING_ICON = mod.stringkeys.twl.boundary.warningIcon;

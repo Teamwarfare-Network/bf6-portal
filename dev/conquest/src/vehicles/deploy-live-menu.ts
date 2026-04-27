@@ -56,7 +56,7 @@ function closeVehicleDeployLiveMenuForPlayer(eventPlayer: mod.Player | number): 
 
 // Opens the in-world live deploy menu for an already deployed player and reveals the reused deploy HUD family.
 function tryOpenVehicleDeployLiveMenuForPlayer(eventPlayer: mod.Player): boolean {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return false;
+    if (!isValidPlayer(eventPlayer)) return false;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return false;
     if (isUiInteractionBlockedForPid(pid)) return false;

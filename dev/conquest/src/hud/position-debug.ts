@@ -50,7 +50,7 @@ function ensurePositionDebugWidgets(player: mod.Player): {
     }
     safeSetUIWidgetVisible(container, false);
 
-    const emptyValueMessage = mod.Message(mod.stringkeys.twl.system.genericCounter, " ");
+    const emptyValueMessage = msg(STR_SYS_COUNTER, " ");
 
     const makeText = (id: string, posX: number, posY: number, width: number, color: mod.Vector, anchor: mod.UIAnchor, label: mod.Message) => {
         let w = safeFind(id);
@@ -120,11 +120,11 @@ function ensurePositionDebugWidgets(player: mod.Player): {
     const SOURCE_WIDTH = 72;
 
     let posXLabel = safeFind(posXLabelId);
-    if (!posXLabel) posXLabel = makeText(posXLabelId, COL_1_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.posX));
+    if (!posXLabel) posXLabel = makeText(posXLabelId, COL_1_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, msg(mod.stringkeys.twl.debug.posX));
     let posYLabel = safeFind(posYLabelId);
-    if (!posYLabel) posYLabel = makeText(posYLabelId, COL_2_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.posY));
+    if (!posYLabel) posYLabel = makeText(posYLabelId, COL_2_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, msg(mod.stringkeys.twl.debug.posY));
     let posZLabel = safeFind(posZLabelId);
-    if (!posZLabel) posZLabel = makeText(posZLabelId, COL_3_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.posZ));
+    if (!posZLabel) posZLabel = makeText(posZLabelId, COL_3_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, msg(mod.stringkeys.twl.debug.posZ));
     let posXValue = safeFind(posXValueId);
     if (!posXValue) posXValue = makeText(posXValueId, COL_1_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, emptyValueMessage);
     let posYValue = safeFind(posYValueId);
@@ -133,27 +133,27 @@ function ensurePositionDebugWidgets(player: mod.Player): {
     if (!posZValue) posZValue = makeText(posZValueId, COL_3_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, emptyValueMessage);
 
     let rotXLabel = safeFind(rotXLabelId);
-    if (!rotXLabel) rotXLabel = makeText(rotXLabelId, COL_1_X + ROT_LABEL_OFFSET_X, ROW_2_Y, LABEL_WIDTH, COLOR_BLUE, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.rotX));
+    if (!rotXLabel) rotXLabel = makeText(rotXLabelId, COL_1_X + ROT_LABEL_OFFSET_X, ROW_2_Y, LABEL_WIDTH, COLOR_BLUE, mod.UIAnchor.CenterLeft, msg(mod.stringkeys.twl.debug.rotX));
     let rotYLabel = safeFind(rotYLabelId);
-    if (!rotYLabel) rotYLabel = makeText(rotYLabelId, COL_2_X + ROT_LABEL_OFFSET_X, ROW_2_Y, LABEL_WIDTH, COLOR_BLUE, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.rotY));
+    if (!rotYLabel) rotYLabel = makeText(rotYLabelId, COL_2_X + ROT_LABEL_OFFSET_X, ROW_2_Y, LABEL_WIDTH, COLOR_BLUE, mod.UIAnchor.CenterLeft, msg(mod.stringkeys.twl.debug.rotY));
     let rotXValue = safeFind(rotXValueId);
     if (!rotXValue) rotXValue = makeText(rotXValueId, COL_1_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, emptyValueMessage);
     let rotYValue = safeFind(rotYValueId);
     if (!rotYValue) rotYValue = makeText(rotYValueId, COL_2_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight, emptyValueMessage);
 
     // Source indicator: uses the full third column width, yellow text, right-aligned.
-    const sourceMessage = mod.Message(mod.stringkeys.twl.debug.srcSoldier);
+    const sourceMessage = msg(mod.stringkeys.twl.debug.srcSoldier);
     let sourceLabel = safeFind(sourceLabelId);
     if (!sourceLabel) sourceLabel = makeText(sourceLabelId, COL_3_X, ROW_2_Y, SOURCE_WIDTH, COLOR_YELLOW, mod.UIAnchor.CenterRight, sourceMessage);
 
-    normalizeText(posXLabel, COL_1_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.posX));
-    normalizeText(posYLabel, COL_2_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.posY));
-    normalizeText(posZLabel, COL_3_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.posZ));
+    normalizeText(posXLabel, COL_1_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, msg(mod.stringkeys.twl.debug.posX));
+    normalizeText(posYLabel, COL_2_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, msg(mod.stringkeys.twl.debug.posY));
+    normalizeText(posZLabel, COL_3_X + POS_LABEL_OFFSET_X, ROW_1_Y, LABEL_WIDTH, COLOR_GREEN, mod.UIAnchor.CenterLeft, msg(mod.stringkeys.twl.debug.posZ));
     normalizeText(posXValue, COL_1_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight);
     normalizeText(posYValue, COL_2_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight);
     normalizeText(posZValue, COL_3_X + VALUE_OFFSET_X, ROW_1_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight);
-    normalizeText(rotXLabel, COL_1_X + ROT_LABEL_OFFSET_X, ROW_2_Y, LABEL_WIDTH, COLOR_BLUE, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.rotX));
-    normalizeText(rotYLabel, COL_2_X + ROT_LABEL_OFFSET_X, ROW_2_Y, LABEL_WIDTH, COLOR_BLUE, mod.UIAnchor.CenterLeft, mod.Message(mod.stringkeys.twl.debug.rotY));
+    normalizeText(rotXLabel, COL_1_X + ROT_LABEL_OFFSET_X, ROW_2_Y, LABEL_WIDTH, COLOR_BLUE, mod.UIAnchor.CenterLeft, msg(mod.stringkeys.twl.debug.rotX));
+    normalizeText(rotYLabel, COL_2_X + ROT_LABEL_OFFSET_X, ROW_2_Y, LABEL_WIDTH, COLOR_BLUE, mod.UIAnchor.CenterLeft, msg(mod.stringkeys.twl.debug.rotY));
     normalizeText(rotXValue, COL_1_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight);
     normalizeText(rotYValue, COL_2_X + VALUE_OFFSET_X, ROW_2_Y, VALUE_WIDTH, COLOR_WHITE, mod.UIAnchor.CenterRight);
     normalizeText(sourceLabel, COL_3_X, ROW_2_Y, SOURCE_WIDTH, COLOR_YELLOW, mod.UIAnchor.CenterRight);
@@ -231,15 +231,15 @@ function applyPositionDebugSnapshot(
     snapshot: { pos: mod.Vector; rotX: number; rotY: number; isVehicle: boolean }
 ): void {
     const roundTo3 = (value: number) => Math.round(value * 1000) / 1000;
-    safeSetUITextLabel(safeFind(UI_POS_DEBUG_X_VALUE_ID + pid), mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.XComponentOf(snapshot.pos))));
-    safeSetUITextLabel(safeFind(UI_POS_DEBUG_Y_VALUE_ID + pid), mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.YComponentOf(snapshot.pos))));
-    safeSetUITextLabel(safeFind(UI_POS_DEBUG_Z_VALUE_ID + pid), mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.ZComponentOf(snapshot.pos))));
-    safeSetUITextLabel(safeFind(UI_POS_DEBUG_ROTX_VALUE_ID + pid), mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(snapshot.rotX)));
-    safeSetUITextLabel(safeFind(UI_POS_DEBUG_ROTY_VALUE_ID + pid), mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(snapshot.rotY)));
+    safeSetUITextLabel(safeFind(UI_POS_DEBUG_X_VALUE_ID + pid), msg(STR_SYS_COUNTER, roundTo3(mod.XComponentOf(snapshot.pos))));
+    safeSetUITextLabel(safeFind(UI_POS_DEBUG_Y_VALUE_ID + pid), msg(STR_SYS_COUNTER, roundTo3(mod.YComponentOf(snapshot.pos))));
+    safeSetUITextLabel(safeFind(UI_POS_DEBUG_Z_VALUE_ID + pid), msg(STR_SYS_COUNTER, roundTo3(mod.ZComponentOf(snapshot.pos))));
+    safeSetUITextLabel(safeFind(UI_POS_DEBUG_ROTX_VALUE_ID + pid), msg(STR_SYS_COUNTER, roundTo3(snapshot.rotX)));
+    safeSetUITextLabel(safeFind(UI_POS_DEBUG_ROTY_VALUE_ID + pid), msg(STR_SYS_COUNTER, roundTo3(snapshot.rotY)));
     // Source indicator in the rotZ label slot.
     const sourceMessage = snapshot.isVehicle
-        ? mod.Message(mod.stringkeys.twl.debug.srcVehicle)
-        : mod.Message(mod.stringkeys.twl.debug.srcSoldier);
+        ? msg(mod.stringkeys.twl.debug.srcVehicle)
+        : msg(mod.stringkeys.twl.debug.srcSoldier);
     safeSetUITextLabel(safeFind(UI_POS_DEBUG_ROTZ_ID + pid), sourceMessage);
 }
 

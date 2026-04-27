@@ -137,17 +137,17 @@ async function primeReadyDialogRevealWhileBlocked(eventPlayer: mod.Player): Prom
         return;
     }
     await mod.Wait(0);
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
     refreshReadyDialogSectionsForWarmPrime(eventPlayer, playerId);
     showReadyDialogUI(eventPlayer);
     await mod.Wait(0);
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
     hideReadyDialogUI(eventPlayer);
     await mod.Wait(0);
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
     hideReadyDialogUI(eventPlayer);
     await mod.Wait(0);
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
     setUIInputModeForPlayer(eventPlayer, false);
     state.dialogVisible = false;
     state.readyDialogWarmPrimed = true;
@@ -211,7 +211,7 @@ function createReadyDialogUI(eventPlayer: mod.Player, reveal: boolean = true) {
         mod.GetUIRoot(),
         false,
         10,
-        mod.CreateVector(0, 0, 0),
+        VEC_ZERO,
         0.995,
         mod.UIBgFill.Blur,
         mod.UIDepth.AboveGameUI,

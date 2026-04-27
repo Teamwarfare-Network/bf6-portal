@@ -35,7 +35,7 @@ function conquestPhase4OnPlayerLeaveOrResetPid(pid: number): void {
 
 function conquestPhase4PrimeSoundRuntime(): void {
     if (!State.conquest.sound.enabled) return;
-    const zero = mod.CreateVector(0, 0, 0);
+    const zero = VEC_ZERO;
 
     if (!conquestCaptureHasValidHandle(State.conquest.sound.captureTickFriendlyHandle)) {
         try {
@@ -119,7 +119,7 @@ function conquestPhase4GetRecipientsForEvent(event: ConquestQueuedSoundEvent): m
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
-        if (!player || !mod.IsPlayerValid(player)) continue;
+        if (!isValidPlayer(player)) continue;
         const pid = safeGetPlayerId(player);
         if (pid === undefined || isPidDisconnected(pid)) continue;
         const engagedObjId = State.conquest.capture.engagedObjIdByPid[pid];
@@ -175,7 +175,7 @@ function conquestPhase4FlushCaptureSoundQueue(): void {
 
         for (let r = 0; r < recipients.length; r++) {
             const recipient = recipients[r];
-            if (!recipient || !mod.IsPlayerValid(recipient)) continue;
+            if (!isValidPlayer(recipient)) continue;
             const recipientPid = safeGetPlayerId(recipient);
             if (recipientPid === undefined) continue;
             const throttleKey = conquestPhase4GetRecipientThrottleKey(event, recipientPid);

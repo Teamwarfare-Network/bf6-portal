@@ -3,7 +3,7 @@
 async function deferForcedUndeploy(player: mod.Player, reason: string): Promise<void> {
     try {
         await mod.Wait(0.1);
-        if (!player || !mod.IsPlayerValid(player)) return;
+        if (!isValidPlayer(player)) return;
         const pid = safeGetPlayerId(player);
         mod.UndeployPlayer(player);
     } catch {
@@ -12,7 +12,7 @@ async function deferForcedUndeploy(player: mod.Player, reason: string): Promise<
 
 // Handles the "deployed before release" race by freezing the player immediately and forcing them back to deploy.
 async function handlePlayerDeployedBeforeRelease(eventPlayer: mod.Player, pid: number): Promise<void> {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
     reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
     setAllInputRestrictionsForPlayer(eventPlayer, true);
     try {
@@ -25,7 +25,7 @@ async function handlePlayerDeployedBeforeRelease(eventPlayer: mod.Player, pid: n
 // Reasserts the loading overlay after the deploy-screen transition has taken ownership so team-swap load is actually visible.
 async function reassertUiLoadingAfterUndeploy(eventPlayer: mod.Player): Promise<void> {
     await mod.Wait(0);
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     if (!isUiLoadGateActiveForPid(pid)) return;
@@ -85,7 +85,7 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
         ensureTopHudShellForPlayer(eventPlayer);
     }
     renderCriticalHudForReveal(eventPlayer, pid);
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
     // inMainBaseByPid is owned by updateZoneStateOnTriggerTransition (mirrored from inOwnHQ)
     // and was reset to false by resetPlayerBoundaryStateOnDeploy above. The synchronous HQ
     // trigger enter event for HQ-deploy spawns flips it back to true; non-HQ spawns leave it
@@ -105,7 +105,7 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
 
 // Cleans up deployed state. If a loading gate is active, reasserts overlay + deploy block without starting new warm.
 function onPlayerUndeployImpl(eventPlayer: mod.Player) {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     if (isPidDisconnected(pid)) return;

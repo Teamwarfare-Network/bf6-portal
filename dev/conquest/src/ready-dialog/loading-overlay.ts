@@ -63,7 +63,7 @@ const LOADING_OVERLAY_BODY_OFFSET_Y = 60;
 
 // Ensures the loading overlay tree exists for one player so the warm gate can show a stable loading message.
 function ensureLoadingOverlayForPlayer(eventPlayer: mod.Player): mod.UIWidget | undefined {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return undefined;
+    if (!isValidPlayer(eventPlayer)) return undefined;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return undefined;
 
@@ -87,7 +87,7 @@ function ensureLoadingOverlayForPlayer(eventPlayer: mod.Player): mod.UIWidget | 
 
     mod.AddUIContainer(
         joinPromptRootName(pid),
-        mod.CreateVector(0, 0, 0),
+        VEC_ZERO,
         mod.CreateVector(640, 240, 0),
         mod.UIAnchor.Center,
         mod.GetUIRoot(),
@@ -106,7 +106,7 @@ function ensureLoadingOverlayForPlayer(eventPlayer: mod.Player): mod.UIWidget | 
 
     mod.AddUIContainer(
         joinPromptPanelName(pid),
-        mod.CreateVector(0, 0, 0),
+        VEC_ZERO,
         mod.CreateVector(LOADING_OVERLAY_PANEL_WIDTH, LOADING_OVERLAY_PANEL_HEIGHT, 0),
         mod.UIAnchor.Center,
         root,
@@ -130,7 +130,7 @@ function ensureLoadingOverlayForPlayer(eventPlayer: mod.Player): mod.UIWidget | 
         34,
         mod.UIAnchor.Center,
         mod.UIAnchor.Center,
-        mod.Message(mod.stringkeys.twl.ui.loading),
+        msg(mod.stringkeys.twl.ui.loading),
         eventPlayer,
         panel,
         24,
@@ -145,7 +145,7 @@ function ensureLoadingOverlayForPlayer(eventPlayer: mod.Player): mod.UIWidget | 
         28,
         mod.UIAnchor.Center,
         mod.UIAnchor.Center,
-        mod.Message(mod.stringkeys.twl.hud.branding.title),
+        msg(mod.stringkeys.twl.hud.branding.title),
         eventPlayer,
         panel,
         18,
@@ -160,7 +160,7 @@ function ensureLoadingOverlayForPlayer(eventPlayer: mod.Player): mod.UIWidget | 
         24,
         mod.UIAnchor.Center,
         mod.UIAnchor.Center,
-        mod.Message(mod.stringkeys.twl.hud.branding.subtitle),
+        msg(mod.stringkeys.twl.hud.branding.subtitle),
         eventPlayer,
         panel,
         15,
@@ -175,7 +175,7 @@ function ensureLoadingOverlayForPlayer(eventPlayer: mod.Player): mod.UIWidget | 
         28,
         mod.UIAnchor.Center,
         mod.UIAnchor.Center,
-        mod.Message(mod.stringkeys.twl.ui.customScriptsLoading),
+        msg(mod.stringkeys.twl.ui.customScriptsLoading),
         eventPlayer,
         panel,
         17,
@@ -198,8 +198,8 @@ function showLoadingOverlayForPlayer(eventPlayer: mod.Player): void {
     safeSetUIWidgetVisible(safeFind(joinPromptSubtitleName(pid)), true);
     safeSetUIWidgetVisible(safeFind(joinPromptBodyName(pid)), true);
     safeSetUIWidgetVisible(safeFind(joinPromptDetailName(pid)), true);
-    safeSetUITextLabel(safeFind(joinPromptBodyName(pid)), mod.Message(mod.stringkeys.twl.hud.branding.subtitle));
-    safeSetUITextLabel(safeFind(joinPromptDetailName(pid)), mod.Message(mod.stringkeys.twl.ui.customScriptsLoading));
+    safeSetUITextLabel(safeFind(joinPromptBodyName(pid)), msg(mod.stringkeys.twl.hud.branding.subtitle));
+    safeSetUITextLabel(safeFind(joinPromptDetailName(pid)), msg(mod.stringkeys.twl.ui.customScriptsLoading));
 }
 
 //#endregion ----------------- Loading Overlay - Layout --------------------

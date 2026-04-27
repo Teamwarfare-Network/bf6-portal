@@ -96,7 +96,7 @@ function buildReadyDialogRosterSection(
         teamLabelY,
         teamLabelWidth,
         teamLabelHeight,
-        mod.Message(getTeamNameKey(TeamID.Team1)),
+        msg(getTeamNameKey(TeamID.Team1)),
         20,
         mod.UIAnchor.Center,
         true
@@ -113,7 +113,7 @@ function buildReadyDialogRosterSection(
         teamLabelY,
         teamLabelWidth,
         teamLabelHeight,
-        mod.Message(getTeamNameKey(TeamID.Team2)),
+        msg(getTeamNameKey(TeamID.Team2)),
         20,
         mod.UIAnchor.Center,
         true
@@ -145,7 +145,7 @@ function buildReadyDialogRosterSection(
             y,
             colNameW,
             rowH,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
+            msg(STR_SYS_COUNTER, " "),
             14,
             mod.UIAnchor.TopLeft
         );
@@ -158,7 +158,7 @@ function buildReadyDialogRosterSection(
             y,
             colStatusW,
             rowH,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
+            msg(STR_SYS_COUNTER, " "),
             14,
             mod.UIAnchor.TopLeft
         );
@@ -171,7 +171,7 @@ function buildReadyDialogRosterSection(
             y,
             colStatusW,
             rowH,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
+            msg(STR_SYS_COUNTER, " "),
             14,
             mod.UIAnchor.TopLeft
         );
@@ -188,7 +188,7 @@ function buildReadyDialogRosterSection(
             y,
             colNameW,
             rowH,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
+            msg(STR_SYS_COUNTER, " "),
             14,
             mod.UIAnchor.TopLeft
         );
@@ -201,7 +201,7 @@ function buildReadyDialogRosterSection(
             y,
             colStatusW,
             rowH,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
+            msg(STR_SYS_COUNTER, " "),
             14,
             mod.UIAnchor.TopLeft
         );
@@ -214,7 +214,7 @@ function buildReadyDialogRosterSection(
             y,
             colStatusW,
             rowH,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, " "),
+            msg(STR_SYS_COUNTER, " "),
             14,
             mod.UIAnchor.TopLeft
         );

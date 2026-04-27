@@ -99,7 +99,7 @@ function setBoundaryPromptVisible(cache: BoundaryPromptWidgetCacheEntry, visible
 }
 
 function ensureBoundaryPromptUiForPlayer(player: mod.Player): BoundaryPromptWidgetCacheEntry | undefined {
-    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    if (!isValidPlayer(player)) return undefined;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return undefined;
 
@@ -156,7 +156,7 @@ function ensureBoundaryPromptUiForPlayer(player: mod.Player): BoundaryPromptWidg
     if (!safeFind(cache.borderName)) {
         mod.AddUIContainer(
             cache.borderName,
-            mod.CreateVector(0, 0, 0),
+            VEC_ZERO,
             mod.CreateVector(BOUNDARY_PROMPT_PANEL_WIDTH, BOUNDARY_PROMPT_PANEL_HEIGHT, 0),
             mod.UIAnchor.Center,
             parent,
@@ -390,7 +390,7 @@ function ensureBoundaryPromptUiForPlayer(player: mod.Player): BoundaryPromptWidg
 }
 
 function showBoundaryPromptForPlayer(player: mod.Player, kind: BoundaryPromptKind, remainingSeconds: number): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return;
     if (!isPlayerDeployed(player) || !safeGetSoldierStateBool(player, mod.SoldierStateBool.IsAlive, false)) {

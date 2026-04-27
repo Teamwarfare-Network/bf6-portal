@@ -224,7 +224,7 @@ function buildDigit(part: string, pid: number, x: number, width: number) {
         size: [width, CLOCK_HEIGHT],
         visible: true,
         bgAlpha: 0,
-        textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
+        textLabel: msg(STR_HUD_CLOCK_DIGIT, 0),
         textSize: CLOCK_FONT_SIZE,
         textAnchor: mod.UIAnchor.Center,
     };
@@ -239,7 +239,7 @@ function buildDigitShadow(part: string, pid: number, x: number, width: number) {
         size: [width, CLOCK_HEIGHT],
         visible: true,
         bgAlpha: 0,
-        textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
+        textLabel: msg(STR_HUD_CLOCK_DIGIT, 0),
         textColor: [0, 0, 0],
         textAlpha: CLOCK_TEXT_SHADOW_ALPHA,
         textSize: CLOCK_FONT_SIZE,
@@ -258,7 +258,7 @@ function buildColon(pid: number, x: number, width: number) {
         size: [width, CLOCK_HEIGHT],
         visible: true,
         bgAlpha: 0,
-        textLabel: mod.Message(mod.stringkeys.twl.hud.clock.colon),
+        textLabel: msg(mod.stringkeys.twl.hud.clock.colon),
         textSize: CLOCK_FONT_SIZE,
         textAnchor: mod.UIAnchor.Center,
     };
@@ -273,7 +273,7 @@ function buildColonShadow(pid: number, x: number, width: number) {
         size: [width, CLOCK_HEIGHT],
         visible: true,
         bgAlpha: 0,
-        textLabel: mod.Message(mod.stringkeys.twl.hud.clock.colon),
+        textLabel: msg(mod.stringkeys.twl.hud.clock.colon),
         textColor: [0, 0, 0],
         textAlpha: CLOCK_TEXT_SHADOW_ALPHA,
         textSize: CLOCK_FONT_SIZE,
@@ -283,12 +283,12 @@ function buildColonShadow(pid: number, x: number, width: number) {
 
 // Writes a single numeric digit into an existing cached clock text widget.
 function setDigitCached(widget: mod.UIWidget, digit: number): void {
-    safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.clock.digit, digit));
+    safeSetUITextLabel(widget, msg(STR_HUD_CLOCK_DIGIT, digit));
 }
 
 // Writes the colon glyph into an existing cached clock separator widget.
 function setColonCached(widget: mod.UIWidget): void {
-    safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.clock.colon));
+    safeSetUITextLabel(widget, msg(mod.stringkeys.twl.hud.clock.colon));
 }
 
 // Applies one color value across all cached clock digit/separator widgets.

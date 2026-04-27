@@ -3,6 +3,15 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.405: fix bundle typecheck: make isValidPlayer a TS type predicate (p is mod.Player) so caller narrowing matches the original '!p || !mod.IsPlayerValid(p)' pattern; resolves 65 TS2345 Player|null|undefined errors in dist/bundle.ts
+// v1.404: fix bundle typecheck: cast spread inside msg() to bypass mod.Message overload narrowing; restore mod.Message(player) for Player-as-name sites (id-helpers.ts)
+// v1.403: fix: revert STR_RD_VEHICLE_NO_SPAWN in foundation/gameplay.ts (forward reference; gameplay loads before string-keys); fix latent mod.Message("?") to use registered flagLetters.unknown stringkey
+// v1.402: Phase 1.4 helper extraction: VEC_ZERO const replaces 23 mod.CreateVector(0,0,0) call sites
+// v1.401: Phase 1.3 helper extraction: isValidPlayer() guard helper across 154 sites
+// v1.400: Phase 1.2 helper extraction: alias 4 high-frequency stringkey paths (genericCounter, hud.clock.digit, unknownPlayer, vehicleShortNoSpawn)
+// v1.399: Phase 1.1 helper extraction: msg() wrapper for mod.Message() across 38 files; ~345 call sites shortened
+// v1.398: postbuild: strip standalone block comments from bundle (preserves inline /* */ that share a line with code)
+// v1.397: postbuild: strip leading whitespace from bundle (reclaims ~150KB / clears bundle pressure)
 // v1.395: tickets 450->400 starting (#103 calibration tweak)
 // v1.394: disable HQ supply boxes (interact point + yellow smoke VFX) when match goes LIVE; new disableOnLive map-config flag, gate at interact-point + VFX-spawn, immediate refresh in startMatch (#108)
 // v1.393: spawn-charge: exempt vehicle_deploy (new reason) and team_switch from ticket cost; alive on-foot vehicle deploys + team-swaps no longer consume tickets

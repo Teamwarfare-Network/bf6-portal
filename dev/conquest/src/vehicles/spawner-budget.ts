@@ -28,12 +28,12 @@ function auditSpawnerBudgetAtRoundStart(): void {
     try {
         sendHighlightedWorldLogMessage(
             mod.Message(
-                mod.stringkeys.twl.system.genericCounter,
+                STR_SYS_COUNTER,
                 `[spawner-budget] persistent VehicleSpawner count=${count} >= threshold ${SPAWNER_COUNT_WARN_THRESHOLD}`
             ),
             false,
             undefined,
-            mod.stringkeys.twl.system.genericCounter
+            STR_SYS_COUNTER
         );
     } catch {}
 }

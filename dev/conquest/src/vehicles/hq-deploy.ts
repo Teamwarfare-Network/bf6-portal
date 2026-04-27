@@ -71,7 +71,7 @@ type HqRequestResult = { ok: boolean; reason?: string };
 //                    seat call runs inside the redeploy's OnPlayerDeployed chain (Phase 6).
 function requestHqVehicleSpawn(player: mod.Player, pid: number, rowIndex: number, source: "deploy_menu" | "on_foot" = "deploy_menu"): HqRequestResult {
     if (!isHqDeployMode()) return { ok: false, reason: "not_hq_mode" };
-    if (!player || !mod.IsPlayerValid(player)) return { ok: false, reason: "invalid_player" };
+    if (!isValidPlayer(player)) return { ok: false, reason: "invalid_player" };
 
     const playerTeamId = safeGetTeamNumberFromPlayer(player, 0);
     if (playerTeamId !== TeamID.Team1 && playerTeamId !== TeamID.Team2) return { ok: false, reason: "bad_team" };
@@ -165,7 +165,7 @@ function requestForwardVehicleSpawn(player: mod.Player, pid: number, rowIndex: n
     if (!isHqDeployMode()) return { ok: false, reason: "not_hq_mode" };
     if (!isForwardDeployEnabled()) return { ok: false, reason: "forward_disabled" };
     if (isRoundStartForwardDeployDelayActive()) return { ok: false, reason: "forward_delay" };
-    if (!player || !mod.IsPlayerValid(player)) return { ok: false, reason: "invalid_player" };
+    if (!isValidPlayer(player)) return { ok: false, reason: "invalid_player" };
 
     const playerTeamId = safeGetTeamNumberFromPlayer(player, 0);
     if (playerTeamId !== TeamID.Team1 && playerTeamId !== TeamID.Team2) return { ok: false, reason: "bad_team" };
@@ -214,7 +214,7 @@ function requestAirVehicleSpawn(player: mod.Player, pid: number, rowIndex: numbe
     if (!isAirDeployEnabled()) return { ok: false, reason: "air_disabled" };
     if (isRoundStartAirDeployDelayActive()) return { ok: false, reason: "air_delay" };
     if (isRoundStartAirDelayActive()) return { ok: false, reason: "air_delay_full" };
-    if (!player || !mod.IsPlayerValid(player)) return { ok: false, reason: "invalid_player" };
+    if (!isValidPlayer(player)) return { ok: false, reason: "invalid_player" };
 
     const playerTeamId = safeGetTeamNumberFromPlayer(player, 0);
     if (playerTeamId !== TeamID.Team1 && playerTeamId !== TeamID.Team2) return { ok: false, reason: "bad_team" };
@@ -279,7 +279,7 @@ async function beginHqSeatFlow(pid: number, vehicle: mod.Vehicle): Promise<void>
     await mod.Wait(HQ_DEPLOY_SEAT_SETTLE_SECONDS);
 
     const player = safeFindPlayer(pid);
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
 
     // Re-validate: the claim may have been cleared/replaced during the settle.
     const slot = findSlotForHqClaim(pid);

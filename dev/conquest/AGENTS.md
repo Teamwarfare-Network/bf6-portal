@@ -89,6 +89,21 @@ Prompting examples:
 5. When removing or refactoring code, update nearby comments so they remain accurate and do not describe deleted behavior.
 6. Function names must describe the end-goal behavior clearly (not temporary/mechanical naming).
 
+## Comment Bundle-Stripping Behavior (postbuild)
+
+`scripts/postbuild.js` strips comments from the emitted bundle to preserve headroom. Source files are unchanged — these rules describe what survives into `dist/bundle.ts`:
+
+1. **Standalone line comments** (`^[ \t]*// ...`) — STRIPPED. Includes JSDoc-style `//` lines, section headers, etc.
+2. **Standalone block comments** (`^[ \t]*/* ... */` on its own line(s)) — STRIPPED (v1.398). Includes JSDoc `/** ... */` blocks above functions and types.
+3. **Inline trailing comments** (`const x = 5; // note`) — SURVIVE. The line-comment regex requires `/` at line start.
+4. **Inline block comments** (`code /* note */ code`) — SURVIVE. The block-comment regex requires `/*` at line start AND `*/` at line end.
+5. **TypeScript directive comments** (`// @ts-nocheck`, `// @ts-ignore`, `// @ts-expect-error`) — SURVIVE. Negative lookahead in the strip regex preserves them.
+
+Implications for authoring:
+- Use JSDoc and section headers freely in source — they cost zero bundle bytes.
+- Inline trailing comments DO cost bundle bytes; reserve them for genuinely useful pointers (subtle invariants, non-obvious whys).
+- Don't write critical structural info as an inline trailing comment expecting it to vanish — it doesn't.
+
 ## Code Placement and Structure Policy
 
 1. Place new code in the correct domain file/module for the behavior being changed.

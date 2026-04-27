@@ -279,13 +279,13 @@ function twlConquestHudRenderPlayerFrame(
     twlConquestHudRenderShadowRingText(
         widgets.ticketBlueTeamNameShadowRing,
         true,
-        mod.Message(getTeamNameKey(snapshot.friendlyTeam))
+        msg(getTeamNameKey(snapshot.friendlyTeam))
     );
     safeSetUIWidgetVisible(widgets.ticketBlueTeamName, true);
     twlConquestHudRenderShadowRingText(
         widgets.ticketRedTeamNameShadowRing,
         true,
-        mod.Message(getTeamNameKey(snapshot.enemyTeam))
+        msg(getTeamNameKey(snapshot.enemyTeam))
     );
     safeSetUIWidgetVisible(widgets.ticketRedTeamName, true);
     safeSetUIWidgetVisible(widgets.ticketBlueCount, true);
@@ -298,14 +298,14 @@ function twlConquestHudRenderPlayerFrame(
 
     safeSetUITextLabel(
         widgets.ticketBlueCount,
-        mod.Message(mod.stringkeys.twl.system.genericCounter, Math.max(0, Math.floor(snapshot.friendlyTickets)))
+        msg(STR_SYS_COUNTER, Math.max(0, Math.floor(snapshot.friendlyTickets)))
     );
     safeSetUITextLabel(
         widgets.ticketRedCount,
-        mod.Message(mod.stringkeys.twl.system.genericCounter, Math.max(0, Math.floor(snapshot.enemyTickets)))
+        msg(STR_SYS_COUNTER, Math.max(0, Math.floor(snapshot.enemyTickets)))
     );
-    const friendlyTeamName = mod.Message(getTeamNameKey(snapshot.friendlyTeam));
-    const enemyTeamName = mod.Message(getTeamNameKey(snapshot.enemyTeam));
+    const friendlyTeamName = msg(getTeamNameKey(snapshot.friendlyTeam));
+    const enemyTeamName = msg(getTeamNameKey(snapshot.enemyTeam));
     safeSetUITextLabel(widgets.ticketBlueTeamName, friendlyTeamName);
     safeSetUITextLabel(widgets.ticketRedTeamName, enemyTeamName);
     safeSetUITextColor(widgets.ticketBlueTeamName, TWL_CONQUEST_HUD_COLOR_BLUE);
@@ -328,7 +328,7 @@ function twlConquestHudRenderPlayerFrame(
     // Reassert left-fill origin each frame so track/fill alignment remains stable after swap rebuilds.
     safeSetUIWidgetPosition(
         widgets.ticketBlueBarFill,
-        mod.CreateVector(0, 0, 0)
+        VEC_ZERO
     );
     safeSetUIWidgetPosition(
         widgets.ticketRedBarFill,
@@ -368,22 +368,22 @@ function twlConquestHudRenderPlayerFrame(
         twlConquestHudRenderShadowRingText(
             leftChevronShadowRing,
             leftVisible,
-            mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT)
+            msg(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT)
         );
         twlConquestHudRenderShadowRingText(
             rightChevronShadowRing,
             rightVisible,
-            mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT)
+            msg(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT)
         );
         safeSetUIWidgetVisible(leftChevron, leftVisible);
         safeSetUIWidgetVisible(rightChevron, rightVisible);
         if (leftVisible) {
-            safeSetUITextLabel(leftChevron, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT));
+            safeSetUITextLabel(leftChevron, msg(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT));
             safeSetUITextColor(leftChevron, TWL_CONQUEST_HUD_COLOR_BLEED_CHEVRON_BLUE);
             safeSetUITextAlpha(leftChevron, 1);
         }
         if (rightVisible) {
-            safeSetUITextLabel(rightChevron, mod.Message(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT));
+            safeSetUITextLabel(rightChevron, msg(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT));
             safeSetUITextColor(rightChevron, TWL_CONQUEST_HUD_COLOR_BLEED_CHEVRON_RED);
             safeSetUITextAlpha(rightChevron, 1);
         }
@@ -406,13 +406,13 @@ function twlConquestHudRenderPlayerFrame(
             twlConquestHudRenderShadowRingText(
                 slotLabelShadowRing,
                 false,
-                mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN)
+                msg(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN)
             );
             safeSetUIWidgetVisible(slotLabel, false);
             twlConquestHudRenderShadowRingText(
                 slotPercentShadowRing,
                 false,
-                mod.Message(STR_SYSTEM_GENERIC_PERCENT, 0)
+                msg(STR_SYSTEM_GENERIC_PERCENT, 0)
             );
             safeSetUIWidgetVisible(slotPercent, false);
             continue;
@@ -445,7 +445,7 @@ function twlConquestHudRenderPlayerFrame(
         safeSetUIWidgetVisible(slotLabel, objective.labelVisible === true);
         if (objective.labelVisible) {
             const fallbackLabelKey = twlConquestHudGetFlagLetterStringKey(objective.label);
-            const labelMessage = objective.labelMessage ?? mod.Message(fallbackLabelKey);
+            const labelMessage = objective.labelMessage ?? msg(fallbackLabelKey);
             twlConquestHudRenderShadowRingText(
                 slotLabelShadowRing,
                 true,
@@ -457,13 +457,13 @@ function twlConquestHudRenderPlayerFrame(
             twlConquestHudRenderShadowRingText(
                 slotLabelShadowRing,
                 false,
-                mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN)
+                msg(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN)
             );
         }
 
         safeSetUIWidgetVisible(slotPercent, objective.percentVisible === true);
         if (objective.percentVisible) {
-            const percentMessage = objective.percentMessage ?? mod.Message(STR_SYSTEM_GENERIC_PERCENT, Math.max(0, Math.min(100, Math.round(objective.progress01 * 100))));
+            const percentMessage = objective.percentMessage ?? msg(STR_SYSTEM_GENERIC_PERCENT, Math.max(0, Math.min(100, Math.round(objective.progress01 * 100))));
             twlConquestHudRenderShadowRingText(
                 slotPercentShadowRing,
                 true,
@@ -478,7 +478,7 @@ function twlConquestHudRenderPlayerFrame(
             twlConquestHudRenderShadowRingText(
                 slotPercentShadowRing,
                 false,
-                mod.Message(STR_SYSTEM_GENERIC_PERCENT, 0)
+                msg(STR_SYSTEM_GENERIC_PERCENT, 0)
             );
         }
     }
@@ -490,13 +490,13 @@ function twlConquestHudRenderPlayerFrame(
         twlConquestHudRenderShadowRingText(
             widgets.popoutPercentShadowRing,
             false,
-            mod.Message(STR_SYSTEM_GENERIC_PERCENT, 0)
+            msg(STR_SYSTEM_GENERIC_PERCENT, 0)
         );
         safeSetUIWidgetVisible(widgets.popoutLabel, false);
         twlConquestHudRenderShadowRingText(
             widgets.popoutLabelShadowRing,
             false,
-            mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN)
+            msg(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN)
         );
         safeSetUIWidgetVisible(widgets.popoutFill, false);
         safeSetUIWidgetVisible(widgets.popoutBorder, false);
@@ -534,7 +534,7 @@ function twlConquestHudRenderPlayerFrame(
         if (popout.labelVisible) {
             const fallbackPopoutLabel = twlConquestHudResolveObjectiveLabelLetter(popout.objId, 0);
             const fallbackPopoutLabelKey = twlConquestHudGetFlagLetterStringKey(fallbackPopoutLabel);
-            const labelMessage = popout.labelMessage ?? mod.Message(fallbackPopoutLabelKey);
+            const labelMessage = popout.labelMessage ?? msg(fallbackPopoutLabelKey);
             twlConquestHudRenderShadowRingText(
                 widgets.popoutLabelShadowRing,
                 true,
@@ -546,13 +546,13 @@ function twlConquestHudRenderPlayerFrame(
             twlConquestHudRenderShadowRingText(
                 widgets.popoutLabelShadowRing,
                 false,
-                mod.Message(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN)
+                msg(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN)
             );
         }
 
         safeSetUIWidgetVisible(widgets.popoutPercent, popout.percentVisible === true);
         if (popout.percentVisible) {
-            const percentMessage = popout.percentMessage ?? mod.Message(STR_SYSTEM_GENERIC_PERCENT, 0);
+            const percentMessage = popout.percentMessage ?? msg(STR_SYSTEM_GENERIC_PERCENT, 0);
             twlConquestHudRenderShadowRingText(
                 widgets.popoutPercentShadowRing,
                 true,
@@ -567,7 +567,7 @@ function twlConquestHudRenderPlayerFrame(
             twlConquestHudRenderShadowRingText(
                 widgets.popoutPercentShadowRing,
                 false,
-                mod.Message(STR_SYSTEM_GENERIC_PERCENT, 0)
+                msg(STR_SYSTEM_GENERIC_PERCENT, 0)
             );
         }
         // Reveal root last for one-pass popout lane appearance.
@@ -580,17 +580,17 @@ function twlConquestHudRenderPlayerFrame(
         twlConquestHudRenderShadowRingText(
             widgets.engageFriendlyCountShadowRing,
             false,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, 0)
+            msg(STR_SYS_COUNTER, 0)
         );
         twlConquestHudRenderShadowRingText(
             widgets.engageEnemyCountShadowRing,
             false,
-            mod.Message(mod.stringkeys.twl.system.genericCounter, 0)
+            msg(STR_SYS_COUNTER, 0)
         );
         twlConquestHudRenderShadowRingText(
             widgets.engageStatusShadowRing,
             false,
-            mod.Message(STR_HUD_CONQUEST_CAPTURE_STATUS_DEFEND)
+            msg(STR_HUD_CONQUEST_CAPTURE_STATUS_DEFEND)
         );
         safeSetUIWidgetVisible(widgets.engageStatus, false);
         safeSetUIWidgetVisible(widgets.engageEnemyCount, false);
@@ -624,9 +624,9 @@ function twlConquestHudRenderPlayerFrame(
             mod.CreateVector(enemyWidth, TWL_CONQUEST_HUD_ENGAGE_TRACK_HEIGHT, 0)
         );
 
-        const friendlyCountLabel = engage.friendlyCountLabel ?? mod.Message(mod.stringkeys.twl.system.genericCounter, 0);
-        const enemyCountLabel = engage.enemyCountLabel ?? mod.Message(mod.stringkeys.twl.system.genericCounter, 0);
-        const statusLabel = engage.statusLabel ?? mod.Message(STR_HUD_CONQUEST_CAPTURE_STATUS_DEFEND);
+        const friendlyCountLabel = engage.friendlyCountLabel ?? msg(STR_SYS_COUNTER, 0);
+        const enemyCountLabel = engage.enemyCountLabel ?? msg(STR_SYS_COUNTER, 0);
+        const statusLabel = engage.statusLabel ?? msg(STR_HUD_CONQUEST_CAPTURE_STATUS_DEFEND);
         twlConquestHudRenderShadowRingText(
             widgets.engageFriendlyCountShadowRing,
             true,

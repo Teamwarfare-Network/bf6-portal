@@ -160,7 +160,7 @@ function refreshBuiltReadyDialogCachesForAllPlayers(): void {
         const state = State.players.readyDialogData[pid];
         if (!state || !state.uiBuilt) continue;
         const viewer = safeFindPlayer(pid);
-        if (!viewer || !mod.IsPlayerValid(viewer)) continue;
+        if (!isValidPlayer(viewer)) continue;
         refreshReadyDialogRosterForViewer(viewer, pid);
         syncReadyToggleButtonWidgetsForPid(pid);
         updateReadyDialogModeConfigForPid(pid);
@@ -189,7 +189,7 @@ function warmHiddenReadyDialogCacheForPid(playerId: number): void {
     if (!state || state.dialogVisible) return;
     if (!State.players.deployedByPid[playerId]) return;
     const player = safeFindPlayer(playerId);
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     ensureReadyDialogUiBuiltHidden(player);
 }
 

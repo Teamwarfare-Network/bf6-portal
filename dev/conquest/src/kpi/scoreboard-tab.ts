@@ -21,18 +21,18 @@ function configureScoreboard(): void {
     }
     try {
         mod.SetScoreboardHeader(
-            mod.Message(getTeamNameKey(TeamID.Team1)),
-            mod.Message(getTeamNameKey(TeamID.Team2))
+            msg(getTeamNameKey(TeamID.Team1)),
+            msg(getTeamNameKey(TeamID.Team2))
         );
     } catch {
     }
     try {
         mod.SetScoreboardColumnNames(
-            mod.Message(mod.stringkeys.twl.scoreboard.colScore),
-            mod.Message(mod.stringkeys.twl.scoreboard.colKills),
-            mod.Message(mod.stringkeys.twl.scoreboard.colDeaths),
-            mod.Message(mod.stringkeys.twl.scoreboard.colAssists),
-            mod.Message(mod.stringkeys.twl.scoreboard.colCaptures)
+            msg(mod.stringkeys.twl.scoreboard.colScore),
+            msg(mod.stringkeys.twl.scoreboard.colKills),
+            msg(mod.stringkeys.twl.scoreboard.colDeaths),
+            msg(mod.stringkeys.twl.scoreboard.colAssists),
+            msg(mod.stringkeys.twl.scoreboard.colCaptures)
         );
         mod.SetScoreboardColumnWidths(1.2, 0.7, 0.7, 0.7, 0.7);
         mod.SetScoreboardSorting(0, false);
@@ -48,7 +48,7 @@ function configureScoreboard(): void {
 // Pushes KPI values for a single player to the scoreboard. Clears the dirty flag on success.
 // Uses engine GetPlayerDeaths for death count (authoritative) and script-tracked kills/assists/captures.
 function updateScoreboardForPlayer(player: mod.Player): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return;
     const kpi = State.players.kpiByPid[pid];

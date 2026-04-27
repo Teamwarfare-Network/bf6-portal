@@ -28,7 +28,7 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         padding: 0,
         bgAlpha: 0,
         bgFill: mod.UIBgFill.None,
-        textLabel: mod.Message(mod.stringkeys.twl.adminPanel.tester.header),
+        textLabel: msg(mod.stringkeys.twl.adminPanel.tester.header),
         textColor: ADMIN_PANEL_LABEL_TEXT_COLOR_RGB,
         textAlpha: 1,
         textSize: 12,
@@ -177,7 +177,7 @@ function addTesterRow(
         minusTextId,
         buttonSizeX,
         buttonSizeY,
-        mod.Message(mod.stringkeys.twl.ui.minus),
+        msg(mod.stringkeys.twl.ui.minus),
         eventPlayer,
         DEC_BORDER ?? containerBase
     );
@@ -187,7 +187,7 @@ function addTesterRow(
     }
 
     mod.AddUIText(labelId, mod.CreateVector(baseX + labelOffsetX, baseY + 11, 0), mod.CreateVector(labelSizeX, buttonSizeY - 22, 0),
-        mod.UIAnchor.TopLeft, mod.Message(labelKey), eventPlayer);
+        mod.UIAnchor.TopLeft, msg(labelKey), eventPlayer);
     const LABEL = safeFind(labelId);
     if (LABEL) {
         mod.SetUITextSize(LABEL, 12);
@@ -212,7 +212,7 @@ function addTesterRow(
         plusTextId,
         buttonSizeX,
         buttonSizeY,
-        mod.Message(mod.stringkeys.twl.ui.plus),
+        msg(mod.stringkeys.twl.ui.plus),
         eventPlayer,
         INC_BORDER ?? containerBase
     );
@@ -250,7 +250,7 @@ function addTesterResetButton(
         labelId,
         width,
         height,
-        mod.Message(mod.stringkeys.twl.adminPanel.tester.buttons.clockReset),
+        msg(mod.stringkeys.twl.adminPanel.tester.buttons.clockReset),
         eventPlayer,
         resetParent
     );
@@ -291,7 +291,7 @@ function addTesterActionButton(
         labelId,
         width,
         height,
-        mod.Message(labelKey),
+        msg(labelKey),
         eventPlayer,
         actionParent
     );
@@ -311,7 +311,7 @@ function isAdminPanelWarmForPid(pid: number): boolean {
 // Prebuilds the admin panel hidden for one player so the first open is instant after the loading gate releases.
 // Idempotent: does nothing if already built. Must be called while the gate is still active (player is hidden).
 function prebuildAdminPanelWhileHidden(eventPlayer: mod.Player, pid: number): void {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
     const state = State.players.readyDialogData[pid];
     if (!state) return;
     if (state.adminPanelBuilt) return;

@@ -161,7 +161,7 @@ function conquestPhase2BOnMatchLiveStart(): void {
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
+        if (!isValidPlayer(p)) continue;
         const pid = safeGetPlayerId(p);
         if (pid === undefined || isPidDisconnected(pid)) continue;
         // First-live-spawn exemption is granted only to players present at round start.
@@ -198,7 +198,7 @@ function conquestPhase2BOnPlayerLeave(pid: number): void {
 
 // Deploy hook: enforces Phase 2B charge policy with first-spawn exemption and duplicate-charge guards.
 function conquestPhase2BOnPlayerDeployed(eventPlayer: mod.Player, wasAlreadyDeployed: boolean): void {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
+    if (!isValidPlayer(eventPlayer)) return;
     if (!isMatchLive()) return;
     if (!State.conquest.spawnCharge.enabled) return;
     if (State.conquest.endRace.endLatched) return;

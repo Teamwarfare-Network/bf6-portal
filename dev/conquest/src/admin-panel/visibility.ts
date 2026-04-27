@@ -91,7 +91,7 @@ function ensureAdminPanelWidgets(
             adminToggleLabelId,
             ADMIN_PANEL_TOGGLE_WIDTH,
             ADMIN_PANEL_TOGGLE_HEIGHT,
-            mod.Message(mod.stringkeys.twl.adminPanel.buttons.panel),
+            msg(mod.stringkeys.twl.adminPanel.buttons.panel),
             eventPlayer,
             adminToggleBorder ?? adminToggleParent
         );
@@ -134,7 +134,7 @@ function toggleReadyDialogAdminPanel(eventPlayer: mod.Player, playerId: number):
     }
 
     sendHighlightedWorldLogMessage(
-        mod.Message(mod.stringkeys.twl.adminPanel.accessed, eventPlayer),
+        msg(mod.stringkeys.twl.adminPanel.accessed, eventPlayer),
         true,
         undefined,
         mod.stringkeys.twl.adminPanel.accessed

@@ -17,7 +17,7 @@ function handleAdminPanelAction(eventPlayer: mod.Player, actionKey: number): voi
     State.admin.actionCount = Math.max(0, Math.floor(State.admin.actionCount) + 1);
     updateAdminPanelActionCountForAllPlayers();
     sendHighlightedWorldLogMessage(
-        mod.Message(mod.stringkeys.twl.adminPanel.actionPressed, eventPlayer, actionKey),
+        msg(mod.stringkeys.twl.adminPanel.actionPressed, eventPlayer, actionKey),
         true,
         undefined,
         mod.stringkeys.twl.adminPanel.actionPressed

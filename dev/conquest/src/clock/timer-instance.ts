@@ -64,7 +64,7 @@ function buildReusableTimerDigit(name: string, x: number, width: number, cfg: Re
         size: [width, cfg.height],
         visible: true,
         bgAlpha: 0,
-        textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
+        textLabel: msg(STR_HUD_CLOCK_DIGIT, 0),
         textSize: cfg.fontSize,
         textAnchor: mod.UIAnchor.Center,
     };
@@ -79,7 +79,7 @@ function buildReusableTimerDigitShadow(name: string, x: number, width: number, c
         size: [width, cfg.height],
         visible: true,
         bgAlpha: 0,
-        textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
+        textLabel: msg(STR_HUD_CLOCK_DIGIT, 0),
         textColor: [0, 0, 0],
         textAlpha: cfg.textShadowAlpha,
         textSize: cfg.fontSize,
@@ -96,7 +96,7 @@ function buildReusableTimerColon(name: string, x: number, width: number, cfg: Re
         size: [width, cfg.height],
         visible: true,
         bgAlpha: 0,
-        textLabel: mod.Message(mod.stringkeys.twl.hud.clock.colon),
+        textLabel: msg(mod.stringkeys.twl.hud.clock.colon),
         textSize: cfg.fontSize,
         textAnchor: mod.UIAnchor.Center,
     };
@@ -114,7 +114,7 @@ function buildReusableTimerColonShadow(name: string, x: number, width: number, c
         size: [width, cfg.height],
         visible: true,
         bgAlpha: 0,
-        textLabel: mod.Message(mod.stringkeys.twl.hud.clock.colon),
+        textLabel: msg(mod.stringkeys.twl.hud.clock.colon),
         textColor: [0, 0, 0],
         textAlpha: cfg.textShadowAlpha,
         textSize: cfg.fontSize,
@@ -131,7 +131,7 @@ function buildReusableTimerStatus(name: string, cfg: ReusableTimerUiConfig) {
         size: [cfg.width, cfg.height],
         visible: false,
         bgAlpha: 0,
-        textLabel: mod.Message(mod.stringkeys.twl.ui.ready),
+        textLabel: msg(mod.stringkeys.twl.ui.ready),
         textSize: cfg.fontSize - 1,
         textAnchor: mod.UIAnchor.Center,
     };
@@ -146,7 +146,7 @@ function buildReusableTimerStatusShadow(name: string, cfg: ReusableTimerUiConfig
         size: [cfg.width, cfg.height],
         visible: false,
         bgAlpha: 0,
-        textLabel: mod.Message(mod.stringkeys.twl.ui.ready),
+        textLabel: msg(mod.stringkeys.twl.ui.ready),
         textColor: [0, 0, 0],
         textAlpha: cfg.textShadowAlpha,
         textSize: cfg.fontSize - 1,
@@ -189,7 +189,7 @@ function ensureReusableTimerInstance(
     cfg: ReusableTimerUiConfig,
     existing?: ReusableTimerWidgetCacheEntry
 ): ReusableTimerWidgetCacheEntry | undefined {
-    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    if (!isValidPlayer(player)) return undefined;
     const pid = mod.GetObjId(player);
     const rootName = `${baseName}Root_${pid}`;
     const surfaceName = `${baseName}Surface_${pid}`;

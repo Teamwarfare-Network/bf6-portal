@@ -6,7 +6,7 @@
 // Writes the admin panel action counter label if the widget is currently available.
 function setAdminPanelActionCountText(widget: mod.UIWidget | undefined, value: number): void {
     if (!widget) return;
-    safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.adminPanel.actionCountFormat, Math.floor(value)));
+    safeSetUITextLabel(widget, msg(mod.stringkeys.twl.adminPanel.actionCountFormat, Math.floor(value)));
 }
 
 //#endregion ----------------- HUD Counter Helpers --------------------
@@ -22,7 +22,7 @@ function getModePlayersHeaderLabel(): mod.Message {
     const gameModeValue = cfg && cfg.confirmed
         ? cfg.confirmed.gameMode
         : STR_HUD_SETTINGS_GAME_MODE_DEFAULT;
-    return mod.Message(mod.stringkeys.twl.hud.statusLiveModePlayersFormat, counts.left, counts.right, gameModeValue);
+    return msg(mod.stringkeys.twl.hud.statusLiveModePlayersFormat, counts.left, counts.right, gameModeValue);
 }
 
 // Renders both top-left status lines from one authoritative phase+ready snapshot.
@@ -44,7 +44,7 @@ function renderTopLeftStatusDockForPid(
     if (visibility.status.isLive) {
         safeSetUITextLabel(statusStateText, getModePlayersHeaderLabel());
         safeSetUITextColor(statusStateText, COLOR_READY_GREEN);
-        safeSetUITextLabel(statusReadyText, mod.Message(mod.stringkeys.twl.hud.roundStateLive));
+        safeSetUITextLabel(statusReadyText, msg(mod.stringkeys.twl.hud.roundStateLive));
         safeSetUITextColor(statusReadyText, COLOR_READY_GREEN);
         return;
     }
@@ -52,30 +52,30 @@ function renderTopLeftStatusDockForPid(
     if (visibility.status.isGameOver) {
         safeSetUITextLabel(statusStateText, getModePlayersHeaderLabel());
         safeSetUITextColor(statusStateText, COLOR_READY_GREEN);
-        safeSetUITextLabel(statusReadyText, mod.Message(mod.stringkeys.twl.hud.roundStateGameOver));
+        safeSetUITextLabel(statusReadyText, msg(mod.stringkeys.twl.hud.roundStateGameOver));
         safeSetUITextColor(statusReadyText, COLOR_READY_GREEN);
         return;
     }
 
     const isViewerReady = !!State.players.readyByPid[pid];
     if (isViewerReady) {
-        safeSetUITextLabel(statusStateText, mod.Message(mod.stringkeys.twl.hud.readyText));
+        safeSetUITextLabel(statusStateText, msg(mod.stringkeys.twl.hud.readyText));
         safeSetUITextColor(statusStateText, COLOR_READY_GREEN);
     } else {
-        safeSetUITextLabel(statusStateText, mod.Message(mod.stringkeys.twl.hud.roundStateNotReady));
+        safeSetUITextLabel(statusStateText, msg(mod.stringkeys.twl.hud.roundStateNotReady));
         safeSetUITextColor(statusStateText, COLOR_READY_GREEN);
     }
 
     safeSetUITextLabel(
         statusReadyText,
         activeCount > totalCount
-            ? mod.Message(
+            ? msg(
                 mod.stringkeys.twl.hud.playersReadyWithServerFormat,
                 Math.floor(readyCount),
                 Math.floor(totalCount),
                 Math.floor(activeCount)
             )
-            : mod.Message(
+            : msg(
                 mod.stringkeys.twl.hud.playersReadyFormat,
                 Math.floor(readyCount),
                 Math.floor(totalCount)
@@ -165,7 +165,7 @@ function safeSetUITextLabel(widget: mod.UIWidget | undefined, label: mod.Message
     let resolvedLabel: mod.Message;
     if (typeof label === "number") {
         try {
-            resolvedLabel = mod.Message(label);
+            resolvedLabel = msg(label);
         } catch {
             return;
         }
@@ -316,7 +316,7 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
     try {
         mod.SetUIWidgetParent(root, uiRoot);
         mod.SetUIWidgetAnchor(root, mod.UIAnchor.TopCenter);
-        mod.SetUIWidgetPosition(root, mod.CreateVector(0, 0, 0));
+        mod.SetUIWidgetPosition(root, VEC_ZERO);
         mod.SetUIWidgetSize(root, mod.CreateVector(TOP_HUD_ROOT_WIDTH, TOP_HUD_ROOT_HEIGHT, 0));
         mod.SetUIWidgetDepth(root, mod.UIDepth.AboveGameUI);
         mod.SetUIWidgetVisible(root, visible);
@@ -335,7 +335,7 @@ function ensureTopHudRootForPid(pid: number, player?: mod.Player): mod.UIWidget 
         }
         const pos = mod.GetUIWidgetPosition(root);
         if (mod.AbsoluteValue(mod.XComponentOf(pos)) > 0.5 || mod.AbsoluteValue(mod.YComponentOf(pos)) > 0.5) {
-            mod.SetUIWidgetPosition(root, mod.CreateVector(0, 0, 0));
+            mod.SetUIWidgetPosition(root, VEC_ZERO);
         }
     } catch {
         // Keep root available even if readback checks fail intermittently.
@@ -511,7 +511,7 @@ function getReadyCountsForStatusHud(): { readyCount: number; totalCount: number;
     let validReadyCount = 0;
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
+        if (!isValidPlayer(p)) continue;
         const pid = safeGetPlayerId(p);
         if (pid === undefined) continue;
         validPlayerCount++;

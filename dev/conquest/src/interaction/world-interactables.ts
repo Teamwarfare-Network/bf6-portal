@@ -5,7 +5,7 @@
 
 const WORLD_INTERACTABLE_DEPLOY_BLUE = mod.CreateVector(0 / 255, 110 / 255, 255 / 255);
 const WORLD_INTERACTABLE_READY_GREEN = mod.CreateVector(0 / 255, 155 / 255, 38 / 255);
-const WORLD_INTERACTABLE_ZERO_ROT = mod.CreateVector(0, 0, 0);
+const WORLD_INTERACTABLE_ZERO_ROT = VEC_ZERO;
 
 // A "supply box" interactable is any world interactable whose action opens the ammo resupply
 // menu. This is the discriminator used to gate spawning/interacting based on the Supply Boxes
@@ -94,7 +94,7 @@ function applyWorldInteractableAuthoredInteractPointState(config: WorldInteracta
 // Gate used both for presentation (pre-game HQ icons) and for activation eligibility. Returns true
 // only for main-base-scope configs when the player is currently in their own team's main base.
 function shouldShowWorldInteractableRuntimeIconForPlayer(player: mod.Player, config: WorldInteractableConfig): boolean {
-    if (!player || !mod.IsPlayerValid(player)) return false;
+    if (!isValidPlayer(player)) return false;
     if (!isPlayerDeployed(player)) return false;
 
     const pid = safeGetPlayerId(player);
@@ -154,7 +154,7 @@ function resolveWorldInteractableIconPosition(config: WorldInteractableConfig): 
 // once the round has started.
 function ensureMainBaseTeamIconForPlayer(player: mod.Player, config: WorldInteractableConfig): void {
     if (isMatchLive()) return;
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     if (!isPlayerDeployed(player)) return;
     if (!config.ownerTeamId) return;
 
@@ -188,7 +188,7 @@ function syncWorldInteractableRuntimeIconForPlayer(player: mod.Player, config: W
 }
 
 function syncWorldInteractableRuntimeIconsForPlayer(player: mod.Player): void {
-    if (!player || !mod.IsPlayerValid(player)) return;
+    if (!isValidPlayer(player)) return;
     for (let i = 0; i < ACTIVE_WORLD_INTERACTABLE_CONFIGS.length; i++) {
         syncWorldInteractableRuntimeIconForPlayer(player, ACTIVE_WORLD_INTERACTABLE_CONFIGS[i]);
     }

@@ -142,7 +142,7 @@ function buildHudTeamSwapButton(player: mod.Player, pid: number, refs: TopHudShe
         player
     );
 
-    const label = mod.Message(mod.stringkeys.twl.teamSwitch.changeTeamToFormat, getTeamNameKey(oppositeTeam));
+    const label = msg(mod.stringkeys.twl.teamSwitch.changeTeamToFormat, getTeamNameKey(oppositeTeam));
     addCenteredButtonText(
         labelId,
         TWL_HUD_TEAM_SWAP_BUTTON_WIDTH,
@@ -188,7 +188,7 @@ function updateHudTeamSwapButtonVisibilityForAllPlayers(): void {
 
 // Ensures the non-combat top-HUD shell exists for one player on the active hard-cut shell path.
 function ensureTopHudShellForPlayer(player: mod.Player): TopHudShellRefs | undefined {
-    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    if (!isValidPlayer(player)) return undefined;
 
     const pid = getObjId(player);
 

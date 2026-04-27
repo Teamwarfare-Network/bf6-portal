@@ -54,7 +54,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     updateAllPlayersClock();
 
     sendHighlightedWorldLogMessage(
-        mod.Message(mod.stringkeys.twl.notifications.roundStarted),
+        msg(mod.stringkeys.twl.notifications.roundStarted),
         false,
         undefined,
         mod.stringkeys.twl.notifications.roundStarted
@@ -155,7 +155,7 @@ function getConfiguredMatchLengthSeconds(): number {
 function syncAdminMatchLengthLabelForAllPlayers(): void {
     const totalSeconds = getConfiguredMatchLengthSeconds();
     const time = getClockTimeParts(totalSeconds);
-    const label = mod.Message(
+    const label = msg(
         mod.stringkeys.twl.adminPanel.labels.roundLengthFormat,
         time.minutes,
         time.secTens,

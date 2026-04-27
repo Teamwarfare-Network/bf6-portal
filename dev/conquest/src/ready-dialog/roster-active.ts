@@ -52,7 +52,7 @@ function getActivePlayers(): ActivePlayers_t {
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p || !mod.IsPlayerValid(p)) continue;
+        if (!isValidPlayer(p)) continue;
         let pid: number;
         try {
             pid = mod.GetObjId(p);
@@ -96,9 +96,9 @@ function getRosterDisplayEntries(): RosterDisplay_t {
 
 // Resolves roster entry label text from live player handle or debug placeholder key.
 function getRosterEntryNameMessage(entry: RosterDisplayEntry | undefined): mod.Message {
-    if (!entry) return mod.Message(mod.stringkeys.twl.system.genericCounter, " ");
+    if (!entry) return msg(STR_SYS_COUNTER, " ");
     if (entry.player) return getUiSafePlayerMessage(entry.player);
-    return mod.Message(mod.stringkeys.twl.system.genericCounter, " ");
+    return msg(STR_SYS_COUNTER, " ");
 }
 
 // Returns true when every currently active player satisfies ready state and min-player gate.
@@ -116,7 +116,7 @@ function areAllActivePlayersReady(): boolean {
         let validCount = 0;
         for (let i = 0; i < count; i++) {
             const p = mod.ValueInArray(players, i) as mod.Player;
-            if (!p || !mod.IsPlayerValid(p)) continue;
+            if (!isValidPlayer(p)) continue;
             const pid = safeGetPlayerId(p);
             if (pid === undefined) continue;
             if (!State.players.readyByPid[pid]) return false;

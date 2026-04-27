@@ -23,7 +23,7 @@ function updateReadyDialogMapLabelForPid(pid: number): void {
     }
     if (!valueWidget) return;
     mod.SetUIWidgetParent(valueWidget, mod.GetUIRoot());
-    safeSetUITextLabel(valueWidget, mod.Message(getMapNameKey(ACTIVE_MAP_KEY)));
+    safeSetUITextLabel(valueWidget, msg(getMapNameKey(ACTIVE_MAP_KEY)));
     state.lastMapSignature = signature;
 }
 
@@ -43,8 +43,8 @@ function updateReadyDialogGridKnobLabelForPid(pid: number, knobKey: string, labe
     if (!widget) return;
     const resolvedLabelKey = labelKey !== undefined && labelKey !== null
         ? labelKey
-        : mod.stringkeys.twl.system.unknownPlayer;
-    safeSetUITextLabel(widget, mod.Message(resolvedLabelKey));
+        : STR_SYS_UNKNOWN_PLAYER;
+    safeSetUITextLabel(widget, msg(resolvedLabelKey));
 }
 
 function updateReadyDialogGridKnobValueForPid(pid: number, knobKey: string, label: mod.Message): void {
@@ -178,14 +178,14 @@ function syncReadyDialogModeActionWidgetsForPid(pid: number, diff: ReadyDialogMo
             mod.SetUIWidgetVisible(unsavedLabel, true);
             safeSetUITextLabel(
                 unsavedLabel,
-                mod.Message(mod.stringkeys.twl.readyDialog.applyBlockedLoading, blockedCount)
+                msg(mod.stringkeys.twl.readyDialog.applyBlockedLoading, blockedCount)
             );
             mod.SetUITextColor(unsavedLabel, COLOR_NOT_READY_RED);
         } else {
             mod.SetUIWidgetVisible(unsavedLabel, live || hasUnsavedChanges);
             safeSetUITextLabel(
                 unsavedLabel,
-                mod.Message(
+                msg(
                     live
                         ? mod.stringkeys.twl.readyDialog.liveConfigLockedLabel
                         : mod.stringkeys.twl.readyDialog.unsavedChangesLabel
@@ -222,12 +222,12 @@ function getReadyDialogViewerTeamVisuals(pid: number): {
 
 function getReadyDialogPlayersValueMessage(): mod.Message {
     const counts = getReadyDialogDraftAutoStartMinPlayerCounts();
-    return mod.Message(mod.stringkeys.twl.readyDialog.playersFormat, counts.left, counts.right);
+    return msg(mod.stringkeys.twl.readyDialog.playersFormat, counts.left, counts.right);
 }
 
 function getReadyDialogMinPlayersSupportMessage(): mod.Message {
     const counts = getReadyDialogDraftAutoStartMinPlayerCounts();
-    return mod.Message(mod.stringkeys.twl.readyDialog.minPlayersToStartFormat, counts.total);
+    return msg(mod.stringkeys.twl.readyDialog.minPlayersToStartFormat, counts.total);
 }
 
 // Builds one stable signature for the mode-config column/knob readout for a viewer.
@@ -286,7 +286,7 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
             if (knob.key === READY_DIALOG_CONFIG_PLAYERS_KNOB_KEY) {
                 const playersLabelWidget = safeFind(UI_READY_DIALOG_MODE_GRID_KNOB_LABEL_ID + knob.key + "_" + pid);
                 if (playersLabelWidget) {
-                    safeSetUITextLabel(playersLabelWidget, mod.Message(mod.stringkeys.twl.system.genericCounter, " "));
+                    safeSetUITextLabel(playersLabelWidget, msg(STR_SYS_COUNTER, " "));
                     mod.SetUIWidgetVisible(playersLabelWidget, false);
                 }
             } else {
@@ -298,7 +298,7 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
                 setReadyDialogGridKnobButtonGlyphColorForPid(pid, knob.key, COLOR_WHITE);
 
                 if (knob.key === READY_DIALOG_CONFIG_GAME_KNOB_KEY) {
-                    updateReadyDialogGridKnobValueForPid(pid, knob.key, mod.Message(cfg.gameMode));
+                    updateReadyDialogGridKnobValueForPid(pid, knob.key, msg(cfg.gameMode));
                     setReadyDialogGridKnobValueColorForPid(
                         pid,
                         knob.key,
@@ -324,7 +324,7 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
             updateReadyDialogGridKnobValueForPid(
                 pid,
                 knob.key,
-                mod.Message(
+                msg(
                     getReadyDialogVehicleSelectionLabelKey(
                         knob.key,
                         State.round.modeConfig.vehicleSelectionIndexByKey?.[knob.key] ?? 0
@@ -381,7 +381,7 @@ function updateReadyDialogConfigCheckboxesForPid(pid: number, diff: ReadyDialogM
         if (boxTextWidget) {
             safeSetUITextLabel(
                 boxTextWidget,
-                mod.Message(checked ? mod.stringkeys.twl.ui.checkMarkChecked : mod.stringkeys.twl.ui.checkMarkEmpty)
+                msg(checked ? mod.stringkeys.twl.ui.checkMarkChecked : mod.stringkeys.twl.ui.checkMarkEmpty)
             );
         }
         if (labelWidget) {
