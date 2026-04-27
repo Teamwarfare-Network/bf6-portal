@@ -123,6 +123,13 @@ Implications for authoring:
    - `npm run build`
    - `cmd /c npx tsc --pretty false --noEmit`
 5. Treat any compile error from that post-bump verification as blocking; fix before finalizing.
+6. **Post-bump doc-state refresh.** `bump-version.js` prints a checklist after every successful bump. Follow it: open [`design_doc/conquest_optimization_state.md`](./design_doc/conquest_optimization_state.md) and update the file map / function inventory / Project Stats per the "How to keep this file accurate" section at the bottom of that file. Specifically:
+   - Project Stats row (bundle bytes, headroom, version)
+   - File map row(s) for any source file with ≥5% line/byte change
+   - PPM column if any per-pid state shape changed (cross-reference Mn IDs in [`design_doc/conquest_optimization_analysis.md`](./design_doc/conquest_optimization_analysis.md))
+   - Function inventory entries for any added/removed top-level function
+   - Compile-Time Feature Flags table if a flag flipped
+   This is **additive** to the changelog/version requirement, not a replacement.
 
 ## Bundle Size Limit Policy
 
@@ -225,11 +232,12 @@ Implications for authoring:
 
 ## Codebase Reference Map Maintenance Policy
 
-1. The authoritative codebase reference map lives in `./design_doc/TWL_Conquest_Design.md` under the "Codebase Reference Map" section.
-2. When a major change adds, removes, or renames files or directories under `src/`, update the reference map in the same change set.
-3. When a major change adds or removes exported functions in high-traffic files (index/, interaction/, hud/), add a brief note to the relevant file entry.
+1. The authoritative codebase reference map lives in [`./design_doc/conquest_optimization_state.md`](./design_doc/conquest_optimization_state.md). It contains the file map (lines, bytes, in-bundle status, per-player multiplier IDs) and the per-file function inventory. The companion [`./design_doc/conquest_optimization_analysis.md`](./design_doc/conquest_optimization_analysis.md) holds the reasoning (M1–M15 ranking, reclaim ladder, regime-change discussion).
+2. When a major change adds, removes, or renames files or directories under `src/`, update the file map in the same change set.
+3. When a major change adds or removes exported functions in high-traffic files (`index/`, `interaction/`, `hud/`, `vehicles/`, `ui/conquest/hud-core/`), add or remove the relevant function-inventory entry.
 4. The reference map is a navigation aid, not exhaustive documentation. Keep entries to 1-line descriptions per file and per function.
-5. Update the "Project Stats" header (line count, bundle size, version) after every bumpVersion.
+5. Update the "Project Stats" header (file count, bundle size, headroom, version) after every bumpVersion. The bump-version script prints a post-bump checklist that points at the relevant section of the state file — follow it.
+6. M1–M15 IDs are sorted by descending heap impact (M1 = worst). If a per-pid allocator is added or removed, re-rank the table in the analysis doc and propagate ID changes to the PPM column in the state doc. Both sides must stay in sync.
 
 ## BEFORE CODING:
 

@@ -1,474 +1,245 @@
 # TWL Conquest Optimization Analysis
 
-Last updated: v1.390 (2026-04-26) — pre-playtest tuning ships: gadget cooldown retune (v1.385), 3-line help tooltip (v1.386–v1.387), team-swap button width 190→210 (v1.389–v1.390), strings.json polish pass (v1.388). Net **+2,596 bytes** since v1.384 cleanup baseline; bundle now 1,035,351 / 13,225 byte headroom / **1.26%** — back near v1.383 levels but still above the v1.10 / v1.110 floors. Boundary architecture remains event-driven (v1.360–v1.370). Tier 1+2 cleanup shipped (v1.371–v1.372). v1.384 Category 6 cleanup retired 10 dead functions + `safetyFloorTriggered` field for −3,495 bytes. Earlier baseline (v1.334): match clock H2 resolved; H1 downgraded post-measurement; Category 1.1 / 1.2 estimates corrected; Admin Panel reclaim arithmetic retired. Carried forward where still accurate.
+Last updated: v1.406 (2026-04-27) — re-issued under a **runtime JS heap** lens after the 16-player MP playtest crashed at script load with `Mod has reached its js script memory usage limit. It has been terminated` (issue [#109](./conquest_issues.md#cq_bug_16player_playtest_js_memory_limit-109)). The reclaim ladder below now ranks levers by **expected runtime memory reduction**, not by emitted bundle bytes.
 
-Companion to: `TWL_Conquest_Design.md` (see "Codebase Reference Map" for file/function index) and `conquest_issues.md`.
-
----
-
-## TL;DR (v1.390)
-
-1. **Bundle at 1,035,351 / 1.26% headroom — TIGHT but stable.** v1.384 cleanup pushed headroom to 1.51%; v1.385–v1.390 pre-playtest tuning consumed 2,596 bytes (mostly the +2 help-text widgets at v1.386/v1.387 = ~2,550 bytes combined). **Burn rate over the v1.385–v1.390 range: ~430 bytes/version** — slightly worse than the historical ~350. Cat 7 (`VehicleSpawnerSlot` write-only fields, ~700 bytes) remains the next defensive lever if pressure resumes.
-2. **Boundary architecture remains event-driven, single-source-of-truth for both zone state and seat state.** v1.383 added a safety-net engine re-probe inside `getDesiredBoundaryViolationKind` for the on_foot Y>200 branch (#106) — does not change the per-tick cost shape (still O(1) per player on the read side; safety-net runs at most once per missed `OnPlayerEnterVehicle` event).
-3. **AreaTriggers required explicit enabling** — `mod.EnableAreaTrigger(trigger, true)` was never called pre-v1.367, which silently broke trigger enter/exit events for ~50 versions. Now wired in `enableBoundaryAreaTriggers()` from `onGameModeStartedImpl`. Same lesson generalizes: **engine objects with explicit enable calls should be audited at game-mode start**.
-4. **No remaining runtime HIGH hot paths.** H1 cleanup (consume TickContext at `pipeline.ts:125`) is still open as low-priority cleanup. H2 retired in v1.338. H3 (boundary tick) reshaped — see Category 2; classifier is now O(1) per player on the read side.
-5. **Admin Panel accepted off indefinitely.** Last measurement at v1.334 was −3,536 bytes over cap when enabled (+28,635 byte panel delta). Bundle has grown +12.7K since then; gap is now ~−16.5K over cap. Re-enabling requires trimming `src/admin-panel/*` directly.
-6. **Dead code inventory partially cleaned in v1.384.** Categories 6/7/8 status:
-   - **Category 6 (functions):** 10 of 11 verified-dead functions removed in v1.384 (−3,495 bytes). 1 retained as intentional Phase 1 scaffold (`conquestSelectSpawnPoint`). Plus 1 cascading dead state field (`safetyFloorTriggered`) removed.
-   - **Category 7 (state fields):** 11 write-only `VehicleSpawnerSlot` fields still present (~700 bundle bytes + ~1.4 KB runtime memory). **Open — recommended next lever.**
-   - **Category 8 (strings):** ~73 dead string keys in `strings.json` (~5,889 raw bytes / ~8.8K JSON impact in `bundle.strings.json`, which is **separate from the 1,048,576-byte script cap**). Open.
-   - **0 dead `if`/`switch` branches** — control flow is clean.
-   See Categories 6, 7, 8 below.
-
-**Playtest-blocking items:** none.
+Companion docs:
+- [`conquest_optimization_state.md`](./conquest_optimization_state.md) — sister log file. File map (lines, bytes, per-player multipliers, in-bundle status) + per-file function inventory. The *facts*; this doc holds the *reasoning*.
+- [`TWL_Conquest_Design.md`](./TWL_Conquest_Design.md) — design intent and phase scope.
+- [`conquest_issues.md`](./conquest_issues.md) — full issue bodies.
+- [`conquest_issues_summary.md`](./conquest_issues_summary.md) — issue index.
 
 ---
 
-## Bundle vs. Strings — Two Separate Caps
+## TL;DR (v1.406)
 
-**Important context for future analyzers:**
+1. **Failure mode shifted.** The 1 MiB upload cap is no longer the binding constraint. Bundle is **872,014 bytes** at v1.406 (~17% headroom under the cap, after v1.397 whitespace strip + v1.398 block-comment strip + v1.399–v1.402 helper extraction reclaimed ~163 KB). The new constraint is the **Mod Evaluator runtime JS memory ceiling**, hit at 16 concurrent players. Memory-pressure work supersedes the prior bundle-byte-pressure work.
+2. **No engine telemetry exists for the heap budget.** Verified against [`reference_sdk_1.2.3/code/types/mod/index.d.ts`](../../reference_sdk_1.2.3/code/types/mod/index.d.ts): no `mod.GetScriptMemory*`, `mod.GetHeapSize`, or comparable surface. The budget is observed only at termination. Reclaim has to be measured by **inference + cumulative reduction**, not by direct readings.
+3. **Per-player multipliers dominate.** Module-level constants are paid once; per-player widget caches, view-model objects, and PID-keyed records pay N times. Fifteen of the largest known allocators scale with player count. The ladder targets those first.
+4. **Functionality is locked.** The user's directive: no UI look change, no feature behavior change. Reclaim is restricted to (a) dead-code removal, (b) inlining of variables that exist purely for naming with no runtime dynamism, (c) helper extraction that *reduces* identifier count, (d) cache/state thinning where the field is write-only or holds a redundant duplicate.
+5. **All design changes require user approval.** This document inventories candidates and ranks them. Any item the user does not pre-authorize stays in "proposed" status until they sign off.
 
-- `dist/bundle.ts` (the script bundle, 1,035,351 bytes at v1.390) is governed by the 1,048,576-byte (1 MiB) hard cap enforced by `scripts/verify.js`. **This is the playtest-blocking cap.**
-- `dist/bundle.strings.json` (22,050 bytes at v1.390 — up from ~21,813 at v1.384 due to helpText2/3 + duration25m + v1.388 polish) is a **separate** runtime asset and is **NOT counted** against the 1 MiB script cap. Strings come out of a different pool.
-- `FEATURE_*` flags (`FEATURE_ADMIN_PANEL`, `FEATURE_PERF_DIAG`, `FEATURE_POSITION_DEBUG`, `FEATURE_JOIN_PROMPT`) gate **TS code only**, via `prebuild.js` import scrub + `postbuild.js` dead-code strip. **They do NOT gate strings.json keys.** A flag-conditional feature like the join-prompt has its TS code stripped at `false` but its **strings remain bundled** in `bundle.strings.json` regardless.
-
-**Implication:** dead strings in `strings.json` are runtime memory bloat (and translation maintenance overhead), not script-bundle pressure. Cleaning them would shrink `bundle.strings.json` by ~40% but would not move the script-bundle cap needle.
-
----
-
-## Baseline (v1.334)
-
-| Metric | v1.334 | v1.289 (prior published baseline) | Delta |
-|--------|--------|----------------------------------|-------|
-| Bundle size (script) | **1,023,477 bytes** | 968,479 bytes | **+54,998 bytes** |
-| Bundle limit | 1,048,576 bytes (1 MiB) | same | — |
-| Headroom | **25,099 bytes (2.39%)** | 80,097 bytes (7.64%) | **−54,998 / −5.25 pp** |
-| Headroom with `FEATURE_ADMIN_PANEL=true` | **−3,536 bytes (OVER cap)** | — | — |
-| Source files | 119 .ts + 1 .json (est. unchanged) | 119 .ts + 1 .json | — |
-| `mod.AllPlayers()` call sites | 29 | 29 | flat |
-| All four `FEATURE_*` flags | still `false` | all `false` | flat |
-
-**Headroom status: TIGHT.** The v1.290–v1.334 feature arc consumed 55K of the 80K v1.289 reserve. The 2.39% margin is near the 2.2% floor of v1.010. **Bundle pressure returned** — any new feature needs to plan for offsetting cuts.
-
-### Admin Panel Bundle Cost — Empirical Measurement (v1.334)
-
-| State | Bundle size | Headroom | Status |
-|-------|-------------|----------|--------|
-| `FEATURE_ADMIN_PANEL = false` | 1,023,477 bytes | 25,099 (2.39%) | PASS |
-| `FEATURE_ADMIN_PANEL = true` | **1,052,112 bytes** | **−3,536 (OVER)** | FAIL |
-| Admin panel delta | **+28,635 bytes** | — | — |
-
-**Correction (2026-04-21, post-v1.338).** The "reclaim-to-re-enable via Category 1" plan does not close. Measured reclaim at v1.338 was ~2.3K best-case — **−26,320 bytes short** of the panel's +28,635 byte delta. If re-enable becomes a goal later, the right investigation is a **trim audit of `src/admin-panel/*` itself**, not accumulating Category 1 items.
-
-**Admin Panel accepted off indefinitely** (user decision 2026-04-21).
-
-## Size Progression
-
-| Version | Bundle | Headroom | Delta | Notable work |
-|---------|--------|----------|-------|--------------|
-| v1.010 | 1,025,710 | 22,866 (2.2%) | — | Phase 6 complete baseline |
-| v1.110 | 1,038,559 | 10,017 (1.0%) | +12,849 | CQ_Bug_39 hardening — low-water mark |
-| v1.190 | 995,854 | 52,722 (5.03%) | **−42,705** | Audit pass: 3 dev flags→false, 52 stale widget names, safeFindPlayer hot-path |
-| v1.213 | 1,001,081 | 47,495 (4.53%) | +5,227 | Phase 10 feature adds; FEATURE_WORLD_ICON_DIAG removed |
-| v1.221 | 998,868 | 49,708 (4.74%) | −2,213 | Stability/perf pass: loading-gate asserts, TickContext, dirty-flag HUD, forEachValidPlayer |
-| v1.259 | — | — | **−~25K** (est.) | Vanilla spawner rewrite. Deleted 6 legacy files; added `vanilla-spawner.ts`. |
-| v1.289 | 968,479 | 80,097 (7.64%) | −30,389 from v1.221 | Phase 6 HQ Deploy. All 4 FEATURE_* flags now `false`. |
-| v1.313 | — | — | ~+15K | Gadget Locker + launcher-slot probe arc |
-| v1.328 | — | — | ~+10K | **Forward Deploy reintroduction.** |
-| v1.329 | — | — | ~+5K | **Air Deploy reintroduction.** |
-| v1.334 | 1,023,477 | 25,099 (2.39%) | +54,998 from v1.289 | Phase 2a/2b loadout fix. |
-| v1.338 | 1,024,810 | 23,766 (2.27%) | +1,333 | Match clock → `Clocks.CountDownClock`. H2 retired. |
-| v1.370 | 1,032,490 | 16,086 (1.53%) | +7,680 | Boundary architecture pass — zone tracker, AreaTrigger enable, event-driven seatKind, squad-spawn inheritance. |
-| v1.371 | — | — | ~−1,000 | **Tier 1 cleanup.** Triangle-math consolidation (Cat 1.3 done) + dead helpers (Cat 1.4 done). |
-| v1.372 | — | — | ~−400 | **Tier 2 cleanup.** Removed 3 dead `VehicleSpawnerSlot` fields (`spawnRetryScheduled`, `freshAirRuntimeSpawner`, `suppressNextBindSpawnTransformCorrection`). |
-| v1.373 | — | — | −1,409 | Launcher cap unified to 3 + non-destructive +1-ammo probe (#95, #96). Net negative. |
-| v1.374 | — | — | small | Deleted dead `mod.GetVehicleFromPlayer` cache seed (#93). |
-| v1.375 | 1,033,439 | 15,137 (1.44%) | +2,776 | Supply Box disabled-focused indicator (#97). |
-| v1.376 | — | — | small | Boundary seed: default-in-bounds when no teammate inheritance signal (#98). |
-| v1.377 | — | — | +9 (strings) | 8 NATO/PAX team-name combos (#102). |
-| v1.378 | — | — | minimal | Firestorm Team 2 Fast slot 2 default flipped Flyer60→Vector. |
-| v1.379 | — | — | +~500 | Per-team vehicle menus split (HELI + FAST slot1/2 → Team1/Team2 variants). |
-| v1.380 | — | — | small | Vehicle-spawned world-log gated behind perfDiag (#89). |
-| v1.381 | 1,034,107 | 14,469 (1.38%) | +668 | Apply Config warm-prime guard (#105) + new player-facing string. |
-| v1.382 | 1,036,032 | 12,544 (1.20%) | +1,925 | Apply-blocked message moved to dialog inline `unsavedLabel` (#105 follow-up). |
-| v1.383 | 1,036,250 | 12,326 (1.18%) | +218 | Y=200 OOB safety-net engine re-probe (#106). |
-| v1.384 | 1,032,755 | 15,821 (1.51%) | −3,495 | **Category 6 cleanup.** Removed 10 verified-dead functions + dead `safetyFloorTriggered` field. |
-| v1.385 | 1,032,801 | 15,775 (1.50%) | +46 | Gadget cooldown retune (Artillery 25m, Smoke 6m, Assault Ladder 10m). Added `duration25m` string. |
-| v1.386 | 1,034,076 | 14,500 (1.38%) | +1,275 | helpText2 second line under help tooltip ("Alternatively, use any of the green smoke..."). |
-| v1.387 | 1,035,351 | 13,225 (1.26%) | +1,275 | helpText3 third line above help tooltip ("The game is NOT Live..."). |
-| v1.388 | 1,035,351 | 13,225 (1.26%) | 0 | Strings polish: tooltip text edits (loading messages, "DEPLOY"→"VEHICLES", help-text wording). No code changes. |
-| v1.389 | 1,035,351 | 13,225 (1.26%) | 0 | Team-swap HUD button widened 190→200 (right edge only). Single int constant. |
-| **v1.390** | **1,035,351** | **13,225 (1.26%)** | **0** | Team-swap HUD button widened 200→210 (right edge only). Single int constant. |
-
-**Direction:** **STABLE.** v1.385–v1.390 was tuning, not feature growth. The two help-text widgets at v1.386/v1.387 account for nearly all the ~2.6KB consumption since v1.384. The 3-line help tooltip is now load-bearing UI for the playtest; not a candidate for removal. Remaining levers (Cat 7 + Cat 8.1) total ~700 bundle bytes + ~5.2 KB strings.json — modest reclaim if needed. **strings.json grew to 22,050 bytes** (helpText2/3 + duration25m + the v1.388 polish edits), still well below the script-bundle pressure that matters.
+**Playtest-blocking items:** [#109](./conquest_issues.md#cq_bug_16player_playtest_js_memory_limit-109).
 
 ---
 
-## Category 1: File Size Reduction
+## Why memory, not bytes (the regime change)
 
-| # | Title | Status |
-|---|-------|--------|
-| 1 | Widget-name factory (residual conversion in 2 files) | **Open — LOW priority.** ~120–415 bytes residual. Factory `wn()` adopted across 230+ sites. Remaining: `vehicles/deploy-timer-ui.ts` (~120 bytes) + `interaction/ammo-resupply-menu.ts` wrapper (bundle-neutral if refactored, ~295 bytes if inlined). |
-| 2 | Emitted comment / JSDoc audit (residual) | **Open — LOW priority.** ~100–300 bytes. `scripts/postbuild.js:114` already strips full-line `//`. Residual: inline trailing `//`, `/* */` blocks (9 in source, 13 in bundle), and 4 `/** */` JSDoc blocks across mega-files. |
-| 3 | Consolidate duplicate triangle-sampling helpers | **Resolved (v1.371).** Moved to `src/vehicles/spawn-volume-math.ts`. ~1,000 bundle bytes reclaimed. |
-| 4 | Remove 2 verified-dead vehicle-path helpers | **Resolved (v1.371).** `clearAllVehicleReservations` + `getDesiredSpawnerCountsForPreset` deleted. ~300 bundle bytes. |
-| 5 | Audit `VehicleSpawnerSlot` for write-only/unread fields | **Partially resolved (v1.372)** — 3 fields removed. **Re-opened (v1.383 audit, still open at v1.384)** — Category 7 below identifies **11 additional dead fields** missed in the v1.372 sweep. Recommended as next reclaim lever. |
-| 6 | Three 2K-line mega-files — split for navigability only | **Open — carry-over.** 0 bundle bytes; review readability only. |
-| 7 | Post-v1.259 dead-module import scrub | **Resolved (v1.289 audit).** Confirmed clean. |
+The previous baseline of this document was written when `dist/bundle.ts` sat 13–25 KB below the 1 MiB upload cap and every feature add risked failing the upload check in `scripts/verify.js`. v1.397's whitespace strip and v1.398's block-comment strip moved that cliff far enough away that the upload cap is no longer where the project hits a wall.
 
-### 1.6 Mega-file splits — carry-over, still LOW (zero bundle impact)
+The 16-player playtest (v1.406) crashed differently: not at upload, but at script execution. The Mod Evaluator terminated the script while running with the message about JS memory limits. That distinguishes two budgets:
 
-| File | Lines (v1.383 est.) | Notes |
-|---|---|---|
-| `index/capture-tickets.ts` | ~2,150 | Phase 2A sync + bleed + 7 combat HUD view models + dispatch |
-| `vehicles/deploy-timer-ui.ts` | ~2,026 | HQ/Forward/Air button wiring and pending-state header |
-| `interaction/ammo-resupply-menu.ts` | ~2,504 | Gadget-delay status header, launcher tile gating, per-class slot-toggle row, launcher-slot probe |
+- **Upload byte cap** — `1,048,576` bytes against `dist/bundle.ts`. Enforced at submit time. Linear in bundle bytes, not in player count.
+- **Runtime heap cap** — opaque, enforced at execution. Grows with both retained module-level state AND per-player allocations. Crosses the threshold at the player-count where the per-player factor compounds enough.
 
-Bundler concatenates — splits are for review readability, not bundle size. Priority remains low.
+Bundle bytes correlate weakly with heap. A single 200-byte `Record<number, T>` declaration creates ~zero heap before any pids exist; once 16 players join and each one materializes the lazy entry, that record holds 16 pid keys × N fields × heap-aligned object overhead. The byte-count pass missed this entirely.
+
+This is why reclaim that previously felt minor (-700 bytes) is suddenly load-bearing if it's *per-player*: removing 11 dead `VehicleSpawnerSlot` fields × 16 slots is 176 small allocations the engine doesn't have to track.
 
 ---
 
-## Category 2: Per-Tick and Recurring Hot Paths — Updated for 64-Player MP
+## Inventory of per-player multipliers
 
-Audit context: 29 `mod.AllPlayers()` call sites across 21 files. TickContext caches per-subtick. Combat HUD dirty-flag gating active. Verified at v1.384.
+The following structures all scale with connected player count. Each row is a candidate target for the reclaim ladder.
 
-### HIGH severity (playtest-blocking if a spike shows up)
+**Ranking convention.** `M1` is the **worst** allocator — largest expected heap retention at 16 players. `M15` is the **least** impactful. The numeric ID *is* the rank. The `Scale` column is the comparable bucket so two allocators with the same scale are roughly equal in impact.
 
-**None currently open.**
+**Scale buckets** (per allocator, totaled across 16 players):
 
-| # | File:line | What it does | Cost @ 64p | Mitigation |
-|---|-----------|-------------|-----------|------------|
-| H2 | ~~`src/clock/state.ts` `updateAllPlayersClock`~~ | — | — | **RESOLVED v1.337+v1.338.** Match clock self-drives via `Clocks.CountDownClock`. |
-| H3 (reshaped v1.369) | `src/boundary/enforcement.ts` `tickBoundaryEnforcement` | `forEachValidPlayer` tick → `refreshPlayerBoundaryState` → `getDesiredBoundaryViolationKind`. The classifier is now a **pure read** of cached `zoneStateByPid[pid]` (zone flags + `seatKind`). Only engine call inside the classifier is `safeGetSoldierStateVector` for the foot-Y-ceiling check, gated on `state.seatKind === "on_foot"`. **v1.383:** added `safeGetSoldierStateBool(IsInVehicle)` re-probe in the same on_foot+Y>200 branch as a safety-net (#106). | O(N) iteration with O(1) per-player work; the v1.383 re-probe runs at most once per missed `OnPlayerEnterVehicle` event (cache self-corrects to "aircraft" and short-circuits future ticks at line 247). | **No further action required.** |
+| Bucket | Approx. size | Meaning |
+|--------|--------------|---------|
+| **XL** | >1,500 widget refs / objects retained | Dominant heap contributor at 16p |
+| **L** | 200–1,500 retained | Heavy multiplier; first-tier reclaim target |
+| **M** | 50–200 retained | Material at scale; plausible reclaim target |
+| **S** | 10–50 retained | Small but still per-pid |
+| **XS** | <10 retained, OR feature-flagged off currently | Negligible at present player counts |
+| **Churn** | Per-tick allocations, GC pressure | Not retained but produces heap churn that the runtime tracks |
+| **Variable** | Hard to estimate statically | Closure capture, depends on scope |
 
-### MED severity (non-blocking but worth watching)
+The IDs are referenced from the `PPM` column of the file map in [`conquest_optimization_state.md`](./conquest_optimization_state.md) — change one, update both.
 
-| # | File:line | What it does | Cost @ 64p | Notes |
-|---|-----------|-------------|-----------|-------|
-| H1 (downgraded v1.338) | `src/ui/conquest/hud-core/pipeline.ts:125` (`twlConquestHudTickFrame`) | Raw `mod.AllPlayers()` bypassing an active TickContext. | ~0 in steady state (dirty-gated); on mutation, one O(N) `AllPlayers()` per dirty-tick. | Full loop is gated by `State.conquest.debug.hudDirty` at `src/index/capture-tickets.ts:2119`. Fix is ~5–10 lines (cleanup, not a latency fix). |
-| M1 | `src/ui/conquest/hud-core/render.ts:93-181` | Per-player snapshot builder; 7-slot loop + engage panel. | O(N×7) | Dirty-flag gated + 0.25s cadence. Safe. |
-| M2 | `src/index/capture-tickets.ts:180-187` | Per-player derived slice every tick, **not** dirty-flag gated. | O(N×3) | Intentional (clock is time-variant); documented in AGENTS.md. |
-| M3 | `src/vehicles/deploy-timer-ui.ts:1986-1988` | 1 Hz refresh of per-slot × per-player vehicle timer widgets. | O(N × slot-count) | Cadence 1s — forgiving. |
+| Rank ID | Scale | Allocator | Source | Per-player heap (est.) | Total at 16 players | Notes |
+|:-------:|:-----:|-----------|--------|-----------------------|---------------------|-------|
+| **M1** | **XL** | `State.hudCache.vehicleDeployTimerCache[pid]` | [state/hud-cache-types.ts:104](../src/state/hud-cache-types.ts#L104) | 1 root + close-button (4 widgets) + N rows × ~25 widget refs. With ~6–10 typical rows: **~150–250 widget refs** | **~2,400–4,000 widget refs** | `VehicleDeployTimerRowCacheEntry` per row carries `lastShowSpawnButton`, `lastShowGroundButton`, `lastSpawnButtonVisualState`, etc. — diff-cache fields that are flag-state mirrors, not authoritative state |
+| **M2** | **XL** | `State.hudCache.ammoResupplyMenuCache[pid]` | [state/hud-cache-types.ts:188](../src/state/hud-cache-types.ts#L188) | Header cluster + `a`/`x`/`q`/`rows`/`m`/`e` arrays of `AmmoResupplyMenuChargeCacheEntry` (each ~12 widget refs) + per-class slot-toggle row × 4 classes. **~100–180 widget refs** | **~1,600–2,900 refs** | Built lazily per pid on first menu open — but also pre-built hidden during `prebuildAllUiFamiliesHidden` for every player |
+| **M3** | **L** | Combat HUD entry graph (`twlConquestHudEnsurePlayerGraph`) | [ui/conquest/hud-core/build.ts:198](../src/ui/conquest/hud-core/build.ts#L198) | Tickets (4 widgets) + tickets bg (2) + team labels (2 + shadow-ring) + flag slots (3 × ~8 widgets each) + engage panel + 7 view-model snapshots. **~50–80 refs/pid plus shadow-ring stack** | **~800–1,300 refs** | Shadow-ring text widgets stack 4 widgets per glyph (1 base + 3 shadow) — largest single render graph |
+| **M4** | **L** | `State.hudCache.topHudShellByPid[pid]` ([TopHudShellRefs](../src/state/hud-cache-types.ts#L3)) | [state/hud-cache-types.ts:3](../src/state/hud-cache-types.ts#L3) | ~25 named widget refs + `victoryLeftRosterText`/`victoryRightRosterText` arrays (sized to roster len) + `roots` array | ~400 base + 16 × 16 × 2 = **~912 refs at full lobby** | The two roster arrays alone are 512 widget refs at full lobby |
+| **M5** | **M** | `State.hudCache.clockWidgetCache[pid]` + `countdownWidgetCache[pid]` | [foundation/ui-layout.ts](../src/foundation/ui-layout.ts) drives schema | `ReusableTimerWidgetCacheEntry`-shaped, ~14 widget refs + 3 diff cache fields × 2 caches | **~480 refs** (~30 × 16) | Two parallel caches per pid for the same MM:SS shape — consolidation candidate |
+| **M6** | **M** | `State.hudCache.boundaryPromptCache[pid]` | [state/hud-cache-types.ts:127](../src/state/hud-cache-types.ts#L127) | 12 widget refs + 12 matched name strings + 3 `last*` diff-cache fields | **~432 entries** (~27 × 16) | Each entry stores both `rootName`/`panelName`/`*Name` strings AND the resolved `mod.UIWidget` ref — duplicate state |
+| **M7** | **M** | 12 PID-keyed records in `State.players.*` (`warmPrimeActiveByPid`, `deployedByPid`, `deployedAtSecondsByPid`, `disconnectedByPid`, `uiInputEnabledByPid`, `liveVehicleDeployMenuVisibleByPid`, `posDebugTransformSourceByPid`, `posDebugVehicleObjIdByPid`, `inMainBaseByPid`, `readyByPid`, `readyNeedsReconfirmByPid`, `readyMessageCooldownByPid`) | [state/runtime-types.ts:380-465](../src/state/runtime-types.ts#L380) | 12 PID-keyed records | **~192 entries** (12 × 16) | `posDebug*` records are unused when `FEATURE_POSITION_DEBUG = false`; their type lives even though writes are stripped |
+| **M8** | **M** | `State.players.worldInteractableIconByPidByObjId[pid]` | [state/runtime-types.ts:387](../src/state/runtime-types.ts#L387) | Per-pid `Record<number, any>` of WorldIcon refs (one per active interactable) | **~128 icon refs** (~8 × 16) | Keep — load-bearing per-player visibility |
+| **M9** | **S** | 7 PID-keyed records in `State.conquest.debug.*` (`hudGenerationByPid`, `combatHudGenerationByPid`, `teamSwapRefreshTokenByPid`, `teamSwapHudResetPendingByPid`, `perspectiveTeamByPid`, `teamSwapPerspectiveLockUntilByPid`, `engageHiddenUntilDeployByPid`) | [state/runtime-types.ts:270-276](../src/state/runtime-types.ts#L270) | 7 PID-keyed records, mostly numeric scalars | **~112 entries** (7 × 16) | Several may be consolidatable into one struct per pid (`hudPerPid[pid]`) |
+| **M10** | **S** | `State.players.armS[pid]` / `armG[pid]` / `armL[pid]` / `armO[pid]` / `armI[pid]` / `armT[pid]` / `armFocusedTileKeyByPid[pid]` | [state/runtime-types.ts:387](../src/state/runtime-types.ts#L387) | 7 small per-pid structs for the resupply menu | **~112 small allocs** (7 × 16) | Fragmented; consolidating to one `armState[pid]` reduces alloc count by 6× |
+| **M11** | **Churn** | `State.conquest.debug.hud{Status,HelpReady,Clock}VmByPid[pid]` | [state/runtime-types.ts:277-291](../src/state/runtime-types.ts#L277) | Three view-model objects per pid; rebuilt every dirty tick | **~48 short-lived allocs per dirty render** (3 × 16) | Each tick spawns new VM objects without reusing the prior ones — heap churn driver, not retention |
+| **M12** | **S** | `State.players.kpiByPid[pid]` | [state/runtime-types.ts:470](../src/state/runtime-types.ts#L470) | 7-field score object | **~112 numeric fields** (7 × 16) | Live state — keep |
+| **M13** | **XS** | `State.players.uiCachePerfByPid[pid]` | [state/runtime-types.ts:440](../src/state/runtime-types.ts#L440) | 3 sub-objects (`vehicle`/`ready`/`gadget`) × 4 numeric counters each | **0 currently** (only populated when `FEATURE_PERF_DIAG = true`); ~192 fields when on | Currently dead at runtime — type+init still live; Tier A5 strips |
+| **M14** | **XS** | `State.players.lockerSlots[pid]` + `lockerSlotToggle[pid]` | [state/runtime-types.ts:414](../src/state/runtime-types.ts#L414) | `{ g1, g2, initializedAt }` + `{ slotByClass: [1,1,1,1] }` | **~32 entries** (2 × 16) | Drops on menu close per design (correct) — keep |
+| **M15** | **Variable** | Closures retained by `Timers.setTimeout` / `mod.Wait` continuations | scattered across `actions.ts`, `vanilla-spawner.ts`, `hq-deploy.ts`, `ammo-resupply-menu.ts`, `deploy-timer-ui.ts` | Each pending continuation captures its enclosing function scope; material at scale | Variable; **a deploy-timer 1 Hz loop per visible viewer × 16 players × N slots is tens of pending continuations** | Hard to inventory statically; needs per-site audit for closure-captured locals that could be passed as arguments instead |
 
-### LOW severity (verified safe)
-
-- `src/index/capture-tickets.ts:38-54` — sparse engaged-players map, ~4–8 keys typical.
-- `src/index/capture-tickets.ts:1409-1444` — pre-computed `onPointTeam1/2` counters.
-
-**No O(N²) nested player loops found.**
-
-### Prior Category 2 items carried forward
-
-| # | Title | Status |
-|---|-------|--------|
-| 1 | Cache `mod.AllPlayers()` once per tick — TickContext | **Resolved** (v1.219) — bypassed at H1; fix upstream. |
-| 2 | Gate combat HUD render behind dirty flag | **Resolved** (v1.221). |
-| 3 | Replace string signatures with generation counters | **Open — low priority.** Several HUD families still use `"v:${visible}|pid:..."` signatures. |
-| 4 | Cache widget refs in hot render paths | **Resolved** (v1.215). |
-| 5 | Skip boundary checks for unmoving/undeployed | **Resolved** (undeployed skip). |
-| 6 | HQ Deploy seat-flow polling loop | **Open — low priority.** |
-| 7 | `safeFind` call count | Flat vs. v1.221 (~342). |
-
----
-
-## Category 3: Legacy Dead Code Inventory (resolved)
-
-Pre-v1.371 inventory. Largely retired by v1.371/v1.372 cleanup. New findings re-opened in **Categories 6 / 7 / 8** below — kept here as reference for what shipped.
-
-| File:line | Symbol | Resolution |
-|-----------|--------|------------|
-| `vanilla-spawner.ts:79-82` | `clearAllVehicleReservations()` | **Removed v1.371** |
-| `vanilla-spawner.ts:63-69` | `getDesiredSpawnerCountsForPreset` | **Removed v1.371** |
-| `air-spawn-volume.ts:17-56` | `airTriangleAreaXZ`, `airSamplePointInTriangle`, `airVolumeQuadAreaXZ` | **Consolidated to `spawn-volume-math.ts` v1.371** |
-| `runtime-types.ts` | `VehicleSpawnerSlot.spawnRetryScheduled` | **Removed v1.372** |
-| `runtime-types.ts` | `VehicleSpawnerSlot.freshAirRuntimeSpawner` | **Removed v1.372** |
-| `runtime-types.ts` | `VehicleSpawnerSlot.suppressNextBindSpawnTransformCorrection` | **Removed v1.372** |
-
-### Feature-flag-gated files (NOT dead — excluded from bundle)
-
-`src/hud/deploy-diagnostic.ts` (218 lines), `src/hud/position-debug.ts` (359 lines), `src/hud/perf-diag.ts` (345 lines), and the four `admin-panel/*` files are flagged-out in source. They are excluded from the bundle by `prebuild.js` + postbuild dead-code strip. Treated correctly.
-
-### Post-v1.259 dead-module scrub — still clean
-
-Grep confirmed at v1.383: no surviving imports or type references to `deploy-fulfillment`, `reservations`, `spawner-sequence`, `spawner-bind`, `spawner-slots`, `spawner-bootstrap`.
+**Reading the table:** if the 16-player crash is dominated by retained heap, focus reclaim on **M1–M4** first (XL+L). If it's dominated by churn or GC pressure, **M11** matters more than its position suggests. If it's dominated by closure pinning, **M15** is the wildcard. The 16-player playtest can't distinguish these without telemetry the SDK doesn't expose, so the ladder ships top-down.
 
 ---
 
-## Category 4: Clock / Timer Module Reuse Opportunities
+## Inventory of one-time (non-per-player) overhead
 
-### HIGH value (cleaner + drift-correct)
+These are paid once but are still resident heap that the runtime tracks:
 
-1. **`src/index/capture-sound.ts:150-158`** — Manual `lastFlushAtSeconds` tracking. Migrate to `Timers.setInterval`.
-2. **`src/index/capture-vo.ts:351-354`** — Per-recipient VO cooldown via map + manual compare. Migrate to per-key `Timers.setTimeout`.
-3. ~~Match clock~~ **RESOLVED v1.338.**
-
-### MED value
-
-4. **`src/interaction/actions.ts:737`** — `teamSwapPerspectiveLockUntilByPid` per-tick expiry poll → `Timers.setTimeout`.
-5. **`src/state/spawn-charge.ts:46-48`** — 1-second debug snapshot throttle. Debug-only.
-
-### LOW value
-
-- `src/vehicles/deploy-timer-ui.ts` — already reads from `slot.respawnClock` (`Clocks.CountDownClock`).
-- `src/ready-dialog/countdown-flow.ts:70-86` — `mod.Wait()` for animation pacing. Fine.
-- `src/utils/multi-click.ts:31-33` — `Date.now()` ms-granular interaction timing; intentional.
-- `src/vehicles/hq-deploy.ts:80-82, 132-157` — O(1) integer compare.
+| # | Source | Quantity | Reclaim feasibility |
+|---|--------|----------|---------------------|
+| O1 | Module-level `const` declarations in bundle | **3,231** | High — many are layout constants whose value is set once and never reassigned. They could be *inlined* at use sites, removing the binding from the heap. |
+| O2 | Module-level `let` declarations in bundle | **171** | Mixed — some are real mutable singletons (`ACTIVE_GADGET_CONFIG`, `suppressReadyDialogModeAutoSwitch`); others may be inlinable |
+| O3 | `bundle.strings.json` keys | 22,082 bytes resident | Medium — ~8.8 KB are dead (Cat 8 below). Strings live separately from script heap but still occupy runtime memory |
+| O4 | `enum`s (`TeamID`, `MatchPhase`, lifecycle phases) | 5–10 enum tables | Low — enums are small and structurally needed |
+| O5 | Compile-time-stripped feature code (`FEATURE_PERF_DIAG`, `FEATURE_ADMIN_PANEL`, `FEATURE_POSITION_DEBUG`, `FEATURE_JOIN_PROMPT` all false) | None at runtime — verified via `prebuild.js` + `postbuild.js` strip | N/A — already gone |
 
 ---
 
-## v1.337 / v1.338 — Match Clock Resolution (historical)
+## The reclaim ladder (ranked by player-count multiplier)
 
-**Scope:** Category 2 H2 hot path + Category 4 HIGH item 3. Both retired.
+Each tier estimates **runtime heap reduction** and **expected effort**. The user must approve each before any code change. These are documentation entries until then.
 
-**v1.337 (Phase A — early-return gate):** Added identical-state short-circuit at `clock/state.ts:150`. +174 bytes. Eliminates ~64 unconditional per-player ops/sec at steady state.
+### Tier A — Per-player widget cache thinning (HIGHEST ROI per player)
 
-**v1.338 (Phase B — `Clocks.CountDownClock` migration):**
-- Added `countdown?: Clocks.CountDownClock` to `State.round.clock` sub-state.
-- Rewrote `resetMatchClock`, `setMatchClockPreview`, `getRemainingSeconds`, `adjustMatchClockBySeconds` to drive the `CountDownClock` instance.
-- New `onClockSecond` callback (per-second HUD repaint) + `onClockComplete` callback (single-fire expiry).
-- Removed `updateAllPlayersClock()` calls from `index/game-mode.ts` tick loop — clock now self-drives.
-- Added `State.round.clock.countdown?.pause()` to `endMatch`.
-- Bundle delta: +1,333 bytes total (v1.334 → v1.338).
+| # | Lever | Target file(s) | Mechanism | Heap impact (16p) | Bundle impact | Risk | Approval status |
+|---|-------|----------------|-----------|-------------------|---------------|------|-----------------|
+| A1 | Remove 11 write-only `VehicleSpawnerSlot` fields (Cat 7 carry-over; not a per-pid `Mn` — slot-keyed not pid-keyed) | [state/runtime-types.ts:15-32](../src/state/runtime-types.ts#L15), [vehicles/vanilla-spawner.ts:233-250](../src/vehicles/vanilla-spawner.ts#L233) | Drop fields whose reads = 0 across `src/`. Keep `vehicleId`, `*Pos`/`*Rot`, `pendingSpawnMode`, `respawnClock` (verified read). | 11 fields × 16 vehicle slots = **176 fewer field allocations** + ~700 bundle bytes | −700 bytes | **Zero** — reads = 0 verified | Pending |
+| A2 | Drop diff-cache `last*` mirror fields where the source is already authoritative (targets **M1**, **M5**, **M6**) | `VehicleDeployTimerRowCacheEntry` (`lastShowPlayerName`, `lastShowSpawnButton`, `lastShowGroundButton`, `lastSpawnButtonVisualState`, `lastGroundButtonVisualState`, `lastVisibleState`, `lastPlayerNameVisible`, `lastSpawnButtonVisible`, `lastGroundButtonVisible`); `BoundaryPromptWidgetCacheEntry` (`lastVisibleState`, `lastKind`, `lastRemainingSeconds`); `VehicleDeployTimerHudCacheEntry` (`lastVisibleState`, `lastRenderSignature`, `lastCloseButtonVisualState`, `lastLiveTerminalChromeVisible`, `lastCloseButtonVisible`) | Replace each `if (cache.lastX !== newX)` check with one of: (a) shared `lastRenderSignature` string check, (b) write-through where engine accepts redundant writes cheaply, (c) read-back from widget if API allows | Hard to estimate — at minimum **~10–15 numeric/string fields × N rows × 16 pids**, possibly hundreds | −300–600 bytes | **Medium** — diff caches were added to suppress redundant `mod.SetUI*` calls; some are perf-load-bearing. Each removal needs profiling justification | **Needs user discussion** — the user explicitly mentioned UI variables existing without runtime dynamism. These are the most likely targets but each removal needs to be benchmarked for engine-call overhead it re-introduces |
+| A3 | Consolidate `armG`/`armL`/`armS`/`armO`/`armI`/`armT`/`armFocusedTileKeyByPid` into one `armState[pid]` (targets **M10**) | [state/runtime-state.ts:213-220](../src/state/runtime-state.ts#L213), [interaction/ammo-resupply-menu.ts:187-258](../src/interaction/ammo-resupply-menu.ts#L187) | One per-pid object instead of seven; same fields under one parent | Saves 6 × 16 = **96 small allocations** + 6 record headers. Same field count overall but one parent allocation per pid instead of 7 | Slight increase (+200 bytes for the type + accessor refactor) | Low — mechanical refactor | Pending |
+| A4 | Strip `posDebugTransformSourceByPid` + `posDebugVehicleObjIdByPid` from production bundle (subset of **M7**) | [state/runtime-types.ts:468-469](../src/state/runtime-types.ts#L468) | Both unused when `FEATURE_POSITION_DEBUG = false` (current). Type and init still live | 2 records × 16 = **32 entries** at lobby fill | −small | Zero — gated feature is off, has been for 80+ versions | Pending |
+| A5 | Drop `uiCachePerfByPid` from production scope when `FEATURE_PERF_DIAG = false` (targets **M13**) | [state/runtime-types.ts:440-459](../src/state/runtime-types.ts#L440), [state/runtime-state.ts:223](../src/state/runtime-state.ts#L223) | Same shape: type + init resident but never written | 1 record × 12 fields × 16 = **192 fields** when populated | −small | Zero — the `mod.AllPlayers` perf counter increment sites are already feature-flag-gated and stripped | Pending |
 
-Properties verified during implementation:
-- `CountDownClock.addSeconds(n)` actually INCREASES remaining; the API audit's "inverted" warning was incorrect.
-- Never-started countdown reports `isPaused = true` and `.seconds = duration`.
-- `Timers.setTimeout` schedules next tick at `1000 - (elapsed % 1000)` ms — drift correction comes for free.
+### Tier B — Module-level constant inlining (one-time but cumulatively large)
 
-**Residual edge case (accepted):** A player joining during a paused pre-live preview won't get their clock widgets built until match start. In practice, pre-live joiners see the ready dialog UI, not the main HUD clock.
+| # | Lever | Target | Mechanism | Heap impact | Bundle impact | Risk | Approval status |
+|---|-------|--------|-----------|-----------|---------------|------|-----------------|
+| B1 | Inline non-tunable layout constants — single-use UI pixel offsets that are never recomputed | `foundation/ui-layout.ts` (~308 const), `ui/conquest/hud-core/constants.ts` (~158 const), `interaction/ammo-resupply-menu.ts` (~67 const) | For each constant: if used at exactly one call site AND value never changes AND it's not a "tuning knob" name, inline the value at the call site. **Keep** any constant that (a) is used in 2+ places, (b) is named something a future maintainer would tune, or (c) represents a semantic meaning (`LOW_TIME_THRESHOLD_SECONDS`) | Removes module-level binding from each — at scale, hundreds of binding entries | Bundle bytes neutral or slightly + (loses the const name, gains the literal copy at each site) | **Medium-High** — inlining can hurt readability. Must keep "tuning intent" constants | **Critical user-discussion item** — user said: "A variable should exist because it needs to be modifiable due to some dynamic run time event, or some forward facing variable for tuning. Examples of this include accounting for a resolution change, or a movement in space." This tier directly applies. **Recommendation:** run a per-file pass and present a ~50-line "candidate for inlining" diff before any change |
+| B2 | Collapse adjacent shadow-color triplets — `*_RGB: [number, number, number]` arrays + `mod.CreateVector(...)` derivatives | `foundation/ui-layout.ts` (~30 such pairs), `ui/conquest/hud-core/constants.ts` (similar) | Where both the `_RGB` tuple AND the `mod.CreateVector(...)` derivative are kept, drop whichever isn't read. Many sites only consume the `mod.CreateVector` form | Removes 30+ array literals × small | −small | Low — read-pattern audit suffices | Pending |
+| B3 | Single-letter alias-of-alias (e.g. `const AX = -264; const EX = -88;` in [ammo-resupply-menu.ts:11-14](../src/interaction/ammo-resupply-menu.ts#L11)) | Various mega-files | Where a single-letter local already exists for the same value as a longer-named export, keep one | Removes duplicate bindings | −small | Low | Pending |
 
-**Follow-up reference:** [design_doc/clock_countdown_migration_plan_2026-04-21.md](./clock_countdown_migration_plan_2026-04-21.md).
+### Tier C — Dead code (confirmed-zero readers)
 
----
+| # | Lever | Target | Mechanism | Heap impact | Bundle impact | Risk | Approval status |
+|---|-------|--------|-----------|-----------|---------------|------|-----------------|
+| C1 | Strings.json: 28 dead `joinPrompt.*` keys | `src/strings.json` | Delete keys; `FEATURE_JOIN_PROMPT = false` strips TS code but not strings — Cat 8.1 carry-over | ~5.2 KB strings.json reduction + matching runtime lookup table shrink | 0 (different cap) | Zero (gated feature off) | **User approval required** (string change policy in [AGENTS.md:75](../AGENTS.md#string-change-authorization-policy)) |
+| C2 | Strings.json: ~30 other dead keys (Cat 8.2–8.7 carry-over) | `src/strings.json` | Categorized in prior analysis: 7 unused map names, 5 UI cache, 8 unused team-name combos (verify dropdown first), 7 readyDialog labels, 10 boundary/debug strings, 4 misc UI | ~3.5 KB strings.json reduction | 0 | Low (Cat 8.4 needs UI verification) | **User approval required** |
+| C3 | Module-level `const` declarations whose values are referenced only inside their declaring file but never used | Suspected in `ui/conquest/hud-core/constants.ts` (158 consts; many may be retained from earlier HUD redesigns) | Per-file pass: for each const, grep for its name across `src/`. Zero hits = candidate for delete | Variable; needs per-file audit | Variable | Low (per-symbol grep verification) | Pending audit |
+| C4 | `for...in` with `delete` in mega-files (Cat 5 item 1 carry-over) | Various | Each pass creates an iterator object. Replace with `for (const pid of Object.keys(record))` + filter pattern. (Already partially done; recheck remaining sites) | Iterator allocation reduction per call | 0 | Low | Pending |
 
-## Category 5: Crash Risks (carried forward)
+### Tier D — Closure / continuation hygiene
 
-| # | Title | Severity | Status |
-|---|-------|----------|--------|
-| 1 | `for...in` with `delete` during iteration | Medium | Partially fixed — remaining sites read-only per v1.190 audit |
-| 2 | Stale widget references after team swap/reconnect | — | **Resolved** (v1.216 generation counter) |
-| 3 | Unbounded loading gate polling loop | — | **Resolved** (v1.104) |
-| 4 | Inverted null guards in hot-path state accessors | — | **Won't fix — intentional** |
-| 5 | Race between async loading gate and synchronous deploy event | — | **Resolved** (v1.214 invariants) |
-| 6 | HQ Deploy claim timeout orphans | Low | **Resolved** (v1.289) |
-| 7 | `GetObjectPosition` unreliable at Vanilla→HQ countdown reset | Medium | **Mitigated** (v1.283/v1.285) |
-| 8 | `SetRedeployTime` late-joiner global side-effect | Medium | **Open** — deferred to polish. See `CQ_Polish_Respawn_Redeploy_Timer_Audit`. |
-| 9 | `mod.Teleport(vehicle, ...)` with seated occupant | Low | **Validated** (v1.333 Forward Deploy playtest). |
-| **10 (NEW v1.381)** | Hard server-process crash from late-joiner ↔ Apply Config widget-tree collision | Resolved | **Mitigated** (v1.381 `warmPrimeActiveByPid` guard, #105). MP confirmation pending. **Symmetric guard (warm starts AFTER Apply begins) deferred** — open follow-up if recurs. |
-| **11 (NEW v1.383)** | `OnPlayerEnterVehicle` engine event reliability gap (heli slot 2 AH-6M observed) | Mitigated | **Safety-net re-probe** in `getDesiredBoundaryViolationKind` (#106). Self-corrects `seatKind` via single writer; recursive `refreshPlayerBoundaryState` terminates on aircraft early-return. Root cause not addressed; Phase A diagnostic deferred unless recurs in MP. |
+| # | Lever | Target | Mechanism | Heap impact | Bundle impact | Risk | Approval status |
+|---|-------|--------|-----------|-----------|---------------|------|-----------------|
+| D1 | Audit `Timers.setTimeout` closure capture | Multiple files (`actions.ts`, `vanilla-spawner.ts`, `hq-deploy.ts`, etc.) | For each `Timers.setTimeout(() => {...})`, check what locals are captured. If the body needs only `pid`/`token`, bind those by extracting a named function and passing args explicitly. Captured locals like full `player` objects, large arrays, or VM snapshots can pin entire scopes | Variable; sites with heavy locals can release entire frames | −0 to small | Medium — refactor changes the readability of inline timer setup | Pending |
+| D2 | `mod.Wait()` inside event handlers — same shape | `runLoadingGateUntilReady` polling loop, `gadget cooldown loops` | Same audit | Same shape | Same | Same | Pending |
+| D3 | Avoid `mod.AllPlayers()` materialization where iteration is short | `forEachValidPlayer` is the sanctioned wrapper. Verify all callers route through it | Already mostly done (`CQ_Refactor_forEachValidPlayer_Helper` #64) | Each `mod.AllPlayers()` allocates a Portal Array | 0 | Zero | Pending audit |
 
----
+### Tier E — Opportunistic / readability (zero memory impact, zero functional change)
 
-## Category 6: Dead Functions — RESOLVED v1.384
-
-Original v1.383 audit identified 11 zero-call-site functions in production-bundle scope. After hard verification (looking for engine-callable patterns, type re-exports, indirect dispatch):
-
-### Removed in v1.384 (9 functions + 1 cascading state field)
-
-| File | Symbol | Reason removed |
-|------|--------|----------------|
-| `vehicles/vanilla-spawner.ts` | `getVanillaSlotRespawnRemainingSeconds` | Dead duplicate of live `getVehicleSlotRespawnRemainingSeconds` in `vehicles/timers.ts:10`. |
-| `state/ui-helpers.ts` | `addRightAlignedLabel` | Orphan widget builder, no readers. |
-| `ready-dialog/mode-config-presets.ts` | `isReadyDialogGameModeVanilla` | Dead twin of live `isReadyDialogGameModeCustom` (5 callers). |
-| `interaction/hud-warm-state.ts` | `setSafetyFloorTriggeredForPid` | Dead writer. |
-| `interaction/hud-warm-state.ts` | `isSafetyFloorTriggeredForPid` | Dead reader. |
-| `interaction/hud-warm-state.ts` | `isSafetyTimeoutTriggeredForPid` | Dead reader. (`set` retained — it has callers in `actions.ts:617, :643` from gate-timeout fallback logic, even though the field it writes is now technically write-only. Field retained too as a safe-no-op reservation for future telemetry.) |
-| `vehicles/registration.ts` | `inferBaseTeamFromPosition` | Orphan from base-team detection refactor. |
-| `interaction/actions.ts` | `isCriticalHudReadyForPlayer` | Explicitly superseded per its own comment by `isAllUiFamiliesReadyForRelease`. |
-| `ready-dialog/mode-config-aircraft-ceiling.ts` | `applyCustomAircraftCeilingHardLimiter` | User-confirmed: custom aircraft ceiling not needed. The engine-side hard-limiter never engaged anyway — `customEnabled` was write-only across the whole codebase. |
-| `ready-dialog/mode-config-aircraft-ceiling.ts` | `enableCustomAircraftCeiling` | Same — user removed custom aircraft ceiling. |
-| (cascading) `interaction/types.ts:61` + 2 init sites | `safetyFloorTriggered` field | Field had zero readers; only the dead floor-flag setter wrote to it. Removed cleanly. |
-
-**Reclaim: −3,495 bundle bytes.** (Estimate was 1.5–1.8 KB; actual nearly 2× because helper-call chains and minifier opportunities surfaced.)
-
-### Retained — intentional scaffold
-
-| File | Symbol | Why kept |
-|------|--------|----------|
-| `interaction/spawn-selector.ts:28` | `conquestSelectSpawnPoint` | File comment is explicit: *"Phase 1 seam for future conquest spawn selection policy. Custom selection is intentionally deferred to later phases."* Module is registered via `index.ts:73`. Placeholder for planned feature, not dead code. |
-
-### Cascading dead retained — touch-risk-not-justified
-
-| File | Symbol | Why retained |
-|------|--------|--------------|
-| `interaction/hud-warm-state.ts` | `setSafetyTimeoutTriggeredForPid` | Has 2 callers in `actions.ts:617, :643` inside the gate-timeout fallback logic (`CQ_Bug_35/40` territory). Removing means editing the gate-timeout fallback, which is sensitive. Field-write is a safe no-op; cost is ~50 bytes for full safety. |
-| `interaction/types.ts:62` | `safetyTimeoutTriggered` field | Same — kept for the live writer. |
-
-### Verified clean
-
-- **No `if (false)` / `if (true)` dead branches** anywhere in `src/`.
-- **No code after unconditional `return`/`throw`** patterns.
-- **3 TODO/FIXME markers total** across the codebase.
-
-### Lessons from this pass
-
-- **Automated grep over-reported.** The Explore agent flagged `vehicleId` as dead (32 occurrences but reported "never read") — manual verification proved it's the most-read field on `VehicleSpawnerSlot`. Future audits must split `\.<field>\b` reads vs `<field>:` writes.
-- **`conquestSelectSpawnPoint`** would have been incorrectly removed without reading the file header. Always read context before removing functions.
-- **Aircraft ceiling was a half-wired feature, not dead code.** The agent's "zero callers" was technically correct but missed the broader context (UI input configures a value that never reaches the engine). User decision required to disambiguate "delete" vs "fix the wiring."
+| # | Lever | Target | Notes |
+|---|-------|--------|-------|
+| E1 | Mega-file split — `capture-tickets.ts` (2,150 lines), `deploy-timer-ui.ts` (2,059 lines), `ammo-resupply-menu.ts` (2,769 lines) | 0 bundle, 0 heap. Pure readability/maintenance. Defer until reclaim ships. | |
+| E2 | One-liner comment audit — replace multi-line block comments with single-line `//` per AGENTS.md "Function Comment Readability Policy". Postbuild strips full-line `//` cleanly (v1.397/v1.398). | 0 bundle (strip), positive readability | |
+| E3 | Empty directory cleanup — `src/loaders/`, `src/team-switch/` are present but empty. Cosmetic. | 0 | |
 
 ---
 
-## Category 7: Dead Variables / State Fields (NEW — v1.383 audit)
+## Justification rules (what counts as "necessary")
 
-State fields written to but **never read** anywhere in `src/`. Each verified by grepping for both `.<field>` (read pattern) and `<field>:` (write/decl pattern). Where reads return zero and writes return ≥1, the field is write-only dead weight.
+The user's bar: *"A variable should exist because it needs to be modifiable due to some dynamic run time event, or some forward facing variable for tuning. Examples of this include accounting for a resolution change, or a movement in space."*
 
-### HIGH confidence — `VehicleSpawnerSlot` write-only fields (11 total)
+Operationalized rules used to classify candidates above:
 
-These are post-v1.259 rewrite hangovers that the v1.372 sweep missed:
+1. **Keep** if reassigned at runtime (`let` mutated by an event handler, or a `const` whose object body is mutated).
+2. **Keep** if read at 2+ call sites with a meaningful name carrying tuning intent (e.g., `LOW_TIME_THRESHOLD_SECONDS`, `CONQUEST_BLEED_PER_DIFF_PER_SECOND`).
+3. **Keep** if the value depends on a runtime input — resolution, spatial position, player count, map config.
+4. **Keep** if the name documents a non-obvious magic number (semantic clarity).
+5. **Inline** if the value is single-use, immutable, and the literal at the use site reads no worse than the named binding.
+6. **Inline** if multiple constants are derivatives of one parent and the parent is the actual tunable (e.g. layout-derived offsets — keep parent, inline derivatives).
+7. **Delete** if the symbol has zero readers anywhere in `src/`.
 
-| Field | Decl | Init site | Reads |
-|-------|------|-----------|-------|
-| `enableToken` | `runtime-types.ts:15` | `vanilla-spawner.ts:233` | **0** |
-| `spawnRequestToken` | `runtime-types.ts:16` | `vanilla-spawner.ts:234` | **0** |
-| `spawnRequestAtSeconds` | `runtime-types.ts` | `vanilla-spawner.ts:235` | **0** |
-| `expectingSpawnStartedAtSeconds` | `runtime-types.ts:21` | `vanilla-spawner.ts:238` | **0** (intended for watchdog reap per comment, never wired) |
-| `respawnQueuedAtSeconds` | `runtime-types.ts` | `vanilla-spawner.ts:240` | **0** |
-| `respawnReadyAtSeconds` | `runtime-types.ts` | `vanilla-spawner.ts:241` | **0** |
-| `lastSpawnedAtSeconds` | `runtime-types.ts` | `vanilla-spawner.ts:242` | **0** |
-| `lastDestroyedAtSeconds` | `runtime-types.ts` | `vanilla-spawner.ts:243` | **0** |
-| `lastMissingAtSeconds` | `runtime-types.ts:28` | `vanilla-spawner.ts:244` | **0** |
-| `spawnCategory` | `runtime-types.ts:30` | `vanilla-spawner.ts:246` | **0** (`VehicleSlotSpawnCategory` enum has 1 reader site for type only) |
-| `availabilityPhase` | `runtime-types.ts:32` | `vanilla-spawner.ts:250` | **0** (prior v1.375 doc claimed 1 read at `deploy-timer-ui.ts:182`; verified at v1.383 — that line reads `vehicleId`, not `availabilityPhase`. Doc was wrong.) |
-
-**Estimated savings:** ~600 bytes type defs + ~250 bytes init writes + ~100 bytes scattered assignments = **~950 source bytes / ~700 bundle bytes.** Plus per-instance runtime memory: 11 fields × ~16 slots × ~8 bytes = **~1.4 KB held in `State` forever.**
-
-### Verified clean
-
-- `VehicleSpawnerSlot.vehicleId` — actively read at 32+ sites as the slot occupancy marker (`slot.vehicleId !== -1` is the canonical "slot occupied" check). The v1.383 audit agent flagged this as dead; verification proved it's the most-read field on the type. Do NOT remove.
-- All `*Pos` / `*Rot` fields (`nextForwardPos`, `nextAirPos`, etc.) — actively used by Phase 2a/2b post-seat Teleport.
-- `pendingSpawnOwnerPid`, `activeOwnerPid`, `pendingSpawnMode`, `expectingSpawn`, `respawnRunning`, `respawnClock`, `enabled`, `deployFlowTracked`, `slotNumber`, `vehicleType` — all actively read.
-
-### LOW confidence
-
-- `spawnCategory` (`VehicleSlotSpawnCategory` enum) — the enum type itself is referenced; field never read but might be a deliberate forward-declaration for a feature that never landed. Safe to remove with the type.
+Applying these to `foundation/ui-layout.ts` as a sample: many `*_OFFSET_X`, `*_OFFSET_Y`, `*_PADDING` constants are used at exactly one site and never tuned in 200+ versions. Those are inline candidates. Color triplets and the explicit `LOW_TIME_THRESHOLD_SECONDS` are keepers — they are tuning knobs.
 
 ---
 
-## Category 8: Dead Strings (NEW — v1.383 audit)
+## Verified safe operations (explicit no-go list)
 
-Keys in `src/strings.json` with **zero `mod.stringkeys.<path>` references** in `src/*.ts`. Verified by enumerating leaf keys then grepping each full dotted path.
+The reclaim pass must NOT:
 
-**Important context:** strings.json compiles to `dist/bundle.strings.json` (21,813 bytes at v1.383) which is **separate from the 1,048,576-byte script-bundle cap**. Dead strings are runtime memory bloat + translation maintenance overhead, **not** main-bundle pressure. Cleanup helps memory and clarity, not the cap.
-
-### Categorized dead-string inventory (~73 keys, ~5,889 raw bytes)
-
-#### Category 8.1 — Join Prompt strings (28 keys, ~5,254 bytes — by far the largest)
-Feature flag `FEATURE_JOIN_PROMPT = false`; TS code stripped at postbuild but strings remain bundled. **`FEATURE_*` flags do not gate strings.json.**
-- `twl.joinPrompt.title`, `dismiss`, `dismissShowMoreTips`, `neverShowAgain`
-- `twl.joinPrompt.body.mandatory1`, `mandatory2`
-- `twl.joinPrompt.body.tip3` through `tip20` (18 keys)
-- `twl.joinPrompt.body.20-skip` and other terminal markers
-
-**If JOIN_PROMPT is permanently retired, ~5.2K of strings.json becomes dead weight.** If the feature is revived, restore intent.
-
-#### Category 8.2 — Map name strings (8 keys, ~98 bytes)
-Only `twl.maps.operationFirestorm` is referenced via `MAP_NAME_STRINGKEYS`. Unreferenced:
-- `twl.maps.area22B`, `blackwellFields`, `defenseNexus`, `golfCourse`, `liberationPeak`, `manhattanBridge`, `mirakValley`, `sobekCity`
-
-#### Category 8.3 — UI cache monitoring strings (5 keys, ~96 bytes)
-Tied to a UI-cache HUD feature that was never wired:
-- `twl.hud.uiCacheHeader`, `uiCacheVehicle`, `uiCacheReady`, `uiCacheGadget`
-- `twl.adminPanel.actions.uiCachePerfToggle`, `tester.buttons.uiCachePerfOn/Off`
-
-#### Category 8.4 — Unused team-name combos (~8 keys)
-v1.377 added 8 NATO/PAX combos but only 4 are exercised by the current matchup-preset defaults across all maps. Unreferenced from code (still selectable from the dropdown UI, so partially "data" not "dead" — confirm with user before removing):
-- `twl.teams.NORTH`, `SOUTH`, `NORTH_NATO`, `NORTH_PAX`, `SOUTH_NATO`, `SOUTH_PAX`, `EAST_NATO`, `WEST_PAX`
-
-**CAUTION on 8.4:** these may be exposed via the team-name dropdown UI for runtime selection. Verify with knob-rendering code before removing — they could be data-bound, not literally referenced by `mod.stringkeys.twl.teams.NORTH`.
-
-#### Category 8.5 — Unused readyDialog strings (~7 keys)
-- `twl.readyDialog.heli3Label`, `heli4Label` — slot labels for slots that never materialized
-- `matchupFormat`, `vehicleDeployLabel/HqForward/HqForwardAir`, `vehiclesCountLabel`, `vehiclesLabelFormat`, `vehicleOptionMapDefault`, `gameModeLabel`, `playerNameFormat`, `modeSettingsLabel`
-
-#### Category 8.6 — Boundary / debug / system strings (~10 keys)
-- `twl.boundary.preLiveMainBaseTitle`, `enemyMainBaseBufferTitle`, `groundCombatZoneTitle` (the title1/title2 versions are referenced; bare parents are not)
-- `twl.debug.rotZ`, `rotX`
-- `twl.system.debugPlaceholderName`, `unassigned`
-- `twl.countdown.go`, `hud.conquest.bleedChevron`, `teamSwitch.debugTimeLimit`
-
-#### Category 8.7 — UI element strings (~4 keys)
-- `twl.ui.airStrike`, `ammo`, `duration7m30s`, `groundDeploy`, `igla`
-
-### Estimated savings
-- **Raw string content:** ~5,889 bytes
-- **JSON overhead (~50%):** ~2,944 bytes
-- **`bundle.strings.json` impact:** **~8.8 KB → ~13 KB** (40–60% of current 21,813 bytes)
-- **Main script bundle impact:** **0 bytes** (separate cap)
+- Change UI look (positions, colors, sizes, animations, render cadence visible to the player).
+- Change feature behavior (every gameplay event continues to fire identically).
+- Modify `src/strings.json` without explicit user approval per [AGENTS.md:75](../AGENTS.md#string-change-authorization-policy).
+- Re-introduce `mod.AddUIIcon` (non-functional per [AGENTS.md:58](../AGENTS.md#mod.addUIIcon-is-non-functional)).
+- Bypass the dirty-flag HUD contract ([AGENTS.md:139](../AGENTS.md#combat-hud-dirty-flag-contract)).
+- Re-introduce pre-seat `mod.Teleport(player, ...)` ([memory: project_teleport_vehicle_spawn_mystery.md](../../../../.claude/projects/c--Users-Soldat-TypeScriptProjects-twlmain/memory/project_teleport_vehicle_spawn_mystery.md)).
+- Touch the v1.259 vanilla-spawner architecture (single-persistent-spawner + spawnMutex).
+- Skip `bumpVersion` when shipping a code change.
+- Increase per-player allocations for any reason short of a user-approved feature add.
 
 ---
 
-## Unique Risks & Issues (NEW — v1.383 audit)
+## Open questions for user (per `Don't delegate understanding` policy)
 
-Beyond the categorized findings, the audit surfaced these systemic concerns:
+These are decisions that change the reclaim plan; flagging them so the user can answer before any code change.
 
-### R1. Bundle-headroom burn rate without active offsets
-Pre-cleanup trend: headroom went from 15,137 bytes (v1.375, 1.44%) to 12,326 bytes (v1.383, 1.18%) over 8 versions = **−351 bytes/version average.** v1.384 Category 6 cleanup reclaimed −3,495 bytes — pushed headroom back to 15,821 (1.51%). At the prior burn rate, this buys ~10 versions of runway. **Recommendation if headroom shrinks below 1.3% again:** ship Category 7 (~700 bytes, zero risk) as the next defensive reclaim, then mega-file end-to-end orphan reads.
+1. **Inline-vs-keep policy for layout constants.** Tier B1 is the highest-ROI tier under the `O1` bucket but is also the most invasive. Options:
+   - (a) Aggressive inline pass — strip every single-use, unmutated const; expect ~hundreds of binding removals, some readability cost.
+   - (b) Conservative pass — keep all named constants, only delete confirmed-zero-reader entries.
+   - (c) Hybrid — inline within mega-files (`ammo-resupply-menu.ts`, `deploy-timer-ui.ts`, `capture-tickets.ts`) only.
 
-### R2. Strings.json is a hidden runtime cost
-`bundle.strings.json` is 21,813 bytes at v1.383 — and ~40% (~8.8 KB) is dead weight from disabled features (join prompt + UI cache + unused map names). Strings are loaded once at game-mode start and held forever. Trim is straightforward but requires playtesting to confirm no dynamic lookups via computed paths. **No FEATURE_* flag gates strings.json.**
+   **Recommendation pending user input.**
 
-### R3. Engine event reliability is asymmetric — `OnPlayerEnterVehicle` only
-`OnPlayerEnterVehicle` is the documented unreliable one (v1.383 #106 fix; user confirms prior testing also showed enter-side issues). **`OnPlayerExitVehicle` has not exhibited reliability problems in playtest** (user confirmation 2026-04-26). The asymmetry tracks: enter-side requires the engine to bind seat → vehicle → script-event, exit-side just requires fire-on-detach. A symmetric safety-net at the aircraft-exemption early-return ([enforcement.ts:247](../src/boundary/enforcement.ts#L247)) is **NOT recommended** as pre-emptive defense — only ship if a future playtest produces "player in OOB / enemy base evading enforcement" reports, which would invert this finding.
+2. **Diff-cache fields (Tier A2) — are they perf-load-bearing?** Many `last*` fields on widget caches were added for engine-call de-duplication. If `mod.SetUITextLabel` (and friends) tolerate redundant writes cheaply, the diff caches are dead weight. If they don't, removing them re-introduces the per-render cost they were supposed to eliminate. **Suggested test:** flip one cache (e.g. `BoundaryPromptWidgetCacheEntry.lastVisibleState`) to no-op writes, profile the boundary-prompt redraw rate at 16p, decide based on data.
 
-### R4. v1.381 #105 fix has a known coverage gap
-The `warmPrimeActiveByPid` guard refuses Apply Config when **a warm-prime is already in flight at Apply time**. It does NOT protect against **a late-joiner whose warm-prime starts AFTER Apply Config begins** (the symmetric race). If the hard-crash recurs in MP testing, the symmetric guard (have warm-prime path also check `applyConfigInFlight` and yield) is the next defensive layer. Capture if it fires.
+3. **`uiCachePerfByPid` (M13) — keep or strip?** When `FEATURE_PERF_DIAG = false`, this record's writers are stripped but the type and init code still live. Stripping fully would slightly reduce per-pid heap. Re-enabling `FEATURE_PERF_DIAG` later would need to add it back. Keep as-is, or strip in production?
 
-### R5. Mega-files breed hidden dead code
-Three 2,000+ line files (`capture-tickets.ts`, `deploy-timer-ui.ts`, `ammo-resupply-menu.ts`) hosted the bulk of removed Category 6 dead functions. Cognitive overhead of these files makes orphan helpers hard to spot in review. Mega-file splits (Category 1.6) are 0 bundle impact but would catch this class of bug at PR time. **Probability there are MORE undiscovered orphans inside these files is HIGH** — the v1.384 audit was symbol-grep based and would miss orphan code that's only reachable through removed callers.
+4. **Strings.json dead-key cleanup (Tier C1, C2).** Player-facing string deletion needs explicit approval per AGENTS.md. Want a pre-edit diff? The cleanup is safe but the policy requires sign-off.
 
-### R6. `vehicleId` was almost reported as dead by automated grep
-The v1.383 Explore-agent dead-variable sweep flagged `vehicleId` as dead (32 occurrences but reported "never read anywhere"). Manual verification proved it's the most-read field on `VehicleSpawnerSlot` (slot occupancy marker, `slot.vehicleId !== -1`). **Lesson:** automated dead-variable sweeps must distinguish read patterns (`obj.field`) from declaration patterns (`field:`); raw symbol grep over-reports. Future audits should use targeted `\.<field>\b` reads vs `<field>:` writes split.
-
-### R7. Comment / JSDoc stripping is partial
-`postbuild.js:114` strips full-line `//` only. Inline trailing `//` comments and `/* */` blocks survive into the bundle (13 `/**` blocks at v1.383). Low-priority but ~100–300 bytes recoverable with a `/* */` strip pass.
-
-### R8. Plan files accumulate in design_doc/
-14+ `*_plan_*.md` files in `bf6-portal/dev/conquest/design_doc/`. Excluded from bundle (markdown), so 0 bundle impact, but document hygiene is poor — many plans reference functions/files that have since been refactored or removed. Periodic plan-file cleanup (move to `design_doc/archive/` once shipped) would aid future analyzers.
+5. **Per-player consolidation (Tier A3).** The `armG/armL/armS/armO/armI/armT` set in `State.players.*` was clearly built incrementally. Consolidation is mechanical but touches ~30 read sites in `ammo-resupply-menu.ts`. Is it worth doing now, or batched with a future menu rewrite?
 
 ---
 
-## Implementation Priority (v1.385+)
+## Verification plan after reclaim ships
 
-Headroom recovered to 1.51% via v1.384 Category 6 cleanup. Above the v1.010 floor of 2.2% would still be ideal but no longer urgent. No runtime hot path is currently flagged HIGH.
+The 16-player playtest is the single source of truth. No engine telemetry exists for the heap budget.
 
-### Playtest-blocking
-*None at runtime.* Architecture is MP-stable.
+1. Apply approved Tier A items first (highest ROI per player, lowest risk).
+2. `npm run bumpVersion -- -c "<entry>"` and `npm run build`. Confirm bundle still under cap.
+3. Run a 16-player playtest. **Pass criteria:** match starts to victory dialog without script termination.
+4. If pass: continue with Tier B–E approved items.
+5. If fail: capture termination time + connected pid count. Implement next-tier reclaim. Re-test.
 
-### Remaining bundle-reclaim levers (ordered by ROI)
-
-| # | Lever | Bundle reclaim | Strings.json | Effort | Risk | Notes |
-|---|-------|---------------|---------------|--------|------|-------|
-| 1 | **Cat 7** — Remove 11 write-only `VehicleSpawnerSlot` fields | **~700 bytes** + ~1.4 KB runtime memory | 0 | ~30 min | **Zero** (verified write-only) | Best next ship if headroom needs help. |
-| 2 | **Cat 1.1 + 1.2 + R7** — Inline widget-name wrappers, strip JSDoc/`/* */`, trailing `//` | ~300–1,000 bytes combined | 0 | ~1 hr | Low | Diminishing returns; bundle together. |
-| 3 | **Mega-file orphan re-read** — Read `capture-tickets.ts`, `deploy-timer-ui.ts`, `ammo-resupply-menu.ts` end-to-end for dead helpers grep missed | ~1–3 KB est. | 0 | ~2 hrs | Low (per-symbol grep verify before delete) | Symbol-grep audits miss code reachable only through previously-removed callers. |
-| 4 | **Cat 8.1** — Trim 28 join-prompt strings | 0 (different cap) | **~5.2 KB** | ~15 min | None if FEATURE_JOIN_PROMPT permanently off | Runtime memory only. |
-| 5 | **Cat 8.2–8.7** — Trim ~45 other dead string keys | 0 (different cap) | ~3.5 KB | ~30 min | Low (Cat 8.4 needs UI verification first) | Runtime memory only. |
-| 6 | **Cat 4 items 1 & 2** — Migrate capture-sound + capture-VO to `Timers.*` | ~50–150 bytes (helper consolidation) | 0 | ~1 hr | Low | Architectural tidiness, near-zero direct savings. |
-| 7 | **Admin Panel trim audit** | up to ~10–15 KB if `FEATURE_ADMIN_PANEL` is re-enabled later | 0 | ~3 hrs | Med | Only relevant if re-enabling admin panel becomes a goal. |
-| 8 | **`FEATURE_PERF_DIAG` runtime profile pass** | Unknown — could surface big or zero | 0 | ~2 hrs | Low | H1/H2 were overstated when measured. Grep-based hot-path list may have other false positives or hidden true positives. |
-
-**Combined practical reclaim (#1–#3, no admin-panel work): ~2–4.5 KB bundle bytes** = headroom up to ~1.7–1.9% if all shipped.
-
-### Pending stability / polish (not bundle-related)
-
-- **Category 5 Item 8** — Late-joiner `SetRedeployTime` audit. Tracked in `CQ_Polish_Respawn_Redeploy_Timer_Audit`.
-- **`CQ_Bug_Abrams_Substitution_Transport_Slot_Regression`** — open in `conquest_issues.md`.
-- **R3 — Symmetric `OnPlayerExitVehicle` safety-net** — only if MP playtest shows aircraft-state-stuck symptom.
-- **R4 — Symmetric Apply Config in-flight guard** — only if hard crash recurs.
-- **R5 — Mega-file split** — readability only, 0 bundle impact.
-- **R8 — Plan-file archival** — `design_doc/archive/` cleanup pass for analyzer hygiene.
+The runtime budget is opaque, so progress is measured only by "does the script terminate?" — bisect by tier accordingly.
 
 ---
 
-## Supersession notes (for future analyzers)
+## Carry-forward notes (still accurate from prior analysis)
 
-- **Do not re-open `CQ_Bug_49 / 52 / 53 / 54 / 55 / ActiveSpawnSingletonMPRace`.** Their host code paths were deleted wholesale in v1.259.
-- **Do not re-introduce `mod.Teleport(player, ...)` immediately before `ForcePlayerToSeat`.** Banned permanently.
-- **Post-seat `mod.Teleport(vehicle, ...)` is validated for occupant carry (v1.333).** Do not confuse this with the banned pre-seat player-Teleport.
-- **`ForcePlayerToSeat` is only reliable inside `OnPlayerDeployed`.** Confirmed across v1.246–v1.252 and Phase 6 HQ Deploy playtest.
-- **The dirty-flag HUD contract is load-bearing.** Any new per-player state affecting combat HUD rendering must call `conquestPhase3MarkHudDirty()` on mutation. See AGENTS.md.
-- **`SetObjectTransform` is a no-op on `Vehicle` objects on the current engine build.** Every post-bind vehicle placement goes through `mod.Teleport`. Vehicle rotation post-bind is yaw-only.
-- **`SetObjectTransform` on a persistent `VehicleSpawner` does not reliably propagate position updates to `ForceVehicleSpawnerSpawn` at altitude.** v1.331 probe confirmed.
-- **`OnPlayerEnterVehicle` engine event is NOT 100% reliable** (v1.383 finding from #106 — heli slot 2 AH-6M observed across 3 different players). Any new code that depends on `seatKind` being correct must either accept the safety-net re-probe pattern OR add its own engine cross-check. See R3 above for the inverse risk.
-- **`vehicleId` on `VehicleSpawnerSlot` is the canonical occupancy marker** (`!== -1` means occupied). It is NOT dead despite v1.383 automated grep flagging — see R6 for why.
-- **`FEATURE_*` flags gate TS code only, NOT strings.json** — disabled features still bundle their strings. See "Bundle vs. Strings — Two Separate Caps" at the top.
+These items remain unchanged from the v1.390 baseline; collected here so the prior context stays accessible without re-reading the historical version.
+
+- **Bundle vs strings — two separate caps.** `dist/bundle.ts` is governed by the 1,048,576-byte cap. `dist/bundle.strings.json` is **not** counted against that cap. `FEATURE_*` flags do NOT gate strings. Cleaning dead strings reduces runtime memory, not bundle pressure.
+- **Match clock self-drives** via `Clocks.CountDownClock` since v1.337/v1.338. Not a hot path.
+- **AreaTriggers require explicit `mod.EnableAreaTrigger(t, true)`** at game-mode start ([CQ_Feat_AreaTrigger_Enable, v1.367](./conquest_issues_summary.md)). Same lesson generalizes to other engine-object enables.
+- **TickContext shares `mod.AllPlayers()` per subtick** ([CQ_Perf_TickContext_AllPlayers_Cache, v1.220](./conquest_issues_summary.md)). One open follow-up: `pipeline.ts:125` raw `mod.AllPlayers()` should consume the active TickContext.
+- **Combat HUD dirty-flag contract** ([AGENTS.md](../AGENTS.md#combat-hud-dirty-flag-contract)) — every state mutation that affects HUD must call `conquestPhase3MarkHudDirty()`.
+- **Engine event reliability is asymmetric** — `OnPlayerEnterVehicle` has known gaps (CQ_Bug_43, #106 v1.383); `OnPlayerExitVehicle` is reliable.
+- **`ForcePlayerToSeat` is only reliable inside `OnPlayerDeployed`** (Phase 6 HQ Deploy contract).
+- **`SetObjectTransform` is no-op on `Vehicle`** — every post-bind vehicle placement is `mod.Teleport`.
+- **`SetObjectTransform` on a persistent `VehicleSpawner` does not propagate at altitude** (v1.331 probe).
+
+---
+
+## File map for reclaim work
+
+The reclaim ladder will touch (in approximate order):
+
+- [state/runtime-types.ts](../src/state/runtime-types.ts) — Tier A1, A4, A5
+- [state/runtime-state.ts](../src/state/runtime-state.ts) — Tier A1, A3, A4, A5 init parity
+- [state/hud-cache-types.ts](../src/state/hud-cache-types.ts) — Tier A2 (after profiling decision)
+- [vehicles/vanilla-spawner.ts](../src/vehicles/vanilla-spawner.ts) — Tier A1 init drop
+- [interaction/ammo-resupply-menu.ts](../src/interaction/ammo-resupply-menu.ts) — Tier A3, B1 sample, B3
+- [vehicles/deploy-timer-ui.ts](../src/vehicles/deploy-timer-ui.ts) — Tier A2 (largest target)
+- [foundation/ui-layout.ts](../src/foundation/ui-layout.ts) — Tier B1
+- [ui/conquest/hud-core/constants.ts](../src/ui/conquest/hud-core/constants.ts) — Tier B1
+- [src/strings.json](../src/strings.json) — Tier C1, C2 (after approval)
+- All `Timers.setTimeout` / `mod.Wait` sites — Tier D audit
+
+Each file change needs the AGENTS.md "Change Log and Versioning Policy" workflow: `npm run bumpVersion -- -c "<entry>"` followed by `npm run build` and `cmd /c npx tsc --pretty false --noEmit`. Bundle-size line in handoff per AGENTS.md "Output Requirements".

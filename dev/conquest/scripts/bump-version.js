@@ -134,6 +134,40 @@ function runBuild() {
   }
 }
 
+// Prints a post-bump reminder so doc integrity stays in sync with code changes.
+// Additive to the changelog entry already produced above — this points the human
+// at the "How to keep this file accurate" contract in conquest_optimization_state.md.
+function printPostBumpDocReminder(targetVersion, hasChangelogComment) {
+  const stateRel = "design_doc/conquest_optimization_state.md";
+  const analysisRel = "design_doc/conquest_optimization_analysis.md";
+  console.log("");
+  console.log("========================================================================");
+  console.log(`POST-BUMP CHECKLIST (v${targetVersion}) — verify before handoff:`);
+  console.log("========================================================================");
+  if (!hasChangelogComment) {
+    console.log("[1] Changelog entry — MISSING. Re-run with: npm run bumpVersion -- -c \"...\"");
+  } else {
+    console.log("[1] Changelog entry — landed (see above).");
+  }
+  console.log("");
+  console.log(`[2] Optimization state file — ${stateRel}`);
+  console.log("    Open the file and follow the 'How to keep this file accurate' section");
+  console.log("    at the bottom. In particular, refresh:");
+  console.log("    - Project Stats (bundle bytes, headroom)");
+  console.log("    - File map row(s) for any file with >=5% line/byte change");
+  console.log("    - PPM column if per-pid state shape changed (see Mn IDs)");
+  console.log("    - Function inventory for any added/removed top-level function;");
+  console.log("      include the usage annotation (N) for static count, or (TIER~N)");
+  console.log("      for hot-path tiers (XL/L/M/S/XS), or (engine) for Portal callbacks.");
+  console.log("    - Compile-Time Feature Flags table if any flag flipped");
+  console.log(`    Cross-reference Mn ID changes into ${analysisRel} too (Mn IDs live there).`);
+  console.log("");
+  console.log("[3] Typecheck verification — run before handoff:");
+  console.log("       cmd /c npx tsc --pretty false --noEmit");
+  console.log("========================================================================");
+  console.log("");
+}
+
 function parseCliArgs(argv) {
   let versionArg;
   let commentArg;
@@ -283,6 +317,8 @@ function main() {
 
   console.log(`Running build...`);
   runBuild();
+
+  printPostBumpDocReminder(targetVersion, Boolean(changelogComment));
 }
 
 try {

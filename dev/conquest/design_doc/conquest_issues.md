@@ -3443,3 +3443,42 @@ Verification (pre-playtest):
 
 Related:
 - Plan: [`design_doc/hq_supply_box_disable_on_live_plan_2026-04-26.md`](./hq_supply_box_disable_on_live_plan_2026-04-26.md).
+
+## CQ_Bug_16Player_Playtest_JS_Memory_Limit (#109)
+Title: 16-player playtest terminated by Mod Evaluator JS script memory usage limit at script load
+
+Observed (2026-04-27, v1.406, 16-player MP playtest):
+- Mod Evaluator terminated the script with the engine error: `ERROR REPORTED BY MOD EVALUATOR WHILE RUNNING JS SCRIPT — Mod has reached its js script memory usage limit. It has been terminated`.
+- Game was unplayable. Functionality and gameplay are confirmed-good in low-player-count testing; failure mode is purely capacity (memory budget) rather than logic.
+- Bundle at v1.406 measures **872,014 bytes** (well below the 1,048,576-byte upload cap; ~17% headroom). Upload-cap pressure is **not** the failure axis — runtime JS heap is.
+
+Symptom interpretation:
+- The Portal Mod Evaluator enforces a script JS memory ceiling separate from the upload byte cap. The engine does not expose `mod.GetScriptMemory*` or comparable telemetry (verified against `reference_sdk_1.2.3/code/types/mod/index.d.ts`), so the budget is observed only at the boundary as termination.
+- Capacity scales with **per-player heap multipliers** more than with bundle bytes. Module-level constants are paid once; per-player widget caches, view-model snapshots, and string formatters are paid N times. 16 players is the first time the project has stressed those multipliers in MP.
+
+Suspected per-player allocation contributors (no isolated repro yet — ranking is by static-analysis weight):
+1. **Per-player widget caches in `State.hudCache.*`** ([state/runtime-types.ts:496](../src/state/runtime-types.ts#L496)) — `topHudShellByPid`, `clockWidgetCache`, `countdownWidgetCache`, `vehicleDeployTimerCache`, `ammoResupplyMenuCache`, `boundaryPromptCache`. Each entry holds dozens-to-hundreds of cached `mod.UIWidget` references plus parallel "lastVisibleState"/"lastSig" diffing fields. The vehicle deploy timer alone ([state/hud-cache-types.ts:67](../src/state/hud-cache-types.ts#L67)) caches ~25 widget refs **per row × N rows** per player; the ammo-resupply menu cache ([state/hud-cache-types.ts:188](../src/state/hud-cache-types.ts#L188)) holds another large widget tree per player.
+2. **Per-player view-model snapshots** ([state/runtime-types.ts:277-291](../src/state/runtime-types.ts#L277)) — `hudStatusVmByPid`, `hudHelpReadyVmByPid`, `hudClockVmByPid`. Object literals per pid that are rebuilt every dirty tick.
+3. **Combat HUD entry graph** built per player by `twlConquestHudEnsurePlayerGraph` ([ui/conquest/hud-core/build.ts:198](../src/ui/conquest/hud-core/build.ts#L198)) — tickets / 3 flag slots / engage / clock / status — each with shadow-ring text widgets (multiple stacked widgets per glyph), retained for the player's session.
+4. **`AmmoResupplyMenuCacheEntry.rows`** + `.a`/`.x`/`.q` charge arrays ([state/hud-cache-types.ts:188](../src/state/hud-cache-types.ts#L188)) — array-of-objects-of-widget-refs, sized by gadget config.
+5. **Per-pid `Record<number, T>` maps in `State.players.*` and `State.conquest.debug.*`** — ~30+ per-pid records initialized lazily; each one of the 16 pids receives an object/array allocation across most of them.
+6. **Module-level constants count** — bundle has **3,231 module-level `const` + 171 `let`** declarations (3,402 retained module-level identifiers). UI-layout constants alone account for **373** entries (`TWL_CONQUEST_HUD_*`, `CONQUEST_HUD_*`, `VEHICLE_HUD_*`, `READY_DIALOG_*`, `AMMO_RESUPPLY_*`, `GADGET_LOCKER_*`, `HUD_*`). These are paid once each but their cumulative retained set is large.
+7. **Strings.json runtime asset** — `dist/bundle.strings.json` is 22,082 bytes, separate from the script cap, but **all** keys are loaded and held including ~5.2KB of dead `joinPrompt.*` keys (FEATURE_JOIN_PROMPT=false strips TS code, NOT strings — see Cat 8.1 in optimization analysis). Estimated ~8.8KB of dead strings still resident.
+8. **Closures captured by `Timers.setTimeout` and `mod.Wait` continuations** in mega-files (`actions.ts`, `vanilla-spawner.ts`, `hq-deploy.ts`, `ammo-resupply-menu.ts`). Each pending continuation retains its enclosing scope; many of these capture a `pid`, a `player`, and incidental local objects that prevent GC of those frames.
+
+Investigation deferred to optimization pass (this branch):
+- This branch's purpose is documentation + analysis only. No source code changes in this pass.
+- The optimization analysis at [`design_doc/conquest_optimization_analysis.md`](./conquest_optimization_analysis.md) is being re-issued with a memory-focused lens: dead code, variable hygiene, helper extraction, and per-player allocation reduction.
+- Functionality-preserving cleanup must not change UI look, gameplay behavior, or any feature surface. Variables retained ONLY when they (a) need to be modified at runtime due to dynamic events (resolution change, spatial movement, dynamic re-config) or (b) are forward-facing tuning knobs. Variables existing solely to cache an immutable inline value should be inlined.
+
+Status: **Open — Critical (playtest-blocking).** No isolated repro available; the crash signature is "lifetime accumulation reaches budget"-shaped, not a deterministic event. First defensive step is the no-functional-change reclaim pass tracked in the optimization analysis. Second step (if symptoms persist) is per-player allocation reductions (cache size, dead VM fields, scope leaks).
+
+Verification (after reclaim ships):
+1. Re-run a 16-player playtest with the rebuilt bundle. Goal: full match (start to victory dialog) without termination.
+2. Capture engine error log immediately on termination if it recurs; note approximate elapsed seconds + connected pid count.
+3. If recurs, ship targeted per-player heap reductions (HUD cache thinning, dead VM fields removed) and re-test.
+
+Related:
+- [`conquest_optimization_analysis.md`](./conquest_optimization_analysis.md) — full reclaim inventory under #109 lens.
+- `CQ_Refactor_forEachValidPlayer_Helper` (#64), `CQ_Perf_TickContext_AllPlayers_Cache` (#65), `CQ_Perf_Combat_HUD_Dirty_Gate` (#66) — prior performance work; reduced CPU per-tick but did not target heap.
+- `CQ_Bug_40 CQ_Bug_Frame_Time_Budget_Exceeded` (#40) — earlier capacity issue (frame time, not memory). Same shape: stress at concurrent join.
