@@ -3,6 +3,8 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.408: F1: strip conquestPhase[2A|2B|3|4|4B] prefix from 104 functions; capture-sound/vo/spawn-charge collisions disambiguated as captureSound* / captureVo* / spawnCharge* (Wave 2)
+// v1.407: A6+A7: plug ammoResupplyMenuCache and hqDeploy.lastRequestAtSecondsByPid leaks on player leave (Wave 1)
 // v1.405: fix bundle typecheck: make isValidPlayer a TS type predicate (p is mod.Player) so caller narrowing matches the original '!p || !mod.IsPlayerValid(p)' pattern; resolves 65 TS2345 Player|null|undefined errors in dist/bundle.ts
 // v1.404: fix bundle typecheck: cast spread inside msg() to bypass mod.Message overload narrowing; restore mod.Message(player) for Player-as-name sites (id-helpers.ts)
 // v1.403: fix: revert STR_RD_VEHICLE_NO_SPAWN in foundation/gameplay.ts (forward reference; gameplay loads before string-keys); fix latent mod.Message("?") to use registered flagLetters.unknown stringkey

@@ -104,13 +104,13 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
         State.conquest.debug.teamSwapRefreshTokenByPid[joinPid] = 0;
         State.conquest.debug.engageHiddenUntilDeployByPid[joinPid] = true;
         delete State.conquest.capture.engagedObjIdByPid[joinPid];
-        conquestPhase4OnPlayerLeaveOrResetPid(joinPid);
-        conquestPhase4BOnPlayerLeaveOrResetPid(joinPid);
+        captureSoundOnPlayerLeaveOrResetPid(joinPid);
+        captureVoOnPlayerLeaveOrResetPid(joinPid);
         const joinTeamNum = safeGetTeamNumberFromPlayer(eventPlayer, 0);
         if (joinTeamNum === TeamID.Team1 || joinTeamNum === TeamID.Team2) {
             State.conquest.debug.perspectiveTeamByPid[joinPid] = joinTeamNum;
         }
-        conquestPhase2BOnPlayerJoin(joinPid, wasDisconnected);
+        onPlayerJoinSpawnCharge(joinPid, wasDisconnected);
     }
 
     await mod.Wait(0.1);
@@ -135,12 +135,13 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     State.players.disconnectedByPid[pid] = true;
     resetVehicleDeployLiveMenuStateForPid(pid);
     resetArmState(pid);
+    destroyArmMenu(pid); // A6: free ammoResupplyMenuCache[pid] widget tree on leave; resetArmState only clears small per-pid scalars.
     cleanupWorldInteractableRuntimeIconsForPid(pid);
     removeReadyDialogInteractPoint(pid);
     cleanupHudForPid(pid);
     resetPlayerBoundaryStateOnUndeployOrReset(pid, true);
-    conquestPhase4OnPlayerLeaveOrResetPid(pid);
-    conquestPhase4BOnPlayerLeaveOrResetPid(pid);
+    captureSoundOnPlayerLeaveOrResetPid(pid);
+    captureVoOnPlayerLeaveOrResetPid(pid);
     clearVehicleReservationForPid(pid);
     // Clear vehicle slot ownership so the slot isn't stuck as "occupied" after disconnect.
     for (let i = 0; i < State.vehicles.slots.length; i++) {
@@ -154,6 +155,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.readyMessageCooldownByPid[pid];
     delete State.players.uiInputEnabledByPid[pid];
     delete State.players.liveVehicleDeployMenuVisibleByPid[pid];
+    delete State.hqDeploy.lastRequestAtSecondsByPid[pid]; // A7: rate-limit timestamp; consumers fall back to -999 when key absent.
     delete State.players.armO[pid];
     delete State.players.armI[pid];
     delete State.players.armT[pid];
@@ -169,7 +171,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     kpiCleanupForPid(pid);
     delete State.players.inMainBaseByPid[pid];
     delete State.players.deployedByPid[pid];
-    conquestPhase2BOnPlayerLeave(pid);
+    onPlayerLeaveSpawnCharge(pid);
     delete State.players.readyDialogData[pid];
     refreshBuiltReadyDialogCachesForAllPlayers();
     clearLoadingOverlayForPlayerId(pid);

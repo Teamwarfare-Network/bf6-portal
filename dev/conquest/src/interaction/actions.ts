@@ -560,7 +560,7 @@ async function releaseLoadingGate(eventPlayer: mod.Player, pid: number, token: n
     delete State.conquest.debug.engageHiddenUntilDeployByPid[pid];
     // Reveal all families at once.
     revealAllUiFamilies(eventPlayer, pid);
-    conquestPhase3MarkHudDirty();
+    markHudDirty();
     // Hide and clear the loading overlay.
     hideLoadingOverlayForPlayerId(pid);
     await mod.Wait(0);
@@ -678,8 +678,8 @@ function cleanupConquestHudForTeamSwap(pid: number): void {
     // Hide-only left stale widget handles that could silently fail visibility calls.
     twlConquestHudDestroyPlayer(pid);
     delete State.conquest.capture.engagedObjIdByPid[pid];
-    conquestPhase4OnPlayerLeaveOrResetPid(pid);
-    conquestPhase4BOnPlayerLeaveOrResetPid(pid);
+    captureSoundOnPlayerLeaveOrResetPid(pid);
+    captureVoOnPlayerLeaveOrResetPid(pid);
     State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
     State.conquest.debug.teamSwapHudResetPendingByPid[pid] = true;
     twlConquestHudHideObjectiveFocusForPid(pid);
@@ -692,7 +692,7 @@ async function forceUndeployPlayer(
 ): Promise<void> {
     if (!isValidPlayer(eventPlayer)) return;
     const pid = safeGetPlayerId(eventPlayer);
-    if (pid !== undefined) conquestPhase2BMarkNextDeployReason(pid, deployReason);
+    if (pid !== undefined) markNextDeployReason(pid, deployReason);
     mod.UndeployPlayer(eventPlayer);
     await mod.Wait(0.05);
     if (!isValidPlayer(eventPlayer)) return;
@@ -715,7 +715,7 @@ async function refreshConquestHudAfterTeamSwap(eventPlayer: mod.Player): Promise
     State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
     delete State.conquest.capture.engagedObjIdByPid[pid];
     twlConquestHudHideObjectiveFocusForPid(pid);
-    conquestPhase3MarkHudDirty();
+    markHudDirty();
 }
 
 function processReadyDialogSelection(eventPlayer: mod.Player) {
@@ -740,7 +740,7 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
     }
     enforceHudWarmTransitionDeployBlock(eventPlayer);
     mod.SetTeam(eventPlayer, mod.GetTeam(newTeamNum));
-    conquestPhase3MarkHudDirty();
+    markHudDirty();
     // Reassert overlay immediately after mod.SetTeam — the engine-side team assignment
     // can briefly flash native UI state, so re-pin the overlay in the same synchronous pass.
     if (pid !== undefined) reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);

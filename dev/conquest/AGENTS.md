@@ -146,7 +146,7 @@ Implications for authoring:
 ## Combat HUD Dirty-Flag Contract
 
 1. `updateConquestCombatHudForAllPlayers` gates the per-player combat-HUD write-through on `State.conquest.debug.hudDirty || force`. If nothing marked the HUD dirty since the last tick, the expensive render is skipped.
-2. Any mutation to the following state fields MUST call `conquestPhase3MarkHudDirty()` in the same function body as the mutation, otherwise the HUD will stop reflecting the new state until some other unrelated change marks it dirty:
+2. Any mutation to the following state fields MUST call `markHudDirty()` in the same function body as the mutation, otherwise the HUD will stop reflecting the new state until some other unrelated change marks it dirty:
    - `State.conquest.tickets.*`
    - `State.conquest.capture.byObjId[*].ownerTeam`, `.ownerProgressTeam`, `.progress01`, `.onPointTeam1`, `.onPointTeam2`
    - `State.conquest.capture.visualByObjId[*]`
@@ -156,8 +156,8 @@ Implications for authoring:
    - `State.match.isEnded`, `State.match.victoryDialogActive`
    - `State.conquest.debug.perspectiveTeamByPid[*]`
    - `State.players.deployedByPid[*]` (on transition between deployed ↔ not-deployed)
-3. PR review must reject any diff mutating these fields without a `conquestPhase3MarkHudDirty()` call in the same function body (exception: cleanup paths that immediately call `twlConquestHudHideAllPlayers()` or `twlConquestHudDestroyPlayer(pid)`).
-4. The top-HUD derived-slice refresh (`conquestPhase3RefreshTopHudDerivedSlicesForAllPlayers`) and animation tick (`twlConquestHudTickAnimation`) are NOT gated — clock VM and animation lerps are time-variant and must run every subtick.
+3. PR review must reject any diff mutating these fields without a `markHudDirty()` call in the same function body (exception: cleanup paths that immediately call `twlConquestHudHideAllPlayers()` or `twlConquestHudDestroyPlayer(pid)`).
+4. The top-HUD derived-slice refresh (`refreshTopHudDerivedSlicesForAllPlayers`) and animation tick (`twlConquestHudTickAnimation`) are NOT gated — clock VM and animation lerps are time-variant and must run every subtick.
 5. Force-render callers (`updateConquestCombatHudForAllPlayers(true)` at line 1998, 2048, area-triggers, spawn-charge, etc.) bypass the gate — leave those force-true wherever an event handler needs a guaranteed immediate render.
 
 ## UI Layout Change Protocol
@@ -196,6 +196,22 @@ Implications for authoring:
 3. Track status explicitly (`pending`, `in_progress`, `completed`) and keep only one item `in_progress` at a time.
 4. Update the task list after each meaningful step, and revise it if scope changes.
 5. Include the final completed task list summary in the response.
+
+## Plan Protocol
+
+Whenever planning a non-trivial change (anything entering plan mode, or any multi-file or multi-step design), follow these rules:
+
+1. **First action of every plan: read `AGENTS.md`.** The planner must load this file's rules into context before drafting any plan, so locked architectural decisions, banned patterns, and policies are reflected in the plan itself. The first explicit step of any plan file should be: *"Read [`AGENTS.md`](./AGENTS.md) and [`design_doc/conquest_design.md`](./design_doc/conquest_design.md)."*
+2. **Plans are historical references.** Every approved plan must be saved as a permanent file in [`./design_doc/`](./design_doc/) for future agents/humans to reference. Plan-mode's transient file at `~/.claude/plans/<name>.md` is ephemeral; a copy must be persisted to the project repo.
+3. **Naming convention:** `design_doc/<MM.DD.YY>_conquest_<topic>_plan.md` — date front-loaded so files sort chronologically in directory listings. Examples: `4.27.26_conquest_wave_1_plan.md`, `5.10.26_conquest_lazy_load_plan.md`. The date is when the plan was approved, not when it ships.
+4. **Plan structure:**
+    - Start with a `## Context` section explaining why the change is being made.
+    - List critical files to be modified (or files referenced for read-only context).
+    - Reference existing functions/utilities to be reused, with their file paths.
+    - Include a verification section describing how to test end-to-end.
+    - When the plan is wave-scoped (per [`conquest_optimizations_solutions_4.27.26.md`](./design_doc/conquest_optimizations_solutions_4.27.26.md)), state which wave it implements and reference the wave's items.
+5. **One plan per coherent change set.** A "wave" or a single-feature design is one plan file. Do not bundle unrelated changes into a shared plan.
+6. **Plans persist regardless of outcome.** If the plan ships and works, it stays as a record of the decision. If the plan is abandoned or superseded, it stays with a header note marking the status (e.g., `*Status: Abandoned 2026-05-01 — superseded by conquest_wave_3_plan_5.05.26.md.*`).
 
 ## New Chat Startup Checklist
 

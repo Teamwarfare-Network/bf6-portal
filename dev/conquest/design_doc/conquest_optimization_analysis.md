@@ -106,8 +106,8 @@ Each tier estimates **runtime heap reduction** and **expected effort**. The user
 | A3 | Consolidate `armG`/`armL`/`armS`/`armO`/`armI`/`armT`/`armFocusedTileKeyByPid` into one `armState[pid]` (targets **M10**) | [state/runtime-state.ts:213-220](../src/state/runtime-state.ts#L213), [interaction/ammo-resupply-menu.ts:187-258](../src/interaction/ammo-resupply-menu.ts#L187) | One per-pid object instead of seven; same fields under one parent | Saves 6 × 16 = **96 small allocations** + 6 record headers. Same field count overall but one parent allocation per pid instead of 7 | Slight increase (+200 bytes for the type + accessor refactor) | Low — mechanical refactor | Pending |
 | A4 | Strip `posDebugTransformSourceByPid` + `posDebugVehicleObjIdByPid` from production bundle (subset of **M7**) | [state/runtime-types.ts:468-469](../src/state/runtime-types.ts#L468) | Both unused when `FEATURE_POSITION_DEBUG = false` (current). Type and init still live | 2 records × 16 = **32 entries** at lobby fill | −small | Zero — gated feature is off, has been for 80+ versions | Pending |
 | A5 | Drop `uiCachePerfByPid` from production scope when `FEATURE_PERF_DIAG = false` (targets **M13**) | [state/runtime-types.ts:440-459](../src/state/runtime-types.ts#L440), [state/runtime-state.ts:223](../src/state/runtime-state.ts#L223) | Same shape: type + init resident but never written | 1 record × 12 fields × 16 = **192 fields** when populated | −small | Zero — the `mod.AllPlayers` perf counter increment sites are already feature-flag-gated and stripped | Pending |
-| **A6** | **Plug `ammoResupplyMenuCache[pid]` leak on player disconnect (Lifecycle Map finding — targets M2)** | [index/player-join-leave.ts:126-183](../src/index/player-join-leave.ts#L126) `onPlayerLeaveGameImpl` + [interaction/ammo-resupply-menu.ts:2035](../src/interaction/ammo-resupply-menu.ts#L2035) `destroyArmMenu` | Add `destroyArmMenu(pid)` after `resetArmState(pid)` in `onPlayerLeaveGameImpl`. Currently the cache (~100–180 widget refs per pid — M2) is leaked when a player who opened the gadget locker once disconnects. Long sessions accumulate stale caches. | Per leak: 100–180 widget refs. Cumulative across N joins/leaves: unbounded. | ~0 (one extra function call) | **Zero** — `destroyArmMenu` is the canonical cache-delete path, already called on join | **Pending — recommend ship-first** |
-| **A7** | **Plug `hqDeploy.lastRequestAtSecondsByPid` leak on player disconnect (Lifecycle Map finding)** | [state/runtime-types.ts:493](../src/state/runtime-types.ts#L493), [index/player-join-leave.ts:126-183](../src/index/player-join-leave.ts#L126) | Add `delete State.hqDeploy.lastRequestAtSecondsByPid[pid];` to `onPlayerLeaveGameImpl`. No `delete` site exists anywhere in `src/`; field grows monotonically across sessions. | Per leak: 1 number per pid. Cumulative: 1 entry per unique pid the server has ever seen. Tiny per-leak but unbounded over time. | ~0 | **Zero** — additive `delete` only | **Pending — recommend ship-first** |
+| **A6** | **Plug `ammoResupplyMenuCache[pid]` leak on player disconnect (Lifecycle Map finding — targets M2)** | [index/player-join-leave.ts:138](../src/index/player-join-leave.ts#L138) | `destroyArmMenu(pid)` added after `resetArmState(pid)` in `onPlayerLeaveGameImpl`. | Per leak: 100–180 widget refs. Cumulative: was unbounded. | ~0 (one extra function call) | **Zero** | **Resolved (v1.407, pending MP confirm — see [`conquest_mp_ongoing_tests.md`](./conquest_mp_ongoing_tests.md) Wave 1)** |
+| **A7** | **Plug `hqDeploy.lastRequestAtSecondsByPid` leak on player disconnect (Lifecycle Map finding)** | [state/runtime-types.ts:494](../src/state/runtime-types.ts#L494), [index/player-join-leave.ts:158](../src/index/player-join-leave.ts#L158) | `delete State.hqDeploy.lastRequestAtSecondsByPid[pid];` added in `onPlayerLeaveGameImpl`'s per-pid delete cluster. | Per leak: 1 number per pid. Cumulative: was unbounded. | ~0 | **Zero** | **Resolved (v1.407, pending MP confirm — see [`conquest_mp_ongoing_tests.md`](./conquest_mp_ongoing_tests.md) Wave 1)** |
 
 ### Tier B — Module-level constant inlining (one-time but cumulatively large)
 
@@ -156,17 +156,17 @@ Identifier text is **66.3% of the bundle** at v1.406 — 577,898 of 872,014 byte
 
 | Current name | Intended meaning | Better |
 |--------------|-----------------|--------|
-| `conquestPhase3MarkHudDirty` (16 calls × 26 chars = 416 bundle bytes) | "mark the HUD as dirty so the next render fires" | `markHudDirty` |
-| `conquestPhase2AApplyBleedTick` | "apply one bleed tick to ticket counts" | `applyBleedTick` |
-| `conquestPhase2ASyncMappedCapturePointsFromEngine` | "sync mapped capture points from engine state" | `syncMappedCapturePointsFromEngine` |
-| `conquestPhase4FlushCaptureSoundQueue` | "flush the queued capture-tick sound events" | `flushCaptureSoundQueue` |
-| `conquestPhase4BEnsureObjectiveState` | "ensure VO state for objective exists" | `ensureObjectiveVoState` |
+| `markHudDirty` (16 calls × 26 chars = 416 bundle bytes) | "mark the HUD as dirty so the next render fires" | `markHudDirty` |
+| `applyBleedTick` | "apply one bleed tick to ticket counts" | `applyBleedTick` |
+| `syncMappedCapturePointsFromEngine` | "sync mapped capture points from engine state" | `syncMappedCapturePointsFromEngine` |
+| `flushCaptureSoundQueue` | "flush the queued capture-tick sound events" | `flushCaptureSoundQueue` |
+| `ensureObjectiveVoState` | "ensure VO state for objective exists" | `ensureObjectiveVoState` |
 
 Note: `lifecyclePhase` and `ConquestLifecyclePhase` describe a runtime *state value* ("we are in PRE_MATCH phase right now"), not implementation work — those stay.
 
 | # | Lever | Bundle saved (est.) | Heap saved (est.) | Effort | Risk |
 |---|-------|--------------------:|------------------:|--------|------|
-| F1 | Strip `conquestPhase[2A|2B|3|4|4B]` prefix from 114 symbols, leaving the descriptive remainder | ~4,400 bytes | ~1–2 KB | **2–4 hours** mechanical: 114 finds × ~5 call sites each = ~600 edits. Bundled per-file via TS rename refactor; typecheck runs catch misses. | **Low.** Pure rename, no semantic change. Test plan = compile + 16-player playtest. |
+| F1 | Strip `conquestPhase[2A|2B|3|4|4B]` prefix from 104 functions, leaving the descriptive remainder. **Resolved (v1.408, pending MP confirm — Wave 2).** Nine collisions disambiguated via module-domain prefix: `spawnCharge*` (Phase 2B), `captureSound*` (Phase 4), `captureVo*` (Phase 4B). One state variable (`conquestPhase2ACaptureTimingConfiguredByObjId`) deliberately out of scope per plan. | **−3,738 bytes** (measured v1.407 → v1.408) | ~1–2 KB | Shipped in ~1 hour via scripted rename + typecheck verification. | **Zero — pure rename.** | **Resolved (v1.408)** |
 | F2 | F1 + cap remaining function names at 24 chars where the shorter form stays self-explanatory (e.g. `updateConquestCombatHudForAllPlayers` (36c) → `renderCombatHud` (15c) since `*ForAllPlayers` is implied by the codebase pattern) | ~24,000 bytes | ~6–10 KB | **1–2 days.** Per-symbol judgment call; needs naming review per file. ~700 functions evaluated, maybe 200–400 actually renamed. | **Medium.** Some renames change cognitive shape of code; need pull-request review. |
 | F3 | F1 + F2 + audit shared variable names in mega-files (e.g. `ammoResupplyMenuCache` could be `armCache`, already done in some places — make consistent) | ~50,000 bytes | ~12–20 KB | **2–3 days.** Per-file pass over the four mega-files + state types. | **Medium.** Touches widely-imported names; large diff. |
 | F4 | Aggressive cap-everything-at-16-chars rewrite | ~122,000 bytes | ~25–40 KB | **1+ week.** Pervasive churn across every file. | **High.** Names lose meaning; review burden enormous; high regression risk. **Not recommended.** |
@@ -175,7 +175,7 @@ Note: `lifecyclePhase` and `ConquestLifecyclePhase` describe a runtime *state va
 
 **Naming standard going forward** (informs new code and any rename pass):
 
-1. **Name for what, not when or why.** `markHudDirty`, not `conquestPhase3MarkHudDirty`. `flushCaptureSoundQueue`, not `conquestPhase4FlushCaptureSoundQueue`. The phase context belongs in the changelog and module-header comment, not in the identifier.
+1. **Name for what, not when or why.** `markHudDirty`, not `markHudDirty`. `flushCaptureSoundQueue`, not `flushCaptureSoundQueue`. The phase context belongs in the changelog and module-header comment, not in the identifier.
 2. **Keep names human-readable and intuitive.** `armCache` is fine; `arSpb_lck_chx_x` isn't. Reasonable shorthand is OK when it's *project conventional* (`pid` for player ID, `vid` for vehicle ID, `obj` for object) but never invent new shorthand for one-off use.
 3. **Drop suffixes implied by context.** `*ForAllPlayers` adds no information when every renderer in the file iterates all players. Drop it where the file's intent is unambiguous.
 4. **Reserve long names for unambiguous semantics.** If a function does something *exactly* as named by `safeSetUITextLabel`, that's a fine 18-char name — it tells you precisely what it does without surprise.
@@ -276,7 +276,7 @@ These items remain unchanged from the v1.390 baseline; collected here so the pri
 - **Match clock self-drives** via `Clocks.CountDownClock` since v1.337/v1.338. Not a hot path.
 - **AreaTriggers require explicit `mod.EnableAreaTrigger(t, true)`** at game-mode start ([CQ_Feat_AreaTrigger_Enable, v1.367](./conquest_issues_summary.md)). Same lesson generalizes to other engine-object enables.
 - **TickContext shares `mod.AllPlayers()` per subtick** ([CQ_Perf_TickContext_AllPlayers_Cache, v1.220](./conquest_issues_summary.md)). One open follow-up: `pipeline.ts:125` raw `mod.AllPlayers()` should consume the active TickContext.
-- **Combat HUD dirty-flag contract** ([AGENTS.md](../AGENTS.md#combat-hud-dirty-flag-contract)) — every state mutation that affects HUD must call `conquestPhase3MarkHudDirty()`.
+- **Combat HUD dirty-flag contract** ([AGENTS.md](../AGENTS.md#combat-hud-dirty-flag-contract)) — every state mutation that affects HUD must call `markHudDirty()`.
 - **Engine event reliability is asymmetric** — `OnPlayerEnterVehicle` has known gaps (CQ_Bug_43, #106 v1.383); `OnPlayerExitVehicle` is reliable.
 - **`ForcePlayerToSeat` is only reliable inside `OnPlayerDeployed`** (Phase 6 HQ Deploy contract).
 - **`SetObjectTransform` is no-op on `Vehicle`** — every post-bind vehicle placement is `mod.Teleport`.

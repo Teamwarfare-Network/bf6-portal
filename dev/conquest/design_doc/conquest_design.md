@@ -82,7 +82,7 @@ Conventions used throughout the codebase. New code follows these.
 | **Widget Caching** | Hot-path widgets cached per-player in `State.hudCache.*`; cold-path uses `safeFind()`. |
 | **Warm Token Invalidation** | `hudWarmToken` per player prevents stale async passes from writing to current state. |
 | **ForAllPlayers** | ~30 functions iterate `mod.AllPlayers()` with validity checks via `forEachValidPlayer` shared helper. |
-| **Dirty-Flag HUD** | Combat HUD render gated on `State.conquest.debug.hudDirty || force`. Every mutation that affects HUD must call `conquestPhase3MarkHudDirty()` in the same function body. See contract enumerated in [AGENTS.md](../AGENTS.md). |
+| **Dirty-Flag HUD** | Combat HUD render gated on `State.conquest.debug.hudDirty || force`. Every mutation that affects HUD must call `markHudDirty()` in the same function body. See contract enumerated in [AGENTS.md](../AGENTS.md). |
 | **Single Owner Authority** | Lifecycle/match-end mutators have one owner function each (`end_CheckAndEndMatch`, `releaseLoadingGate`, etc.); all callers route through that owner with guard-on-already-fired semantics. |
 | **PID-suffixed widget names** | All cached widget names carry `_${pid}` via `wn(name, pid)`. Required to avoid namespace collisions in the engine widget registry. |
 

@@ -1680,7 +1680,7 @@ Root Cause:
 - `onPlayerUndeployImpl` (src/index/player-deploy.ts) flipped `State.players.deployedByPid[pid] = false` and cleaned up state, but it never called the deploy timer HUD refresh. The only refresh in the undeploy path was inside `closeVehicleDeployLiveMenuForPlayer` (src/vehicles/deploy-live-menu.ts), which early-returned when the live terminal was never open (the common "alive in vehicle" case).
 - Result: the HUD cache kept its "alive + hidden" `lastVisibleState` until some other event forced a refresh:
   - A discrete vehicle event calling `updateVehicleDeployTimerHudForAllPlayers` (e.g. `scheduleVehicleSlotRespawnTimer` → `runVehicleSlotCooldownHudLoop` in src/vehicles/timers.ts).
-  - The v1.121 1-second live-tick re-assertion at `conquestPhase2AOnLiveTick` (capture-tickets.ts), which only runs during `isMatchLive() && !victoryDialogActive` — pre-live was completely uncovered.
+  - The v1.121 1-second live-tick re-assertion at `onLiveTick` (capture-tickets.ts), which only runs during `isMatchLive() && !victoryDialogActive` — pre-live was completely uncovered.
 
 Fix (v1.143):
 - Added a direct `updateVehicleDeployTimerHudForPlayer(eventPlayer)` call at the end of `onPlayerUndeployImpl` (after the loading-gate early-return block).
@@ -2268,12 +2268,12 @@ Related:
 Title: Combat HUD twlConquestHudTickFrame Runs Every Tick Regardless of State Changes
 
 Context:
-- `conquestPhase3MarkHudDirty()` set a `hudDirty` flag but `twlConquestHudTickFrame` ignored it entirely, re-rendering the full combat HUD on every tick. This was the single largest per-tick CPU regression item identified in the optimization analysis (Category 4 Item 2), estimated to waste 70-80% of HUD render work.
+- `markHudDirty()` set a `hudDirty` flag but `twlConquestHudTickFrame` ignored it entirely, re-rendering the full combat HUD on every tick. This was the single largest per-tick CPU regression item identified in the optimization analysis (Category 4 Item 2), estimated to waste 70-80% of HUD render work.
 
 Resolution (v1.221):
 - `updateConquestCombatHudForAllPlayers` is now gated on `State.conquest.debug.hudDirty || force`.
 - Derived top-HUD slices (clock view model) and `twlConquestHudTickAnimation` remain unconditional because they are time-variant.
-- AGENTS.md gained a "Combat HUD Dirty-Flag Contract" section enumerating 9 state fields that must call `conquestPhase3MarkHudDirty()` on mutation; this is the enforcement mechanism to prevent silent regressions where a state change skips the dirty mark.
+- AGENTS.md gained a "Combat HUD Dirty-Flag Contract" section enumerating 9 state fields that must call `markHudDirty()` on mutation; this is the enforcement mechanism to prevent silent regressions where a state change skips the dirty mark.
 
 Status:
 - Resolved v1.221. Bundle 998,868 / 1,048,576 bytes (49,708 headroom, 4.74%).
@@ -2834,12 +2834,12 @@ Inventory of engine queries against capture-point objects:
 
 | File:line | Call | Cadence | Notes |
 |---|---|---|---|
-| [index/area-triggers.ts:8,18](../src/index/area-triggers.ts#L8) | `OngoingCapturePoint` → `conquestPhase2AOnCapturePointTick` and `OnCapturePointCaptured/Lost` edges | event-driven | These are the engine's per-point callbacks. Already correct. |
-| [index/area-triggers.ts:32,54](../src/index/area-triggers.ts#L32) | `OnPlayerEnter/ExitCapturePoint` → updates `engagedObjIdByPid[pid]`, fires `conquestPhase2AOnCapturePointTick` immediately, marks HUD dirty | event-driven | This is the cache-at-events pathway for engage-HUD ownership. Authoritative. |
-| [index/capture-tickets.ts:1751,1756,1761,1769](../src/index/capture-tickets.ts#L1751) | Inside `conquestPhase2AOnCapturePointTick`: `GetCurrentOwnerTeam`, `GetOwnerProgressTeam`, `GetCaptureProgress`, `GetPlayersOnPoint` (all per-call) | event-driven OR polled (depending on caller) | Each call is ~one engine query per mapped point per invocation. |
-| [index/capture-tickets.ts:2058,2070,2075](../src/index/capture-tickets.ts#L2058) | `conquestPhase2ASyncMappedCapturePointsFromEngine` per-subtick: for each mapped point, `mod.GetCapturePoint(objId)` + `conquestPhase2AOnCapturePointTick(cp)` | **per-subtick (~8.3 Hz)** | Called from `conquestPhase2ARefreshLiveCaptureStateSubtick` ([index/game-mode.ts:118](../src/index/game-mode.ts#L118)) inside the live game-mode loop. |
+| [index/area-triggers.ts:8,18](../src/index/area-triggers.ts#L8) | `OngoingCapturePoint` → `onCapturePointTick` and `OnCapturePointCaptured/Lost` edges | event-driven | These are the engine's per-point callbacks. Already correct. |
+| [index/area-triggers.ts:32,54](../src/index/area-triggers.ts#L32) | `OnPlayerEnter/ExitCapturePoint` → updates `engagedObjIdByPid[pid]`, fires `onCapturePointTick` immediately, marks HUD dirty | event-driven | This is the cache-at-events pathway for engage-HUD ownership. Authoritative. |
+| [index/capture-tickets.ts:1751,1756,1761,1769](../src/index/capture-tickets.ts#L1751) | Inside `onCapturePointTick`: `GetCurrentOwnerTeam`, `GetOwnerProgressTeam`, `GetCaptureProgress`, `GetPlayersOnPoint` (all per-call) | event-driven OR polled (depending on caller) | Each call is ~one engine query per mapped point per invocation. |
+| [index/capture-tickets.ts:2058,2070,2075](../src/index/capture-tickets.ts#L2058) | `syncMappedCapturePointsFromEngine` per-subtick: for each mapped point, `mod.GetCapturePoint(objId)` + `onCapturePointTick(cp)` | **per-subtick (~8.3 Hz)** | Called from `refreshLiveCaptureStateSubtick` ([index/game-mode.ts:118](../src/index/game-mode.ts#L118)) inside the live game-mode loop. |
 | [index/player-kpi-events.ts:51](../src/index/player-kpi-events.ts#L51) | `mod.GetPlayersOnPoint` inside `OnCapturePointCaptured` → KPI capture credit | event-driven (one call per capture event) | Correct. |
-| [index/capture-tickets.ts:1548](../src/index/capture-tickets.ts#L1548) | `mod.GetCapturePoint(objId)` inside `conquestPhase2AApplyCaptureTimingForMappedPoints` | one-shot at live-state reset | Correct. |
+| [index/capture-tickets.ts:1548](../src/index/capture-tickets.ts#L1548) | `mod.GetCapturePoint(objId)` inside `applyCaptureTimingForMappedPoints` | one-shot at live-state reset | Correct. |
 
 Per-subtick cost arithmetic:
 - 3 mapped capture points × 4 engine queries (`GetCapturePoint` + `GetCurrentOwnerTeam` + `GetOwnerProgressTeam` + `GetCaptureProgress` + `GetPlayersOnPoint` + array iteration) at 0.12s subtick (~8.3 Hz) = **~100 capture-point engine queries per second**, regardless of actual capture activity.
@@ -2851,7 +2851,7 @@ Why the polling exists (load-bearing, do NOT blindly remove):
 
 Findings — actionable optimizations (none playtest-blocking):
 
-1. **`mod.GetPlayersOnPoint` inside the per-subtick polling could be replaced with a cached set fed by `OnPlayerEnter/ExitCapturePoint` events.** The enter/exit handlers at [index/area-triggers.ts:32,54](../src/index/area-triggers.ts#L32) already maintain `engagedObjIdByPid[pid]` authoritatively. A reverse index `State.conquest.capture.byObjId[objId].onPointPids: Set<number>` (or array) maintained at the same enter/exit edges would let `conquestPhase2AOnCapturePointTick` derive `onPointTeam1` / `onPointTeam2` from the cache instead of re-querying the engine + iterating an allocated array. Saves ~25 engine queries/sec + 25 array allocations/sec at 3 mapped points. Owner/progress queries must remain (they exist precisely to plug missed `OngoingCapturePoint` events). Estimated cost: medium effort (the cache must stay consistent across deploy/undeploy/disconnect, all of which already touch `engagedObjIdByPid`); medium reward (smaller absolute savings than the v1.358 boundary fix because per-point-per-tick is smaller than per-player-per-tick).
+1. **`mod.GetPlayersOnPoint` inside the per-subtick polling could be replaced with a cached set fed by `OnPlayerEnter/ExitCapturePoint` events.** The enter/exit handlers at [index/area-triggers.ts:32,54](../src/index/area-triggers.ts#L32) already maintain `engagedObjIdByPid[pid]` authoritatively. A reverse index `State.conquest.capture.byObjId[objId].onPointPids: Set<number>` (or array) maintained at the same enter/exit edges would let `onCapturePointTick` derive `onPointTeam1` / `onPointTeam2` from the cache instead of re-querying the engine + iterating an allocated array. Saves ~25 engine queries/sec + 25 array allocations/sec at 3 mapped points. Owner/progress queries must remain (they exist precisely to plug missed `OngoingCapturePoint` events). Estimated cost: medium effort (the cache must stay consistent across deploy/undeploy/disconnect, all of which already touch `engagedObjIdByPid`); medium reward (smaller absolute savings than the v1.358 boundary fix because per-point-per-tick is smaller than per-player-per-tick).
 
 2. **Cadence reduction is NOT recommended.** Dropping the polling from per-subtick to per-second would halve the HUD fill/percent update rate — the comment explicitly cites "sub-second cadence to keep fill/percent updates responsive" as the reason for the current design.
 
@@ -2859,7 +2859,7 @@ Findings — actionable optimizations (none playtest-blocking):
 
 Conclusion: **Clean for correctness. One actionable optimization deferred.** The capture-point polling is intentional, documented, and load-bearing. It does not exhibit the v1.358 anti-pattern of "per-tick engine query when an event-driven cache would do" for the owner/progress fields, because the polling specifically exists to compensate for missed events. The one applicable v1.369 lesson — replace `GetPlayersOnPoint` with an event-driven cache — is logged as a low-priority optimization, not a bug.
 
-Status: **Resolved (audit clean).** Optional follow-up: cache `onPointPids` at enter/exit events and read the cached set inside `conquestPhase2AOnCapturePointTick` instead of calling `mod.GetPlayersOnPoint`. Defer until a 64-player playtest with `FEATURE_PERF_DIAG=true` confirms the per-subtick cost is measurable on the section-1 timer.
+Status: **Resolved (audit clean).** Optional follow-up: cache `onPointPids` at enter/exit events and read the cached set inside `onCapturePointTick` instead of calling `mod.GetPlayersOnPoint`. Defer until a 64-player playtest with `FEATURE_PERF_DIAG=true` confirms the per-subtick cost is measurable on the section-1 timer.
 
 Related:
 - v1.358–v1.369 boundary refactor (cache-at-events principle generalized from this work).
@@ -2934,20 +2934,29 @@ Observed (2026-04-25, v1.372B error-log capture at [reference_design_documentati
 - Error log shows one occurrence each of `Error reported by GetInventoryAmmo while running JS Script — Failed to return ammo amount due to an invalid player or inventory item.` and `Error reported by GetInventoryMagazineAmmo while running JS Script — Failed to return ammo amount due to an invalid player or inventory item.`
 - User-reported trigger: opening the gadget Supply Box (ammo-resupply) menu, possibly while playing as Assault.
 
+Re-observed (2026-04-27, v1.408 SP smoke test at [reference_design_documentation/testing_images/20260427212633_1.jpg](../reference_design_documentation/testing_images/20260427212633_1.jpg)):
+- Same engine errors (`GetInventoryAmmo` + `GetInventoryMagazineAmmo` invalid-player-or-inventory-item), now multiple repetitions per menu interaction (4 errors visible in the v1.408 capture vs 2 in the v1.372B capture).
+- **Class context: Medic.** Trigger path: opening the Supply Box and selecting medic gadgets and/or smoke artillery. This rules out the earlier "Assault-specific" hypothesis — the bug is class-agnostic, fired wherever the slot probe lands on an empty or non-launcher slot.
+- **Not a Wave 1/2 regression.** Wave 1 (v1.407) only modified `onPlayerLeaveGameImpl` cleanups; Wave 2 (v1.408) was a phase-prefix rename pass that did not touch `ammo-resupply-menu.ts`. The bug is the same pre-existing latent issue from v1.372B; the v1.379 "not reproducing" mark was premature.
+
 Suspected root cause:
 - The Supply Box menu's slot-probe path in [src/interaction/ammo-resupply-menu.ts](../src/interaction/ammo-resupply-menu.ts) calls `mod.GetInventoryAmmo` and `mod.GetInventoryMagazineAmmo` against `mod.InventorySlots.GadgetOne` / `GadgetTwo` to classify slot contents. Calls at lines 1135/1139 and 1333/1336 are NOT wrapped in try/catch (others at 863-876, 937-943, 1354-1364, 2294-2295 are wrapped). When the player has no item in a probed slot — or when the slot holds a class-loadout item the probe is not expecting — the engine reports an invalid-inventory-item error.
-- "As Assault" is consistent: the Assault class has no launcher and may have a different default gadget loadout from the engineer probe path's expectations. Probing for a launcher slot on a class that has no launcher would land on an empty-or-non-launcher slot and trigger the invalid-item error.
+- Confirmed class-agnostic per v1.408 Medic repro: probing for a launcher slot on any class that has no launcher (Assault, Medic, Recon — any non-Engineer class) lands on an empty-or-non-launcher slot and triggers the invalid-item error.
 - Pattern matches `CQ_Polish_Launcher_Ammo_Per_Launcher_Cap` (#78) and the v1.341 `RemoveEquipment` fix, where slot-targeted SDK calls without an `isSlotEmpty` / `HasEquipment` precheck produce engine error spam.
 
 Impact:
-- Cosmetic / log-noise only at present. No observed gameplay regression. Could mask other Supply Box menu issues if the error log fills up.
+- **Cosmetic / log-noise only.** No observed gameplay regression — game continues, gadgets work, Supply Box still functions. The errors fill the world log overlay which is visually noisy but not blocking.
+- Could mask other Supply Box menu issues if the error log fills up.
 
-Proposed fix:
-1. Audit every `mod.GetInventoryAmmo` / `mod.GetInventoryMagazineAmmo` call site in [ammo-resupply-menu.ts](../src/interaction/ammo-resupply-menu.ts). Confirm every call is either (a) wrapped in `try { ... } catch {}` (which still emits the engine log but prevents JS exceptions) AND (b) gated behind a `mod.HasEquipment(player, slot)` / `isSlotEmpty(slot)` precheck so the engine never sees an invalid-item call in the first place.
-2. Specifically: lines 1135/1139 and 1333/1336 are unwrapped — wrap them at minimum, and add the precheck where the surrounding logic doesn't already establish that the slot has a launcher.
-3. Mirror the v1.341 pattern for `RemoveEquipment` ("gate every slot-based RemoveEquipment behind isSlotEmpty precheck") and the v1.343 read-back/retry pattern for `SetInventoryAmmo`.
+Possible fix paths (not actioned in current wave):
 
-Status: **Open** — repro captured (the v1.372B screenshot). Estimated effort: low (15–30 min for the audit + precheck additions). Bundle impact near-zero. Verify by reproducing the menu-open as Assault and confirming the log lines no longer appear.
+1. **Minimum-effort fix (~15–30 min)**: at the four unwrapped call sites (lines 1135/1139 and 1333/1336 in [`ammo-resupply-menu.ts`](../src/interaction/ammo-resupply-menu.ts)), add `try { ... } catch {}` wrapping. Still emits the engine log (engine logs fire BEFORE the JS catch), but prevents any JS-side exception fallout. This matches the wrap pattern at the other call sites (863-876, 937-943, 1354-1364, 2294-2295) but does not silence the log itself.
+
+2. **Cleaner fix (~30–45 min — preferred for log silence)**: gate every `GetInventoryAmmo` / `GetInventoryMagazineAmmo` call behind a `mod.HasEquipment(player, slot)` precheck (or an equivalent `isSlotEmpty(slot)` check derived from `IsInventorySlotActive`). When the slot is empty or holds a non-launcher class loadout, skip the ammo probe entirely. This is the v1.341 `RemoveEquipment` precheck pattern from `CQ_Bug_RemoveEquipment_JS_Error` (#84) reapplied to the `GetInventoryAmmo` family. Eliminates the engine log entirely.
+
+3. **Architectural fix (larger, deferred)**: refactor the slot-probe path to use the authoritative `State.players.lockerSlots[pid]` map (already maintained by the locker open flow) as the source of truth for slot contents. Eliminates the need for live `GetInventoryAmmo` probes during menu refresh. Out of scope for a small bugfix; would belong to a Supply Box rework.
+
+Status: **Open — reproduced v1.408 (2026-04-27)**. Bundle impact of fix paths #1 / #2: near-zero (a few `if` checks). Verify by reproducing the menu-open across all four classes (Assault, Engineer, Medic, Recon) with various gadget combinations and confirming the log lines no longer appear (path #2) or are properly absorbed (path #1).
 
 Related:
 - `CQ_Polish_Launcher_Ammo_Per_Launcher_Cap` (#78) — same call-family, adjacent issue.
@@ -3276,7 +3285,7 @@ Open question: design — TBD. Specific Mancours target values not yet sourced.
 Status: **Open — design TBD; needs reference-rate sourcing.**
 
 Related:
-- Existing bleed system: `conquestPhase2AApplyBleedTick` in [`index/capture-tickets.ts`](../src/index/capture-tickets.ts). Per-second tick gated to live-match. Tunable via `BLEED_*` constants.
+- Existing bleed system: `applyBleedTick` in [`index/capture-tickets.ts`](../src/index/capture-tickets.ts). Per-second tick gated to live-match. Tunable via `BLEED_*` constants.
 - `design_doc/bleed_tuning.md` — historical bleed tuning notes (review for prior calibration baselines).
 
 ## CQ_Audit_Weapon_Gadget_Bans (#104)
@@ -3376,13 +3385,13 @@ Title: Exempt voluntary UX redeploys from Phase 2B spawn-charge ticket cost
 
 Observed (2026-04-26, v1.392):
 - During pre-playtest bleed-rate calibration discussion (#103), surfaced that vehicle HQ-Deploy / Forward-Deploy / Air-Deploy from on-foot was firing a chargeable redeploy event despite the player not having died. The player was alive, voluntarily grabbed a vehicle, and lost a ticket from their team. Same gap applied to pre-game and live team-swaps — the team_switch reason was wired but still charged tickets.
-- Phase 2B spawn-charge model ([spawn-charge.ts:197 `conquestPhase2BOnPlayerDeployed`](../src/state/spawn-charge.ts#L197)) charged on every deploy event with no per-reason exempt mechanism. All 6 reasons (`deploy`, `forced_redeploy`, `team_switch`, `admin_move`, `phase_transition`, `reconnect`) charged equally.
+- Phase 2B spawn-charge model ([spawn-charge.ts:197 `onPlayerDeployedSpawnCharge`](../src/state/spawn-charge.ts#L197)) charged on every deploy event with no per-reason exempt mechanism. All 6 reasons (`deploy`, `forced_redeploy`, `team_switch`, `admin_move`, `phase_transition`, `reconnect`) charged equally.
 
 Resolution shipped at v1.393:
 - Added `"vehicle_deploy"` as a 7th reason in the `ConquestSpawnChargeReason` union ([runtime-types.ts:139-146](../src/state/runtime-types.ts#L139-L146)).
 - Updated all 4 reason-counter initializers (`runtime-state.ts`, `conquest-scaffold.ts`, `spawn-charge.ts:NewReasonCounterState`) and the reason-code/total enumerations.
-- In `conquestPhase2BOnPlayerDeployed`, after `IncrementReasonCounter` (so diagnostic counts still track the deploy) but before the charge logic, early-return when `reason === "vehicle_deploy" || reason === "team_switch"`.
-- In `hq-deploy.ts:289-295` on-foot branch, added `conquestPhase2BMarkNextDeployReason(pid, "vehicle_deploy")` before `mod.SetRedeployTime` / `mod.UndeployPlayer`. The `team_switch` reason was already wired at [actions.ts:752](../src/interaction/actions.ts#L752) — no marker change needed there, only the exempt-set in the charge function picks it up.
+- In `onPlayerDeployedSpawnCharge`, after `IncrementReasonCounter` (so diagnostic counts still track the deploy) but before the charge logic, early-return when `reason === "vehicle_deploy" || reason === "team_switch"`.
+- In `hq-deploy.ts:289-295` on-foot branch, added `markNextDeployReason(pid, "vehicle_deploy")` before `mod.SetRedeployTime` / `mod.UndeployPlayer`. The `team_switch` reason was already wired at [actions.ts:752](../src/interaction/actions.ts#L752) — no marker change needed there, only the exempt-set in the charge function picks it up.
 - Bundle delta v1.392 → v1.393: **+397 bytes** (slightly above the ~140-200 estimate due to expanded counter initializers across 4 files).
 
 Behavior change matrix:

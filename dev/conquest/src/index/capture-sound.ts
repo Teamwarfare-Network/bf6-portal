@@ -1,7 +1,7 @@
 ﻿// @ts-nocheck
 // Module: index/capture-sound -- Phase 4 isolated capture-sound backbone and V1 capture-tick dispatch
 
-function conquestPhase4CleanupSoundRuntimeHandles(): void {
+function cleanupSoundRuntimeHandles(): void {
     conquestCaptureSafeUnspawnHandle(State.conquest.sound.captureTickFriendlyHandle);
     conquestCaptureSafeUnspawnHandle(State.conquest.sound.captureTickEnemyHandle);
     State.conquest.sound.captureTickFriendlyHandle = undefined;
@@ -9,31 +9,31 @@ function conquestPhase4CleanupSoundRuntimeHandles(): void {
     State.conquest.sound.handlesReady = false;
 }
 
-function conquestPhase4ResetQueueAndThrottleState(): void {
+function resetCaptureSoundQueueState(): void {
     State.conquest.sound.queue = [];
     State.conquest.sound.lastFlushAtSeconds = -1;
     State.conquest.sound.lastEventAtByThrottleKey = {};
 }
 
 // Clears queued/timing state for any not-live lifecycle transition without throwing away reusable runtime handles.
-function conquestPhase4OnNotLiveReset(): void {
-    conquestPhase4ResetQueueAndThrottleState();
+function captureSoundOnNotLiveReset(): void {
+    resetCaptureSoundQueueState();
 }
 
 // Live start is the earliest moment a capture sound can be needed; prime handles and clear stale queue state here.
-function conquestPhase4OnMatchLiveStart(): void {
-    conquestPhase4ResetQueueAndThrottleState();
-    conquestPhase4PrimeSoundRuntime();
+function captureSoundOnMatchLiveStart(): void {
+    resetCaptureSoundQueueState();
+    primeSoundRuntime();
 }
 
-function conquestPhase4OnPlayerLeaveOrResetPid(pid: number): void {
+function captureSoundOnPlayerLeaveOrResetPid(pid: number): void {
     if (!pid) return;
     State.conquest.sound.lastEventAtByThrottleKey = conquestCaptureFilterThrottleMapByPid(
         State.conquest.sound.lastEventAtByThrottleKey, pid
     );
 }
 
-function conquestPhase4PrimeSoundRuntime(): void {
+function primeSoundRuntime(): void {
     if (!State.conquest.sound.enabled) return;
     const zero = VEC_ZERO;
 
@@ -67,28 +67,28 @@ function conquestPhase4PrimeSoundRuntime(): void {
     );
 }
 
-function conquestPhase4GetThrottleKey(event: ConquestQueuedSoundEvent): string {
+function getCaptureSoundThrottleKey(event: ConquestQueuedSoundEvent): string {
     return `${event.eventKey}:${event.objId}:${event.sourceTeamId}`;
 }
 
-function conquestPhase4GetRecipientThrottleKey(event: ConquestQueuedSoundEvent, pid: number): string {
+function getCaptureSoundRecipientThrottleKey(event: ConquestQueuedSoundEvent, pid: number): string {
     return `${event.eventKey}:${pid}:${event.objId}:${event.sourceTeamId}`;
 }
 
-function conquestPhase4QueueEvent(event: ConquestQueuedSoundEvent): void {
+function queueCaptureSoundEvent(event: ConquestQueuedSoundEvent): void {
     if (!State.conquest.sound.enabled) return;
-    const throttleKey = conquestPhase4GetThrottleKey(event);
+    const throttleKey = getCaptureSoundThrottleKey(event);
     for (let i = 0; i < State.conquest.sound.queue.length; i++) {
         const queued = State.conquest.sound.queue[i];
         if (!queued) continue;
-        if (conquestPhase4GetThrottleKey(queued) !== throttleKey) continue;
+        if (getCaptureSoundThrottleKey(queued) !== throttleKey) continue;
         return;
     }
     State.conquest.sound.queue.push(event);
 }
 
 // Produces one logical capture-tick event when capture progress is actively moving.
-function conquestPhase4OnCapturePointStateSample(
+function captureSoundOnCapturePointStateSample(
     objId: number,
     prevOwnerProgressTeam: TeamID | 0,
     prevProgress01: number,
@@ -105,7 +105,7 @@ function conquestPhase4OnCapturePointStateSample(
     if (!activeCaptureStarted && !progressMovedEnough) return;
 
     const queuedAtSeconds = mod.GetMatchTimeElapsed();
-    conquestPhase4QueueEvent({
+    queueCaptureSoundEvent({
         eventKey: "capture_tick",
         objId,
         sourceTeamId: nextOwnerProgressTeam,
@@ -113,7 +113,7 @@ function conquestPhase4OnCapturePointStateSample(
     });
 }
 
-function conquestPhase4GetRecipientsForEvent(event: ConquestQueuedSoundEvent): mod.Player[] {
+function getCaptureSoundRecipientsForEvent(event: ConquestQueuedSoundEvent): mod.Player[] {
     const recipients: mod.Player[] = [];
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -125,7 +125,7 @@ function conquestPhase4GetRecipientsForEvent(event: ConquestQueuedSoundEvent): m
         const engagedObjId = State.conquest.capture.engagedObjIdByPid[pid];
         if (!conquestShouldTreatPidAsActiveObjectiveOccupant(pid, engagedObjId)) continue;
         if (engagedObjId !== event.objId) continue;
-        if (!conquestPhase2AShouldCountPlayerAsActiveOnPoint(player)) continue;
+        if (!shouldCountPlayerAsActiveOnPoint(player)) continue;
         const viewerTeam = safeGetTeamNumberFromPlayer(player, 0);
         if (viewerTeam !== TeamID.Team1 && viewerTeam !== TeamID.Team2) continue;
 
@@ -134,7 +134,7 @@ function conquestPhase4GetRecipientsForEvent(event: ConquestQueuedSoundEvent): m
     return recipients;
 }
 
-function conquestPhase4GetHandleForRecipient(event: ConquestQueuedSoundEvent, recipient: mod.Player): any {
+function getCaptureSoundHandleForRecipient(event: ConquestQueuedSoundEvent, recipient: mod.Player): any {
     if (event.eventKey !== "capture_tick") return undefined;
     const viewerTeam = safeGetTeamNumberFromPlayer(recipient, 0);
     const isFriendlyPerspective = viewerTeam === event.sourceTeamId;
@@ -144,7 +144,7 @@ function conquestPhase4GetHandleForRecipient(event: ConquestQueuedSoundEvent, re
 }
 
 // Flushes queued capture sounds on a fixed cadence and resolves recipients from current team truth.
-function conquestPhase4FlushCaptureSoundQueue(): void {
+function flushCaptureSoundQueue(): void {
     if (!State.conquest.sound.enabled) return;
     if (!isMatchLive()) return;
 
@@ -158,7 +158,7 @@ function conquestPhase4FlushCaptureSoundQueue(): void {
     State.conquest.sound.lastFlushAtSeconds = now;
 
     if (State.conquest.sound.queue.length <= 0) return;
-    conquestPhase4PrimeSoundRuntime();
+    primeSoundRuntime();
 
     const queued = State.conquest.sound.queue.splice(0, State.conquest.sound.queue.length);
 
@@ -168,7 +168,7 @@ function conquestPhase4FlushCaptureSoundQueue(): void {
             continue;
         }
 
-        const recipients = conquestPhase4GetRecipientsForEvent(event);
+        const recipients = getCaptureSoundRecipientsForEvent(event);
         if (recipients.length <= 0) {
             continue;
         }
@@ -178,13 +178,13 @@ function conquestPhase4FlushCaptureSoundQueue(): void {
             if (!isValidPlayer(recipient)) continue;
             const recipientPid = safeGetPlayerId(recipient);
             if (recipientPid === undefined) continue;
-            const throttleKey = conquestPhase4GetRecipientThrottleKey(event, recipientPid);
+            const throttleKey = getCaptureSoundRecipientThrottleKey(event, recipientPid);
             const lastEventAt = State.conquest.sound.lastEventAtByThrottleKey[throttleKey] ?? -999;
             if ((now - lastEventAt) < CONQUEST_CAPTURE_SOUND_MIN_COOLDOWN_SECONDS) {
                 continue;
             }
 
-            const handle = conquestPhase4GetHandleForRecipient(event, recipient);
+            const handle = getCaptureSoundHandleForRecipient(event, recipient);
             if (!conquestCaptureHasValidHandle(handle)) {
                 continue;
             }

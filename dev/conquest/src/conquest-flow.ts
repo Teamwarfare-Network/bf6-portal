@@ -12,7 +12,7 @@ function forceSpawnAllReadyVehicleSlots(): void {
 function bindClockExpiryForContinuousMode(): void {
     State.round.clock.expiryHandlers = [
         () => {
-            conquestPhase2ACheckEndCondition();
+            checkEndCondition();
         },
     ];
 }
@@ -34,10 +34,10 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     clearActiveBoundaryViolationsForAllPlayers();
     updateReadyDialogModeConfigForAllHiddenBuiltCaches();
     updateReadyToggleButtonsForAllBuiltReadyDialogs();
-    conquestPhase2AResetLiveState();
-    conquestPhase2BOnMatchLiveStart();
-    conquestPhase4OnMatchLiveStart();
-    conquestPhase4BOnMatchLiveStart();
+    resetLiveState();
+    spawnChargeOnMatchLiveStart();
+    captureSoundOnMatchLiveStart();
+    captureVoOnMatchLiveStart();
 
     mod.EnableAllPlayerDeploy(true);
 
@@ -118,10 +118,10 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     clearActiveBoundaryViolationsForAllPlayers();
     updateReadyDialogModeConfigForAllHiddenBuiltCaches();
     updateReadyToggleButtonsForAllBuiltReadyDialogs();
-    conquestPhase2AResetNotLiveState();
-    conquestPhase2BOnNotLiveReset();
-    conquestPhase4OnNotLiveReset();
-    conquestPhase4BOnNotLiveReset();
+    resetNotLiveState();
+    spawnChargeOnNotLiveReset();
+    captureSoundOnNotLiveReset();
+    captureVoOnNotLiveReset();
 
     setMatchClockPreview(getConfiguredMatchLengthSeconds());
     updateAllPlayersClock();

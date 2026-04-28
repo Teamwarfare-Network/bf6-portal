@@ -292,7 +292,7 @@ async function beginHqSeatFlow(pid: number, vehicle: mod.Vehicle): Promise<void>
         // closes the menu naturally. No mod.Teleport before the seat call -- the ban stands.
         // Mark the imminent redeploy as exempt from spawn-charge: the player did not die,
         // they voluntarily grabbed a vehicle. Resolved+cleared by spawn-charge on DeployPlayer.
-        conquestPhase2BMarkNextDeployReason(pid, "vehicle_deploy");
+        markNextDeployReason(pid, "vehicle_deploy");
         // Zero the player's redeploy timer so the forced DeployPlayer below is not delayed
         // by the engine's post-death countdown (UndeployPlayer is treated like a death).
         try { mod.SetRedeployTime(player, 0); } catch {}

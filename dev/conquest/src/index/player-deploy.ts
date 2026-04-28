@@ -52,13 +52,13 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     setUIInputModeForPlayer(eventPlayer, false);
     if (State.round.flow.cleanupActive && !State.round.flow.cleanupAllowDeploy) {
         State.players.deployedByPid[pid] = false;
-        conquestPhase2BMarkNextDeployReason(pid, "phase_transition");
+        markNextDeployReason(pid, "phase_transition");
         await deferForcedUndeploy(eventPlayer, "cleanup");
         return;
     }
 
     const wasAlreadyDeployed = !!State.players.deployedByPid[pid];
-    conquestPhase2BOnPlayerDeployed(eventPlayer, wasAlreadyDeployed);
+    onPlayerDeployedSpawnCharge(eventPlayer, wasAlreadyDeployed);
     State.players.deployedByPid[pid] = true;
     invalidateVehicleDeployTimerHudViewerCache(pid);
     updateHudTeamSwapButtonVisibilityForPid(pid);
@@ -128,10 +128,10 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     State.conquest.debug.engageHiddenUntilDeployByPid[pid] = true;
     delete State.conquest.capture.engagedObjIdByPid[pid];
     resetPlayerBoundaryStateOnUndeployOrReset(pid);
-    conquestPhase4OnPlayerLeaveOrResetPid(pid);
-    conquestPhase4BOnPlayerLeaveOrResetPid(pid);
+    captureSoundOnPlayerLeaveOrResetPid(pid);
+    captureVoOnPlayerLeaveOrResetPid(pid);
     twlConquestHudHideObjectiveFocusForPid(pid);
-    conquestPhase3MarkHudDirty();
+    markHudDirty();
     cleanupWorldInteractableRuntimeIconsForPid(pid);
     if (State.players.readyDialogData[pid]?.dialogVisible) {
         hideReadyDialogUI(eventPlayer);

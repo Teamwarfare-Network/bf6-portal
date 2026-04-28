@@ -3,8 +3,8 @@
 
 // Resets conquest runtime scaffold fields to a known baseline before map/live flow starts.
 function initializeConquestPhase1Scaffold(): void {
-    conquestPhase4CleanupSoundRuntimeHandles();
-    conquestPhase4BCleanupAllVoiceOverRuntimeHandles();
+    cleanupSoundRuntimeHandles();
+    cleanupAllVoiceOverRuntimeHandles();
     State.conquest.lifecyclePhase = "NOT_READY";
     State.conquest.tickets.team1 = CONQUEST_STARTING_TICKETS;
     State.conquest.tickets.team2 = CONQUEST_STARTING_TICKETS;

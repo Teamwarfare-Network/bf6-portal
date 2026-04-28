@@ -1,6 +1,6 @@
 # TWL Conquest Optimization State
 
-Last updated: v1.406 (2026-04-27)
+Last updated: v1.408 (2026-04-27)
 Sister doc to: [`conquest_optimization_analysis.md`](./conquest_optimization_analysis.md). The analysis doc contains the *reasoning* (reclaim ladder, regime change, justification rules); this doc contains the *facts* (file map + function inventory).
 
 This is a per-file state log, ordered by path. It tracks four things:
@@ -38,17 +38,17 @@ Source: [`config/conquest-constants.ts`](../src/config/conquest-constants.ts).
 
 ---
 
-## Project Stats (v1.406)
+## Project Stats (v1.408)
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.406 |
+| Version | 1.408 |
 | Source files (`.ts`) | 123 (incl. orphan / feature-flagged) |
 | Source files in bundle | ~111 (123 − 8 feature-flag-excluded − Changelog.ts − orphan deploy-diagnostic − 2 empty dirs) |
-| `dist/bundle.ts` | **872,014 bytes** |
+| `dist/bundle.ts` | **868,535 bytes** (−3,738 bytes from F1 phase-prefix strip in v1.408) |
 | `dist/bundle.strings.json` | 22,082 bytes (separate cap) |
 | Bundle upload limit | 1,048,576 bytes (1 MiB) |
-| Bundle headroom | **176,562 bytes (16.84%)** |
+| Bundle headroom | **180,041 bytes (17.17%)** |
 | Total raw `src/` size | ~1,533,756 bytes (~1.5 MB) |
 | Build pipeline | `prebuild.js` → `bf6-portal-bundler` → `postbuild.js` → `verify.js` |
 | Entry point | `src/index.ts` (20 Portal event handler exports) |
@@ -224,7 +224,7 @@ Every function entry ends with a parenthesized usage tag:
 | `(N)` | **Static call-site count.** Plain integer = called from N locations in `src/`. Concrete, grep-counted. Higher N = wider-blast-radius helper (e.g. `safeFind` (323), `msg` (326), `wn` (215)). `(0)` = currently unused / dead candidate. |
 | `(TIER~N)` | **Hot-path entry point.** TIER tells you the runtime cadence; the `~N` tail is the static call count. The static count understates true frequency for these functions. TIER buckets: |
 | ↳ `XL` | Runs every game-loop subtick (~8/sec). For per-player variants, multiplied by player count. *Examples:* `ongoingPlayerImpl()` (XL~1), `updateConquestCombatHudForAllPlayers()` (XL~9), `twlConquestHudTickFrame()` (XL~1). |
-| ↳ `L` | Runs every second (second-boundary work). *Examples:* `tickBoundaryEnforcement()` (L~1), `conquestPhase2AOnLiveTick()` (L~1). |
+| ↳ `L` | Runs every second (second-boundary work). *Examples:* `tickBoundaryEnforcement()` (L~1), `onLiveTick()` (L~1). |
 | ↳ `M` | Runs on common gameplay events (deploy, vehicle entry, capture edge, kill). *Examples:* `onPlayerDeployedImpl()` (M~1), `onVehicleSpawnedImpl()` (M~1). |
 | ↳ `S` | Runs on rare gameplay events (match start/end, team swap, join, leave). *Examples:* `onPlayerJoinGameImpl()` (S~1), `startMatch()` (S~3). |
 | ↳ `XS` | Runs once or near-once (mode startup, scaffold init). *Examples:* `onGameModeStartedImpl()` (XS~1), `initializeConquestPhase1Scaffold()` (XS~1). |
@@ -475,110 +475,110 @@ Module: shared helpers for capture-sound and capture-vo subsystems
 
 ### src/index/capture-sound.ts
 Module: Phase 4 isolated capture-sound backbone and V1 capture-tick dispatch
-- `conquestPhase4CleanupSoundRuntimeHandles()` (1) — destroy sound handles
-- `conquestPhase4ResetQueueAndThrottleState()` (2) — clear sound state
-- `conquestPhase4OnNotLiveReset()` (2) — reset sound on pre-live transition
-- `conquestPhase4OnMatchLiveStart()` (1) — prime sound system on live start
-- `conquestPhase4OnPlayerLeaveOrResetPid()` (4) — cleanup player sound state
-- `conquestPhase4PrimeSoundRuntime()` (3) — initialize sound system
-- `conquestPhase4GetThrottleKey()` (2) — get throttle category for event
-- `conquestPhase4GetRecipientThrottleKey()` (1) — get throttle per recipient
-- `conquestPhase4QueueEvent()` (1) — queue sound event for processing
-- `conquestPhase4OnCapturePointStateSample()` (1) — handle state change
-- `conquestPhase4GetRecipientsForEvent()` (1) — resolve affected players
-- `conquestPhase4GetHandleForRecipient()` (1) — get SFX handle for player
-- `conquestPhase4FlushCaptureSoundQueue()` (XL~1) — process all queued sounds (plus 1 internal helper)
+- `cleanupSoundRuntimeHandles()` (1) — destroy sound handles
+- `resetCaptureSoundQueueState()` (2) — clear sound state
+- `captureSoundOnNotLiveReset()` (2) — reset sound on pre-live transition
+- `captureSoundOnMatchLiveStart()` (1) — prime sound system on live start
+- `captureSoundOnPlayerLeaveOrResetPid()` (4) — cleanup player sound state
+- `primeSoundRuntime()` (3) — initialize sound system
+- `getCaptureSoundThrottleKey()` (2) — get throttle category for event
+- `getCaptureSoundRecipientThrottleKey()` (1) — get throttle per recipient
+- `queueCaptureSoundEvent()` (1) — queue sound event for processing
+- `captureSoundOnCapturePointStateSample()` (1) — handle state change
+- `getCaptureSoundRecipientsForEvent()` (1) — resolve affected players
+- `getCaptureSoundHandleForRecipient()` (1) — get SFX handle for player
+- `flushCaptureSoundQueue()` (XL~1) — process all queued sounds (plus 1 internal helper)
 
 ### src/index/capture-tickets.ts
 Module: Phase 2A capture routing, ticket bleed, end checks, and combat HUD dispatch (mega-file ~2,150 lines)
-- `conquestPhase2AClamp01()` (2) — clamp value to 0-1 range
-- `conquestPhase2AShouldCountPlayerAsActiveOnPoint()` (5) — check player activity
-- `conquestPhase2AClearInactiveEngagedObjectiveOwners()` (1) — reset inactive ownership
-- `conquestPhase3MarkHudDirty()` (16) — mark HUD for refresh
-- `conquestPhase3ShouldRunCombatHud()` (0) — check if combat HUD active
-- `conquestPhase3RefreshTopHudDerivedSlicesForAllPlayers()` (XL~1) — update HUD for all
-- `conquestPhase3PublishTopHudDerivedSlicesForPid()` (3) — sync HUD values to player
-- `conquestPhase3EnsureTopHudDerivedSlicesForPid()` (1) — ensure HUD cache for player
-- `conquestPhase3PublishDerivedHudSlicesForPid()` (0) — apply HUD state to player
+- `clamp01()` (2) — clamp value to 0-1 range
+- `shouldCountPlayerAsActiveOnPoint()` (5) — check player activity
+- `clearInactiveEngagedObjectiveOwners()` (1) — reset inactive ownership
+- `markHudDirty()` (16) — mark HUD for refresh
+- `shouldRunCombatHud()` (0) — check if combat HUD active
+- `refreshTopHudDerivedSlicesForAllPlayers()` (XL~1) — update HUD for all
+- `publishTopHudDerivedSlicesForPid()` (3) — sync HUD values to player
+- `ensureTopHudDerivedSlicesForPid()` (1) — ensure HUD cache for player
+- `publishDerivedHudSlicesForPid()` (0) — apply HUD state to player
 - `conquestShouldTreatPidAsActiveObjectiveOccupant()` (4) — check objective presence
-- `conquestPhase3ShouldRenderEngageForPid()` (2) — check if engage indicator visible
-- `conquestPhase3GetRenderableActiveObjIdForPid()` (2) — get focused objective for player
-- `conquestPhase3GetPerspectiveTeams()` (0) — resolve allied/enemy teams for viewer
-- `conquestPhase3GetOrderedMappedCaptureStates()` (1) — get ordered capture states
-- `conquestPhase3GetTicketBarRatio()` (0) — compute progress bar ratio
-- `conquestPhase3GetTicketLeaderTeam()` (1) — get team with more tickets
-- `conquestPhase3GetBleedChevronCountsForPerspective()` (1) — get bleed indicator count
+- `shouldRenderEngageForPid()` (2) — check if engage indicator visible
+- `getRenderableActiveObjIdForPid()` (2) — get focused objective for player
+- `getPerspectiveTeams()` (0) — resolve allied/enemy teams for viewer
+- `getOrderedMappedCaptureStates()` (1) — get ordered capture states
+- `getTicketBarRatio()` (0) — compute progress bar ratio
+- `getTicketLeaderTeam()` (1) — get team with more tickets
+- `getBleedChevronCountsForPerspective()` (1) — get bleed indicator count
 - `deriveConquestHudHelpReadyViewModel()` (3) — generate help/ready display state
 - `deriveConquestHudClockViewModel()` (3) — generate clock display state
 - `deriveConquestHudStatusViewModel()` (3) — generate status display state
 - `deriveConquestHudEngageViewModel()` (1) — generate engage indicator state
-- `conquestPhase3ComputeFlagFillHeight()` (2) — calculate capture fill height
-- `conquestPhase3ShouldFillFromTopForEnemy()` (2) — check fill direction
-- `conquestPhase3IsFlagFullyOwnedForHud()` (2) — check if flag fully captured
+- `computeFlagFillHeight()` (2) — calculate capture fill height
+- `shouldFillFromTopForEnemy()` (2) — check fill direction
+- `isFlagFullyOwnedForHud()` (2) — check if flag fully captured
 - `deriveConquestHudFlagsViewModel()` (1) — generate all flag display states
 - `deriveConquestHudActiveFlagPopoutViewModel()` (1) — generate popout state
 - `deriveHudViewModelForPlayer()` (1) — generate complete HUD state for player
-- `conquestPhase3GetCenteredFlagSlots()` (1) — get layout-centered flag positions
-- `conquestPhase3GetFallbackFlagToken()` (1) — get fallback flag token
-- `conquestPhase3GetFlagLetterStringKey()` (2) — get flag label key
-- `conquestPhase3CreateDefaultFlagVisualState()` (4) — init flag visual state
-- `conquestPhase3EnsureFlagVisualState()` (5) — cache flag visual state
-- `conquestPhase3NormalizeVisualSample()` (1) — normalize visual sample
-- `conquestPhase3ResolveFlagVisualState()` (1) — resolve flag visual state
-- `conquestPhase3HasVisualStateChanged()` (1) — check if visual state dirty
-- `conquestPhase3RefreshFlagVisualState()` (1) — update flag visual state
-- `conquestPhase3GetFlagSlotVisual()` (2) — get flag slot visual config
-- `conquestPhase3GetFlagPercentDisplay()` (2) — get progress percent display
-- `conquestPhase3GetEngageStatusKey()` (1) — get engage status label key
-- `conquestPhase3BuildHiddenEngageDisplay()` (3) — build engage HUD while hidden
-- `conquestPhase3GetFlagEngageDisplayForViewer()` (1) — get engage state for viewer
-- `conquestPhase2AGetMappedConfigsInOrder()` (2) — get ordered capture configs
-- `conquestPhase2ABuildMappedCaptureIndexFromConfig()` (2) — build lookup index
-- `conquestPhase2AEnsureCaptureState()` (3) — ensure capture state exists
-- `conquestPhase2AResetCaptureTimingConfigCache()` (2) — clear timing cache
-- `conquestPhase2AConfigureCaptureTimingForPoint()` (4) — configure capture timing
-- `conquestPhase2AApplyCaptureTimingForMappedPoints()` (2) — apply timing to all captures
-- `conquestPhase2AResetLiveState()` (1) — reset state on live start
-- `conquestPhase2AResetNotLiveState()` (2) — reset state on pre-live
-- `conquestPhase2AMirrorTicketsToEngineScore()` (3) — sync tickets to engine score
-- `conquestPhase2AGetOwnershipCounts()` (2) — count owned captures by team
-- `conquestPhase2AApplyTicketDelta()` (2) — apply ticket change
-- `conquestPhase2ATryLatchEnd()` (5) — check if match should end
-- `conquestPhase2AApplyBleedTick()` (1) — apply ticket bleed
-- `conquestPhase2ACheckEndCondition()` (3) — check end condition
-- `conquestPhase2AOnCapturePointTick()` (3) — per-capture ongoing handler
-- `conquestPhase2AResolveAuthoritativeOwnerTeam()` (1) — determine capture owner
-- `conquestPhase2AOnCapturePointLost()` (1) — handle capture lost
-- `conquestPhase2AOnCapturePointCaptured()` (1) — handle capture won
-- `conquestPhase2ASyncMappedCapturePointsFromEngine()` (1) — sync engine state
+- `getCenteredFlagSlots()` (1) — get layout-centered flag positions
+- `getFallbackFlagToken()` (1) — get fallback flag token
+- `getFlagLetterStringKey()` (2) — get flag label key
+- `createDefaultFlagVisualState()` (4) — init flag visual state
+- `ensureFlagVisualState()` (5) — cache flag visual state
+- `normalizeVisualSample()` (1) — normalize visual sample
+- `resolveFlagVisualState()` (1) — resolve flag visual state
+- `hasVisualStateChanged()` (1) — check if visual state dirty
+- `refreshFlagVisualState()` (1) — update flag visual state
+- `getFlagSlotVisual()` (2) — get flag slot visual config
+- `getFlagPercentDisplay()` (2) — get progress percent display
+- `getEngageStatusKey()` (1) — get engage status label key
+- `buildHiddenEngageDisplay()` (3) — build engage HUD while hidden
+- `getFlagEngageDisplayForViewer()` (1) — get engage state for viewer
+- `getMappedConfigsInOrder()` (2) — get ordered capture configs
+- `buildMappedCaptureIndexFromConfig()` (2) — build lookup index
+- `ensureCaptureState()` (3) — ensure capture state exists
+- `resetCaptureTimingConfigCache()` (2) — clear timing cache
+- `configureCaptureTimingForPoint()` (4) — configure capture timing
+- `applyCaptureTimingForMappedPoints()` (2) — apply timing to all captures
+- `resetLiveState()` (1) — reset state on live start
+- `resetNotLiveState()` (2) — reset state on pre-live
+- `mirrorTicketsToEngineScore()` (3) — sync tickets to engine score
+- `getOwnershipCounts()` (2) — count owned captures by team
+- `applyTicketDelta()` (2) — apply ticket change
+- `tryLatchEnd()` (5) — check if match should end
+- `applyBleedTick()` (1) — apply ticket bleed
+- `checkEndCondition()` (3) — check end condition
+- `onCapturePointTick()` (3) — per-capture ongoing handler
+- `resolveAuthoritativeOwnerTeam()` (1) — determine capture owner
+- `onCapturePointLost()` (1) — handle capture lost
+- `onCapturePointCaptured()` (1) — handle capture won
+- `syncMappedCapturePointsFromEngine()` (1) — sync engine state
 - `hasOwnerTeamForProgressReset()` (1) — check if progress resets
 - `updateConquestCombatHudForAllPlayers()` (XL~9) — update combat HUD for all players
-- `conquestPhase2ARefreshLiveCaptureStateSubtick()` (XL~1) — subtick capture refresh
-- `conquestPhase2AOnLiveTick()` (L~1) — per-second capture tick (plus 2 internal helpers)
+- `refreshLiveCaptureStateSubtick()` (XL~1) — subtick capture refresh
+- `onLiveTick()` (L~1) — per-second capture tick (plus 2 internal helpers)
 
 ### src/index/capture-vo.ts
 Module: Phase 4B isolated objective VO exploration path
-- `conquestPhase4BCleanupAllVoiceOverRuntimeHandles()` (1) — destroy VO handles
-- `conquestPhase4BEnsureObjectiveState()` (4) — ensure VO state exists
-- `conquestPhase4BClearNonTerminalThrottleForObjective()` (1) — clear throttle
-- `conquestPhase4BTransitionObjectiveState()` (3) — transition VO state
-- `conquestPhase4BResetQueueAndThrottleState()` (2) — clear VO state
-- `conquestPhase4BOnNotLiveReset()` (2) — reset VO on pre-live transition
-- `conquestPhase4BOnMatchLiveStart()` (1) — prime VO on live start
-- `conquestPhase4BOnPlayerLeaveOrResetPid()` (4) — cleanup player VO state
-- `conquestPhase4BEnsureVoiceOverRuntimeForPid()` (1) — ensure VO runtime for player
-- `conquestPhase4BQueueEvent()` (4) — queue VO event
-- `conquestPhase4BResolveVoiceOverFlagForObjective()` (1) — get VO flag
-- `conquestPhase4BResolveVoiceOverEventForRecipient()` (1) — resolve VO event
-- `conquestPhase4BMarkRecentObjectivePresence()` (2) — track objective presence
-- `conquestPhase4BRefreshRecentPresence()` (1) — update presence tracking
-- `conquestPhase4BWasRecentlyActiveOnObjective()` (1) — check recent activity
-- `conquestPhase4BGetRecipientsForEvent()` (1) — resolve affected players
-- `conquestPhase4BGetRecipientThrottleKey()` (1) — get throttle key per recipient
-- `conquestPhase4BOnCapturePointStateSample()` (1) — handle capture state change
-- `conquestPhase4BOnCapturePointLostEdge()` (1) — handle capture lost edge
-- `conquestPhase4BOnCapturePointCapturedEdge()` (1) — handle capture won edge
-- `conquestPhase4BFlushCaptureVoiceOverQueue()` (XL~1) — process queued VO events
+- `cleanupAllVoiceOverRuntimeHandles()` (1) — destroy VO handles
+- `ensureObjectiveVoState()` (4) — ensure VO state exists
+- `clearNonTerminalThrottleForObjective()` (1) — clear throttle
+- `transitionObjectiveVoState()` (3) — transition VO state
+- `resetCaptureVoQueueState()` (2) — clear VO state
+- `captureVoOnNotLiveReset()` (2) — reset VO on pre-live transition
+- `captureVoOnMatchLiveStart()` (1) — prime VO on live start
+- `captureVoOnPlayerLeaveOrResetPid()` (4) — cleanup player VO state
+- `ensureVoiceOverRuntimeForPid()` (1) — ensure VO runtime for player
+- `queueCaptureVoEvent()` (4) — queue VO event
+- `resolveVoiceOverFlagForObjective()` (1) — get VO flag
+- `resolveVoiceOverEventForRecipient()` (1) — resolve VO event
+- `markRecentObjectivePresence()` (2) — track objective presence
+- `refreshRecentPresence()` (1) — update presence tracking
+- `wasRecentlyActiveOnObjective()` (1) — check recent activity
+- `getCaptureVoRecipientsForEvent()` (1) — resolve affected players
+- `getCaptureVoRecipientThrottleKey()` (1) — get throttle key per recipient
+- `captureVoOnCapturePointStateSample()` (1) — handle capture state change
+- `onCapturePointLostVoEdge()` (1) — handle capture lost edge
+- `onCapturePointCapturedVoEdge()` (1) — handle capture won edge
+- `flushCaptureVoiceOverQueue()` (XL~1) — process queued VO events
 
 ### src/index/conquest-scaffold.ts
 Module: Phase 1 conquest state reset/wiring seam
@@ -958,20 +958,20 @@ Module: object/player/team guards and safe widget lookup
 (no functions; composition shim)
 
 ### src/state/spawn-charge.ts
-- `conquestPhase2BNewReasonCounterState()` (2) — create new counter state
-- `conquestPhase2BIncrementReasonCounter()` (2) — increment counter
-- `conquestPhase2BGetReasonCode()` (1) — get reason code
-- `conquestPhase2BGetReasonCounterTotal()` (2) — get total counter
-- `conquestPhase2BMaybeEmitDebugSnapshot()` (4) — emit debug snapshot
-- `conquestPhase2BEnsureDeployTxn()` (1) — ensure deploy transaction
-- `conquestPhase2BResolvePendingReason()` (1) — resolve pending reason
-- `conquestPhase2BMarkNextDeployReason()` (4) — mark next deploy reason
-- `conquestPhase2BClearPidSessionState()` (2) — clear player session state
-- `conquestPhase2BTrackIdentityFallbackCounters()` (1) — track fallback counters
-- `conquestPhase2BResetSpawnChargeState()` (2) — reset spawn charge state
-- `conquestPhase2BOnMatchLiveStart()` (1) / `conquestPhase2BOnNotLiveReset()` (2) — phase transitions
-- `conquestPhase2BOnPlayerJoin()` (1) / `conquestPhase2BOnPlayerLeave()` (1) — player lifecycle
-- `conquestPhase2BOnPlayerDeployed()` (1) — on player deployed (charge gate)
+- `newReasonCounterState()` (2) — create new counter state
+- `incrementReasonCounter()` (2) — increment counter
+- `getReasonCode()` (1) — get reason code
+- `getReasonCounterTotal()` (2) — get total counter
+- `maybeEmitDebugSnapshot()` (4) — emit debug snapshot
+- `ensureDeployTxn()` (1) — ensure deploy transaction
+- `resolvePendingReason()` (1) — resolve pending reason
+- `markNextDeployReason()` (4) — mark next deploy reason
+- `clearPidSessionState()` (2) — clear player session state
+- `trackIdentityFallbackCounters()` (1) — track fallback counters
+- `resetSpawnChargeState()` (2) — reset spawn charge state
+- `spawnChargeOnMatchLiveStart()` (1) / `spawnChargeOnNotLiveReset()` (2) — phase transitions
+- `onPlayerJoinSpawnCharge()` (1) / `onPlayerLeaveSpawnCharge()` (1) — player lifecycle
+- `onPlayerDeployedSpawnCharge()` (1) — on player deployed (charge gate)
 
 ### src/state/tick-context.ts
 - `beginTickContext()` (1) / `endTickContext()` (2) / `getActiveTickContext()` (1) — per-tick `mod.AllPlayers()` cache helpers (v1.220)
@@ -1235,7 +1235,7 @@ Module: serial dispatch + Clocks-based respawn (v1.258 rewrite)
 | `perspectiveTeamByPid[pid]` | Join handler `:111` | `cleanupHudForPid:84` | ✓ |
 | `teamSwapPerspectiveLockUntilByPid[pid]` | Team-swap dispatch | `cleanupHudForPid:85` | ✓ |
 | `engageHiddenUntilDeployByPid[pid]` | Join handler `:105` | `cleanupHudForPid:86` | ✓ |
-| `hudStatusVmByPid[pid]` | `conquestPhase3RefreshTopHudDerivedSlicesForAllPlayers` | `cleanupHudForPid:87` | ✓ (also M11 churn — rebuilt every dirty tick) |
+| `hudStatusVmByPid[pid]` | `refreshTopHudDerivedSlicesForAllPlayers` | `cleanupHudForPid:87` | ✓ (also M11 churn — rebuilt every dirty tick) |
 | `hudHelpReadyVmByPid[pid]` | Same | `cleanupHudForPid:88` | ✓ (M11 churn) |
 | `hudClockVmByPid[pid]` | Same | `cleanupHudForPid:89` | ✓ (M11 churn) |
 
@@ -1249,17 +1249,17 @@ Module: serial dispatch + Clocks-based respawn (v1.258 rewrite)
 
 | Field | Allocator | Deallocator | Status |
 |-------|-----------|-------------|:------:|
-| `firstLiveSpawnExemptByPid[pid]` | `conquestPhase2BOnMatchLiveStart` | `conquestPhase2BClearPidSessionState` (called from `conquestPhase2BOnPlayerLeave` ← `onPlayerLeaveGameImpl:172`) | ✓ |
-| `deployTxnByPid[pid]` | `conquestPhase2BEnsureDeployTxn` (lazy on first deploy) | Same path | ✓ |
-| `pendingReasonByPid[pid]` | `conquestPhase2BMarkNextDeployReason` | Same path + cleared at deploy time | ✓ |
+| `firstLiveSpawnExemptByPid[pid]` | `spawnChargeOnMatchLiveStart` | `clearPidSessionState` (called from `onPlayerLeaveSpawnCharge` ← `onPlayerLeaveGameImpl:172`) | ✓ |
+| `deployTxnByPid[pid]` | `ensureDeployTxn` (lazy on first deploy) | Same path | ✓ |
+| `pendingReasonByPid[pid]` | `markNextDeployReason` | Same path + cleared at deploy time | ✓ |
 
 #### `State.conquest.vo.*`
 
 | Field | Allocator | Deallocator | Status |
 |-------|-----------|-------------|:------:|
-| `runtimeHandleByPid[pid]` | `conquestPhase4BEnsureVoiceOverRuntimeForPid` | `conquestPhase4BOnPlayerLeaveOrResetPid` (`capture-vo.ts:82`) ← `onPlayerLeaveGameImpl:143` | ✓ |
+| `runtimeHandleByPid[pid]` | `ensureVoiceOverRuntimeForPid` | `captureVoOnPlayerLeaveOrResetPid` (`capture-vo.ts:82`) ← `onPlayerLeaveGameImpl:143` | ✓ |
 | `handlesReadyByPid[pid]` | Same path | `capture-vo.ts:83` | ✓ |
-| `recentActiveObjIdByPid[pid]` | `conquestPhase4BMarkRecentObjectivePresence` | `capture-vo.ts:84` | ✓ |
+| `recentActiveObjIdByPid[pid]` | `markRecentObjectivePresence` | `capture-vo.ts:84` | ✓ |
 | `recentActiveAtSecondsByPid[pid]` | Same | `capture-vo.ts:85` | ✓ |
 
 #### `State.round.boundary.*`
@@ -1277,26 +1277,21 @@ Module: serial dispatch + Clocks-based respawn (v1.258 rewrite)
 | `clockWidgetCache[pid]` | `ensureClockUIAndGetCache` | `cleanupHudForPid:76` | ✓ |
 | `countdownWidgetCache[pid]` | `ensureCountdownUIAndGetWidget` | `cleanupHudForPid:77` | ✓ |
 | `vehicleDeployTimerCache[pid]` | First viewer render | `cleanupHudForPid:78` (also `resetUiForPlayerOnJoin:35` defensively) | ✓ |
-| `ammoResupplyMenuCache[pid]` | `mkArmCache` on first menu open | `destroyArmMenu` (`ammo-resupply-menu.ts:2045`) called from `resetUiForPlayerOnJoin:18` (on join) and `closeArmMenu` (on close). **NOT called from `onPlayerLeaveGameImpl`** — only `resetArmState` is, which clears `armO/I/T/Focused` but not the cache itself. | ❌ **Leak suspect on player leave** (M2 — largest after M1) |
+| `ammoResupplyMenuCache[pid]` | `mkArmCache` on first menu open | `destroyArmMenu` (`ammo-resupply-menu.ts:2045`) called from `resetUiForPlayerOnJoin:18`, `closeArmMenu` (on close), AND `onPlayerLeaveGameImpl:138` (added v1.407, A6). | ✓ (v1.407 fix) |
 | `boundaryPromptCache[pid]` | `ensureBoundaryPromptUiForPlayer` | `destroyBoundaryPromptUiForPid` (`prompt-ui.ts:475`) called from `cleanupHudForPid:73` | ✓ |
 
 #### `State.hqDeploy.*`
 
 | Field | Allocator | Deallocator | Status |
 |-------|-----------|-------------|:------:|
-| `lastRequestAtSecondsByPid[pid]` | HQ deploy request rate-limit | **No `delete` found anywhere in `src/`** | ❌ **Leak — every HQ deploy request leaks an entry; no cleanup on leave** |
+| `lastRequestAtSecondsByPid[pid]` | HQ deploy request rate-limit | `onPlayerLeaveGameImpl:158` (added v1.407, A7). All 7 read sites in `vehicles/hq-deploy.ts` use `?? -999` fallback so absence reads as "no recent request". | ✓ (v1.407 fix) |
 
-### Findings — leak suspects to fix
+### Resolved leak suspects (v1.407 — Wave 1)
 
-Two confirmed gaps surfaced by this audit:
+Both leaks identified in the v1.406 audit shipped fixes in v1.407 (Tier A6, A7 in [`conquest_optimization_analysis.md`](./conquest_optimization_analysis.md)). Pending MP confirmation per [`conquest_mp_ongoing_tests.md`](./conquest_mp_ongoing_tests.md) Wave 1 entries.
 
-1. **`State.hudCache.ammoResupplyMenuCache[pid]` (M2 — XL scale).** On player leave, `resetArmState(pid)` clears the small per-pid arm-state booleans but does NOT call `destroyArmMenu(pid)`, which is the only path that deletes `ammoResupplyMenuCache[pid]`. A player who opens the gadget locker once and then leaves leaves their full menu cache (~100–180 widget refs) resident. With 16 players cycling through joins/leaves over a long session, this leaks the largest-after-M1 widget cache.
-   **Fix:** add `destroyArmMenu(pid)` to `onPlayerLeaveGameImpl`, after `resetArmState(pid)` and before `cleanupHudForPid`. ~2 lines. Verify no double-destroy issues if both `resetUiForPlayerOnJoin` and the leave path fire on a fast reconnect.
-
-2. **`State.hqDeploy.lastRequestAtSecondsByPid[pid]`.** Field exists, written on every HQ-deploy request, never deleted anywhere. Small payload (one number per pid), but unbounded growth in a server that sees many distinct pids over time.
-   **Fix:** add `delete State.hqDeploy.lastRequestAtSecondsByPid[pid]` to `onPlayerLeaveGameImpl`. 1 line.
-
-Both should be added to `conquest_optimization_analysis.md` reclaim ladder as Tier A items (zero-risk, leak-prevention, immediate ship candidates).
+1. **`State.hudCache.ammoResupplyMenuCache[pid]` (M2 — XL scale)** — fixed by adding `destroyArmMenu(pid)` to `onPlayerLeaveGameImpl` after `resetArmState(pid)` (v1.407, [`src/index/player-join-leave.ts:138`](../src/index/player-join-leave.ts#L138)).
+2. **`State.hqDeploy.lastRequestAtSecondsByPid[pid]`** — fixed by adding `delete State.hqDeploy.lastRequestAtSecondsByPid[pid]` to the per-pid delete cluster in `onPlayerLeaveGameImpl` (v1.407, [`src/index/player-join-leave.ts:158`](../src/index/player-join-leave.ts#L158)).
 
 ### Findings — partial / intentional immortals to verify
 
@@ -1374,43 +1369,26 @@ extremes:   62, 69, 72-char single names exist
 
 **Reading the table:** the top entries are mostly names that are already short or are SDK-fixed (`mod`, `pid`, `State`, `Player`, `UIWidget`). Below them are heavily-used helpers we own — `safeSetUIWidgetVisible` (22 chars × 337 uses = 7.4KB), `safeSetUITextLabel` (18 × 117), `isValidPlayer` (13 × 158). And single-use long names like `deleteAllReusableTimerWidgetsByName` (35 × 51 = 1.8KB).
 
-### Phase-named anti-pattern
+### Phase-named anti-pattern (resolved v1.408 — Tier F1)
 
-Functions and variables prefixed with `conquestPhaseN[A-D]` were named for the implementation phase they belonged to (Phase 2A capture work, Phase 2B spawn-charge, Phase 3 HUD, Phase 4/4B sound/VO), not for what they do.
+**Status: Resolved (v1.408, pending MP confirm).** All 104 phase-prefixed functions had their `conquestPhase[2A|2B|3|4|4B]` prefix stripped. Nine collisions resolved via module-domain disambiguation: Phase 2B → `spawnCharge*`, Phase 4 → `captureSound*`, Phase 4B → `captureVo*`. See [`./conquest_optimization_analysis.md`](./conquest_optimization_analysis.md) Tier F1 row.
+
+#### Historical measurement (v1.406 baseline, pre-rename)
 
 | Metric | Value |
 |--------|------:|
-| Unique phase-named symbols | **114** |
+| Unique phase-named functions | **104** |
 | Bundle bytes occupied by phase names | **11,736** |
 | Avg phase prefix length | 13.5 chars |
-| Bytes saved if prefix stripped (no other rename) | ~4,436 |
 
-Top 15 by total bundle bytes (these are the renames with the highest payoff):
+#### Actual measurement (v1.408 post-rename)
 
-| Bytes | Uses × len | Symbol |
-|------:|:----------|--------|
-| 416 | 16 × 26 | `conquestPhase3MarkHudDirty` |
-| 282 | 6 × 47 | `conquestPhase2AShouldCountPlayerAsActiveOnPoint` |
-| 225 | 5 × 45 | `conquestPhase2ACaptureTimingConfiguredByObjId` |
-| 225 | 5 × 45 | `conquestPhase2AConfigureCaptureTimingForPoint` |
-| 210 | 5 × 42 | `conquestPhase3CreateDefaultFlagVisualState` |
-| 210 | 6 × 35 | `conquestPhase3EnsureFlagVisualState` |
-| 190 | 5 × 38 | `conquestPhase4BOnPlayerLeaveOrResetPid` |
-| 185 | 5 × 37 | `conquestPhase2BMaybeEmitDebugSnapshot` |
-| 185 | 5 × 37 | `conquestPhase4OnPlayerLeaveOrResetPid` |
-| 184 | 4 × 46 | `conquestPhase3PublishTopHudDerivedSlicesForPid` |
-| 175 | 5 × 35 | `conquestPhase2BMarkNextDeployReason` |
-| 175 | 5 × 35 | `conquestPhase4BEnsureObjectiveState` |
-| 168 | 12 × 14 | `lifecyclePhase` (kept — semantic, not implementation-phase) |
-| 164 | 4 × 41 | `conquestPhase2AMirrorTicketsToEngineScore` |
-| 156 | 4 × 39 | `conquestPhase4BTransitionObjectiveState` |
+| Metric | Value |
+|--------|------:|
+| Bundle delta from F1 (v1.407 → v1.408) | **−3,738 bytes** |
+| Remaining phase-prefixed identifiers | 1 — `conquestPhase2ACaptureTimingConfiguredByObjId` (state variable; out-of-scope per Wave 2 plan) |
 
-The full list of 114 symbols lives in `src/index/capture-tickets.ts`, `src/index/capture-sound.ts`, `src/index/capture-vo.ts`, and `src/state/spawn-charge.ts`. They share four prefix stems:
-
-- `conquestPhase2A*` — capture/ticket work in [`index/capture-tickets.ts`](../src/index/capture-tickets.ts)
-- `conquestPhase2B*` — spawn-charge work in [`state/spawn-charge.ts`](../src/state/spawn-charge.ts)
-- `conquestPhase3*` — HUD derivation/dispatch in [`index/capture-tickets.ts`](../src/index/capture-tickets.ts)
-- `conquestPhase4*` / `conquestPhase4B*` — sound/VO queues in [`index/capture-sound.ts`](../src/index/capture-sound.ts), [`index/capture-vo.ts`](../src/index/capture-vo.ts)
+The residual state variable in `src/index/capture-tickets.ts` was deliberately left untouched — Wave 2 scope was function names only. Type / variable / state-field renames (including this one) are eligible for a future cleanup pass if pursued.
 
 ### Hypothetical shortening savings
 

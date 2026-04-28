@@ -5,17 +5,17 @@
 
 // CapturePoint tick: Phase 2A reads engine capture ownership/progress and routes to ticket/debug state.
 function ongoingCapturePointImpl(eventCapturePoint: mod.CapturePoint): void {
-    conquestPhase2AOnCapturePointTick(eventCapturePoint);
+    onCapturePointTick(eventCapturePoint);
 }
 
 // CapturePoint lost edge: ownership has dropped to neutral.
 function onCapturePointLostImpl(eventCapturePoint: mod.CapturePoint): void {
-    conquestPhase2AOnCapturePointLost(eventCapturePoint);
+    onCapturePointLost(eventCapturePoint);
 }
 
 // CapturePoint captured edge: a team has fully acquired ownership. Awards KPI capture credit.
 function onCapturePointCapturedImpl(eventCapturePoint: mod.CapturePoint): void {
-    conquestPhase2AOnCapturePointCaptured(eventCapturePoint);
+    onCapturePointCaptured(eventCapturePoint);
     onCapturePointCapturedKpiImpl(eventCapturePoint);
 }
 
@@ -41,8 +41,8 @@ function onPlayerEnterCapturePointImpl(eventPlayer: mod.Player, eventCapturePoin
         State.conquest.capture.engagedObjIdByPid[pid] = objId;
         // Refresh capture-point sample immediately so engage counts + popout/top-row visual state
         // do not wait for the next global live-tick polling pass.
-        conquestPhase2AOnCapturePointTick(eventCapturePoint);
-        conquestPhase3MarkHudDirty();
+        onCapturePointTick(eventCapturePoint);
+        markHudDirty();
         // Enter/exit should feel atomic: apply top row + popout + engage in one immediate pass.
         updateConquestCombatHudForAllPlayers(true);
     } catch {
@@ -61,7 +61,7 @@ function onPlayerExitCapturePointImpl(eventPlayer: mod.Player, eventCapturePoint
         const exitingObjId = safeGetObjId(eventCapturePoint);
         if (exitingObjId !== undefined && currentObjId !== exitingObjId) return;
         delete State.conquest.capture.engagedObjIdByPid[pid];
-        conquestPhase3MarkHudDirty();
+        markHudDirty();
         // Enter/exit should feel atomic: apply top row + popout + engage in one immediate pass.
         updateConquestCombatHudForAllPlayers(true);
     } catch {

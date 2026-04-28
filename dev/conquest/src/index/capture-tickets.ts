@@ -2,7 +2,7 @@
 // Module: index/capture-tickets -- Phase 2A capture routing, ticket bleed, end checks, and temporary debug HUD
 
 // Clamps engine capture-progress reads to a safe [0..1] range.
-function conquestPhase2AClamp01(value: number): number {
+function clamp01(value: number): number {
     if (value <= 0) return 0;
     if (value >= 1) return 1;
     return value;
@@ -10,7 +10,7 @@ function conquestPhase2AClamp01(value: number): number {
 
 // Returns true when a player should count toward live capture-point engage state.
 // Dead, man-down, undeployed, or invalid soldiers are treated the same as leaving the point.
-function conquestPhase2AShouldCountPlayerAsActiveOnPoint(player: mod.Player | undefined): boolean {
+function shouldCountPlayerAsActiveOnPoint(player: mod.Player | undefined): boolean {
     if (!isValidPlayer(player)) return false;
     if (!isPlayerDeployed(player)) return false;
     if (!safeGetSoldierStateBool(player, mod.SoldierStateBool.IsAlive, false)) return false;
@@ -35,7 +35,7 @@ type ConquestFlagVisualSample = {
 
 // Clears engaged-objective ownership for players who are no longer valid active on-point soldiers.
 // This keeps popout/engage HUD state aligned with death/undeploy even if engine exit callbacks lag.
-function conquestPhase2AClearInactiveEngagedObjectiveOwners(): void {
+function clearInactiveEngagedObjectiveOwners(): void {
     let clearedAny = false;
     const engagedByPid = State.conquest.capture.engagedObjIdByPid;
     for (const pidKey of Object.keys(engagedByPid)) {
@@ -44,12 +44,12 @@ function conquestPhase2AClearInactiveEngagedObjectiveOwners(): void {
         const engagedObjId = engagedByPid[pid];
         if (engagedObjId === undefined) continue;
         const player = safeFindPlayer(pid);
-        if (conquestPhase2AShouldCountPlayerAsActiveOnPoint(player)) continue;
+        if (shouldCountPlayerAsActiveOnPoint(player)) continue;
         delete engagedByPid[pid];
         clearedAny = true;
     }
     if (clearedAny) {
-        conquestPhase3MarkHudDirty();
+        markHudDirty();
     }
 }
 
@@ -167,27 +167,27 @@ type ConquestHudViewModel = {
 const CONQUEST_PHASE3_ACTIVE_SLOT_MUTED_LABEL = mod.CreateVector(180 / 255, 188 / 255, 196 / 255);
 
 // Marks conquest HUD projections dirty so the next live tick performs a render pass.
-function conquestPhase3MarkHudDirty(): void {
+function markHudDirty(): void {
     State.conquest.debug.hudDirty = true;
 }
 
 // Returns true when combat HUD projection is enabled in both runtime debug and config gates.
-function conquestPhase3ShouldRunCombatHud(): boolean {
+function shouldRunCombatHud(): boolean {
     return State.conquest.debug.hudEnabled && CONQUEST_COMBAT_HUD_ENABLED;
 }
 
 // Refreshes top-HUD derived slices for all viewers without touching combat lane refs.
-function conquestPhase3RefreshTopHudDerivedSlicesForAllPlayers(): void {
+function refreshTopHudDerivedSlicesForAllPlayers(): void {
     forEachValidPlayer((_player, pid) => {
         const topHelpReadyVm = deriveConquestHudHelpReadyViewModel(pid);
         const topStatusVm = deriveConquestHudStatusViewModel(topHelpReadyVm);
         const topClockVm = deriveConquestHudClockViewModel();
-        conquestPhase3PublishTopHudDerivedSlicesForPid(pid, topStatusVm, topHelpReadyVm, topClockVm);
+        publishTopHudDerivedSlicesForPid(pid, topStatusVm, topHelpReadyVm, topClockVm);
     });
 }
 
 // Publishes derived top-HUD slices shared by status/help/clock owners.
-function conquestPhase3PublishTopHudDerivedSlicesForPid(
+function publishTopHudDerivedSlicesForPid(
     pid: number,
     status: ConquestHudStatusViewModel,
     helpReady: ConquestHudHelpReadyViewModel,
@@ -215,16 +215,16 @@ function conquestPhase3PublishTopHudDerivedSlicesForPid(
 // Important:
 // - Clock remaining seconds are time-variant every second while live.
 // - Therefore this function must refresh the derived slices each call, not only initialize once.
-function conquestPhase3EnsureTopHudDerivedSlicesForPid(pid: number): void {
+function ensureTopHudDerivedSlicesForPid(pid: number): void {
     const helpReady = deriveConquestHudHelpReadyViewModel(pid);
     const status = deriveConquestHudStatusViewModel(helpReady);
     const clock = deriveConquestHudClockViewModel();
-    conquestPhase3PublishTopHudDerivedSlicesForPid(pid, status, helpReady, clock);
+    publishTopHudDerivedSlicesForPid(pid, status, helpReady, clock);
 }
 
 // Publishes derived top-HUD view-model slices for status/help/clock owners.
-function conquestPhase3PublishDerivedHudSlicesForPid(pid: number, vm: ConquestHudViewModel): void {
-    conquestPhase3PublishTopHudDerivedSlicesForPid(pid, vm.status, vm.helpReady, vm.clock);
+function publishDerivedHudSlicesForPid(pid: number, vm: ConquestHudViewModel): void {
+    publishTopHudDerivedSlicesForPid(pid, vm.status, vm.helpReady, vm.clock);
 }
 
 // Shared active-objective occupancy gate used by combat HUD and capture-sound dispatch.
@@ -239,14 +239,14 @@ function conquestShouldTreatPidAsActiveObjectiveOccupant(pid: number, activeObjI
 
 // Single-owner engage visibility gate for Conquest capture HUD.
 // Engage can render only when the player passes the shared active-objective occupancy gate.
-function conquestPhase3ShouldRenderEngageForPid(pid: number, activeObjId: number | undefined): boolean {
+function shouldRenderEngageForPid(pid: number, activeObjId: number | undefined): boolean {
     return conquestShouldTreatPidAsActiveObjectiveOccupant(pid, activeObjId);
 }
 
 // Returns the engaged objective only when engage/popout/top-slot active state should render.
-function conquestPhase3GetRenderableActiveObjIdForPid(pid: number): number | undefined {
+function getRenderableActiveObjIdForPid(pid: number): number | undefined {
     const engagedObjId = State.conquest.capture.engagedObjIdByPid[pid];
-    if (!conquestPhase3ShouldRenderEngageForPid(pid, engagedObjId)) {
+    if (!shouldRenderEngageForPid(pid, engagedObjId)) {
         return undefined;
     }
     return engagedObjId;
@@ -254,7 +254,7 @@ function conquestPhase3GetRenderableActiveObjIdForPid(pid: number): number | und
 
 // Resolves viewer perspective teams for friendly-left/enemy-right HUD rendering.
 // If unresolved, render should skip team-colored conquest widgets for this frame.
-function conquestPhase3GetPerspectiveTeams(
+function getPerspectiveTeams(
     viewer: mod.Player
 ): { friendlyTeam: TeamID; enemyTeam: TeamID; resolved: boolean } {
     const pid = safeGetPlayerId(viewer);
@@ -303,7 +303,7 @@ function conquestPhase3GetPerspectiveTeams(
 }
 
 // Returns mapped capture states in stable config-driven order for flag HUD rows.
-function conquestPhase3GetOrderedMappedCaptureStates(): ConquestCapturePointRuntimeState[] {
+function getOrderedMappedCaptureStates(): ConquestCapturePointRuntimeState[] {
     const ordered: ConquestCapturePointRuntimeState[] = [];
     const ids = State.conquest.capture.mappedObjIdsInOrder;
     for (let i = 0; i < ids.length; i++) {
@@ -315,13 +315,13 @@ function conquestPhase3GetOrderedMappedCaptureStates(): ConquestCapturePointRunt
 }
 
 // Returns conquest ticket ratio for bar fill with safe [0..1] clamping.
-function conquestPhase3GetTicketBarRatio(currentTickets: number): number {
+function getTicketBarRatio(currentTickets: number): number {
     const base = Math.max(1, CONQUEST_STARTING_TICKETS);
     return Math.max(0, Math.min(1, currentTickets / base));
 }
 
 // Returns the authoritative global ticket leader from script state.
-function conquestPhase3GetTicketLeaderTeam(): TeamID | 0 {
+function getTicketLeaderTeam(): TeamID | 0 {
     if (State.conquest.tickets.team1 > State.conquest.tickets.team2) return TeamID.Team1;
     if (State.conquest.tickets.team2 > State.conquest.tickets.team1) return TeamID.Team2;
     return 0;
@@ -331,14 +331,14 @@ function conquestPhase3GetTicketLeaderTeam(): TeamID | 0 {
 // Contract:
 // - up to CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT chevrons are shown on the losing/bleeding side
 // - no chevrons are shown when bleed is disabled, pre-live, or objective control is tied
-function conquestPhase3GetBleedChevronCountsForPerspective(
+function getBleedChevronCountsForPerspective(
     friendlyTeam: TeamID,
     enemyTeam: TeamID
 ): { leftCount: number; rightCount: number } {
     if (!isMatchLive()) return { leftCount: 0, rightCount: 0 };
     if (!State.conquest.bleed.enabled) return { leftCount: 0, rightCount: 0 };
 
-    const ownership = conquestPhase2AGetOwnershipCounts();
+    const ownership = getOwnershipCounts();
     const diff = ownership.team1Owned - ownership.team2Owned;
     if (diff === 0) return { leftCount: 0, rightCount: 0 };
 
@@ -415,7 +415,7 @@ function deriveConquestHudEngageViewModel(
     friendlyTeam: TeamID,
     enemyTeam: TeamID
 ): ConquestHudEngageViewModel {
-    const engageDisplay = conquestPhase3GetFlagEngageDisplayForViewer(pid, friendlyTeam, enemyTeam);
+    const engageDisplay = getFlagEngageDisplayForViewer(pid, friendlyTeam, enemyTeam);
     if (!engageDisplay.visible) {
         return {
             visible: false,
@@ -446,7 +446,7 @@ function deriveConquestHudEngageViewModel(
 }
 
 // Converts a fill ratio into pixel height while preserving neutral-idle cleanup rules.
-function conquestPhase3ComputeFlagFillHeight(
+function computeFlagFillHeight(
     maxFillHeight: number,
     visualFillRatio: number,
     ownerTeam: TeamID | 0,
@@ -472,7 +472,7 @@ function conquestPhase3ComputeFlagFillHeight(
 }
 
 // Enemy-colored fills animate from the top edge; friendly fills keep bottom-up behavior.
-function conquestPhase3ShouldFillFromTopForEnemy(
+function shouldFillFromTopForEnemy(
     visualState: ConquestFlagVisualRuntimeState,
     enemyTeam: TeamID
 ): boolean {
@@ -495,7 +495,7 @@ function conquestPhase3ShouldFillFromTopForEnemy(
 // - fully owned => show border, hide percent
 // - not fully owned => no border, percent may show
 // Ownership authority is game-state based (ownerTeam + ownerProgressTeam), not visual-state phase.
-function conquestPhase3IsFlagFullyOwnedForHud(
+function isFlagFullyOwnedForHud(
     ownerTeam: TeamID | 0,
     ownerProgressTeam: TeamID | 0,
     progress01: number,
@@ -517,7 +517,7 @@ function deriveConquestHudFlagsViewModel(
     maxSlots: number
 ): ConquestHudFlagsViewModel {
     const clampedSlots = Math.max(1, maxSlots);
-    const engagedObjId = conquestPhase3GetRenderableActiveObjIdForPid(pid);
+    const engagedObjId = getRenderableActiveObjIdForPid(pid);
     const slots: ConquestHudFlagSlotViewModel[] = [];
     for (let i = 0; i < clampedSlots; i++) {
         slots.push({
@@ -531,16 +531,16 @@ function deriveConquestHudFlagsViewModel(
         });
     }
 
-    const visibleSlots = conquestPhase3GetCenteredFlagSlots(mappedCaptureStates.length, clampedSlots);
+    const visibleSlots = getCenteredFlagSlots(mappedCaptureStates.length, clampedSlots);
     const sampleTick = Math.floor(mod.GetMatchTimeElapsed() * 10);
     for (let row = 0; row < mappedCaptureStates.length && row < visibleSlots.length; row++) {
         const slotIndex = visibleSlots[row];
         const cp = mappedCaptureStates[row];
-        const labelKey = conquestPhase3GetFlagLetterStringKey(cp, row);
+        const labelKey = getFlagLetterStringKey(cp, row);
         const visualState = State.conquest.capture.visualByObjId[cp.objId]
-            ?? conquestPhase3CreateDefaultFlagVisualState(sampleTick);
-        const visual = conquestPhase3GetFlagSlotVisual(visualState, friendlyTeam, enemyTeam);
-        const percentVisual = conquestPhase3GetFlagPercentDisplay(visualState, friendlyTeam, enemyTeam);
+            ?? createDefaultFlagVisualState(sampleTick);
+        const visual = getFlagSlotVisual(visualState, friendlyTeam, enemyTeam);
+        const percentVisual = getFlagPercentDisplay(visualState, friendlyTeam, enemyTeam);
         const borderColor = cp.ownerTeam === friendlyTeam
             ? mod.CreateVector(
                 CONQUEST_HUD_TEXT_FRIENDLY_RGB[0],
@@ -554,7 +554,7 @@ function deriveConquestHudFlagsViewModel(
                 CONQUEST_HUD_TEXT_ENEMY_RGB[2]
             )
                 : undefined;
-        const fullyOwned = conquestPhase3IsFlagFullyOwnedForHud(
+        const fullyOwned = isFlagFullyOwnedForHud(
             cp.ownerTeam,
             cp.ownerProgressTeam,
             cp.progress01,
@@ -563,7 +563,7 @@ function deriveConquestHudFlagsViewModel(
         const borderVisible = fullyOwned;
         const onPointCount = cp.onPointTeam1 + cp.onPointTeam2;
         const forceNeutralIdleEmpty = visualState.phase === "NEUTRAL_IDLE";
-        const fillHeight = conquestPhase3ComputeFlagFillHeight(
+        const fillHeight = computeFlagFillHeight(
             CONQUEST_HUD_FLAG_FILL_MAX_HEIGHT,
             visual.fillRatio,
             cp.ownerTeam,
@@ -571,7 +571,7 @@ function deriveConquestHudFlagsViewModel(
             onPointCount,
             forceNeutralIdleEmpty
         );
-        const fillFromTop = conquestPhase3ShouldFillFromTopForEnemy(visualState, enemyTeam);
+        const fillFromTop = shouldFillFromTopForEnemy(visualState, enemyTeam);
 
         const slotVm: ConquestHudFlagSlotViewModel = {
             visible: true,
@@ -634,7 +634,7 @@ function deriveConquestHudActiveFlagPopoutViewModel(
     friendlyTeam: TeamID,
     enemyTeam: TeamID
 ): ConquestHudActiveFlagPopoutViewModel {
-    const engagedObjId = conquestPhase3GetRenderableActiveObjIdForPid(pid);
+    const engagedObjId = getRenderableActiveObjIdForPid(pid);
     const hidden: ConquestHudActiveFlagPopoutViewModel = {
         visible: false,
         objId: engagedObjId,
@@ -659,12 +659,12 @@ function deriveConquestHudActiveFlagPopoutViewModel(
     }
     if (!activeCapturePoint) return hidden;
 
-    const labelKey = conquestPhase3GetFlagLetterStringKey(activeCapturePoint, activeRow);
+    const labelKey = getFlagLetterStringKey(activeCapturePoint, activeRow);
     const sampleTick = Math.floor(mod.GetMatchTimeElapsed() * 10);
     const visualState = State.conquest.capture.visualByObjId[activeCapturePoint.objId]
-        ?? conquestPhase3CreateDefaultFlagVisualState(sampleTick);
-    const visual = conquestPhase3GetFlagSlotVisual(visualState, friendlyTeam, enemyTeam);
-    const percentVisual = conquestPhase3GetFlagPercentDisplay(visualState, friendlyTeam, enemyTeam);
+        ?? createDefaultFlagVisualState(sampleTick);
+    const visual = getFlagSlotVisual(visualState, friendlyTeam, enemyTeam);
+    const percentVisual = getFlagPercentDisplay(visualState, friendlyTeam, enemyTeam);
     const borderColor = activeCapturePoint.ownerTeam === friendlyTeam
         ? mod.CreateVector(
             CONQUEST_HUD_TEXT_FRIENDLY_RGB[0],
@@ -678,7 +678,7 @@ function deriveConquestHudActiveFlagPopoutViewModel(
             CONQUEST_HUD_TEXT_ENEMY_RGB[2]
         )
             : undefined;
-    const fullyOwned = conquestPhase3IsFlagFullyOwnedForHud(
+    const fullyOwned = isFlagFullyOwnedForHud(
         activeCapturePoint.ownerTeam,
         activeCapturePoint.ownerProgressTeam,
         activeCapturePoint.progress01,
@@ -695,7 +695,7 @@ function deriveConquestHudActiveFlagPopoutViewModel(
     const borderVisible = fullyOwned;
     const onPointCount = activeCapturePoint.onPointTeam1 + activeCapturePoint.onPointTeam2;
     const forceNeutralIdleEmpty = visualState.phase === "NEUTRAL_IDLE";
-    const fillHeight = conquestPhase3ComputeFlagFillHeight(
+    const fillHeight = computeFlagFillHeight(
         CONQUEST_HUD_FLAG_ACTIVE_POPOUT_FILL_MAX_HEIGHT,
         visual.fillRatio,
         activeCapturePoint.ownerTeam,
@@ -703,7 +703,7 @@ function deriveConquestHudActiveFlagPopoutViewModel(
         onPointCount,
         forceNeutralIdleEmpty
     );
-    const fillFromTop = conquestPhase3ShouldFillFromTopForEnemy(visualState, enemyTeam);
+    const fillFromTop = shouldFillFromTopForEnemy(visualState, enemyTeam);
 
     const popoutVm: ConquestHudActiveFlagPopoutViewModel = {
         visible: true,
@@ -744,7 +744,7 @@ function deriveHudViewModelForPlayer(
     const enemyTickets = perspective.enemyTeam === TeamID.Team1
         ? State.conquest.tickets.team1
         : State.conquest.tickets.team2;
-    const bleedCounts = conquestPhase3GetBleedChevronCountsForPerspective(
+    const bleedCounts = getBleedChevronCountsForPerspective(
         perspective.friendlyTeam,
         perspective.enemyTeam
     );
@@ -783,7 +783,7 @@ function deriveHudViewModelForPlayer(
             enemyTickets,
             friendlyTicketLabel: msg(STR_SYS_COUNTER, friendlyTickets),
             enemyTicketLabel: msg(STR_SYS_COUNTER, enemyTickets),
-            leaderTeam: conquestPhase3GetTicketLeaderTeam(),
+            leaderTeam: getTicketLeaderTeam(),
             bleedLeftCount: bleedCounts.leftCount,
             bleedRightCount: bleedCounts.rightCount,
         },
@@ -797,7 +797,7 @@ function deriveHudViewModelForPlayer(
 }
 
 // Returns centered slot indices for N visible flags across a fixed slot row.
-function conquestPhase3GetCenteredFlagSlots(flagCount: number, maxSlots: number): number[] {
+function getCenteredFlagSlots(flagCount: number, maxSlots: number): number[] {
     const clamped = Math.max(0, Math.min(flagCount, maxSlots));
     if (clamped <= 0) return [];
     const start = Math.floor((maxSlots - clamped) / 2);
@@ -809,7 +809,7 @@ function conquestPhase3GetCenteredFlagSlots(flagCount: number, maxSlots: number)
 }
 
 // Resolves a deterministic fallback letter token when map config labels are missing.
-function conquestPhase3GetFallbackFlagToken(row: number): string {
+function getFallbackFlagToken(row: number): string {
     if (row === 0) return "A";
     if (row === 1) return "B";
     if (row === 2) return "C";
@@ -821,8 +821,8 @@ function conquestPhase3GetFallbackFlagToken(row: number): string {
 }
 
 // Maps capture-point labels to explicit localized string keys (A..G or unknown).
-function conquestPhase3GetFlagLetterStringKey(cp: ConquestCapturePointRuntimeState, row: number): number {
-    const raw = (cp.label && cp.label.length > 0 ? cp.label : conquestPhase3GetFallbackFlagToken(row)).toUpperCase();
+function getFlagLetterStringKey(cp: ConquestCapturePointRuntimeState, row: number): number {
+    const raw = (cp.label && cp.label.length > 0 ? cp.label : getFallbackFlagToken(row)).toUpperCase();
     if (raw === "A") return STR_HUD_CONQUEST_FLAG_LETTER_A;
     if (raw === "B") return STR_HUD_CONQUEST_FLAG_LETTER_B;
     if (raw === "C") return STR_HUD_CONQUEST_FLAG_LETTER_C;
@@ -834,7 +834,7 @@ function conquestPhase3GetFlagLetterStringKey(cp: ConquestCapturePointRuntimeSta
 }
 
 // Creates the default script-authoritative visual state for one flag.
-function conquestPhase3CreateDefaultFlagVisualState(sampleTick: number): ConquestFlagVisualRuntimeState {
+function createDefaultFlagVisualState(sampleTick: number): ConquestFlagVisualRuntimeState {
     return {
         phase: "NEUTRAL_IDLE",
         ownerTeam: 0,
@@ -850,7 +850,7 @@ function conquestPhase3CreateDefaultFlagVisualState(sampleTick: number): Conques
 }
 
 // Ensures a visual state record exists for one flag and returns it.
-function conquestPhase3EnsureFlagVisualState(objId: number, sampleTick: number): ConquestFlagVisualRuntimeState {
+function ensureFlagVisualState(objId: number, sampleTick: number): ConquestFlagVisualRuntimeState {
     const existing = State.conquest.capture.visualByObjId[objId];
     if (existing) {
         if (existing.suppressOwnerUntilRecaptured === undefined) {
@@ -858,13 +858,13 @@ function conquestPhase3EnsureFlagVisualState(objId: number, sampleTick: number):
         }
         return existing;
     }
-    const created = conquestPhase3CreateDefaultFlagVisualState(sampleTick);
+    const created = createDefaultFlagVisualState(sampleTick);
     State.conquest.capture.visualByObjId[objId] = created;
     return created;
 }
 
 // Normalizes raw capture ownership/progress into a stable visual sample for FSM transitions.
-function conquestPhase3NormalizeVisualSample(
+function normalizeVisualSample(
     cp: ConquestCapturePointRuntimeState,
     previousVisual: ConquestFlagVisualRuntimeState,
     sampleTick: number
@@ -961,7 +961,7 @@ function conquestPhase3NormalizeVisualSample(
 }
 
 // Resolves the next flag visual phase from normalized sample + previous phase state.
-function conquestPhase3ResolveFlagVisualState(
+function resolveFlagVisualState(
     sample: ConquestFlagVisualSample,
     previousVisual: ConquestFlagVisualRuntimeState
 ): ConquestFlagVisualRuntimeState {
@@ -1143,7 +1143,7 @@ function conquestPhase3ResolveFlagVisualState(
 }
 
 // Compares two visual state snapshots and returns true when any render-relevant field differs.
-function conquestPhase3HasVisualStateChanged(
+function hasVisualStateChanged(
     previousVisual: ConquestFlagVisualRuntimeState,
     nextVisual: ConquestFlagVisualRuntimeState
 ): boolean {
@@ -1159,17 +1159,17 @@ function conquestPhase3HasVisualStateChanged(
 }
 
 // Refreshes and stores script-authoritative visual state for one flag from current capture state.
-function conquestPhase3RefreshFlagVisualState(cp: ConquestCapturePointRuntimeState): ConquestFlagVisualRuntimeState {
+function refreshFlagVisualState(cp: ConquestCapturePointRuntimeState): ConquestFlagVisualRuntimeState {
     const sampleTick = Math.floor(mod.GetMatchTimeElapsed() * 10);
-    const previousVisual = conquestPhase3EnsureFlagVisualState(cp.objId, sampleTick);
-    const sample = conquestPhase3NormalizeVisualSample(cp, previousVisual, sampleTick);
-    const nextVisual = conquestPhase3ResolveFlagVisualState(sample, previousVisual);
+    const previousVisual = ensureFlagVisualState(cp.objId, sampleTick);
+    const sample = normalizeVisualSample(cp, previousVisual, sampleTick);
+    const nextVisual = resolveFlagVisualState(sample, previousVisual);
     State.conquest.capture.visualByObjId[cp.objId] = nextVisual;
     return nextVisual;
 }
 
 // Resolves final flag widget colors/fills from script-authoritative visual phase + viewer perspective.
-function conquestPhase3GetFlagSlotVisual(
+function getFlagSlotVisual(
     visualState: ConquestFlagVisualRuntimeState,
     friendlyTeam: TeamID,
     enemyTeam: TeamID
@@ -1300,7 +1300,7 @@ function conquestPhase3GetFlagSlotVisual(
 }
 
 // Resolves percentage text visibility/value/color from the same script-authoritative flag visual state.
-function conquestPhase3GetFlagPercentDisplay(
+function getFlagPercentDisplay(
     visualState: ConquestFlagVisualRuntimeState,
     friendlyTeam: TeamID,
     enemyTeam: TeamID
@@ -1370,7 +1370,7 @@ function conquestPhase3GetFlagPercentDisplay(
 }
 
 // Resolves engagement status text for the viewer from owner + on-point differential.
-function conquestPhase3GetEngageStatusKey(
+function getEngageStatusKey(
     ownerTeam: TeamID | 0,
     friendlyTeam: TeamID,
     friendlyCount: number,
@@ -1391,7 +1391,7 @@ function conquestPhase3GetEngageStatusKey(
 
 // Builds a hidden engage panel payload with optional last-known counts.
 // This keeps hidden-return branches consistent and prevents subtle field drift.
-function conquestPhase3BuildHiddenEngageDisplay(
+function buildHiddenEngageDisplay(
     friendlyCount: number = 0,
     enemyCount: number = 0
 ): ConquestFlagEngageDisplay {
@@ -1406,18 +1406,18 @@ function conquestPhase3BuildHiddenEngageDisplay(
 }
 
 // Builds script-authoritative engagement panel data for one viewer.
-function conquestPhase3GetFlagEngageDisplayForViewer(
+function getFlagEngageDisplayForViewer(
     pid: number,
     friendlyTeam: TeamID,
     enemyTeam: TeamID
 ): ConquestFlagEngageDisplay {
     const activeObjId = State.conquest.capture.engagedObjIdByPid[pid];
-    if (!conquestPhase3ShouldRenderEngageForPid(pid, activeObjId)) {
-        return conquestPhase3BuildHiddenEngageDisplay();
+    if (!shouldRenderEngageForPid(pid, activeObjId)) {
+        return buildHiddenEngageDisplay();
     }
     const cp = State.conquest.capture.byObjId[activeObjId];
     if (!cp || !cp.mapped) {
-        return conquestPhase3BuildHiddenEngageDisplay();
+        return buildHiddenEngageDisplay();
     }
     const friendlyCount = friendlyTeam === TeamID.Team1
         ? cp.onPointTeam1
@@ -1427,12 +1427,12 @@ function conquestPhase3GetFlagEngageDisplayForViewer(
         : cp.onPointTeam2;
     const total = friendlyCount + enemyCount;
     if (total <= 0 || friendlyCount <= 0) {
-        return conquestPhase3BuildHiddenEngageDisplay(friendlyCount, enemyCount);
+        return buildHiddenEngageDisplay(friendlyCount, enemyCount);
     }
 
     const friendlyRatio = Math.max(0, Math.min(1, friendlyCount / total));
     const enemyRatio = Math.max(0, Math.min(1, enemyCount / total));
-    const statusKey = conquestPhase3GetEngageStatusKey(cp.ownerTeam, friendlyTeam, friendlyCount, enemyCount);
+    const statusKey = getEngageStatusKey(cp.ownerTeam, friendlyTeam, friendlyCount, enemyCount);
     return {
         visible: true,
         friendlyCount,
@@ -1444,7 +1444,7 @@ function conquestPhase3GetFlagEngageDisplayForViewer(
 }
 
 // Returns mapped capture configs in deterministic display/evaluation order.
-function conquestPhase2AGetMappedConfigsInOrder(): CapturePointConfig[] {
+function getMappedConfigsInOrder(): CapturePointConfig[] {
     const copy = [...ACTIVE_CAPTURE_POINT_CONFIGS];
     copy.sort((a, b) => {
         if (a.order !== b.order) return a.order - b.order;
@@ -1454,8 +1454,8 @@ function conquestPhase2AGetMappedConfigsInOrder(): CapturePointConfig[] {
 }
 
 // Rebuilds authoritative mapped capture index from active map config.
-function conquestPhase2ABuildMappedCaptureIndexFromConfig(): void {
-    const ordered = conquestPhase2AGetMappedConfigsInOrder();
+function buildMappedCaptureIndexFromConfig(): void {
+    const ordered = getMappedConfigsInOrder();
     State.conquest.capture.mappedObjIdsInOrder = [];
     for (let i = 0; i < ordered.length; i++) {
         const cfg = ordered[i];
@@ -1474,12 +1474,12 @@ function conquestPhase2ABuildMappedCaptureIndexFromConfig(): void {
             lastUpdatedAtSeconds: -1,
         };
         const sampleTick = Math.floor(mod.GetMatchTimeElapsed() * 10);
-        State.conquest.capture.visualByObjId[cfg.objId] = conquestPhase3CreateDefaultFlagVisualState(sampleTick);
+        State.conquest.capture.visualByObjId[cfg.objId] = createDefaultFlagVisualState(sampleTick);
     }
 }
 
 // Ensures runtime capture state exists for a capture-point ObjId and tracks unmapped sightings.
-function conquestPhase2AEnsureCaptureState(objId: number): ConquestCapturePointRuntimeState {
+function ensureCaptureState(objId: number): ConquestCapturePointRuntimeState {
     const existing = State.conquest.capture.byObjId[objId];
     if (existing) return existing;
     const cfg = getActiveCapturePointConfigByObjId(objId);
@@ -1498,7 +1498,7 @@ function conquestPhase2AEnsureCaptureState(objId: number): ConquestCapturePointR
     };
     State.conquest.capture.byObjId[objId] = next;
     const sampleTick = Math.floor(mod.GetMatchTimeElapsed() * 10);
-    conquestPhase3EnsureFlagVisualState(objId, sampleTick);
+    ensureFlagVisualState(objId, sampleTick);
     if (!cfg) {
         State.conquest.capture.unmappedSeenCount += 1;
         State.conquest.capture.lastUnmappedObjId = objId;
@@ -1515,7 +1515,7 @@ function conquestPhase2AEnsureCaptureState(objId: number): ConquestCapturePointR
 }
 
 // Clears capture-timing application cache so the current map's capture points are reconfigured deterministically.
-function conquestPhase2AResetCaptureTimingConfigCache(): void {
+function resetCaptureTimingConfigCache(): void {
     const keys = Object.keys(conquestPhase2ACaptureTimingConfiguredByObjId);
     for (let i = 0; i < keys.length; i++) {
         delete conquestPhase2ACaptureTimingConfiguredByObjId[Number(keys[i])];
@@ -1523,7 +1523,7 @@ function conquestPhase2AResetCaptureTimingConfigCache(): void {
 }
 
 // Applies engine capture/neutralization timing to one capture point once per ObjId.
-function conquestPhase2AConfigureCaptureTimingForPoint(capturePoint: mod.CapturePoint | undefined, objIdHint?: number): boolean {
+function configureCaptureTimingForPoint(capturePoint: mod.CapturePoint | undefined, objIdHint?: number): boolean {
     if (!capturePoint) return false;
     const objId = objIdHint ?? safeGetObjId(capturePoint);
     if (objId === undefined) return false;
@@ -1539,8 +1539,8 @@ function conquestPhase2AConfigureCaptureTimingForPoint(capturePoint: mod.Capture
 }
 
 // Best-effort pass to apply configured capture timings to all mapped points for the active map.
-function conquestPhase2AApplyCaptureTimingForMappedPoints(): void {
-    const ordered = conquestPhase2AGetMappedConfigsInOrder();
+function applyCaptureTimingForMappedPoints(): void {
+    const ordered = getMappedConfigsInOrder();
     for (let i = 0; i < ordered.length; i++) {
         const objId = ordered[i].objId;
         let capturePoint: mod.CapturePoint | undefined;
@@ -1549,12 +1549,12 @@ function conquestPhase2AApplyCaptureTimingForMappedPoints(): void {
         } catch {
             capturePoint = undefined;
         }
-        conquestPhase2AConfigureCaptureTimingForPoint(capturePoint, objId);
+        configureCaptureTimingForPoint(capturePoint, objId);
     }
 }
 
 // Resets conquest state for live start and seeds mapped capture state for Phase 2A.
-function conquestPhase2AResetLiveState(): void {
+function resetLiveState(): void {
     State.conquest.lifecyclePhase = "LIVE_MATCH";
     State.conquest.tickets.team1 = CONQUEST_STARTING_TICKETS;
     State.conquest.tickets.team2 = CONQUEST_STARTING_TICKETS;
@@ -1570,16 +1570,16 @@ function conquestPhase2AResetLiveState(): void {
     State.conquest.endRace.endLatched = false;
     State.conquest.endRace.endReason = undefined;
     State.conquest.endRace.endSnapshot = undefined;
-    conquestPhase2AResetCaptureTimingConfigCache();
-    conquestPhase2ABuildMappedCaptureIndexFromConfig();
-    conquestPhase2AApplyCaptureTimingForMappedPoints();
-    conquestPhase3MarkHudDirty();
-    conquestPhase2AMirrorTicketsToEngineScore();
+    resetCaptureTimingConfigCache();
+    buildMappedCaptureIndexFromConfig();
+    applyCaptureTimingForMappedPoints();
+    markHudDirty();
+    mirrorTicketsToEngineScore();
     updateConquestCombatHudForAllPlayers();
 }
 
 // Resets conquest state for non-live phases while preserving config-derived mappings.
-function conquestPhase2AResetNotLiveState(): void {
+function resetNotLiveState(): void {
     State.conquest.lifecyclePhase = "NOT_READY";
     State.conquest.bleed.lastTickSeconds = -1;
     State.conquest.bleed.carryTeam1 = 0;
@@ -1593,21 +1593,21 @@ function conquestPhase2AResetNotLiveState(): void {
     State.conquest.capture.unmappedSeenCount = 0;
     State.conquest.capture.visualByObjId = {};
     State.conquest.capture.engagedObjIdByPid = {};
-    conquestPhase2AResetCaptureTimingConfigCache();
-    conquestPhase2ABuildMappedCaptureIndexFromConfig();
-    conquestPhase2AApplyCaptureTimingForMappedPoints();
-    conquestPhase3MarkHudDirty();
+    resetCaptureTimingConfigCache();
+    buildMappedCaptureIndexFromConfig();
+    applyCaptureTimingForMappedPoints();
+    markHudDirty();
     updateConquestCombatHudForAllPlayers();
 }
 
 // Mirrors authoritative script tickets into engine score projection.
-function conquestPhase2AMirrorTicketsToEngineScore(): void {
+function mirrorTicketsToEngineScore(): void {
     mod.SetGameModeScore(mod.GetTeam(TeamID.Team1), State.conquest.tickets.team1);
     mod.SetGameModeScore(mod.GetTeam(TeamID.Team2), State.conquest.tickets.team2);
 }
 
 // Counts currently owned mapped objectives per team (neutral/unmapped excluded).
-function conquestPhase2AGetOwnershipCounts(): { team1Owned: number; team2Owned: number } {
+function getOwnershipCounts(): { team1Owned: number; team2Owned: number } {
     let team1Owned = 0;
     let team2Owned = 0;
     const ids = State.conquest.capture.mappedObjIdsInOrder;
@@ -1621,19 +1621,19 @@ function conquestPhase2AGetOwnershipCounts(): { team1Owned: number; team2Owned: 
 }
 
 // Applies signed ticket delta to one team with floor-at-zero safety.
-function conquestPhase2AApplyTicketDelta(team: TeamID, delta: number): boolean {
+function applyTicketDelta(team: TeamID, delta: number): boolean {
     if (delta === 0) return false;
     const prev = team === TeamID.Team1 ? State.conquest.tickets.team1 : State.conquest.tickets.team2;
     const next = Math.max(0, Math.floor(prev + delta));
     if (next === prev) return false;
     if (team === TeamID.Team1) State.conquest.tickets.team1 = next;
     else State.conquest.tickets.team2 = next;
-    conquestPhase3MarkHudDirty();
+    markHudDirty();
     return true;
 }
 
 // Single-latch end transition owner for ticket/clock end reasons.
-function conquestPhase2ATryLatchEnd(reason: "tickets" | "clock", winnerTeam: TeamID | 0): void {
+function tryLatchEnd(reason: "tickets" | "clock", winnerTeam: TeamID | 0): void {
     if (State.conquest.endRace.endLatched) return;
     State.conquest.lifecyclePhase = "POST_MATCH";
     State.conquest.endRace.endLatched = true;
@@ -1648,7 +1648,7 @@ function conquestPhase2ATryLatchEnd(reason: "tickets" | "clock", winnerTeam: Tea
 }
 
 // Applies one bleed step from ownership differential and mirrors any ticket changes.
-function conquestPhase2AApplyBleedTick(): void {
+function applyBleedTick(): void {
     if (!isMatchLive()) return;
     if (State.conquest.endRace.endLatched) return;
     if (!State.conquest.bleed.enabled) return;
@@ -1661,7 +1661,7 @@ function conquestPhase2AApplyBleedTick(): void {
     if (elapsed <= 0) return;
     State.conquest.bleed.lastTickSeconds = now;
 
-    const ownership = conquestPhase2AGetOwnershipCounts();
+    const ownership = getOwnershipCounts();
     const diff = ownership.team1Owned - ownership.team2Owned;
     if (diff === 0) return;
 
@@ -1683,14 +1683,14 @@ function conquestPhase2AApplyBleedTick(): void {
         State.conquest.bleed.carryTeam2 = Math.max(0, State.conquest.bleed.carryTeam2 - bleedUnits);
     }
 
-    const changed = conquestPhase2AApplyTicketDelta(losingTeam, -bleedUnits);
+    const changed = applyTicketDelta(losingTeam, -bleedUnits);
     if (changed) {
-        conquestPhase2AMirrorTicketsToEngineScore();
+        mirrorTicketsToEngineScore();
     }
 }
 
 // Evaluates ticket-first end condition with clock fallback per CF-07/CF-60.
-function conquestPhase2ACheckEndCondition(): void {
+function checkEndCondition(): void {
     if (!isMatchLive()) return;
     if (State.conquest.endRace.endLatched) return;
 
@@ -1699,34 +1699,34 @@ function conquestPhase2ACheckEndCondition(): void {
 
     if (team1Tickets <= 0 || team2Tickets <= 0) {
         if (team1Tickets <= 0 && team2Tickets <= 0) {
-            conquestPhase2ATryLatchEnd("tickets", 0);
+            tryLatchEnd("tickets", 0);
             return;
         }
         if (team1Tickets <= 0) {
-            conquestPhase2ATryLatchEnd("tickets", TeamID.Team2);
+            tryLatchEnd("tickets", TeamID.Team2);
             return;
         }
-        conquestPhase2ATryLatchEnd("tickets", TeamID.Team1);
+        tryLatchEnd("tickets", TeamID.Team1);
         return;
     }
 
     if (getRemainingSeconds() > 0) return;
     if (team1Tickets === team2Tickets) {
-        conquestPhase2ATryLatchEnd("clock", 0);
+        tryLatchEnd("clock", 0);
         return;
     }
-    conquestPhase2ATryLatchEnd("clock", team1Tickets > team2Tickets ? TeamID.Team1 : TeamID.Team2);
+    tryLatchEnd("clock", team1Tickets > team2Tickets ? TeamID.Team1 : TeamID.Team2);
 }
 
 // Ingests engine capture-point ownership/progress into authoritative capture runtime state.
 // Engage membership is handled by capture-point enter/exit event handlers.
-function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint): void {
+function onCapturePointTick(eventCapturePoint: mod.CapturePoint): void {
     if (!eventCapturePoint) return;
     const objId = safeGetObjId(eventCapturePoint);
     if (objId === undefined) return;
-    conquestPhase2AConfigureCaptureTimingForPoint(eventCapturePoint, objId);
+    configureCaptureTimingForPoint(eventCapturePoint, objId);
 
-    const state = conquestPhase2AEnsureCaptureState(objId);
+    const state = ensureCaptureState(objId);
     const prevMapped = state.mapped;
     const prevLabel = state.label;
     const prevOrder = state.order;
@@ -1736,7 +1736,7 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
     const prevOnPointTeam1 = state.onPointTeam1;
     const prevOnPointTeam2 = state.onPointTeam2;
     const visualSampleTick = Math.floor(mod.GetMatchTimeElapsed() * 10);
-    const prevVisual = { ...conquestPhase3EnsureFlagVisualState(objId, visualSampleTick) };
+    const prevVisual = { ...ensureFlagVisualState(objId, visualSampleTick) };
     const cfg = getActiveCapturePointConfigByObjId(objId);
     if (cfg) {
         state.mapped = true;
@@ -1758,7 +1758,7 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
         ownerProgressTeam = 0;
     }
     try {
-        progress01 = conquestPhase2AClamp01(mod.GetCaptureProgress(eventCapturePoint));
+        progress01 = clamp01(mod.GetCaptureProgress(eventCapturePoint));
     } catch {
         progress01 = 0;
     }
@@ -1777,7 +1777,7 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
             // to re-lookup via safeFindPlayer(pid) + AllPlayers() iteration (BUG-A8 perf fix).
             const countablePlayer = pointPlayer;
             const resolvedPointTeam = safeGetTeamNumberFromPlayer(pointPlayer, 0);
-            if (!conquestPhase2AShouldCountPlayerAsActiveOnPoint(countablePlayer)) continue;
+            if (!shouldCountPlayerAsActiveOnPoint(countablePlayer)) continue;
             if (resolvedPointTeam === TeamID.Team1) onPointTeam1 += 1;
             if (resolvedPointTeam === TeamID.Team2) onPointTeam2 += 1;
         }
@@ -1786,7 +1786,7 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
         onPointTeam2 = 0;
     }
 
-    ownerTeam = conquestPhase2AResolveAuthoritativeOwnerTeam(
+    ownerTeam = resolveAuthoritativeOwnerTeam(
         state,
         ownerTeam,
         ownerProgressTeam,
@@ -1806,17 +1806,17 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
     state.onPointTeam1 = onPointTeam1;
     state.onPointTeam2 = onPointTeam2;
     state.lastUpdatedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
-    const nextVisual = conquestPhase3RefreshFlagVisualState(state);
-    const visualChanged = conquestPhase3HasVisualStateChanged(prevVisual, nextVisual);
+    const nextVisual = refreshFlagVisualState(state);
+    const visualChanged = hasVisualStateChanged(prevVisual, nextVisual);
     if (state.mapped) {
-        conquestPhase4OnCapturePointStateSample(
+        captureSoundOnCapturePointStateSample(
             objId,
             prevOwnerProgressTeam,
             prevProgress01,
             state.ownerProgressTeam,
             state.progress01
         );
-        conquestPhase4BOnCapturePointStateSample(
+        captureVoOnCapturePointStateSample(
             objId,
             state.ownerProgressTeam,
             state.progress01,
@@ -1836,7 +1836,7 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
         || state.onPointTeam2 !== prevOnPointTeam2
         || visualChanged;
     if (changed) {
-        conquestPhase3MarkHudDirty();
+        markHudDirty();
     }
 }
 
@@ -1847,7 +1847,7 @@ function conquestPhase2AOnCapturePointTick(eventCapturePoint: mod.CapturePoint):
  * 2) After edge events are seen, owner is event-latched and only changed on explicit neutralization/recapture completion.
  * This prevents stale engine owner echoes from re-enabling owner border after neutralization.
  */
-function conquestPhase2AResolveAuthoritativeOwnerTeam(
+function resolveAuthoritativeOwnerTeam(
     state: ConquestCapturePointRuntimeState,
     engineOwnerTeam: TeamID | 0,
     ownerProgressTeam: TeamID | 0,
@@ -1957,13 +1957,13 @@ function conquestPhase2AResolveAuthoritativeOwnerTeam(
  * Handles the engine neutralization edge for a capture point.
  * This is the authoritative moment ownership is lost; force neutralized visuals immediately.
  */
-function conquestPhase2AOnCapturePointLost(eventCapturePoint: mod.CapturePoint): void {
+function onCapturePointLost(eventCapturePoint: mod.CapturePoint): void {
     if (!eventCapturePoint) return;
     const objId = safeGetObjId(eventCapturePoint);
     if (objId === undefined) return;
-    conquestPhase2AConfigureCaptureTimingForPoint(eventCapturePoint, objId);
+    configureCaptureTimingForPoint(eventCapturePoint, objId);
 
-    const cp = conquestPhase2AEnsureCaptureState(objId);
+    const cp = ensureCaptureState(objId);
     const previousOwnerTeam = cp.ownerTeam;
     cp.ownerLatchedByEvent = true;
     cp.ownerTeam = 0;
@@ -1973,14 +1973,14 @@ function conquestPhase2AOnCapturePointLost(eventCapturePoint: mod.CapturePoint):
         cp.ownerProgressTeam = 0;
     }
     try {
-        cp.progress01 = conquestPhase2AClamp01(mod.GetCaptureProgress(eventCapturePoint));
+        cp.progress01 = clamp01(mod.GetCaptureProgress(eventCapturePoint));
     } catch {
         cp.progress01 = 0;
     }
     cp.lastUpdatedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
 
     const sampleTick = Math.floor(mod.GetMatchTimeElapsed() * 10);
-    const visual = conquestPhase3EnsureFlagVisualState(objId, sampleTick);
+    const visual = ensureFlagVisualState(objId, sampleTick);
     visual.phase = "NEUTRALIZED_LATCH";
     visual.ownerTeam = 0;
     visual.activeTeam = cp.ownerProgressTeam;
@@ -1993,8 +1993,8 @@ function conquestPhase2AOnCapturePointLost(eventCapturePoint: mod.CapturePoint):
     visual.sampleTick = sampleTick;
     State.conquest.capture.visualByObjId[objId] = visual;
 
-    conquestPhase4BOnCapturePointLostEdge(objId, previousOwnerTeam, cp.ownerProgressTeam);
-    conquestPhase3MarkHudDirty();
+    onCapturePointLostVoEdge(objId, previousOwnerTeam, cp.ownerProgressTeam);
+    markHudDirty();
     updateConquestCombatHudForAllPlayers(true);
 }
 
@@ -2002,13 +2002,13 @@ function conquestPhase2AOnCapturePointLost(eventCapturePoint: mod.CapturePoint):
  * Handles the engine ownership-acquired edge for a capture point.
  * This confirms recapture and releases neutralization owner-suppression.
  */
-function conquestPhase2AOnCapturePointCaptured(eventCapturePoint: mod.CapturePoint): void {
+function onCapturePointCaptured(eventCapturePoint: mod.CapturePoint): void {
     if (!eventCapturePoint) return;
     const objId = safeGetObjId(eventCapturePoint);
     if (objId === undefined) return;
-    conquestPhase2AConfigureCaptureTimingForPoint(eventCapturePoint, objId);
+    configureCaptureTimingForPoint(eventCapturePoint, objId);
 
-    const cp = conquestPhase2AEnsureCaptureState(objId);
+    const cp = ensureCaptureState(objId);
     let ownerTeam: TeamID | 0 = 0;
     try {
         ownerTeam = getTeamNumber(mod.GetCurrentOwnerTeam(eventCapturePoint));
@@ -2030,7 +2030,7 @@ function conquestPhase2AOnCapturePointCaptured(eventCapturePoint: mod.CapturePoi
     cp.lastUpdatedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
 
     const sampleTick = Math.floor(mod.GetMatchTimeElapsed() * 10);
-    const visual = conquestPhase3EnsureFlagVisualState(objId, sampleTick);
+    const visual = ensureFlagVisualState(objId, sampleTick);
     visual.phase = ownerTeam === 0 ? "NEUTRAL_IDLE" : "OWNED_STABLE";
     visual.ownerTeam = ownerTeam;
     visual.activeTeam = ownerTeam;
@@ -2043,8 +2043,8 @@ function conquestPhase2AOnCapturePointCaptured(eventCapturePoint: mod.CapturePoi
     visual.sampleTick = sampleTick;
     State.conquest.capture.visualByObjId[objId] = visual;
 
-    conquestPhase4BOnCapturePointCapturedEdge(objId, ownerTeam);
-    conquestPhase3MarkHudDirty();
+    onCapturePointCapturedVoEdge(objId, ownerTeam);
+    markHudDirty();
     updateConquestCombatHudForAllPlayers(true);
 }
 
@@ -2055,7 +2055,7 @@ function conquestPhase2AOnCapturePointCaptured(eventCapturePoint: mod.CapturePoi
  * - If that final sample is missed, the previous contested frame can keep an old owner border visible.
  * - Live polling guarantees the visual FSM receives authoritative owner/progress updates at least once per tick.
  */
-function conquestPhase2ASyncMappedCapturePointsFromEngine(): void {
+function syncMappedCapturePointsFromEngine(): void {
     const mappedObjIds = State.conquest.capture.mappedObjIdsInOrder;
     const previousEngagedByPid = { ...State.conquest.capture.engagedObjIdByPid };
     for (let i = 0; i < mappedObjIds.length; i++) {
@@ -2072,20 +2072,20 @@ function conquestPhase2ASyncMappedCapturePointsFromEngine(): void {
             cp = undefined;
         }
         if (!cp) continue;
-        conquestPhase2AOnCapturePointTick(cp);
+        onCapturePointTick(cp);
     }
     const nextEngagedByPid = State.conquest.capture.engagedObjIdByPid;
 
     const previousKeys = Object.keys(previousEngagedByPid);
     const nextKeys = Object.keys(nextEngagedByPid);
     if (previousKeys.length !== nextKeys.length) {
-        conquestPhase3MarkHudDirty();
+        markHudDirty();
         return;
     }
     for (let i = 0; i < nextKeys.length; i++) {
         const pid = Number(nextKeys[i]);
         if (previousEngagedByPid[pid] !== nextEngagedByPid[pid]) {
-            conquestPhase3MarkHudDirty();
+            markHudDirty();
             return;
         }
     }
@@ -2105,7 +2105,7 @@ function updateConquestCombatHudForAllPlayers(force?: boolean): void {
     const hudMode = getConquestHudMode();
     // Clock VM + derived top-HUD slices are time-variant; they must refresh every tick
     // regardless of combat-HUD dirtiness so the clock color flip / countdown never freezes.
-    conquestPhase3RefreshTopHudDerivedSlicesForAllPlayers();
+    refreshTopHudDerivedSlicesForAllPlayers();
     if (hudMode === "off") {
         twlConquestHudHideAllPlayers();
         State.conquest.debug.hudDirty = false;
@@ -2113,7 +2113,7 @@ function updateConquestCombatHudForAllPlayers(force?: boolean): void {
     }
     try {
         // Gate the expensive per-player combat-HUD write-through on hudDirty||force.
-        // Dirty flag is set by conquestPhase3MarkHudDirty() from every state mutation
+        // Dirty flag is set by markHudDirty() from every state mutation
         // that affects the combat HUD projection. See AGENTS.md "Combat HUD Dirty-Flag
         // Contract" for the complete list of fields that must mark dirty on mutation.
         const shouldRunFrame = !!force || State.conquest.debug.hudDirty;
@@ -2133,16 +2133,16 @@ function updateConquestCombatHudForAllPlayers(force?: boolean): void {
 }
 
 // Runs sub-second live capture synchronization so dynamic HUD elements do not strobe on second boundaries.
-function conquestPhase2ARefreshLiveCaptureStateSubtick(): void {
-    conquestPhase2AClearInactiveEngagedObjectiveOwners();
+function refreshLiveCaptureStateSubtick(): void {
+    clearInactiveEngagedObjectiveOwners();
     // Keep capture-state authoritative even if event-driven capture callbacks miss a transition frame.
-    conquestPhase2ASyncMappedCapturePointsFromEngine();
+    syncMappedCapturePointsFromEngine();
 }
 
 // Phase 2A second-boundary tick owner: bleed, end checks, then combat HUD refresh.
-function conquestPhase2AOnLiveTick(): void {
-    conquestPhase2AApplyBleedTick();
-    conquestPhase2ACheckEndCondition();
+function onLiveTick(): void {
+    applyBleedTick();
+    checkEndCondition();
     updateConquestCombatHudForAllPlayers();
     // Re-assert deploy timer HUD visibility every second so transient suppression self-heals.
     updateVehicleDeployTimerHudForAllPlayers();

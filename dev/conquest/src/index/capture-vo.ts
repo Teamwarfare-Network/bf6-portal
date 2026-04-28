@@ -1,7 +1,7 @@
 ﻿// @ts-nocheck
 // Module: index/capture-vo -- Phase 4B isolated objective VO exploration path
 
-function conquestPhase4BCleanupAllVoiceOverRuntimeHandles(): void {
+function cleanupAllVoiceOverRuntimeHandles(): void {
     const runtimeHandles = State.conquest.vo.runtimeHandleByPid;
     for (const pidKey in runtimeHandles) {
         conquestCaptureSafeUnspawnHandle(runtimeHandles[pidKey]);
@@ -10,7 +10,7 @@ function conquestPhase4BCleanupAllVoiceOverRuntimeHandles(): void {
     State.conquest.vo.handlesReadyByPid = {};
 }
 
-function conquestPhase4BEnsureObjectiveState(objId: number): ConquestObjectiveVoState {
+function ensureObjectiveVoState(objId: number): ConquestObjectiveVoState {
     let state = State.conquest.vo.objectiveStateByObjId[objId];
     if (state) return state;
     state = {
@@ -23,7 +23,7 @@ function conquestPhase4BEnsureObjectiveState(objId: number): ConquestObjectiveVo
     return state;
 }
 
-function conquestPhase4BClearNonTerminalThrottleForObjective(objId: number): void {
+function clearNonTerminalThrottleForObjective(objId: number): void {
     const nextThrottleMap: Record<string, number> = {};
     const needle = `:${objId}`;
     for (const key in State.conquest.vo.lastEventAtByThrottleKey) {
@@ -34,20 +34,20 @@ function conquestPhase4BClearNonTerminalThrottleForObjective(objId: number): voi
     State.conquest.vo.lastEventAtByThrottleKey = nextThrottleMap;
 }
 
-function conquestPhase4BTransitionObjectiveState(
+function transitionObjectiveVoState(
     objId: number,
     nextPhase: ConquestObjectiveVoState["phase"],
     nextActiveTeamId: TeamID | 0,
     nextAnnouncedOwnerTeam: TeamID | 0
 ): ConquestObjectiveVoState {
-    const state = conquestPhase4BEnsureObjectiveState(objId);
+    const state = ensureObjectiveVoState(objId);
     const changed = (
         state.phase !== nextPhase
         || state.activeTeamId !== nextActiveTeamId
         || state.lastAnnouncedOwnerTeam !== nextAnnouncedOwnerTeam
     );
     if (changed) {
-        conquestPhase4BClearNonTerminalThrottleForObjective(objId);
+        clearNonTerminalThrottleForObjective(objId);
     }
     state.phase = nextPhase;
     state.activeTeamId = nextActiveTeamId;
@@ -56,7 +56,7 @@ function conquestPhase4BTransitionObjectiveState(
     return state;
 }
 
-function conquestPhase4BResetQueueAndThrottleState(): void {
+function resetCaptureVoQueueState(): void {
     State.conquest.vo.queue = [];
     State.conquest.vo.lastFlushAtSeconds = -1;
     State.conquest.vo.lastEventAtByThrottleKey = {};
@@ -65,15 +65,15 @@ function conquestPhase4BResetQueueAndThrottleState(): void {
     State.conquest.vo.recentActiveAtSecondsByPid = {};
 }
 
-function conquestPhase4BOnNotLiveReset(): void {
-    conquestPhase4BResetQueueAndThrottleState();
+function captureVoOnNotLiveReset(): void {
+    resetCaptureVoQueueState();
 }
 
-function conquestPhase4BOnMatchLiveStart(): void {
-    conquestPhase4BResetQueueAndThrottleState();
+function captureVoOnMatchLiveStart(): void {
+    resetCaptureVoQueueState();
 }
 
-function conquestPhase4BOnPlayerLeaveOrResetPid(pid: number): void {
+function captureVoOnPlayerLeaveOrResetPid(pid: number): void {
     if (!pid) return;
     State.conquest.vo.lastEventAtByThrottleKey = conquestCaptureFilterThrottleMapByPid(
         State.conquest.vo.lastEventAtByThrottleKey, pid
@@ -85,7 +85,7 @@ function conquestPhase4BOnPlayerLeaveOrResetPid(pid: number): void {
     delete State.conquest.vo.recentActiveAtSecondsByPid[pid];
 }
 
-function conquestPhase4BEnsureVoiceOverRuntimeForPid(pid: number): any {
+function ensureVoiceOverRuntimeForPid(pid: number): any {
     if (!State.conquest.vo.enabled) return;
     const existing = State.conquest.vo.runtimeHandleByPid[pid];
     if (conquestCaptureHasValidHandle(existing)) {
@@ -107,7 +107,7 @@ function conquestPhase4BEnsureVoiceOverRuntimeForPid(pid: number): any {
     return nextHandle;
 }
 
-function conquestPhase4BQueueEvent(event: ConquestQueuedVoEvent): void {
+function queueCaptureVoEvent(event: ConquestQueuedVoEvent): void {
     if (!State.conquest.vo.enabled) return;
     for (let i = 0; i < State.conquest.vo.queue.length; i++) {
         const queued = State.conquest.vo.queue[i];
@@ -120,7 +120,7 @@ function conquestPhase4BQueueEvent(event: ConquestQueuedVoEvent): void {
     State.conquest.vo.queue.push(event);
 }
 
-function conquestPhase4BResolveVoiceOverFlagForObjective(objId: number): any {
+function resolveVoiceOverFlagForObjective(objId: number): any {
     const label = `${State.conquest.capture.byObjId[objId]?.label ?? ""}`.trim().toUpperCase();
     const leading = label.length > 0 ? label.charAt(0) : "";
     switch (leading) {
@@ -135,7 +135,7 @@ function conquestPhase4BResolveVoiceOverFlagForObjective(objId: number): any {
     }
 }
 
-function conquestPhase4BResolveVoiceOverEventForRecipient(event: ConquestQueuedVoEvent, recipient: mod.Player): any {
+function resolveVoiceOverEventForRecipient(event: ConquestQueuedVoEvent, recipient: mod.Player): any {
     switch (event.eventKey) {
         case "objective_capturing":
             return mod.VoiceOverEvents2D.ObjectiveCapturing;
@@ -156,13 +156,13 @@ function conquestPhase4BResolveVoiceOverEventForRecipient(event: ConquestQueuedV
     }
 }
 
-function conquestPhase4BMarkRecentObjectivePresence(pid: number, objId: number, atSeconds: number): void {
+function markRecentObjectivePresence(pid: number, objId: number, atSeconds: number): void {
     if (!pid || !objId) return;
     State.conquest.vo.recentActiveObjIdByPid[pid] = objId;
     State.conquest.vo.recentActiveAtSecondsByPid[pid] = atSeconds;
 }
 
-function conquestPhase4BRefreshRecentPresence(now: number): void {
+function refreshRecentPresence(now: number): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
@@ -172,19 +172,19 @@ function conquestPhase4BRefreshRecentPresence(now: number): void {
         if (pid === undefined || isPidDisconnected(pid)) continue;
         const engagedObjId = State.conquest.capture.engagedObjIdByPid[pid];
         if (!conquestShouldTreatPidAsActiveObjectiveOccupant(pid, engagedObjId)) continue;
-        if (!conquestPhase2AShouldCountPlayerAsActiveOnPoint(player)) continue;
-        conquestPhase4BMarkRecentObjectivePresence(pid, engagedObjId, now);
+        if (!shouldCountPlayerAsActiveOnPoint(player)) continue;
+        markRecentObjectivePresence(pid, engagedObjId, now);
     }
 }
 
-function conquestPhase4BWasRecentlyActiveOnObjective(pid: number, objId: number, now: number): boolean {
+function wasRecentlyActiveOnObjective(pid: number, objId: number, now: number): boolean {
     if (!pid || !objId) return false;
     if ((State.conquest.vo.recentActiveObjIdByPid[pid] ?? 0) !== objId) return false;
     const lastSeenAt = State.conquest.vo.recentActiveAtSecondsByPid[pid] ?? -999;
     return (now - lastSeenAt) <= CONQUEST_CAPTURE_VO_TERMINAL_RECENT_SECONDS;
 }
 
-function conquestPhase4BGetRecipientsForEvent(event: ConquestQueuedVoEvent, now: number): mod.Player[] {
+function getCaptureVoRecipientsForEvent(event: ConquestQueuedVoEvent, now: number): mod.Player[] {
     const recipients: mod.Player[] = [];
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -197,26 +197,26 @@ function conquestPhase4BGetRecipientsForEvent(event: ConquestQueuedVoEvent, now:
         const currentlyActiveOnEventObjective = (
             conquestShouldTreatPidAsActiveObjectiveOccupant(pid, engagedObjId)
             && engagedObjId === event.objId
-            && conquestPhase2AShouldCountPlayerAsActiveOnPoint(player)
+            && shouldCountPlayerAsActiveOnPoint(player)
         );
         if (currentlyActiveOnEventObjective) {
-            conquestPhase4BMarkRecentObjectivePresence(pid, event.objId, now);
+            markRecentObjectivePresence(pid, event.objId, now);
             recipients.push(player);
             continue;
         }
         if (!event.terminal) continue;
-        if (!conquestPhase4BWasRecentlyActiveOnObjective(pid, event.objId, now)) continue;
+        if (!wasRecentlyActiveOnObjective(pid, event.objId, now)) continue;
         recipients.push(player);
     }
     return recipients;
 }
 
-function conquestPhase4BGetRecipientThrottleKey(event: ConquestQueuedVoEvent, pid: number): string {
+function getCaptureVoRecipientThrottleKey(event: ConquestQueuedVoEvent, pid: number): string {
     return `${event.eventKey}:${pid}:${event.objId}`;
 }
 
 // Produces non-terminal objective VO only on state-entry edges so rising progress never replays continuously.
-function conquestPhase4BOnCapturePointStateSample(
+function captureVoOnCapturePointStateSample(
     objId: number,
     nextOwnerProgressTeam: TeamID | 0,
     nextProgress01: number,
@@ -239,10 +239,10 @@ function conquestPhase4BOnCapturePointStateSample(
         && (nextOwnerProgressTeam === TeamID.Team1 || nextOwnerProgressTeam === TeamID.Team2)
     ) ? nextOwnerProgressTeam : 0;
 
-    const state = conquestPhase4BEnsureObjectiveState(objId);
+    const state = ensureObjectiveVoState(objId);
     const nextPhase = contested ? "CONTESTED" : activeCaptureTeam !== 0 ? "CAPTURING" : "IDLE";
     if (nextPhase === "CONTESTED" && state.phase !== "CONTESTED") {
-        conquestPhase4BQueueEvent({
+        queueCaptureVoEvent({
             eventKey: "objective_contested",
             objId,
             sourceTeamId: activeCaptureTeam,
@@ -253,7 +253,7 @@ function conquestPhase4BOnCapturePointStateSample(
         nextPhase === "CAPTURING"
         && (state.phase !== "CAPTURING" || state.activeTeamId !== activeCaptureTeam)
     ) {
-        conquestPhase4BQueueEvent({
+        queueCaptureVoEvent({
             eventKey: "objective_capturing",
             objId,
             sourceTeamId: activeCaptureTeam,
@@ -261,10 +261,10 @@ function conquestPhase4BOnCapturePointStateSample(
             terminal: false,
         });
     }
-    conquestPhase4BTransitionObjectiveState(objId, nextPhase, activeCaptureTeam, state.lastAnnouncedOwnerTeam);
+    transitionObjectiveVoState(objId, nextPhase, activeCaptureTeam, state.lastAnnouncedOwnerTeam);
 }
 
-function conquestPhase4BOnCapturePointLostEdge(
+function onCapturePointLostVoEdge(
     objId: number,
     previousOwnerTeam: TeamID | 0,
     progressTeam: TeamID | 0
@@ -274,39 +274,39 @@ function conquestPhase4BOnCapturePointLostEdge(
         progressTeam === TeamID.Team1 || progressTeam === TeamID.Team2
     ) ? progressTeam : previousOwnerTeam;
     if (sourceTeamId !== TeamID.Team1 && sourceTeamId !== TeamID.Team2 && previousOwnerTeam === 0) return;
-    const state = conquestPhase4BEnsureObjectiveState(objId);
+    const state = ensureObjectiveVoState(objId);
     if (state.phase === "NEUTRALISED" && state.activeTeamId === sourceTeamId && state.lastAnnouncedOwnerTeam === 0) {
         return;
     }
-    conquestPhase4BQueueEvent({
+    queueCaptureVoEvent({
         eventKey: "objective_neutralised",
         objId,
         sourceTeamId,
         queuedAtSeconds: mod.GetMatchTimeElapsed(),
         terminal: true,
     });
-    conquestPhase4BTransitionObjectiveState(objId, "NEUTRALISED", sourceTeamId, 0);
+    transitionObjectiveVoState(objId, "NEUTRALISED", sourceTeamId, 0);
 }
 
-function conquestPhase4BOnCapturePointCapturedEdge(objId: number, ownerTeam: TeamID | 0): void {
+function onCapturePointCapturedVoEdge(objId: number, ownerTeam: TeamID | 0): void {
     if (!State.conquest.vo.enabled || !isMatchLive()) return;
     if (ownerTeam !== TeamID.Team1 && ownerTeam !== TeamID.Team2) return;
-    const state = conquestPhase4BEnsureObjectiveState(objId);
+    const state = ensureObjectiveVoState(objId);
     if (state.phase === "CAPTURED" && state.lastAnnouncedOwnerTeam === ownerTeam) {
         return;
     }
-    conquestPhase4BQueueEvent({
+    queueCaptureVoEvent({
         eventKey: "objective_captured",
         objId,
         sourceTeamId: ownerTeam,
         queuedAtSeconds: mod.GetMatchTimeElapsed(),
         terminal: true,
     });
-    conquestPhase4BTransitionObjectiveState(objId, "CAPTURED", ownerTeam, ownerTeam);
+    transitionObjectiveVoState(objId, "CAPTURED", ownerTeam, ownerTeam);
 }
 
 // Flushes queued VO events with player-local dispatch and recipient-local cooldown for non-terminal lines only.
-function conquestPhase4BFlushCaptureVoiceOverQueue(): void {
+function flushCaptureVoiceOverQueue(): void {
     if (!State.conquest.vo.enabled) return;
     if (!isMatchLive()) return;
 
@@ -320,7 +320,7 @@ function conquestPhase4BFlushCaptureVoiceOverQueue(): void {
     State.conquest.vo.lastFlushAtSeconds = now;
 
     if (State.conquest.vo.queue.length <= 0) return;
-    conquestPhase4BRefreshRecentPresence(now);
+    refreshRecentPresence(now);
 
     const queued = State.conquest.vo.queue.splice(0, State.conquest.vo.queue.length);
 
@@ -330,12 +330,12 @@ function conquestPhase4BFlushCaptureVoiceOverQueue(): void {
             continue;
         }
 
-        const flag = conquestPhase4BResolveVoiceOverFlagForObjective(event.objId);
+        const flag = resolveVoiceOverFlagForObjective(event.objId);
         if (flag === undefined) {
             continue;
         }
 
-        const recipients = conquestPhase4BGetRecipientsForEvent(event, now);
+        const recipients = getCaptureVoRecipientsForEvent(event, now);
         if (recipients.length <= 0) {
             continue;
         }
@@ -346,7 +346,7 @@ function conquestPhase4BFlushCaptureVoiceOverQueue(): void {
             const recipientPid = safeGetPlayerId(recipient);
             if (recipientPid === undefined) continue;
             if (!event.terminal) {
-                const throttleKey = conquestPhase4BGetRecipientThrottleKey(event, recipientPid);
+                const throttleKey = getCaptureVoRecipientThrottleKey(event, recipientPid);
                 const lastEventAt = State.conquest.vo.lastEventAtByThrottleKey[throttleKey] ?? -999;
                 if ((now - lastEventAt) < CONQUEST_CAPTURE_VO_MIN_COOLDOWN_SECONDS) {
                     continue;
@@ -354,12 +354,12 @@ function conquestPhase4BFlushCaptureVoiceOverQueue(): void {
                 State.conquest.vo.lastEventAtByThrottleKey[throttleKey] = now;
             }
 
-            const voEvent = conquestPhase4BResolveVoiceOverEventForRecipient(event, recipient);
+            const voEvent = resolveVoiceOverEventForRecipient(event, recipient);
             if (voEvent === undefined) {
                 continue;
             }
 
-            const runtimeHandle = conquestPhase4BEnsureVoiceOverRuntimeForPid(recipientPid);
+            const runtimeHandle = ensureVoiceOverRuntimeForPid(recipientPid);
             if (!conquestCaptureHasValidHandle(runtimeHandle)) {
                 continue;
             }

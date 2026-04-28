@@ -30,10 +30,10 @@ async function onGameModeStartedImpl(): Promise<void> {
     spawnWorldInteractableVfxForActiveConfigs();
     State.vehicles.configReady = true;
     initializeConquestPhase1Scaffold();
-    conquestPhase2AResetNotLiveState();
-    conquestPhase2BOnNotLiveReset();
-    conquestPhase4OnNotLiveReset();
-    conquestPhase4BOnNotLiveReset();
+    resetNotLiveState();
+    spawnChargeOnNotLiveReset();
+    captureSoundOnNotLiveReset();
+    captureVoOnNotLiveReset();
     const hudMode = getConquestHudMode();
     // Core/off startup: keep combat HUD ownership inside the TwlConquestHud runtime only.
     twlConquestHudHideAllPlayers();
@@ -69,7 +69,7 @@ async function onGameModeStartedImpl(): Promise<void> {
 
     // Start vehicle spawner backend before any optional HUD-core warmup so gameplay systems can proceed independently.
     void startVanillaVehicleSpawnerSystem();
-    conquestPhase4PrimeSoundRuntime();
+    primeSoundRuntime();
 
     // Ensure HUD exists for anyone already in-game at start
     await mod.Wait(0.1);
@@ -115,12 +115,12 @@ async function onGameModeStartedImpl(): Promise<void> {
 
             if (isMatchLive() && !State.match.victoryDialogActive) {
                 if (_pd) _t = perfDiagBeginSection();
-                conquestPhase2ARefreshLiveCaptureStateSubtick();
+                refreshLiveCaptureStateSubtick();
                 if (_pd) perfDiagEndSection(1, _t);
                 if (nowSecondBoundary !== lastLiveCoreTickSecond) {
                     lastLiveCoreTickSecond = nowSecondBoundary;
                     if (_pd) _t = perfDiagBeginSection();
-                    conquestPhase2AOnLiveTick();
+                    onLiveTick();
                     if (_pd) perfDiagEndSection(2, _t);
                 } else {
                     if (_pd) _t = perfDiagBeginSection();
@@ -128,10 +128,10 @@ async function onGameModeStartedImpl(): Promise<void> {
                     if (_pd) perfDiagEndSection(3, _t);
                 }
                 if (_pd) _t = perfDiagBeginSection();
-                conquestPhase4FlushCaptureSoundQueue();
+                flushCaptureSoundQueue();
                 if (_pd) perfDiagEndSection(4, _t);
                 if (_pd) _t = perfDiagBeginSection();
-                conquestPhase4BFlushCaptureVoiceOverQueue();
+                flushCaptureVoiceOverQueue();
                 if (_pd) perfDiagEndSection(5, _t);
             } else {
                 lastLiveCoreTickSecond = -1;

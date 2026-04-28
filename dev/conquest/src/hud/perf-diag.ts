@@ -19,11 +19,11 @@
 //   State.players.uiCachePerfByPid. Updated every 1-second window.
 //
 // Section ID reference:
-//   1 = conquestPhase2ARefreshLiveCaptureStateSubtick (every subtick)
-//   2 = conquestPhase2AOnLiveTick (second boundary)
+//   1 = refreshLiveCaptureStateSubtick (every subtick)
+//   2 = onLiveTick (second boundary)
 //   3 = updateConquestCombatHudForAllPlayers (non-second subtick)
-//   4 = conquestPhase4FlushCaptureSoundQueue (every subtick)
-//   5 = conquestPhase4BFlushCaptureVoiceOverQueue (every subtick)
+//   4 = flushCaptureSoundQueue (every subtick)
+//   5 = flushCaptureVoiceOverQueue (every subtick)
 //   6 = updateAllPlayersClock (second boundary or critical flash)
 //   7 = ensureActiveWorldInteractablesReady (second boundary)
 //   8 = checkTakeoffLimitForAllPlayers (second boundary)

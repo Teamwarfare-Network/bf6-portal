@@ -41,14 +41,14 @@
 
 Cadence: **small batches with a 16-player playtest between waves.** Stack-then-test loses attribution if a wave regresses; one-change-per-test is too slow. Each wave should be a coherent unit that passes/fails together.
 
-### Wave 1 — Zero-design leak fixes (ship immediately)
-- **A6** — `destroyArmMenu(pid)` in `onPlayerLeaveGameImpl` (M2 leak). 2 lines.
-- **A7** — `delete State.hqDeploy.lastRequestAtSecondsByPid[pid]` in `onPlayerLeaveGameImpl`. 1 line.
-- **Effort:** minutes. **Risk:** zero. **Test gate:** standard manual scenarios + 16-player playtest before next wave.
+### Wave 1 — Zero-design leak fixes (SP-shipped v1.407, pending MP confirm)
+- **A6** — `destroyArmMenu(pid)` in `onPlayerLeaveGameImpl` (M2 leak). 2 lines. **Shipped.**
+- **A7** — `delete State.hqDeploy.lastRequestAtSecondsByPid[pid]` in `onPlayerLeaveGameImpl`. 1 line. **Shipped.**
+- **Effort:** minutes. **Risk:** zero. **MP validation:** entries in [`conquest_mp_ongoing_tests.md`](./conquest_mp_ongoing_tests.md) Wave 1 section, ticked off when next 24+ player playtest is feasible. Plan record: [`4.27.26_conquest_wave_1_plan.md`](./4.27.26_conquest_wave_1_plan.md).
 
-### Wave 2 — Mechanical bundle/perf cleanup
-- **F1** — strip `conquestPhase[2A|2B|3|4|4B]` prefix from 114 symbols. ~4 hours mechanical.
-- **Effort:** half-day. **Risk:** low (pure rename). **Test gate:** typecheck pass + brief in-game smoke test.
+### Wave 2 — Mechanical bundle/perf cleanup (SP-shipped v1.408, pending MP confirm)
+- **F1** — stripped `conquestPhase[2A|2B|3|4|4B]` prefix from 104 functions. **Shipped v1.408.** Nine collisions disambiguated via module-domain prefix (`spawnCharge*` / `captureSound*` / `captureVo*`). Bundle delta: **−3,738 bytes**. Plan record: [`4.27.26_conquest_wave_2_plan.md`](./4.27.26_conquest_wave_2_plan.md).
+- **MP validation:** entries in [`conquest_mp_ongoing_tests.md`](./conquest_mp_ongoing_tests.md) Wave 2 section.
 
 ### Wave 3 — Lazy-load pivot + loading-gate removal
 - **#0 + #11 paired.** Needs a written design (plan-mode) covering hitch mitigation: per-build yield points, concurrent-open serialization, late-joiner cold-open acceptance.

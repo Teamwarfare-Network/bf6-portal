@@ -95,7 +95,7 @@ function twlConquestHudBuildSnapshotForPlayer(player: mod.Player): TwlConquestHu
     const pid = safeGetPlayerId(player) ?? 0;
 
     try {
-        const mappedCaptureStates = conquestPhase3GetOrderedMappedCaptureStates();
+        const mappedCaptureStates = getOrderedMappedCaptureStates();
         const hudVm = deriveHudViewModelForPlayer(
             pid,
             perspective,

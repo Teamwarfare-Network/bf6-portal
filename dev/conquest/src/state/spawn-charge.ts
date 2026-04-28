@@ -2,7 +2,7 @@
 // Module: state/spawn-charge -- Phase 2B spawn-charge reason matrix and transaction safeguards
 
 // Allocates zeroed per-reason counters for deploy attempts/charges.
-function conquestPhase2BNewReasonCounterState(): ConquestSpawnChargeReasonCounters {
+function newReasonCounterState(): ConquestSpawnChargeReasonCounters {
     return {
         deploy: 0,
         forced_redeploy: 0,
@@ -15,7 +15,7 @@ function conquestPhase2BNewReasonCounterState(): ConquestSpawnChargeReasonCounte
 }
 
 // Increments one reason bucket in a reason-counter map.
-function conquestPhase2BIncrementReasonCounter(
+function incrementReasonCounter(
     counters: ConquestSpawnChargeReasonCounters,
     reason: ConquestSpawnChargeReason
 ): void {
@@ -23,7 +23,7 @@ function conquestPhase2BIncrementReasonCounter(
 }
 
 // Encodes reason keys as compact numeric IDs for no-string debug projection.
-function conquestPhase2BGetReasonCode(reason: ConquestSpawnChargeReason): number {
+function getReasonCode(reason: ConquestSpawnChargeReason): number {
     if (reason === "deploy") return 1;
     if (reason === "forced_redeploy") return 2;
     if (reason === "team_switch") return 3;
@@ -34,7 +34,7 @@ function conquestPhase2BGetReasonCode(reason: ConquestSpawnChargeReason): number
 }
 
 // Computes total count across all reason buckets in a counter map.
-function conquestPhase2BGetReasonCounterTotal(counters: ConquestSpawnChargeReasonCounters): number {
+function getReasonCounterTotal(counters: ConquestSpawnChargeReasonCounters): number {
     return counters.deploy
         + counters.forced_redeploy
         + counters.team_switch
@@ -45,13 +45,13 @@ function conquestPhase2BGetReasonCounterTotal(counters: ConquestSpawnChargeReaso
 }
 
 // Emits gated debug-world-log snapshots (using existing debug format keys, no new strings).
-function conquestPhase2BMaybeEmitDebugSnapshot(reason: ConquestSpawnChargeReason): void {
+function maybeEmitDebugSnapshot(reason: ConquestSpawnChargeReason): void {
     const now = Math.floor(mod.GetMatchTimeElapsed());
     if (State.conquest.spawnCharge.lastDebugEmitAtSeconds === now) return;
     State.conquest.spawnCharge.lastDebugEmitAtSeconds = now;
 
-    const deployTotal = conquestPhase2BGetReasonCounterTotal(State.conquest.spawnCharge.deployCountByReason);
-    const chargedTotal = conquestPhase2BGetReasonCounterTotal(State.conquest.spawnCharge.chargedCountByReason);
+    const deployTotal = getReasonCounterTotal(State.conquest.spawnCharge.deployCountByReason);
+    const chargedTotal = getReasonCounterTotal(State.conquest.spawnCharge.chargedCountByReason);
     const reasonDeployCount = State.conquest.spawnCharge.deployCountByReason[reason] ?? 0;
     const reasonChargedCount = State.conquest.spawnCharge.chargedCountByReason[reason] ?? 0;
 
@@ -70,7 +70,7 @@ function conquestPhase2BMaybeEmitDebugSnapshot(reason: ConquestSpawnChargeReason
     sendHighlightedWorldLogMessage(
         mod.Message(
             mod.stringkeys.twl.debug.adminFacing,
-            conquestPhase2BGetReasonCode(reason),
+            getReasonCode(reason),
             reasonDeployCount,
             reasonChargedCount
         ),
@@ -94,7 +94,7 @@ function conquestPhase2BMaybeEmitDebugSnapshot(reason: ConquestSpawnChargeReason
 }
 
 // Ensures per-player deploy transaction state exists for duplicate-charge guards.
-function conquestPhase2BEnsureDeployTxn(pid: number): ConquestSpawnChargeTxnState {
+function ensureDeployTxn(pid: number): ConquestSpawnChargeTxnState {
     const existing = State.conquest.spawnCharge.deployTxnByPid[pid];
     if (existing) return existing;
     const created: ConquestSpawnChargeTxnState = {
@@ -108,7 +108,7 @@ function conquestPhase2BEnsureDeployTxn(pid: number): ConquestSpawnChargeTxnStat
 }
 
 // Resolves and clears one pending deploy reason for the next chargeable deploy.
-function conquestPhase2BResolvePendingReason(pid: number): ConquestSpawnChargeReason {
+function resolvePendingReason(pid: number): ConquestSpawnChargeReason {
     const pending = State.conquest.spawnCharge.pendingReasonByPid[pid];
     if (pending) {
         delete State.conquest.spawnCharge.pendingReasonByPid[pid];
@@ -118,20 +118,20 @@ function conquestPhase2BResolvePendingReason(pid: number): ConquestSpawnChargeRe
 }
 
 // Marks the next deploy reason for a player (team switch/reconnect/etc).
-function conquestPhase2BMarkNextDeployReason(pid: number, reason: ConquestSpawnChargeReason): void {
+function markNextDeployReason(pid: number, reason: ConquestSpawnChargeReason): void {
     if (pid === undefined || pid === null) return;
     State.conquest.spawnCharge.pendingReasonByPid[pid] = reason;
 }
 
 // Clears all per-pid spawn-charge session state to enforce session-scoped identity policy.
-function conquestPhase2BClearPidSessionState(pid: number): void {
+function clearPidSessionState(pid: number): void {
     delete State.conquest.spawnCharge.firstLiveSpawnExemptByPid[pid];
     delete State.conquest.spawnCharge.deployTxnByPid[pid];
     delete State.conquest.spawnCharge.pendingReasonByPid[pid];
 }
 
 // Tracks how often session identity continuity is intentionally discarded for V1 fallback policy.
-function conquestPhase2BTrackIdentityFallbackCounters(hadSessionState: boolean, wasDisconnected: boolean): void {
+function trackIdentityFallbackCounters(hadSessionState: boolean, wasDisconnected: boolean): void {
     if (hadSessionState || wasDisconnected) {
         State.conquest.spawnCharge.sessionIdentityResetCount += 1;
     }
@@ -141,13 +141,13 @@ function conquestPhase2BTrackIdentityFallbackCounters(hadSessionState: boolean, 
 }
 
 // Resets all spawn-charge state for a new lifecycle segment.
-function conquestPhase2BResetSpawnChargeState(enable: boolean): void {
+function resetSpawnChargeState(enable: boolean): void {
     State.conquest.spawnCharge.enabled = enable;
     State.conquest.spawnCharge.firstLiveSpawnExemptByPid = {};
     State.conquest.spawnCharge.deployTxnByPid = {};
     State.conquest.spawnCharge.pendingReasonByPid = {};
-    State.conquest.spawnCharge.deployCountByReason = conquestPhase2BNewReasonCounterState();
-    State.conquest.spawnCharge.chargedCountByReason = conquestPhase2BNewReasonCounterState();
+    State.conquest.spawnCharge.deployCountByReason = newReasonCounterState();
+    State.conquest.spawnCharge.chargedCountByReason = newReasonCounterState();
     State.conquest.spawnCharge.duplicateChargeSuspicionCount = 0;
     State.conquest.spawnCharge.sessionIdentityResetCount = 0;
     State.conquest.spawnCharge.reconnectContinuityDropCount = 0;
@@ -155,8 +155,8 @@ function conquestPhase2BResetSpawnChargeState(enable: boolean): void {
 }
 
 // Live-start hook: enables spawn-charge and grants first-live-spawn exemption to present players only.
-function conquestPhase2BOnMatchLiveStart(): void {
-    conquestPhase2BResetSpawnChargeState(true);
+function spawnChargeOnMatchLiveStart(): void {
+    resetSpawnChargeState(true);
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {
@@ -170,34 +170,34 @@ function conquestPhase2BOnMatchLiveStart(): void {
 }
 
 // Non-live hook: disables spawn-charge and clears transactional state.
-function conquestPhase2BOnNotLiveReset(): void {
-    conquestPhase2BResetSpawnChargeState(false);
+function spawnChargeOnNotLiveReset(): void {
+    resetSpawnChargeState(false);
 }
 
 // Join hook: always starts a fresh pid session; reconnects never retain prior exemption/txn continuity.
-function conquestPhase2BOnPlayerJoin(pid: number, wasDisconnected: boolean): void {
+function onPlayerJoinSpawnCharge(pid: number, wasDisconnected: boolean): void {
     const hadSessionState =
         State.conquest.spawnCharge.firstLiveSpawnExemptByPid[pid] !== undefined
         || State.conquest.spawnCharge.deployTxnByPid[pid] !== undefined
         || State.conquest.spawnCharge.pendingReasonByPid[pid] !== undefined;
-    conquestPhase2BClearPidSessionState(pid);
-    conquestPhase2BTrackIdentityFallbackCounters(hadSessionState, wasDisconnected);
+    clearPidSessionState(pid);
+    trackIdentityFallbackCounters(hadSessionState, wasDisconnected);
     if (isMatchLive()) {
         if (wasDisconnected) {
             // Reconnect deploys are chargeable and do not regain first-live-spawn exemption in this match.
-            conquestPhase2BMarkNextDeployReason(pid, "reconnect");
-            conquestPhase2BMaybeEmitDebugSnapshot("reconnect");
+            markNextDeployReason(pid, "reconnect");
+            maybeEmitDebugSnapshot("reconnect");
         }
     }
 }
 
 // Leave hook: drops session-scoped spawn-charge state for the departing pid.
-function conquestPhase2BOnPlayerLeave(pid: number): void {
-    conquestPhase2BClearPidSessionState(pid);
+function onPlayerLeaveSpawnCharge(pid: number): void {
+    clearPidSessionState(pid);
 }
 
 // Deploy hook: enforces Phase 2B charge policy with first-spawn exemption and duplicate-charge guards.
-function conquestPhase2BOnPlayerDeployed(eventPlayer: mod.Player, wasAlreadyDeployed: boolean): void {
+function onPlayerDeployedSpawnCharge(eventPlayer: mod.Player, wasAlreadyDeployed: boolean): void {
     if (!isValidPlayer(eventPlayer)) return;
     if (!isMatchLive()) return;
     if (!State.conquest.spawnCharge.enabled) return;
@@ -206,8 +206,8 @@ function conquestPhase2BOnPlayerDeployed(eventPlayer: mod.Player, wasAlreadyDepl
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
 
-    const reason = conquestPhase2BResolvePendingReason(pid);
-    conquestPhase2BIncrementReasonCounter(State.conquest.spawnCharge.deployCountByReason, reason);
+    const reason = resolvePendingReason(pid);
+    incrementReasonCounter(State.conquest.spawnCharge.deployCountByReason, reason);
 
     // Exempt voluntary UX-driven redeploys: alive-on-foot vehicle deploy and team-swap.
     // Death-respawn / forced-redeploy / admin-move / phase-transition / reconnect still charge.
@@ -216,11 +216,11 @@ function conquestPhase2BOnPlayerDeployed(eventPlayer: mod.Player, wasAlreadyDepl
     if (wasAlreadyDeployed) {
         // Duplicate deploy event for a still-deployed player; track suspicion and avoid double-charge.
         State.conquest.spawnCharge.duplicateChargeSuspicionCount += 1;
-        conquestPhase2BMaybeEmitDebugSnapshot(reason);
+        maybeEmitDebugSnapshot(reason);
         return;
     }
 
-    const txn = conquestPhase2BEnsureDeployTxn(pid);
+    const txn = ensureDeployTxn(pid);
     txn.deploySeq += 1;
     txn.lastReason = reason;
 
@@ -234,22 +234,22 @@ function conquestPhase2BOnPlayerDeployed(eventPlayer: mod.Player, wasAlreadyDepl
 
     if (txn.lastChargedDeploySeq === txn.deploySeq) {
         State.conquest.spawnCharge.duplicateChargeSuspicionCount += 1;
-        conquestPhase2BMaybeEmitDebugSnapshot(reason);
+        maybeEmitDebugSnapshot(reason);
         return;
     }
 
     const teamNum = safeGetTeamNumberFromPlayer(eventPlayer, 0);
     if (teamNum !== TeamID.Team1 && teamNum !== TeamID.Team2) return;
 
-    const changed = conquestPhase2AApplyTicketDelta(teamNum, -chargePerDeploy);
+    const changed = applyTicketDelta(teamNum, -chargePerDeploy);
     if (!changed) return;
 
     txn.lastChargedDeploySeq = txn.deploySeq;
     txn.lastChargeAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
-    conquestPhase2BIncrementReasonCounter(State.conquest.spawnCharge.chargedCountByReason, reason);
-    conquestPhase2AMirrorTicketsToEngineScore();
-    conquestPhase2ACheckEndCondition();
+    incrementReasonCounter(State.conquest.spawnCharge.chargedCountByReason, reason);
+    mirrorTicketsToEngineScore();
+    checkEndCondition();
     updateConquestCombatHudForAllPlayers(true);
-    conquestPhase2BMaybeEmitDebugSnapshot(reason);
+    maybeEmitDebugSnapshot(reason);
 }
 

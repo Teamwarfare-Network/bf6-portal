@@ -400,7 +400,7 @@ type HudVisibilitySnapshot = {
 // 1) derived Conquest HUD VM slices
 // 2) local fallback computation
 function getHudVisibilitySnapshotForPid(pid: number): HudVisibilitySnapshot {
-    conquestPhase3EnsureTopHudDerivedSlicesForPid(pid);
+    ensureTopHudDerivedSlicesForPid(pid);
     const derivedStatus = State.conquest.debug.hudStatusVmByPid[pid];
     const derivedHelpReady = State.conquest.debug.hudHelpReadyVmByPid[pid];
     if (derivedStatus && derivedHelpReady) {
