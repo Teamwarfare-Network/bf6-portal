@@ -8,6 +8,6 @@ This is a project to make a Conquest game mode for BF6
 ## Rules
 - ALWAYS read bf6-portal\dev\conquest\AGENTS.md for updated documentation and information on rules and process
 - REFERENCE these for documentation and design. Consult them for design decisions and consistency:
-    - bf6-portal\dev\conquest\design_doc\TWL_Conquest_Design.md
+    - bf6-portal\dev\conquest\design_doc\conquest_design.md
 - REFERENCE this for issues. Log new issues here and update/resolve issues when we can with details on how they were fixed:
     - bf6-portal\dev\conquest\design_doc\conquest_issues.md

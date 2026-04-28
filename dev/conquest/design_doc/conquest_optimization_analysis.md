@@ -4,7 +4,7 @@ Last updated: v1.406 (2026-04-27) — re-issued under a **runtime JS heap** lens
 
 Companion docs:
 - [`conquest_optimization_state.md`](./conquest_optimization_state.md) — sister log file. File map (lines, bytes, per-player multipliers, in-bundle status) + per-file function inventory. The *facts*; this doc holds the *reasoning*.
-- [`TWL_Conquest_Design.md`](./TWL_Conquest_Design.md) — design intent and phase scope.
+- [`conquest_design.md`](./conquest_design.md) — locked design rules (architecture, UI contract, CF gameplay rules, vehicle patterns) + new-design space.
 - [`conquest_issues.md`](./conquest_issues.md) — full issue bodies.
 - [`conquest_issues_summary.md`](./conquest_issues_summary.md) — issue index.
 

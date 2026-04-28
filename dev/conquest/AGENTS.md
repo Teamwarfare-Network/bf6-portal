@@ -15,7 +15,7 @@ Use `bf6-portal-assistant` when requested or when troubleshooting/explaining beh
 
 Primary design and product documentation:
 
-- `./design_doc/TWL_Conquest_Design.md` (canonical requirements)
+- `./design_doc/conquest_design.md` (canonical requirements)
 - `./reference_design_documentation` (supporting analyses and references)
 
 Archive (outdated; opt-in only):
@@ -176,7 +176,7 @@ Implications for authoring:
 
 ## Execution Workflow
 
-1. Start from `./design_doc/TWL_Conquest_Design.md` to understand requirements and intended behavior.
+1. Start from `./design_doc/conquest_design.md` to understand requirements and intended behavior.
 2. Use `./reference_design_documentation` for supporting analysis context.
 3. Do not use `./reference_design_documentation/archive` unless explicitly requested by the user.
 4. Read methodology references under `./reference_implementations` for approach ideas only.
@@ -200,7 +200,7 @@ Implications for authoring:
 ## New Chat Startup Checklist
 
 1. Confirm this file (`AGENTS.md`) is loaded and being followed.
-2. Confirm primary doc source: `./design_doc/TWL_Conquest_Design.md`.
+2. Confirm primary doc source: `./design_doc/conquest_design.md`.
 3. Confirm API source: `../reference_bf6_core`.
 4. Confirm archive policy: `./reference_design_documentation/archive` is outdated and used only if explicitly requested.
 5. Confirm non-copy policy for methodology folders.
@@ -242,7 +242,7 @@ Implications for authoring:
 ## BEFORE CODING:
 
 1. Confirm you loaded `AGENTS.md`.
-2. Confirm you will use `./design_doc/TWL_Conquest_Design.md` as primary requirements source.
+2. Confirm you will use `./design_doc/conquest_design.md` as primary requirements source.
 3. Confirm `./reference_design_documentation` is supporting analysis context (not canonical requirements).
 4. Confirm `./reference_design_documentation/archive` is treated as outdated and will only be used if explicitly requested.
 5. Confirm you will use `../reference_bf6_core` as API source of truth and validate every `mod.*` / `modlib.*` symbol.
