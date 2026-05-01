@@ -2496,8 +2496,11 @@ function openArmMenu(eventPlayer: mod.Player, objId: number): boolean {
     if (FEATURE_PERF_DIAG && !armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])) {
         incrementUiCachePerfCounter(pid, "gadget", "cold");
     }
-    const cache = buildArmMenuHidden(eventPlayer);
-    if (!cache) return false;
+    // Wave 3 Ship 3 (v1.411): route through registry. Dispatcher's supplyBox handler
+    // short-circuits on cache hit, so subsequent opens are still essentially free.
+    triggerLazyBuild('supplyBox', pid);
+    const cache = State.hudCache.ammoResupplyMenuCache[pid];
+    if (!cache || !armCacheOk(cache)) return false;
     setArmObj(pid, objId);
     // Seed authoritative slot state BEFORE the first refresh so tile dup-dim and the Launcher
     // Ammo enable flag read from accurate data on the opening frame.

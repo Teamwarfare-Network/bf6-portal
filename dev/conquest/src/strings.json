@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.408)",
+        "title": "teamwarfare . net | TWL Conquest (v1.417)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText3": "The game is NOT Live and you are NOT Ready yet...",
@@ -57,6 +57,9 @@
           "contesting": "CONTESTED",
           "capturing": "CAPTURING"
         }
+      },
+      "loadingPlaceholder": {
+        "body": "Loading UI..."
       }
     },
     "teams": {

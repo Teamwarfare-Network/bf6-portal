@@ -38,17 +38,17 @@ Source: [`config/conquest-constants.ts`](../src/config/conquest-constants.ts).
 
 ---
 
-## Project Stats (v1.408)
+## Project Stats (v1.417)
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.408 |
-| Source files (`.ts`) | 123 (incl. orphan / feature-flagged) |
-| Source files in bundle | ~111 (123 − 8 feature-flag-excluded − Changelog.ts − orphan deploy-diagnostic − 2 empty dirs) |
-| `dist/bundle.ts` | **868,535 bytes** (−3,738 bytes from F1 phase-prefix strip in v1.408) |
-| `dist/bundle.strings.json` | 22,082 bytes (separate cap) |
+| Version | 1.417 |
+| Source files (`.ts`) | 127 (incl. orphan / feature-flagged) |
+| Source files in bundle | ~115 (127 − 8 feature-flag-excluded − Changelog.ts − orphan deploy-diagnostic − 2 empty dirs) |
+| `dist/bundle.ts` | **878,544 bytes** (−45 bytes from Ship 7 follow-up: deleted deploy-time `warmHiddenReadyDialogCacheForPid` call + comment from `spawnReadyDialogInteractPoint`; closes the Ship 7 lazy-build loop so first triple-tap genuinely cold-builds) |
+| `dist/bundle.strings.json` | 22,153 bytes (separate cap; unchanged) |
 | Bundle upload limit | 1,048,576 bytes (1 MiB) |
-| Bundle headroom | **180,041 bytes (17.17%)** |
+| Bundle headroom | **170,032 bytes (16.21%)** |
 | Total raw `src/` size | ~1,533,756 bytes (~1.5 MB) |
 | Build pipeline | `prebuild.js` → `bf6-portal-bundler` → `postbuild.js` → `verify.js` |
 | Entry point | `src/index.ts` (20 Portal event handler exports) |
@@ -68,9 +68,9 @@ Legend:
 | `Changelog.ts` | 1,072 | 174,698 | N (strip) | — | Version history; postbuild strips full-line `//` to ~0 bundle bytes. |
 | `header-file.ts` | 71 | 4,121 | Y | — | Version line + license; postbuild re-injects only the version. |
 | `footer-file.ts` | 2 | 74 | Y | — | EOF version marker. |
-| `index.ts` | 238 | 9,530 | Y | — | Entry: imports + 20 Portal event handler exports. |
+| `index.ts` | 241 | 9,663 | Y | — | Entry: imports + 20 Portal event handler exports. |
 | `types.ts` | 8 | 247 | Y | — | Foundation type shim (re-exports from `foundation/`). |
-| `conquest-flow.ts` | 170 | 6,774 | Y | — | start/end match, clock binding, match length config. |
+| `conquest-flow.ts` | 175 | ~6,990 | Y | — | start/end match, clock binding, match length config. v1.412 (Ship 3.5): `startMatch` kicks off `SupplyBoxWarmScheduler.startWarmStaggerForLive()`; `endMatch` + `triggerFreshMatchSetup` cancel it. v1.415 (Ship 6): same three sites also call `BoundaryPromptLivePrebuildScheduler.startBoundaryPromptPrebuildForLive()` / `cancelBoundaryPromptPrebuild()`. |
 | `strings.json` | (n/a) | 22,082 | (separate) | — | Localized strings; not in script bundle but bundled separately. ~8.8KB dead keys (Cat 8). |
 | **admin-panel/** | | | | | |
 | `admin-panel/build.ts` | 348 | 11,464 | N (FEATURE_ADMIN_PANEL) | — | Admin panel widget construction. |
@@ -79,6 +79,7 @@ Legend:
 | **boundary/** | | | | | |
 | `boundary/enforcement.ts` | 599 | 27,235 | Y | (per-pid `zoneStateByPid` + `activeViolationByPid` not in M ranking — small) | Per-second classifier reads `zoneStateByPid` + `seatKind`; dispatches violation timers. |
 | `boundary/prompt-ui.ts` | 477 | 19,160 | Y | **M6** | `BoundaryPromptWidgetCacheEntry` per pid — 12 widget refs + 12 name strings + 3 `last*` diff fields. |
+| `boundary/live-prebuild-scheduler.ts` | 100 | 4,400 | Y | — | Wave 3 Ship 6 (v1.415): `BoundaryPromptLivePrebuildScheduler` namespace. At LIVE start, schedules 10 batches (1s spacing) of `ceil(N/10)` pids (cap 8) via `Timers.setTimeout`, each batch dispatching `triggerLazyBuild('boundaryPrompt', pid)`. Snapshot only — late joiners use existing first-violation fallback in `showBoundaryPromptForPlayer`. Token-based cancellation on `endMatch` / `triggerFreshMatchSetup`. |
 | **clock/** | | | | | |
 | `clock/state.ts` | 254 | 10,838 | Y | — | `Clocks.CountDownClock` driver; per-second tick + critical-flash gate. |
 | `clock/timer-instance.ts` | 404 | 17,901 | Y | M5 family | Reusable MM:SS widget builders shared by deploy-timer-ui + countdown. |
@@ -117,16 +118,19 @@ Legend:
 | `index/conquest-scaffold.ts` | 85 | 3,973 | Y | — | Phase 1 state init scaffold. |
 | `index/game-mode.ts` | 186 | 8,376 | Y | — | `OnGameModeStarted` impl + 0.12s main loop. |
 | `index/player-deploy.ts` | 158 | 8,016 | Y | — | `OnPlayerDeployed`/`OnPlayerUndeploy` impls. |
-| `index/player-join-leave.ts` | 186 | 7,862 | Y | — | `OnPlayerJoinGame`/`OnPlayerLeaveGame` impls. |
+| `index/player-join-leave.ts` | 192 | 8,325 | Y | — | `OnPlayerJoinGame`/`OnPlayerLeaveGame` impls. v1.410 (Ship 2): join flow calls `triggerLazyBuild('topHudShell', joinPid)` after reset, before gate. v1.412 (Ship 3.5): also calls `SupplyBoxWarmScheduler.enqueueLateJoiner(joinPid)` for LIVE-phase warm tail-append. v1.413 (Ship 4): also calls `triggerLazyBuild('vehicleDeployTimer', joinPid)` for gate-entry warm of the deploy-timer cache. v1.414 (Ship 5): also calls `triggerLazyBuild('combatHud', joinPid)` for gate-entry warm of the combat-HUD cache. |
 | `index/player-kpi-events.ts` | 68 | 3,119 | Y | — | KPI event impls (kill, assist, capture). |
 | `index/player-loop-inputs.ts` | 63 | 3,064 | Y | — | `OngoingPlayer`, `OnPlayerInteract`, `OnPlayerUIButtonEvent` impls. |
 | `index/vehicle-events.ts` | 114 | 5,214 | Y | — | Vehicle enter/exit/spawn/destroy impls. |
 | **interaction/** | | | | | |
-| `interaction/actions.ts` | 763 | 33,102 | Y | — | Loading gate orchestration; warm-prime serialization lock. |
-| `interaction/ammo-resupply-menu.ts` | 2,769 | 121,159 | Y | **M2** | `AmmoResupplyMenuCacheEntry` per pid — ~100–180 widget refs + arrays. **Largest mega-file.** |
+| `interaction/actions.ts` | ~745 | ~33,800 | Y | — | Loading gate orchestration; warm-prime serialization lock. Top-shell prebuild removed from bulk path in v1.410 (Ship 2); `triggerLazyBuild('topHudShell', pid)` invoked at gate entry + non-ready poll retry. Supply-box prebuild + readiness checks removed in v1.411 (Ship 3). Vehicle deploy timer prebuild removed from bulk path in v1.413 (Ship 4); `triggerLazyBuild('vehicleDeployTimer', pid)` invoked at gate entry + retry alongside top-shell. Combat HUD prebuild removed from bulk path in v1.414 (Ship 5); `triggerLazyBuild('combatHud', pid)` invoked at gate entry + retry alongside the other two — first production exerciser of mutex contention path. Ready-dialog cache + hot-prime removed from bulk path in v1.416 (Ship 7); `triggerLazyBuild('readyDialog', pid)` invoked at first triple-tap in `tryOpenReadyDialogForPlayer`; gate-readiness check no longer waits on the dialog. Bulk path now contains only the FEATURE_ADMIN_PANEL admin-prebuild. |
+| `interaction/ammo-resupply-menu.ts` | 2,772 | 121,401 | Y | **M2** | `AmmoResupplyMenuCacheEntry` per pid — ~100–180 widget refs + arrays. **Largest mega-file.** v1.411 (Ship 3): `openArmMenu` first-interact path routes through `triggerLazyBuild('supplyBox', pid)`. Hide-on-close behavior retained; teardown at disconnect via Wave 1 `destroyArmMenu`. |
+| `interaction/build-pacer.ts` | 139 | 5,372 | Y | — | Wave 3 Ship 1 (v1.409): global heavy-build mutex + 10Hz Timers.setTimeout drainer for paced lazy builds. Dormant when queue empty. |
 | `interaction/hud-warm-state.ts` | 264 | 11,741 | Y | M7 indirect | 40+ getters/setters over per-pid gate state booleans. |
-| `interaction/interact-point.ts` | 193 | 8,022 | Y | — | Ready-dialog interact point spawn/despawn. |
+| `interaction/interact-point.ts` | 191 | ~7,940 | Y | — | Ready-dialog interact point spawn/despawn. v1.416 (Ship 7): `tryOpenReadyDialogForPlayer` calls `triggerLazyBuild('readyDialog', playerId)` immediately before `showReadyDialogUI` so the dispatcher's in-flight guard + error tear-down semantics own the build path. v1.417 (Ship 7 follow-up): deploy-time `warmHiddenReadyDialogCacheForPid(playerId)` call deleted from `spawnReadyDialogInteractPoint` — without this deletion the cache pre-warmed at deploy and the lazy trigger was a no-op. Now the build genuinely fires on first triple-tap. |
+| `interaction/lazy-build-registry.ts` | 254 | 9,238 | Y | — | Wave 3 Ship 1 (v1.409): const config map for 6 UI surfaces (combat HUD, top shell, vehicle deploy timer, supply box, ready dialog, boundary prompt) + `triggerLazyBuild(name, pid)` dispatcher with per-surface in-flight guard, mutex acquisition, error retry. |
 | `interaction/spawn-selector.ts` | 36 | 974 | Y | — | Phase 1 placeholder for future spawn selection. |
+| `interaction/supply-box-warm-scheduler.ts` | 116 | 5,358 | Y | — | Wave 3 Ship 3.5 (v1.412): `SupplyBoxWarmScheduler` namespace owning a 2s/op self-rescheduling `Timers.setTimeout` chain. Persistent queue with late-joiner enqueue. Cancellation via token-bump on endMatch / triggerFreshMatchSetup. |
 | `interaction/types.ts` | 74 | 2,999 | Y | — | `readyDialogData_t` + `UiLoadReason` types. |
 | `interaction/ui-events-ready.ts` | 232 | 8,607 | Y | — | Ready-dialog button click routing. |
 | `interaction/ui-events.ts` | 17 | 789 | Y | — | UI button event dispatcher. |
@@ -285,6 +289,13 @@ Module: cached per-player center-screen boundary warning prompt family
 - `showBoundaryPromptForPlayer()` (1) — display prompt with violation info
 - `hideBoundaryPromptForPid()` (4) — hide prompt by player ID
 - `destroyBoundaryPromptUiForPid()` (3) — cleanup and destroy prompt widgets
+
+### src/boundary/live-prebuild-scheduler.ts
+Module: Wave 3 Ship 6 (v1.415) — LIVE-phase 10-batch staggered prebuild of boundary prompt widget tree. Snapshot-only (no late-joiner queue); first-violation fallback in `showBoundaryPromptForPlayer` covers any pid not warmed.
+- `BoundaryPromptLivePrebuildScheduler.startBoundaryPromptPrebuildForLive()` (1) — kicked off at LIVE start by `conquest-flow.ts:startMatch`; bumps token, snapshots connected pids, schedules 10 batches at +0s..+9s
+- `BoundaryPromptLivePrebuildScheduler.cancelBoundaryPromptPrebuild()` (2) — invoked from `endMatch` and `triggerFreshMatchSetup`; bumps token, clears pending Timers handles
+- `BoundaryPromptLivePrebuildScheduler.isBoundaryPromptPrebuildActive()` (0) — read-only telemetry helper
+- internal: `collectConnectedPidsOrdered()`
 
 ### src/clock/state.ts
 Module: clock runtime state, reset, tick update, and duration adjustment
@@ -658,6 +669,14 @@ Module: loading gate orchestration and HUD warm/reveal control
 ### src/interaction/ammo-resupply-menu.ts
 Module: gadget locker menu for supply-box interaction (mega-file ~2,769 lines; 59 internal helpers). External callers use `openArmMenu` / `closeArmMenu` / `armRefreshFrame` / `resetArmState` / `resetArmTimers` / `probeLauncherSlot` / `probeSlot` / `slotWithLauncher` / `syncActiveGadgetLockerConfig`. Owns largest per-pid widget cache (M2).
 
+### src/interaction/build-pacer.ts
+Module: Wave 3 Ship 1 (v1.409) — global heavy-build mutex + 10Hz Timers.setTimeout drainer. Surface namespace `LazyBuildPacer`. Dormant when queue is empty. No `mod.Wait` anywhere.
+- `LazyBuildPacer.tryAcquireHeavyBuildMutex()` (1) — synchronous mutex acquire; returns false when held
+- `LazyBuildPacer.releaseHeavyBuildMutex()` (1) — paired release for finally-block use
+- `LazyBuildPacer.isHeavyBuildMutexHeld()` (0) / `getHeavyBuildMutexHolderName()` (0) / `getHeavyBuildMutexHolderPid()` (0) — mutex inspection helpers
+- `LazyBuildPacer.enqueueBuildOp()` (1) — append paced op + start drainer if dormant
+- `LazyBuildPacer.getPendingOpCount()` (0) / `isDrainerActive()` (0) / `getDrainerTickCount()` (0) — drainer telemetry
+
 ### src/interaction/hud-warm-state.ts
 Module: per-player HUD warm/reveal state accessors and signature reset helpers
 - `getReadyDialogStateForPid()` (38) — get ready dialog state for player
@@ -691,9 +710,24 @@ Module: deploy interact-point lifecycle and ready-dialog trigger logic
 - `checkReadyDialogInteractPointRemoval()` (1) — remove point if conditions met
 - `initReadyDialogData()` (11) — initialize dialog state
 
+### src/interaction/lazy-build-registry.ts
+Module: Wave 3 Ship 1 (v1.409) — per-UI lazy-load config table + dispatch entry point. `const LAZY_BUILD_REGISTRY` covers six surfaces: combatHud, topHudShell, vehicleDeployTimer, supplyBox, readyDialog, boundaryPrompt. No production caller routes through `triggerLazyBuild` yet; ships 2-7 wire per-surface triggers.
+- `getLazyBuildConfig()` (0) — return locked config for a surface
+- `getLazyBuildSuccessCount()` (0) / `getLazyBuildErrorCount()` (0) / `isLazyBuildInFlight()` (0) — telemetry/in-flight inspection
+- `triggerLazyBuild()` (0) — dispatcher; per-surface in-flight guard, mutex acquire (or paced retry), error catch, retry-on-next-call
+- internal: `_resolveLazyBuildHandler()`, `_logLazyBuildError()`
+
 ### src/interaction/spawn-selector.ts
 Module: Phase 1 seam for future conquest spawn selection policy
 - `conquestSelectSpawnPoint()` (0) — select spawn point for player (placeholder)
+
+### src/interaction/supply-box-warm-scheduler.ts
+Module: Wave 3 Ship 3.5 (v1.412) — staggered LIVE-phase warm of supply box widget tree. 2s/pid cadence, persistent queue with late-joiner enqueue, token-based cancellation.
+- `SupplyBoxWarmScheduler.startWarmStaggerForLive()` (1) — kicked off at LIVE start by `conquest-flow.ts:startMatch`; bumps token, snapshots connected pids, schedules first trigger at +2s
+- `SupplyBoxWarmScheduler.cancelWarmStagger()` (2) — invoked from `endMatch` and `triggerFreshMatchSetup`; bumps token, clears queue + pending Timers handle
+- `SupplyBoxWarmScheduler.enqueueLateJoiner()` (1) — invoked from `onPlayerJoinGameImpl`; appends pid to queue tail when LIVE active; restarts chain if drained
+- `SupplyBoxWarmScheduler.isWarmStaggerActive()` (0) — read-only telemetry helper
+- internal: `scheduleNext()`, `collectConnectedPidsOrdered()`
 
 ### src/interaction/types.ts
 (no functions; types/constants only)

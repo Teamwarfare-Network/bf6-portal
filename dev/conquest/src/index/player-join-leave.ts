@@ -118,6 +118,10 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
 
     resetUiForPlayerOnJoin(eventPlayer);
     if (joinPid !== undefined && mod.IsPlayerValid(eventPlayer)) {
+        triggerLazyBuild('topHudShell', joinPid);
+        triggerLazyBuild('vehicleDeployTimer', joinPid);
+        triggerLazyBuild('combatHud', joinPid);
+        SupplyBoxWarmScheduler.enqueueLateJoiner(joinPid);
         reassertPlayerUiLoadingGateVisuals(eventPlayer, joinPid);
         await runLoadingGateUntilReady(eventPlayer, joinPid);
     }

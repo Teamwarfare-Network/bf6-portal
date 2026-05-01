@@ -94,16 +94,15 @@ function isCriticalVehicleDeployHudReadyForPid(pid: number): boolean {
     return isVehicleDeployTimerHudCacheUsable(State.hudCache.vehicleDeployTimerCache[pid]);
 }
 
-// Unified readiness gate: all six UI families must be warm and cache-usable before the gate releases.
+// Unified readiness gate: required UI families must be warm and cache-usable before the gate releases.
+// Wave 3 Ship 3 (v1.411): supply-box readiness checks dropped — first-interact-only.
+// Wave 3 Ship 7 (v1.416): ready-dialog readiness checks dropped — first-interact-only via
+// triggerLazyBuild('readyDialog', pid) in tryOpenReadyDialogForPlayer; gate no longer waits.
 function isAllUiFamiliesReadyForRelease(eventPlayer: mod.Player, pid: number): boolean {
     if (!isValidPlayer(eventPlayer)) return false;
     return isCriticalTopHudReadyForPid(pid)
         && isCriticalCombatHudReadyForPid(pid)
         && isCriticalVehicleDeployHudReadyForPid(pid)
-        && isReadyDialogUiCacheUsableForPid(pid)
-        && isReadyDialogHotReadyForPid(pid)
-        && armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])
-        && isGadgetMenuHotReadyForPid(pid)
         && (FEATURE_ADMIN_PANEL ? isAdminPanelWarmForPid(pid) : true);
 }
 
@@ -270,58 +269,17 @@ async function prebuildAllUiFamiliesHidden(eventPlayer: mod.Player, pid: number)
     }
     _prebuildBusy = true;
     try {
-        // Critical families — yield between each to spread work across frames.
-        prebuildTopLeftUiFamilyWhileHidden(eventPlayer, pid);
-        await mod.Wait(0);
-        if (!isValidPlayer(eventPlayer)) return;
-        if (!isUiLoadGateActiveForPid(pid)) return;
+        // Wave 3 Ship 2 (v1.410): top-shell prebuild removed from the bulk path.
+        // Wave 3 Ship 3 (v1.411): supply-box prebuild removed from bulk path; builds via
+        // triggerLazyBuild('supplyBox', pid) at first-interact in openArmMenu.
+        // Wave 3 Ship 4 (v1.413): vehicle-spawner family also removed from bulk;
+        // builds via triggerLazyBuild('vehicleDeployTimer', pid) at gate-entry + retry.
+        // Wave 3 Ship 5 (v1.414): combat-HUD family also removed from bulk;
+        // builds via triggerLazyBuild('combatHud', pid) at gate-entry + retry.
+        // Wave 3 Ship 7 (v1.416): ready-dialog cache + hot-prime removed from bulk;
+        // builds via triggerLazyBuild('readyDialog', pid) at first-interact in tryOpenReadyDialogForPlayer.
+        // Bulk path now covers admin panel only (gated behind FEATURE_ADMIN_PANEL).
 
-        prebuildVehicleSpawnerUiFamilyWhileHidden(eventPlayer, pid);
-        await mod.Wait(0);
-        if (!isValidPlayer(eventPlayer)) return;
-        if (!isUiLoadGateActiveForPid(pid)) return;
-
-        prebuildCombatHudFamilyWhileHidden(eventPlayer, pid);
-        await mod.Wait(0);
-        if (!isValidPlayer(eventPlayer)) return;
-        if (!isUiLoadGateActiveForPid(pid)) return;
-
-        // Production menus (may involve async priming)
-        prebuildReadyDialogUiFamilyWhileHidden(eventPlayer, pid);
-        await mod.Wait(0);
-        if (!isValidPlayer(eventPlayer)) return;
-        if (!isUiLoadGateActiveForPid(pid)) return;
-
-        try {
-            if (!armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])) {
-                prebuildArmMenu(eventPlayer);
-            }
-        } catch {}
-        await mod.Wait(0);
-        if (!isValidPlayer(eventPlayer)) return;
-        if (!isUiLoadGateActiveForPid(pid)) return;
-
-        // Ready dialog hot-prime: show/hide pass so first open is pure reveal not a cold build.
-        // The prime makes the dialog briefly visible behind the loading overlay. Reassert the overlay
-        // and yield one frame before starting so the overlay is fully rendered and occludes the prime.
-        if (isReadyDialogUiCacheUsableForPid(pid)
-            && State.players.readyDialogData[pid]?.readyDialogWarmPrimed !== true) {
-            reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
-            await mod.Wait(0);
-            if (!isValidPlayer(eventPlayer)) return;
-            if (!isUiLoadGateActiveForPid(pid)) return;
-            await primeReadyDialogRevealWhileBlocked(eventPlayer);
-            if (!isValidPlayer(eventPlayer)) return;
-            reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
-        }
-        if (isReadyDialogUiCacheUsableForPid(pid)
-            && State.players.readyDialogData[pid]?.readyDialogWarmPrimed === true) {
-            setReadyDialogHotReadyForPid(pid, true);
-        }
-        if (armCacheOk(State.hudCache.ammoResupplyMenuCache[pid])) {
-            setGadgetMenuHotReadyForPid(pid, true);
-        }
-        // Admin panel (hidden prebuild for all players)
         if (FEATURE_ADMIN_PANEL) prebuildAdminPanelWhileHidden(eventPlayer, pid);
     } finally {
         _prebuildBusy = false;
@@ -585,7 +543,6 @@ async function runLoadingGateUntilReady(eventPlayer: mod.Player, pid: number): P
     // Reset all warm milestones before the new warm pass.
     setCombatHudRevealAllowedForPid(pid, false);
     setHudWarmCompletedForPid(pid, false);
-    setReadyDialogHotReadyForPid(pid, false);
     setGadgetMenuHotReadyForPid(pid, false);
 
     // Stagger initial prebuild per player so concurrent joins don't all resume in the same frame (CQ_Bug_40).
@@ -594,6 +551,18 @@ async function runLoadingGateUntilReady(eventPlayer: mod.Player, pid: number): P
     if (!isValidPlayer(eventPlayer)) return;
     if (!isHudWarmTokenCurrent(pid, token)) return;
 
+    // Wave 3 Ship 2 (v1.410): top-shell is no longer in the bulk path; trigger it
+    // alongside the bulk so both team-swap and first-join entry paths build it.
+    // Idempotent when top-shell cache already populated (registry's per-surface
+    // in-flight guard + ensureTopHudShellForPlayer's existing-refs short-circuit).
+    triggerLazyBuild('topHudShell', pid);
+    // Wave 3 Ship 4 (v1.413): vehicleDeployTimer same pattern; readiness check still
+    // waits on the cache so the ~300ms sync-build hitch lands inside the gate window.
+    triggerLazyBuild('vehicleDeployTimer', pid);
+    // Wave 3 Ship 5 (v1.414): combatHud same pattern; serializesWith=['vehicleDeployTimer']
+    // so the heavy-build mutex serializes contention against the vehicle-timer trigger
+    // landing in the same frame (first production exerciser of mutex contention path).
+    triggerLazyBuild('combatHud', pid);
     await prebuildAllUiFamiliesHidden(eventPlayer, pid);
     if (!isValidPlayer(eventPlayer)) return;
     if (!isHudWarmTokenCurrent(pid, token)) return;
@@ -647,6 +616,13 @@ async function runLoadingGateUntilReady(eventPlayer: mod.Player, pid: number): P
             stableCount++;
         } else {
             stableCount = 0;
+            // Wave 3 Ship 2 (v1.410): top-shell retry alongside bulk; covers a
+            // failed initial join trigger so the gate doesn't sit until safety timeout.
+            triggerLazyBuild('topHudShell', pid);
+            // Wave 3 Ship 4 (v1.413): vehicleDeployTimer same retry guarantee.
+            triggerLazyBuild('vehicleDeployTimer', pid);
+            // Wave 3 Ship 5 (v1.414): combatHud same retry guarantee.
+            triggerLazyBuild('combatHud', pid);
             await prebuildAllUiFamiliesHidden(eventPlayer, pid);
             if (!isValidPlayer(eventPlayer)) return;
             if (!isHudWarmTokenCurrent(pid, token)) return;

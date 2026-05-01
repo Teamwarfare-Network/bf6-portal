@@ -15,9 +15,6 @@ async function spawnReadyDialogInteractPoint(eventPlayer: mod.Player) {
         State.players.readyDialogData[playerId].interactPoint === null &&
         READY_DIALOG_INTERACT_CONFIG.enableReadyDialog
     ) {
-        // Reassert the hidden dialog cache before any ground-wait so the eventual open path stays on the hot reveal branch.
-        warmHiddenReadyDialogCacheForPid(playerId);
-
         let isOnGround = safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsOnGround);
 
         while (!isOnGround) {
@@ -60,6 +57,7 @@ function tryOpenReadyDialogForPlayer(eventPlayer: mod.Player): boolean {
         }
         setUIInputModeForPlayer(eventPlayer, true);
         updateHelpTextVisibilityForPid(playerId);
+        triggerLazyBuild('readyDialog', playerId);
         const dialogRoot = showReadyDialogUI(eventPlayer);
         if (!dialogRoot) {
             throw new Error(`Ready dialog root missing for pid ${playerId}`);

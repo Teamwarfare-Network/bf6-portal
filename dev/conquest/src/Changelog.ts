@@ -3,6 +3,15 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.417: Ship 7 follow-up: delete deploy-time warmHiddenReadyDialogCacheForPid call from spawnReadyDialogInteractPoint — without this the cache pre-warmed at deploy and the lazy trigger was effectively a no-op. Now first triple-tap genuinely cold-builds (~300-500ms hitch), and never-openers truly skip the build for real heap reclaim.
+// v1.416: Ship 7: ready-dialog lazy build — first triple-tap routes through triggerLazyBuild('readyDialog', pid); prebuild + hot-prime block removed from prebuildAllUiFamiliesHidden; gate-readiness check no longer waits on the dialog cache. First-interact pays a one-time cold-build hitch; subsequent opens cached.
+// v1.415: Ship 6: boundary prompt LIVE-batched prebuild — new BoundaryPromptLivePrebuildScheduler dispatches triggerLazyBuild('boundaryPrompt', pid) in 10 batches at +0s..+9s post-LIVE; snapshot-only, late joiners use existing first-violation fallback.
+// v1.414: Wave 3 Ship 5: combat HUD lazy via triggerLazyBuild('combatHud', pid) at gate-entry + retry (Ship 4 pattern); removed from bulk prebuildAllUiFamiliesHidden; readiness check retained; first production exerciser of mutex contention path (combatHud.serializesWith=['vehicleDeployTimer'])
+// v1.413: Wave 3 Ship 4: vehicle deploy timer lazy via triggerLazyBuild('vehicleDeployTimer', pid) at gate-entry + retry (Ship 2 pattern); removed from bulk prebuildAllUiFamiliesHidden; readiness check retained so the ~300ms sync hitch lands inside loading-overlay window; placeholder UX deferred (sync-builder limitation, registry value preserved for future paced-builder)
+// v1.412: Wave 3 Ship 3.5: supply box LIVE-phase warm stagger - 2s/pid cadence at LIVE start; persistent queue with late-joiner enqueue; cancellation on endMatch/triggerFreshMatchSetup
+// v1.411: Wave 3 Ship 3: supply box first-interact via triggerLazyBuild('supplyBox', pid) in openArmMenu; removed from bulk prebuildAllUiFamiliesHidden + dropped armCacheOk/isGadgetMenuHotReadyForPid from gate readiness; teardown stays at disconnect (Wave 1 destroyArmMenu)
+// v1.410: Wave 3 Ship 2: top HUD shell lazy build via triggerLazyBuild('topHudShell', pid) at join + gate-poll retry; removed from bulk prebuildAllUiFamiliesHidden; added approved 'Loading UI...' string (dormant; Ship 4 wires placeholder widgets)
+// v1.409: Wave 3 Ship 1: lazy-build registry + 10Hz pacer + heavy-build mutex foundation (no surface conversions yet)
 // v1.408: F1: strip conquestPhase[2A|2B|3|4|4B] prefix from 104 functions; capture-sound/vo/spawn-charge collisions disambiguated as captureSound* / captureVo* / spawnCharge* (Wave 2)
 // v1.407: A6+A7: plug ammoResupplyMenuCache and hqDeploy.lastRequestAtSecondsByPid leaks on player leave (Wave 1)
 // v1.405: fix bundle typecheck: make isValidPlayer a TS type predicate (p is mod.Player) so caller narrowing matches the original '!p || !mod.IsPlayerValid(p)' pattern; resolves 65 TS2345 Player|null|undefined errors in dist/bundle.ts

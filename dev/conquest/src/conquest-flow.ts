@@ -29,6 +29,8 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     kpiSnapshotDeathBaselines();
     lifecycleSetLiveBaseline("pregame-start-match");
     State.round.liveStartedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
+    SupplyBoxWarmScheduler.startWarmStaggerForLive();
+    BoundaryPromptLivePrebuildScheduler.startBoundaryPromptPrebuildForLive();
     cleanupMainBaseTeamWorldIconsForLiveTransition();
     refreshDisableOnLiveInteractableStateForLiveTransition();
     clearActiveBoundaryViolationsForAllPlayers();
@@ -63,6 +65,8 @@ function startMatch(_triggerPlayer?: mod.Player): void {
 
 // Ends the current round using one authoritative post-match transition and winner snapshot.
 function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number, overrideWinnerTeamNum?: TeamID | 0): void {
+    SupplyBoxWarmScheduler.cancelWarmStagger();
+    BoundaryPromptLivePrebuildScheduler.cancelBoundaryPromptPrebuild();
     State.round.liveStartedAtSeconds = undefined;
     // Determine winner: use explicit override if provided, otherwise infer from ticket counts.
     let winner: TeamID | 0;
@@ -108,6 +112,8 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     if (State.match.isEnded) return;
     if (isMatchLive()) return;
 
+    SupplyBoxWarmScheduler.cancelWarmStagger();
+    BoundaryPromptLivePrebuildScheduler.cancelBoundaryPromptPrebuild();
     cancelPregameCountdown();
     resetReadyStateForAllPlayers();
 
