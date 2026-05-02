@@ -38,17 +38,17 @@ Source: [`config/conquest-constants.ts`](../src/config/conquest-constants.ts).
 
 ---
 
-## Project Stats (v1.420)
+## Project Stats (v1.436)
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.420 |
-| Source files (`.ts`) | 127 (incl. orphan / feature-flagged; `loading-overlay.ts` is a stub) |
-| Source files in bundle | ~114 |
-| `dist/bundle.ts` | **847,560 bytes** (unchanged from v1.419 — v1.420 is doc-consistency-sweep only). Wave 3 total: v1.408 → v1.420 = 877,390 → 847,560 bytes = **−29,830 bytes (−3.4%)**. |
-| `dist/bundle.strings.json` | 22,153 bytes (separate cap; unchanged) |
+| Version | 1.436 |
+| Source files (`.ts`) | 130 (incl. orphan / feature-flagged; `loading-overlay.ts` is a stub) |
+| Source files in bundle | ~117 |
+| `dist/bundle.ts` | **871,059 bytes** (-55 from v1.435 — Admin.onPlayerJoin lost the auto-admin assignment line, slightly offset by new noAdminLabel string-arg substitution path). **v1.436 — Wave 4 v1.3 follow-up:** removed auto-admin-on-vacancy in Admin.onPlayerJoin (Q2 superseded — server starts vacant; first joiner must press CLAIM ADMIN); added `twl.playerReadyPanel.noAdminLabel = "No Admin"` and wired vacant-slot Game Admin display to use it instead of `system.unknownPlayer`. Wave 4 total: +23,499 bytes (Ships 1-7 + v1.3 follow-up). |
+| `dist/bundle.strings.json` | 22,548 bytes (+26 from v1.435 — 1 new noAdminLabel string) |
 | Bundle upload limit | 1,048,576 bytes (1 MiB) |
-| Bundle headroom | **201,016 bytes (19.17%)** |
+| Bundle headroom | **177,517 bytes (16.93%)** |
 | Total raw `src/` size | ~1,533,756 bytes (~1.5 MB) |
 | Build pipeline | `prebuild.js` → `bf6-portal-bundler` → `postbuild.js` → `verify.js` |
 | Entry point | `src/index.ts` (20 Portal event handler exports) |
@@ -72,6 +72,8 @@ Legend:
 | `types.ts` | 8 | 247 | Y | — | Foundation type shim (re-exports from `foundation/`). |
 | `conquest-flow.ts` | 175 | ~6,990 | Y | — | start/end match, clock binding, match length config. v1.412 (Ship 3.5): `startMatch` kicks off `SupplyBoxWarmScheduler.startWarmStaggerForLive()`; `endMatch` + `triggerFreshMatchSetup` cancel it. v1.415 (Ship 6): same three sites also call `BoundaryPromptLivePrebuildScheduler.startBoundaryPromptPrebuildForLive()` / `cancelBoundaryPromptPrebuild()`. |
 | `strings.json` | (n/a) | 22,082 | (separate) | — | Localized strings; not in script bundle but bundled separately. ~8.8KB dead keys (Cat 8). |
+| **admin/** | | | | | |
+| `admin/identity.ts` | 104 | ~4,800 | Y | — | Wave 4 Ship 1 (v1.421); Ship 6 / v1.2 redesign (v1.431); v1.3 follow-up (v1.436): single-slot admin model with one-time auto-admin (first-ever-join exception) + NO subsequent auto-promotion. Module-level state: `_currentAdminPid: number \| undefined`, `_hostFirstPid: number \| undefined`, `_hostNameMessage: mod.Message \| undefined`. Public API: `onPlayerJoin(player, pid)` (first-ever-join branch sets host slot AND auto-assigns admin slot, gated on `_hostFirstPid === undefined` so it fires exactly once per server lifetime; subsequent joins are no-ops), `onPlayerLeave(pid)` (auto-vacates admin slot if leaver was admin + broadcasts via `refreshAllVisiblePlayerReadyPanels`), `isAdmin(pid)`, `getCurrentAdminPid()`, `isAdminVacant()`, `isHost(pid)`, `getHostFirstPid()`, `getHostNameMessage()`, `claimAdmin(pid)` (succeeds only if vacant), `giveUpAdmin(pid)` (succeeds only if pid is current admin). Wired into `onPlayerJoinGameImpl` + `onPlayerLeaveGameImpl`. v1.436: removed the unconditional `_currentAdminPid = pid` line that auto-promoted any joiner landing on a vacant slot; admin auto-assignment now lives inside the first-ever-join branch only. |
 | **admin-panel/** | | | | | |
 | `admin-panel/build.ts` | 348 | 11,464 | N (FEATURE_ADMIN_PANEL) | — | Admin panel widget construction. |
 | `admin-panel/events.ts` | 229 | 8,896 | N (FEATURE_ADMIN_PANEL) | — | Admin panel button handlers. |
@@ -127,13 +129,14 @@ Legend:
 | `interaction/ammo-resupply-menu.ts` | 2,772 | 121,401 | Y | **M2** | `AmmoResupplyMenuCacheEntry` per pid — ~100–180 widget refs + arrays. **Largest mega-file.** v1.411 (Ship 3): `openArmMenu` first-interact path routes through `triggerLazyBuild('supplyBox', pid)`. Hide-on-close behavior retained; teardown at disconnect via Wave 1 `destroyArmMenu`. |
 | `interaction/build-pacer.ts` | 139 | 5,372 | Y | — | Wave 3 Ship 1 (v1.409): global heavy-build mutex + 10Hz Timers.setTimeout drainer for paced lazy builds. Dormant when queue empty. |
 | `interaction/hud-warm-state.ts` | ~55 | ~2,000 | Y | — | v1.418 (Ship 8): swept from 40+ accessors down to 5 — `getReadyDialogStateForPid`, `setCombatHudRevealAllowedForPid`/`isCombatHudRevealAllowedForPid`, `resetReadyDialogSectionSignaturesForPid`, plus `isHudWarmReadyForPid` (always returns true) + `isHudSwapTransitionActiveForPid` (always returns false) kept as constants for backward-compat across clock/help/vehicles/HUD pipeline call sites. |
-| `interaction/interact-point.ts` | 191 | ~7,940 | Y | — | Ready-dialog interact point spawn/despawn. v1.416 (Ship 7): `tryOpenReadyDialogForPlayer` calls `triggerLazyBuild('readyDialog', playerId)` immediately before `showReadyDialogUI` so the dispatcher's in-flight guard + error tear-down semantics own the build path. v1.417 (Ship 7 follow-up): deploy-time `warmHiddenReadyDialogCacheForPid(playerId)` call deleted from `spawnReadyDialogInteractPoint` — without this deletion the cache pre-warmed at deploy and the lazy trigger was a no-op. Now the build genuinely fires on first triple-tap. |
+| `interaction/interact-point.ts` | 183 | ~8,200 | Y | — | Ready-dialog interact point spawn/despawn. v1.416 (Ship 7): `tryOpenReadyDialogForPlayer` calls `triggerLazyBuild('readyDialog', playerId)` immediately before `showReadyDialogUI` so the dispatcher's in-flight guard + error tear-down semantics own the build path. v1.417 (Ship 7 follow-up): deploy-time `warmHiddenReadyDialogCacheForPid(playerId)` call deleted from `spawnReadyDialogInteractPoint` — without this deletion the cache pre-warmed at deploy and the lazy trigger was a no-op. Now the build genuinely fires on first triple-tap. v1.424 (Wave 4 Ship 3): `tryOpenReadyDialogForPlayer` branches on `Admin.isAdmin(playerId)` — non-admins route to `triggerLazyBuild('playerReadyPanel', playerId)` + `showPlayerReadyPanelForPid(playerId)`; admins keep the full ready-dialog flow. Shared menu-close + cursor-enable prep is unbranched; route-specific build/show + error recovery live inside their respective conditionals. |
 | `interaction/lazy-build-registry.ts` | 254 | 9,238 | Y | — | Wave 3 Ship 1 (v1.409): const config map for 6 UI surfaces (combat HUD, top shell, vehicle deploy timer, supply box, ready dialog, boundary prompt) + `triggerLazyBuild(name, pid)` dispatcher with per-surface in-flight guard, mutex acquisition, error retry. |
 | `interaction/spawn-selector.ts` | 36 | 974 | Y | — | Phase 1 placeholder for future spawn selection. |
 | `interaction/supply-box-warm-scheduler.ts` | 116 | 5,358 | Y | — | Wave 3 Ship 3.5 (v1.412): `SupplyBoxWarmScheduler` namespace owning a 2s/op self-rescheduling `Timers.setTimeout` chain. Persistent queue with late-joiner enqueue. Cancellation via token-bump on endMatch / triggerFreshMatchSetup. |
 | `interaction/types.ts` | 74 | 2,999 | Y | — | `readyDialogData_t` + `UiLoadReason` types. |
+| `interaction/ui-events-player-ready-panel.ts` | ~105 | ~4,200 | Y | — | Wave 4 Ship 5 (v1.429): sibling button router for the non-admin Player Ready Up Panel (per L15). 4 buttons: CLOSE (hide+restore cursor), READY (delegates to handleReadyDialogReadyButtonClick + refresh panel), CHANGE TEAMS (delegates to swapPlayerTeam + refresh panel), SPECTATE/COACH (no-op claim). Independent debounce tracker so panel + dialog clicks don't cross-cancel. |
 | `interaction/ui-events-ready.ts` | 232 | 8,607 | Y | — | Ready-dialog button click routing. |
-| `interaction/ui-events.ts` | 17 | 789 | Y | — | UI button event dispatcher. |
+| `interaction/ui-events.ts` | 18 | ~860 | Y | — | UI button event dispatcher. v1.429: added `tryHandlePlayerReadyPanelButtonEvent` call after the dialog handler. |
 | `interaction/ui-primary-click.ts` | 72 | 2,241 | Y | — | Primary-click debounce helpers. |
 | `interaction/world-interactables.ts` | 457 | 19,654 | Y | **M8** | Per-pid spawned WorldIcon clones; `ensureMainBaseTeamIconForPlayer`. |
 | **kpi/** | | | | | |
@@ -158,6 +161,7 @@ Legend:
 | `ready-dialog/roster-active.ts` | 138 | 5,475 | Y | — | Active-player selection + roster entries. |
 | `ready-dialog/roster-render.ts` | 270 | 13,122 | Y | — | Roster widget rendering + ready-toggle. |
 | `ready-dialog/swap-action.ts` | 29 | 1,534 | Y | — | Single-button team swap. |
+| `ready-dialog/player-ready-panel.ts` | 431 | 22,384 | Y | — | Wave 4 Ship 2 (v1.423): non-admin Player Ready Up Panel skeleton. ~20 widgets/pid post-Ship-6 (was ~17 pre-claim-button). Hidden builder + show/hide/destroy. Bound to lazy-build registry surface `playerReadyPanel`. Spectate/Coach button uses verbatim D3 disabled treatment. Ship 3 polish (v1.426/427): centering fix; button row Y reposition + height doubled 36->72. Ship 4 (v1.428): `refreshPlayerReadyPanelContentForPid` wires Game Host / Game Admin / ready status. Ship 6 / v1.2 (v1.431): added CLAIM ADMIN button (TopRight anchor, vacancy-gated visibility via `syncPlayerReadyPanelClaimAdminButtonForPid`); added `refreshAllVisiblePlayerReadyPanels` broadcast helper called from claim/give-up/admin-disconnect transitions. Ship 6 polish v1.434: CLAIM ADMIN live-disable styling (greyed + SetUIButtonEnabled(false) when match is live). |
 | `ready-dialog/takeoff-gating.ts` | 16 | 652 | Y | — | Aircraft takeoff readiness check. |
 | **state/** | | | | | |
 | `state/core.ts` | ~99 | ~3,950 | Y | — | `isMatchLive`, round-start delay helpers, world-log. v1.418 (Ship 8): `setAllInputRestrictionsForPlayer` deleted (no callers post-gate-deletion; `mod.EnableAllInputRestrictions` no longer invoked from script). |
@@ -235,6 +239,19 @@ Every function entry ends with a parenthesized usage tag:
 | `(engine)` | **Engine-fired Portal callback.** No script-side callers; the Portal runtime fires these at event boundaries. All 22 entries in `src/index.ts` are tagged this way. The matching `*Impl` function in `src/index/*` carries the cadence tier (e.g., `OngoingPlayer` (engine) → `ongoingPlayerImpl()` (XL~1)). |
 
 **How to use this:** scan each file's section. A high `(N)` plain count tells you the function is widely used (often a helper) — touch it carefully. A `(XL~)` or `(L~)` prefix tells you the function fires frequently — its body is on a heap-multiplied hot path. A `(0)` count is a delete candidate.
+
+### src/admin/identity.ts
+Module: Wave 4 Ship 1 (v1.422) + Ship 6 / v1.2 redesign (v1.431) — single-slot admin model + host slot. `Admin` namespace with module-level state + public accessors.
+- `Admin.onPlayerJoin()` (1 — `onPlayerJoinGameImpl`) — first-ever join: sets host slot AND auto-assigns admin slot to the joiner (one-time server-lifetime exception, gated on `_hostFirstPid === undefined`). Subsequent joins are no-ops; vacant admin slots stay vacant until someone presses CLAIM ADMIN (v1.436 — no auto-promotion of later joiners).
+- `Admin.onPlayerLeave()` (1 — `onPlayerLeaveGameImpl`) — vacates admin slot if leaver was admin (per Q1) and broadcasts via `refreshAllVisiblePlayerReadyPanels`. Host fields stay untouched (cosmetic; survive disconnect via cached Message per R5).
+- `Admin.isAdmin()` (2 — Ship 3 router + ui-events-ready guard) — returns true iff `_currentAdminPid === pid`
+- `Admin.getCurrentAdminPid()` (1 — Ship 4 panel refresh) — returns the current admin pid or undefined
+- `Admin.isAdminVacant()` (1 — Ship 6 panel claim-button visibility) — returns true iff `_currentAdminPid === undefined`
+- `Admin.isHost()` (0) — returns true if pid matches `_hostFirstPid` (kept for future use)
+- `Admin.getHostFirstPid()` (1 — Ship 4 panel refresh) — returns the recorded first-pid or undefined
+- `Admin.getHostNameMessage()` (0 — kept for cached-Message host display path; Ship 4 chose live-Player route instead)
+- `Admin.claimAdmin()` (1 — Ship 6 CLAIM ADMIN handler) — atomic: succeeds only if `isAdminVacant()`; returns true on success, false on race (someone else claimed first)
+- `Admin.giveUpAdmin()` (1 — Ship 6 GIVE UP ADMIN handler) — atomic: succeeds only if `pid === _currentAdminPid`; returns true on success, false otherwise
 
 ### src/boundary/enforcement.ts
 Module: boundary occupancy, prompt, and kill-timer enforcement
@@ -692,17 +709,24 @@ Module: Wave 3 Ship 3.5 (v1.412) — staggered LIVE-phase warm of supply box wid
 ### src/interaction/types.ts
 (no functions; types/constants only)
 
+### src/interaction/ui-events-player-ready-panel.ts
+Module: Wave 4 Ship 5 (v1.429) — sibling button router for the non-admin Player Ready Up Panel (per L15). Independent debounce tracker so panel + dialog click windows don't cross-cancel.
+- `tryConsumePlayerReadyPanelPrimaryClickEvent()` (1) — consume panel click via own per-pid tracker
+- `tryHandlePlayerReadyPanelPrimaryAction()` (3) — match a single panel button by id and run its action with debounce
+- `closePlayerReadyPanelForViewer()` (1) — hide panel widgets + restore game cursor
+- `tryHandlePlayerReadyPanelButtonEvent()` (1 — `ui-events.ts` dispatcher) — top-level: CLOSE / READY / CHANGE TEAMS / SPECTATE-COACH (no-op claim)
+
 ### src/interaction/ui-events-ready.ts
 Module: ready-dialog and admin-panel toggle button handlers
 - `tryConsumeReadyDialogPrimaryClickEvent()` (4) — consume ready dialog click
 - `tryHandleReadyDialogPrimaryAction()` (7) — handle ready dialog primary action
 - `handleReadyDialogGridKnobClick()` (2) — handle grid knob click
-- `handleReadyDialogReadyButtonClick()` (1) — handle ready button click
+- `handleReadyDialogReadyButtonClick()` (2 — own dispatcher + Ship 5 panel router) — handle ready button click
 - `tryHandleReadyDialogButtonEvent()` (1) — handle button event
 
 ### src/interaction/ui-events.ts
 Module: dispatcher for ready-dialog and admin-panel button handlers
-- `teamSwitchButtonEvent()` (1) — handle team switch button
+- `teamSwitchButtonEvent()` (1) — handle team switch button; v1.429 added `tryHandlePlayerReadyPanelButtonEvent` call after the dialog handler
 
 ### src/interaction/ui-primary-click.ts
 Module: shared primary-click dedupe helpers for UI buttons
@@ -850,7 +874,7 @@ Module: DELETED in Wave 3 Ship 8 (v1.418). File is now a stub; not in bundle. Lo
 - `setReadyDialogGridKnobButtonsVisibleForPid()` (2) / `setReadyDialogGridKnobRowVisibleForPid()` (2) — visibility
 - `setReadyDialogGridColumnHeaderColorForPid()` (1) — set header color
 - `setReadyDialogGridKnobPanelThemeForPid()` (2) / `setReadyDialogGridKnobButtonGlyphColorForPid()` (2) — theme/glyph
-- `syncReadyDialogModeActionWidgetsForPid()` (1) — sync action widgets (renders apply-blocked label #105)
+- `syncReadyDialogModeActionWidgetsForPid()` (1) — sync action widgets (renders apply-blocked label #105). v1.435 (Ship 7): added GIVE UP ADMIN live-disable styling (greyed + SetUIButtonEnabled(false) when match is live), mirroring RESET treatment
 - `getReadyDialogViewerTeamVisuals()` (1) / `getReadyDialogPlayersValueMessage()` (1) / `getReadyDialogMinPlayersSupportMessage()` (1) — visual lookups
 - `buildReadyDialogModeConfigSignature()` (1) — build mode signature
 - `updateReadyDialogModeConfigForPid()` (7) — update mode config for player
@@ -890,6 +914,18 @@ Module: DELETED in Wave 3 Ship 8 (v1.418). File is now a stub; not in bundle. Lo
 - `refreshReadyDialogRosterForViewer()` (6) — refresh roster for viewer
 - `syncReadyToggleButtonWidgetsForPid()` (6) / `updateReadyToggleButtonForViewer()` (3) / `updateReadyToggleButtonsForAllBuiltReadyDialogs()` (3) — toggle button updates
 - `refreshReadyStatusForAllBuiltReadyDialogs()` (6) — refresh status for all
+
+### src/ready-dialog/player-ready-panel.ts
+Module: Wave 4 Ship 2 (v1.423) — Player Ready Up Panel skeleton (built lazily on first triple-tap by non-admins via Ship 3 routing).
+- `getPlayerReadyPanelWidgetIds()` (3) — internal helper; returns the list of widget IDs owned by the panel for show/hide/destroy iteration
+- `prebuildPlayerReadyPanelHidden()` (1 — registry dispatcher) — builds the widget tree hidden; idempotent; ~17 widgets
+- `refreshPlayerReadyPanelContentForPid()` (3 — `showPlayerReadyPanelForPid` + Ship 5 button router + Ship 6 broadcast) — Ship 4 (v1.428): reads live state and updates the 3 dynamic labels (Game Host / Game Admin / ready status) via safeSetUITextLabel; live-Player as format arg if pid connected, else unknownPlayer fallback. Ship 5 polish (v1.430): also calls `syncPlayerReadyPanelReadyButtonForPid` to update the READY button label. Ship 6 (v1.431): also calls `syncPlayerReadyPanelClaimAdminButtonForPid` to flip CLAIM ADMIN visibility.
+- `syncPlayerReadyPanelReadyButtonForPid()` (1 — `refreshPlayerReadyPanelContentForPid`) — Ship 5 polish (v1.430): toggles READY button label between READY/NOT READY based on `State.players.readyByPid`; greys + disables button when match is live (mirrors roster-render `syncReadyToggleButtonWidgetsForPid`)
+- `syncPlayerReadyPanelClaimAdminButtonForPid()` (1 — `refreshPlayerReadyPanelContentForPid`) — Ship 6 (v1.431): toggles CLAIM ADMIN button + border + label visibility together based on `Admin.isAdminVacant()` (per L17 / D4)
+- `refreshAllVisiblePlayerReadyPanels()` (3 — `Admin.onPlayerLeave` + Ship 6 CLAIM/GIVE-UP handlers) — Ship 6 (v1.431): broadcast helper; iterates connected pids and refreshes every panel whose container exists (built or built-but-hidden) so Game Admin row + CLAIM ADMIN visibility stay in lock-step across all viewers after admin transitions
+- `showPlayerReadyPanelForPid()` (1 — Ship 3 router) — Ship 4: refreshes dynamic content first, then flips visibility on every cached widget
+- `hidePlayerReadyPanelForPid()` (0 — Ship 5+) — flips visibility off (cache survives until disconnect)
+- `destroyPlayerReadyPanelForPid()` (1 — `cleanupHudForPid`) — hard cleanup on player leave; iterates widget IDs and DeleteUIWidget each
 
 ### src/ready-dialog/swap-action.ts
 - `swapPlayerTeam()` (S~2) — swap player to other team

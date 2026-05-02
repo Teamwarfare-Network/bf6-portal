@@ -23,7 +23,8 @@ type LazyBuildSurfaceName =
     | 'vehicleDeployTimer'
     | 'supplyBox'
     | 'readyDialog'
-    | 'boundaryPrompt';
+    | 'boundaryPrompt'
+    | 'playerReadyPanel';
 
 interface LazyBuildConfig {
     name: LazyBuildSurfaceName;
@@ -100,6 +101,16 @@ const LAZY_BUILD_REGISTRY: { readonly [K in LazyBuildSurfaceName]: LazyBuildConf
         serializesWith: [],
         teardownTrigger: 'matchEnd',
     },
+    playerReadyPanel: {
+        name: 'playerReadyPanel',
+        showPlaceholder: false,
+        placeholderDelayMs: 0,
+        hitchBudgetMs: 200,
+        builder: 'sync',
+        pacedOpsPerTick: 0,
+        serializesWith: [],
+        teardownTrigger: 'roundEnd',
+    },
 };
 
 // Per-surface in-flight pid set. Re-entrancy guard so we never double-build the
@@ -112,6 +123,7 @@ const _lazyBuildInFlightByName: { [K in LazyBuildSurfaceName]: Set<number> } = {
     supplyBox: new Set<number>(),
     readyDialog: new Set<number>(),
     boundaryPrompt: new Set<number>(),
+    playerReadyPanel: new Set<number>(),
 };
 
 const _lazyBuildSuccessByName: { [K in LazyBuildSurfaceName]: number } = {
@@ -121,6 +133,7 @@ const _lazyBuildSuccessByName: { [K in LazyBuildSurfaceName]: number } = {
     supplyBox: 0,
     readyDialog: 0,
     boundaryPrompt: 0,
+    playerReadyPanel: 0,
 };
 
 const _lazyBuildErrorByName: { [K in LazyBuildSurfaceName]: number } = {
@@ -130,6 +143,7 @@ const _lazyBuildErrorByName: { [K in LazyBuildSurfaceName]: number } = {
     supplyBox: 0,
     readyDialog: 0,
     boundaryPrompt: 0,
+    playerReadyPanel: 0,
 };
 
 // Public registry accessor. Returns the locked config for a surface; the caller
@@ -185,6 +199,8 @@ function _resolveLazyBuildHandler(
             return () => {
                 ensureBoundaryPromptUiForPlayer(eventPlayer);
             };
+        case 'playerReadyPanel':
+            return () => prebuildPlayerReadyPanelHidden(eventPlayer, pid);
     }
     return undefined;
 }

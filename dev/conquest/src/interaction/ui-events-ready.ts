@@ -202,6 +202,33 @@ function tryHandleReadyDialogButtonEvent(
     );
     if (resetHandled !== undefined) return resetHandled;
 
+    // Wave 4 Ship 6 / v1.2: GIVE UP ADMIN. Only succeeds if the caller is the
+    // current admin (defensive -- the button only renders inside the admin's
+    // dialog, but the click handler is robust to stale state). On success: hide
+    // the dialog (which restores cursor via setUIInputModeForPlayer false), then
+    // broadcast refresh so other panels' Game Admin row shows "Unknown" + CLAIM
+    // ADMIN button appears for everyone. The former admin's next triple-tap
+    // routes to the panel (Ship 3 gate now sees isAdmin === false).
+    const giveUpAdminHandled = tryHandleReadyDialogPrimaryAction(
+        eventPlayer,
+        playerId,
+        widgetName,
+        eventUIButtonEvent,
+        UI_READY_DIALOG_BUTTON_GIVE_UP_ADMIN_ID,
+        () => {
+            // v1.435 (Ship 7 polish): defensive isMatchLive() guard. The button is
+            // greyed + SetUIButtonEnabled(false) when live (suppressing engine
+            // clicks), but a raw click slipping through must not vacate the slot
+            // mid-match -- config is locked once live and admin handoff would have
+            // no effect anyway.
+            if (isMatchLive()) return;
+            if (!Admin.giveUpAdmin(playerId)) return;
+            hideReadyDialogUI(eventPlayer);
+            refreshAllVisiblePlayerReadyPanels();
+        }
+    );
+    if (giveUpAdminHandled !== undefined) return giveUpAdminHandled;
+
     if (FEATURE_ADMIN_PANEL) {
         const adminHandled = tryHandleReadyDialogPrimaryAction(
             eventPlayer,

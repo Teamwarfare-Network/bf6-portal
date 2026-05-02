@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.420)",
+        "title": "teamwarfare . net | TWL Conquest (v1.438)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText3": "The game is NOT Live and you are NOT Ready yet...",
@@ -92,6 +92,15 @@
       "roundStarted": "Match started.",
       "teamSwitch": "You have switched teams!",
       "playerReadiedUp": "{0} has readied up: {1} / {2} Players Ready"
+    },
+    "playerReadyPanel": {
+      "title": "Player Ready Up Panel",
+      "gameHostFormat": "Game Host: {0}",
+      "gameAdminFormat": "Game Admin: {0}",
+      "claimAdminButton": "CLAIM\nADMIN",
+      "noAdminLabel": "No Admin",
+      "readyStatusYesFormat": "You are Ready on the {0} Team",
+      "readyStatusNoFormat": "You are NOT Ready on the {0} Team"
     },
     "boundary": {
       "warningIcon": "!",
@@ -238,7 +247,8 @@
         "ready": "READY",
         "notReady": "NOT READY",
         "swapTeams": "CHANGE TEAMS",
-        "spectateCoach": "SPECTATE / COACH"
+        "spectateCoach": "SPECTATE / COACH",
+        "giveUpAdmin": "GIVE UP ADMIN"
       }
     },
     "adminPanel": {

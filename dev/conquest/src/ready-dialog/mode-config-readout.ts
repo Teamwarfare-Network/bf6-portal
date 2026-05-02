@@ -164,6 +164,27 @@ function syncReadyDialogModeActionWidgetsForPid(pid: number, diff: ReadyDialogMo
         mod.SetUITextColor(resetLabel, canReset ? COLOR_WHITE : COLOR_GRAY);
     }
 
+    // Wave 4 Ship 7 (v1.435): GIVE UP ADMIN live-disable. Mirrors RESET treatment --
+    // admin handoff is meaningless once the match is live (config locked), so the
+    // button is greyed + SetUIButtonEnabled(false). Click handler also guards on
+    // isMatchLive() defensively.
+    const giveUpAdminButton = safeFind(UI_READY_DIALOG_BUTTON_GIVE_UP_ADMIN_ID + pid);
+    const giveUpAdminBorder = safeFind(UI_READY_DIALOG_BUTTON_GIVE_UP_ADMIN_ID + pid + "_BORDER");
+    const giveUpAdminLabel = safeFind(UI_READY_DIALOG_BUTTON_GIVE_UP_ADMIN_LABEL_ID + pid);
+    const canGiveUp = !live;
+    if (giveUpAdminButton) {
+        mod.SetUIButtonEnabled(giveUpAdminButton, canGiveUp);
+        mod.SetUIWidgetBgColor(giveUpAdminButton, canGiveUp ? COLOR_BUTTON_BASE : COLOR_GRAY_DARK);
+        mod.SetUIWidgetBgAlpha(giveUpAdminButton, canGiveUp ? BUTTON_OPACITY_BASE : 0.45);
+    }
+    if (giveUpAdminBorder) {
+        mod.SetUIWidgetBgColor(giveUpAdminBorder, canGiveUp ? COLOR_BUTTON_BORDER : COLOR_GRAY_DARK);
+        mod.SetUIWidgetBgAlpha(giveUpAdminBorder, canGiveUp ? BUTTON_BORDER_OPACITY : 0.45);
+    }
+    if (giveUpAdminLabel) {
+        mod.SetUITextColor(giveUpAdminLabel, canGiveUp ? COLOR_WHITE : COLOR_GRAY);
+    }
+
     if (unsavedLabel) {
         // Apply-blocked state takes priority over live / unsaved labels (#105). When the
         // late-joiner-warm guard refuses an Apply, applyBlockedAtSeconds is set; the dialog

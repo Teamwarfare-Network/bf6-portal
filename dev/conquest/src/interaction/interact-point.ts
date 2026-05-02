@@ -44,8 +44,12 @@ async function spawnReadyDialogInteractPoint(eventPlayer: mod.Player) {
 }
 
 // Opens the ready dialog through the single shared UI path and restores local input state on failure.
+// Wave 4 Ship 3: routes non-admins to the small player-ready-up panel; admins continue to the full
+// ready dialog. Shared menu-close + cursor-enable prep runs for both branches; route-specific build,
+// show, and error-recovery logic live inside their respective conditionals.
 function tryOpenReadyDialogForPlayer(eventPlayer: mod.Player): boolean {
     const playerId = mod.GetObjId(eventPlayer);
+    const isAdmin = Admin.isAdmin(playerId);
     try {
         if (isArmOpen(playerId)) {
             closeArmMenu(playerId);
@@ -54,6 +58,13 @@ function tryOpenReadyDialogForPlayer(eventPlayer: mod.Player): boolean {
             closeVehicleDeployLiveMenuForPlayer(playerId);
         }
         setUIInputModeForPlayer(eventPlayer, true);
+
+        if (!isAdmin) {
+            triggerLazyBuild('playerReadyPanel', playerId);
+            showPlayerReadyPanelForPid(playerId);
+            return true;
+        }
+
         updateHelpTextVisibilityForPid(playerId);
         triggerLazyBuild('readyDialog', playerId);
         const dialogRoot = showReadyDialogUI(eventPlayer);
@@ -62,6 +73,11 @@ function tryOpenReadyDialogForPlayer(eventPlayer: mod.Player): boolean {
         }
         return true;
     } catch {
+        if (!isAdmin) {
+            setUIInputModeForPlayer(eventPlayer, false);
+            hidePlayerReadyPanelForPid(playerId);
+            return false;
+        }
         State.players.readyDialogData[playerId].dialogVisible = false;
         setUIInputModeForPlayer(eventPlayer, false);
         hideReadyDialogUI(eventPlayer);

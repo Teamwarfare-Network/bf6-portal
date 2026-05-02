@@ -72,6 +72,20 @@ Prompting examples:
 5. This applies everywhere `mod.Message` is used: HUD text labels, AddUIIcon text, world log messages, notifications.
 6. When in doubt, copy the exact pattern from an existing working call site (e.g. clock digit widget).
 
+## Debugging / Diagnostic Output Policy
+
+1. **The world log is NOT a debugging surface.** It is transient, holds at most 4 lines at once, and is unreliable (fires inconsistently, silently breaks under load). `mod.DisplayHighlightedWorldLogMessage` and `sendHighlightedWorldLogMessage` are for **user-facing gameplay notifications only** (e.g. "Match started.", "{Player} has readied up: 3/4"). Never use them to surface diagnostic state for SP smoke or MP verification.
+2. **`console.log` is also unreliable.** Existing call sites (e.g. `lazy-build-registry.ts`'s error logger) write to `console.log`, but it is not confirmed to surface to any visible developer console in the BF6 Portal runtime. Do not rely on it for diagnostic verification.
+3. **`FEATURE_PERF_DIAG` is broken** even when its flag is true (per `project_perf_diag_broken.md` memory). Do not propose `FEATURE_PERF_DIAG`-gated instrumentation as a verification mechanism.
+4. **Reliable testable surfaces in BF6 Portal:**
+   - **Persistent HUD widget overlay.** Render diagnostic state to a `mod.AddUIText` widget owned by a specific pid. Always-visible, durable, per-pid scoped. Use this for any SP smoke that requires observing internal state.
+   - **In-game UI dialog / panel.** Heavier than a HUD overlay but useful for paginated state inspection.
+   - **`mod.DisplayNotificationMessage(message, player)`.** Distinct from world log; appears as a per-player notification. Verify durability empirically before relying on it for repeated probes.
+   - **Implicit verification via downstream behavior.** Pure-plumbing changes (no UX surface) can defer SP smoke to the next ship that consumes the new state. If Ship N+1 behaves correctly, Ship N's plumbing is implicitly verified.
+   - **Type system + bundle build.** `npx tsc --noEmit` and `npm run bumpVersion` catch shape errors but not runtime correctness.
+5. **When proposing SP smoke for a ship**, the proposal must use one of the reliable surfaces above. Proposals that say "look in the world log" or "check console.log" should be rejected during review and re-proposed with a HUD overlay or implicit-verification path.
+6. **Existing `console.log` call sites** (e.g. `_logLazyBuildError` in `lazy-build-registry.ts`) are tolerated as best-effort error sinks but are not load-bearing for diagnostics. Do not add new `console.log` instrumentation expecting it to surface anywhere.
+
 ## String Change Authorization Policy
 
 1. Any player-facing string edit requires explicit human approval before making the change.

@@ -70,6 +70,7 @@ function cleanupHudForPid(pid: number): void {
     }
     deleteVehicleDeployTimerHudArtifactsForPid(pid);
     destroyBoundaryPromptUiForPid(pid);
+    destroyPlayerReadyPanelForPid(pid);
     resetTopHudRootInitializationForPid(pid);
 
     delete State.hudCache.clockWidgetCache[pid];
@@ -111,6 +112,7 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
             State.conquest.debug.perspectiveTeamByPid[joinPid] = joinTeamNum;
         }
         onPlayerJoinSpawnCharge(joinPid, wasDisconnected);
+        Admin.onPlayerJoin(eventPlayer, joinPid);
     }
 
     await mod.Wait(0.1);
@@ -174,6 +176,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.deployedByPid[pid];
     onPlayerLeaveSpawnCharge(pid);
     delete State.players.readyDialogData[pid];
+    Admin.onPlayerLeave(pid);
     refreshBuiltReadyDialogCachesForAllPlayers();
 
     if (!isMatchLive()) {

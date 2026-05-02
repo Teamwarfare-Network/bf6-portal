@@ -417,11 +417,41 @@ function buildReadyDialogModeConfigSection(
     const modeConfirmLabelId = UI_READY_DIALOG_MODE_CONFIRM_LABEL_ID + playerId;
     const modeResetId = UI_READY_DIALOG_MODE_RESET_ID + playerId;
     const modeResetLabelId = UI_READY_DIALOG_MODE_RESET_LABEL_ID + playerId;
+    const giveUpAdminId = UI_READY_DIALOG_BUTTON_GIVE_UP_ADMIN_ID + playerId;
+    const giveUpAdminLabelId = UI_READY_DIALOG_BUTTON_GIVE_UP_ADMIN_LABEL_ID + playerId;
     const unsavedLabelId = UI_READY_DIALOG_MODE_UNSAVED_LABEL_ID + playerId;
-    const actionRowWidth = READY_DIALOG_RESET_BUTTON_WIDTH + READY_DIALOG_CONFIRM_BUTTON_GAP + READY_DIALOG_CONFIRM_BUTTON_WIDTH;
+    // Wave 4 Ship 6 / v1.2: GIVE UP ADMIN button inserted to the LEFT of RESET (per Q7);
+    // same width + height as RESET. Layout row is now [GIVE UP ADMIN] [RESET] [CONFIRM]
+    // centered as a unit in the content lane.
+    const actionRowWidth = READY_DIALOG_RESET_BUTTON_WIDTH
+        + READY_DIALOG_CONFIRM_BUTTON_GAP
+        + READY_DIALOG_RESET_BUTTON_WIDTH
+        + READY_DIALOG_CONFIRM_BUTTON_GAP
+        + READY_DIALOG_CONFIRM_BUTTON_WIDTH;
     const actionRowX = laneLeftX + Math.floor((READY_DIALOG_CONTENT_LANE_WIDTH - actionRowWidth) / 2);
-    const resetButtonX = actionRowX;
+    const giveUpAdminX = actionRowX;
+    const resetButtonX = giveUpAdminX + READY_DIALOG_RESET_BUTTON_WIDTH + READY_DIALOG_CONFIRM_BUTTON_GAP;
     const confirmButtonX = resetButtonX + READY_DIALOG_RESET_BUTTON_WIDTH + READY_DIALOG_CONFIRM_BUTTON_GAP;
+
+    const giveUpAdminBorder = addOutlinedButton(
+        giveUpAdminId,
+        giveUpAdminX,
+        buttonRowY,
+        READY_DIALOG_RESET_BUTTON_WIDTH,
+        READY_DIALOG_SMALL_BUTTON_HEIGHT,
+        mod.UIAnchor.TopLeft,
+        containerBase,
+        eventPlayer
+    );
+    addReadyDialogCenteredText(
+        giveUpAdminLabelId,
+        READY_DIALOG_RESET_BUTTON_WIDTH,
+        READY_DIALOG_SMALL_BUTTON_HEIGHT,
+        msg(mod.stringkeys.twl.readyDialog.buttons.giveUpAdmin),
+        eventPlayer,
+        giveUpAdminBorder ?? containerBase,
+        12
+    );
 
     const resetBorder = addOutlinedButton(
         modeResetId,

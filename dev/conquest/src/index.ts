@@ -18,6 +18,7 @@ import './state/player-iteration';
 import './state/hud-cache-types';
 import './state/runtime';
 import './state/spawn-charge';
+import './admin/identity';
 import './hud/status';
 import './hud/help-visibility';
 import './hud/conquest-scaffold';
@@ -77,6 +78,7 @@ import './interaction/actions';
 import './interaction/spawn-selector';
 import './interaction/ui-events-ready';
 // import './admin-panel/events'; // @feature FEATURE_ADMIN_PANEL
+import './interaction/ui-events-player-ready-panel';
 import './interaction/ui-events';
 // import './admin-panel/build'; // @feature FEATURE_ADMIN_PANEL
 // import './admin-panel/visibility'; // @feature FEATURE_ADMIN_PANEL
@@ -100,6 +102,7 @@ import './ready-dialog/pregame-ui';
 import './ready-dialog/countdown-flow';
 import './ready-dialog/auto-start';
 import './ready-dialog/swap-action';
+import './ready-dialog/player-ready-panel';
 import './conquest-flow';
 import './index/capture-shared';
 import './index/capture-sound';

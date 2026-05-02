@@ -11,7 +11,7 @@
 ---
 
 ## Wave 1 — A6 + A7 leak fixes (shipped v1.407, 2026-04-27)
-
+b
 - [ ] **Join / Supply-Box-open / leave cycle.** ≥4 players join, each opens the Supply Box once, then disconnects. New players take their slots. Repeat ≥3 cycles. Pass: server still responsive; no script termination during or after the cycles.
 - [ ] **HQ Deploy spam + churn.** Players use HQ Deploy multiple times across leave/rejoin cycles. Pass: no script termination; vehicle slots still spawn correctly for new joiners.
 - [ ] **Full match start → victory dialog at ≥24 players (ideal 64).** Pass: match starts, plays, ends without `Mod has reached its js script memory usage limit` termination.
@@ -95,6 +95,23 @@
 - [ ] **Concurrent first-opens (≥2 players triple-tap in same frame).** Pass: per-surface in-flight guard in the dispatcher prevents double-build; both players' dialogs appear; no orphan widgets; no thrown errors in world log.
 - [ ] **Reconnect during round.** Pass: a rejoining player who never re-opens the dialog never rebuilds the cache (heap saved). When they do triple-tap, fresh cold build runs cleanly.
 - [ ] **Disconnect mid-build.** Pass: a player who triple-taps then immediately disconnects mid-cold-build — dispatcher's existing `isValidPlayer` guards short-circuit subsequent steps; `cleanupHudForPid` path on disconnect tears down any partial widgets.
+
+## Wave 4 — Single-Admin + Player Ready Up Panel (shipped v1.421–v1.436, 2026-05-02)
+
+See [`design_doc/5.01.26_conquest_wave_4_plan.md`](./5.01.26_conquest_wave_4_plan.md) for full plan + locked decisions (v1.3 = first-ever-joiner auto-admin one-time exception + no auto-promotion thereafter; refines v1.2 explicit handoff).
+
+- [ ] **24+ players: cold launch + first triple-tap routing (v1.3).** Pass: first joiner is auto-admin (one-time server-lifetime exception, gated on `_hostFirstPid === undefined`); their triple-tap opens the existing full ready dialog. All other joiners' triple-tap opens the new Player Ready Up Panel (~20 widgets/pid, lazy-built first time only). Game Admin row on non-admin panels reads the first joiner's name (live Player). No script termination; no missing widgets on either surface.
+- [ ] **Admin disconnect auto-vacate (NO auto-promotion, v1.436).** Pass: when current admin disconnects mid-pregame, `Admin.onPlayerLeave` clears `_currentAdminPid` and broadcasts `refreshAllVisiblePlayerReadyPanels()`; every viewer's panel updates: Game Admin row reads "No Admin" + CLAIM ADMIN button becomes visible top-right. **A new joiner arriving after the disconnect does NOT inherit the admin slot** (auto-admin branch is permanently inert after first-ever join). New joiner sees the panel with CLAIM ADMIN visible and must press it to take the slot.
+- [ ] **Claim race condition (two non-admins click CLAIM ADMIN within same frame).** Pass: first click wins (`Admin.claimAdmin` returns true → handoff happens), second click is a silent no-op (returns false). Loser's panel CLAIM ADMIN button hides on the next refresh broadcast triggered by the winner. No double-admin state, no error spam.
+- [ ] **GIVE UP ADMIN handoff at scale.** Pass: admin presses GIVE UP ADMIN on the dialog → dialog hides + cursor restores; all visible non-admin panels refresh (Game Admin "No Admin" + CLAIM ADMIN button appears). A second player presses CLAIM ADMIN → their panel hides + they're admin; all other panels refresh again. Loop confirms no state leaks.
+- [ ] **Live-disable parity.** Pass: once match goes LIVE, both CLAIM ADMIN (panel) and GIVE UP ADMIN (dialog) are greyed + click-disabled (`SetUIButtonEnabled(false)`); raw click events that slip through hit the `isMatchLive()` defensive guard and no-op. Admin handoff is impossible during a live match. RESET / APPLY also disabled (existing behavior; verify still works).
+- [ ] **Host display post-disconnect (R5 verify).** Pass: when the original first-joiner disconnects, every player's Game Host line should still read the original host's name (cached `_hostNameMessage`). If instead it reads "Unknown" — the cached `mod.Message` token did NOT survive player handle invalidation (R5 risk realized); document the SDK behavior and consider falling back to a static "(host disconnected)" string in a future wave. **Note:** Ship 4 chose live-Player rendering instead of cached-Message rendering, so this currently displays "Unknown" by design when host is disconnected. Re-evaluate if user wants the cached-Message behavior wired in.
+- [ ] **Triple-tap admin-gate single chokepoint at scale.** Pass: there is no MP scenario in which the dialog opens for a non-admin or the panel opens for an admin. Every routing decision flows through `tryOpenReadyDialogForPlayer` (`Admin.isAdmin(playerId)` check). Both interact-point and green-smoke world-interactable trigger paths verified — no bypass surfaces.
+- [ ] **CHANGE TEAMS auto-close + redeploy.** Pass: pressing CHANGE TEAMS on the panel hides the panel before `swapPlayerTeam` fires the redeploy lifecycle, mirroring the dialog's `processReadyDialogSelection:257` pattern. No orphan panel widgets visible during the undeploy/redeploy window.
+- [ ] **READY auto-close on panel.** Pass: pressing READY on the panel hides the panel + restores cursor + fires `handleReadyDialogReadyButtonClick` (world-log "X readied up", HUD ready-count, auto-start gate) identically to the dialog path. No double-toggle, no missing world-log.
+- [ ] **Heap reclaim accounting.** Pass: 16-player room target was ~80% reduction in admin-dialog widget refs (1500 → 100 + 225 panel = 325 net). Confirm via existing `getReadyDialogStateForPid` + new panel cache count. Panel never builds for players who don't triple-tap (lazy).
+- [ ] **No script termination over a full Wave-4 round.** Pass: cold launch → ready up → match live → victory → restart, with multiple admin handoffs across the cycle. No frame-budget breach, no `Mod has reached its js script memory usage limit` termination.
+- [ ] **CLAIM ADMIN visibility consistency (v1.438 bugfix).** Pass: across all four state combinations the button behaves correctly: (admin in place + pre-live → hidden), (admin in place + live → hidden), (admin vacant + pre-live → visible + enabled), (admin vacant + live → visible + greyed/disabled). Verifies the show-loop bug — where every visible-flip was overriding the sync function's vacancy-gated visibility — does not return at scale (multiple panels open simultaneously when admin transitions occur).
 
 ---
 
