@@ -2485,7 +2485,6 @@ function openArmMenu(eventPlayer: mod.Player, objId: number): boolean {
     if (!isValidPlayer(eventPlayer)) return false;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return false;
-    if (isUiInteractionBlockedForPid(pid)) return false;
     if (!State.players.deployedByPid[pid]) return false;
     if (State.players.readyDialogData[pid]?.dialogVisible) {
         hideReadyDialogUI(eventPlayer);

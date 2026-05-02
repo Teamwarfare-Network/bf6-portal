@@ -6,16 +6,6 @@ function setUIInputModeForPlayer(player: mod.Player, enabled: boolean): void {
     State.players.uiInputEnabledByPid[mod.GetObjId(player)] = enabled;
 }
 
-// Applies full movement/fire/look input restriction for one player during short loading/finalize windows.
-function setAllInputRestrictionsForPlayer(player: mod.Player, restricted: boolean): void {
-    if (!isValidPlayer(player)) return;
-    const pid = safeGetPlayerId(player);
-    if (pid !== undefined) {
-        recordUiLoadInputRestrictedForPid(pid, restricted);
-    }
-    mod.EnableAllInputRestrictions(player, restricted);
-}
-
 function isMatchLive(): boolean {
     return State.round.phase === MatchPhase.Live;
 }

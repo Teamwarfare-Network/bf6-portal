@@ -156,7 +156,7 @@ function buildHudTeamSwapButton(player: mod.Player, pid: number, refs: TopHudShe
     refs.teamSwapBorder = border ?? undefined;
     refs.teamSwapLabel = safeFind(labelId) ?? undefined;
 
-    const visible = !isMatchLive() && State.conquest.lifecyclePhase !== "COUNTDOWN" && !State.players.deployedByPid[pid] && isUiLoadGateReleasedForPid(pid);
+    const visible = !isMatchLive() && State.conquest.lifecyclePhase !== "COUNTDOWN" && !State.players.deployedByPid[pid];
     safeSetUIWidgetVisible(refs.teamSwapBorder, visible);
 }
 
@@ -177,7 +177,7 @@ function deleteHudTeamSwapWidgetsForPid(pid: number): void {
 function updateHudTeamSwapButtonVisibilityForPid(pid: number): void {
     const refs = State.hudCache.topHudShellByPid[pid];
     if (!refs) return;
-    const visible = !isMatchLive() && State.conquest.lifecyclePhase !== "COUNTDOWN" && !State.players.deployedByPid[pid] && isUiLoadGateReleasedForPid(pid);
+    const visible = !isMatchLive() && State.conquest.lifecyclePhase !== "COUNTDOWN" && !State.players.deployedByPid[pid];
     safeSetUIWidgetVisible(refs.teamSwapBorder, visible);
 }
 

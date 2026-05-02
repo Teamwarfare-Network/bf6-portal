@@ -3,130 +3,6 @@
 
 const TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS = 0.6;
 
-const TEAM_SWAP_HUD_UNDEPLOY_WAIT_SECONDS = 0.05;
-const TEAM_SWAP_HUD_UNDEPLOY_WAIT_ATTEMPTS = 20;
-const TEAM_SWAP_HUD_TEAM_SETTLE_SECONDS = 0.05;
-const TEAM_SWAP_HUD_TEAM_SETTLE_ATTEMPTS = 8;
-
-// Keeps one player on the deploy screen while the current loading session is still blocking release.
-function holdPlayerAtDeploy(eventPlayer: mod.Player, pid: number, source: string): void {
-    if (!isValidPlayer(eventPlayer)) return;
-    setUIInputModeForPlayer(eventPlayer, false);
-    recordUiLoadDeployEnabledForPid(pid, false);
-    mod.EnablePlayerDeploy(eventPlayer, false);
-    mod.SetRedeployTime(eventPlayer, HUD_WARM_REDEPLOY_BLOCK_SECONDS);
-}
-
-// Applies the current deploy-availability decision and records who changed it for the loading-gate audit.
-function applyPlayerDeployAvailability(eventPlayer: mod.Player, pid: number, deployEnabled: boolean, source: string): void {
-    if (!isValidPlayer(eventPlayer)) return;
-    recordUiLoadDeployEnabledForPid(pid, deployEnabled);
-    mod.EnablePlayerDeploy(eventPlayer, deployEnabled);
-    mod.SetRedeployTime(eventPlayer, deployEnabled ? 0 : (isHudTransitionBlockingForPid(pid) ? HUD_WARM_REDEPLOY_BLOCK_SECONDS : 0));
-}
-
-// Single gate entry for both first-join and team-swap.
-// Immediately shows the loading overlay, blocks deploy, and hides all visible UI families before warm begins.
-function beginLoadingGate(eventPlayer: mod.Player, pid: number, reason: UiLoadReason): void {
-    clearLoadingOverlayForPlayerId(pid);
-    beginUiLoadSessionForPid(pid, reason);
-    updateHudTeamSwapButtonVisibilityForPid(pid);
-    setGateStartTimeForPid(pid, mod.GetMatchTimeElapsed());
-    hideAllUiFamiliesForPlayer(eventPlayer, pid);
-    reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
-}
-
-// Reasserts deploy ownership for an unreleased loading session so the gate keeps winning even if the engine or another path nudges deploy state.
-function maintainPlayerLoadingGateAuthority(eventPlayer: mod.Player, pid: number): void {
-    if (!isValidPlayer(eventPlayer)) return;
-    if (!isUiLoadGateActiveForPid(pid)) return;
-    reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
-}
-
-function enforceHudWarmTransitionDeployBlock(eventPlayer: mod.Player): void {
-    if (!isValidPlayer(eventPlayer)) return;
-    const pid = safeGetPlayerId(eventPlayer);
-    if (pid === undefined) return;
-    holdPlayerAtDeploy(eventPlayer, pid, "warm_block");
-}
-
-function canEnablePlayerDeployForPid(pid: number): boolean {
-    if (isPidDisconnected(pid)) return false;
-    if (State.round.flow.cleanupActive && !State.round.flow.cleanupAllowDeploy) return false;
-    if (isUiLoadGateActiveForPid(pid)) return false;
-    if (!isUiLoadGateReleasedForPid(pid)) return false;
-    return true;
-}
-
-function syncPlayerDeployAvailability(eventPlayer: mod.Player): void {
-    if (!isValidPlayer(eventPlayer)) return;
-    const pid = safeGetPlayerId(eventPlayer);
-    if (pid === undefined) return;
-    const canEnableDeploy = canEnablePlayerDeployForPid(pid);
-    applyPlayerDeployAvailability(eventPlayer, pid, canEnableDeploy, "sync");
-}
-
-function isCriticalTopHudReadyForPid(pid: number): boolean {
-    const refs = getTopHudShellRefsForPid(pid);
-    const clockCache = State.hudCache.clockWidgetCache[pid];
-    return !!(
-        refs
-        && hasTopLeftHudShellRefs(refs)
-        && safeFind(wn("HelpText", pid))
-        && clockCache?.root
-        && clockCache?.plate
-    );
-}
-
-function isCriticalCombatHudReadyForPid(pid: number): boolean {
-    const entry = twlConquestHudGetEntry(pid);
-    return !!(
-        entry
-        && entry.initialized
-        && entry.widgets.root
-        && entry.widgets.combatLane
-        && entry.widgets.ticketsLane
-        && entry.widgets.objectivesLane
-    );
-}
-
-function isCriticalVehicleDeployHudReadyForPid(pid: number): boolean {
-    return isVehicleDeployTimerHudCacheUsable(State.hudCache.vehicleDeployTimerCache[pid]);
-}
-
-// Unified readiness gate: required UI families must be warm and cache-usable before the gate releases.
-// Wave 3 Ship 3 (v1.411): supply-box readiness checks dropped — first-interact-only.
-// Wave 3 Ship 7 (v1.416): ready-dialog readiness checks dropped — first-interact-only via
-// triggerLazyBuild('readyDialog', pid) in tryOpenReadyDialogForPlayer; gate no longer waits.
-function isAllUiFamiliesReadyForRelease(eventPlayer: mod.Player, pid: number): boolean {
-    if (!isValidPlayer(eventPlayer)) return false;
-    return isCriticalTopHudReadyForPid(pid)
-        && isCriticalCombatHudReadyForPid(pid)
-        && isCriticalVehicleDeployHudReadyForPid(pid)
-        && (FEATURE_ADMIN_PANEL ? isAdminPanelWarmForPid(pid) : true);
-}
-
-// Reasserts the player loading overlay + deploy block together so all gate paths share the same visible/blocking ownership.
-function reassertPlayerUiLoadingGateVisuals(eventPlayer: mod.Player, pid: number): void {
-    if (!isValidPlayer(eventPlayer)) return;
-    const overlayWasShown = isUiLoadOverlayShownForPid(pid);
-    showLoadingOverlayForPlayer(eventPlayer);
-    setUiLoadOverlayShownForPid(pid, true);
-    enforceHudWarmTransitionDeployBlock(eventPlayer);
-}
-
-// Hides all currently visible UI families before a gate warm pass begins.
-// Called at the start of every gate session so no partial UI is visible during warm.
-function hideAllUiFamiliesForPlayer(eventPlayer: mod.Player, pid: number): void {
-    if (!isValidPlayer(eventPlayer)) return;
-    hideCriticalHudForWarmTransition(pid);
-    if (State.players.readyDialogData[pid]?.dialogVisible) {
-        hideReadyDialogUI(eventPlayer);
-    }
-    closeArmMenu(eventPlayer);
-    closeVehicleDeployLiveMenuForPlayer(eventPlayer);
-}
-
 function refreshClockForPlayer(eventPlayer: mod.Player, pid: number): void {
     if (!isValidPlayer(eventPlayer)) return;
     const cacheEntry = ensureClockUIAndGetCache(eventPlayer);
@@ -244,51 +120,6 @@ function prebuildReadyDialogUiFamilyWhileHidden(eventPlayer: mod.Player, pid: nu
     } catch {}
 }
 
-// Serialization lock: only one player prebuilds heavy UI at a time to stay under
-// the engine's 1,000ms per-frame evaluation budget (CQ_Bug_40).
-let _prebuildBusy = false;
-let _prebuildStaggerIndex = 0;
-
-// Consolidated hidden prebuild for all six UI families. Called at gate start and on each poll retry.
-// Each family is best-effort; failures are swallowed so one cold family does not block others.
-// Serialized via _prebuildBusy lock so concurrent player joins don't stack heavy sync work in one frame.
-async function prebuildAllUiFamiliesHidden(eventPlayer: mod.Player, pid: number): Promise<void> {
-    if (!isValidPlayer(eventPlayer)) return;
-    // Mark warm-prime in flight for this pid. Read by confirmReadyDialogModeConfig (Apply
-    // Config) to refuse-with-feedback while any warm is mid-flight, preventing the v1.380
-    // hard-crash where Apply Config's per-player widget rebuild collides with a late-joiner's
-    // partially-populated UI cache (#105). Cleared in the outer finally so disconnect /
-    // throw / early-return paths all guarantee the flag clears.
-    State.players.warmPrimeActiveByPid[pid] = true;
-    try {
-    // Acquire serialization lock — yield until free.
-    while (_prebuildBusy) {
-        await mod.Wait(0.05);
-        if (!isValidPlayer(eventPlayer)) return;
-        if (!isUiLoadGateActiveForPid(pid)) return;
-    }
-    _prebuildBusy = true;
-    try {
-        // Wave 3 Ship 2 (v1.410): top-shell prebuild removed from the bulk path.
-        // Wave 3 Ship 3 (v1.411): supply-box prebuild removed from bulk path; builds via
-        // triggerLazyBuild('supplyBox', pid) at first-interact in openArmMenu.
-        // Wave 3 Ship 4 (v1.413): vehicle-spawner family also removed from bulk;
-        // builds via triggerLazyBuild('vehicleDeployTimer', pid) at gate-entry + retry.
-        // Wave 3 Ship 5 (v1.414): combat-HUD family also removed from bulk;
-        // builds via triggerLazyBuild('combatHud', pid) at gate-entry + retry.
-        // Wave 3 Ship 7 (v1.416): ready-dialog cache + hot-prime removed from bulk;
-        // builds via triggerLazyBuild('readyDialog', pid) at first-interact in tryOpenReadyDialogForPlayer.
-        // Bulk path now covers admin panel only (gated behind FEATURE_ADMIN_PANEL).
-
-        if (FEATURE_ADMIN_PANEL) prebuildAdminPanelWhileHidden(eventPlayer, pid);
-    } finally {
-        _prebuildBusy = false;
-    }
-    } finally {
-        delete State.players.warmPrimeActiveByPid[pid];
-    }
-}
-
 function renderTopLeftUiFamilyImmediate(eventPlayer: mod.Player, pid: number): void {
     if (!isValidPlayer(eventPlayer)) return;
     const refs = ensureTopHudShellForPlayer(eventPlayer);
@@ -338,12 +169,6 @@ function renderAdminUiFamilyForReveal(eventPlayer: mod.Player, pid: number): voi
     if (FEATURE_PERF_DIAG) ensurePerfDiagWidgetsForPlayer(eventPlayer);
 }
 
-function setPositionDebugWidgetsVisibleForPid(pid: number, visible: boolean): void {
-    for (const widgetId of getPositionDebugWidgetIds(pid)) {
-        safeSetUIWidgetVisible(safeFind(widgetId), visible);
-    }
-}
-
 function getPositionDebugWidgetIds(pid: number): string[] {
     return [
         UI_POS_DEBUG_CONTAINER_ID + pid,
@@ -369,289 +194,19 @@ function deletePositionDebugWidgetsForPid(pid: number): void {
     }
 }
 
-function setClockWidgetCacheVisible(
-    clockCache: ReusableTimerWidgetCacheEntry | undefined,
-    visible: boolean
-): void {
-    if (!clockCache) return;
-    safeSetUIWidgetVisible(clockCache.root, visible);
-    safeSetUIWidgetVisible(clockCache.plate, visible);
-    safeSetUIWidgetVisible(clockCache.minTensShadow, visible);
-    safeSetUIWidgetVisible(clockCache.minTens, visible);
-    safeSetUIWidgetVisible(clockCache.minOnesShadow, visible);
-    safeSetUIWidgetVisible(clockCache.minOnes, visible);
-    safeSetUIWidgetVisible(clockCache.colonShadow, visible);
-    safeSetUIWidgetVisible(clockCache.colon, visible);
-    safeSetUIWidgetVisible(clockCache.secTensShadow, visible);
-    safeSetUIWidgetVisible(clockCache.secTens, visible);
-    safeSetUIWidgetVisible(clockCache.secOnesShadow, visible);
-    safeSetUIWidgetVisible(clockCache.secOnes, visible);
-    clockCache.lastVisibleState = visible;
-}
-
-function hideVehicleSpawnerUiFamilyForPid(pid: number): void {
-    const vehicleCache = State.hudCache.vehicleDeployTimerCache[pid];
-    if (!vehicleCache) return;
-    hideVehicleDeployTimerHudFamily(vehicleCache, false);
-}
-
-function hideTopHudFamilyForWarmTransition(pid: number): void {
-    const refs = getTopHudShellRefsForPid(pid);
-    safeSetUIWidgetVisible(refs?.topCenterAuxRoot, false);
-    safeSetUIWidgetVisible(refs?.helpTextContainer, false);
-    safeSetUIWidgetVisible(refs?.adminPanelActionCountText, false);
-    safeSetUIWidgetVisible(refs?.victoryRoot, false);
-
-    setClockWidgetCacheVisible(State.hudCache.clockWidgetCache[pid], false);
-}
-
 function renderCriticalHudForReveal(eventPlayer: mod.Player, pid: number): void {
     if (!isValidPlayer(eventPlayer)) return;
-    if (isHudSwapTransitionActiveForPid(pid) || !isHudWarmReadyForPid(pid)) {
-        hideCriticalHudForWarmTransition(pid);
-        return;
-    }
     renderTopLeftUiFamilyForReveal(eventPlayer, pid);
     renderVehicleSpawnerUiFamilyForReveal(eventPlayer, pid);
     armCombatHudFamilyForSchedulerReveal(eventPlayer, pid);
     twlConquestHudPrimePlayerFrame(eventPlayer);
     renderAdminUiFamilyForReveal(eventPlayer, pid);
-}
-
-
-async function waitForPlayerToBecomeUndeployedForTeamSwap(
-    eventPlayer: mod.Player,
-    pid: number,
-    token: number
-): Promise<boolean> {
-    for (let i = 0; i < TEAM_SWAP_HUD_UNDEPLOY_WAIT_ATTEMPTS; i++) {
-        if (!isValidPlayer(eventPlayer)) return false;
-        if (!isHudWarmTokenCurrent(pid, token)) return false;
-        if (!State.players.deployedByPid[pid]) return true;
-        reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
-        hideCriticalHudForWarmTransition(pid);
-        await mod.Wait(TEAM_SWAP_HUD_UNDEPLOY_WAIT_SECONDS);
-    }
-    return !State.players.deployedByPid[pid];
-}
-
-async function waitForPlayerTeamToSettleForSwap(
-    eventPlayer: mod.Player,
-    pid: number,
-    token: number,
-    newTeamNum: TeamID
-): Promise<boolean> {
-    for (let i = 0; i < TEAM_SWAP_HUD_TEAM_SETTLE_ATTEMPTS; i++) {
-        if (!isValidPlayer(eventPlayer)) return false;
-        if (!isHudWarmTokenCurrent(pid, token)) return false;
-        if (safeGetTeamNumberFromPlayer(eventPlayer, 0) === newTeamNum) return true;
-        reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
-        hideCriticalHudForWarmTransition(pid);
-        await mod.Wait(TEAM_SWAP_HUD_TEAM_SETTLE_SECONDS);
-    }
-    return safeGetTeamNumberFromPlayer(eventPlayer, 0) === newTeamNum;
-}
-
-// Runs the team-swap loading gate: waits for undeploy + team settle, then delegates to runLoadingGateUntilReady.
-async function runTeamSwapLoadingGate(
-    eventPlayer: mod.Player,
-    pid: number,
-    newTeamNum: TeamID,
-    waitForUndeploy: boolean
-): Promise<void> {
-    if (!isValidPlayer(eventPlayer)) return;
-    const token = getHudWarmTokenForPid(pid);
-
-    if (waitForUndeploy) {
-        const undeployed = await waitForPlayerToBecomeUndeployedForTeamSwap(eventPlayer, pid, token);
-        if (!undeployed) return;
-    }
-
-    const settled = await waitForPlayerTeamToSettleForSwap(eventPlayer, pid, token, newTeamNum);
-    if (!settled) return;
-    if (!isValidPlayer(eventPlayer)) return;
-    if (!isHudWarmTokenCurrent(pid, token)) return;
-
-    await runLoadingGateUntilReady(eventPlayer, pid);
-}
-
-function hideCriticalHudForWarmTransition(pid: number): void {
-    setCombatHudRevealAllowedForPid(pid, false);
-    twlConquestHudHideRootOnly(pid);
-    hideTopHudFamilyForWarmTransition(pid);
-    setPositionDebugWidgetsVisibleForPid(pid, false);
-    hideVehicleSpawnerUiFamilyForPid(pid);
-
-    safeSetUIWidgetVisible(safeFind(wn("Container_HelpText", pid)), false);
-    safeSetUIWidgetVisible(safeFind(wn("HelpText", pid)), false);
-}
-
-// Reveals all critical UI families atomically once the gate releases.
-// Called only from releaseLoadingGate to ensure one reveal owner.
-// Production menus (ready dialog, gadget) are intentionally left hidden — player opens them.
-function revealAllUiFamilies(eventPlayer: mod.Player, pid: number): void {
-    if (!isValidPlayer(eventPlayer)) return;
-    renderTopLeftUiFamilyForReveal(eventPlayer, pid);
-    renderVehicleSpawnerUiFamilyForReveal(eventPlayer, pid);
-    armCombatHudFamilyForSchedulerReveal(eventPlayer, pid);
-    twlConquestHudPrimePlayerFrame(eventPlayer);
-    renderAdminUiFamilyForReveal(eventPlayer, pid);
-}
-
-// Single release owner for the unified loading gate.
-// Idempotent: guarded by token and gate-active check.
-// Reveals all UI, hides overlay, enables deploy. No post-deploy finalize window.
-async function releaseLoadingGate(eventPlayer: mod.Player, pid: number, token: number): Promise<void> {
-    if (!isValidPlayer(eventPlayer)) return;
-    if (!isHudWarmTokenCurrent(pid, token)) return;
-    if (!isUiLoadGateActiveForPid(pid)) return;
-    // Mark gate inactive before reveal so the ongoing loop stops reasserting the overlay.
-    setUiLoadGateActiveForPid(pid, false);
-    setUiLoadGateReleasedForPid(pid, true);
-    // Rebuild team swap button so the label reflects the player's current team.
-    const gateRefs = State.hudCache.topHudShellByPid[pid];
-    if (gateRefs) buildHudTeamSwapButton(eventPlayer, pid, gateRefs);
-    updateHudTeamSwapButtonVisibilityForPid(pid);
-    // Clear the team-swap HUD reset flag so the combat HUD (tickets, bars, team names)
-    // is no longer force-hidden by the scheduler pipeline on the deploy screen.
-    State.conquest.debug.teamSwapHudResetPendingByPid[pid] = false;
-    delete State.conquest.debug.engageHiddenUntilDeployByPid[pid];
-    // Reveal all families at once.
-    revealAllUiFamilies(eventPlayer, pid);
-    markHudDirty();
-    // Hide and clear the loading overlay.
-    hideLoadingOverlayForPlayerId(pid);
-    await mod.Wait(0);
-    if (!isValidPlayer(eventPlayer)) return;
-    clearLoadingOverlayForPlayerId(pid);
-    setUiLoadOverlayShownForPid(pid, false);
-    // Clear script-side restriction tracking without calling engine — player is on deploy screen
-    // (undeployed) when the gate releases, so EnableAllInputRestrictions would be rejected (CQ_Bug_35).
-    recordUiLoadInputRestrictedForPid(pid, false);
-    // Enable deploy.
-    applyPlayerDeployAvailability(eventPlayer, pid, true, "gate_release");
-}
-
-// Main unified loading gate loop for both first-join and team-swap.
-// Polls until all UI families are warm and stable, then enforces a minimum floor before releasing.
-// A 60s hard timeout force-releases even if not all families are warm.
-async function runLoadingGateUntilReady(eventPlayer: mod.Player, pid: number): Promise<void> {
-    if (!isValidPlayer(eventPlayer)) return;
-    const token = invalidateHudWarmTokenForPid(pid);
-    if (token === undefined) return;
-
-    // Reset all warm milestones before the new warm pass.
-    setCombatHudRevealAllowedForPid(pid, false);
-    setHudWarmCompletedForPid(pid, false);
-    setGadgetMenuHotReadyForPid(pid, false);
-
-    // Stagger initial prebuild per player so concurrent joins don't all resume in the same frame (CQ_Bug_40).
-    const staggerDelay = HUD_WARM_PREBUILD_DELAY_SECONDS + (_prebuildStaggerIndex++ * 0.25);
-    await mod.Wait(staggerDelay);
-    if (!isValidPlayer(eventPlayer)) return;
-    if (!isHudWarmTokenCurrent(pid, token)) return;
-
-    // Wave 3 Ship 2 (v1.410): top-shell is no longer in the bulk path; trigger it
-    // alongside the bulk so both team-swap and first-join entry paths build it.
-    // Idempotent when top-shell cache already populated (registry's per-surface
-    // in-flight guard + ensureTopHudShellForPlayer's existing-refs short-circuit).
-    triggerLazyBuild('topHudShell', pid);
-    // Wave 3 Ship 4 (v1.413): vehicleDeployTimer same pattern; readiness check still
-    // waits on the cache so the ~300ms sync-build hitch lands inside the gate window.
-    triggerLazyBuild('vehicleDeployTimer', pid);
-    // Wave 3 Ship 5 (v1.414): combatHud same pattern; serializesWith=['vehicleDeployTimer']
-    // so the heavy-build mutex serializes contention against the vehicle-timer trigger
-    // landing in the same frame (first production exerciser of mutex contention path).
-    triggerLazyBuild('combatHud', pid);
-    await prebuildAllUiFamiliesHidden(eventPlayer, pid);
-    if (!isValidPlayer(eventPlayer)) return;
-    if (!isHudWarmTokenCurrent(pid, token)) return;
-
-    let stableCount = 0;
-    let iterations = 0;
-    const GATE_MAX_ITERATIONS = 1500;
-    const GATE_REASSERT_INTERVAL = 20; // ~1s at 50ms poll -- throttle redundant engine calls
-    while (true) {
-        if (!isValidPlayer(eventPlayer)) return;
-        if (!isHudWarmTokenCurrent(pid, token)) return;
-        if (++iterations > GATE_MAX_ITERATIONS) {
-            setSafetyTimeoutTriggeredForPid(pid, true);
-            setHudWarmCompletedForPid(pid, true);
-            await releaseLoadingGate(eventPlayer, pid, token);
-            return;
-        }
-
-        // Throttle gate authority reassertion: first iteration + periodic safety net (~1s).
-        // beginLoadingGate already set overlay + deploy block; redundant calls waste frame budget (CQ_Bug_35/40).
-        if (iterations === 1 || iterations % GATE_REASSERT_INTERVAL === 0) {
-            maintainPlayerLoadingGateAuthority(eventPlayer, pid);
-        }
-
-        // Belt-and-suspenders: if player is somehow deployed while gate is active, force undeploy.
-        // Guard with isPlayerDeployed to avoid CQ_Bug_36 (UndeployPlayer on undeployed player).
-        // Gate-loop force-undeploy invariant: deployedByPid must be clear before next iteration.
-        if (State.players.deployedByPid[pid]) {
-            State.players.deployedByPid[pid] = false;
-            if (isPlayerDeployed(eventPlayer)) {
-                try { mod.UndeployPlayer(eventPlayer); } catch {}
-            }
-        }
-
-        const elapsed = mod.GetMatchTimeElapsed() - getGateStartTimeForPid(pid);
-
-        // Hard timeout: force-release if max wait exceeded, even if UI not fully warm.
-        if (elapsed >= GATE_TIMEOUT_SECONDS) {
-            setSafetyTimeoutTriggeredForPid(pid, true);
-            sendHighlightedWorldLogMessage(
-                msg(mod.stringkeys.twl.system.uiLoadHardTimeout, Math.floor(elapsed), pid),
-                true
-            );
-            setHudWarmCompletedForPid(pid, true);
-            await releaseLoadingGate(eventPlayer, pid, token);
-            return;
-        }
-
-        // Poll readiness and retry prebuild on any cold family.
-        if (isAllUiFamiliesReadyForRelease(eventPlayer, pid)) {
-            stableCount++;
-        } else {
-            stableCount = 0;
-            // Wave 3 Ship 2 (v1.410): top-shell retry alongside bulk; covers a
-            // failed initial join trigger so the gate doesn't sit until safety timeout.
-            triggerLazyBuild('topHudShell', pid);
-            // Wave 3 Ship 4 (v1.413): vehicleDeployTimer same retry guarantee.
-            triggerLazyBuild('vehicleDeployTimer', pid);
-            // Wave 3 Ship 5 (v1.414): combatHud same retry guarantee.
-            triggerLazyBuild('combatHud', pid);
-            await prebuildAllUiFamiliesHidden(eventPlayer, pid);
-            if (!isValidPlayer(eventPlayer)) return;
-            if (!isHudWarmTokenCurrent(pid, token)) return;
-            await mod.Wait(HUD_WARM_READY_POLL_SECONDS);
-            continue;
-        }
-
-        // Stable for required polls — enforce minimum floor then release.
-        if (stableCount >= HUD_WARM_READY_STABLE_POLLS) {
-            if (elapsed < GATE_FLOOR_SECONDS) {
-                // Floor still holding — keep polling.
-            } else {
-                setHudWarmCompletedForPid(pid, true);
-                refreshBuiltReadyDialogCachesForAllPlayers();
-                replayActiveMapValidationWarningsToPlayer(eventPlayer);
-                renderReadyDialogForAllVisibleViewers();
-                await releaseLoadingGate(eventPlayer, pid, token);
-                return;
-            }
-        }
-
-        await mod.Wait(HUD_WARM_READY_POLL_SECONDS);
-    }
 }
 
 function cleanupConquestHudForTeamSwap(pid: number): void {
-    // Destroy (not just hide) the combat HUD entry so the prebuild phase during the
-    // loading gate creates a completely fresh widget graph for the new team context.
-    // Hide-only left stale widget handles that could silently fail visibility calls.
+    // Destroy (not just hide) the combat HUD entry so the next deploy creates a fresh widget
+    // graph for the new team context. Hide-only left stale widget handles that could silently
+    // fail visibility calls.
     twlConquestHudDestroyPlayer(pid);
     delete State.conquest.capture.engagedObjIdByPid[pid];
     captureSoundOnPlayerLeaveOrResetPid(pid);
@@ -694,6 +249,9 @@ async function refreshConquestHudAfterTeamSwap(eventPlayer: mod.Player): Promise
     markHudDirty();
 }
 
+// Wave 3 Ship 8 (v1.418): team-swap no longer routes through the loading gate. Player snaps to
+// the deploy screen with the new team perspective immediately. Combat HUD rebuilds on the next
+// deploy via the existing armCombatHudFamilyForSchedulerReveal in renderCriticalHudForReveal.
 function processReadyDialogSelection(eventPlayer: mod.Player) {
 
     hideReadyDialogUI(eventPlayer);
@@ -705,8 +263,6 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
     if (pid !== undefined) {
         closeArmMenu(eventPlayer);
         resetArmTimers(pid);
-        // Unified loading gate: one entry point for team swap.
-        beginLoadingGate(eventPlayer, pid, "team_swap");
         State.players.deployedByPid[pid] = false;
         resetPlayerBoundaryStateOnUndeployOrReset(pid);
         clearVehicleReservationForPid(pid);
@@ -714,15 +270,10 @@ function processReadyDialogSelection(eventPlayer: mod.Player) {
         State.conquest.debug.perspectiveTeamByPid[pid] = newTeamNum;
         State.conquest.debug.teamSwapPerspectiveLockUntilByPid[pid] = mod.GetMatchTimeElapsed() + TEAM_SWAP_PERSPECTIVE_LOCK_SECONDS;
     }
-    enforceHudWarmTransitionDeployBlock(eventPlayer);
     mod.SetTeam(eventPlayer, mod.GetTeam(newTeamNum));
     markHudDirty();
-    // Reassert overlay immediately after mod.SetTeam — the engine-side team assignment
-    // can briefly flash native UI state, so re-pin the overlay in the same synchronous pass.
-    if (pid !== undefined) reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
     if (pid !== undefined) {
         void refreshConquestHudAfterTeamSwap(eventPlayer);
-        void runTeamSwapLoadingGate(eventPlayer, pid, newTeamNum, wasDeployedBeforeSwap);
     }
     if (wasDeployedBeforeSwap) {
         void forceUndeployPlayer(eventPlayer, "team_switch");

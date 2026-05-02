@@ -121,11 +121,6 @@ function destroyReadyDialogUI(playerId: number): void {
         state.uiBuilt = false;
         state.adminPanelBuilt = false;
         state.dialogVisible = false;
-        state.readyDialogWarmPrimed = false;
-        state.readyDialogHotReady = false;
-        state.uiProductionMenusWarm = false;
-        state.uiPostDeployFinalizeActive = false;
-        state.uiJoinDeployLockActive = false;
         resetReadyDialogSectionSignaturesForPid(playerId);
     }
 }
@@ -183,15 +178,6 @@ function refreshOrEnsureReadyDialogHiddenForPid(player: mod.Player, playerId: nu
     ensureReadyDialogUiBuiltHidden(player);
 }
 
-// Rebuilds one hidden ready-dialog cache ahead of user open so cached reveal stays fast.
-function warmHiddenReadyDialogCacheForPid(playerId: number): void {
-    const state = State.players.readyDialogData[playerId];
-    if (!state || state.dialogVisible) return;
-    if (!State.players.deployedByPid[playerId]) return;
-    const player = safeFindPlayer(playerId);
-    if (!isValidPlayer(player)) return;
-    ensureReadyDialogUiBuiltHidden(player);
-}
 
 // Returns true when the hidden ready-dialog shell is already built for the current layout version.
 function isReadyDialogUiCacheUsableForPid(playerId: number): boolean {

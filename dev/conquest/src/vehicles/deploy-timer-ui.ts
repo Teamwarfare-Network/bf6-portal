@@ -1662,12 +1662,9 @@ function setVehicleDeployTimerHudFamilyVisible(
 // Restores UI input mode when the vehicle HUD is the active undeployed interaction surface.
 function syncVehicleDeployHudViewerInputMode(player: mod.Player, pid: number): void {
     const liveTerminalOpen = isVehicleDeployLiveTerminalModeForPid(pid);
-    // Per-tick safeFind replaced by state flag maintained by loading-overlay.ts lifecycle.
-    const joinPromptVisible = !!State.players.readyDialogData[pid]?.loadingOverlayExists;
     if (
         (!State.players.deployedByPid[pid] || liveTerminalOpen)
         && !State.players.readyDialogData[pid]?.dialogVisible
-        && !joinPromptVisible
         && !State.players.uiInputEnabledByPid[pid]
     ) {
         setUIInputModeForPlayer(player, true);
@@ -1921,15 +1918,6 @@ function refreshVehicleDeployTimersForPlayerPreservingVisibility(player: mod.Pla
     if (!isValidPlayer(player)) return false;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return false;
-    // Fix A: Skip refresh while loading gate owns this player's UI state.
-    // Harden: if match is live and player is deployed, the gate should have cleared — force-release it.
-    if (isUiLoadGateActiveForPid(pid)) {
-        if (isMatchLive() && !!State.players.deployedByPid[pid]) {
-            setUiLoadGateActiveForPid(pid, false);
-        } else {
-            return false;
-        }
-    }
     const cache = ensureVehicleDeployTimerHudForPlayer(player);
     if (!cache || !cache.root) return false;
     const renderPlan = buildVehicleDeployTimerRenderPlan(player, pid);

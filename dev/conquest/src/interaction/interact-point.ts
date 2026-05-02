@@ -9,7 +9,6 @@ async function spawnReadyDialogInteractPoint(eventPlayer: mod.Player) {
     if (!isPlayerDeployed(eventPlayer)) return;
     const playerId = mod.GetObjId(eventPlayer);
     if (!State.players.readyDialogData[playerId]) initReadyDialogData(eventPlayer);
-    if (isUiInteractionBlockedForPid(playerId)) return;
 
     if (
         State.players.readyDialogData[playerId].interactPoint === null &&
@@ -47,7 +46,6 @@ async function spawnReadyDialogInteractPoint(eventPlayer: mod.Player) {
 // Opens the ready dialog through the single shared UI path and restores local input state on failure.
 function tryOpenReadyDialogForPlayer(eventPlayer: mod.Player): boolean {
     const playerId = mod.GetObjId(eventPlayer);
-    if (isUiInteractionBlockedForPid(playerId)) return false;
     try {
         if (isArmOpen(playerId)) {
             closeArmMenu(playerId);
@@ -157,29 +155,7 @@ function initReadyDialogData(eventPlayer: mod.Player) {
         posDebugToken: 0,
         posDebugAdminOverride: false,
         vehicleTimersVisibleWhileDeployed: false,
-        hudWarmToken: 0,
-        hudWarmCompleted: false,
-        hudSwapTransitionActive: false,
         combatHudRevealAllowed: false,
-        uiLoadGateActive: false,
-        uiLoadGateReleased: false,
-        uiLoadSessionId: 0,
-        uiLoadReason: "join",
-        uiLoadOverlayShown: false,
-        loadingOverlayExists: false,
-        uiCriticalRevealCompleted: false,
-        uiProductionMenusWarm: false,
-        uiPostDeployFinalizeActive: false,
-        uiJoinDeployLockActive: false,
-        uiSlipUndeployLastAttemptAt: -1,
-        uiLoadDeployEnabled: false,
-        uiLoadDeployAuthorized: false,
-        uiLoadInputRestricted: false,
-        readyDialogWarmPrimed: false,
-        readyDialogHotReady: false,
-        gadgetMenuHotReady: false,
-        gateStartTime: 0,
-        safetyTimeoutTriggered: false,
         lastButtonSignature: "",
         lastRosterSignature: "",
         lastModeConfigSignature: "",

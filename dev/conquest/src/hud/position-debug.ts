@@ -295,10 +295,6 @@ function setPositionDebugVisibleForPlayer(player: mod.Player, visible: boolean):
     const widgets = ensurePositionDebugWidgets(player);
     if (!widgets) return;
 
-    if (visible && (isUiLoadGateActiveForPid(pid) || !isHudWarmReadyForPid(pid))) {
-        visible = false;
-    }
-
     state.posDebugToken = (state.posDebugToken + 1) % 1000000000;
     const container = safeFind(UI_POS_DEBUG_CONTAINER_ID + pid);
     const applyVisible = (nextVisible: boolean): void => {

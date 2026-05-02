@@ -391,13 +391,6 @@ interface GameState {
         // Currently-focused tile key per pid in the Supply Box (arm) menu, for the
         // disabled-focused border indicator. Cleared on FocusOut, menu close, and player leave.
         armFocusedTileKeyByPid: Record<number, string>;
-        // True while a player's UI warm-prime is in flight (entry to exit of
-        // prebuildAllUiFamiliesHidden). Read by confirmReadyDialogModeConfig (Apply Config) to
-        // refuse-with-feedback while any warm is mid-flight, preventing the v1.380 hard-crash
-        // case where Apply Config's per-player widget rebuild collides with a late-joiner's
-        // partially-populated UI cache. Cleared in a finally block (covers throw/early-return)
-        // and in the player-leave cleanup path (covers disconnect-during-warm).
-        warmPrimeActiveByPid: Record<number, boolean>;
         armG: Record<number, {
             n: number;
             s: number;

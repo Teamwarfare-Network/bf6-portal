@@ -38,17 +38,17 @@ Source: [`config/conquest-constants.ts`](../src/config/conquest-constants.ts).
 
 ---
 
-## Project Stats (v1.417)
+## Project Stats (v1.420)
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.417 |
-| Source files (`.ts`) | 127 (incl. orphan / feature-flagged) |
-| Source files in bundle | ~115 (127 − 8 feature-flag-excluded − Changelog.ts − orphan deploy-diagnostic − 2 empty dirs) |
-| `dist/bundle.ts` | **878,544 bytes** (−45 bytes from Ship 7 follow-up: deleted deploy-time `warmHiddenReadyDialogCacheForPid` call + comment from `spawnReadyDialogInteractPoint`; closes the Ship 7 lazy-build loop so first triple-tap genuinely cold-builds) |
+| Version | 1.420 |
+| Source files (`.ts`) | 127 (incl. orphan / feature-flagged; `loading-overlay.ts` is a stub) |
+| Source files in bundle | ~114 |
+| `dist/bundle.ts` | **847,560 bytes** (unchanged from v1.419 — v1.420 is doc-consistency-sweep only). Wave 3 total: v1.408 → v1.420 = 877,390 → 847,560 bytes = **−29,830 bytes (−3.4%)**. |
 | `dist/bundle.strings.json` | 22,153 bytes (separate cap; unchanged) |
 | Bundle upload limit | 1,048,576 bytes (1 MiB) |
-| Bundle headroom | **170,032 bytes (16.21%)** |
+| Bundle headroom | **201,016 bytes (19.17%)** |
 | Total raw `src/` size | ~1,533,756 bytes (~1.5 MB) |
 | Build pipeline | `prebuild.js` → `bf6-portal-bundler` → `postbuild.js` → `verify.js` |
 | Entry point | `src/index.ts` (20 Portal event handler exports) |
@@ -117,16 +117,16 @@ Legend:
 | `index/capture-vo.ts` | 376 | 14,753 | Y | — | Phase 4B objective VO queue. |
 | `index/conquest-scaffold.ts` | 85 | 3,973 | Y | — | Phase 1 state init scaffold. |
 | `index/game-mode.ts` | 186 | 8,376 | Y | — | `OnGameModeStarted` impl + 0.12s main loop. |
-| `index/player-deploy.ts` | 158 | 8,016 | Y | — | `OnPlayerDeployed`/`OnPlayerUndeploy` impls. |
+| `index/player-deploy.ts` | ~120 | ~5,950 | Y | — | `OnPlayerDeployed`/`OnPlayerUndeploy` impls. v1.418 (Ship 8): `handlePlayerDeployedBeforeRelease`, `reassertUiLoadingAfterUndeploy`, gate-active branches all deleted. |
 | `index/player-join-leave.ts` | 192 | 8,325 | Y | — | `OnPlayerJoinGame`/`OnPlayerLeaveGame` impls. v1.410 (Ship 2): join flow calls `triggerLazyBuild('topHudShell', joinPid)` after reset, before gate. v1.412 (Ship 3.5): also calls `SupplyBoxWarmScheduler.enqueueLateJoiner(joinPid)` for LIVE-phase warm tail-append. v1.413 (Ship 4): also calls `triggerLazyBuild('vehicleDeployTimer', joinPid)` for gate-entry warm of the deploy-timer cache. v1.414 (Ship 5): also calls `triggerLazyBuild('combatHud', joinPid)` for gate-entry warm of the combat-HUD cache. |
 | `index/player-kpi-events.ts` | 68 | 3,119 | Y | — | KPI event impls (kill, assist, capture). |
-| `index/player-loop-inputs.ts` | 63 | 3,064 | Y | — | `OngoingPlayer`, `OnPlayerInteract`, `OnPlayerUIButtonEvent` impls. |
+| `index/player-loop-inputs.ts` | ~16 | ~600 | Y | — | `OngoingPlayer`, `OnPlayerInteract`, `OnPlayerUIButtonEvent` impls. v1.418 (Ship 8): `enforceUiLoadingGateWhileDeployed`, `maintainUiLoadingGateWhileUnreleased`, `UI_LOADING_GATE_UNDEPLOY_RETRY_SECONDS` deleted; `ongoingPlayerImpl` reduced to deploy-check + interact-point removal/spawn. |
 | `index/vehicle-events.ts` | 114 | 5,214 | Y | — | Vehicle enter/exit/spawn/destroy impls. |
 | **interaction/** | | | | | |
-| `interaction/actions.ts` | ~745 | ~33,800 | Y | — | Loading gate orchestration; warm-prime serialization lock. Top-shell prebuild removed from bulk path in v1.410 (Ship 2); `triggerLazyBuild('topHudShell', pid)` invoked at gate entry + non-ready poll retry. Supply-box prebuild + readiness checks removed in v1.411 (Ship 3). Vehicle deploy timer prebuild removed from bulk path in v1.413 (Ship 4); `triggerLazyBuild('vehicleDeployTimer', pid)` invoked at gate entry + retry alongside top-shell. Combat HUD prebuild removed from bulk path in v1.414 (Ship 5); `triggerLazyBuild('combatHud', pid)` invoked at gate entry + retry alongside the other two — first production exerciser of mutex contention path. Ready-dialog cache + hot-prime removed from bulk path in v1.416 (Ship 7); `triggerLazyBuild('readyDialog', pid)` invoked at first triple-tap in `tryOpenReadyDialogForPlayer`; gate-readiness check no longer waits on the dialog. Bulk path now contains only the FEATURE_ADMIN_PANEL admin-prebuild. |
+| `interaction/actions.ts` | ~290 | ~12,600 | Y | — | v1.418 (Ship 8): loading-gate orchestration deleted — `prebuildAllUiFamiliesHidden`, `runLoadingGateUntilReady`, `releaseLoadingGate`, `revealAllUiFamilies`, `hideAllUiFamiliesForPlayer`, `reassertPlayerUiLoadingGateVisuals`, `runTeamSwapLoadingGate`, `holdPlayerAtDeploy`, `applyPlayerDeployAvailability`, `beginLoadingGate`, `enforceHudWarmTransitionDeployBlock`, `isAllUiFamiliesReadyForRelease`, `isCriticalTopHudReadyForPid`/`CombatHud`/`VehicleDeployHud`, `hideCriticalHudForWarmTransition`, `hideTopHudFamilyForWarmTransition`, `hideVehicleSpawnerUiFamilyForPid`, `setClockWidgetCacheVisible`, `setPositionDebugWidgetsVisibleForPid`, `waitForPlayerToBecomeUndeployedForTeamSwap`, `waitForPlayerTeamToSettleForSwap` all gone. File now contains only the prebuild-while-hidden builders called by the lazy-build dispatcher, the per-family render-for-reveal helpers (called from `onPlayerDeployedImpl` via `renderCriticalHudForReveal`), `processReadyDialogSelection` (team-swap with no overlay), and team-swap support helpers. |
 | `interaction/ammo-resupply-menu.ts` | 2,772 | 121,401 | Y | **M2** | `AmmoResupplyMenuCacheEntry` per pid — ~100–180 widget refs + arrays. **Largest mega-file.** v1.411 (Ship 3): `openArmMenu` first-interact path routes through `triggerLazyBuild('supplyBox', pid)`. Hide-on-close behavior retained; teardown at disconnect via Wave 1 `destroyArmMenu`. |
 | `interaction/build-pacer.ts` | 139 | 5,372 | Y | — | Wave 3 Ship 1 (v1.409): global heavy-build mutex + 10Hz Timers.setTimeout drainer for paced lazy builds. Dormant when queue empty. |
-| `interaction/hud-warm-state.ts` | 264 | 11,741 | Y | M7 indirect | 40+ getters/setters over per-pid gate state booleans. |
+| `interaction/hud-warm-state.ts` | ~55 | ~2,000 | Y | — | v1.418 (Ship 8): swept from 40+ accessors down to 5 — `getReadyDialogStateForPid`, `setCombatHudRevealAllowedForPid`/`isCombatHudRevealAllowedForPid`, `resetReadyDialogSectionSignaturesForPid`, plus `isHudWarmReadyForPid` (always returns true) + `isHudSwapTransitionActiveForPid` (always returns false) kept as constants for backward-compat across clock/help/vehicles/HUD pipeline call sites. |
 | `interaction/interact-point.ts` | 191 | ~7,940 | Y | — | Ready-dialog interact point spawn/despawn. v1.416 (Ship 7): `tryOpenReadyDialogForPlayer` calls `triggerLazyBuild('readyDialog', playerId)` immediately before `showReadyDialogUI` so the dispatcher's in-flight guard + error tear-down semantics own the build path. v1.417 (Ship 7 follow-up): deploy-time `warmHiddenReadyDialogCacheForPid(playerId)` call deleted from `spawnReadyDialogInteractPoint` — without this deletion the cache pre-warmed at deploy and the lazy trigger was a no-op. Now the build genuinely fires on first triple-tap. |
 | `interaction/lazy-build-registry.ts` | 254 | 9,238 | Y | — | Wave 3 Ship 1 (v1.409): const config map for 6 UI surfaces (combat HUD, top shell, vehicle deploy timer, supply box, ready dialog, boundary prompt) + `triggerLazyBuild(name, pid)` dispatcher with per-surface in-flight guard, mutex acquisition, error retry. |
 | `interaction/spawn-selector.ts` | 36 | 974 | Y | — | Phase 1 placeholder for future spawn selection. |
@@ -147,7 +147,7 @@ Legend:
 | `ready-dialog/dialog-build-sections.ts` | 265 | 7,947 | Y | — | Header/map + bottom-button sections. |
 | `ready-dialog/dialog-build.ts` | 328 | 14,652 | Y | — | Root dialog assembly + section orchestration. |
 | `ready-dialog/lifecycle.ts` | 205 | 8,849 | Y | — | Dialog open/close/destroy. |
-| `ready-dialog/loading-overlay.ts` | 205 | 6,967 | Y | — | Loading overlay during UI warm gate (always included). |
+| `ready-dialog/loading-overlay.ts` | 5 | ~280 | N (stub) | — | v1.418 (Ship 8): file emptied; loading overlay UX deleted with the loading gate. Import removed from `index.ts`. Stub remains on disk only. |
 | `ready-dialog/matchup-summary.ts` | 109 | 4,907 | Y | — | Team names + matchup readouts. |
 | `ready-dialog/mode-config-aircraft-ceiling.ts` | 43 | 2,522 | Y | — | Aircraft ceiling control. |
 | `ready-dialog/mode-config-presets.ts` | 387 | 19,961 | Y | — | Vehicle preset packages (1v1 → 4v4) + apply. |
@@ -160,7 +160,7 @@ Legend:
 | `ready-dialog/swap-action.ts` | 29 | 1,534 | Y | — | Single-button team swap. |
 | `ready-dialog/takeoff-gating.ts` | 16 | 652 | Y | — | Aircraft takeoff readiness check. |
 | **state/** | | | | | |
-| `state/core.ts` | 109 | 4,381 | Y | — | `isMatchLive`, round-start delay helpers, world-log. |
+| `state/core.ts` | ~99 | ~3,950 | Y | — | `isMatchLive`, round-start delay helpers, world-log. v1.418 (Ship 8): `setAllInputRestrictionsForPlayer` deleted (no callers post-gate-deletion; `mod.EnableAllInputRestrictions` no longer invoked from script). |
 | `state/hud-cache-types.ts` | 231 | 7,300 | Y | M1/M2/M4/M5/M6 owner | All HUD cache type defs. **Tier A2 target.** |
 | `state/id-helpers.ts` | 167 | 6,640 | Y | — | `safe*` accessors: `isValidPlayer`, `safeFind`, `safeGetPlayerId`. |
 | `state/lifecycle-guardrails.ts` | 66 | 2,120 | Y | — | Phase transition guards. |
@@ -601,10 +601,8 @@ Module: mode start loop and top-level initialization
 
 ### src/index/player-deploy.ts
 - `deferForcedUndeploy()` (2) — schedule delayed player undeploy
-- `handlePlayerDeployedBeforeRelease()` (1) — undeploy player if deployed early
-- `reassertUiLoadingAfterUndeploy()` (1) — show loading overlay after undeploy
-- `onPlayerDeployedImpl()` (M~1) — player spawn handler implementation
-- `onPlayerUndeployImpl()` (M~1) — player undeploy handler implementation
+- `onPlayerDeployedImpl()` (M~1) — player spawn handler implementation (v1.418 Ship 8: gate-active branch removed; just initializes per-pid state, calls `renderCriticalHudForReveal`, spawns interact-point)
+- `onPlayerUndeployImpl()` (M~1) — player undeploy handler implementation (v1.418 Ship 8: gate-active reassert branch removed)
 
 ### src/index/player-join-leave.ts
 Module: join/leave lifecycle handlers and join-time UI reset
@@ -620,9 +618,7 @@ Module: KPI event handler implementations for kills, assists, and capture attrib
 - `onCapturePointCapturedKpiImpl()` (M~1) — record capture event
 
 ### src/index/player-loop-inputs.ts
-- `enforceUiLoadingGateWhileDeployed()` (1) — block input during UI loading
-- `maintainUiLoadingGateWhileUnreleased()` (1) — maintain loading gate state
-- `ongoingPlayerImpl()` (XL~1) — per-player ongoing tick implementation
+- `ongoingPlayerImpl()` (XL~1) — per-player ongoing tick implementation (v1.418 Ship 8: gate enforce/maintain helpers deleted; reduced to deploy-check + interact-point removal/spawn)
 - `onPlayerInteractImpl()` (M~1) — player interact handler implementation
 - `onPlayerUIButtonEventImpl()` (M~1) — UI button event handler implementation
 
@@ -634,37 +630,16 @@ Module: player vehicle enter/exit and vehicle spawn/destroy handlers
 - `onVehicleDestroyedImpl()` (M~1) — vehicle destroy handler implementation
 
 ### src/interaction/actions.ts
-Module: loading gate orchestration and HUD warm/reveal control
-- `holdPlayerAtDeploy()` (1) — prevent player from deploying
-- `applyPlayerDeployAvailability()` (2) — control deploy button availability
-- `beginLoadingGate()` (2) — start UI loading gate
-- `maintainPlayerLoadingGateAuthority()` (2) — maintain loading gate state
-- `enforceHudWarmTransitionDeployBlock()` (2) — block deploy during HUD transition
-- `canEnablePlayerDeployForPid()` (1) — check if deploy can be enabled
-- `syncPlayerDeployAvailability()` (0) — sync deploy button state to player
-- `isCriticalTopHudReadyForPid()` (1) — check if top HUD ready
-- `isCriticalCombatHudReadyForPid()` (1) — check if combat HUD ready
-- `isCriticalVehicleDeployHudReadyForPid()` (1) — check if deploy HUD ready
-- `isAllUiFamiliesReadyForRelease()` (1) — check if all UI ready
-- `reassertPlayerUiLoadingGateVisuals()` (12) — update loading gate visuals
-- `hideAllUiFamiliesForPlayer()` (1) — hide all UI families
-- `refreshClockForPlayer()` (2) — refresh clock display
+Module: HUD warm/reveal helpers + lazy-build per-family builders + team-swap orchestration. v1.418 (Ship 8) deleted the loading-gate orchestration; this file shrank from ~745 to ~290 lines.
+- `refreshClockForPlayer()` (2) — refresh clock display (called from clock module; widget visibility now always-on post-Ship-8)
 - `refreshCombatHudForPlayer()` (0) — refresh combat HUD
-- `prebuildTopLeftUiFamilyWhileHidden()` (1) / `prebuildVehicleSpawnerUiFamilyWhileHidden()` (1) / `prebuildCombatHudFamilyWhileHidden()` (1) / `prebuildReadyDialogUiFamilyWhileHidden()` (1) — prebuild individual UI families
-- `prebuildAllUiFamiliesHidden()` (2) — prebuild all UI families (lock-serialized)
-- `renderTopLeftUiFamilyImmediate()` (2) / `renderTopLeftUiFamilyForReveal()` (2) / `renderVehicleSpawnerUiFamilyForReveal()` (3) / `armCombatHudFamilyForSchedulerReveal()` (2) / `renderAdminUiFamilyForReveal()` (2) — show UI families
-- `setPositionDebugWidgetsVisibleForPid()` (1) / `getPositionDebugWidgetIds()` (2) / `deletePositionDebugWidgetsForPid()` (1) — position debug widgets
-- `setClockWidgetCacheVisible()` (1) — show/hide clock
-- `hideVehicleSpawnerUiFamilyForPid()` (1) / `hideTopHudFamilyForWarmTransition()` (1) / `hideCriticalHudForWarmTransition()` (4) — hide families during transitions
-- `renderCriticalHudForReveal()` (2) — show critical HUD
-- `waitForPlayerToBecomeUndeployedForTeamSwap()` (1) / `waitForPlayerTeamToSettleForSwap()` (1) — team-swap wait helpers
-- `runTeamSwapLoadingGate()` (S~1) — execute team swap loading gate
-- `revealAllUiFamilies()` (1) — show all UI families
-- `releaseLoadingGate()` (3) — end loading gate (single owner)
-- `runLoadingGateUntilReady()` (2) — execute loading gate until ready
+- `prebuildTopLeftUiFamilyWhileHidden()` (1) / `prebuildVehicleSpawnerUiFamilyWhileHidden()` (1) / `prebuildCombatHudFamilyWhileHidden()` (1) / `prebuildReadyDialogUiFamilyWhileHidden()` (1) — per-family hidden builders called by the lazy-build dispatcher
+- `renderTopLeftUiFamilyImmediate()` (2) / `renderTopLeftUiFamilyForReveal()` (2) / `renderVehicleSpawnerUiFamilyForReveal()` (3) / `armCombatHudFamilyForSchedulerReveal()` (2) / `renderAdminUiFamilyForReveal()` (2) — per-family reveal helpers (called from `renderCriticalHudForReveal` on deploy + ready-dialog close)
+- `getPositionDebugWidgetIds()` (1) / `deletePositionDebugWidgetsForPid()` (1) — position debug widget helpers
+- `renderCriticalHudForReveal()` (2) — atomic critical HUD reveal (called from `onPlayerDeployedImpl` and ready-dialog close)
 - `cleanupConquestHudForTeamSwap()` (1) / `refreshConquestHudAfterTeamSwap()` (1) — team-swap HUD cleanup/refresh
-- `forceUndeployPlayer()` (1) — force player undeploy
-- `processReadyDialogSelection()` (2) — process ready dialog selection (plus 6 internal helpers)
+- `forceUndeployPlayer()` (1) — force player undeploy (used by team-swap path)
+- `processReadyDialogSelection()` (2) — team-swap action: snap-to-deploy with no overlay (v1.418 Ship 8: removed `beginLoadingGate`/`enforceHudWarmTransitionDeployBlock`/`reassertPlayerUiLoadingGateVisuals`/`runTeamSwapLoadingGate` calls)
 
 ### src/interaction/ammo-resupply-menu.ts
 Module: gadget locker menu for supply-box interaction (mega-file ~2,769 lines; 59 internal helpers). External callers use `openArmMenu` / `closeArmMenu` / `armRefreshFrame` / `resetArmState` / `resetArmTimers` / `probeLauncherSlot` / `probeSlot` / `slotWithLauncher` / `syncActiveGadgetLockerConfig`. Owns largest per-pid widget cache (M2).
@@ -678,27 +653,12 @@ Module: Wave 3 Ship 1 (v1.409) — global heavy-build mutex + 10Hz Timers.setTim
 - `LazyBuildPacer.getPendingOpCount()` (0) / `isDrainerActive()` (0) / `getDrainerTickCount()` (0) — drainer telemetry
 
 ### src/interaction/hud-warm-state.ts
-Module: per-player HUD warm/reveal state accessors and signature reset helpers
-- `getReadyDialogStateForPid()` (38) — get ready dialog state for player
-- `invalidateHudWarmTokenForPid()` (2) / `getHudWarmTokenForPid()` (2) / `isHudWarmTokenCurrent()` (8) — HUD warm token management
-- `setHudWarmCompletedForPid()` (4) — mark HUD warm complete
-- `setCombatHudRevealAllowedForPid()` (3) — control combat HUD reveal
-- `setUiLoadGateActiveForPid()` (2) / `setUiLoadGateReleasedForPid()` (1) — gate state setters
-- `setUiLoadDeployAuthorizedForPid()` (0) — authorize deploy
-- `beginUiLoadSessionForPid()` (1) — begin loading session
-- `recordUiLoadDeployEnabledForPid()` (2) / `isUiLoadDeployAuthorizedForPid()` (0) / `recordUiLoadInputRestrictedForPid()` (3) — load record/check
-- `setUiLoadOverlayShownForPid()` (2) / `isUiLoadOverlayShownForPid()` (2) — overlay state
-- `setUiCriticalRevealCompletedForPid()` (0) / `isUiCriticalRevealCompletedForPid()` (0) — reveal state
-- `setUiProductionMenusWarmForPid()` (0) / `isUiProductionMenusWarmForPid()` (0) — menu warm state
-- `setUiPostDeployFinalizeActiveForPid()` (0) / `isUiPostDeployFinalizeActiveForPid()` (0) — finalize state
-- `setUiJoinDeployLockActiveForPid()` (0) / `isUiJoinDeployLockActiveForPid()` (0) — join lock state
-- `setReadyDialogHotReadyForPid()` (2) / `isReadyDialogHotReadyForPid()` (1) — ready-dialog hot state
-- `setGadgetMenuHotReadyForPid()` (2) / `isGadgetMenuHotReadyForPid()` (1) — gadget menu hot state
-- `resetReadyDialogSectionSignaturesForPid()` (2) — reset dialog signatures
-- `isHudWarmReadyForPid()` (11) / `isHudSwapTransitionActiveForPid()` (5) / `isUiLoadGateActiveForPid()` (19) / `isUiLoadGateReleasedForPid()` (6) — gate state checks
-- `isHudTransitionBlockingForPid()` (1) / `isUiInteractionBlockedForPid()` (4) / `isCombatHudRevealAllowedForPid()` (2) — interaction-block checks
-- `setGateStartTimeForPid()` (1) / `getGateStartTimeForPid()` (1) — gate-time accessors
-- `setSafetyTimeoutTriggeredForPid()` (2) — mark safety timeout triggered
+Module: per-pid ready-dialog state accessor + combat-HUD reveal flag. v1.418 (Ship 8) swept this from 40+ accessors to 5 — the loading-gate machinery is gone.
+- `getReadyDialogStateForPid()` (~30) — get ready dialog state for player
+- `setCombatHudRevealAllowedForPid()` (1) / `isCombatHudRevealAllowedForPid()` (2) — control combat HUD reveal flag (set true on deploy, read by HUD pipeline)
+- `resetReadyDialogSectionSignaturesForPid()` (2) — reset dialog signatures so the next refresh cannot early-out on stale content
+- `isHudWarmReadyForPid()` (~11) — always returns `true` (legacy reader kept for backward-compat across clock/help/vehicles/HUD pipeline)
+- `isHudSwapTransitionActiveForPid()` (~5) — always returns `false` (legacy reader; team-swap no longer routes through a gated swap transition)
 
 ### src/interaction/interact-point.ts
 Module: deploy interact-point lifecycle and ready-dialog trigger logic
@@ -835,7 +795,6 @@ Module: custom two-team tab scoreboard configuration and per-player value sync
 - `refreshReadyDialogSectionsForWarmPrime()` (3) — refresh for warm prime
 - `ensureReadyDialogUiBuiltHidden()` (4) — ensure UI built while hidden
 - `showReadyDialogUI()` (3) — show dialog UI
-- `primeReadyDialogRevealWhileBlocked()` (1) — prime reveal while blocked
 - `createReadyDialogUI()` (1) — create dialog UI
 
 ### src/ready-dialog/lifecycle.ts
@@ -848,15 +807,10 @@ Module: custom two-team tab scoreboard configuration and per-player value sync
 - `invalidateHiddenReadyDialogCacheForPid()` (1) / `invalidateHiddenReadyDialogCacheForAllPlayers()` (1) — cache invalidation
 - `refreshBuiltReadyDialogCachesForAllPlayers()` (2) — refresh caches for all
 - `refreshOrEnsureReadyDialogHiddenForPid()` (0) — refresh or ensure for player
-- `warmHiddenReadyDialogCacheForPid()` (1) — warm cache for player
 - `isReadyDialogUiCacheUsableForPid()` (6) — check if cache usable
 
 ### src/ready-dialog/loading-overlay.ts
-Module: loading overlay shown during player UI warm gate
-- `joinPromptRootName()` (4) / `joinPromptPanelName()` (5) / `joinPromptTitleName()` (4) / `joinPromptSubtitleName()` (4) / `joinPromptBodyName()` (5) / `joinPromptDetailName()` (5) — widget ID generators (legacy join-prompt prefix retained)
-- `getLoadingOverlayWidgetNames()` (2) — get all widget IDs
-- `hideLoadingOverlayForPlayerId()` (1) / `clearLoadingOverlayForPlayerId()` (5) — overlay teardown
-- `ensureLoadingOverlayForPlayer()` (1) / `showLoadingOverlayForPlayer()` (1) — overlay show
+Module: DELETED in Wave 3 Ship 8 (v1.418). File is now a stub; not in bundle. Loading-overlay UX gone with the loading gate; players snap to deploy screen on first-join and team-swap.
 
 ### src/ready-dialog/matchup-summary.ts
 - `updateTeamNameWidgetsForPid()` (1) / `updateTeamNameWidgetsForAllPlayers()` (1) — team name updates
@@ -884,7 +838,7 @@ Module: loading overlay shown during player UI warm gate
 - `resetReadyDialogModeConfigToDefaults()` (1) — reset to defaults
 - `setReadyDialogGameModeIndex()` (1) / `setReadyDialogAircraftCeiling()` (0) / `setReadyDialogVehicleSelectionIndexByKey()` (1) — knob setters
 - `toggleReadyDialogVanillaDeployCheckbox()` (1) / `toggleReadyDialogHqDeployCheckbox()` (1) / `toggleReadyDialogAirDeployCheckbox()` (1) / `toggleReadyDialogForwardDeployCheckbox()` (1) / `toggleReadyDialogSupplyBoxesCheckbox()` (1) — checkbox toggles
-- `confirmReadyDialogModeConfig()` (S~1) — confirm config changes (warm-prime guarded #105)
+- `confirmReadyDialogModeConfig()` (S~1) — confirm config changes (the original #105 warm-prime guard was deleted in v1.418 Ship 8 along with `warmPrimeActiveByPid`; the lazy-build dispatcher's per-surface in-flight guard is the new line of defense)
 - `forceUnreadyApplierAfterConfirm()` (1) — force unready after confirm
 
 ### src/ready-dialog/mode-config-readout.ts
@@ -946,7 +900,6 @@ Module: loading overlay shown during player UI warm gate
 
 ### src/state/core.ts
 - `setUIInputModeForPlayer()` (15) — set UI input mode
-- `setAllInputRestrictionsForPlayer()` (2) — set all input restrictions
 - `isMatchLive()` (64) — check if match is live
 - `getSecondsSinceLive()` (7) — get seconds since live start
 - `isRoundStartAirDelayActive()` (2) / `isRoundStartAirDeployDelayActive()` (3) / `isRoundStartForwardDeployDelayActive()` (3) / `isRoundStartGadgetDelayActive()` (2) — round-start delay checks
@@ -1244,7 +1197,7 @@ Module: serial dispatch + Clocks-based respawn (v1.258 rewrite)
 | `worldInteractableIconByPidByObjId[pid]` | `ensureMainBaseTeamIconForPlayer` (per WorldIcon) | `cleanupWorldInteractableRuntimeIconsForPid` (called from `onPlayerLeaveGameImpl:138`) | ✓ |
 | `armO[pid]` / `armI[pid]` / `armT[pid]` | Gadget menu open paths | `onPlayerLeaveGameImpl:157-159` + `resetArmState` | ✓ |
 | `armFocusedTileKeyByPid[pid]` | FocusIn handler | `onPlayerLeaveGameImpl:160` + `setArmOpen(pid, false)` | ✓ |
-| `warmPrimeActiveByPid[pid]` | `prebuildAllUiFamiliesHidden` entry | `onPlayerLeaveGameImpl:161` + `finally` block in prebuild (#105 fix) | ✓ |
+| ~~`warmPrimeActiveByPid[pid]`~~ | DELETED in v1.418 Ship 8 (along with `prebuildAllUiFamiliesHidden`). | — | — |
 | `armG[pid]` / `armL[pid]` / `armS[pid]` | Gadget cooldown ensure helpers | `onPlayerLeaveGameImpl:162-164` + `resetArmTimers(pid)` | ✓ |
 | `lockerSlots[pid]` | `probeLauncherSlot` first call | `closeArmMenu` (`ammo-resupply-menu.ts:2474`) — fires on menu close, NOT explicit on leave | ⚠ |
 | `lockerSlotToggle[pid]` | First locker open | **No deallocator** found in `src/`. Persists by design (player preference across menu reopen) | ❌ |
@@ -1277,7 +1230,7 @@ Module: serial dispatch + Clocks-based respawn (v1.258 rewrite)
 
 | Field | Allocator | Deallocator | Status |
 |-------|-----------|-------------|:------:|
-| `engagedObjIdByPid[pid]` | `onPlayerEnterCapturePointImpl` | `onPlayerExitCapturePointImpl`, `onPlayerDeployedImpl`, `onPlayerUndeployImpl`, `cleanupConquestHudForTeamSwap`, `runTeamSwapLoadingGate`, HUD pipeline recovery — **6 delete sites**. **Not deleted explicitly in `onPlayerLeaveGameImpl`** but preceding `cleanupHudForPid` chain may handle it via team-swap path. | ⚠ |
+| `engagedObjIdByPid[pid]` | `onPlayerEnterCapturePointImpl` | `onPlayerExitCapturePointImpl`, `onPlayerDeployedImpl`, `onPlayerUndeployImpl`, `cleanupConquestHudForTeamSwap`, `processReadyDialogSelection` (team-swap path post-Ship-8), HUD pipeline recovery — **5 delete sites** (was 6 pre-v1.418; `runTeamSwapLoadingGate` deleted in Ship 8). **Not deleted explicitly in `onPlayerLeaveGameImpl`** but preceding `cleanupHudForPid` chain may handle it via team-swap path. | ⚠ |
 
 #### `State.conquest.spawnCharge.*`
 

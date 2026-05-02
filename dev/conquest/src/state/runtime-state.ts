@@ -214,7 +214,6 @@ const State: GameState = {
         armI: {},
         armT: {},
         armFocusedTileKeyByPid: {},
-        warmPrimeActiveByPid: {},
         armG: {},
         armL: {},
         armS: {},

@@ -10,40 +10,10 @@ async function deferForcedUndeploy(player: mod.Player, reason: string): Promise<
     }
 }
 
-// Handles the "deployed before release" race by freezing the player immediately and forcing them back to deploy.
-async function handlePlayerDeployedBeforeRelease(eventPlayer: mod.Player, pid: number): Promise<void> {
-    if (!isValidPlayer(eventPlayer)) return;
-    reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
-    setAllInputRestrictionsForPlayer(eventPlayer, true);
-    try {
-        mod.UndeployPlayer(eventPlayer);
-    } catch {
-    }
-    await deferForcedUndeploy(eventPlayer, "hud_warm_pending");
-}
-
-// Reasserts the loading overlay after the deploy-screen transition has taken ownership so team-swap load is actually visible.
-async function reassertUiLoadingAfterUndeploy(eventPlayer: mod.Player): Promise<void> {
-    await mod.Wait(0);
-    if (!isValidPlayer(eventPlayer)) return;
-    const pid = safeGetPlayerId(eventPlayer);
-    if (pid === undefined) return;
-    if (!isUiLoadGateActiveForPid(pid)) return;
-    reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
-}
-
 async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     if (!State.players.readyDialogData[pid]) initReadyDialogData(eventPlayer);
-    // Unified gate check: if gate is still active (not yet released), recapture.
-    // Dual-guard invariant: active || !released covers both pre-release and released-but-not-authorized windows.
-    if (isUiLoadGateActiveForPid(pid) || !isUiLoadGateReleasedForPid(pid)) {
-        State.players.deployedByPid[pid] = false;
-        await handlePlayerDeployedBeforeRelease(eventPlayer, pid);
-        return;
-    }
-    invalidateHudWarmTokenForPid(pid);
     mod.SetRedeployTime(eventPlayer, 0);
     const deployedTeam = safeGetTeamNumberFromPlayer(eventPlayer, 0);
     if (deployedTeam === TeamID.Team1 || deployedTeam === TeamID.Team2) {
@@ -103,15 +73,12 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     await spawnReadyDialogInteractPoint(eventPlayer);
 }
 
-// Cleans up deployed state. If a loading gate is active, reasserts overlay + deploy block without starting new warm.
+// Cleans up deployed state.
 function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     if (!isValidPlayer(eventPlayer)) return;
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
     if (isPidDisconnected(pid)) return;
-    // Clear script-side restriction tracking without calling engine — player is already undeployed
-    // and the engine rejects EnableAllInputRestrictions on undeployed players (CQ_Bug_35).
-    recordUiLoadInputRestrictedForPid(pid, false);
     State.players.deployedByPid[pid] = false;
     // Clear vehicle slot ownership — OnPlayerExitVehicle does not fire on undeploy/death.
     for (let i = 0; i < State.vehicles.slots.length; i++) {
@@ -139,14 +106,6 @@ function onPlayerUndeployImpl(eventPlayer: mod.Player) {
     closeArmMenu(eventPlayer);
     closeVehicleDeployLiveMenuForPlayer(eventPlayer);
     removeReadyDialogInteractPoint(pid);
-
-    // If any loading gate is active (join or team_swap), reassert overlay + deploy block.
-    // The running gate loop owns warm — do not start a new warm pass here.
-    if (isUiLoadGateActiveForPid(pid)) {
-        reassertPlayerUiLoadingGateVisuals(eventPlayer, pid);
-        void reassertUiLoadingAfterUndeploy(eventPlayer);
-        return;
-    }
 
     // CQ_Bug_44: proactively refresh the deploy timer HUD on undeploy so the Ground/Air
     // deploy rows appear immediately on the deploy screen. Without this, the HUD cache is

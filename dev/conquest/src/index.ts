@@ -90,7 +90,6 @@ import './ready-dialog/mode-config-readout';
 import './ready-dialog/mode-config-aircraft-ceiling';
 import './ready-dialog/mode-config-presets';
 import './ready-dialog/matchup-summary';
-import './ready-dialog/loading-overlay';
 // import './ready-dialog/join-prompt-ids'; // @feature FEATURE_JOIN_PROMPT
 // import './ready-dialog/join-prompt-layout'; // @feature FEATURE_JOIN_PROMPT
 // import './ready-dialog/join-prompt-events'; // @feature FEATURE_JOIN_PROMPT

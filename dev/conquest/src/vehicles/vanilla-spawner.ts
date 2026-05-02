@@ -118,7 +118,6 @@ function revealVehicleSpawnerUiAfterStartup(): void {
         if (pid === undefined) continue;
         if (State.players.deployedByPid[pid]) continue;
         if (State.players.readyDialogData[pid]?.dialogVisible) continue;
-        if (!isHudWarmReadyForPid(pid) || isHudSwapTransitionActiveForPid(pid)) continue;
         renderVehicleSpawnerUiFamilyForReveal(player, pid);
     }
 }

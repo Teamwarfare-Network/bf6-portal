@@ -10,12 +10,10 @@ interface ReadyDialogInteractConfig {
     velocityThreshold: number;
 }
 
-type UiLoadReason = "join" | "team_swap";
-
-// Unified loading gate mode (replaces the old conservative/non-conservative split).
-// One gate entry point for both first-join and team-swap; released only after
-// all UI families are warm and the floor window has elapsed.
-
+// Wave 3 Ship 8 (v1.418): the loading-gate machinery was deleted, so all of the legacy gate
+// session/timing/restriction fields are gone. What survives: dialog visibility, UI cache state,
+// position-debug state, vehicle-timer admin override, combat HUD reveal arming, and section
+// signature caches that drive the ready-dialog refresh-while-hidden path.
 interface readyDialogData_t {
     interactPoint: mod.InteractPoint | null;
     lastDeployTime: number;
@@ -32,33 +30,7 @@ interface readyDialogData_t {
     // paths (respawn, team-swap re-warm, ready-dialog close) stop re-asserting posDebugVisible=true.
     posDebugAdminOverride: boolean;
     vehicleTimersVisibleWhileDeployed: boolean;
-    hudWarmToken: number;
-    hudWarmCompleted: boolean;
-    hudSwapTransitionActive: boolean;
     combatHudRevealAllowed: boolean;
-    uiLoadGateActive: boolean;
-    uiLoadGateReleased: boolean;
-    uiLoadSessionId: number;
-    uiLoadReason: UiLoadReason;
-    uiLoadOverlayShown: boolean;
-    // Tracks loading-overlay widget tree existence (NOT visibility). Set true when
-    // ensureLoadingOverlayForPlayer creates the tree; cleared in clearLoadingOverlayForPlayerId.
-    // Replaces a per-tick safeFind in syncVehicleDeployHudViewerInputMode.
-    loadingOverlayExists: boolean;
-    uiCriticalRevealCompleted: boolean;
-    uiProductionMenusWarm: boolean;
-    uiPostDeployFinalizeActive: boolean;
-    uiJoinDeployLockActive: boolean;
-    uiSlipUndeployLastAttemptAt: number;
-    uiLoadDeployEnabled: boolean;
-    uiLoadDeployAuthorized: boolean;
-    uiLoadInputRestricted: boolean;
-    readyDialogWarmPrimed: boolean;
-    readyDialogHotReady: boolean;
-    gadgetMenuHotReady: boolean;
-    // Unified gate timing: set when beginLoadingGate starts, used by runLoadingGateUntilReady for floor/timeout checks.
-    gateStartTime: number;
-    safetyTimeoutTriggered: boolean;
     lastButtonSignature: string;
     lastRosterSignature: string;
     lastModeConfigSignature: string;

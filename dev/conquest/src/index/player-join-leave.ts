@@ -13,7 +13,6 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
     resetVehicleDeployLiveMenuStateForPid(pid);
     resetArmState(pid);
     cleanupWorldInteractableRuntimeIconsForPid(pid);
-    clearLoadingOverlayForPlayerId(pid);
     hideReadyDialogUI(pid);
     destroyArmMenu(pid);
 
@@ -89,13 +88,14 @@ function cleanupHudForPid(pid: number): void {
     delete State.conquest.debug.hudClockVmByPid[pid];
 }
 
-// Starts the first-join loading session immediately, then keeps deploy blocked until the join-owned warm/reveal path explicitly releases it.
+// Initializes per-pid state and triggers the lazy-build cohort. With the loading gate deleted in
+// Wave 3 Ship 8 (v1.418), surfaces build via their dispatcher triggers and complete in the same
+// JS execution slice; the player lands directly on deploy screen without a loading-overlay window.
 async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
     initReadyDialogData(eventPlayer);
     const joinPid = safeGetPlayerId(eventPlayer);
     const wasDisconnected = joinPid !== undefined && State.players.disconnectedByPid[joinPid] === true;
     if (joinPid !== undefined) {
-        beginLoadingGate(eventPlayer, joinPid, "join");
         resetPlayerBoundaryStateOnUndeployOrReset(joinPid, true);
         delete State.players.disconnectedByPid[joinPid];
         State.players.deployedByPid[joinPid] = false;
@@ -122,8 +122,6 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
         triggerLazyBuild('vehicleDeployTimer', joinPid);
         triggerLazyBuild('combatHud', joinPid);
         SupplyBoxWarmScheduler.enqueueLateJoiner(joinPid);
-        reassertPlayerUiLoadingGateVisuals(eventPlayer, joinPid);
-        await runLoadingGateUntilReady(eventPlayer, joinPid);
     }
 }
 
@@ -164,7 +162,6 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.armI[pid];
     delete State.players.armT[pid];
     delete State.players.armFocusedTileKeyByPid[pid];
-    delete State.players.warmPrimeActiveByPid[pid];
     delete State.players.armS[pid];
     delete State.players.armG[pid];
     delete State.players.armL[pid];
@@ -178,7 +175,6 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     onPlayerLeaveSpawnCharge(pid);
     delete State.players.readyDialogData[pid];
     refreshBuiltReadyDialogCachesForAllPlayers();
-    clearLoadingOverlayForPlayerId(pid);
 
     if (!isMatchLive()) {
         renderReadyDialogForAllVisibleViewers();

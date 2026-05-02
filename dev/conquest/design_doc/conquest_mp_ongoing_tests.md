@@ -77,6 +77,15 @@
 - [ ] **64-player worst case.** Pass: batch size = `ceil(64/10) = 7` (under MAX_BATCH_SIZE = 8); 7 sync 12-widget builds per second is well within the 1000ms engine eval budget; no script termination; sweep wraps in 10s flat.
 - [ ] **Pre-warm interaction with sweep.** Pass: a player who triggers a violation during pregame (forcing a build via existing path before LIVE) sees no double-build when their batch fires post-LIVE — `ensureBoundaryPromptUiForPlayer`'s `existing` branch returns the cached entry as a fast no-op.
 
+## Wave 3.8 — loading-gate deletion (shipped v1.418, 2026-04-30)
+
+- [ ] **24+ player full match: every Ship 2–7 surface continues to function correctly without gate orchestration.** Pass: top HUD, vehicle deploy timer, supply box, combat HUD, boundary prompt, ready dialog all build via lazy triggers when expected; no missing-function errors; no script termination.
+- [ ] **First-join race condition: no players reach world state with missing HUD.** Pass: previously prevented by the gate's force-undeploy loop; now relies on lazy-build sync-completion timing. If players occasionally land deployed with a partially-built HUD, regression — restore at minimum a deploy-event-bound guard or rebuild trigger.
+- [ ] **Team-swap UX at scale: snap-to-deploy-screen evaluated subjectively across multiple players.** Pass condition is qualitative: does the team-swap feel acceptable without the loading overlay (instant snap), or jarring (no visual continuity between dialog dismissal and new perspective)? If jarring at scale, restore the team-swap-only overlay.
+- [ ] **No `mod.EnableAllInputRestrictions` regression spam.** Pass: CQ_Bug_35 stays fixed even though `setAllInputRestrictionsForPlayer` was deleted — the engine call is no longer made from script.
+- [ ] **No script termination during full match.** Pass: 24+ player match runs Pregame → LIVE → Victory cleanly.
+- [ ] **Final heap headroom captured.** v1.418 = 200,678 bytes (19.14%) headroom. Compared to pre-Wave-3 baseline (v1.408 = 877,390 bytes / 16.33%): bundle shrank 29,492 bytes total across the wave; heap-footprint reductions are larger because per-pid gate state fields are also deleted.
+
 ## Wave 3.7 — ready dialog lazy build (shipped v1.416, follow-up v1.417, 2026-04-30)
 
 - [ ] **24+ players: each player's first triple-tap pays a one-time ~300–500ms blank, then dialog appears.** Pass: no script termination across the join-burst; cold build hits the `hitchBudgetMs: 500` ceiling on the slowest pid; subsequent re-opens are instant (cache hit). v1.417 follow-up: deploy-time warm in `spawnReadyDialogInteractPoint` deleted, so the hitch is now genuinely on first triple-tap (in v1.416 it was masked by deploy-time warm).

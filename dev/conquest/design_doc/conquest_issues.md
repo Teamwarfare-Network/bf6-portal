@@ -192,6 +192,8 @@ Status:
 - v1.082: Performance diagnostic system added (admin-toggleable) to help attribute any remaining lag spikes.
 - Needs MP confirmation to verify frame budget stays under 1,000ms with 3+ simultaneous players.
 
+v1.418 update (Wave 3 Ship 8): the v1.104 fix mechanism (`_prebuildBusy` lock + `prebuildAllUiFamiliesHidden` + `_prebuildStaggerIndex`) was deleted along with the loading-gate machinery. The ORIGINAL scenario (3 players synchronously running `prebuildAllUiFamiliesHidden` in one frame) no longer exists — there is no `prebuildAllUiFamiliesHidden`. Lazy-build surfaces still build synchronously per-trigger, and `LazyBuildPacer` (v1.409 Ship 1) provides a global heavy-build mutex that serializes contending lazy builds in the same frame; but the failure mode (3+ simultaneous heavy synchronous builds in one frame) has not been re-stressed at 24+ players post-Ship-8. Reopen if frame-budget breaches recur.
+
 Related:
 - CQ_Bug_35 (original contributor at v1.070 — now resolved)
 - CQ_Bug_41 (structural cause — unconditional per-tick work, partially addressed v1.078-v1.081)
@@ -2477,6 +2479,8 @@ Latest findings (2026-04-21):
 
 Status update (2026-04-25, v1.376): user reaffirmed all three scope items remain on the punch list. Investigation still pending MP repro / `FEATURE_PERF_DIAG=true` playtest data.
 
+Status update (2026-05-01, v1.418, Wave 3 Ship 8): scope item (3) — `holdPlayerAtDeploy` global-application concern — is **resolved-by-removal**. The function `holdPlayerAtDeploy` and the `HUD_WARM_REDEPLOY_BLOCK_SECONDS` constant were both deleted along with the loading-gate machinery. Items (1) (death respawn timing) and (2) (`SetRedeployTime(0)` persistence) remain open and unchanged.
+
 ## CQ_Polish_Launcher_Ammo_Per_Launcher_Cap
 Title: `giveRocketCharge` Consumes a Charge at Max Launcher Ammo
 
@@ -3333,9 +3337,11 @@ What this does NOT cover (followup-eligible):
 - Team-swap mid-Apply collisions. Same logic could extend to refuse team-swap-during-Apply, but the user's reported crash specifically called out late-joiner.
 - Generic instrumentation. No diagnostic world-log sentinels added in this iteration.
 
-Status: **Resolved (v1.382) pending MP confirmation.**
+Status: **Resolved (v1.382) pending MP confirmation — fix mechanism replaced in v1.418 (Wave 3 Ship 8).**
 
 v1.382 follow-up: moved the rejection message from `sendHighlightedWorldLogMessage` (world-log overlay) to the dialog's inline `unsavedLabel` red-text slot — same widget that normally renders "Unsaved changes! Press 'Apply Configuration' to save" / "Round live. Config locked." Added `applyBlockedAtSeconds` + `applyBlockedCount` fields to `ReadyDialogModeConfig` ([foundation/gameplay.ts:124](../src/foundation/gameplay.ts#L124)) and `APPLY_BLOCKED_LABEL_DURATION_SECONDS = 5` constant. `confirmReadyDialogModeConfig`'s guard branch now sets the timestamp + count, calls `updateReadyDialogModeConfigForAllVisibleViewers()`, and schedules a deferred clear after 5s. `syncReadyDialogModeActionWidgetsForPid` ([ready-dialog/mode-config-readout.ts:167](../src/ready-dialog/mode-config-readout.ts#L167)) checks the timestamp first and renders the block message before falling through to live/unsaved logic. Rationale: world-log message was easy to miss; the dialog slot is where the user is already looking when they press Apply.
+
+v1.418 update (Wave 3 Ship 8): the entire fix machinery was deleted along with the loading-gate. Specifically: `warmPrimeActiveByPid` flag (deleted from `runtime-state.ts` + `runtime-types.ts`), the Apply-blocked-loading guard branch in `confirmReadyDialogModeConfig` (deleted; `mode-config-presets.ts` simplified), `prebuildAllUiFamiliesHidden` itself (deleted from `actions.ts`), and the join-leave cleanup site for the flag. The `applyBlockedAtSeconds` / `applyBlockedCount` fields and the `applyBlockedLoading` string remain in shape but are never set (writers gone) — the dialog renderer's read branch is dead. The lazy-build dispatcher's per-surface in-flight guard (`_lazyBuildInFlightByName` in `lazy-build-registry.ts`) now serializes per-pid mid-build contention, but the original race condition (parallel widget-tree mutations from Apply Config vs. mid-warm late-joiner) has not been re-stressed at scale post-Ship-8. Reopen if the original hard-crash recurs in MP at 24+ players.
 
 Verification:
 1. Build clean (v1.381). Typecheck exit 0.
@@ -3480,12 +3486,14 @@ Investigation deferred to optimization pass (this branch):
 - The optimization analysis at [`design_doc/conquest_optimization_analysis.md`](./conquest_optimization_analysis.md) is being re-issued with a memory-focused lens: dead code, variable hygiene, helper extraction, and per-player allocation reduction.
 - Functionality-preserving cleanup must not change UI look, gameplay behavior, or any feature surface. Variables retained ONLY when they (a) need to be modified at runtime due to dynamic events (resolution change, spatial movement, dynamic re-config) or (b) are forward-facing tuning knobs. Variables existing solely to cache an immutable inline value should be inlined.
 
-Status: **Open — Critical (playtest-blocking).** No isolated repro available; the crash signature is "lifetime accumulation reaches budget"-shaped, not a deterministic event. First defensive step is the no-functional-change reclaim pass tracked in the optimization analysis. Second step (if symptoms persist) is per-player allocation reductions (cache size, dead VM fields, scope leaks).
+Status: **Awaiting MP confirmation (Wave 3 complete, 2026-05-01).** Wave 3 (v1.409–v1.418) targeted the per-pid allocation contributors directly — every UI surface now builds via `triggerLazyBuild` only when used, the loading-gate machinery + per-pid gate state is deleted, `readyDialogData_t` lost 18 fields, `warmPrimeActiveByPid` removed, ~30 `hud-warm-state.ts` accessors deleted. Bundle 877,390 → 847,898 bytes (−29,492); per-pid heap shape collapsed substantially more. Verification requires a 16+ player MP playtest (see `conquest_mp_ongoing_tests.md` Waves 3.1–3.8).
 
-Verification (after reclaim ships):
-1. Re-run a 16-player playtest with the rebuilt bundle. Goal: full match (start to victory dialog) without termination.
+Pre-Wave-3 status: **Open — Critical (playtest-blocking).** No isolated repro; crash signature was "lifetime accumulation reaches budget"-shaped, not deterministic.
+
+Verification (post-Wave-3):
+1. Re-run a 24+ player playtest with v1.418 (or later). Goal: full match (start to victory dialog) without termination.
 2. Capture engine error log immediately on termination if it recurs; note approximate elapsed seconds + connected pid count.
-3. If recurs, ship targeted per-player heap reductions (HUD cache thinning, dead VM fields removed) and re-test.
+3. If recurs at 24+ players, the remaining contributors are likely M1 (`vehicleDeployTimerCache`, ~150–250 widget refs/pid) and the combat HUD entry graph. Wave 4 candidates would target those.
 
 Related:
 - [`conquest_optimization_analysis.md`](./conquest_optimization_analysis.md) — full reclaim inventory under #109 lens.

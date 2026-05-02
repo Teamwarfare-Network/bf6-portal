@@ -78,12 +78,11 @@ Conventions used throughout the codebase. New code follows these.
 | **Event Queueing** | Sound and VO events queue and flush on fixed cadence with per-recipient throttling (see `index/capture-sound.ts`, `index/capture-vo.ts`). |
 | **Safe Accessors** | `safe*()` pattern for guarded engine calls (`safeFind`, `safeGetPlayerId`, `safeSetUITextLabel`, `safeGetSoldierStateBool`, etc.) — every engine call that can fail is wrapped. |
 | **Per-Player Maps** | State uses PID-keyed `Record<number, T>` extensively; `delete` on disconnect, paired against `onPlayerLeaveGameImpl`. |
-| **Loading Gate** | Unified single-owner state machine for first-join and team-swap with floor + hard-timeout (see `interaction/actions.ts`). All production menu entry points consult the same gate contract. |
+| **Lazy-Build Dispatch** | Wave 3 (v1.409–v1.418): UI surfaces build via `triggerLazyBuild(name, pid)` from a per-surface registry (`interaction/lazy-build-registry.ts`) with per-surface in-flight guards, optional mutex serialization, and error tear-down semantics. Replaced the prior monolithic prebuild + loading-gate pattern. |
 | **Widget Caching** | Hot-path widgets cached per-player in `State.hudCache.*`; cold-path uses `safeFind()`. |
-| **Warm Token Invalidation** | `hudWarmToken` per player prevents stale async passes from writing to current state. |
 | **ForAllPlayers** | ~30 functions iterate `mod.AllPlayers()` with validity checks via `forEachValidPlayer` shared helper. |
 | **Dirty-Flag HUD** | Combat HUD render gated on `State.conquest.debug.hudDirty || force`. Every mutation that affects HUD must call `markHudDirty()` in the same function body. See contract enumerated in [AGENTS.md](../AGENTS.md). |
-| **Single Owner Authority** | Lifecycle/match-end mutators have one owner function each (`end_CheckAndEndMatch`, `releaseLoadingGate`, etc.); all callers route through that owner with guard-on-already-fired semantics. |
+| **Single Owner Authority** | Lifecycle/match-end mutators have one owner function each (`end_CheckAndEndMatch`, etc.); all callers route through that owner with guard-on-already-fired semantics. |
 | **PID-suffixed widget names** | All cached widget names carry `_${pid}` via `wn(name, pid)`. Required to avoid namespace collisions in the engine widget registry. |
 
 ---

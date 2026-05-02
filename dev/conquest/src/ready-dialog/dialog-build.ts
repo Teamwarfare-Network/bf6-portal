@@ -123,35 +123,6 @@ function showReadyDialogUI(eventPlayer: mod.Player): mod.UIWidget | undefined {
     return dialogRoot as mod.UIWidget;
 }
 
-// Performs the actual ready-dialog open path while the loading gate is active:
-// refresh the real content, enable UI input mode, show the dialog, wait frames, then hide and restore input mode.
-async function primeReadyDialogRevealWhileBlocked(eventPlayer: mod.Player): Promise<void> {
-    const playerId = mod.GetObjId(eventPlayer);
-    const state = State.players.readyDialogData[playerId];
-    if (!state || state.readyDialogWarmPrimed === true) return;
-    setUIInputModeForPlayer(eventPlayer, true);
-    refreshReadyDialogSectionsForWarmPrime(eventPlayer, playerId);
-    const dialogRoot = showReadyDialogUI(eventPlayer);
-    if (!dialogRoot) {
-        setUIInputModeForPlayer(eventPlayer, false);
-        return;
-    }
-    await mod.Wait(0);
-    if (!isValidPlayer(eventPlayer)) return;
-    refreshReadyDialogSectionsForWarmPrime(eventPlayer, playerId);
-    showReadyDialogUI(eventPlayer);
-    await mod.Wait(0);
-    if (!isValidPlayer(eventPlayer)) return;
-    hideReadyDialogUI(eventPlayer);
-    await mod.Wait(0);
-    if (!isValidPlayer(eventPlayer)) return;
-    hideReadyDialogUI(eventPlayer);
-    await mod.Wait(0);
-    if (!isValidPlayer(eventPlayer)) return;
-    setUIInputModeForPlayer(eventPlayer, false);
-    state.dialogVisible = false;
-    state.readyDialogWarmPrimed = true;
-}
 
 // Legacy function name is preserved to avoid call-site churn.
 // Function name intentionally preserved to avoid call-site churn.
