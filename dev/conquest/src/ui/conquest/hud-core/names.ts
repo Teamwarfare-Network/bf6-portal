@@ -173,6 +173,10 @@ function twlConquestHudEngageStatusName(pid: number): string {
     return `TwlConquestHud_EngageStatus_${pid}`;
 }
 
+function twlConquestHudEngageStatusBoxName(pid: number): string {
+    return `TwlConquestHud_EngageStatusBox_${pid}`;
+}
+
 // Composes one deterministic shadow-layer widget name from a core text widget and layer suffix.
 function twlConquestHudShadowLayerName(baseName: string, layerSuffix: string): string {
     return `${baseName}_Shadow${layerSuffix}`;

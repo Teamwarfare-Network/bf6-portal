@@ -880,6 +880,14 @@ function isSlotEmpty(player: mod.Player, slot: mod.InventorySlots): boolean {
     return loaded <= 0 && mag <= 0 && !active;
 }
 function probeSlot(player: mod.Player, slot: mod.InventorySlots): { kind: "unknown" | "empty" | "launcher" | "gadget"; source: "probed" } {
+    // Engineer-class probe: ammo-based slot detection. Used ONLY for Engineer (the only class
+    // that places launcher + supply-crate / AV-mine / EOD-bot in GadgetOne/Two with variable
+    // ammo state requiring the destructive probe path in probeLauncherSlot). For Assault /
+    // Medic / Recon, use the per-class HasEquipment-based probes below (probeAssaultSlot,
+    // probeMedicSlot, probeReconSlot) routed via probeSlotForClass(). Fixes CQ_Bug_94 by
+    // skipping ammo-based detection for the 3 classes whose slots usually empty -> 4 engine
+    // error logs per supply-box open.
+    //
     // Never infer "launcher" from ammo here -- a Supply Crate with 1 charge has loaded===1 and
     // would be falsely labelled as launcher, which then fooled slotWithLauncher/launcherSlotKnown
     // (v1.311 playtest: box+EOD loadout, no launcher, toggle slot 2, launcher still landed in
@@ -892,6 +900,74 @@ function probeSlot(player: mod.Player, slot: mod.InventorySlots): { kind: "unkno
     const populated = loaded > 0 || mag > 0;
     if (populated) return { kind: "gadget", source: "probed" };
     if (active) return { kind: "unknown", source: "probed" };
+    return { kind: "empty", source: "probed" };
+}
+
+// CQ_Bug_94 fix: HasEquipment-based slot probe scoped to Assault's GadgetOne/Two candidates.
+// HasEquipment does not emit the engine error log on miss (unlike GetInventoryAmmo /
+// GetInventoryMagazineAmmo which fire "invalid player or inventory item" on every empty-slot
+// read). Iteration source is ACTIVE_GADGET_CONFIG.assault filtered by slot, so map overrides
+// via applyMapGadgetLockerConfig propagate automatically.
+function probeAssaultSlot(player: mod.Player, slot: mod.InventorySlots): { kind: "unknown" | "empty" | "gadget"; gadget?: number; source: "probed" } {
+    let active = false;
+    try { active = mod.IsInventorySlotActive(player, slot); } catch {}
+    const cfg = ACTIVE_GADGET_CONFIG;
+    for (let i = 0; i < cfg.assault.length; i++) {
+        const item = cfg.assault[i];
+        if (item.slot !== slot) continue;
+        let owned = false;
+        try { owned = mod.HasEquipment(player, item.gadget); } catch {}
+        if (owned) return { kind: "gadget", gadget: item.gadget, source: "probed" };
+    }
+    if (active) return { kind: "unknown", source: "probed" };
+    return { kind: "empty", source: "probed" };
+}
+
+// Medic per-class probe. Iteration source is ACTIVE_GADGET_CONFIG.medicItems filtered by slot
+// (smoke is on Callins, not GadgetOne/Two, so it's correctly skipped here -- tileOwned for
+// smoke falls through to its HasEquipment branch).
+function probeMedicSlot(player: mod.Player, slot: mod.InventorySlots): { kind: "unknown" | "empty" | "gadget"; gadget?: number; source: "probed" } {
+    let active = false;
+    try { active = mod.IsInventorySlotActive(player, slot); } catch {}
+    const cfg = ACTIVE_GADGET_CONFIG;
+    for (let i = 0; i < cfg.medicItems.length; i++) {
+        const item = cfg.medicItems[i];
+        if (item.slot !== slot) continue;
+        let owned = false;
+        try { owned = mod.HasEquipment(player, item.gadget); } catch {}
+        if (owned) return { kind: "gadget", gadget: item.gadget, source: "probed" };
+    }
+    if (active) return { kind: "unknown", source: "probed" };
+    return { kind: "empty", source: "probed" };
+}
+
+// Recon per-class probe. Iteration source is ACTIVE_GADGET_CONFIG.recon filtered by slot
+// (AV grenade is on Throwable, not GadgetOne/Two, so it's correctly skipped here -- tileOwned
+// for the AV grenade falls through to its HasEquipment branch).
+function probeReconSlot(player: mod.Player, slot: mod.InventorySlots): { kind: "unknown" | "empty" | "gadget"; gadget?: number; source: "probed" } {
+    let active = false;
+    try { active = mod.IsInventorySlotActive(player, slot); } catch {}
+    const cfg = ACTIVE_GADGET_CONFIG;
+    for (let i = 0; i < cfg.recon.length; i++) {
+        const item = cfg.recon[i];
+        if (item.slot !== slot) continue;
+        let owned = false;
+        try { owned = mod.HasEquipment(player, item.gadget); } catch {}
+        if (owned) return { kind: "gadget", gadget: item.gadget, source: "probed" };
+    }
+    if (active) return { kind: "unknown", source: "probed" };
+    return { kind: "empty", source: "probed" };
+}
+
+// Routes a slot probe to the per-class probe function. Engineer keeps the original ammo-based
+// probeSlot (variable launcher ammo state requires the destructive probe path). Non-Engineer
+// classes use the HasEquipment-based per-class probes which never trigger the engine error log.
+// Unknown class (no class assigned yet, edge case) returns a safe "empty" default.
+function probeSlotForClass(player: mod.Player, slot: mod.InventorySlots): { kind: "unknown" | "empty" | "launcher" | "gadget"; gadget?: number; source: "probed" } {
+    if (isCls(player, mod.SoldierClass.Engineer)) return probeSlot(player, slot);
+    if (isCls(player, mod.SoldierClass.Assault)) return probeAssaultSlot(player, slot);
+    if (isCls(player, mod.SoldierClass.Support)) return probeMedicSlot(player, slot);
+    if (isCls(player, mod.SoldierClass.Recon)) return probeReconSlot(player, slot);
     return { kind: "empty", source: "probed" };
 }
 // The only gadgets an engineer can hold in GadgetOne/GadgetTwo: Supply Crate, AV Mine,
@@ -1060,8 +1136,11 @@ function probeLauncherSlot(player: mod.Player): {
     return { slot: launcherSlot, gadget: ownedLauncher };
 }
 function initLockerSlotStateFromProbe(pid: number, player: mod.Player): void {
-    const g1 = probeSlot(player, mod.InventorySlots.GadgetOne);
-    const g2 = probeSlot(player, mod.InventorySlots.GadgetTwo);
+    // CQ_Bug_94 fix: route through the class dispatcher. Engineer keeps the original ammo-based
+    // probeSlot; Assault/Medic/Recon use HasEquipment-based per-class probes that don't emit
+    // the "invalid player or inventory item" engine error log on empty slots.
+    const g1 = probeSlotForClass(player, mod.InventorySlots.GadgetOne);
+    const g2 = probeSlotForClass(player, mod.InventorySlots.GadgetTwo);
     // Attach owned launchers to whichever slot has kind="launcher". HasEquipment misses some
     // class variants (that's the whole reason we're here), but any launcher it DOES see we
     // want annotated so click-dup-reject works for the common case.
@@ -1146,9 +1225,18 @@ function reprobeSiblingGadgetSlot(pid: number, placedSlot: mod.InventorySlots, p
     const siblingEntry = placedIsG1 ? slotsState.g2 : slotsState.g1;
     if (siblingEntry.gadget !== undefined) return;
     const siblingSlot = placedIsG1 ? mod.InventorySlots.GadgetTwo : mod.InventorySlots.GadgetOne;
-    const fresh = probeSlot(player, siblingSlot);
+    // CQ_Bug_94 fix: route through the class dispatcher (same reason as initLockerSlotStateFromProbe).
+    // Sibling re-probe fires after every gadget placement on Assault/Medic/Recon paths too, so
+    // it would also emit engine error log noise if it kept calling Engineer's probeSlot directly.
+    const fresh = probeSlotForClass(player, siblingSlot);
     siblingEntry.kind = fresh.kind;
     siblingEntry.source = "probed";
+    // If the per-class probe identified a specific gadget, attach it to the sibling entry. The
+    // existing init-time non-launcher attachment loop only fires on initLockerSlotStateFromProbe;
+    // we replicate that behavior here so sibling-re-probe results are equally annotated.
+    if (fresh.gadget !== undefined && siblingEntry.gadget === undefined) {
+        siblingEntry.gadget = fresh.gadget;
+    }
 }
 // Returns the HDR_KEYS-order class index (0=Assault,1=Engineer,2=Medic,3=Recon) for the player,
 // or undefined if the class isn't one of the four.
@@ -1264,10 +1352,11 @@ function giveMedicSmoke(eventPlayer: mod.Player): boolean {
         hasSmoke = mod.HasEquipment(eventPlayer, smokeGadget);
     } catch {}
     if (hasSmoke) return false;
-    // Callins slot -- not modelled in lockerSlots state; HasEquipment is canonical here.
-    if (!isSlotEmpty(eventPlayer, mod.InventorySlots.Callins)) {
-        try { mod.RemoveEquipment(eventPlayer, mod.InventorySlots.Callins); } catch {}
-    }
+    // CQ_Bug_94 follow-up (v1.448): dropped the isSlotEmpty + slot-targeted RemoveEquipment
+    // precheck. isSlotEmpty calls GetInventoryAmmo/GetInventoryMagazineAmmo which fire the
+    // engine "invalid item" log on empty slots. AddEquipment cleanly clobbers if Callins holds
+    // a different callin gadget; users own slot choice. Dup-prevention for THIS gadget is
+    // handled by the HasEquipment check above (line 1352).
     try {
         mod.AddEquipment(eventPlayer, smokeGadget, mod.InventorySlots.Callins);
     } catch {}
@@ -1310,9 +1399,12 @@ function giveAssaultItem(
     if (hasGadget) {
         try { mod.RemoveEquipment(eventPlayer, gadget); } catch {}
     }
-    if (!isSlotEmpty(eventPlayer, targetSlot)) {
-        try { mod.RemoveEquipment(eventPlayer, targetSlot); } catch {}
-    }
+    // CQ_Bug_94 follow-up (v1.448): dropped the isSlotEmpty + slot-targeted RemoveEquipment
+    // precheck. isSlotEmpty calls GetInventoryAmmo/GetInventoryMagazineAmmo which fire the
+    // engine "invalid item" log on empty slots. AddEquipment cleanly clobbers if the slot
+    // already holds something else; users own the slot choice via the slot-toggle UI. Dup-
+    // prevention for THIS gadget is handled by ownedByLockerState (line 1387) for GadgetOne/Two
+    // and HasEquipment (line 1390) for non-Gadget slots, plus the gadget-id sweep above (1397).
     try {
         mod.AddEquipment(eventPlayer, gadget, targetSlot);
     } catch {
@@ -1355,9 +1447,12 @@ function giveReconItem(
     if (hasGadget) {
         try { mod.RemoveEquipment(eventPlayer, gadget); } catch {}
     }
-    if (!isSlotEmpty(eventPlayer, targetSlot)) {
-        try { mod.RemoveEquipment(eventPlayer, targetSlot); } catch {}
-    }
+    // CQ_Bug_94 follow-up (v1.448): dropped the isSlotEmpty + slot-targeted RemoveEquipment
+    // precheck. isSlotEmpty calls GetInventoryAmmo/GetInventoryMagazineAmmo which fire the
+    // engine "invalid item" log on empty slots. AddEquipment cleanly clobbers if the slot
+    // already holds something else; users own the slot choice via the slot-toggle UI. Dup-
+    // prevention for THIS gadget (esp. C4 / Drone) is handled by ownedByLockerState +
+    // HasEquipment dup checks above + the gadget-id sweep at line 1446.
     try {
         mod.AddEquipment(eventPlayer, gadget, targetSlot);
     } catch {

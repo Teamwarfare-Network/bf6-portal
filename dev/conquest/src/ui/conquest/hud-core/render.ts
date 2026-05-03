@@ -379,12 +379,16 @@ function twlConquestHudRenderPlayerFrame(
         safeSetUIWidgetVisible(rightChevron, rightVisible);
         if (leftVisible) {
             safeSetUITextLabel(leftChevron, msg(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT));
-            safeSetUITextColor(leftChevron, TWL_CONQUEST_HUD_COLOR_BLEED_CHEVRON_BLUE);
+            // Inverted color: left chevron sits on the blue bar but is colored red so the
+            // opposing team's color shows through. Improves contrast post-shadow-removal
+            // (Wave 6 Ship 1c) and reinforces the "enemy is bleeding you" semantic.
+            safeSetUITextColor(leftChevron, TWL_CONQUEST_HUD_COLOR_BLEED_CHEVRON_RED);
             safeSetUITextAlpha(leftChevron, 1);
         }
         if (rightVisible) {
             safeSetUITextLabel(rightChevron, msg(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT));
-            safeSetUITextColor(rightChevron, TWL_CONQUEST_HUD_COLOR_BLEED_CHEVRON_RED);
+            // Inverted color: right chevron sits on the red bar but is colored blue (see leftChevron above).
+            safeSetUITextColor(rightChevron, TWL_CONQUEST_HUD_COLOR_BLEED_CHEVRON_BLUE);
             safeSetUITextAlpha(rightChevron, 1);
         }
     }
@@ -592,6 +596,7 @@ function twlConquestHudRenderPlayerFrame(
             false,
             msg(STR_HUD_CONQUEST_CAPTURE_STATUS_DEFEND)
         );
+        safeSetUIWidgetVisible(widgets.engageStatusBox, false);
         safeSetUIWidgetVisible(widgets.engageStatus, false);
         safeSetUIWidgetVisible(widgets.engageEnemyCount, false);
         safeSetUIWidgetVisible(widgets.engageFriendlyCount, false);
@@ -607,6 +612,7 @@ function twlConquestHudRenderPlayerFrame(
         safeSetUIWidgetVisible(widgets.engageEnemyFill, true);
         safeSetUIWidgetVisible(widgets.engageFriendlyCount, true);
         safeSetUIWidgetVisible(widgets.engageEnemyCount, true);
+        safeSetUIWidgetVisible(widgets.engageStatusBox, true);
         safeSetUIWidgetVisible(widgets.engageStatus, true);
 
         const friendlyWidth = Math.max(0, Math.min(TWL_CONQUEST_HUD_ENGAGE_TRACK_WIDTH, Math.floor(engage.friendlyWidth)));

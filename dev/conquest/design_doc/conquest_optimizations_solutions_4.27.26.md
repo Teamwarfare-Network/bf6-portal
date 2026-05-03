@@ -69,7 +69,15 @@ Cadence: **small batches with a 16-player playtest between waves.** Stack-then-t
 - Each is independent; can ship sub-wave-by-sub-wave.
 - **Effort:** 1–2 days each. **Risk:** low-medium (mechanical UI reduction; UX trade-offs). **Test gate:** per sub-wave playtest.
 
-### Wave 6 — Diff-cache trim
+### Wave 6 — Combat HUD heap diet + connect/disconnect spike smoothing (planning, 2026-05-02)
+Triggered by 13-15p MP playtest at v1.442 — match completed cleanly (Wave 3 #109 termination resolved) but two frame-budget spikes remained noticeable on player connect (lazy-build of combat HUD ~372 widgets/pid after the `await mod.Wait(0.1)`) and player disconnect (sync widget tear-down + 6 all-player broadcast cascade). Plan doc: [`5.02.26_conquest_wave_6_plan.md`](./5.02.26_conquest_wave_6_plan.md).
+- **Ship 0** — `maxPasses` ceiling reduction (128 → 4) in pid-namespaced `safeFind`/delete loops in `cleanupHudForPid` + `resetUiForPlayerOnJoin`. ~95% of `safeFind` ops eliminated on disconnect; ~70% of disconnect-spike reclaim. **Effort:** one-line change. **Risk:** zero (revert by bumping ceiling; orphan widgets are visibly observable).
+- **Ship 1** — Combat HUD shadow-ring diet (8 → 4 layers across all text-bearing widgets) + lazy chevron container (build chevron widgets on first bleed event, not at HUD-ensure). **Heap reclaim:** ~140 widgets/pid (1a only) → ~210 widgets/pid (1a + 1b lazy chevron) → ~280 widgets/pid (1c eliminate shadows entirely; gated on subjective contrast acceptance). **Effort:** 1-2 days. **Risk:** medium (visual regression on bright maps; SP smoke gates 1c).
+- **Ship 2** — Coalesced post-leave refresh: replace 6 sync all-player broadcasts in `onPlayerLeaveGameImpl` with a single `Timers.setTimeout(50ms)` deferred refresh driven by a bitflag accumulator (`READY_PANEL | DEPLOY_TIMER | HELP_TEXT | READY_HUD_TEXT | DIALOG_RENDER`). At 14 viewers: 84 stacked per-viewer refresh calls → 14. **Effort:** ~60 LOC new module. **Risk:** low (50ms stale-UI window; bitflag handles concurrent leaves). **Decision gate:** ship only if disconnect spike still visible after Ship 0.
+- **Ship 3 — DEFERRED.** Original "pace cleanup across pacer ticks" idea has a pid-recycle hazard: BF6 reuses pids on reconnect within the same match; deferred cleanup colliding with a same-pid rebuild would orphan freshly-built widgets. Mitigation (per-pid generation tracking + force-flush on rejoin) reintroduces the spike on the rejoin path. Shelved unless 0+1+2 don't suffice at 24+p.
+- **Test gate:** SP smoke per ship + 13-15p MP playtest between each (entries in [`conquest_mp_ongoing_tests.md`](./conquest_mp_ongoing_tests.md) Wave 6 section).
+
+### Wave 7 — Diff-cache trim (deferred from prior Wave 6 slot)
 - **Tier A2** — drop `last*` mirror fields from `VehicleDeployTimerRowCacheEntry`, `BoundaryPromptWidgetCacheEntry`, `VehicleDeployTimerHudCacheEntry`. Benefits Combat HUD baseline (M3) which is otherwise stuck.
 - **Effort:** half-day per cache. **Risk:** medium (diff caches exist to suppress redundant `mod.SetUI*` writes; removing may re-introduce CPU cost). **Test gate:** measure visible HUD update rate on a 16-player playtest before approving permanent removal.
 

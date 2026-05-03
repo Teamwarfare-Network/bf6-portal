@@ -34,6 +34,11 @@ const TWL_CONQUEST_HUD_COMBAT_Y = CONQUEST_HUD_TICKETS_FLAGS_SHIFT_Y + TWL_CONQU
 const TWL_CONQUEST_HUD_TICKET_BOX_WIDTH = 72;
 const TWL_CONQUEST_HUD_TICKET_BOX_HEIGHT = 28;
 const TWL_CONQUEST_HUD_TICKET_BOX_ALPHA = 0.75;
+// v1.451: TWL_CONQUEST_HUD_TEXT_BOX_PADDING removed. Was only used by the team-name backplates
+// for horizontal padding; team-name backplates were dropped entirely in v1.451 (looked weird
+// in top-HUD spacing, team names not load-bearing UI). Engage-status backplate uses dedicated
+// ENGAGE_STATUS_BOX_* constants below — re-add a generic padding constant only when a NEW
+// backplate surface needs it.
 const TWL_CONQUEST_HUD_TICKET_COUNT_WIDTH = 72;
 const TWL_CONQUEST_HUD_TICKET_COUNT_HEIGHT = 28;
 const TWL_CONQUEST_HUD_TICKET_COUNT_TEXT_SIZE = 26;
@@ -233,6 +238,20 @@ const TWL_CONQUEST_HUD_ENGAGE_STATUS_Y = CONQUEST_HUD_FLAG_ENGAGE_STATUS_Y;
 const TWL_CONQUEST_HUD_ENGAGE_STATUS_WIDTH = CONQUEST_HUD_FLAG_ENGAGE_STATUS_WIDTH;
 const TWL_CONQUEST_HUD_ENGAGE_STATUS_HEIGHT = CONQUEST_HUD_FLAG_ENGAGE_STATUS_HEIGHT;
 const TWL_CONQUEST_HUD_ENGAGE_STATUS_TEXT_SIZE = CONQUEST_HUD_FLAG_ENGAGE_STATUS_TEXT_SIZE;
+// Engage-status backplate (v1.450, iteratively tightened through v1.453): sized to just
+// barely fit the longest status string ("NEUTRALIZING" — 12 chars at fontSize 18). The other
+// 3 status strings (DEFEND/CAPTURING/CONTESTED) are shorter and center inside this box.
+// Width history: 110 (v1.450) → 90 (v1.451, NEUTRALIZING clipped) → 98 (v1.452, snug fit).
+// Height history: 22 → 18 (v1.452, full text bounding-box height) → 14 (v1.453, covers only
+// the visible glyph cap-height; 18px widget bounding box has ~2px padding above + ~2px below
+// the actual rendered all-caps glyphs that the box doesn't need to back). Y shifted down 2px
+// in v1.453 so the top of the box no longer touches the engage-track bar above it.
+const TWL_CONQUEST_HUD_ENGAGE_STATUS_BOX_WIDTH = 98;
+const TWL_CONQUEST_HUD_ENGAGE_STATUS_BOX_HEIGHT = 14;
+const TWL_CONQUEST_HUD_ENGAGE_STATUS_BOX_X = Math.floor(
+    (TWL_CONQUEST_HUD_ENGAGE_STATUS_WIDTH - TWL_CONQUEST_HUD_ENGAGE_STATUS_BOX_WIDTH) / 2
+);
+const TWL_CONQUEST_HUD_ENGAGE_STATUS_BOX_Y = TWL_CONQUEST_HUD_ENGAGE_STATUS_Y + 2;
 const TWL_CONQUEST_HUD_OBJECTIVE_LABEL_SHADOW_OFFSET = CONQUEST_HUD_FLAG_LABEL_SHADOW_OFFSET;
 const TWL_CONQUEST_HUD_OBJECTIVE_PERCENT_SHADOW_OFFSET = Math.max(1, CONQUEST_HUD_FLAG_PERCENT_SHADOW_OFFSET);
 const TWL_CONQUEST_HUD_POPOUT_LABEL_SHADOW_OFFSET = CONQUEST_HUD_FLAG_ACTIVE_POPOUT_LABEL_SHADOW_OFFSET;
@@ -252,29 +271,17 @@ type TwlConquestHudShadowLayerProfile = {
     y: number;
 };
 
-// Builds one reusable 8-way ring (+ optional inner layer) so all text shadows use one tunable pattern.
+// Wave 6 Ship 1c: returns empty profile to eliminate ALL combat HUD compass shadow rings
+// (~280 widgets/pid reclaim, ~75% of M3 cache). The Ensure/Render/Hide/Delete consumers all
+// iterate the profile, so empty-profile cascades to zero work without changing call sites.
+// To restore: see reference_implementations/reference_conquest_attempt_d/src/ui/conquest/hud-core/constants.ts
+// for the original 8-layer compass-direction ring builder.
 function twlConquestHudBuildShadowRingProfile(
     offset: number,
     upScale: number,
     includeInner: boolean
 ): TwlConquestHudShadowLayerProfile[] {
-    const ringOffset = Math.max(1, Math.round(offset));
-    const upOffset = Math.max(1, Math.round(ringOffset * upScale));
-    const profile: TwlConquestHudShadowLayerProfile[] = [
-        { suffix: "Right", x: ringOffset, y: 0 },
-        { suffix: "Left", x: -ringOffset, y: 0 },
-        { suffix: "Up", x: 0, y: -upOffset },
-        { suffix: "Down", x: 0, y: ringOffset },
-        { suffix: "UpLeft", x: -ringOffset, y: -upOffset },
-        { suffix: "UpRight", x: ringOffset, y: -upOffset },
-        { suffix: "DownRight", x: ringOffset, y: ringOffset },
-        { suffix: "DownLeft", x: -ringOffset, y: ringOffset },
-    ];
-    if (includeInner) {
-        profile.push({ suffix: "Inner", x: 0, y: 0 });
-        profile.push({ suffix: "InnerDeep", x: 0, y: 0 });
-    }
-    return profile;
+    return [];
 }
 
 const TWL_CONQUEST_HUD_SHADOW_RING_PROFILE_PERCENT = twlConquestHudBuildShadowRingProfile(

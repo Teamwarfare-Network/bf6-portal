@@ -330,6 +330,9 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
     );
     if (!ticketRedCount) return undefined;
 
+    // v1.451: team-name backplate removed. The dark backdrop behind WEST/NATO + EAST/PAX looked
+    // out of place in the top-HUD spacing and the team names are not load-bearing UI. Engage-
+    // status backplate retained (see below) since that text needs the contrast more.
     const ticketBlueTeamNameShadowRing = twlConquestHudEnsureShadowRingText(
         player,
         twlConquestHudTicketBlueTeamNameName(pid),
@@ -363,6 +366,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
     );
     if (!ticketBlueTeamLabel) return undefined;
 
+    // v1.451: team-name backplate removed (mirror of blue side; same rationale).
     const ticketRedTeamNameShadowRing = twlConquestHudEnsureShadowRingText(
         player,
         twlConquestHudTicketRedTeamNameName(pid),
@@ -583,8 +587,8 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT,
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_TEXT_SIZE,
             msg(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT),
-            CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB,
-            TWL_CONQUEST_HUD_COLOR_BLUE
+            CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB,
+            TWL_CONQUEST_HUD_COLOR_RED
         );
         if (!leftChevron) return undefined;
         ticketBleedLeftChevronShadowRings[i] = leftChevronShadowRing;
@@ -615,8 +619,8 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_HEIGHT,
             TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_TEXT_SIZE,
             msg(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT),
-            CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB,
-            TWL_CONQUEST_HUD_COLOR_RED
+            CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB,
+            TWL_CONQUEST_HUD_COLOR_BLUE
         );
         if (!rightChevron) return undefined;
         ticketBleedRightChevronShadowRings[i] = rightChevronShadowRing;
@@ -1020,6 +1024,31 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
     safeSetUIWidgetBgColor(engageEnemyCount, TWL_CONQUEST_HUD_COLOR_BOX_BG);
     safeSetUIWidgetBgAlpha(engageEnemyCount, TWL_CONQUEST_HUD_ENGAGE_COUNT_BG_ALPHA);
 
+    // Backplate behind engage status text (DEFEND / NEUTRALIZING / CONTESTING / CAPTURING).
+    // Built BEFORE the text widget so it draws behind in z-order. TopLeft anchor.
+    // v1.450: dimensions tightened to ENGAGE_STATUS_BOX_* — width 110 (just barely fits the
+    // longest status string "NEUTRALIZING") + height 22 (text + 2px vertical pad each side).
+    // Centered horizontally inside the engage root via ENGAGE_STATUS_BOX_X = 21. Replaces the
+    // v1.449 wide-bar visual that overlapped the chevron / ticket-diff area below the tickets row.
+    const engageStatusBox = twlConquestHudEnsureContainer(
+        player,
+        twlConquestHudEngageStatusBoxName(pid),
+        engageRoot,
+        mod.UIAnchor.TopLeft,
+        TWL_CONQUEST_HUD_ENGAGE_STATUS_BOX_X,
+        TWL_CONQUEST_HUD_ENGAGE_STATUS_BOX_Y,
+        TWL_CONQUEST_HUD_ENGAGE_STATUS_BOX_WIDTH,
+        TWL_CONQUEST_HUD_ENGAGE_STATUS_BOX_HEIGHT
+    );
+    if (!engageStatusBox) return undefined;
+    try {
+        mod.SetUIWidgetBgFill(engageStatusBox, mod.UIBgFill.Blur);
+    } catch {
+        // Keep engage lane alive even if bg-fill API fails on this client/runtime.
+    }
+    safeSetUIWidgetBgColor(engageStatusBox, TWL_CONQUEST_HUD_COLOR_BOX_BG);
+    safeSetUIWidgetBgAlpha(engageStatusBox, TWL_CONQUEST_HUD_TICKET_BOX_ALPHA);
+
     const engageStatusShadowRing = twlConquestHudEnsureShadowRingText(
         player,
         twlConquestHudEngageStatusName(pid),
@@ -1104,6 +1133,7 @@ function twlConquestHudEnsurePlayerGraph(player: mod.Player): TwlConquestHudPlay
     entry.widgets.engageEnemyCountShadowRing = engageEnemyCountShadowRing;
     entry.widgets.engageFriendlyCount = engageFriendlyCount;
     entry.widgets.engageEnemyCount = engageEnemyCount;
+    entry.widgets.engageStatusBox = engageStatusBox;
     entry.widgets.engageStatusShadowRing = engageStatusShadowRing;
     entry.widgets.engageStatus = engageStatus;
     entry.layoutFlagCount = ticketLayout.layoutFlagCount;

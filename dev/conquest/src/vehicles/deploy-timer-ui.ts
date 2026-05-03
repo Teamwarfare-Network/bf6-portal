@@ -310,11 +310,8 @@ function isVehicleDeployTimerRowCacheUsable(row: VehicleDeployTimerRowCacheEntry
         && row.groundButtonText
         && row.timer?.root
         && row.timer?.plate
-        && row.timer?.minTens
-        && row.timer?.minOnes
-        && row.timer?.colon
-        && row.timer?.secTens
-        && row.timer?.secOnes
+        && row.timer?.barBorder
+        && row.timer?.barFill
     );
 }
 
@@ -1579,14 +1576,20 @@ function renderVehicleDeployTimerRow(
     } else if (showSpawnButton || showGroundButton) {
         setReusableTimerStatus(row.timer, "ready", msg(mod.stringkeys.twl.ui.ready), COLOR_READY_GREEN);
     } else if (isAirType && airDelayActive) {
-        // Round-start air delay: show countdown until aircraft deployment unlocks.
-        setReusableTimerColor(row.timer, COLOR_WHITE);
-        setReusableTimerSeconds(row.timer, getRoundStartAirDelayRemainingSeconds());
+        // Round-start air delay: show progress bar until aircraft deployment unlocks.
+        // Bar fills 0% -> 100% as the delay elapses (Wave 5 v1.439 / L11).
+        const airDelayTotal = ACTIVE_MAP_CONFIG.roundStartAirDelay ?? 0;
+        const airDelayRemaining = getRoundStartAirDelayRemainingSeconds();
+        const airDelayElapsed = airDelayTotal > 0 ? 1 - (airDelayRemaining / airDelayTotal) : 1;
+        setReusableTimerProgress(row.timer, airDelayElapsed);
     } else if (getVehicleSlotRespawnRemainingSeconds(slot) <= 0) {
         setReusableTimerStatus(row.timer, "ready", msg(mod.stringkeys.twl.ui.ready), COLOR_READY_GREEN);
     } else {
-        setReusableTimerColor(row.timer, COLOR_WHITE);
-        setReusableTimerSeconds(row.timer, getVehicleSlotRespawnRemainingSeconds(slot));
+        // Vehicle respawn cooldown: bar fills 0% -> 100% as the cooldown elapses.
+        const respawnTotal = slot.respawnDelaySeconds ?? 0;
+        const respawnRemaining = getVehicleSlotRespawnRemainingSeconds(slot);
+        const respawnElapsed = respawnTotal > 0 ? 1 - (respawnRemaining / respawnTotal) : 1;
+        setReusableTimerProgress(row.timer, respawnElapsed);
     }
 
     applyVehicleDeployActionButtonVisualStateForMode(row, "air", !!row.spawnButtonHovered || !!row.spawnButtonFocused, !!row.spawnButtonPressed);
@@ -2021,7 +2024,7 @@ function invalidateVehicleDeployTimerHudViewerCache(pid: number): void {
         if (row.timer) {
             row.timer.lastVisibleState = undefined;
             row.timer.lastStatusMode = undefined;
-            row.timer.lastDisplayedSeconds = undefined;
+            row.timer.lastDecile = undefined;
         }
     }
 }

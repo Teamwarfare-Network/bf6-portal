@@ -16,7 +16,9 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
     hideReadyDialogUI(pid);
     destroyArmMenu(pid);
 
-    const deleteAllByName = (name: string, maxPasses: number = 64): void => {
+    // Wave 6 Ship 0: pid-namespaced widget IDs via wn() can only produce duplicates if a prior
+    // cleanup was interrupted mid-loop. 4 passes is 4x tolerance for that case; common path is 1-2.
+    const deleteAllByName = (name: string, maxPasses: number = 4): void => {
         for (let i = 0; i < maxPasses; i++) {
             const widget = safeFind(name);
             if (!widget) return;
@@ -36,7 +38,8 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
 }
 
 function cleanupHudForPid(pid: number): void {
-    const deleteAllByName = (name: string, maxPasses: number = 128): void => {
+    // Wave 6 Ship 0: see Wave 6 plan L1. Same rationale as resetUiForPlayerOnJoin's local copy.
+    const deleteAllByName = (name: string, maxPasses: number = 4): void => {
         for (let i = 0; i < maxPasses; i++) {
             const widget = safeFind(name);
             if (!widget) return;
@@ -120,9 +123,15 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
 
     resetUiForPlayerOnJoin(eventPlayer);
     if (joinPid !== undefined && mod.IsPlayerValid(eventPlayer)) {
+        // Wave 6 Ship 1d: stagger 3 lazy-build triggers across 3 frames to distribute the join
+        // cost. topHudShell stays immediate (player needs the clock visible). vehicleDeployTimer
+        // defers 50ms (deploy menu opens on first death/respawn, well after join). combatHud
+        // defers 150ms (not visible until first OnPlayerDeployed). triggerLazyBuild already
+        // short-circuits on invalid pid, so the deferred callbacks are safe if the player
+        // disconnects in the window.
         triggerLazyBuild('topHudShell', joinPid);
-        triggerLazyBuild('vehicleDeployTimer', joinPid);
-        triggerLazyBuild('combatHud', joinPid);
+        Timers.setTimeout(() => triggerLazyBuild('vehicleDeployTimer', joinPid), 50);
+        Timers.setTimeout(() => triggerLazyBuild('combatHud', joinPid), 150);
         SupplyBoxWarmScheduler.enqueueLateJoiner(joinPid);
     }
 }

@@ -113,6 +113,97 @@ See [`design_doc/5.01.26_conquest_wave_4_plan.md`](./5.01.26_conquest_wave_4_pla
 - [ ] **No script termination over a full Wave-4 round.** Pass: cold launch → ready up → match live → victory → restart, with multiple admin handoffs across the cycle. No frame-budget breach, no `Mod has reached its js script memory usage limit` termination.
 - [ ] **CLAIM ADMIN visibility consistency (v1.438 bugfix).** Pass: across all four state combinations the button behaves correctly: (admin in place + pre-live → hidden), (admin in place + live → hidden), (admin vacant + pre-live → visible + enabled), (admin vacant + live → visible + greyed/disabled). Verifies the show-loop bug — where every visible-flip was overriding the sync function's vacancy-gated visibility — does not return at scale (multiple panels open simultaneously when admin transitions occur).
 
+## Wave 5 — Timer Simplification (shipped v1.439, 2026-05-02)
+
+See [`design_doc/5.02.26_conquest_wave_5_plan.md`](./5.02.26_conquest_wave_5_plan.md) for full plan + locked decisions L1-L14.
+
+- [ ] **24+ players: vehicle deploy timer rows render bars instead of digits.** Pass: every visible deploy timer row shows the vehicle name label + a red progress bar in the slot the digit clock used to occupy. NO MM:SS digit display anywhere on the deploy timer HUD. Master clock (top of HUD) still shows digital MM:SS — that's correct, untouched per L2.
+- [ ] **Bar fills UP in 10% chunks at 1Hz.** Pass: bar drains visibly step-by-step (full → 90% → 80% → ... → 0%) as the cooldown elapses. NOT continuous motion — discrete steps per L8 + L11. Verify at 24+ players running multiple countdowns simultaneously: no per-frame stutter, no hitches on decile transitions.
+- [ ] **At 100% the bar is replaced by green "READY" text** in the same widget slot per L12. No bar remnant visible alongside the READY text. Other status modes (ACTIVE/SPAWNING/DEPLOYING) still display correctly with their respective colors per the existing `setReusableTimerStatus` path.
+- [ ] **Air delay timer (HQ/Forward/Air post-LIVE delays) follows the same fill-up + READY pattern.** Pass: post-LIVE delay rows show a red bar filling up to the unlock moment, then swap to green READY text. No regression from pre-Wave-5 behavior other than the visual change.
+- [ ] **Vehicle spawn cycle loop.** Pass: deploy a vehicle → row resets to empty bar → fills up to READY → loop. No stuck "READY" or missing bar states. Bar reset on cycle boundary is clean.
+- [ ] **Heap reclaim verified at scale.** Pass: per-pid `ReusableTimerWidgetCacheEntry` is ~8 widget refs lighter per row × ~12 rows = ~96 widget refs reclaimed per pid. Across 24 pids: ~2,300 widget refs reclaimed total. Subjectively, no `Mod has reached its js script memory usage limit` termination over a full Pregame → LIVE → Victory cycle that previously came close to the limit.
+- [ ] **CPU/GC under load.** Pass: at 24+ players running multiple cooldowns simultaneously, no visible stutter on decile transition events. The decile-chunk diff-cache (L8) caps `mod.SetUIWidgetSize` writes at ~10 per countdown per row; steady-state should be 1-3 writes/sec across the whole HUD even with many active timers.
+- [ ] **Status mode transitions stay clean.** Pass: rapid mode swaps (timer ↔ ready ↔ active ↔ spawning ↔ deploying — e.g. via vehicle deploy → death → respawn cycle) don't cause widget orphan states. The bar widgets correctly hide when a non-timer status mode is set; statusText correctly hides when timer mode resumes.
+- [ ] **No regression in adjacent UI.** Pass: combat HUD + boundary prompt + pregame countdown + master clock + ready dialog all render identically to v1.438. Wave 5 is timer-display-only; no other surface should be visibly affected.
+- [ ] **No script termination over a full Wave-5 round.** Pass: cold launch → ready up → match live → victory → restart with vehicles deploying / dying / respawning throughout. No frame-budget breach.
+
+## Wave 6 — Connect/disconnect frame-budget bundle (shipped v1.443 + chevron color polish v1.444, 2026-05-02)
+
+See [`design_doc/5.02.26_conquest_wave_6_plan.md`](./5.02.26_conquest_wave_6_plan.md) for full plan + locked decisions L1-L8. Bundle = Ship 0 (`maxPasses` 128→4) + Ship 1c (eliminate combat HUD compass shadow rings, ~280 widgets/pid reclaim) + Ship 1d (stagger 3 join triggers across 3 frames) + chevron color inversion (left=red on blue bar, right=blue on red bar — improves contrast post-shadow-removal).
+
+- [ ] **13-15 player connect/disconnect spike comparison vs v1.442 baseline.** Pass: subjectively, both spikes feel reduced or eliminated. Ship 0 cuts ~95% of `safeFind` ops on disconnect; Ship 1c cuts ~75% of widgets to delete; Ship 1d distributes the remaining join cost across 3 frames. **Decision gate:** if disconnect spike still visible after this bundle, revive Ship 2 (coalesced post-leave refresh).
+- [ ] **Combat HUD reads correctly at scale on a bright map (Operation Firestorm / snow / sand).** Pass: chevrons, objective slot labels (A/B/C... letters and percent text), engage status text, team name labels in top ticket bar, popout text — all legible without their pre-Wave-6 dark shadow halos. If any one surface is hard to read, log which one — single-offset shadow restoration on just that surface is the rollback path (Wave 7 candidate).
+- [ ] **Bleed chevron color inversion verified.** Pass: when bleed differential triggers, left chevrons (on blue ticket bar) display in RED; right chevrons (on red ticket bar) display in BLUE. Inverted color reinforces the "enemy is bleeding you" semantic and provides the contrast that the removed shadow halo used to.
+- [ ] **No orphan combat HUD widgets across leave/rejoin cycles.** Pass: after Ship 0 reduced `maxPasses` from 128 to 4, a player who disconnects then reconnects on the same pid sees a clean HUD rebuild. If orphan widgets surface (visible stuck text/chevrons from prior pid occupancy), bump `maxPasses` to 8 (R4 mitigation).
+- [ ] **Bot disconnect-during-join race test (R6 verification).** Pass: bot connects, then disconnects within 200ms (before the 150ms `combatHud` deferred trigger fires). No console errors, no orphan widgets on the now-disconnected bot's slot, no impact on other players' HUDs. Verifies that `triggerLazyBuild`'s existing `safeFindPlayer`+`isValidPlayer` guard correctly catches the deferred-window invalidation.
+- [ ] **Concurrent disconnect (2-3 players within a few seconds).** Pass: no crash, no script termination, all surviving players' HUDs stay correct. Tests that the `maxPasses=4` ceiling holds up when multiple cleanup loops race.
+- [ ] **Reconnect mid-match.** Pass: disconnected player reconnects on same pid (BF6 reuses pid integers within a match); their HUD rebuilds cleanly via the lazy-build dispatchers; no doomed-parent races. Pid-recycle hazard is the documented reason Ship 3 (paced cleanup) was deferred — the existing sync rebuild path is the validation here.
+- [ ] **Bleed event chevron rendering correctness.** Pass: when bleed differential triggers (control more objectives than enemy), chevrons appear on the bleeding team's side, count matches the differential level, color is correctly inverted per the policy above. No missing-on-first-bleed regressions (chevron lazy-build was DROPPED in v0.2 lock per L3, so chevrons build at HUD-ensure time alongside the rest of the HUD).
+- [ ] **Heap reclaim accounting at scale.** Pass: combat HUD widget count per pid drops from ~372 to ~92 (a ~75% reduction). At 13-15 players, ~280 widgets/pid × 14 pids = ~3,920 widget refs reclaimed total. Should move M3 (combat HUD) below M2 (supply box) in the heap-impact ranking — confirmable by absence of pressure on heap headroom during a long match.
+- [ ] **No script termination over a full Wave-6 round.** Pass: cold launch → ready up → match live → victory → restart, with multiple connect/disconnect events throughout. No frame-budget breach, no `Mod has reached its js script memory usage limit` termination.
+
+## HUD Backplates — engage status only (shipped v1.449, iteratively polished through v1.453, 2026-05-03)
+
+Reuses tickets-box visual style (Blur fill, dark color, 0.75 alpha). **Final scope (v1.451): engage-status backplate only** (DEFEND/CAPTURING/CONTESTING/NEUTRALIZING text on the engage panel). Team-name backplates added in v1.449 then removed in v1.451. **Final dimensions (v1.453):** engage box 98 wide × 14 tall (covers only the visible glyph cap-height; the 18px text widget had ~4px of bounding-box padding the backplate didn't need to back), Y shifted +2 from text Y so the box top doesn't touch the engage-track bar above. Centered in the 152-wide engage root. +1 widget/pid net in M3.
+
+- [ ] **Cold launch + view top HUD bar.** Pass: NO backplates behind WEST/NATO + EAST/PAX team names (v1.451 removal). Tickets backplates still visible behind the count text.
+- [ ] **Approach an objective + trigger CONTESTING / CAPTURING / NEUTRALIZING / DEFEND state cycling.** Pass: engage status text rotates through all 4 labels with backplate behind. **v1.453 dimension check:** NEUTRALIZING fits inside the backplate with a thin visible margin (no clipping); the box wraps tightly around the visible glyph height (no empty padding above or below the rendered letters); the box top has visible vertical separation from the engage-track bar above (no touching/overlap); CAPTURING / CONTESTED / DEFEND (shorter labels) appear centered within the same backplate width.
+- [ ] **Engage panel show/hide cycle (enter objective → leave → re-enter).** Pass: engage status backplate appears + disappears in lockstep with the engage status text. No orphan backplate visible after the panel hides.
+- [ ] **Team swap mid-match.** Pass: engage status backplate rebuilds correctly with new perspective.
+- [ ] **Bright-map screenshot comparison vs v1.448.** Pass: subjective readability of engage status text improved on Operation Firestorm.
+- [ ] **13-15p MP at scale.** Pass: engage status text readable mid-objective contest. Concurrent objective contests don't produce missing-backplate states.
+- [ ] **Bot disconnect mid-match.** Pass: no crash, no orphan backplate, no stuck widgets.
+
+---
+
+## CQ_Bug_94 — Supply Box engine-log noise on Medic/Assault/Recon (shipped v1.447 + v1.448, 2026-05-03)
+
+See [`design_doc/5.03.26_conquest_supplybox_medic_fix_plan.md`](./5.03.26_conquest_supplybox_medic_fix_plan.md). Two-step fix: **v1.447** added per-class HasEquipment-based probes for the menu-OPEN path. **v1.448** dropped the `isSlotEmpty` precheck from non-Engineer give helpers for the menu-PLACEMENT path. Combined: non-Engineer classes emit ZERO `GetInventoryAmmo` / `GetInventoryMagazineAmmo` engine error log entries on either path. Engineer's `probeSlot` + give helpers left untouched.
+
+- [ ] **Engineer + open supply box on cold spawn (no gadgets placed yet).** Pass: menu builds correctly. (Note: Engineer ammo-based probe still in place, so engine log noise on Engineer cold-spawn is EXPECTED — not a regression.)
+- [ ] **Engineer + place RPG → close menu → re-open.** Pass: launcher tile dimmed (dup-dim works), no new behavioral regression.
+- [ ] **Medic + open supply box on cold spawn.** Pass: menu builds with smoke + intercept tiles, **NO `GetInventoryAmmo` / `GetInventoryMagazineAmmo` engine error log entries.** (v1.447 fix)
+- [ ] **Medic + click GrenadeIntercept tile (placement).** Pass: gadget placed in GadgetTwo, **no engine error log on the click**. (v1.448 fix — was firing pre-v1.448 via `isSlotEmpty` in `giveAssaultItem`.) Tile becomes gray-dimmed on next refresh (dup-dim via `tileOwned` → `ownedByLockerState`).
+- [ ] **Medic + click MissileIntercept tile while GrenadeIntercept is already in GadgetTwo.** Pass: clobbers cleanly (engine `AddEquipment` semantic), GrenadeIntercept replaced with MissileIntercept, no error log, no soft-lock.
+- [ ] **Medic + click Smoke tile (Callins slot).** Pass: smoke placed, no error log. (v1.448 fix — `giveMedicSmoke` was firing pre-v1.448.)
+- [ ] **Assault + open supply box on cold spawn.** Pass: menu builds with artillery + beacon + ladder tiles, no engine error log. (v1.447 fix)
+- [ ] **Assault + click SpawnBeacon tile (placement).** Pass: beacon placed, no error log on click. (v1.448 fix.) Tile gray-dim post-placement.
+- [ ] **Assault + click AssaultLadder while Beacon already in GadgetTwo.** Pass: clobbers cleanly, ladder replaces beacon, no error log.
+- [ ] **Recon + open supply box on cold spawn.** Pass: menu builds with drone + C4 + AV grenade tiles, no engine error log. (v1.447 fix)
+- [ ] **Recon + click Drone tile (placement).** Pass: drone placed, no error log on click. (v1.448 fix.) Tile gray-dim post-placement.
+- [ ] **Recon + C4 anti-double-up check.** Click C4 tile → C4 placed → click C4 tile again. Pass: second click silent-rejects via `ownedByLockerState`/`HasEquipment` dup check, tile is gray-dimmed, no error log, no double C4.
+- [ ] **Class swap mid-match (Engineer with placed RPG → Medic via team swap → open supply box).** Pass: menu builds correctly for new class; locker state re-populates on the new class's first open via `initLockerSlotStateFromProbe` re-call (heals naturally — no separate cleanup needed). No error log on the post-swap open.
+- [ ] **Concurrent supply-box opens at scale (≥3 non-Engineer players in same frame at 13-15p MP).** Pass: no error log spam, no crash, all menus build correctly. This is the concrete heap-pressure test — if removing the per-pid log allocations holds the engine envelope where Wave 6 reclaim left it, this scenario should run cleanly indefinitely.
+- [ ] **Bot disconnect mid-menu.** Pass: no crash, no orphan widgets, no stuck per-pid state.
+- [ ] **24+ player full match: world-log overlay free of `GetInventoryAmmo` / `GetInventoryMagazineAmmo` invalid-item errors throughout.** Pass: cold launch → ready up → match live → players use supply boxes throughout → victory. Engineer rows in the world log are acceptable (out of scope for this fix). Non-Engineer rows should be zero.
+
+---
+
+## CQ_Tweak_WAIT_Label — "WAIT" label on vehicle deploy timer bars (shipped v1.446, 2026-05-02)
+
+UX polish: every vehicle deploy timer row's progress bar now shows a "WAIT" label centered on top (black text, drawn last in z-order so it appears over the red fill).
+
+- [ ] **Cold launch + open deploy menu mid-cooldown.** Pass: every visible row in timer mode shows "WAIT" centered on the bar in black, readable on top of both the gray frame and the advancing red fill.
+- [ ] **Row transitions timer → READY → timer (e.g. spawn a vehicle, wait for cooldown).** Pass: WAIT label hides when row swaps to "READY" green text mode; reappears on the next timer cycle. No flicker, no orphan WAIT visible alongside status text.
+- [ ] **Row transitions timer → ACTIVE / SPAWNING / DEPLOYING.** Pass: WAIT label hides correctly during all four non-timer status modes (`setReusableTimerStatus` toggles all three bar widgets — border, fill, text — together).
+- [ ] **Multi-row HUD at scale (24+ pids active).** Pass: WAIT renders correctly on every visible row simultaneously; no missing-text states; no positional drift.
+
+---
+
+## CQ_Bug_58 — Ready-state auto-unready tuning (shipped v1.445, 2026-05-02)
+
+See [`design_doc/5.02.26_conquest_ready_tuning_plan.md`](./5.02.26_conquest_ready_tuning_plan.md). Behaviour change: auto-unready triggers reduced to two — SWAP TEAMS + admin config change. Removed: death-respawn auto-unready, leaving-main-base-pre-live auto-unready.
+
+- [ ] **Player readies up, dies, respawns.** Pass: still shows READY post-respawn. No "needs reconfirm" warning visible. Pre-fix would have shown them as NOT READY with a warning halo.
+- [ ] **Player readies up, walks out of HQ pre-live, walks back in.** Pass: stays READY throughout the entire walk-out / walk-back cycle. The IN MAIN BASE / NOT IN MAIN BASE indicator on the panel still updates correctly to reflect their position, but the READY flag does NOT flip.
+- [ ] **Player clicks SWAP TEAMS.** Pass: flips to NOT READY as before. (Sanity check that this trigger still works.)
+- [ ] **Admin opens dialog, changes vehicle config, clicks APPLY.** Pass: every previously-ready player including the admin themselves shows NOT READY with the reconfirm warning visual on the ready toggle button. (Sanity check that this trigger still works.)
+- [ ] **Player clicks NOT READY explicitly.** Pass: flips to NOT READY as before. (Sanity check on the explicit user toggle path.)
+- [ ] **Match-start fresh-cycle reset (admin RESET).** Pass: all players go to NOT READY at fresh-cycle start. (Sanity check that the bulk reset path still works after removing the deploy clear.)
+- [ ] **24+ player full match: no script termination, no orphan ready-state inconsistencies.** Pass: cold launch → ready up → match live → players die/respawn during pre-live (e.g. boundary kills) → all surviving ready players still show READY → match starts → live play normal → victory. No regression in adjacent UI surfaces (Player Ready Up Panel, full Ready Dialog, ready-up HUD count).
+- [ ] **Bot disconnect mid-match.** Pass: leaving cleanup still removes the bot's ready state cleanly. No stuck "X is still ready" entry on remaining players' rosters.
+
 ---
 
 ## How to use this file

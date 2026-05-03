@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.438)",
+        "title": "teamwarfare . net | TWL Conquest (v1.453)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText3": "The game is NOT Live and you are NOT Ready yet...",
@@ -372,6 +372,7 @@
       "hqDeploy": "HQ DEPLOY",
       "forwardDeploy": "FORWARD DEPLOY",
       "ready": "READY",
+      "wait": "WAIT",
       "atCap": "FULL",
       "idle": "IDLE",
       "active": "ACTIVE",

@@ -49,17 +49,14 @@ type ReusableTimerWidgetCacheEntry = {
     plate?: mod.UIWidget;
     statusShadow?: mod.UIWidget;
     statusText?: mod.UIWidget;
-    minTensShadow?: mod.UIWidget;
-    minTens: mod.UIWidget;
-    minOnesShadow?: mod.UIWidget;
-    minOnes: mod.UIWidget;
-    colonShadow?: mod.UIWidget;
-    colon: mod.UIWidget;
-    secTensShadow?: mod.UIWidget;
-    secTens: mod.UIWidget;
-    secOnesShadow?: mod.UIWidget;
-    secOnes: mod.UIWidget;
-    lastDisplayedSeconds?: number;
+    barBorder?: mod.UIWidget;
+    barFill?: mod.UIWidget;
+    barText?: mod.UIWidget;
+    // Captured at build time so the per-tick update doesn't need to recompute geometry
+    // or carry the config. Bar fill width at 100% = barFillMaxWidth; height stays barFillHeight.
+    barFillMaxWidth?: number;
+    barFillHeight?: number;
+    lastDecile?: number;
     lastVisibleState?: boolean;
     lastStatusMode?: "timer" | "ready" | "active" | "spawning" | "deploying";
 };

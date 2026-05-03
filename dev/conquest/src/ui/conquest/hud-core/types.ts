@@ -119,6 +119,7 @@ type TwlConquestHudWidgetRefs = {
     engageEnemyCountShadowRing: Array<mod.UIWidget | undefined>;
     engageFriendlyCount?: mod.UIWidget;
     engageEnemyCount?: mod.UIWidget;
+    engageStatusBox?: mod.UIWidget;
     engageStatusShadowRing: Array<mod.UIWidget | undefined>;
     engageStatus?: mod.UIWidget;
 };

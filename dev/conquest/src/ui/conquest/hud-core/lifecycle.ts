@@ -1,7 +1,10 @@
 ﻿// @ts-nocheck
 // Module: ui/conquest/hud-core/lifecycle -- hide/destroy/reset ownership for hard-cut combat HUD
 
-function twlConquestHudDeleteAllByName(name: string, maxPasses: number = 128): void {
+// Wave 6 Ship 0: pid-namespaced widget IDs only produce duplicates if a prior cleanup was
+// interrupted mid-loop. 4 passes is 4x tolerance for that case; common path is 1-2 passes.
+// This was the dominant disconnect-spike contributor pre-Wave-6 (~5,120 ops across ~40 calls).
+function twlConquestHudDeleteAllByName(name: string, maxPasses: number = 4): void {
     for (let i = 0; i < maxPasses; i++) {
         const widget = safeFind(name);
         if (!widget) return;
@@ -94,6 +97,7 @@ function twlConquestHudHidePlayer(pid: number): void {
     safeSetUIWidgetVisible(entry.widgets.popoutRoot, false);
     twlConquestHudHideShadowRing(entry.widgets.engageFriendlyCountShadowRing ?? []);
     twlConquestHudHideShadowRing(entry.widgets.engageEnemyCountShadowRing ?? []);
+    safeSetUIWidgetVisible(entry.widgets.engageStatusBox, false);
     twlConquestHudHideShadowRing(entry.widgets.engageStatusShadowRing ?? []);
     safeSetUIWidgetVisible(entry.widgets.engageStatus, false);
     safeSetUIWidgetVisible(entry.widgets.engageEnemyCount, false);
@@ -144,6 +148,7 @@ function twlConquestHudHideObjectiveFocusForPid(pid: number): void {
     safeSetUIWidgetVisible(entry.widgets.popoutRoot, false);
     twlConquestHudHideShadowRing(entry.widgets.engageFriendlyCountShadowRing ?? []);
     twlConquestHudHideShadowRing(entry.widgets.engageEnemyCountShadowRing ?? []);
+    safeSetUIWidgetVisible(entry.widgets.engageStatusBox, false);
     twlConquestHudHideShadowRing(entry.widgets.engageStatusShadowRing ?? []);
     safeSetUIWidgetVisible(entry.widgets.engageStatus, false);
     safeSetUIWidgetVisible(entry.widgets.engageEnemyCount, false);

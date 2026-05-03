@@ -271,20 +271,6 @@ function getDesiredBoundaryViolationKind(player: mod.Player): BoundaryPromptKind
     return undefined;
 }
 
-function notePreliveMainBaseViolation(player: mod.Player, pid: number): void {
-    const wasReady = State.players.readyByPid[pid] === true;
-    State.players.readyByPid[pid] = false;
-    if (wasReady) {
-        State.players.readyNeedsReconfirmByPid[pid] = true;
-    }
-    refreshReadyStatusForAllBuiltReadyDialogs();
-    if (!wasReady) return;
-
-    updatePlayersReadyHudTextForAllPlayers();
-    updateHelpTextVisibilityForPid(pid);
-    renderReadyDialogForAllVisibleViewers();
-}
-
 function tryKillBoundaryPlayer(player: mod.Player): void {
     if (!isValidPlayer(player)) return;
     try {
@@ -326,9 +312,7 @@ function refreshPlayerBoundaryState(player: mod.Player): void {
     }
 
     if (!previous || previous.kind !== nextKind) {
-        if (nextKind === "prelive_main_base") {
-            notePreliveMainBaseViolation(player, pid);
-        }
+        // CQ_Bug_58 (v1.445): pre-live main-base violation no longer auto-unreadies the player.
         const token = ++State.round.boundary.nextEnforcementToken;
         State.round.boundary.activeViolationByPid[pid] = {
             kind: nextKind,
@@ -531,6 +515,15 @@ function tryInheritZonesFromNearbyTeammate(
         && (mod.GetMatchTimeElapsed() - teammateDeployedAt) < GCZ_DEPLOY_GRACE_SECONDS) {
         return false;
     }
+    // CQ_Bug_57 (v1.442): also inherit inOwnHQ. Original v0.1 inheritance scope was
+    // "non-HQ zones only" because the anchor-radius probe was assumed to always catch
+    // at-HQ spawns. In practice the probe can fail (position not yet settled at deploy
+    // event, or the trigger volume is wider than DEPLOY_MAIN_BASE_RADIUS_METERS), at
+    // which point a spawner landing on a teammate inside their own HQ trigger inherited
+    // all-false flags and got flagged as out-of-bounds. Inheriting inOwnHQ here closes
+    // that gap. The `|| state.inOwnHQ` preserves an earlier-set true value from the
+    // anchor probe (don't downgrade if the teammate happens to be inOwnHQ=false).
+    state.inOwnHQ = teammateState.inOwnHQ || state.inOwnHQ;
     state.inOwnBuffer = teammateState.inOwnBuffer;
     state.inGCZ = teammateState.inGCZ;
     state.inEnemyHQ = teammateState.inEnemyHQ;

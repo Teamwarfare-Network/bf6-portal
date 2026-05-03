@@ -66,6 +66,8 @@ Last Tested Build: `v1.375` — single-player verified for v1.373 launcher cap +
 - `CQ_Bug_54`: **Obsolete (v1.259 rewrite)** — per-click runtime `RuntimeSpawn_Common.VehicleSpawner` prefab instantiation was deleted outright. Slots now use one persistent spawner each, so the prefab-default Abrams race cannot occur.
 - `CQ_Bug_55`: **Obsolete (v1.259 rewrite)** — air-deploy consumed-deploy branch in `onPlayerDeployedImpl` no longer exists; Phase 6 HQ Deploy's seating path handles HQ World Icon visibility through its own `beginHqSeatFlow` lifecycle.
 - `CQ_Bug_56`: Resolved (v1.212 — Kills counter incremented on friendly kills when team damage was on. `onPlayerEarnedKillImpl` now compares killer/victim team via `safeGetTeamNumberFromPlayer(..., 0)` and skips the increment when teams match; fails open on unassigned team (team 0) rather than silently dropping)
+- `CQ_Bug_57`: Resolved (v1.442 — squad-spawn on a teammate inside own HQ flagged the spawning player as out-of-bounds. `tryInheritZonesFromNearbyTeammate` in `boundary/enforcement.ts` was copying 4 zone flags from the teammate but explicitly omitting `inOwnHQ`. When teammate had `inOwnHQ=true` and all-other-flags=false, spawner inherited all-false (no `inOwnHQ` set, no `inGCZ` fallback fired because inheritance returned true) → classifier fired pre-live `prelive_main_base` or live `ground_combat_zone` violation. Fix: one-line addition `state.inOwnHQ = teammateState.inOwnHQ || state.inOwnHQ;` so the spawner inherits the teammate's HQ status if the teammate is at HQ, OR retains the anchor-radius probe result if it had already set it. Squad-spawn on HQ teammate now correctly seeds `inOwnHQ=true`.)
+- `CQ_Bug_58`: Resolved (v1.445 — pre-game READY state was getting auto-cleared by gameplay events the user did not intend, specifically (a) every respawn (the engine `OnPlayerDeployed` callback at `player-deploy.ts:42-43` unconditionally cleared `readyByPid`/`readyNeedsReconfirmByPid`) and (b) every pre-live exit from the player's own HQ trigger (the `notePreliveMainBaseViolation` helper in `boundary/enforcement.ts` invoked from `enforcement.ts:330` per-tick refresh and `area-triggers.ts:112` immediate AreaTrigger exit). Fix: deleted the deploy-event clear (Edit 1), removed both `notePreliveMainBaseViolation` callers (Edits 2+3), and deleted the now-unused function definition (Edit 4). Auto-unready triggers reduced to exactly two legitimate cases per L1 of plan: SWAP TEAMS (`swap-action.ts:17`) and admin config change (`mode-config-presets.ts` — `requireReadyReconfirmAfterConfigChange` for non-admin viewers + `forceUnreadyApplierAfterConfirm` for the admin themselves on APPLY). Match-start fresh-cycle reset (`resetReadyStateForAllPlayers`), explicit READY/NOT READY button clicks, and join/leave housekeeping all preserved. Plan archive: `design_doc/5.02.26_conquest_ready_tuning_plan.md`.)
 - `CQ_Bug_Loadout_Not_Respected`: **Open — scope confirmed (v1.332 playtest)**. Forward Deploy and Air Deploy do NOT respect the player's loadout (e.g. TOW on AH-6M); HQ Deploy does. Same `ForcePlayerToSeat` call site (`onHqSeatPendingPlayerDeployed`); suspected cause is vehicle position at deploy-time — HQ vehicle sits at `slot.spawnPos` (HQ pad) when `DeployPlayer` + `ForcePlayerToSeat` fire, Forward/Air vehicle has already been Teleported to the forward/air point pre-seat. Engine likely applies vehicle loadout via proximity to the player's deploy origin. Proposed fix (unimplemented): delay the Forward/Air vehicle Teleport until AFTER `ForcePlayerToSeat`, not pre-seat. Risk: Teleport on aircraft with player aboard may strip seating or desync physics — needs probe.
 - `CQ_Bug_Air_Deploy_Jet_Position_Regression`: **Open** (v1.331 probe regressed jets — reverted v1.332). v1.331 Phase A probe (skip post-bind Teleport for jets) left jets birthed at the primary spawner's last position rather than `nextAirPos`. Confirms `SetObjectTransform` on a persistent `VehicleSpawner` does not reliably propagate position updates to `ForceVehicleSpawnerSpawn` at altitude — the post-bind `mod.Teleport` is what delivers Air Deploy position for both heli and jet. v1.332 restores the yaw-only Teleport path. Jet pitch (rotPlane.X=-45°) remains lost; sister-spawner plan at `~/.claude/plans/sleepy-juggling-thunder.md` Phase B is the documented path. Phase B depends on the same `SetObjectTransform`-at-altitude hypothesis that just failed for Phase A; deferred until a separate probe verifies sibling-spawner position updates at y≈1000.
 - `CQ_Bug_RemoveEquipment_JS_Error`: Likely resolved — not observed since the v1.341 RemoveEquipment `isSlotEmpty` precheck gate (user confirmation 2026-04-25, no recent error-log occurrence). Needs MP confirmation before final close.
@@ -108,6 +110,80 @@ Last Tested Build: `v1.375` — single-player verified for v1.373 launcher cap +
 - `CQ_Feat_AreaTrigger_Enable`: Implemented (v1.367 — root cause for the v1.358–v1.366 OOB bug class: `mod.EnableAreaTrigger` was never called anywhere in the codebase, and AreaTriggers do not fire `OnPlayerEnter/ExitAreaTrigger` events until explicitly enabled per the SDK doc. Every "main base" signal across all prior versions came from the deploy-time distance probe, NOT from real trigger events. Added `enableBoundaryAreaTriggers()` in `boundary/enforcement.ts` that resolves the five trigger IDs via `mod.GetAreaTrigger` and calls `mod.EnableAreaTrigger(trigger, true)` on each; called from `onGameModeStartedImpl` after `applyMapConfig`. With this in place, HQ-back-walk and other physical-crossing OOB scenarios fire correctly.)
 - `CQ_Feat_Squad_Spawn_Zone_Inheritance`: Implemented (v1.370 — closes the last seed gap left open by `CQ_Feat_Event_Driven_Seat_State`. Squad spawn (no slot claim, IsInVehicle probe handles seatKind) previously left zone flags all-false except `inOwnHQ` (anchor probe). A foot squad-spawn deep inside the GCZ would post-grace flag OOB until the player physically crossed a trigger boundary. Fix: at deploy time, find the nearest deployed teammate within `SQUAD_SPAWN_PROXIMITY_RADIUS_METERS = 25` (engine doesn't expose authoritative squad-spawn target — proximity is the proxy); copy `inOwnBuffer`/`inGCZ`/`inEnemyHQ`/`inEnemyBuffer` from their cached state. `inOwnHQ` is NOT inherited — anchor probe owns it (independent reliable signal that may legitimately disagree with a squadmate at the HQ trigger edge). Skip inheritance when the teammate is still inside their own deploy grace window. One-shot at deploy, no per-tick cost. Helpers: `findNearestDeployedTeammatePid`, `tryInheritZonesFromNearbyTeammate`. Plan archive: `design_doc/squad_spawn_zone_inheritance_plan_2026-04-25.md`. Edge cases (squadmate near trigger boundary, inheriting OOB-state from a teammate currently in enemy buffer countdown) accepted and documented in the plan.)
 - `CQ_Feat_Event_Driven_Seat_State`: Implemented (v1.369 — structural fix for the v1.367–v1.368 aircraft OOB false-positive bug. After AreaTriggers were enabled in v1.367, ground/foot OOB worked, but aircraft occupants kept getting flagged when flying outside the GCZ. v1.368 attempted a fix by bypassing `safeGetVehicleFromPlayer`'s cache gate and adding a slot-binding fallback for `isAircraftVehicleInstance`; did not work. Root cause matches `CQ_Feat_Zone_Tracker_Refactor` (v1.360): per-tick engine queries (`mod.GetVehicleFromPlayer`, `mod.CompareVehicleName`, `safeGetPlayerVehicleSeat`) are unreliable on this Portal runtime — `safeGetVehicleFromPlayer`'s `posDebugVehicleObjIdByPid` cache lags reality at deploy time (Air Deploy timing race), and `CompareVehicleName` has documented enum-swap reliability gaps (CQ_Bug_43). Fix: add `seatKind: "on_foot" | "ground_vehicle" | "aircraft"` to `PlayerZoneState`, owned exclusively by `setPlayerSeatKind` (called from `onPlayerEnterVehicleImpl`, `onPlayerExitVehicleImpl`, and the deploy-mode seed). Vehicle classification at the event boundary uses `classifyVehicleSeatKind(vehicle)` which looks up `slot.vehicleType` via `vehicleToSlot` and routes to the existing pure-JS `isAircraftVehicleType(enum)` switch — no `mod.CompareVehicleName` calls. The boundary classifier's vehicle block is now a pure read of `state.seatKind`. Non-slot deploys (squad/flag spawn) get a one-shot `mod.GetSoldierState(IsInVehicle)` probe in `seedZoneStateFromSpawnContext` (Andy's reference pattern; reliable). NO per-tick polling — drift after deploy is owned by the OnPlayerEnter/ExitVehicle events. Removed: `isPlayerSeatedInAircraftForBoundary` (v1.368). Plan archive: `design_doc/event_driven_seat_state_plan_2026-04-25.md`. Squad-spawn zone seeding deferred — see plan "Future considerations".)
+
+## CQ_Bug_58
+Title: Pre-Game READY State Cleared by Death-Respawn and Leaving-HQ-Pre-Live
+
+Observed:
+- Player triple-tap-readies up via the Player Ready Up Panel or full Ready Dialog. UI shows them as READY.
+- Player dies (boundary kill, vehicle explosion, suicide, etc.) and respawns. UI now shows them as NOT READY again — they have to re-click READY.
+- Or: player walks out of their own HQ trigger pre-live (e.g. to look at a vehicle nearby). The moment they cross the trigger boundary, UI flips them to NOT READY with a "needs reconfirm" warning.
+- Both behaviours are user-disruptive — readying up should be a stable commitment that persists through movement and death.
+
+Expected:
+- Pre-game READY state should persist through death + respawn and through walking in/out of the main base.
+- The ONLY events that should auto-clear READY status are:
+  1. Player explicitly clicks SWAP TEAMS (legitimate — new team, fresh confirmation).
+  2. Admin changes match configuration (every previously-ready player including the admin themselves on APPLY auto-unreadies so they re-confirm against the new settings).
+
+Root cause analysis:
+- Two write sites were responsible:
+  - **Site #9** in `src/index/player-deploy.ts:42-43`: `onPlayerDeployedImpl` unconditionally cleared `State.players.readyByPid[pid]` and deleted `State.players.readyNeedsReconfirmByPid[pid]` on every body-into-world event. The engine `OnPlayerDeployed` callback fires not just on initial spawn but on every respawn after death, which is the path users observed as "death unreadies you".
+  - **Site #10** in `src/boundary/enforcement.ts:274-286`: `notePreliveMainBaseViolation` set `readyByPid=false` + `readyNeedsReconfirmByPid=true` whenever a player exited their own HQ trigger pre-live. Called from two sites: `enforcement.ts:330` (per-tick boundary-state refresh transition) and `area-triggers.ts:112` (immediate AreaTrigger exit event).
+- The function existed because pre-Wave-4 design assumed players who left HQ pre-live were "no longer ready"; that assumption no longer matches user intent.
+- `readyNeedsReconfirmByPid` is consumed by `roster-render.ts:217` to drive a "you need to re-confirm" visual state on the ready toggle button. After this fix, that flag is still written by the two admin-config-change paths, so the visual state remains functional for its intended purpose.
+
+Verification path:
+- Exhaustive grep for both `readyByPid` and `readyNeedsReconfirmByPid` across `src/` produced a 10-site inventory (full table in plan archive). Sites #1-#8 stay; sites #9 and #10 removed.
+- Verified no other call sites of `notePreliveMainBaseViolation` exist; function safely deletable after removing 2 callers.
+- Verified match-start lifecycle does NOT force-redeploy already-deployed players (no `OnPlayerDeployed` fires on phase transition), so removing site #9 does not break the bulk reset path at `resetReadyStateForAllPlayers` which handles fresh-cycle resets independently.
+
+Resolution (v1.445):
+- 4 edits across 3 files:
+  - `src/index/player-deploy.ts:42-43` — deleted 2 lines.
+  - `src/index/area-triggers.ts:108-114` + header comment — dropped `notePreliveMainBaseViolation` call + inner `if (!isMatchLive())` wrapper; refresh broadcasts kept (ready dialog still shows IN/NOT IN MAIN BASE indicators on trigger exit).
+  - `src/boundary/enforcement.ts:328-331` — dropped `if (nextKind === "prelive_main_base")` block.
+  - `src/boundary/enforcement.ts:274-286` — deleted entire `notePreliveMainBaseViolation` function (zero remaining callers; refresh broadcasts inside body were redundant with the now-preserved area-triggers exit broadcast path).
+- Plan archive: `design_doc/5.02.26_conquest_ready_tuning_plan.md`.
+
+## CQ_Bug_57
+Title: Squad-Spawn on Teammate at HQ Flags Spawner as Out-of-Bounds
+
+Observed:
+- Player squad-spawns onto a teammate who is currently inside the team's own main base (HQ) trigger volume.
+- Engine fires the boundary-violation prompt on the spawner: "MATCH IS NOT LIVE; RETURN TO YOUR MAIN BASE!" pre-live, or "YOU ARE OUT OF BOUNDS; RETURN NOW!" live.
+- Teammate (the spawn target) is correctly inside HQ and not flagged.
+- Spawner is also physically at HQ but the boundary classifier disagrees.
+
+Root cause:
+- `seedZoneStateFromSpawnContext` ([boundary/enforcement.ts:446](../src/boundary/enforcement.ts#L446)) classifies non-slot deploys (squad/flag spawn) in priority order: anchor-radius probe → teammate inheritance → default-in-bounds fallback (`inGCZ = true`).
+- The anchor-radius probe (`isPlayerWithinOwnMainBaseAnchorRadius`) reads `safeGetSoldierStateVector(player, GetPosition)` immediately on `OnPlayerDeployed`. If the engine hasn't settled the spawner's position yet — or if `DEPLOY_MAIN_BASE_RADIUS_METERS` is tighter than the actual HQ trigger volume — this probe returns false even when the player is physically at HQ.
+- Control then falls through to `tryInheritZonesFromNearbyTeammate` ([enforcement.ts:516](../src/boundary/enforcement.ts#L516)), which copies the teammate's `inOwnBuffer`, `inGCZ`, `inEnemyHQ`, `inEnemyBuffer` flags but **explicitly omits `inOwnHQ`**.
+- When the teammate is `inOwnHQ=true` (and all other flags false because they're at HQ, not in GCZ or buffer), the spawner inherits all-four-false. `state.inOwnHQ` stays false (default).
+- Inheritance returns true → the default-in-bounds fallback (`state.inGCZ = true`) is **bypassed**.
+- Classifier ([enforcement.ts:223](../src/boundary/enforcement.ts#L223)) sees:
+  - Pre-live: `!inOwnHQ` → `prelive_main_base` violation.
+  - Live: not `inOwnHQ`, not enemy HQ/buffer, grace expires, on-foot/ground-vehicle, not `inGCZ` + not `inOwnBuffer` → `ground_combat_zone` violation.
+- All five trigger types (own HQ, own buffer, GCZ, enemy HQ, enemy buffer) are correctly tracked by `OnPlayerEnterAreaTrigger` / `OnPlayerExitAreaTrigger` after the spawner physically crosses a trigger boundary, but the engine does NOT fire those events on spawn-inside-trigger — so the seed at deploy time is the only mechanism to set initial state for squad/flag spawns.
+
+Expected:
+- Spawning on a teammate inside own HQ should result in spawner having `inOwnHQ=true`, no violation.
+- Default policy is "in-bounds unless we have proof otherwise" — see comment block at [enforcement.ts:475-484](../src/boundary/enforcement.ts#L475).
+
+Fix:
+- One-line addition to `tryInheritZonesFromNearbyTeammate`:
+  ```ts
+  state.inOwnHQ = teammateState.inOwnHQ || state.inOwnHQ;
+  ```
+- Inherits `inOwnHQ=true` when the teammate is at HQ. Preserves any earlier-set true value from the anchor-radius probe (the `|| state.inOwnHQ` keeps prior-true intact even if teammate happens to be false).
+- Edge case: 25m squad-spawn proximity radius means a teammate just inside HQ could give the spawner `inOwnHQ=true` even if the spawner lands just outside the trigger. The trigger-exit event on the next physical movement out of HQ will correctly flip the flag back to false. Acceptable trade — better than the current always-flag-as-violation outcome.
+
+Status:
+- Resolved (v1.442). Boundary inheritance now propagates `inOwnHQ` from the squad-spawn target.
+
+Related:
+- `CQ_Feat_Event_Driven_Seat_State` (v1.369): same family of bugs — engine doesn't fire trigger-enter on spawn-inside-trigger, so the deploy-time seed is the sole authority for initial zone state.
+- `design_doc/squad_spawn_zone_inheritance_plan_2026-04-25.md` (referenced in the inheritance function comment): original design that introduced the inheritance path. Did not include `inOwnHQ` per its scope ("non-HQ zone flags"), but the at-HQ case wasn't validated against the pre-live + live classifier behavior.
 
 ## CQ_Bug_42
 Title: CountOf Called With Invalid/Undefined Array Argument During Gameplay
@@ -2498,13 +2574,16 @@ Related:
 - Plan: `C:\Users\Soldat\.claude\plans\sleepy-juggling-thunder.md` (scope explicitly excluded per-launcher caps).
 - `CQ_Bug_Launcher_Slot2_Double_Give` (#90) — the adjacent launcher-slot regression captured 2026-04-21.
 
-Status: **Open.** Deferred to polish phase per user direction at v1.300 closeout.
+Status: **Resolved (superseded by v1.373; closure user-confirmed 2026-05-03).** The original "charge consumed at silent cap clamp" failure mode no longer fires:
+- v1.373 introduced a uniform 3-rocket cap across all launchers (`maxAmmo: 3` on RPG / AT4 / Stinger in `DEFAULT_GADGET_LOCKER_CONFIG`), eliminating the per-variant cap divergence that produced silent clamps.
+- The Launcher Ammo tile now disables (renders "FULL" in gray) once the launcher is at cap — `atCap === true` gates `ammoEnabled` to false so charges are never consumed against a clamped write.
+- v1.343 read-back-verify continues to refund a charge if the engine ever silently no-ops a write.
+- v1.373's +1-ammo non-destructive probe (#96) replaced the destructive launcher-slot identification path, fixing the AT4 second-slot ammo gap noted in the original "Latest findings" below.
 
-Latest findings (2026-04-21):
-- Observation: the Launcher Ammo tile is not giving second-slot ammo on AT4. Two possibilities to diagnose together:
-  1. `slotWithLauncher` returns the wrong slot for AT4 (probe / kind classification gap — see #90 for the sibling regression in `giveLauncher`).
-  2. The engine cap clamp is hitting *before* the increment lands, so `mag + 1` writes but reads back the prior value; same underlying cap issue already described here.
-- Suggested polish-phase probe: read `GetInventoryMagazineAmmo(slot)` both before and after the `SetInventoryMagazineAmmo` call and log the delta per launcher id; correlate with the probe's reported `kind`/`gadget` for that slot. Same telemetry run can feed both #78 and #90.
+Historical findings (2026-04-21, retained for archive):
+- The original "Launcher Ammo tile not giving second-slot ammo on AT4" observation traced to two possibilities. Both were closed by v1.373:
+  1. `slotWithLauncher` returning the wrong slot — addressed by the +1-ammo non-destructive probe in #96.
+  2. Engine cap clamp landing before the increment — addressed by the uniform 3-cap + `atCap` tile-disable gate in #95.
 
 ## CQ_Refactor_Gadget_Locker_v1.290_to_v1.313
 Title: Gadget Locker Authoritative Slot State + Slot-Based Probe + Preference Persistence
@@ -2682,7 +2761,7 @@ Scope:
 - Air Deploy spawns jets with engine-default pitch (flat) regardless of the authored `volume.rotPlane.X`. Yaw is preserved via the post-bind `mod.Teleport`; pitch has no argument in `mod.Teleport` and `mod.SetObjectTransform` is a no-op on `Vehicle`.
 - Sister-spawner plan (per-jet-slot sibling `VehicleSpawner` born with `rotPlane`, relocated per click) was deferred in v1.332: its core assumption is spawner-relocate propagates at altitude, which v1.331 disproved for position. Reviving the plan requires a **narrow probe**: create a runtime `VehicleSpawner` at ground level with non-zero pitch, fire `ForceVehicleSpawnerSpawn` without relocation, observe whether the birthed vehicle inherits the pitch. If yes, the sibling pattern's upper bound is "pitched vehicle at HQ pad" — still a net loss without position. If no, birth-rotation is engine-determined and the sibling pattern cannot help.
 
-Status: **Deferred polish.** Pilots pitch manually after seat. Not a blocker for the MP playtest.
+Status: **Closed — Accepted (2026-05-03, user direction).** Jet pitch loss on Air Deploy is accepted as-is for V1; the sister-spawner workaround is not pursued and the issue is dropped from the active known-issues backlog. Pilots pitch manually after seat. Reopen if a future engine update exposes a pitch-aware Teleport signature for `Vehicle` objects.
 
 ## CQ_Bug_RemoveEquipment_JS_Error
 Title: `mod.RemoveEquipment` JS error log — scope and repro unconfirmed
@@ -2717,7 +2796,7 @@ Observed (2026-04-21):
 Intent:
 - Consolidate to a single source of truth for the XvY selection so the Victory screen, ready-dialog preset picker, and any admin-side surfaces all render from the same value.
 
-Status: **Open.** Scoped for the polish phase; not a playtest blocker. Reaffirmed on punch list 2026-04-25 (v1.376).
+Status: **Open — Low-impact (2026-05-03 reclassification).** Cosmetic only — divergent copies do not affect gameplay or match outcome, just inconsistent UI display. Dropped from the player-facing known-issues list as low player impact; remains Open internally for the polish phase. Originally scoped at v1.338, reaffirmed on punch list 2026-04-25 (v1.376).
 
 ## CQ_Bug_Border_OutOfBounds_Rework (#87)
 Title: Border bug rework + out-of-bounds handling aligned with new Godot settings
@@ -2744,7 +2823,7 @@ Observed (2026-04-21):
 Resolution path:
 - Map-side fix: reposition the oil tanker in Godot. Not a code issue; no script change required.
 
-Status: **Open.** Map-side TODO.
+Status: **Resolved (v1.379, user-confirmed 2026-04-26 + closure reaffirmed 2026-05-03).** Map-side Godot fix applied — oil tanker repositioned out of the terrain at flag B. No code change required.
 
 ## CQ_Polish_Vehicle_Spawn_Messaging_To_Admin_Panel (#89)
 Title: Relegate "Vehicle spawned at X/Z" world-log messaging to admin-panel
@@ -2960,7 +3039,18 @@ Possible fix paths (not actioned in current wave):
 
 3. **Architectural fix (larger, deferred)**: refactor the slot-probe path to use the authoritative `State.players.lockerSlots[pid]` map (already maintained by the locker open flow) as the source of truth for slot contents. Eliminates the need for live `GetInventoryAmmo` probes during menu refresh. Out of scope for a small bugfix; would belong to a Supply Box rework.
 
-Status: **Open — reproduced v1.408 (2026-04-27)**. Bundle impact of fix paths #1 / #2: near-zero (a few `if` checks). Verify by reproducing the menu-open across all four classes (Assault, Engineer, Medic, Recon) with various gadget combinations and confirming the log lines no longer appear (path #2) or are properly absorbed (path #1).
+Status: **Resolved (v1.447 menu-open path + v1.448 placement path, 2026-05-03, pending MP confirm)**. Bundle impact of fix paths #1 / #2: near-zero (a few `if` checks). Verify by reproducing the menu-open across all four classes (Assault, Engineer, Medic, Recon) with various gadget combinations and confirming the log lines no longer appear (path #2) or are properly absorbed (path #1).
+
+**Resolution shipped at v1.447 (per-class scoped probes — variant of fix path #2):**
+- Engineer's `probeSlot` left untouched (original ammo-based detection + destructive `probeLauncherSlot` semantics for launcher identification — works "best it can" per user direction; engine-log noise on Engineer cold-spawn opens is accepted as out of scope, since removing it would require the larger architectural rework of fix path #3).
+- Three new HasEquipment-based per-class probes added in [`src/interaction/ammo-resupply-menu.ts`](../src/interaction/ammo-resupply-menu.ts): `probeAssaultSlot`, `probeMedicSlot`, `probeReconSlot`. Each iterates `ACTIVE_GADGET_CONFIG.{assault,medicItems,recon}` filtered by slot; uses `mod.IsInventorySlotActive` for the unknown branch + `mod.HasEquipment` for gadget detection. Neither call emits the engine error log on miss.
+- Small dispatcher `probeSlotForClass(player, slot)` routes by class (Engineer → existing `probeSlot`; others → matching per-class probe; unknown class → safe `{ kind: "empty" }` default).
+- Wired into both consumers: `initLockerSlotStateFromProbe` (line 1062, first-open menu probe) and `reprobeSiblingGadgetSlot` (line 1141, placement-time sibling re-probe).
+- Bundle delta: +2,614 bytes (866,137 → 868,751).
+- Plan: [`design_doc/5.03.26_conquest_supplybox_medic_fix_plan.md`](./5.03.26_conquest_supplybox_medic_fix_plan.md).
+- Also corrects the original "cosmetic / log-noise only" framing of impact: every engine error log entry allocates against the same JS heap that crashed the script at 16p in [`#109`](#cq_bug_16player_playtest_js_memory_limit-109). Eliminating 4 errors per menu open across N players × N opens removes a non-trivial heap-pressure contributor that would have eaten back some of Wave 6's reclaim.
+
+**Follow-up at v1.448 (placement path):** v1.447 SP-test pushback — "still triggers as a medic and as assault." The menu-open path was clean post-v1.447 (per-class probes worked) but the menu-PLACEMENT path was still emitting engine log via `isSlotEmpty()` ([line 875-880](../src/interaction/ammo-resupply-menu.ts#L875)) which itself calls `GetInventoryAmmo` + `GetInventoryMagazineAmmo`. `isSlotEmpty` was invoked on every tile click from `giveMedicSmoke` (line 1356), `giveAssaultItem` (line 1401), and `giveReconItem` (line 1450). User-directed simplification: drop the `if (!isSlotEmpty(targetSlot)) { RemoveEquipment(targetSlot); }` precheck entirely — engine `AddEquipment` cleanly clobbers the slot, users own the slot choice via the slot-toggle UI, dup prevention is handled by the existing `ownedByLockerState` (gray-out via `tileOwned`) + HasEquipment-based gadget-id sweep. Engineer's `giveLauncher` LEFT UNTOUCHED (launcher swap-in-place needs the slot-targeted RemoveEquipment). Bundle delta v1.448: −362 bytes (868,751 → 868,389). Combined v1.447+v1.448 result: non-Engineer classes emit ZERO `GetInventoryAmmo` / `GetInventoryMagazineAmmo` engine error log entries on either menu-open OR placement.
 
 Related:
 - `CQ_Polish_Launcher_Ammo_Per_Launcher_Cap` (#78) — same call-family, adjacent issue.
@@ -3209,19 +3299,25 @@ Related:
 - Plan reference: [`design_doc/supply_box_disabled_focus_indicator_plan_2026-04-25.md`](./supply_box_disabled_focus_indicator_plan_2026-04-25.md) noted "Out of scope: Other menus" — top-row slot selectors are within the same Supply Box surface and should ride the same pattern.
 
 ## CQ_Bug_FlagB_Spawn_Failure (#100)
-Title: Cannot spawn on flag B — suspected Godot spatial / CapturePoint configuration bug
+Title: Cannot spawn on flag B in B+C-owned-without-A ownership state — Godot spawner limitation
 
 Observed (2026-04-25, user punch list):
 - Players unable to deploy onto flag B from the deploy screen. Symptom: clicking flag B on the deploy screen does not produce a spawn at the flag (or spawns at a fallback location instead).
-- Suspected origin: Godot spatial configuration for the flag B `CapturePoint` object — possibly a misconfigured spawn-point reference or a missing/disabled `PlayerSpawner` association on the captured-by-team state of that point. Could also be a script-side issue where flag B's objId is misconfigured in [`config/maps/operation-firestorm.ts`](../src/config/maps/operation-firestorm.ts) capture-point list.
-- Needs repro: capture flag B (confirm capture animation + ticket bleed engages), then attempt to flag-spawn onto B from the deploy screen.
+- Suspected origin: Godot spatial configuration for the flag B `CapturePoint` object — possibly a misconfigured spawn-point reference or a missing/disabled `PlayerSpawner` association on the captured-by-team state of that point.
 
-Investigation notes:
-- Compare flag B's spatial entry against flag A and flag C in `MP_TWL_Conquest16_FireStorm.spatial.json` for any structural diff (associated SpawnPoint binding, blueprint, etc.).
-- Cross-check `getActiveCapturePointConfigByObjId` returns a valid config for B's objId — if the config is missing, the script-side `isMappedConquestCapturePointObjId` filter would suppress B from the spawn-eligible list.
-- The recently-shipped #98 (flag-spawn default-in-bounds) only fixed the post-spawn OOB path; it does not affect the spawn-mechanism itself. So B's failure is a separate root cause.
+Repro narrowed (2026-05-03, user clarification):
+- The failure fires **only when the team owns flag B + flag C but NOT flag A**. Other ownership topologies (B alone, B+A, all three) work as expected.
+- This is a Godot-side spawner limitation in how flag B's spawn associations resolve when the upstream-ownership chain skips A. Not a script-side configuration issue (`getActiveCapturePointConfigByObjId` returns a valid config; the script is already wired correctly).
 
-Status: **Open — needs repro and root-cause classification (map-side vs script-side).** May overlap with #88 oil-tanker-in-ground (also flag B, also Godot-side).
+Resolution plan:
+- **Deferred to custom player spawner system.** Rather than spot-patching this single ownership topology in the current Godot-driven spawner, the fix will land with the planned custom player spawner — which gives us full control over per-team / per-flag spawn association and removes the dependency on Godot's built-in spawner behavior. Spec for the custom spawner is out of scope for V1; tracked separately.
+- In the meantime: surfaced on the player-facing known-issues list so players can avoid the failure mode mid-match (work around by capturing A or losing C to restore expected ownership topology).
+
+Investigation notes (retained for archive):
+- Compared flag B's spatial entry against flag A and flag C in `MP_TWL_Conquest16_FireStorm.spatial.json` — no obvious structural diff explains the topology-conditional failure, supporting the "Godot spawner internal logic" hypothesis.
+- The recently-shipped #98 (flag-spawn default-in-bounds) only fixed the post-spawn OOB path; it does not affect the spawn-mechanism itself. B's failure is a separate root cause.
+
+Status: **Open — deferred to custom player spawner system (2026-05-03).** Surfaced on the player-known-issues page; not in active code-side investigation pending the custom spawner architecture.
 
 Related:
 - `CQ_Bug_FlagSpawn_FalsePositive_OOB` (#98) — adjacent flag-spawn bug; resolved at v1.376. Different root cause from this issue.

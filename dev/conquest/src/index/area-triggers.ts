@@ -89,9 +89,9 @@ function onPlayerEnterAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger:
     }
 }
 
-// Routes every area-trigger exit to the boundary single-update path, then handles the pre-live
-// own-HQ violation side-effects (notePreliveMainBaseViolation + ready-dialog refresh) for the
-// own-HQ trigger only. Boundary-flag writes are owned by updateZoneStateOnTriggerTransition.
+// Routes every area-trigger exit to the boundary single-update path, then refreshes the ready
+// dialog so the IN/NOT IN MAIN BASE indicators stay current. Boundary-flag writes are owned by
+// updateZoneStateOnTriggerTransition.
 function onPlayerExitAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger) {
     try {
         if (!isValidPlayer(eventPlayer)) return;
@@ -106,12 +106,8 @@ function onPlayerExitAreaTriggerImpl(eventPlayer: mod.Player, eventAreaTrigger: 
         if (!safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsAlive, false)) return;
 
         if (IsPlayerInOwnMainBase(eventPlayer, eventAreaTrigger)) {
-            if (!isMatchLive()) {
-                const pid = safeGetPlayerId(eventPlayer);
-                if (pid !== undefined) {
-                    notePreliveMainBaseViolation(eventPlayer, pid);
-                }
-            }
+            // CQ_Bug_58 (v1.445): leaving the main base no longer auto-unreadies. Refresh
+            // broadcasts kept because the ready dialog still shows IN/NOT IN MAIN BASE indicators.
             refreshReadyStatusForAllBuiltReadyDialogs();
             renderReadyDialogForAllVisibleViewers();
         }

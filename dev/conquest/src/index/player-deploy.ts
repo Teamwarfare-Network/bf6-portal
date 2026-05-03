@@ -39,8 +39,8 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     // during deploy timing races (#93). Boundary classification is event-driven via seatKind
     // (v1.369) and does not depend on this cache.
     State.conquest.debug.teamSwapHudResetPendingByPid[pid] = false;
-    State.players.readyByPid[pid] = false;
-    delete State.players.readyNeedsReconfirmByPid[pid];
+    // CQ_Bug_58 (v1.445): deploy events no longer auto-unready. Ready state changes only on
+    // (a) explicit button press, (b) team swap, (c) admin config change, (d) match-start reset.
     // resetPlayerBoundaryStateOnDeploy drops zoneStateByPid + sets inMainBaseByPid=false +
     // stamps deployedAtSecondsByPid for the grace window. The synchronous HQ trigger enter
     // event for HQ-deploy spawns flips the matching flag to true via updateZoneStateOnTriggerTransition.
