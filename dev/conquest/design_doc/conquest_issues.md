@@ -3595,3 +3595,34 @@ Related:
 - [`conquest_optimization_analysis.md`](./conquest_optimization_analysis.md) — full reclaim inventory under #109 lens.
 - `CQ_Refactor_forEachValidPlayer_Helper` (#64), `CQ_Perf_TickContext_AllPlayers_Cache` (#65), `CQ_Perf_Combat_HUD_Dirty_Gate` (#66) — prior performance work; reduced CPU per-tick but did not target heap.
 - `CQ_Bug_40 CQ_Bug_Frame_Time_Budget_Exceeded` (#40) — earlier capacity issue (frame time, not memory). Same shape: stress at concurrent join.
+
+## CQ_Bug_Console_DeployScreen_Vehicle_Buttons_Unresponsive (#113)
+Title: Console / controller players cannot trigger HQ / Forward / Air Deploy from the deploy screen's Vehicle Deploy menu
+
+Observed (2026-05-03, console MP playtest):
+- On controller, the SPAWN buttons in the Vehicle Deploy menu surfaced on the deploy screen do not respond to controller input. The menu renders correctly — rows visible, statuses correct, WAIT / READY labels accurate — but pressing A / X on a row produces no spawn request and no audible feedback.
+- The same menu opened on-foot via the purple smoke triple-tap at HQ works correctly on console: identical widget tree, identical row data, controller input registers normally and the SPAWN press fires the corresponding `requestHqVehicleSpawn` / `requestForwardVehicleSpawn` / `requestAirVehicleSpawn` request.
+- PC mouse input works in both contexts (deploy screen + on-foot live terminal).
+
+Workaround currently in use:
+- Console players who want to HQ / Forward / Air Deploy must spawn on foot first (any spawn point — main base or flag), then triple-tap the purple smoke at HQ to open the same Vehicle Deploy menu via the on-foot live terminal. From the live terminal, controller input registers normally and SPAWN presses fire as expected.
+- Workaround is surfaced on the player-facing known-issues list ([`conquest_player_know_issues_documentation.md`](./conquest_player_know_issues_documentation.md)) so console players know to use the purple smoke path until the underlying input-routing gap is fixed.
+
+Suspected root cause:
+- Input-mode discrepancy between the two open paths. The live-terminal path in `tryOpenVehicleDeployLiveMenuForPlayer` ([`src/vehicles/deploy-live-menu.ts:74`](../src/vehicles/deploy-live-menu.ts#L74)) explicitly calls `setUIInputModeForPlayer(eventPlayer, true)` before revealing the HUD family. The deploy-screen reveal path (via `revealVehicleDeployTimerHudForPlayer` called from `renderCriticalHudForReveal` in [`src/interaction/actions.ts`](../src/interaction/actions.ts)) does NOT enable UI input mode — it relies on the deploy screen itself owning controller cursor focus.
+- On the deploy screen, the engine's controller cursor may not be routed onto custom HUD widgets unless `EnableUIInputMode` (or an equivalent deploy-screen-compatible API) is explicitly invoked. This would explain why the menu renders but buttons don't accept controller input.
+- PC mouse works in both contexts because mouse hover/click is global, not gated by the engine's controller cursor focus model.
+
+Investigation needed:
+- Confirm whether `mod.EnableUIInputMode(player, true)` is safe to call on the deploy screen, or whether it conflicts with deploy-screen-native UI (squad picker, spawn-point selectors, etc.).
+- Probe whether the deploy screen exposes a different controller-cursor-enable API or whether widgets need explicit `mod.SetUIWidgetButtonControllerNav` (or similar) wiring to receive controller focus from the deploy-screen overlay.
+- Cross-check against the squad / spawn-point selectors on the deploy screen — those clearly work on controller, so understanding their input-routing is the model to follow.
+- A minimal repro probe: enable UI input mode on the deploy screen (gated to a single test pid via admin toggle), observe whether the SPAWN buttons start accepting controller input AND whether deploy-screen-native UI is impaired.
+
+Related:
+- Live-terminal entry path: `tryOpenVehicleDeployLiveMenuForPlayer` in [`src/vehicles/deploy-live-menu.ts`](../src/vehicles/deploy-live-menu.ts).
+- Deploy-screen reveal path: `revealVehicleDeployTimerHudForPlayer` (called from `renderCriticalHudForReveal` in [`src/interaction/actions.ts`](../src/interaction/actions.ts)).
+- Vehicle Deploy menu rendering: [`src/vehicles/deploy-timer-ui.ts`](../src/vehicles/deploy-timer-ui.ts).
+- Player-facing surface: Custom Dialogs / Vehicle Deploy entries in [`conquest_player_design_documentation_features.md`](./conquest_player_design_documentation_features.md).
+
+Status: **Open (2026-05-03).** Surfaced on the player-facing known-issues page with the on-foot purple-smoke workaround documented. Awaits controller-input investigation; not blocking V1 since the workaround path exists and is reliable.

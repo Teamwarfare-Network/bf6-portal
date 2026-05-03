@@ -15,6 +15,9 @@ Only occurs when your team owns flag B and flag C but not flag A. Underlying God
 ### Possible brief frame stutter on heavy deploy activity
 Hitch possible when multiple players HQ / Forward / Air Deploy in the same window. Under investigation. *(internal #29)*
 
+### Console: deploy screen vehicle SPAWN buttons unresponsive
+On controller, the SPAWN buttons in the Vehicle Deploy menu don't activate from the deploy screen. Workaround: deploy on foot anywhere, then triple-tap the purple smoke at HQ to open the same menu via the live terminal. *(internal #113)*
+
 ### Focus highlight missing on disabled gadget slot toggle buttons
 Console / controller players navigating to a disabled prev/next button on the Supply Box top row get no visual cue. Cosmetic only. *(internal #99)*
 

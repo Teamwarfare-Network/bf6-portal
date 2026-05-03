@@ -3,6 +3,7 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.454: Vehicle deploy timer row spacing tightened: ROW_HEIGHT 30->22, ROW_GAP_Y 2->1. Row stride drops from 32 to 23 (~28% reduction; tightest possible without clipping the 20-tall spawn button). Visible gap between adjacent button bottoms drops from ~12px to ~3px.
 // v1.453: Engage-status backplate dimension finalize v2: height 18 -> 14 (covers only visible glyph cap-height; 18px widget had ~4px of bounding-box padding the backplate did not need to back). Y shifted +2 so top no longer touches the engage-track bar above. Width 98 unchanged.
 // v1.452: Engage-status backplate dimension tune: width 90 -> 98 (NEUTRALIZING was clipping at 90), height 22 -> 18 (drop vertical padding entirely; text has no descenders so it fits cleanly). Box now snug horizontally + flush vertically with the text.
 // v1.451: Conquest HUD backplate polish v3: removed team-name backplates entirely (looked weird in top HUD spacing, team names not load-bearing). Tightened engage-status backplate width 110->90 (closer fit around NEUTRALIZING per SP feedback). Engage backplate is now the only HUD-text backplate.

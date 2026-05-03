@@ -268,8 +268,12 @@ const VEHICLE_DEPLOY_TIMER_ROOT_OFFSET_Y = -187;
 const VEHICLE_DEPLOY_TIMER_ROOT_WIDTH = 486;
 const VEHICLE_DEPLOY_TIMER_CONTENT_HEIGHT = 394;
 const VEHICLE_DEPLOY_TIMER_ROOT_HEIGHT = 432;
-const VEHICLE_DEPLOY_TIMER_ROW_HEIGHT = 30;
-const VEHICLE_DEPLOY_TIMER_ROW_GAP_Y = 2;
+// v1.454: row-stride tightened from 32 to 23 (ROW_HEIGHT 30→22, ROW_GAP_Y 2→1) per user
+// "halve the vertical spacing between rows" feedback. ROW_HEIGHT bottoms out at the spawn-button
+// height (20) + 2px slack — going lower would clip the button. Visible gap between adjacent
+// button bottoms drops from ~12px to ~3px.
+const VEHICLE_DEPLOY_TIMER_ROW_HEIGHT = 22;
+const VEHICLE_DEPLOY_TIMER_ROW_GAP_Y = 1;
 const VEHICLE_DEPLOY_TIMER_PLAYER_PLATE_X = 0;
 const VEHICLE_DEPLOY_TIMER_PLAYER_PLATE_WIDTH = 176;
 const VEHICLE_DEPLOY_TIMER_ROW_GAP_X = 6;

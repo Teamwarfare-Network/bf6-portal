@@ -16,6 +16,7 @@
 - **Function Inventory** — every callable with one-line purpose and usage tag.
 - **Lifecycle Map** — every per-pid state field with allocator + deallocator + status.
 - **Naming Economy** — identifier counts, length distribution, top expensive symbols, anti-pattern symbol list.
+- **Code-Comment-Deficiency Hotspots** *(added v1.454 audit, 2026-05-03)* — prioritized list of files / functions / blocks where comments are insufficient to explain intent per AGENTS.md "Function Comment Readability Policy". Severity-tagged (HIGH/MEDIUM/LOW) and category-tagged (NO_PURPOSE_COMMENT / COMPLEX_NO_RATIONALE / EMPTY_CATCH_NO_WHY / etc.). NOT tracked as bugs — code is functionally correct; the deficiency is for human comprehension.
 - **How to keep this file accurate** — maintenance rules.
 
 **`conquest_optimization_analysis.md`** — the *reasoning*:

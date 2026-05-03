@@ -1,6 +1,6 @@
 # TWL Conquest Optimization State
 
-Last updated: v1.453 (2026-05-03) — v1.453 further tightened engage-status backplate height 18→14 (covers only the visible glyph cap-height; the 18px text widget bounding box has ~4px of padding the backplate didn't need to back) and shifted Y down by 2 so the top no longer touches the engage-track bar above. v1.452 had set width 98 + height 18 (final width is now stable). v1.451 dropped team-name backplates. Engage backplate is the only HUD-text backplate. Net +1 widget/pid in M3 vs pre-v1.449 (~92 → ~93). v1.449 originally added 3 backplates; v1.450/v1.451/v1.452/v1.453 iteratively reduced scope and tightened dimensions per SP-test feedback. Recovers some of the legibility lost when Wave 6 Ship 1c eliminated the 8-layer compass shadow rings on those text widgets. CQ_Bug_94 supply-box engine-log noise SHIPPED at v1.447+v1.448. Wave 6 Ship 0+1c+1d SHIPPED at v1.443+v1.444; CQ_Bug_58 ready-state auto-unready tuning SHIPPED at v1.445; CQ_Tweak_WAIT_Label SHIPPED at v1.446. All MP playtest validation pending (see [`5.02.26_conquest_wave_6_plan.md`](./5.02.26_conquest_wave_6_plan.md), [`5.02.26_conquest_ready_tuning_plan.md`](./5.02.26_conquest_ready_tuning_plan.md), [`5.03.26_conquest_supplybox_medic_fix_plan.md`](./5.03.26_conquest_supplybox_medic_fix_plan.md), [`conquest_mp_ongoing_tests.md`](./conquest_mp_ongoing_tests.md)).
+Last updated: v1.454 (2026-05-03) — v1.454 vehicle deploy timer row spacing tightened: `ROW_HEIGHT` 30→22 + `ROW_GAP_Y` 2→1, dropping the per-row stride from 32px to 23px (~28% reduction; tightest possible without clipping the 20-tall spawn button). Visible gap between adjacent rows drops from ~12px to ~3px. v1.453 finalized engage-status backplate dimensions (98 wide × 14 tall, Y +2). v1.451 dropped team-name backplates. Net +1 widget/pid in M3 vs pre-v1.449 (~92 → ~93). v1.449 originally added 3 backplates; v1.450–v1.453 iteratively tightened/reduced. Recovers some of the legibility lost when Wave 6 Ship 1c eliminated the 8-layer compass shadow rings on those text widgets. CQ_Bug_94 supply-box engine-log noise SHIPPED at v1.447+v1.448. Wave 6 Ship 0+1c+1d SHIPPED at v1.443+v1.444; CQ_Bug_58 ready-state auto-unready tuning SHIPPED at v1.445; CQ_Tweak_WAIT_Label SHIPPED at v1.446. All MP playtest validation pending (see [`5.02.26_conquest_wave_6_plan.md`](./5.02.26_conquest_wave_6_plan.md), [`5.02.26_conquest_ready_tuning_plan.md`](./5.02.26_conquest_ready_tuning_plan.md), [`5.03.26_conquest_supplybox_medic_fix_plan.md`](./5.03.26_conquest_supplybox_medic_fix_plan.md), [`conquest_mp_ongoing_tests.md`](./conquest_mp_ongoing_tests.md)).
 Sister doc to: [`conquest_optimization_analysis.md`](./conquest_optimization_analysis.md). The analysis doc contains the *reasoning* (reclaim ladder, regime change, justification rules); this doc contains the *facts* (file map + function inventory).
 
 This is a per-file state log, ordered by path. It tracks four things:
@@ -38,7 +38,9 @@ Source: [`config/conquest-constants.ts`](../src/config/conquest-constants.ts).
 
 ---
 
-## Project Stats (v1.453)
+## Project Stats (v1.454)
+
+**v1.454 (2026-05-03) — Vehicle deploy timer row spacing tighten.** UI tuning pass: rows in the vehicle deploy timer HUD were visually too far apart (~12px of empty space between adjacent rows). Tightened the per-row stride by reducing both `VEHICLE_DEPLOY_TIMER_ROW_HEIGHT` (30→22) and `VEHICLE_DEPLOY_TIMER_ROW_GAP_Y` (2→1) in `foundation/ui-layout.ts`. Both constants are consumed only by `getVehicleDeployTimerRowBaseY()` in `vehicles/deploy-timer-ui.ts` (line 269) which computes each row's baseY via `CONTENT_HEIGHT - ROW_HEIGHT - ((ROW_HEIGHT + ROW_GAP_Y) * index)`. New stride = 22 + 1 = 23 (was 32). Visible gap between adjacent button bottoms drops from ~12px to ~3px. **Constraint:** ROW_HEIGHT bottoms out at the 20-tall spawn-button height + 2px slack (going lower would clip buttons). Bundle delta: 0 (constant value change only).
 
 **v1.453 (2026-05-03) — Engage-status backplate dimension finalize v2.** SP feedback on v1.452: backplate top was touching the engage-track bar above (no visual separation), and there was still visible empty space inside the box below the rendered glyphs. Root cause: text widget at fontSize 18 has a bounding box of 18px tall but the actual rendered all-caps glyphs occupy only ~12-14px (font line-height padding). v1.453 backs only the visible glyph area:
 - `ENGAGE_STATUS_BOX_HEIGHT = 18 → 14` — covers only the cap-height of the rendered glyphs.
@@ -89,11 +91,11 @@ Net widget count unchanged from v1.449 (still +3 widgets/pid in M3). Bundle delt
 
 | Metric | Value |
 |--------|-------|
-| Version | 1.453 |
+| Version | 1.454 |
 | Source files (`.ts`) | 130 (incl. orphan / feature-flagged; `loading-overlay.ts` is a stub) |
 | Source files in bundle | ~117 |
-| `dist/bundle.ts` | **869,724 bytes** (v1.443 −566 Wave 6; v1.445 −754 CQ_Bug_58; v1.446 +933 WAIT label; v1.447 +2,614 CQ_Bug_94 menu-open; v1.448 −362 CQ_Bug_94 placement; v1.449 +3,337 HUD backplates; v1.450 +111 backplate polish; v1.451 −2,074 backplate scope-reduce; v1.452 −8 backplate dimension finalize; v1.453 −31 backplate dimension finalize v2 = net +3,766 vs v1.442). |
-| `dist/bundle.strings.json` | 22,578 bytes (unchanged — no string changes in v1.447–v1.453) |
+| `dist/bundle.ts` | **869,724 bytes** (v1.443 −566 Wave 6; v1.445 −754 CQ_Bug_58; v1.446 +933 WAIT label; v1.447 +2,614 CQ_Bug_94 menu-open; v1.448 −362 CQ_Bug_94 placement; v1.449 +3,337 HUD backplates; v1.450 +111 backplate polish; v1.451 −2,074 backplate scope-reduce; v1.452 −8 backplate dimension finalize; v1.453 −31 backplate dimension finalize v2; v1.454 0 row spacing tighten = net +3,766 vs v1.442). |
+| `dist/bundle.strings.json` | 22,578 bytes (unchanged — no string changes in v1.447–v1.454) |
 | Bundle upload limit | 1,048,576 bytes (1 MiB) |
 | Bundle headroom | **178,852 bytes (17.06%)** |
 | Total raw `src/` size | ~1,533,756 bytes (~1.5 MB) |
@@ -126,12 +128,12 @@ Legend:
 | `admin-panel/events.ts` | 229 | 8,896 | N (FEATURE_ADMIN_PANEL) | — | Admin panel button handlers. |
 | `admin-panel/visibility.ts` | 172 | 6,878 | N (FEATURE_ADMIN_PANEL) | — | Admin panel show/hide/toggle. |
 | **boundary/** | | | | | |
-| `boundary/enforcement.ts` | ~582 | ~26,540 | Y | (per-pid `zoneStateByPid` + `activeViolationByPid` not in M ranking — small) | Per-second classifier reads `zoneStateByPid` + `seatKind`; dispatches violation timers. **v1.445 (CQ_Bug_58)**: deleted `notePreliveMainBaseViolation` function (13 lines) + its caller block in `refreshPlayerBoundaryState` (3 lines) — leaving the main base pre-live no longer auto-unreadies the player. |
+| `boundary/enforcement.ts` | 592 | 27,489 | Y | (per-pid `zoneStateByPid` + `activeViolationByPid` not in M ranking — small) | Per-second classifier reads `zoneStateByPid` + `seatKind`; dispatches violation timers. **v1.445 (CQ_Bug_58)**: deleted `notePreliveMainBaseViolation` function (13 lines) + its caller block in `refreshPlayerBoundaryState` (3 lines) — leaving the main base pre-live no longer auto-unreadies the player. |
 | `boundary/prompt-ui.ts` | 477 | 19,160 | Y | **M6** | `BoundaryPromptWidgetCacheEntry` per pid — 12 widget refs + 12 name strings + 3 `last*` diff fields. |
 | `boundary/live-prebuild-scheduler.ts` | 100 | 4,400 | Y | — | Wave 3 Ship 6 (v1.415): `BoundaryPromptLivePrebuildScheduler` namespace. At LIVE start, schedules 10 batches (1s spacing) of `ceil(N/10)` pids (cap 8) via `Timers.setTimeout`, each batch dispatching `triggerLazyBuild('boundaryPrompt', pid)`. Snapshot only — late joiners use existing first-violation fallback in `showBoundaryPromptForPlayer`. Token-based cancellation on `endMatch` / `triggerFreshMatchSetup`. |
 | **clock/** | | | | | |
 | `clock/state.ts` | 254 | 10,838 | Y | — | `Clocks.CountDownClock` driver; per-second tick + critical-flash gate. |
-| `clock/timer-instance.ts` | ~310 | ~13,400 | Y | M5 family + M1 contributor | Reusable progress-bar widget builders shared by deploy-timer-ui (countdown caller migrated). v1.439 (Wave 5 Ship 1): replaced 5-digit MM:SS clock display with 10-step decile-chunk progress bar (`buildReusableTimerBarBorder` + `buildReusableTimerBarFill`); removed `setReusableTimerSeconds` + `setReusableTimerColor`; added `setReusableTimerProgress(cache, elapsedFraction)`. Net -8 widgets per timer instance + ~150 fewer lines of code. **v1.443 (Wave 6 Ship 0)**: `deleteAllReusableTimerWidgetsByName` `maxPasses` default dropped from 64 → 4. Common path is 1 pass; 4× tolerance for interrupted-prior-cleanup edge case. **v1.446 (CQ_Tweak_WAIT_Label)**: new `buildReusableTimerBarText` helper added; black "WAIT" text widget at the bar's coords (overlapping border + fill), centered, `cfg.fontSize - 2`, drawn last in z-order so it appears on top of the red fill. Wired into `purgeReusableTimerInstance` (cleanup), `ensureReusableTimerInstance` (cache resolve + validity check + post-parse find), and all three visibility setters (`setReusableTimerProgress`, `setReusableTimerStatus`, `setReusableTimerVisible`) so it shows in timer mode and hides alongside the bar in non-timer status modes. +1 widget per row across every M1/M5 timer instance. |
+| `clock/timer-instance.ts` | 386 | 16,423 | Y | M5 family + M1 contributor | Reusable progress-bar widget builders shared by deploy-timer-ui (countdown caller migrated). v1.439 (Wave 5 Ship 1): replaced 5-digit MM:SS clock display with 10-step decile-chunk progress bar (`buildReusableTimerBarBorder` + `buildReusableTimerBarFill`); removed `setReusableTimerSeconds` + `setReusableTimerColor`; added `setReusableTimerProgress(cache, elapsedFraction)`. Net -8 widgets per timer instance + ~150 fewer lines of code. **v1.443 (Wave 6 Ship 0)**: `deleteAllReusableTimerWidgetsByName` `maxPasses` default dropped from 64 → 4. Common path is 1 pass; 4× tolerance for interrupted-prior-cleanup edge case. **v1.446 (CQ_Tweak_WAIT_Label)**: new `buildReusableTimerBarText` helper added; black "WAIT" text widget at the bar's coords (overlapping border + fill), centered, `cfg.fontSize - 2`, drawn last in z-order so it appears on top of the red fill. Wired into `purgeReusableTimerInstance` (cleanup), `ensureReusableTimerInstance` (cache resolve + validity check + post-parse find), and all three visibility setters (`setReusableTimerProgress`, `setReusableTimerStatus`, `setReusableTimerVisible`) so it shows in timer mode and hides alongside the bar in non-timer status modes. +1 widget per row across every M1/M5 timer instance. |
 | `clock/ui.ts` | 325 | 14,152 | Y | **M5** | `clockWidgetCache[pid]` ~14 widget refs + 3 diff fields. |
 | **config/** | | | | | |
 | `config/conquest-constants.ts` | 65 | 3,087 | Y | — | Feature flags + gameplay tuning constants. |
@@ -148,7 +150,7 @@ Legend:
 | `foundation/gameplay.ts` | 376 | 20,877 | Y | — | `TeamID`, `MatchPhase`, vehicle lists, presets, color tables. |
 | `foundation/modlib.ts` | 13 | 638 | Y | — | Portal SDK import wrapper. |
 | `foundation/string-keys.ts` | 115 | 8,507 | Y | — | `STR_*` const aliases for `mod.stringkeys.twl.*`. Hosts `msg()` helper (v1.399). |
-| `foundation/ui-layout.ts` | 356 | 22,468 | Y | — | All HUD/dialog pixel constants. **Tier B1 inlining target** (~308 const). |
+| `foundation/ui-layout.ts` | ~360 | ~22,560 | Y | — | All HUD/dialog pixel constants. **Tier B1 inlining target** (~308 const). **v1.454**: `VEHICLE_DEPLOY_TIMER_ROW_HEIGHT` 30→22 + `VEHICLE_DEPLOY_TIMER_ROW_GAP_Y` 2→1 (row stride 32→23, ~28% tighter; visual: row gap ~12px → ~3px). |
 | **hud/** | | | | | |
 | `hud/conquest-scaffold.ts` | 9 | 306 | Y | — | Phase 1 HUD seam (no-op placeholder). |
 | `hud/deploy-diagnostic.ts` | 218 | 10,334 | N (orphan) | — | Not imported in `index.ts`; references undeclared `FEATURE_DEPLOY_DIAGNOSTIC`. Candidate for delete. |
@@ -173,7 +175,7 @@ Legend:
 | `index/vehicle-events.ts` | 114 | 5,214 | Y | — | Vehicle enter/exit/spawn/destroy impls. |
 | **interaction/** | | | | | |
 | `interaction/actions.ts` | ~290 | ~12,600 | Y | — | v1.418 (Ship 8): loading-gate orchestration deleted — `prebuildAllUiFamiliesHidden`, `runLoadingGateUntilReady`, `releaseLoadingGate`, `revealAllUiFamilies`, `hideAllUiFamiliesForPlayer`, `reassertPlayerUiLoadingGateVisuals`, `runTeamSwapLoadingGate`, `holdPlayerAtDeploy`, `applyPlayerDeployAvailability`, `beginLoadingGate`, `enforceHudWarmTransitionDeployBlock`, `isAllUiFamiliesReadyForRelease`, `isCriticalTopHudReadyForPid`/`CombatHud`/`VehicleDeployHud`, `hideCriticalHudForWarmTransition`, `hideTopHudFamilyForWarmTransition`, `hideVehicleSpawnerUiFamilyForPid`, `setClockWidgetCacheVisible`, `setPositionDebugWidgetsVisibleForPid`, `waitForPlayerToBecomeUndeployedForTeamSwap`, `waitForPlayerTeamToSettleForSwap` all gone. File now contains only the prebuild-while-hidden builders called by the lazy-build dispatcher, the per-family render-for-reveal helpers (called from `onPlayerDeployedImpl` via `renderCriticalHudForReveal`), `processReadyDialogSelection` (team-swap with no overlay), and team-swap support helpers. |
-| `interaction/ammo-resupply-menu.ts` | ~2,852 | ~123,650 | Y | **M2** | `AmmoResupplyMenuCacheEntry` per pid — ~100–180 widget refs + arrays. **Largest mega-file.** v1.411 (Ship 3): `openArmMenu` first-interact path routes through `triggerLazyBuild('supplyBox', pid)`. Hide-on-close behavior retained; teardown at disconnect via Wave 1 `destroyArmMenu`. **v1.447 (CQ_Bug_94 menu-open path)**: 3 new HasEquipment-based per-class probes (`probeAssaultSlot`, `probeMedicSlot`, `probeReconSlot`) + dispatcher (`probeSlotForClass`); wired into `initLockerSlotStateFromProbe` + `reprobeSiblingGadgetSlot`. **v1.448 (CQ_Bug_94 placement path)**: dropped `isSlotEmpty` + slot-targeted RemoveEquipment precheck from `giveMedicSmoke`, `giveAssaultItem`, `giveReconItem` (was the remaining `GetInventoryAmmo` source). Engineer's `probeSlot` + `giveLauncher` + `giveRocketCharge` untouched (launcher detection + swap-in-place need destructive-probe + slot-targeted clear semantics). Combined: non-Engineer classes emit zero `GetInventoryAmmo`/`GetInventoryMagazineAmmo` engine error log entries on either menu-open or placement. Net ~+87 lines / ~+2.25KB across both versions. |
+| `interaction/ammo-resupply-menu.ts` | 2,866 | 127,961 | Y | **M2** | `AmmoResupplyMenuCacheEntry` per pid — ~100–180 widget refs + arrays. **Largest mega-file.** v1.411 (Ship 3): `openArmMenu` first-interact path routes through `triggerLazyBuild('supplyBox', pid)`. Hide-on-close behavior retained; teardown at disconnect via Wave 1 `destroyArmMenu`. **v1.447 (CQ_Bug_94 menu-open path)**: 3 new HasEquipment-based per-class probes (`probeAssaultSlot`, `probeMedicSlot`, `probeReconSlot`) + dispatcher (`probeSlotForClass`); wired into `initLockerSlotStateFromProbe` + `reprobeSiblingGadgetSlot`. **v1.448 (CQ_Bug_94 placement path)**: dropped `isSlotEmpty` + slot-targeted RemoveEquipment precheck from `giveMedicSmoke`, `giveAssaultItem`, `giveReconItem` (was the remaining `GetInventoryAmmo` source). Engineer's `probeSlot` + `giveLauncher` + `giveRocketCharge` untouched (launcher detection + swap-in-place need destructive-probe + slot-targeted clear semantics). Combined: non-Engineer classes emit zero `GetInventoryAmmo`/`GetInventoryMagazineAmmo` engine error log entries on either menu-open or placement. Net ~+87 lines / ~+2.25KB across both versions. |
 | `interaction/build-pacer.ts` | 139 | 5,372 | Y | — | Wave 3 Ship 1 (v1.409): global heavy-build mutex + 10Hz Timers.setTimeout drainer for paced lazy builds. Dormant when queue empty. |
 | `interaction/hud-warm-state.ts` | ~55 | ~2,000 | Y | — | v1.418 (Ship 8): swept from 40+ accessors down to 5 — `getReadyDialogStateForPid`, `setCombatHudRevealAllowedForPid`/`isCombatHudRevealAllowedForPid`, `resetReadyDialogSectionSignaturesForPid`, plus `isHudWarmReadyForPid` (always returns true) + `isHudSwapTransitionActiveForPid` (always returns false) kept as constants for backward-compat across clock/help/vehicles/HUD pipeline call sites. |
 | `interaction/interact-point.ts` | 183 | ~8,200 | Y | — | Ready-dialog interact point spawn/despawn. v1.416 (Ship 7): `tryOpenReadyDialogForPlayer` calls `triggerLazyBuild('readyDialog', playerId)` immediately before `showReadyDialogUI` so the dispatcher's in-flight guard + error tear-down semantics own the build path. v1.417 (Ship 7 follow-up): deploy-time `warmHiddenReadyDialogCacheForPid(playerId)` call deleted from `spawnReadyDialogInteractPoint` — without this deletion the cache pre-warmed at deploy and the lazy trigger was a no-op. Now the build genuinely fires on first triple-tap. v1.424 (Wave 4 Ship 3): `tryOpenReadyDialogForPlayer` branches on `Admin.isAdmin(playerId)` — non-admins route to `triggerLazyBuild('playerReadyPanel', playerId)` + `showPlayerReadyPanelForPid(playerId)`; admins keep the full ready-dialog flow. Shared menu-close + cursor-enable prep is unbranched; route-specific build/show + error recovery live inside their respective conditionals. |
@@ -212,7 +214,7 @@ Legend:
 | `ready-dialog/takeoff-gating.ts` | 16 | 652 | Y | — | Aircraft takeoff readiness check. |
 | **state/** | | | | | |
 | `state/core.ts` | ~99 | ~3,950 | Y | — | `isMatchLive`, round-start delay helpers, world-log. v1.418 (Ship 8): `setAllInputRestrictionsForPlayer` deleted (no callers post-gate-deletion; `mod.EnableAllInputRestrictions` no longer invoked from script). |
-| `state/hud-cache-types.ts` | 223 | ~7,030 | Y | M1/M2/M4/M5/M6 owner | All HUD cache type defs. **Tier A2 target.** v1.439 (Wave 5 Ship 1): `ReusableTimerWidgetCacheEntry` shape change — 10 digit/shadow widget refs + `lastDisplayedSeconds` removed; 2 bar widget refs + `lastDecile` added. **v1.446 (CQ_Tweak_WAIT_Label)**: added `barText?: mod.UIWidget` for the centered WAIT label drawn on top of the timer bar. |
+| `state/hud-cache-types.ts` | 228 | 7,316 | Y | M1/M2/M4/M5/M6 owner | All HUD cache type defs. **Tier A2 target.** v1.439 (Wave 5 Ship 1): `ReusableTimerWidgetCacheEntry` shape change — 10 digit/shadow widget refs + `lastDisplayedSeconds` removed; 2 bar widget refs + `lastDecile` added. **v1.446 (CQ_Tweak_WAIT_Label)**: added `barText?: mod.UIWidget` for the centered WAIT label drawn on top of the timer bar. |
 | `state/id-helpers.ts` | 167 | 6,640 | Y | — | `safe*` accessors: `isValidPlayer`, `safeFind`, `safeGetPlayerId`. |
 | `state/lifecycle-guardrails.ts` | 66 | 2,120 | Y | — | Phase transition guards. |
 | `state/player-iteration.ts` | 18 | 828 | Y | — | `forEachValidPlayer` shared helper (v1.217). |
@@ -230,7 +232,7 @@ Legend:
 | **ui/branding/** | | | | | |
 | `ui/branding/top-left.ts` | 217 | 9,216 | Y | — | Title/version/status panel. |
 | **ui/conquest/** | | | | | |
-| `ui/conquest/hud-core/build.ts` | ~1,118 | ~44,000 | Y | **M3** | Combat HUD widget construction (tickets/flags/engage). **v1.444 (Wave 6 chevron polish)**: chevron initial colors swapped — left chevron (on blue bar) now `TWL_CONQUEST_HUD_COLOR_RED` + `CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB`; right chevron (on red bar) now `TWL_CONQUEST_HUD_COLOR_BLUE` + `CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB`. Crown image shadows preserved (2 widgets/pid, outside ring system — Wave 7 candidate). **v1.449 (HUD backplates)**: 3 new `twlConquestHudEnsureContainer` calls added — `ticketBlueTeamNameBox`, `ticketRedTeamNameBox`, `engageStatusBox`. **v1.450 (HUD backplates v2)**: team-name dimensions polished; engage box switched to dedicated constants. **v1.451 (HUD backplates v3)**: removed both team-name backplates entirely (build sites + cache assignments); engage status backplate is the only remaining HUD-text backplate. |
+| `ui/conquest/hud-core/build.ts` | 1,146 | 46,381 | Y | **M3** | Combat HUD widget construction (tickets/flags/engage). **v1.444 (Wave 6 chevron polish)**: chevron initial colors swapped — left chevron (on blue bar) now `TWL_CONQUEST_HUD_COLOR_RED` + `CONQUEST_HUD_TICKET_BLEED_CHEVRON_ENEMY_RGB`; right chevron (on red bar) now `TWL_CONQUEST_HUD_COLOR_BLUE` + `CONQUEST_HUD_TICKET_BLEED_CHEVRON_FRIENDLY_RGB`. Crown image shadows preserved (2 widgets/pid, outside ring system — Wave 7 candidate). **v1.449 (HUD backplates)**: 3 new `twlConquestHudEnsureContainer` calls added — `ticketBlueTeamNameBox`, `ticketRedTeamNameBox`, `engageStatusBox`. **v1.450 (HUD backplates v2)**: team-name dimensions polished; engage box switched to dedicated constants. **v1.451 (HUD backplates v3)**: removed both team-name backplates entirely (build sites + cache assignments); engage status backplate is the only remaining HUD-text backplate. |
 | `ui/conquest/hud-core/constants.ts` | ~415 | ~20,960 | Y | — | HUD layout constants (~158 const). **Tier B1 target.** **v1.443 (Wave 6 Ship 1c)**: `twlConquestHudBuildShadowRingProfile` rewritten to return `[]` regardless of args. Single-source change cascades through every `Ensure`/`Render`/`Hide`/`Delete` consumer in `build.ts`/`render.ts`/`lifecycle.ts` — eliminates ~280 widgets/pid (~75% of M3 cache). Original 8-layer compass-direction ring builder preserved in [`reference_implementations/reference_conquest_attempt_d/src/ui/conquest/hud-core/constants.ts`](../reference_implementations/reference_conquest_attempt_d/src/ui/conquest/hud-core/constants.ts) for restoration. **v1.449**: added `TWL_CONQUEST_HUD_TEXT_BOX_PADDING = 4`. **v1.450**: added 4 dedicated engage-status box constants. **v1.451**: removed `TWL_CONQUEST_HUD_TEXT_BOX_PADDING` (unused after team-name backplates dropped); engage `_BOX_WIDTH` tightened 110→90. **v1.452**: engage `_BOX_WIDTH = 98`, `_BOX_HEIGHT = 18` (full text bounding box), `_BOX_Y = ENGAGE_STATUS_Y`. **v1.453**: engage box dimensions finalized — `_BOX_HEIGHT = 14` (covers only visible glyph cap-height; the 18px text widget had ~4px padding the backplate didn't need to back), `_BOX_Y = ENGAGE_STATUS_Y + 2` (top no longer touches engage-track bar). Width unchanged at 98. |
 | `ui/conquest/hud-core/lifecycle.ts` | ~292 | ~16,000 | Y | M3 indirect | Show/hide/destroy HUD per pid. **v1.443 (Wave 6 Ship 0)**: `twlConquestHudDeleteAllByName` `maxPasses` default dropped from 128 → 4. This was the dominant disconnect-spike contributor pre-Wave-6 (~5,120 ops on disconnect across ~40 calls); now ~160 ops in the common path. **Post-Ship-1c**: `twlConquestHudHideShadowRing` and `twlConquestHudDeleteShadowRingByBaseName` still exist but iterate the now-empty profile, so they're effectively no-ops on the ring path. **v1.449/v1.451 (HUD backplates)**: hide entry added for `engageStatusBox` in both `twlConquestHudHidePlayer` and `twlConquestHudHideObjectiveFocusForPid`. v1.449's team-name backplate hide entries removed in v1.451 (team-name backplates dropped). |
 | `ui/conquest/hud-core/names.ts` | ~184 | ~6,090 | Y | — | Widget ID generators. **v1.449**: 3 new generators for the HUD backplates. **v1.451**: 2 generators removed (team-name backplates dropped) — only `twlConquestHudEngageStatusBoxName` remains. |
@@ -1282,7 +1284,7 @@ Module: serial dispatch + Clocks-based respawn (v1.258 rewrite)
 | `armFocusedTileKeyByPid[pid]` | FocusIn handler | `onPlayerLeaveGameImpl:160` + `setArmOpen(pid, false)` | ✓ |
 | ~~`warmPrimeActiveByPid[pid]`~~ | DELETED in v1.418 Ship 8 (along with `prebuildAllUiFamiliesHidden`). | — | — |
 | `armG[pid]` / `armL[pid]` / `armS[pid]` | Gadget cooldown ensure helpers | `onPlayerLeaveGameImpl:162-164` + `resetArmTimers(pid)` | ✓ |
-| `lockerSlots[pid]` | `probeLauncherSlot` first call | `closeArmMenu` (`ammo-resupply-menu.ts:2474`) — fires on menu close, NOT explicit on leave | ⚠ |
+| `lockerSlots[pid]` | `probeLauncherSlot` first call | `closeArmMenu` (`ammo-resupply-menu.ts:2551`; actual `delete` at line 2569) — fires on menu close, NOT explicit on leave | ⚠ |
 | `lockerSlotToggle[pid]` | First locker open | **No deallocator** found in `src/`. Persists by design (player preference across menu reopen) | ❌ |
 | `uiCachePerfByPid[pid]` | `resetUiCachePerfCountersForPid` | `onPlayerLeaveGameImpl:165` | ✓ (also Tier A5 strip candidate) |
 | `deployedByPid[pid]` | `onPlayerDeployedImpl` / `onPlayerUndeployImpl` | `onPlayerLeaveGameImpl:171` | ✓ |
@@ -1347,7 +1349,7 @@ Module: serial dispatch + Clocks-based respawn (v1.258 rewrite)
 | `clockWidgetCache[pid]` | `ensureClockUIAndGetCache` | `cleanupHudForPid:76` | ✓ |
 | `countdownWidgetCache[pid]` | `ensureCountdownUIAndGetWidget` | `cleanupHudForPid:77` | ✓ |
 | `vehicleDeployTimerCache[pid]` | First viewer render | `cleanupHudForPid:78` (also `resetUiForPlayerOnJoin:35` defensively) | ✓ |
-| `ammoResupplyMenuCache[pid]` | `mkArmCache` on first menu open | `destroyArmMenu` (`ammo-resupply-menu.ts:2045`) called from `resetUiForPlayerOnJoin:18`, `closeArmMenu` (on close), AND `onPlayerLeaveGameImpl:138` (added v1.407, A6). | ✓ (v1.407 fix) |
+| `ammoResupplyMenuCache[pid]` | `mkArmCache` on first menu open | `destroyArmMenu` (`ammo-resupply-menu.ts:2140`) called from `resetUiForPlayerOnJoin`, `closeArmMenu` (on close), AND `onPlayerLeaveGameImpl:151` (added v1.407, A6). | ✓ (v1.407 fix) |
 | `boundaryPromptCache[pid]` | `ensureBoundaryPromptUiForPlayer` | `destroyBoundaryPromptUiForPid` (`prompt-ui.ts:475`) called from `cleanupHudForPid:73` | ✓ |
 
 #### `State.hqDeploy.*`
@@ -1382,21 +1384,23 @@ Whenever a `Record<number, T>` per-PID state field is added or removed:
 
 ---
 
-## Naming Economy (v1.406 measurement)
+## Naming Economy (v1.406 baseline + v1.454 re-measurement)
 
-Identifier text — function names, variable names, type names — accounts for **577,898 bytes of the 872,014-byte bundle (~66%)**. That's the inherent cost of having descriptive names; the question is whether the names are *over*-descriptive.
+Identifier text — function names, variable names, type names — accounts for the bulk of the bundle. That's the inherent cost of having descriptive names; the question is whether the names are *over*-descriptive.
+
+> **Re-measured v1.454, 2026-05-03.** v1.454 column added via `grep -oE '[A-Za-z_$][A-Za-z0-9_$]*' dist/bundle.ts` + JS-keyword filter. Methodology may differ slightly from v1.406's tool (which was unspecified) — the magnitudes are comparable but exact unique-count differences may reflect filter-list differences rather than real code growth. The v1.406 detail tables below (length distribution, top-20 expensive identifiers, hypothetical shortening savings) were NOT re-measured — those require deeper instrumentation than grep, and the underlying semantic story has not changed.
 
 ### Bundle-wide identifier facts
 
-| Metric | Value |
-|--------|------:|
-| Bundle bytes | 872,014 |
-| Unique identifiers (excl. JS reserved) | **4,991** |
-| Total identifier occurrences | 51,626 |
-| Bytes occupied by identifier text | **577,898** (66.3% of bundle) |
-| Unique function declarations | **1,027** |
-| Avg function name length | **28.6 chars** |
-| Total function-name bytes (decl + calls) | **128,566** |
+| Metric | v1.454 (re-measured) | v1.406 (baseline) | Delta |
+|--------|---------------------:|------------------:|-------|
+| Bundle bytes | **869,724** | 872,014 | −2,290 (−0.3%) |
+| Unique identifiers (filtered) | **5,858** | 4,991 | +867 (+17.4%) — likely partly filter-methodology, partly Wave 3-6 additions |
+| Total identifier occurrences | **54,365** | 51,626 | +2,739 (+5.3%) |
+| Bytes occupied by identifier text | **602,527** (69.3% of bundle) | 577,898 (66.3%) | +24,629 bytes / +3.0pp |
+| Unique function declarations | **951** | 1,027 | −76 (−7.4%) — F1 stripped 104 phase-prefix funcs at v1.408; offset by Wave 3-6 additions |
+| Avg function name length | **27.54 chars** | 28.6 chars | −1.06 chars (−3.7%) — F1's prefix-strip effect |
+| Sum of function declaration name bytes | **26,190** *(declarations only)* | 128,566 *(decl + calls)* | not directly comparable — different methodology |
 
 ### Identifier length distribution (unique names, all kinds)
 
@@ -1485,6 +1489,102 @@ Two budgets, two effects:
 - **Runtime heap (Mod Evaluator memory):** identifier strings are typically interned by the JS runtime — paid once per unique string regardless of call count. Estimated savings is ~ **(unique-name × avg-shorten) ÷ 2** because of interning amortization. For "Cap function names only at 24 chars": ~12KB heap savings, not 24KB. Modest.
 
 The honest takeaway: **renaming is mostly a code-clarity win, with bundle-byte and modest heap upside**. It's not a load-bearing memory reclaim like Tier A, but it pairs cleanly with the per-PID-cache thinning since the names *of* per-pid widget-cache fields are themselves part of the bundle.
+
+---
+
+## Code-Comment-Deficiency Hotspots (v1.454 audit, 2026-05-03)
+
+A read-only inventory of TypeScript files / functions / blocks where the existing comments are insufficient to explain the intent. Per AGENTS.md "Function Comment Readability Policy", every top-level function should have a one-line purpose comment describing intent + non-obvious side effects/constraints. These items would benefit a future code-cleanup pass — they are NOT tracked as "bugs" in `conquest_issues.md` because the code is functionally correct; the deficiency is purely for human-comprehension/maintainability.
+
+**Severity legend:**
+- **HIGH** — complex algorithm or state machine with no rationale comment; confusing to a future reader without prior context
+- **MEDIUM** — clarity loss but understandable on careful read
+- **LOW** — nice-to-have purpose comments
+
+**Deficiency category legend:**
+- `NO_PURPOSE_COMMENT` — top-level function lacks the AGENTS.md one-line purpose comment
+- `COMMENT_RESTATES_NAME` — comment exists but adds no information beyond the function name
+- `COMPLEX_NO_RATIONALE` — long function (>30 lines) with non-obvious branching but no inline rationale for WHY the branches are ordered as they are
+- `MAGIC_NUMBER` — numeric value used without naming or context
+- `UNEXPLAINED_TS_CAST` — `as any` / `as unknown as T` cast without inline rationale
+- `EMPTY_CATCH_NO_WHY` — `try { … } catch {}` without comment explaining what error is being absorbed and why silently
+- `ENGINE_QUIRK_WORKAROUND_UNDOC` — workaround for an engine quirk without a comment naming the quirk
+
+### High-priority hotspots
+
+| File | Function / Range | Category | Severity | Suggested comment |
+|------|-----------------|----------|:--------:|------------------|
+| `interaction/ammo-resupply-menu.ts` | `probeSlot()` — line 882 | COMPLEX_NO_RATIONALE | HIGH | Classifies inventory slot state with branch precedence (empty/unknown/launcher/gadget); used to seed menu tile state at open. Branch order is semantically load-bearing — document the precedence rule. |
+| `interaction/ammo-resupply-menu.ts` | `giveLauncher()` — line 1268 | COMPLEX_NO_RATIONALE | HIGH | Multi-step launcher grant: slot validation, ammo set, pool decrement, slot-conflict fallback. Document the pool-decrement-on-success rule and the slot-conflict fallback path. |
+| `interaction/ammo-resupply-menu.ts` | `giveMedicSmoke()` — line 1347 | COMPLEX_NO_RATIONALE | HIGH | Team-shared smoke pool management with fallback to give-ammo when smoke unavailable. Document the team-shared semantic. |
+| `vehicles/deploy-timer-ui.ts` | `ensureVehicleDeployInfoPlate()` — line 342 | COMPLEX_NO_RATIONALE | HIGH | Row construction cascade with interdependent anchor math. Document the row-element ordering and anchor cascade. |
+| `vehicles/deploy-timer-ui.ts` | `ensureVehicleDeployActionButtonWidgets()` — line 459 | COMPLEX_NO_RATIONALE | HIGH | Button cascade with similar interdependent positioning. Document the spawn/ground/air button placement cascade. |
+| `boundary/enforcement.ts` | `getDesiredBoundaryViolationKind()` — line 223 | COMPLEX_NO_RATIONALE | HIGH | Multi-branch violation classifier (prelive base / own-HQ / enemy-buffer / GCZ-grace / aircraft / Y-ceiling). Branch precedence is semantically load-bearing — document the priority rule and the GCZ_DEPLOY_GRACE_SECONDS rationale. |
+
+### Medium-priority hotspots
+
+| File | Function / Range | Category | Severity | Suggested comment |
+|------|-----------------|----------|:--------:|------------------|
+| `interaction/ammo-resupply-menu.ts` | `armDur()` — line 150 | NO_PURPOSE_COMMENT | MEDIUM | Looks up localized duration label for cooldown display, falls back to ready string. |
+| `interaction/ammo-resupply-menu.ts` | `armGBox()` — line 162 | NO_PURPOSE_COMMENT | MEDIUM | Spawns bordered container widget for gadget tiles; wraps `mod.AddUIContainer` + anchor/depth setup. |
+| `interaction/ammo-resupply-menu.ts` | `resetAllArmTimers()` — line 192 | NO_PURPOSE_COMMENT | MEDIUM | Globally resets all per-player timers + team-shared medic/launcher pools; called on config sync. |
+| `interaction/ammo-resupply-menu.ts` | `mkArmCache()` — line 231 | NO_PURPOSE_COMMENT | MEDIUM | Allocates fresh cache entry structure mirroring `ACTIVE_GADGET_CONFIG`; used on first menu open per pid. |
+| `vehicles/deploy-timer-ui.ts` | `getVehicleDeployLabelKey()` — line 18 | COMPLEX_NO_RATIONALE | MEDIUM | Maps `VehicleList` enum → HUD label string key; missing fallback comment on unexpected/new enum values. |
+| `index/capture-tickets.ts` | `shouldCountPlayerAsActiveOnPoint()` — line 13 | NO_PURPOSE_COMMENT | MEDIUM | Gate for capture-state updates; player must be valid + deployed + alive + not man-down to count engagement. |
+| `index/capture-tickets.ts` | `clearInactiveEngagedObjectiveOwners()` — line 38 | COMPLEX_NO_RATIONALE | MEDIUM | Scans engaged players + clears ownership for invalid soldiers; keeps HUD state aligned with death/undeploy edge cases. |
+| `index/player-deploy.ts` | `deferForcedUndeploy()` — line 3 | NO_PURPOSE_COMMENT | MEDIUM | Async forced undeploy with 100ms defer to allow frame processing; wraps `UndeployPlayer` in try-catch. |
+
+### Low-priority hotspots
+
+| File | Function / Range | Category | Severity | Suggested comment |
+|------|-----------------|----------|:--------:|------------------|
+| `interaction/ammo-resupply-menu.ts` | `armGH()` — line 153 | NO_PURPOSE_COMMENT | LOW | Computes container height scaling with tile count; `DY` is vertical spacing step. |
+| `interaction/ammo-resupply-menu.ts` | `armGCY()` — line 156 | NO_PURPOSE_COMMENT | LOW | Centers group container vertically; used for UI positioning relative to row base. |
+| `interaction/ammo-resupply-menu.ts` | `armGHY()` — line 159 | NO_PURPOSE_COMMENT | LOW | Positions hint text below group; calculated from group center and height. |
+| `interaction/ammo-resupply-menu.ts` | `resetArmTimers()` — line 187 | COMMENT_RESTATES_NAME | LOW | Clears per-player gadget + launcher + medic cooldown timers (used on join/leave). |
+| `interaction/ammo-resupply-menu.ts` | `ammoResupplyMenuName()` — line 201 | NO_PURPOSE_COMMENT | LOW | Generates scoped widget name for ammo menu root/subcontainer; used for `safeFind`/`Delete`. |
+| `interaction/ammo-resupply-menu.ts` | `isArmOpen()` — line 207 | COMMENT_RESTATES_NAME | LOW | Returns true if ammo resupply menu is currently open for player. |
+| `interaction/ammo-resupply-menu.ts` | `getArmObj()` — line 211 | COMMENT_RESTATES_NAME | LOW | Returns object ID of menu's root widget or undefined if not created. |
+| `interaction/ammo-resupply-menu.ts` | `setArmOpen()` — line 215 | NO_PURPOSE_COMMENT | LOW | Marks menu open or closed; clears focus on close to prevent stale tile-focus leak. |
+| `interaction/ammo-resupply-menu.ts` | `setArmObj()` — line 224 | COMMENT_RESTATES_NAME | LOW | Caches menu's root widget ID for quick lookup; deletes when menu destroyed. |
+| `vehicles/deploy-timer-ui.ts` | `getVehicleDeployTimerAdminToggleLabelKey()` — line 4 | NO_PURPOSE_COMMENT | LOW | Returns admin-mode toggle label (on/off) based on override enablement for player. |
+| `ui/conquest/hud-core/build.ts` | `twlConquestHudApplySolidSurfaceStyle()` — line 44 | NO_PURPOSE_COMMENT | LOW | Normalizes surface widget fill mode + alpha; inline comment "keep HUD alive if fill unavailable" exists but no top-level intent. |
+
+### Secondary findings — engine-quirk + magic-number underdocs
+
+These are patterns rather than single-function fixes:
+
+- **`ammo-resupply-menu.ts:131`** — `catch {}` after `mod.PlaySound()`. Should note: SFX handle may be invalidated; fail-silent to preserve menu responsiveness.
+- **`ammo-resupply-menu.ts:877–879`** — Three sequential `catch {}` on inventory API calls. Should note: engine returns may be unavailable during loading transitions; treat errors as zero/false for slot classification. (See related v1.447 / v1.448 `CQ_Bug_94` resolution which addressed these same APIs from the engine-error-log angle — the JS-side wrap is preserved per same family pattern.)
+- **`vehicles/vanilla-spawner.ts:92, 98`** — `catch {}` on vector component extraction. Should note: `GetObjectPosition` unreliable during vehicle transitions per memory `project_getobjectposition_unreliable_on_destroy.md`; fallback to zero assumes slot-context caller passes `spawnPos`.
+- **`boundary/enforcement.ts:13`** — `GCZ_DEPLOY_GRACE_SECONDS = 1.5`. Inline comment exists but should be elevated to a top-level docstring on the const definition explaining the post-spawn settle window rationale (see `CQ_Feat_Squad_Spawn_Zone_Inheritance` v1.370 for the related design discussion in [`conquest_issues.md`](./conquest_issues.md)).
+- **`interaction/ammo-resupply-menu.ts:153–161`** — Multiple layout constants (`DY=126`, `SPY=30`, `LY`, etc.) with abbreviation-heavy names. Suggest a docstring at the const group explaining abbreviated meanings, OR (per Tier B1 in [`conquest_optimization_analysis.md`](./conquest_optimization_analysis.md)) inline the values where used.
+- **`interaction/ammo-resupply-menu.ts:234, 236–240`** — Bare `as any` casts in `mkArmCache` loop initialization. Should explain: initial cache entries are typed empty objects; real widget refs assigned during build pass.
+
+### Summary table
+
+| File | Hotspot count | Severity mix |
+|------|--------------:|--------------|
+| `interaction/ammo-resupply-menu.ts` | 15 | 1 HIGH, 5 MEDIUM, 9 LOW |
+| `vehicles/deploy-timer-ui.ts` | 5 | 2 HIGH, 2 MEDIUM, 1 LOW |
+| `index/capture-tickets.ts` | 2 | 1 HIGH, 1 MEDIUM |
+| `index/player-deploy.ts` | 1 | 0 HIGH, 1 MEDIUM, 0 LOW |
+| `boundary/enforcement.ts` | 1 | 1 HIGH, 0 MEDIUM, 0 LOW |
+| `ui/conquest/hud-core/build.ts` | 1 | 0 HIGH, 0 MEDIUM, 1 LOW |
+| **Total** | **25** | **5 HIGH, 10 MEDIUM, 10 LOW** |
+
+### Actionable notes for a future cleanup pass
+
+1. **Abbreviation glossary first.** `ammo-resupply-menu.ts` uses single/double-letter constants (`AX`, `EX`, `MX`, `RX` for class headers; `DY`, `LY`, `SPY` for layout). Adding a glossary at the top of the const group (~lines 2–10) unblocks comprehension of every consumer site without per-call-site changes.
+2. **Branch-precedence comments on the 6 HIGH items.** Each of the 6 `COMPLEX_NO_RATIONALE` HIGH items has semantically load-bearing branch ordering (e.g., `getDesiredBoundaryViolationKind`'s violation-priority chain). A 3-5 line block comment at the top of each function explaining "why these branches in this order" would prevent future regressions where a maintainer reorders thinking it's cosmetic.
+3. **Empty-catch convention header.** Add a section header comment at the top of files heavy with `catch {}` (e.g., `ammo-resupply-menu.ts`, `vanilla-spawner.ts`) explaining the project convention: engine API calls are wrapped because the engine may invalidate object handles or return errors during transitions; silent failure preserves responsiveness. Then individual sites only need a tag like `// CQ_Bug_43-class` instead of full re-explanation.
+4. **Maintenance contract.** This audit was a one-time read-only sweep. To keep it useful long-term, treat new HIGH-severity additions (any new `COMPLEX_NO_RATIONALE` ≥30-line function landing without a docstring) as a soft block on PR merge — not a hard gate, but called out in code review.
+
+### Maintenance contract for THIS section
+
+- Re-run an Explore audit pass on every major version (~v1.470) to catch new hotspots.
+- When a HIGH item gets cleanup, move the row to a "Resolved" subsection with the version reference (don't delete — preserves the historical pattern record).
+- Items added to source code with proper purpose comments do NOT need to be added here; this list is the inventory of what's MISSING.
 
 ---
 
