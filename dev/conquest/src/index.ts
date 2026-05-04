@@ -107,6 +107,7 @@ import './conquest-flow';
 import './index/capture-shared';
 import './index/capture-sound';
 import './index/capture-vo';
+import './index/delay-broadcast';
 import './utils/multi-click';
 import './utils/main-base';
 

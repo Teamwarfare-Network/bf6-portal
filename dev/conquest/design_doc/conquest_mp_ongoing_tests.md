@@ -204,6 +204,17 @@ See [`design_doc/5.02.26_conquest_ready_tuning_plan.md`](./5.02.26_conquest_read
 - [ ] **24+ player full match: no script termination, no orphan ready-state inconsistencies.** Pass: cold launch → ready up → match live → players die/respawn during pre-live (e.g. boundary kills) → all surviving ready players still show READY → match starts → live play normal → victory. No regression in adjacent UI surfaces (Player Ready Up Panel, full Ready Dialog, ready-up HUD count).
 - [ ] **Bot disconnect mid-match.** Pass: leaving cleanup still removes the bot's ready state cleanly. No stuck "X is still ready" entry on remaining players' rosters.
 
+## Delay-Elapsed Broadcasts (shipped v1.455, 2026-05-04)
+
+See [`design_doc/5.03.26_conquest_delay_broadcasts_plan.md`](./5.03.26_conquest_delay_broadcasts_plan.md). 4 transient on-screen text widgets fire at each `roundStart*Delay` milestone after LIVE (Firestorm: 30/60/90/120s) announcing vehicle/gadget unlock states. 5s display window per broadcast. Per-PID widgets, lazy-built on first broadcast, hidden after auto-hide timer.
+
+- [ ] **Full match plays from LIVE through all 4 broadcast milestones at 24+ players.** Pass: at LIVE+30s, "Aircraft can now HQ Ground Deploy (Purple Smoke)!" appears at the top-center of every player's screen for 5s, then auto-hides. At LIVE+60/90/120s the corresponding Aircraft Air / Forward / Gadgets broadcasts fire similarly. No overlap. No stuck-visible widgets between broadcasts.
+- [ ] **Late-joiner during the LIVE phase (post-LIVE+30s).** Pass: late-joiner sees only the broadcasts they're still on track to receive (per Q5 lock — no replay). Past broadcasts do NOT re-fire for them. Future broadcasts fire normally.
+- [ ] **Match ends mid-broadcast.** Pass: end-match cleanly cancels the visible broadcast (no stuck "X is now available!" widget on the victory dialog overlay). Pending broadcasts also cancel — next match's LIVE re-schedules cleanly.
+- [ ] **Admin resets to fresh setup mid-LIVE.** Pass: `triggerFreshMatchSetup` cancellation hides any visible broadcast. Re-LIVE re-schedules from zero.
+- [ ] **Bot/player disconnect mid-broadcast.** Pass: `cleanupHudForPid` destroys the per-pid widget tree + cancels the per-pid hide timer; no orphan widgets on remaining players' screens; no script termination.
+- [ ] **Heap headroom check across full match.** Pass: 24+ player match runs to completion; M16 (delayBroadcastByPid) does not contribute meaningful heap pressure (~32 widget refs at full lobby; auto-hide timers cancel cleanly). No `Mod has reached its js script memory usage limit` termination.
+
 ---
 
 ## How to use this file

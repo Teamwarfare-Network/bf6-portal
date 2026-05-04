@@ -252,6 +252,7 @@ const State: GameState = {
         vehicleDeployTimerCache: {},
         ammoResupplyMenuCache: {},
         boundaryPromptCache: {},
+        delayBroadcastByPid: {},
     },
 };
 

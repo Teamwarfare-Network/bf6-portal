@@ -74,6 +74,7 @@ function cleanupHudForPid(pid: number): void {
     deleteVehicleDeployTimerHudArtifactsForPid(pid);
     destroyBoundaryPromptUiForPid(pid);
     destroyPlayerReadyPanelForPid(pid);
+    DelayBroadcast.destroyDelayBroadcastWidgetForPid(pid);
     resetTopHudRootInitializationForPid(pid);
 
     delete State.hudCache.clockWidgetCache[pid];

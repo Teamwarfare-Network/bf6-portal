@@ -3,7 +3,7 @@
 
 //#region -------------------- Versioning --------------------
 
-// version: 1.454 | Date: 05.03.26 | Time: 17:38 UTC
+// version: 1.458 | Date: 05.04.26 | Time: 01:02 UTC
 // version policy header file: src/header-file.ts
 // version policy footer file: src/footer-file.ts
 // version policy strings file: src/strings.json

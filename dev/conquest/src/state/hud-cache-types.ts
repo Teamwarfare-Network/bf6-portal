@@ -226,3 +226,13 @@ type AmmoResupplyMenuCacheEntry = {
     } | undefined>;
 };
 
+// Per-pid cache for the LIVE-phase delay-elapsed broadcast widget. One transient text
+// widget hung independently from the combat HUD (NOT a child of engage-root) that displays
+// for 5 seconds when each roundStart*Delay tunable elapses. `hideTimerId` tracks the auto-
+// hide setTimeout so a subsequent broadcast can cancel/restart it cleanly.
+type DelayBroadcastWidgetCacheEntry = {
+    root?: mod.UIWidget;
+    text?: mod.UIWidget;
+    hideTimerId?: number;
+};
+

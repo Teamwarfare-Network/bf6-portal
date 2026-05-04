@@ -493,6 +493,7 @@ interface GameState {
         vehicleDeployTimerCache: Record<number, VehicleDeployTimerHudCacheEntry>;
         ammoResupplyMenuCache: Record<number, AmmoResupplyMenuCacheEntry>;
         boundaryPromptCache: Record<number, BoundaryPromptWidgetCacheEntry>;
+        delayBroadcastByPid: Record<number, DelayBroadcastWidgetCacheEntry>;
     };
 }
 

@@ -31,6 +31,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
     State.round.liveStartedAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
     SupplyBoxWarmScheduler.startWarmStaggerForLive();
     BoundaryPromptLivePrebuildScheduler.startBoundaryPromptPrebuildForLive();
+    DelayBroadcast.scheduleDelayBroadcastsForLive();
     cleanupMainBaseTeamWorldIconsForLiveTransition();
     refreshDisableOnLiveInteractableStateForLiveTransition();
     clearActiveBoundaryViolationsForAllPlayers();
@@ -67,6 +68,7 @@ function startMatch(_triggerPlayer?: mod.Player): void {
 function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number, overrideWinnerTeamNum?: TeamID | 0): void {
     SupplyBoxWarmScheduler.cancelWarmStagger();
     BoundaryPromptLivePrebuildScheduler.cancelBoundaryPromptPrebuild();
+    DelayBroadcast.cancelDelayBroadcastsForLive();
     State.round.liveStartedAtSeconds = undefined;
     // Determine winner: use explicit override if provided, otherwise infer from ticket counts.
     let winner: TeamID | 0;
@@ -114,6 +116,7 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
 
     SupplyBoxWarmScheduler.cancelWarmStagger();
     BoundaryPromptLivePrebuildScheduler.cancelBoundaryPromptPrebuild();
+    DelayBroadcast.cancelDelayBroadcastsForLive();
     cancelPregameCountdown();
     resetReadyStateForAllPlayers();
 

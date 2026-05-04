@@ -8,16 +8,17 @@ Player-readable summaries of the features that make up TWL Conquest. Tone is Ste
 
 ---
 
-## Custom Dialogs
+## Custom Dialogs / UI Interfaces
 
-Colored smoke columns mark every interactive menu in the game — walk into one, triple-tap E, and the matching dialog opens.
+Colored smokes mark every static interactive menu in the game; interact with them to open dialogs.
 
-- **Green smoke** (main base) → Ready Up menu.
-- **Purple smoke** (main base) → Vehicle Deploy menu.
-- **Yellow smoke** → Supply Box. Active during Live at every captured objective; pre-game only at HQ as a loadout preview.
-- Triple-tap E to open any of them.
+- **Green smoke** → (main base) Ready Up and Team Switcher 
+   - You can also get to these with a triple-tap of the interact button while standing still on foot
+   - If you're admin - this also enables configuration of the mode
+- **Purple smoke** → (main base) Vehicle Redeploy menu (if HQ, Air or Forward Deploy is enabled).
+- **Yellow smoke** → Supply Box. Active during Live around every captured objective; pre-game only at HQ as a loadout preview.
 
-Color is the wayfinding: green to ready up, purple to grab a vehicle, yellow to resupply. Both main bases carry a green and purple smoke pair so ready-up and vehicle deploy are always one walk away. Every captured objective gets a yellow Supply Box during Live; the yellow smokes you see at HQ during pre-game are previews — they let you test loadouts before the round starts and disappear when Live begins.
+Color is helps with finding them. Both main bases carry a green and purple smoke pair near player spawners - so ready-up and vehicle deploy are always steps away. The yellow Supply Boxes are in the field, near capture points and accessible during the Live game; the yellow smoke at HQ are just for pre-game previews — they let you see gadget tuning before the round starts, as this will be tuned uniquely per map. 
 
 ### Exhaustive detail (working notes — not player facing)
 
@@ -49,12 +50,12 @@ Color is the wayfinding: green to ready up, purple to grab a vehicle, yellow to 
 
 A match runs through four stages — pre-game tuning, ready-up, a 3-2-1 countdown, then live play — with a 30-second victory wrap-up at the end.
 
-- **Pre-game:** the admin tunes vehicles and deploy modes; everyone else can spawn, drive, walk the map, and preview loadouts at the HQ Supply Box.
-- **Ready Up:** each player clicks READY; the match auto-starts once enough players are ready on both sides.
-- **Countdown:** 3-2-1 final lockout — config locks, everyone snaps to the deploy screen.
-- **Live:** tickets bleed, capture points activate, objective Supply Boxes come online, victory triggers on 0 tickets or clock end.
+- **Pre-game:** the admin tunes vehicles and deploy modes; everyone else can spawn, drive, walk the map, and preview gadgets at the HQ Supply Box
+- **Ready Up:** each player clicks READY; the match auto-starts once enough players are ready on both sides
+- **Countdown:** 3-2-1 final countdown in the deploy screen
+- **Live:** victory is triggered either on 0 tickets or clock end
 
-TWL Conquest uses a clean four-stage flow. Pre-game is for setup and exploration: the admin uses the Ready Up dialog to dial in vehicles, deploy modes, and player counts, while everyone else can spawn into the map, take vehicles for a spin, and use the yellow HQ Supply Box to pick a class and loadout. When players hit READY and the minimum-per-side threshold is met, a 3-2-1 countdown locks settings and forces every player to the deploy screen. Live phase activates capture points, ticket bleed, and the Supply Boxes at every objective; the round ends when one team hits 0 tickets or the clock expires (or in a draw if both hit 0 in the same window).
+TWL Conquest uses pre-game is for setup and configuration. The admin uses the Ready Up dialog to dial in vehicles, deploy modes, and player counts, while everyone else can spawn into the map, take vehicles for a spin, and use the yellow HQ Supply Box to pick a class and loadout. When players hit READY and the minimum-per-side threshold is met, a 3-2-1 countdown locks settings and forces every player to the deploy screen. Live phase activates capture points, ticket bleed, and the Supply Boxes at every objective; the round ends when one team hits 0 tickets or the clock expires (or in a draw if both hit 0 in the same window).
 
 ### Exhaustive detail (working notes — not player facing)
 
@@ -129,145 +130,107 @@ Every player who isn't the admin uses this lightweight panel — about 20 widget
 
 ---
 
-## Vanilla Deploy
-
-Classic Battlefield-style fixed vehicle pads: each slot at HQ has a respawn timer, a vehicle of a chosen type spawns automatically when the timer hits zero, and any player on the team can hop in.
-
-- Vehicles spawn automatically at HQ at round start.
-- Destroyed vehicles respawn after 120 seconds.
-- Walk up, press E — no menu, no claim, no UI.
-- Disabled slots stay hidden in the HUD.
-- Default deploy mode; HQ / Forward / Air are opt-in alternatives.
-
-Vanilla Deploy is the "just like vanilla Battlefield" pathway. The admin picks a vehicle type per slot in the Ready Up dialog, the spawner cycles automatically, and the rest of the team interacts the way they always have: walk up, press E, drive away. Under the hood every spawn goes through a serialized dispatcher (`spawnMutex`) so two simultaneous events can never race; respawn delays are driven by drift-resistant `CountDownClock` instances that can be aborted cleanly when the match resets. If the admin changes vehicle types mid-pregame, the existing fleet is sunk and replaced cleanly.
-
-### Exhaustive detail (working notes — not player facing)
-
-- Source: [`src/vehicles/vanilla-spawner.ts`](../src/vehicles/vanilla-spawner.ts) (~596 lines).
-- Architecture (v1.258 rewrite): one persistent `VehicleSpawner` per slot, never destroyed. Pre-existing parallel-spawn paths and reservation systems are deleted; do not reintroduce.
-- Spawn dispatch: `enqueueDispatch(slotIndex)` chains onto a Promise mutex; each `doDispatch` calls `mod.ForceVehicleSpawnerSpawn`, awaits `OnVehicleSpawned`, binds to slot. `currentlyExpectingSlotIndex` lets a delayed event arriving after timeout drop cleanly.
-- Bind: `bindSpawnedVehicleToExpectingSlot` is the only writer; HQ-mode also forks here into `onHqVehicleSpawnedForClaim` for player-claimed seats.
-- Respawn: `OnVehicleDestroyed` is the only respawn trigger; `Clocks.CountDownClock` drives the 120s timer and surfaces remaining time to the deploy-timer HUD.
-- Vehicle destroy: every tracked vehicle goes through `sinkAndDestroyVehicle` (X/Z preserved, teleport to Y=-1000, lethal damage 1.5s later — explosion muffled beneath the pad).
-- Slot disable / mid-match config change paths: `applyVehicleSpawnSpecsToExistingSlots` re-applies the 8-setter spawner config block; the pre-existing fleet is sunk before the new types take over.
-- Vanilla mode gate: `isVanillaDeployMode()` — `confirmed.vehicleDeployMethod === VEHICLE_DEPLOY_METHOD_VANILLA`. All auto-dispatch sites (round-start fleet, countdown-reset fleet, post-destroy respawn) check this so HQ mode leaves the pads empty.
-- Per-map vehicle slot inventory authored in [`src/config/maps/operation-firestorm.ts`](../src/config/maps/operation-firestorm.ts) etc.
-
----
-
-## HQ Deploy
-
-Click a vehicle in the deploy menu — your tank, jet, or heli spawns at the HQ pad and you're seated inside it instantly.
-
-- Pick a vehicle from the deploy screen, or from the purple smoke at HQ while alive.
-- 5-second cooldown; one in-flight claim per player at a time.
-- Vehicle spawns at HQ; you're force-seated immediately.
-- Slots stay empty until somebody requests them — no auto-respawn cycle.
-- Voluntary deploys don't cost a ticket.
-
-HQ Deploy lets each player request a vehicle on demand instead of racing to a spawn pad. From the deploy screen (or by interacting with the live terminal at your main base while alive), you click a vehicle row, the system spawns the appropriate type at the HQ pad, and the engine seats you inside as part of the standard deploy chain. The 5-second cooldown stops spam; the one-claim-per-player gate stops you from clogging two slots at once. If something goes wrong (vehicle destroyed pre-seat, you disconnect, the bind never lands), a 10-second timeout cleans the orphan automatically and the slot becomes requestable again.
-
-### Exhaustive detail (working notes — not player facing)
-
-- Source: [`src/vehicles/hq-deploy.ts`](../src/vehicles/hq-deploy.ts).
-- Mode gate: `isHqDeployMode()` — `confirmed.vehicleDeployMethod >= VEHICLE_DEPLOY_METHOD_HQ`.
-- Two entry points: `requestHqVehicleSpawn(player, pid, rowIndex, source)` where `source = "deploy_menu" | "on_foot"`. Deploy menu is the dead-at-deploy-screen path; on_foot is the alive-at-live-terminal path.
-- Validation chain (rejects with reason): cooldown, claim_in_flight, slot_disabled, slot_occupied, slot_claimed, slot_busy, respawn_cooldown, team_mismatch, bad_team.
-- Reservation: `slot.pendingSpawnOwnerPid = pid`, `slot.pendingSpawnMode = "ground"`, `slot.hqSource = source`. Single-claim-per-player via `findSlotForHqClaim(pid)`.
-- Dispatch reuses Vanilla's `enqueueDispatch` channel — no new spawn code; HQ is a caller, not a parallel system.
-- Post-bind seat flow: `onHqVehicleSpawnedForClaim` → `beginHqSeatFlow` → 0.5s settle → for `on_foot` source: mark `vehicle_deploy` exempt, `mod.SetRedeployTime(0)`, `mod.UndeployPlayer`, poll for undeploy registration, `mod.DeployPlayer` → `OnPlayerDeployed` fires → `onHqSeatPendingPlayerDeployed` calls `mod.ForcePlayerToSeat(player, vehicle, -1)` inside the deploy event handler ("BountyHunter pattern", v1.252-validated).
-- For deploy_menu source: skips the undeploy/redeploy step (player is already dead at deploy screen).
-- Permanent ban: `mod.Teleport(player, ...)` immediately before `ForcePlayerToSeat` — broke twice in v1.106-v1.108 and v1.151-v1.154. See `project_teleport_vehicle_spawn_mystery.md` memory.
-- Claim timeout: 10s via `scheduleHqClaimTimeout`. If still bound at timeout (seat never fired), the orphan vehicle is sunk via `sinkAndDestroyVehicle` and slot flags clear.
-- Spawn-charge exemption: `markNextDeployReason(pid, "vehicle_deploy")` — alive on-foot vehicle deploys do NOT charge a ticket (CF-91 / v1.393).
-- HUD timer / cooldown surface: `updateVehicleDeployTimerHudForAllPlayers` repaints after every state edge (request, success, timeout, respawn).
-
----
-
-## Air Deploy
-
-Spawn into a heli or jet already in the air, mid-map, dropped at a randomized point inside your team's air zone.
-
-- Aircraft only (helis + jets); admin enables via the Air Deploy checkbox.
-- Each click drops you in at a randomized point in the team's air zone.
-- Round-start lockout suppresses air for an opening window.
-- Same 5-second cooldown and one-claim-per-player as HQ.
-- Vehicle relocates *after* you're seated so your loadout applies cleanly.
-
-Air Deploy gets you into the sky fast without contesting a runway. After the round-start delay clears, picking an aircraft from the deploy menu spawns the vehicle at HQ, seats you inside, then teleports you both — together — to a randomized point high in the team's air zone with a yaw aligned to the volume. The post-seat relocation is critical: spawning the vehicle at HQ first lets the engine apply your full loadout before flight, which used to drop in earlier versions when we tried to spawn in-place.
-
-### Exhaustive detail (working notes — not player facing)
-
-- Source: shared with HQ in [`src/vehicles/hq-deploy.ts:requestAirVehicleSpawn`](../src/vehicles/hq-deploy.ts), with air-volume sampling in [`src/vehicles/air-spawn-volume.ts`](../src/vehicles/air-spawn-volume.ts).
-- Gate: `isAirDeployEnabled()` — `confirmed.airDeployEnabled === true`. Orthogonal to HQ enum tier.
-- Aircraft-only check: `isAircraftVehicleType(slot.vehicleType)` rejects ground slots.
-- Round-start delay: `isRoundStartAirDeployDelayActive()` and `isRoundStartAirDelayActive()` — both gates must be clear.
-- Per-slot pre-sampled point: `slot.nextAirPos`, `slot.nextAirRot` seeded by `seedNextAirTransformForSlot`. Re-seeded after every successful spawn so consecutive clicks never reuse coordinates.
-- Reservation flow identical to HQ except `pendingSpawnMode = "air"`.
-- Dispatch branch in vanilla-spawner: pre-seat early-return for air mode (no pre-seat Teleport — that path drops vehicle loadout, v1.333/v1.334 fix).
-- Post-seat relocation (in `onHqSeatPendingPlayerDeployed`): snapshot `airTargetPos / airTargetRot` BEFORE `onAirSpawnSuccess` re-seeds them → call `mod.ForcePlayerToSeat(player, vehicle, -1)` → `mod.Teleport(vehicle, airTargetPos, yawRad)`. Validated: `mod.Teleport(vehicle, ...)` carries the seated occupant.
-- Spawner restore: `onAirSpawnSuccess(slot)` puts `slot.spawner` back at HQ pad and re-seeds the next sky point.
-- Yaw-only placement (no pitch) — jet pitch on Air Deploy is a known polish item (CQ_Polish_Jet_Pitch_On_Air_Deploy / Issue #85, deferred).
-- Banned: `mod.SetObjectTransform` on a `VehicleSpawner` to relocate at altitude — does not reliably propagate (v1.331 probe).
-
----
-
-## Forward Deploy
-
-Spawn a ground vehicle at a randomized forward point closer to the action, bypassing the long drive from HQ.
-
-- Ground vehicles only — aircraft use Air Deploy instead.
-- Admin enables via the Forward Deploy checkbox.
-- Each click samples a new randomized landing point in the team's forward zone.
-- Round-start lockout protects the opening minutes.
-- Same cooldown framework as HQ and Air.
-
-Forward Deploy mirrors Air Deploy for ground armor: pick a ground slot from the deploy menu after the round-start delay, the vehicle spawns at HQ first to apply loadout, then teleports — with you seated — to a randomized free-space point in the team's forward volume. It's the answer to Conquest's classic "long drive to the front" problem without giving any single player a coordinated push spawn. Each request samples a new landing point; you can't farm one location.
-
-### Exhaustive detail (working notes — not player facing)
-
-- Source: [`src/vehicles/hq-deploy.ts:requestForwardVehicleSpawn`](../src/vehicles/hq-deploy.ts) + [`src/vehicles/forward-spawn-volume.ts`](../src/vehicles/forward-spawn-volume.ts).
-- Gate: `isForwardDeployEnabled()` — `confirmed.forwardDeployEnabled === true`. Orthogonal to HQ enum tier.
-- Ground-only check: `isAircraftVehicleType(slot.vehicleType)` rejects aircraft slots (returns `aircraft_slot` reason).
-- Round-start delay: `isRoundStartForwardDeployDelayActive()` gate.
-- Per-slot pre-sampled point: `slot.nextForwardPos`, `slot.nextForwardRot` seeded by `seedNextForwardTransformForSlot`; re-sampled after every successful click.
-- Free-space guard: forward sampling validates the landing point isn't inside an obstacle (CQ_Feat_Forward_Deploy_FreeSpace / Issue #57 / v1.207).
-- Reservation flow identical to HQ except `pendingSpawnMode = "forward"`.
-- Dispatch + post-seat Teleport pattern identical to Air Deploy: spawn at HQ → ForcePlayerToSeat → `mod.Teleport(vehicle, forwardTargetPos, yawRad)` once the engine has applied loadout.
-- Spawner restore: `onForwardSpawnSuccess(slot)` snaps `slot.spawner` back to HQ and re-seeds the next forward point.
-- Reintroduced on the new persistent-spawner infrastructure (CQ_Feat_Forward_Deploy_Reintroduction / Issue #81 / v1.328).
-
----
-
 ## Vehicle Deploy
 
-The list-style menu where you actually pick a vehicle — a row per slot showing vehicle name, cooldown bar, and a SPAWN button — accessible both from the deploy screen when you're dead and from the purple smoke at HQ when you're alive.
+The Vehicle Deploy menu is your one-stop shop for vehicles — open it from the deploy screen or the purple smoke at HQ, and the admin's chosen mode (Vanilla / HQ / Forward / Air) decides what happens when you click SPAWN.
 
-- One row per slot: vehicle name, WAIT/READY status, SPAWN button.
-- Disabled or unauthored slots stay hidden.
-- Opens automatically on the deploy screen, or from the purple smoke at HQ.
-- SPAWN routes to whichever deploy mode the admin has on (HQ / Forward / Air).
-- Clicking SPAWN auto-closes the menu; CLOSE or another triple-tap dismisses it.
+- Opens automatically on the deploy screen, or from the purple smoke at HQ while alive.
+- One row per slot: vehicle name, status (WAIT / READY / ACTIVE), SPAWN button.
+- Admin picks the mode: **Vanilla** (auto-spawn cycle, no SPAWN button — walk up and press E), **HQ Deploy** (spawn at HQ + auto-seat), **Forward Deploy** (ground vehicles dropped at a randomized forward point), **Air Deploy** (aircraft dropped airborne in your team's air zone).
+- 5-second per-player cooldown; one in-flight request at a time.
+- Voluntary deploys don't cost a ticket — UX action, not a death.
 
-The Vehicle Deploy menu is the front-end for HQ Deploy, Forward Deploy, and Air Deploy. It's the same UI in two contexts: when you're dead at the deploy screen it appears automatically alongside the squad/spawn-point list, and when you're alive at HQ you can pull it up by triple-tapping the purple smoke without dying first. Each row shows the slot's current state — counting up if it's on cooldown, "READY" if you can spawn it, "ACTIVE" if a teammate's already in it. Click SPAWN, the system handles the request, and you're either seated in the new vehicle (HQ/Air/Forward modes) or watching it spawn at the pad (Vanilla mode, in which case the menu doesn't actually have spawn buttons).
+The Vehicle Deploy menu is the shared front-end for all four deploy modes — same widget tree, different behavior based on the admin's pick. **Vanilla** is classic Battlefield: vehicles auto-spawn at HQ on a 120-second respawn cycle and players walk up to drive away (so the menu shows status only — no SPAWN button). **HQ Deploy** flips that — nothing auto-spawns, but each player can request a vehicle on demand and is force-seated inside the moment it spawns at HQ. **Forward Deploy** mirrors HQ for ground armor at a randomized forward point closer to the action; **Air Deploy** mirrors it for jets and helis dropped airborne in your team's sky zone. Round-start lockouts on Air and Forward keep the opening minutes balanced; voluntary deploys never charge a ticket.
 
 ### Exhaustive detail (working notes — not player facing)
 
-- Source: [`src/vehicles/deploy-timer-ui.ts`](../src/vehicles/deploy-timer-ui.ts) (rendering + spawn button names) + [`src/vehicles/deploy-live-menu.ts`](../src/vehicles/deploy-live-menu.ts) (alive-player live-terminal ownership).
-- Two open paths:
-  - **Deploy screen (dead player):** revealed automatically as part of `renderVehicleSpawnerUiFamilyForReveal` → `revealVehicleDeployTimerHudForPlayer`.
-  - **On-foot (alive player at purple smoke):** `tryOpenVehicleDeployLiveMenuForPlayer(eventPlayer)` — closes any open arm menu / ready dialog, sets `setVehicleDeployLiveMenuVisibleForPid(pid, true)`, enables UI input mode, calls `revealVehicleDeployTimerHudForPlayer`. Closes via `closeVehicleDeployLiveMenuForPlayer` (restores input mode, hides the timer HUD family).
+**Source files**
+- Menu rendering + spawn button names: [`src/vehicles/deploy-timer-ui.ts`](../src/vehicles/deploy-timer-ui.ts).
+- Alive-player live-terminal ownership: [`src/vehicles/deploy-live-menu.ts`](../src/vehicles/deploy-live-menu.ts).
+- Vanilla spawner architecture: [`src/vehicles/vanilla-spawner.ts`](../src/vehicles/vanilla-spawner.ts) (~596 lines).
+- HQ / Forward / Air request paths: [`src/vehicles/hq-deploy.ts`](../src/vehicles/hq-deploy.ts).
+- Forward sampling: [`src/vehicles/forward-spawn-volume.ts`](../src/vehicles/forward-spawn-volume.ts).
+- Air sampling: [`src/vehicles/air-spawn-volume.ts`](../src/vehicles/air-spawn-volume.ts).
+- Per-map vehicle slot inventory: [`src/config/maps/operation-firestorm.ts`](../src/config/maps/operation-firestorm.ts) etc.
+
+**Menu open paths (two contexts)**
+- **Deploy screen (dead player):** revealed automatically as part of `renderVehicleSpawnerUiFamilyForReveal` → `revealVehicleDeployTimerHudForPlayer`.
+- **On-foot live terminal (alive player at purple smoke):** `tryOpenVehicleDeployLiveMenuForPlayer(eventPlayer)` — closes any open arm menu / ready dialog, sets `setVehicleDeployLiveMenuVisibleForPid(pid, true)`, enables UI input mode, calls `revealVehicleDeployTimerHudForPlayer`. Closes via `closeVehicleDeployLiveMenuForPlayer` (restores input mode, hides the timer HUD family).
 - Per-pid state field: `State.players.liveVehicleDeployMenuVisibleByPid[pid]`. Allocator: `setVehicleDeployLiveMenuVisibleForPid`. Deallocator: `resetVehicleDeployLiveMenuStateForPid` (called from `cleanupHudForPid`).
-- Slot rendering: `getVehicleDeployVisibleSlotsForPlayer(player)` returns the per-team filtered visible slot list; row index → slot index mapping is what `requestHqVehicleSpawn(player, pid, rowIndex, source)` resolves with `visibleSlots[rowIndex]`.
-- Per-row spawn button names: `getVehicleDeploySpawnButtonName(pid, rowIndex)` produces `${UI_VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_ID}${pid}_${rowIndex}` so each pid + row combination is uniquely targeted.
-- HQ Deploy / Forward Deploy / Air Deploy specific buttons: `getVehicleDeployGroundButtonName` (forward), generic SPAWN button maps to HQ for ground or air based on slot type and admin config.
-- Aircraft slots vs ground slots: `doesVehicleTypeSupportAirDeploy` / `doesVehicleTypeSupportGroundDeploy` / `doesVehicleTypeSupportForwardDeploy` gate which deploy buttons render per row.
-- Status text via `setReusableTimerStatus`: "READY" (green), "ACTIVE" (slot occupied), "SPAWNING" (mid-dispatch), "DEPLOYING" (post-bind seat flow). Otherwise the row renders the Wave 5 decile-chunk fill bar with "WAIT" label centered (CQ_Tweak_WAIT_Label / v1.446).
-- HUD repaint: `updateVehicleDeployTimerHudForAllPlayers()` is called after every state edge in `hq-deploy.ts` (request, success, timeout, respawn).
 - Lazy build: `triggerLazyBuild('vehicleDeployTimer', pid)` — built on first deploy menu open. Wave 6 stagger places it at +50ms after `topHudShell` to distribute join cost.
-- Admin override: `isVehicleDeployTimerAdminOverrideEnabledForPid(pid)` lets the admin force the timers visible at all times for testing (toggle button in the admin panel: "DEPLOY TIMERS VISIBLE ON / OFF").
-- Vanilla mode interaction: when the admin has Vanilla mode confirmed, the menu still shows row state (timer / READY / ACTIVE) for situational awareness, but SPAWN buttons are absent because Vanilla auto-spawns on respawn cycle — players walk up to the pad and press E instead.
-- Cooldown surface: vehicle slot's `Clocks.CountDownClock` drives the row's bar fill via the same decile-chunk pattern used elsewhere; the underlying remaining-time read is `getVehicleSlotRemainingSeconds(slot)`.
+- Console / controller note: SPAWN buttons currently don't activate from the deploy screen on controller — see [issue #113](./conquest_issues.md). On-foot purple-smoke path works as a workaround.
+
+**Mode gates**
+- Vanilla: `isVanillaDeployMode()` — `confirmed.vehicleDeployMethod === VEHICLE_DEPLOY_METHOD_VANILLA`.
+- HQ: `isHqDeployMode()` — `confirmed.vehicleDeployMethod >= VEHICLE_DEPLOY_METHOD_HQ`.
+- Forward: `isForwardDeployEnabled()` — `confirmed.forwardDeployEnabled === true`. Orthogonal to HQ enum tier.
+- Air: `isAirDeployEnabled()` — `confirmed.airDeployEnabled === true`. Orthogonal to HQ enum tier.
+- Admin checkboxes: Vanilla and HQ are a radio pair; Air and Forward are children of HQ that auto-flip the parent on click. Toggling Vanilla while Air/Forward is on force-clears them.
+
+**Vanilla architecture (v1.258 rewrite)**
+- One persistent `VehicleSpawner` per slot, never destroyed. Pre-existing parallel-spawn paths and reservation systems are deleted; do not reintroduce.
+- Spawn dispatch: `enqueueDispatch(slotIndex)` chains onto a Promise mutex (`spawnMutex`); each `doDispatch` calls `mod.ForceVehicleSpawnerSpawn`, awaits `OnVehicleSpawned`, binds to slot via `bindSpawnedVehicleToExpectingSlot`. `currentlyExpectingSlotIndex` lets a delayed event arriving after timeout drop cleanly.
+- Respawn: `OnVehicleDestroyed` is the only respawn trigger; `Clocks.CountDownClock` drives the 120s timer and surfaces remaining time to the deploy-timer HUD.
+- Vehicle destroy: every tracked vehicle goes through `sinkAndDestroyVehicle` (X/Z preserved, teleport to Y=-1000, lethal damage 1.5s later — explosion muffled beneath the pad).
+- Mid-match config change: `applyVehicleSpawnSpecsToExistingSlots` re-applies the 8-setter spawner config block; pre-existing fleet is sunk before new types take over.
+
+**HQ / Forward / Air request flow (shared)**
+- Three entry points, one per mode: `requestHqVehicleSpawn` / `requestForwardVehicleSpawn` / `requestAirVehicleSpawn`, all with `source: "deploy_menu" | "on_foot"`.
+- Validation chain (rejects with reason): cooldown, claim_in_flight, slot_disabled, slot_occupied, slot_claimed, slot_busy, respawn_cooldown, team_mismatch, bad_team, plus mode-specific checks (aircraft-only / ground-only).
+- Reservation: `slot.pendingSpawnOwnerPid = pid`, `slot.pendingSpawnMode = "ground" | "forward" | "air"`, `slot.hqSource = source`. Single-claim-per-player via `findSlotForHqClaim(pid)`.
+- Dispatch reuses Vanilla's `enqueueDispatch` channel — no new spawn code; HQ / Forward / Air are callers, not parallel systems.
+- Claim timeout: 10s via `scheduleHqClaimTimeout`. If still bound at timeout (seat never fired), the orphan vehicle is sunk via `sinkAndDestroyVehicle` and slot flags clear.
+- Cooldown: 5-second per-player gate via `State.hqDeploy.lastRequestAtSecondsByPid`.
+
+**Post-bind seat flow ("BountyHunter pattern", v1.252-validated)**
+- `onHqVehicleSpawnedForClaim` → `beginHqSeatFlow` → 0.5s settle → for `on_foot` source: mark `vehicle_deploy` exempt, `mod.SetRedeployTime(0)`, `mod.UndeployPlayer`, poll for undeploy registration, `mod.DeployPlayer` → `OnPlayerDeployed` fires → `onHqSeatPendingPlayerDeployed` calls `mod.ForcePlayerToSeat(player, vehicle, -1)` inside the deploy event handler.
+- For `deploy_menu` source: skips the undeploy/redeploy step (player is already dead at deploy screen).
+- `ForcePlayerToSeat` is reliable only inside the `OnPlayerDeployed` event handler — that's the BountyHunter pattern's load-bearing constraint.
+
+**Forward / Air post-seat relocation**
+- HQ mode: vehicle stays at `slot.spawnPos` (HQ pad) through the `DeployPlayer` chain. No pre-seat or post-seat Teleport needed.
+- Forward / Air: snapshot `forwardTargetPos` / `airTargetPos` in `onHqSeatPendingPlayerDeployed` BEFORE `onForwardSpawnSuccess` / `onAirSpawnSuccess` re-seed for the next click. After `ForcePlayerToSeat` completes, `mod.Teleport(vehicle, targetPos, yawRad)` relocates the vehicle (with the seated player aboard).
+- Validated: `mod.Teleport(vehicle, ...)` carries the seated occupant. No visible pop because the player is still in the deploy UI during the HQ-pad occupancy window.
+- Spawner restore: `onForwardSpawnSuccess` / `onAirSpawnSuccess` snap `slot.spawner` back to HQ pad and re-seed the next sample point.
+
+**Forward / Air spawn-volume sampling**
+- Forward: triangle-split + barycentric sample of authored quad in X/Z, weighted by triangle area. Free-space guard validates landing point isn't inside an obstacle (CQ_Feat_Forward_Deploy_FreeSpace / Issue #57 / v1.207).
+- Air: floor X/Z from triangle sampling + additive altitude (jets in `[floorY + jetSpawnFloor, floorY + jetSpawnCeiling]`, helis in `[floorY, floorY + heliSpawnCeiling]`). Jets use `volume.rotPlane`; helis use `volume.rotHeli`.
+- Per-slot pre-sampled point: `slot.nextForwardPos` / `nextAirPos` seeded by `seedNextForwardTransformForSlot` / `seedNextAirTransformForSlot` at slot init, countdown-reset, and after every successful spawn — so consecutive clicks never reuse coordinates.
+
+**Round-start lockouts (Air / Forward only)**
+- Air: `isRoundStartAirDeployDelayActive()` and `isRoundStartAirDelayActive()` — both gates must clear.
+- Forward: `isRoundStartForwardDeployDelayActive()` gate.
+- Pregame countdown UI ([`src/ready-dialog/countdown-flow.ts`](../src/ready-dialog/countdown-flow.ts)) surfaces these as staggered delay lines so players know when each unlocks.
+
+**Ticket / spawn-charge interaction**
+- Spawn-charge exemption: `markNextDeployReason(pid, "vehicle_deploy")` — alive on-foot vehicle deploys (HQ / Forward / Air) do NOT charge a ticket (CF-91 / v1.393).
+- Death-then-deploy from deploy screen still charges a ticket (the player consumed a death-respawn anyway).
+- Vanilla mode: no spawn-charge interaction with the menu — players just walk up and press E.
+
+**Menu rendering details**
+- Slot rendering: `getVehicleDeployVisibleSlotsForPlayer(player)` returns the per-team filtered visible slot list; row index → slot index mapping is what `requestHqVehicleSpawn(player, pid, rowIndex, source)` resolves with `visibleSlots[rowIndex]`.
+- Per-row spawn button names: `getVehicleDeploySpawnButtonName(pid, rowIndex)` → `${UI_VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_ID}${pid}_${rowIndex}` (per-pid + per-row uniqueness).
+- Per-mode buttons: `getVehicleDeployGroundButtonName` (forward); generic SPAWN button maps to HQ for ground or air based on slot type + admin config.
+- Aircraft vs ground gating: `doesVehicleTypeSupportAirDeploy` / `doesVehicleTypeSupportGroundDeploy` / `doesVehicleTypeSupportForwardDeploy` gate which deploy buttons render per row.
+- Status text via `setReusableTimerStatus`: "READY" (green), "ACTIVE" (slot occupied), "SPAWNING" (mid-dispatch), "DEPLOYING" (post-bind seat flow). Timer mode renders the Wave 5 decile-chunk fill bar with "WAIT" label centered (CQ_Tweak_WAIT_Label / v1.446).
+- HUD repaint: `updateVehicleDeployTimerHudForAllPlayers()` is called after every state edge.
+- Vanilla mode interaction: menu still shows row state (timer / READY / ACTIVE) for situational awareness, but SPAWN buttons are absent.
+- Admin override: `isVehicleDeployTimerAdminOverrideEnabledForPid(pid)` lets the admin force the timers visible at all times for testing (admin panel toggle: "DEPLOY TIMERS VISIBLE ON / OFF").
+- Disabled slots stay hidden in the HUD; admin can re-enable via the Ready Up dialog vehicle knobs.
+
+**Banned patterns (across all modes)**
+- `mod.Teleport(player, ...)` immediately before `ForcePlayerToSeat` — broke twice in v1.106-v1.108 and v1.151-v1.154. See `project_teleport_vehicle_spawn_mystery.md` memory.
+- Pre-seat vehicle Teleport in `doDispatch` for forward/air paths — drops vehicle loadout. v1.333/v1.334 fix moved both to post-seat.
+- `mod.SetObjectTransform` on a `Vehicle` instance — no-op on the current engine build.
+- `mod.SetObjectTransform` on a persistent `VehicleSpawner` to relocate at altitude — does not reliably propagate (v1.331 probe).
+
+**Engine event reliability (asymmetric)**
+- `OnPlayerEnterVehicle` drops events under load (CQ_Bug_43 / Issue #106). Code that depends on a fresh `seatKind` on entry must include a safety-net engine re-probe.
+- `OnPlayerExitVehicle` is reliable.
+
+**Known limitations**
+- Jet pitch on Air Deploy is lost (yaw-only Teleport) — accepted as-is, pilots pitch manually after seat (Issue #85, closed accepted).
 
 ---
 
@@ -379,23 +342,15 @@ The three smokes (green / purple / yellow) are the player's mental map for "what
 
 The full **Ready Up dialog** (admin only) and the **Player Ready Up Panel** (everyone else) are different UIs that solve different jobs. The dialog is a configuration suite; the panel is a status board with a swap/ready/claim button row. When the player-facing copy talks about "ready up", we should probably refer to the panel — that's what 99% of players ever see. The dialog is "the host's settings menu", which is a separate concept. Both are opened by the **green smoke**.
 
-### Vehicle Deploy is the menu, HQ/Air/Forward are the modes
+### Vehicle Deploy is one feature with four modes — match the player's mental model
 
-Player copy should distinguish between:
-- **Vehicle Deploy** = the menu surface (the list of vehicle rows with SPAWN buttons), opened from the deploy screen or the **purple smoke**.
-- **HQ Deploy / Forward Deploy / Air Deploy** = the *modes* the admin enabled, which determine what happens when you click SPAWN.
+The Vehicle Deploy menu and the four deploy modes (Vanilla / HQ / Forward / Air) live as a single feature in this doc because that's how players experience it: one menu, one SPAWN button, four different outcomes depending on what the admin enabled. Mechanically they all share the same persistent spawner, the same `enqueueDispatch` mutex, the same `OnVehicleSpawned` bind path, and (for HQ/Air/Forward) the same `ForcePlayerToSeat` post-deploy hook — so explaining them as siblings is accurate as well as friendly. From a player's POV the four feel like:
+- **Vanilla** = "drive up and press E"
+- **HQ** = "click a vehicle, spawn at HQ"
+- **Forward** = "click a tank, spawn closer to the action"
+- **Air** = "click a jet/heli, spawn in the air"
 
-Same UI, different outcomes. If a player asks "how do I get a tank?", the answer chain is: purple-smoke-or-deploy-screen → Vehicle Deploy menu → click SPAWN on the tank row → HQ/Forward Deploy fires depending on what the admin has on. We shouldn't make players learn four separate UIs; there's one menu and four backend modes.
-
-### The four deploy modes share one framework, but feel different
-
-Vanilla, HQ, Air, and Forward all run through the same persistent spawner, the same `enqueueDispatch` mutex, the same `OnVehicleSpawned` bind path, and (for HQ/Air/Forward) the same `ForcePlayerToSeat` post-deploy hook. Mechanically they're variants of one system. From a player's POV they're four different experiences:
-- Vanilla = "drive up and press E"
-- HQ = "click a vehicle, spawn at HQ"
-- Forward = "click a tank, spawn closer to the action"
-- Air = "click a jet/heli, spawn in the air"
-
-The admin's checkbox layout reinforces the relationship (Air and Forward are *children* of HQ — they only mean anything in HQ mode), so the player copy should respect that hierarchy: "HQ Deploy is on" is the parent statement, "Air Deploy is enabled" is a refinement.
+The admin checkbox layout reinforces the relationship (Air and Forward are children of HQ — they only mean anything in HQ mode), so player copy should respect that hierarchy: "HQ Deploy is on" is the parent statement, "Air Deploy is enabled" is a refinement.
 
 ### "Bars instead of digits" is a global rule with one exception
 

@@ -3,6 +3,8 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.457: Delay broadcasts v1.456: text widget visibility now toggled alongside root (was hidden); WIDGET_Y 150→220 to clear engage panel.
+// v1.455: Delay-elapsed broadcasts: 4 transient on-screen announcements at each roundStart*Delay milestone (5s display).
 // v1.454: Vehicle deploy timer row spacing tightened: ROW_HEIGHT 30->22, ROW_GAP_Y 2->1. Row stride drops from 32 to 23 (~28% reduction; tightest possible without clipping the 20-tall spawn button). Visible gap between adjacent button bottoms drops from ~12px to ~3px.
 // v1.453: Engage-status backplate dimension finalize v2: height 18 -> 14 (covers only visible glyph cap-height; 18px widget had ~4px of bounding-box padding the backplate did not need to back). Y shifted +2 so top no longer touches the engage-track bar above. Width 98 unchanged.
 // v1.452: Engage-status backplate dimension tune: width 90 -> 98 (NEUTRALIZING was clipping at 90), height 22 -> 18 (drop vertical padding entirely; text has no descenders so it fits cleanly). Box now snug horizontally + flush vertically with the text.

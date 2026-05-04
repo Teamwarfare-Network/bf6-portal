@@ -49,7 +49,7 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
         hudFloorY: 132,
         useCustomCeiling: false,
         vehicleSpawnYawOffsetDeg: 0,
-        roundStartAirDelay: 30,
+        roundStartAirDelay: 30, //all delays must be >5s from all other delays!
         roundStartAirDeployDelay: 60,
         roundStartForwardDeployDelay: 90,
         roundStartGadgetDelay: 120,
