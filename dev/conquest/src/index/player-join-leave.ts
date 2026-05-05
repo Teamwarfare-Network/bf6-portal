@@ -72,6 +72,7 @@ function cleanupHudForPid(pid: number): void {
         deleteAllByName(name);
     }
     deleteVehicleDeployTimerHudArtifactsForPid(pid);
+    resetVehicleDeployPrimaryClickTrackerForPid(pid);
     destroyBoundaryPromptUiForPid(pid);
     destroyPlayerReadyPanelForPid(pid);
     DelayBroadcast.destroyDelayBroadcastWidgetForPid(pid);

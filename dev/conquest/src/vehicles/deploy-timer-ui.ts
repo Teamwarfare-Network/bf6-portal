@@ -1,6 +1,22 @@
 // @ts-nocheck
 // Module: vehicles/deploy-timer-ui -- Firestorm helicopter deploy/live timer display with direct spawn buttons
 
+// Primary-click dedupe tracker for vehicle deploy buttons (action buttons + close button).
+// v1.465: action fires on the FIRST primary-click event (ButtonDown OR ButtonUp). Mirrors the
+// team-swap pattern in interaction/ui-events-ready.ts. The matching paired event is suppressed
+// inside shouldConsumeUIButtonPrimaryClick. Necessary because on console the engine consumes
+// controller A as "deploy on foot" before ButtonUp delivers to the userland handler — firing
+// on ButtonDown gets the spawn request enqueued in the same input frame as the engine's deploy.
+const VEHICLE_DEPLOY_PRIMARY_CLICK_DEBOUNCE_SECONDS = 0.12;
+const VEHICLE_DEPLOY_PRIMARY_CLICK_RELEASE_GRACE_SECONDS = 2.0;
+const vehicleDeployLastPrimaryClickByPid: UIButtonPrimaryClickTracker = {};
+
+// Per-pid cleanup hook — paired with onPlayerLeaveGameImpl-reachable cleanup in player-join-leave.ts
+// to prevent stale tracker entries surviving disconnect→reconnect on recycled pids.
+function resetVehicleDeployPrimaryClickTrackerForPid(pid: number): void {
+    delete vehicleDeployLastPrimaryClickByPid[pid];
+}
+
 function getVehicleDeployTimerAdminToggleLabelKey(pid: number): number {
     const state = State.players.readyDialogData[pid];
     if (state?.vehicleTimersVisibleWhileDeployed) {
@@ -1516,16 +1532,30 @@ function tryHandleVehicleDeployTimerButtonEvent(
             applyVehicleDeployCloseButtonVisualState(cache, !!cache.closeButtonFocused, false);
             return true;
         }
+        // v1.465: action fires on the first primary-click event (Down OR Up) via the dedupe
+        // tracker, so the close action runs in the same input frame as the controller press.
+        // Visual press/release feedback still tracks Down/Up edges separately.
         if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.ButtonDown)) {
             cache.closeButtonHovered = cache.closeButtonHovered === true;
             cache.closeButtonFocused = cache.closeButtonFocused === true || !cache.closeButtonHovered;
             cache.closeButtonPressed = true;
             applyVehicleDeployCloseButtonVisualState(cache, true, true);
+            // fall through to dedupe + dispatch
+        } else if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.ButtonUp)) {
+            cache.closeButtonPressed = false;
+            applyVehicleDeployCloseButtonVisualState(cache, !!cache.closeButtonHovered || !!cache.closeButtonFocused, false);
+            // fall through to dedupe + dispatch
+        } else {
             return true;
         }
-        if (!mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.ButtonUp)) return true;
-        cache.closeButtonPressed = false;
-        applyVehicleDeployCloseButtonVisualState(cache, !!cache.closeButtonHovered || !!cache.closeButtonFocused, false);
+        if (!tryConsumeUIButtonPrimaryClickEvent(
+            vehicleDeployLastPrimaryClickByPid,
+            pid,
+            widgetName,
+            eventUIButtonEvent,
+            VEHICLE_DEPLOY_PRIMARY_CLICK_DEBOUNCE_SECONDS,
+            VEHICLE_DEPLOY_PRIMARY_CLICK_RELEASE_GRACE_SECONDS
+        )) return true;
         closeVehicleDeployLiveMenuForPlayer(eventPlayer);
         return true;
     }
@@ -1614,6 +1644,10 @@ function tryHandleVehicleDeployTimerButtonEvent(
         }
         return true;
     }
+    // v1.465: action fires on the first primary-click event (Down OR Up) via the dedupe
+    // tracker, so the spawn request enqueues in the same input frame as the controller press.
+    // Visual press/release feedback still tracks Down/Up edges separately. The deployed-state
+    // gate at the dispatch path catches both edges (was Up-only previously).
     if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.ButtonDown)) {
         clearVehicleDeployActionButtonStateForAllRows(cache, rowIndex, mode);
         if (row) {
@@ -1628,21 +1662,32 @@ function tryHandleVehicleDeployTimerButtonEvent(
             }
             setVisual(true, true);
         }
+        // fall through to dedupe + dispatch
+    } else if (mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.ButtonUp)) {
+        if (row) {
+            if (mode === "ground") {
+                const keepActive = !!row.groundButtonHovered || !!row.groundButtonFocused;
+                row.groundButtonPressed = false;
+                setVisual(keepActive, false);
+            } else {
+                const keepActive = !!row.spawnButtonHovered || !!row.spawnButtonFocused;
+                row.spawnButtonPressed = false;
+                setVisual(keepActive, false);
+            }
+        }
+        // fall through to dedupe + dispatch
+    } else {
         return true;
     }
-    if (!mod.Equals(eventUIButtonEvent, mod.UIButtonEvent.ButtonUp)) return true;
     if (State.players.deployedByPid[pid] && !liveTerminalOpen) return true;
-    if (row) {
-        if (mode === "ground") {
-            const keepActive = !!row.groundButtonHovered || !!row.groundButtonFocused;
-            row.groundButtonPressed = false;
-            setVisual(keepActive, false);
-        } else {
-            const keepActive = !!row.spawnButtonHovered || !!row.spawnButtonFocused;
-            row.spawnButtonPressed = false;
-            setVisual(keepActive, false);
-        }
-    }
+    if (!tryConsumeUIButtonPrimaryClickEvent(
+        vehicleDeployLastPrimaryClickByPid,
+        pid,
+        widgetName,
+        eventUIButtonEvent,
+        VEHICLE_DEPLOY_PRIMARY_CLICK_DEBOUNCE_SECONDS,
+        VEHICLE_DEPLOY_PRIMARY_CLICK_RELEASE_GRACE_SECONDS
+    )) return true;
 
     // v1.279 Phase 3 / Phase 6: HQ dispatch wiring. Deploy-menu and live-terminal routes both
     // dispatch through requestHqVehicleSpawn -- the `source` param selects the seat path

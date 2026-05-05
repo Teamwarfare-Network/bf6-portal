@@ -3,6 +3,7 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.465: Vehicle deploy: fire button action on ButtonDown via dedupe (fixes console deploy-on-foot race)
 // v1.464: Vehicle deploy: remove inert Blur+Fill widgets + dead Checkbox cleanup hooks (~18 widgets/pid reclaim)
 // v1.463: Vehicle deploy: remove text-shadow widgets from chrome (~21 widgets/pid reclaim)
 // v1.462: Player Ready Panel: swap admin row + admin-hint Y positions (Game Admin now at -60, hint at -28).
