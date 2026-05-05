@@ -12,24 +12,11 @@ type VehicleSpawnerSlot = {
     spawnRot: mod.Vector;
     vehicleType: mod.VehicleList;
     enabled: boolean;
-    enableToken: number;
-    spawnRequestToken: number;
-    spawnRequestAtSeconds: number;
     expectingSpawn: boolean;
-    // CQ_Bug_52: seconds at which expectingSpawn was most recently flipped to true.
-    // Used by the watchdog reap in pollVehicleSpawnerSlots to detect latched flags.
-    expectingSpawnStartedAtSeconds: number;
     vehicleId: number;
     respawnDelaySeconds: number;
-    respawnQueuedAtSeconds: number;
-    respawnReadyAtSeconds: number;
-    lastSpawnedAtSeconds: number;
-    lastDestroyedAtSeconds: number;
-    lastMissingAtSeconds: number;
     respawnRunning: boolean;
-    spawnCategory: VehicleSlotSpawnCategory;
     deployFlowTracked: boolean;
-    availabilityPhase: VehicleSlotAvailabilityPhase;
     pendingSpawnOwnerPid?: number;
     pendingSpawnMode?: VehicleDirectSpawnMode;
     // HQ claim trigger surface: "deploy_menu" (dead, at deploy screen) vs "on_foot"
@@ -54,23 +41,7 @@ type VehicleSpawnerSlot = {
     respawnClock?: Clocks.CountDownClock;
 };
 
-type VehicleSlotSpawnCategory =
-    | "attack_chopper"
-    | "transport_chopper"
-    | "jet"
-    | "ground_vehicle"
-    | "fast_mover"
-    | "other";
-
 type VehicleDirectSpawnMode = "air" | "ground" | "forward";
-
-type VehicleSlotAvailabilityPhase =
-    | "DISABLED"
-    | "EMPTY_ENABLED"
-    | "SPAWN_REQUESTED"
-    | "ACTIVE"
-    | "RESPAWN_PENDING"
-    | "RESPAWN_READY";
 
 type ConquestLifecyclePhase = "NOT_READY" | "COUNTDOWN" | "PRE_MATCH" | "LIVE_MATCH" | "POST_MATCH" | "RESET";
 type PositionDebugTransformSource = "soldier" | "vehicle";

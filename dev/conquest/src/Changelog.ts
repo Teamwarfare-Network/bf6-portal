@@ -3,6 +3,8 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.470: C3 audit on hud-core/constants.ts: dropped 9 dead consts (2 team-label-shadow stragglers + 7 SHADOW_OFFSET passthroughs to a function that ignores its args) + simplified twlConquestHudBuildShadowRingProfile signature (3 ignored params -> 0). 8 call sites updated to no-args form. Wave 6 Ship 1c rubble cleanup.
+// v1.469: Tier A1 cleanup: drop 11 read-zero fields from VehicleSpawnerSlot (enableToken, spawnRequestToken, spawnRequestAtSeconds, expectingSpawnStartedAtSeconds, respawnQueuedAtSeconds, respawnReadyAtSeconds, lastSpawnedAtSeconds, lastDestroyedAtSeconds, lastMissingAtSeconds, spawnCategory, availabilityPhase) + 2 orphan type aliases (VehicleSlotSpawnCategory, VehicleSlotAvailabilityPhase) + stale watchdog comment. ~176 fewer property allocations per match (11 fields x 16 slots).
 // v1.468: Fix v1.467 typecheck regression: STR_UI_WAIT alias was referenced but never declared in string-keys.ts. Added the alias next to STR_UI_READY.
 // v1.467: Supply box: yellow WAIT label replaces green READY on per-class tiles during round-start gadget delay; flips back to READY on gate elapse. In-class only; preserves cooldowns + off-class red. Per-tile sig now includes gadgetBlocked so transition reliably triggers refresh.
 // v1.466: Vehicle deploy: block engine deploy-on-foot per-player during HQ claim lifetime (resolves console seat race)
