@@ -116,7 +116,6 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
             State.conquest.debug.perspectiveTeamByPid[joinPid] = joinTeamNum;
         }
         onPlayerJoinSpawnCharge(joinPid, wasDisconnected);
-        Admin.onPlayerJoin(eventPlayer, joinPid);
     }
 
     await mod.Wait(0.1);

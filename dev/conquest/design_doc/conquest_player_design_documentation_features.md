@@ -116,16 +116,17 @@ Every player who isn't the admin uses this lightweight panel — about 20 widget
 - Source: [`src/ready-dialog/player-ready-panel.ts`](../src/ready-dialog/player-ready-panel.ts) (~448 lines); event routing in [`src/interaction/ui-events-player-ready-panel.ts`](../src/interaction/ui-events-player-ready-panel.ts).
 - Built lazily via `triggerLazyBuild('playerReadyPanel', pid)` from [`src/interaction/interact-point.ts:tryOpenReadyDialogForPlayer`](../src/interaction/interact-point.ts) — single chokepoint, branches on `Admin.isAdmin(pid)`. Admin → full ready dialog; non-admin → this panel.
 - Container is 640w × 280h, centered, with 4-line border chrome mirroring the full dialog.
-- Content rows (centered): Title (large), Game Host name, Game Admin name (or "No Admin"), team-aware ready status line.
+- Content rows (centered): Title (large), Game Admin name (or "No Admin"), team-aware ready status line. Game Host row removed v1.459 (Host was never script-authoritative — engine reports closest-to-server player as first-loaded, not the actual server host).
 - Bottom button row: SWAP TEAMS, READY/NOT READY (label flips), SPECTATE/COACH (disabled, greyed — D3 verbatim from full dialog), CLOSE.
-- CLAIM ADMIN button (Wave 4 Ship 6 / v1.2): top-right, 8px padded. Visibility owned by `syncPlayerReadyPanelClaimAdminButtonForPid` which gates on `Admin.isAdminVacant()`. Live-disabled state: greyed + click-disabled, but stays visible (so the viewer understands the slot is vacant and that handoff is locked during Live).
+- CLAIM ADMIN button: top-right, 8px padded. Visibility owned by `syncPlayerReadyPanelClaimAdminButtonForPid` which gates on `Admin.isAdminVacant()`. Live-disabled state: greyed + click-disabled, but stays visible (so the viewer understands the slot is vacant and that handoff is locked during Live).
 - Refresh broadcast: any admin transition (claim / give-up / admin-disconnect) calls `refreshAllVisiblePlayerReadyPanels` so every viewer's Game Admin row + CLAIM ADMIN visibility update in lock-step.
 - READY auto-close behavior on the panel mirrors the dialog's path: hide → restore cursor → fire `handleReadyDialogReadyButtonClick` (world log, ready-count, auto-start gate) — single shared handler.
-- Identity / handoff rules (Wave 4 v1.2 + v1.436):
-  - First-ever joiner is auto-admin (one-time server-lifetime exception, `_hostFirstPid === undefined` gate).
-  - Admin disconnect → slot vacates immediately, no auto-promotion.
-  - Late joiner arriving on a vacant slot does NOT inherit it; CLAIM ADMIN required.
+- Identity / handoff rules (v1.459):
+  - **No auto-promotion ever.** Every match starts with `Admin.isAdminVacant() === true`; CLAIM ADMIN visible to every viewer until someone presses it.
+  - Admin disconnect → slot vacates immediately, no auto-promotion of next-in-server.
   - Two simultaneous CLAIM ADMIN clicks → first wins atomically (`Admin.claimAdmin` returns false on contended slot).
+  - GIVE UP ADMIN (button on the full ready dialog) releases the slot for someone else to claim.
+  - **CLAIM ADMIN auto-opens the admin dialog (v1.460):** after a successful claim, the panel hides and the new admin is canonical-routed straight into the full ready dialog (`tryOpenReadyDialogForPlayer`) — no second triple-tap required. Cursor stays up across the panel-hide → dialog-show transition.
 - Auto-unready triggers locked at exactly 2 (CQ_Bug_58 / v1.445): SWAP TEAMS click, and admin config change → APPLY. Death/respawn does NOT clear ready. Walking out of the main base does NOT clear ready.
 
 ---
@@ -360,9 +361,9 @@ Every countdown in the game is a 10-chunk progress bar except the master clock a
 
 Not negotiable. Every UI surface respects it. The bleed-chevron color *inversion* (left chevrons on the blue bar are red, right chevrons on the red bar are blue) is the one place we deliberately violate the rule, and it's because chevrons mean "you are bleeding" — they need contrast against their own bar, and the inverted color reads correctly as "the enemy is doing this to you".
 
-### The host is a player, not the admin (necessarily)
+### Admin is claim-only
 
-The first player to ever connect to the server is permanently marked as the **Host** for cosmetic display purposes — their name shows up on the Game Host line forever. The **Admin** slot is the *active* configuration owner and can be passed around: the host starts as admin, but they can give it up, lose it on disconnect, and any player can claim it back when it's vacant. New joiners do *not* automatically inherit a vacant admin slot — somebody has to actively press CLAIM ADMIN. This is a deliberate lock-in: passive vacancy beats accidental promotion.
+The **Admin** slot is the *active* configuration owner and can be passed around: every match starts with the slot vacant, anyone can press CLAIM ADMIN to take it, the current admin can press GIVE UP ADMIN to release it, and an admin disconnect vacates immediately. New joiners do *not* automatically inherit a vacant admin slot — somebody has to actively press CLAIM ADMIN. This is a deliberate lock-in: passive vacancy beats accidental promotion. (Pre-v1.459 there was a "first-ever joiner becomes admin" exception piggy-backed on a Host concept; the engine reports the closest-to-server player as first-loaded rather than the actual server host, so the inferred Host was often wrong and the auto-admin path went with it.)
 
 ### Spawn-charge applies to deaths, not deploys
 

@@ -8,8 +8,9 @@
 // L14 + D3 (Spectate/Coach disabled with verbatim treatment from existing dialog).
 //
 // Layout: 640w x 280h centered container with 4 borders. Text rows top-down:
-// title (large, centered), Game Host, Game Admin, ready-status. Bottom button
-// row (4 buttons): SWAP, READY, COACH (disabled), CLOSE.
+// title (large, centered), Game Admin, admin-hint (vacancy-aware copy),
+// ready-status. Bottom button row (4 buttons): SWAP, READY, COACH (disabled),
+// CLOSE.
 
 const PLAYER_READY_PANEL_WIDTH = 640;
 const PLAYER_READY_PANEL_HEIGHT = 280;
@@ -18,8 +19,8 @@ const PLAYER_READY_PANEL_BORDER_PADDING = 1;
 const PLAYER_READY_PANEL_BORDER_OVERLAP = 2;
 
 const PLAYER_READY_PANEL_TITLE_Y = -110;
-const PLAYER_READY_PANEL_HOST_Y = -60;
-const PLAYER_READY_PANEL_ADMIN_Y = -28;
+const PLAYER_READY_PANEL_ADMIN_Y = -60;
+const PLAYER_READY_PANEL_ADMIN_HINT_Y = -28;
 const PLAYER_READY_PANEL_STATUS_Y = 4;
 
 const PLAYER_READY_PANEL_TITLE_SIZE = 22;
@@ -53,7 +54,7 @@ function getPlayerReadyPanelWidgetIds(pid: number): string[] {
         UI_PLAYER_READY_PANEL_BORDER_LEFT_ID + pid,
         UI_PLAYER_READY_PANEL_BORDER_RIGHT_ID + pid,
         UI_PLAYER_READY_PANEL_TITLE_ID + pid,
-        UI_PLAYER_READY_PANEL_HOST_LABEL_ID + pid,
+        UI_PLAYER_READY_PANEL_ADMIN_HINT_ID + pid,
         UI_PLAYER_READY_PANEL_ADMIN_LABEL_ID + pid,
         UI_PLAYER_READY_PANEL_READY_STATUS_ID + pid,
         UI_PLAYER_READY_PANEL_BUTTON_SWAP_ID + pid,
@@ -143,15 +144,15 @@ function prebuildPlayerReadyPanelHidden(eventPlayer: mod.Player, pid: number): v
     );
     if (titleWidget) mod.SetUITextAnchor(titleWidget, mod.UIAnchor.Center);
 
-    const hostWidget = addReadyDialogText(
-        UI_PLAYER_READY_PANEL_HOST_LABEL_ID + pid,
-        0, PLAYER_READY_PANEL_HOST_Y,
+    const adminHintWidget = addReadyDialogText(
+        UI_PLAYER_READY_PANEL_ADMIN_HINT_ID + pid,
+        0, PLAYER_READY_PANEL_ADMIN_HINT_Y,
         PLAYER_READY_PANEL_TEXT_WIDTH, PLAYER_READY_PANEL_TEXT_HEIGHT,
         mod.UIAnchor.Center, mod.UIAnchor.Center,
-        msg(mod.stringkeys.twl.playerReadyPanel.gameHostFormat, mod.stringkeys.twl.system.unknownPlayer),
+        msg(mod.stringkeys.twl.playerReadyPanel.adminHintVacant),
         eventPlayer, containerBase, PLAYER_READY_PANEL_TEXT_SIZE, false, COLOR_WHITE
     );
-    if (hostWidget) mod.SetUITextAnchor(hostWidget, mod.UIAnchor.Center);
+    if (adminHintWidget) mod.SetUITextAnchor(adminHintWidget, mod.UIAnchor.Center);
 
     const adminWidget = addReadyDialogText(
         UI_PLAYER_READY_PANEL_ADMIN_LABEL_ID + pid,
@@ -268,9 +269,9 @@ function prebuildPlayerReadyPanelHidden(eventPlayer: mod.Player, pid: number): v
     );
 }
 
-// Wave 4 Ship 4: refresh the 3 dynamic content rows (Game Host, Game Admin,
-// ready status) before the panel becomes visible. Reads live state each call
-// so a stale cache cannot show out-of-date names or ready-state.
+// Refresh the 3 dynamic content rows (admin hint, Game Admin, ready status)
+// before the panel becomes visible. Reads live state each call so a stale
+// cache cannot show out-of-date names or ready-state.
 //
 // Format-arg discipline: a connected pid resolves to a live `mod.Player` which
 // the engine substitutes as the player's name. A disconnected/unknown pid falls
@@ -284,15 +285,13 @@ function refreshPlayerReadyPanelContentForPid(pid: number): void {
     const viewerPlayer = safeFindPlayer(pid);
     if (!viewerPlayer) return;
 
-    const hostLabel = safeFind(UI_PLAYER_READY_PANEL_HOST_LABEL_ID + pid);
-    if (hostLabel) {
-        const hostPid = Admin.getHostFirstPid();
-        const hostPlayer = hostPid !== undefined ? safeFindPlayer(hostPid) : undefined;
-        const hostMsg = hostPlayer
-            ? msg(mod.stringkeys.twl.playerReadyPanel.gameHostFormat, hostPlayer)
-            : msg(mod.stringkeys.twl.playerReadyPanel.gameHostFormat, mod.stringkeys.twl.system.unknownPlayer);
-        safeSetUITextLabel(hostLabel, hostMsg);
-        try { mod.SetUITextAnchor(hostLabel, mod.UIAnchor.Center); } catch {}
+    const adminHintLabel = safeFind(UI_PLAYER_READY_PANEL_ADMIN_HINT_ID + pid);
+    if (adminHintLabel) {
+        const hintKey = Admin.isAdminVacant()
+            ? mod.stringkeys.twl.playerReadyPanel.adminHintVacant
+            : mod.stringkeys.twl.playerReadyPanel.adminHintClaimed;
+        safeSetUITextLabel(adminHintLabel, msg(hintKey));
+        try { mod.SetUITextAnchor(adminHintLabel, mod.UIAnchor.Center); } catch {}
     }
 
     const adminLabel = safeFind(UI_PLAYER_READY_PANEL_ADMIN_LABEL_ID + pid);

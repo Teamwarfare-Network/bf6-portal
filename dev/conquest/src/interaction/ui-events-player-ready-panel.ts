@@ -135,8 +135,13 @@ function tryHandlePlayerReadyPanelButtonEvent(
         () => {
             if (isMatchLive()) return;
             if (!Admin.claimAdmin(playerId)) return;
-            closePlayerReadyPanelForViewer(eventPlayer, playerId);
+            // Hide panel widgets but keep cursor up — the admin dialog will replace it.
+            hidePlayerReadyPanelForPid(playerId);
             refreshAllVisiblePlayerReadyPanels();
+            // Player is now admin; canonical entry routes them straight into the full
+            // ready dialog. Reusing tryOpenReadyDialogForPlayer keeps the open path
+            // (lazy-build + showReadyDialogUI + error recovery) in one place.
+            tryOpenReadyDialogForPlayer(eventPlayer);
         }
     );
     if (claimAdminHandled !== undefined) return claimAdminHandled;

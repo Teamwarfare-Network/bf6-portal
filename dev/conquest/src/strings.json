@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.458)",
+        "title": "teamwarfare . net | TWL Conquest (v1.462)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText3": "The game is NOT Live and you are NOT Ready yet...",
@@ -95,10 +95,11 @@
     },
     "playerReadyPanel": {
       "title": "Player Ready Up Panel",
-      "gameHostFormat": "Game Host: {0}",
       "gameAdminFormat": "Game Admin: {0}",
       "claimAdminButton": "CLAIM\nADMIN",
       "noAdminLabel": "No Admin",
+      "adminHintVacant": "Select 'Claim Admin' to configure/change mode, vehicles or settings",
+      "adminHintClaimed": "Only the Admin can configure/change mode, vehicles or settings",
       "readyStatusYesFormat": "You are Ready on the {0} Team",
       "readyStatusNoFormat": "You are NOT Ready on the {0} Team"
     },

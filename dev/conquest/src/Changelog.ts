@@ -3,6 +3,10 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.462: Player Ready Panel: swap admin row + admin-hint Y positions (Game Admin now at -60, hint at -28).
+// v1.461: Player Ready Panel: add vacancy-aware admin-hint row at the old Host Y. Vacant: 'Select Claim Admin to configure...'; claimed: 'Only the Admin can configure...'. Refreshes via existing broadcast on every claim/give-up/disconnect.
+// v1.460: CLAIM ADMIN auto-opens admin dialog: after claim, hide panel + canonical-route the new admin into the full ready dialog so they land directly in the surface they now control.
+// v1.459: Strip Host concept + first-joiner auto-admin: admin slot now claim-only. Removed Admin.isHost/getHostFirstPid/getHostNameMessage/onPlayerJoin (3 host-state fields, 3 accessors, auto-promote branch); dropped Game Host row from Player Ready Panel (constant, widget id, build, refresh); dropped gameHostFormat string. Host was never script-authoritative.
 // v1.457: Delay broadcasts v1.456: text widget visibility now toggled alongside root (was hidden); WIDGET_Y 150→220 to clear engage panel.
 // v1.455: Delay-elapsed broadcasts: 4 transient on-screen announcements at each roundStart*Delay milestone (5s display).
 // v1.454: Vehicle deploy timer row spacing tightened: ROW_HEIGHT 30->22, ROW_GAP_Y 2->1. Row stride drops from 32 to 23 (~28% reduction; tightest possible without clipping the 20-tall spawn button). Visible gap between adjacent button bottoms drops from ~12px to ~3px.
