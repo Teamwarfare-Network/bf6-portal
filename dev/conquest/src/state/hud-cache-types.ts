@@ -67,13 +67,9 @@ type VehicleDeployTimerRowCacheEntry = {
     vehiclePlate?: mod.UIWidget;
     vehicleText?: mod.UIWidget;
     spawnButtonBorder?: mod.UIWidget;
-    spawnButtonBlur?: mod.UIWidget;
-    spawnButtonFill?: mod.UIWidget;
     spawnButton?: mod.UIWidget;
     spawnButtonText?: mod.UIWidget;
     groundButtonBorder?: mod.UIWidget;
-    groundButtonBlur?: mod.UIWidget;
-    groundButtonFill?: mod.UIWidget;
     groundButton?: mod.UIWidget;
     groundButtonText?: mod.UIWidget;
     spawnButtonHovered?: boolean;
@@ -101,8 +97,6 @@ type VehicleDeployTimerHudCacheEntry = {
     livePanelBlur?: mod.UIWidget;
     livePanelFill?: mod.UIWidget;
     closeButtonBorder?: mod.UIWidget;
-    closeButtonBlur?: mod.UIWidget;
-    closeButtonFill?: mod.UIWidget;
     closeButton?: mod.UIWidget;
     closeButtonText?: mod.UIWidget;
     closeButtonHovered?: boolean;

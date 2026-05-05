@@ -3,6 +3,7 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.464: Vehicle deploy: remove inert Blur+Fill widgets + dead Checkbox cleanup hooks (~18 widgets/pid reclaim)
 // v1.463: Vehicle deploy: remove text-shadow widgets from chrome (~21 widgets/pid reclaim)
 // v1.462: Player Ready Panel: swap admin row + admin-hint Y positions (Game Admin now at -60, hint at -28).
 // v1.461: Player Ready Panel: add vacancy-aware admin-hint row at the old Host Y. Vacant: 'Select Claim Admin to configure...'; claimed: 'Only the Admin can configure...'. Refreshes via existing broadcast on every claim/give-up/disconnect.
