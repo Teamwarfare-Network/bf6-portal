@@ -1,7 +1,7 @@
 # Conquest Issues
 
-Last Updated: 2026-04-25 (v1.375)
-Last Tested Build: `v1.375` — single-player verified for v1.373 launcher cap + at-cap label, v1.374 GetVehicleFromPlayer error-log cleanup (user-confirmed via error-log inspection at v1.374), and v1.375 Supply Box disabled-focused indicator (user-confirmed via in-menu navigation). MP confirmation pending. Phase 6 HQ Deploy remains functional. Gadget locker rework (v1.290–v1.313) and the v1.339–v1.344 launcher probe + ammo polish stand. Vanilla regression path remains byte-identical to the v1.276 baseline. v1.314 reworks the ready-dialog config column to checkbox seeds (Supply Boxes wired v1.325; Forward Deploy wired v1.328; Air Deploy wired v1.329). v1.333/v1.334 move Forward/Air Deploy vehicle Teleport to post-seat to fix loadout drop. v1.337–v1.338 migrate the match clock to `Clocks.CountDownClock`. v1.358–v1.370 stabilized the boundary architecture (single-zone-state, event-driven seatKind, squad-spawn inheritance, `mod.EnableAreaTrigger` wired). v1.371–v1.372 shipped Tier 1+2 cleanup. v1.373 unified launcher caps to 3 + non-destructive +1-ammo slot probe (#95, #96). v1.374 deleted dead `GetVehicleFromPlayer` cache seed (#93) — completes v1.369 design intent. v1.375 added Supply Box disabled-focused border indicator (#97). Outstanding: late-joiner redeploy-timer investigation deferred to polish phase; #94 `GetInventoryAmmo` error log noted as not-recently-observed (review pending).
+Last Updated: 2026-05-05 (v1.471)
+Last Tested Build: `v1.471` — single-player verified clean for the late-join crash defense bundle (Phase A try/catch + Phase B cache-race close + Phase C team-bind re-read; see #114). Issue housekeeping pass 2026-05-05 retired CQ_Bug_29, CQ_Bug_32, CQ_Bug_33, and CQ_Polish_Respawn_Redeploy_Timer_Audit (design changes since v1.418 made them no longer applicable). CQ_Polish_Jet_Pitch_On_Air_Deploy reaffirmed as Closed-Accepted / known shippable for V1. Earlier history retained: `v1.375` — single-player verified for v1.373 launcher cap + at-cap label, v1.374 GetVehicleFromPlayer error-log cleanup (user-confirmed via error-log inspection at v1.374), and v1.375 Supply Box disabled-focused indicator (user-confirmed via in-menu navigation). MP confirmation pending. Phase 6 HQ Deploy remains functional. Gadget locker rework (v1.290–v1.313) and the v1.339–v1.344 launcher probe + ammo polish stand. Vanilla regression path remains byte-identical to the v1.276 baseline. v1.314 reworks the ready-dialog config column to checkbox seeds (Supply Boxes wired v1.325; Forward Deploy wired v1.328; Air Deploy wired v1.329). v1.333/v1.334 move Forward/Air Deploy vehicle Teleport to post-seat to fix loadout drop. v1.337–v1.338 migrate the match clock to `Clocks.CountDownClock`. v1.358–v1.370 stabilized the boundary architecture (single-zone-state, event-driven seatKind, squad-spawn inheritance, `mod.EnableAreaTrigger` wired). v1.371–v1.372 shipped Tier 1+2 cleanup. v1.373 unified launcher caps to 3 + non-destructive +1-ammo slot probe (#95, #96). v1.374 deleted dead `GetVehicleFromPlayer` cache seed (#93) — completes v1.369 design intent. v1.375 added Supply Box disabled-focused border indicator (#97). Outstanding: late-joiner redeploy-timer investigation deferred to polish phase; #94 `GetInventoryAmmo` error log noted as not-recently-observed (review pending).
 
 **Cross-reference:** for the numbered, named, at-a-glance index of all 105 issues (status table + per-issue executive summary), see [`conquest_issues_summary.md`](./conquest_issues_summary.md). This doc holds the full body — history, investigation notes, timelines. The summary is the authoritative numeric index.
 
@@ -38,11 +38,11 @@ Last Tested Build: `v1.375` — single-player verified for v1.373 launcher cap +
 - `CQ_Bug_26`: Likely resolved (believed fixed by vehicle HUD polish passes; needs confirmation)
 - `CQ_Bug_27`: Resolved (fixed in vehicle HUD render passes)
 - `CQ_Bug_28`: Likely resolved — not observed since the v1.328+ Forward/Air Deploy reintroduction refactor and the v1.333/v1.334 post-seat Teleport pattern (user confirmation 2026-04-25). Needs MP confirmation across all aircraft slots.
-- `CQ_Bug_29`: Open (Phase 10 — needs repro)
+- `CQ_Bug_29`: Closed — no longer reproducing (2026-05-05 user direction); retired from active list
 - `CQ_Bug_30`: Likely resolved (believed fixed by loading gate rearchitecture and UI cache polish; needs confirmation)
 - `CQ_Bug_31`: Likely obsolete (v1.308–v1.313 reworked the gadget locker slot-probe path wholesale; the v1.306 by-id probe that could destroy gadgets has been removed. Deploy path also substantially changed in v1.258–v1.289. Re-observe under v1.313 before acting — original symptom may no longer reproduce.)
-- `CQ_Bug_32`: Open (Phase 10 polish)
-- `CQ_Bug_33`: Open (Phase 10 polish)
+- `CQ_Bug_32`: Closed — design change resolved (2026-05-05); the loading-gate rearchitecture (v1.418, Wave 3 Ship 8) eliminated the warm-prime show/hide cycle the flicker was tied to
+- `CQ_Bug_33`: Closed — design change resolved (2026-05-05); same root cause as #32, eliminated by v1.418 loading-gate deletion
 - `CQ_Bug_34`: Partially resolved (Firestorm ground + air spawn orientations tuned v1.132-v1.141; other maps still need pass)
 - `CQ_Bug_35`: Resolved (v1.075 — all call sites on undeployed players eliminated; error logs confirmed clean in SP testing)
 - `CQ_Bug_36`: Resolved (v1.071 — guarded behind isPlayerDeployed; confirmed clean in SP testing)
@@ -99,7 +99,7 @@ Last Tested Build: `v1.375` — single-player verified for v1.373 launcher cap +
   - v1.288: poll undeploy completion; retry `DeployPlayer` 3× with 0.4s waits.
   - v1.289: zero redeploy timer (`SetRedeployTime=0`) around `UndeployPlayer` so the on-foot flow is not blocked by post-death countdown.
   Durable design constraints: never teleport player before `ForcePlayerToSeat`; `ForcePlayerToSeat` only reliable inside `OnPlayerDeployed`; no code copied from the deleted fulfillment/reservations modules.)
-- `CQ_Polish_Respawn_Redeploy_Timer_Audit`: **Open** — late-joiner `SetRedeployTime(HUD_WARM_REDEPLOY_BLOCK_SECONDS)` in `holdPlayerAtDeploy` may be applying globally rather than per-player; `SetRedeployTime(0)` persistence (one-shot vs persistent) not empirically verified. Deferred to polish phase. See memory `project_respawn_redeploy_timer_polish.md`.
+- `CQ_Polish_Respawn_Redeploy_Timer_Audit`: Closed — design change resolved (2026-05-05). Item (3) was already resolved-by-removal in v1.418 (loading-gate deletion eliminated `holdPlayerAtDeploy` and the `HUD_WARM_REDEPLOY_BLOCK_SECONDS` constant). Items (1) and (2) retired by user direction — the respawn-timer call-site landscape has shifted enough since v1.289 that the original suspicions no longer apply. See memory `project_respawn_redeploy_timer_polish.md` (now stale and pending update).
 - `CQ_Feat_ReadyDialog_Config_Checkboxes_UI_Seed`: Resolved for UI-only scope (v1.314 — ready-dialog center column reworked. Configuration header removed; Game Mode stepper moved into the reclaimed header row and relabeled to `Game Mode Configuration:`; Vehicle Deploy stepper removed. Replaced with 5 checkboxes in a left sub-column: Vanilla Deploy, HQ Deploy, Air Deploy (indented), Forward Deploy (indented), Supply Boxes. Vanilla/HQ are a radio pair backed by the existing `vehicleDeployMethod` enum; Air/Forward/SupplyBoxes are new optional booleans (`airDeployEnabled`, `forwardDeployEnabled`, `supplyBoxesEnabled`) on `ReadyDialogModeConfig` that persist through Apply/Reset/preset-apply but are not yet read by any downstream consumer. Clicking Air or Forward while Vanilla is on auto-switches to HQ. Right sub-column reserved empty for future checkboxes. Wiring of Air/Forward into the spawn path and Supply Boxes into the ammo-resupply interactable remains TODO.)
   - v1.328 (Forward Deploy wired): see `CQ_Feat_Forward_Deploy_Reintroduction` below.
   - v1.325 (Supply Boxes wired): the `supplyBoxesEnabled` flag is now read at three call sites in `src/interaction/world-interactables.ts`: (1) VFX spawn loop skips supply-box configs when disabled, (2) `shouldEnableWorldInteractableAuthoredInteractPoint` returns false for supply-box configs when disabled, (3) `shouldAllowWorldInteractableActivationForPlayer` returns `isSupplyBoxesEnabled()` for the `open_ammo_resupply_menu` branch. Apply-time resync `refreshSupplyBoxInteractableStateFromConfirmedConfig()` runs at the tail of `confirmReadyDialogModeConfig` to reconcile already-spawned VFX + InteractPoint state and to force-close any open ammo-resupply menus via `closeArmMenu(pid)` when Supply Boxes flips off. Default remains true. Air Deploy and Forward Deploy wiring are still UI-only and remain TODO. See `design_doc/supply_boxes_wiring_plan_2026-04-19.md` for full rationale.
@@ -450,13 +450,10 @@ Expected:
 - The loading overlay should remain continuously visible from the moment the team-swap gate starts until the gate releases.
 
 Status:
-- Open.
-- Deferred polish.
-- Partially improved in `v1.013` by the same pre-prime overlay reassert + yield fix.
-- Full fix likely requires ensuring `hideAllUiFamiliesForPlayer` does not transiently hide the overlay, or that the overlay is immediately reasserted after it runs.
+- **Closed — design change resolved (2026-05-05).** The loading-gate rearchitecture in v1.418 (Wave 3 Ship 8) deleted the loading-gate machinery entirely along with the warm-prime show/hide cycle this flicker was tied to. With the gate gone, there is no overlay-vs-warm-prime race to lose. Retired from the active list. Reopen if a team-swap visual flicker resurfaces in MP playtest.
 
 Related:
-- CQ_Bug_32 (same underlying timing issue)
+- CQ_Bug_32 (same underlying timing issue, also closed)
 - CQ_Bug_30 (parent issue for loading gate lifecycle)
 
 ## CQ_Bug_32
@@ -472,17 +469,12 @@ Expected:
 - The ready dialog should never be player-visible during its hidden warm prime pass.
 
 Status:
-- Open.
-- Deferred polish.
-- v1.013 fix (reassert overlay + `await mod.Wait(0)` before prime) reduced but did not fully eliminate the flicker.
-- Full fix likely requires one of:
-  - Build the ready dialog with explicit `visible: false` on all children during the prime pass instead of relying on the overlay to occlude it
-  - Move the warm prime to occur before the player reaches the deploy screen (during an earlier lifecycle phase)
-  - Use z-depth ordering to guarantee the overlay is always above the ready dialog during the prime
+- **Closed — design change resolved (2026-05-05).** The loading-gate rearchitecture in v1.418 (Wave 3 Ship 8) deleted the entire loading-gate machinery — the warm-prime show/hide cycle that produced the flicker no longer exists. UI surfaces now build via `triggerLazyBuild` only when used (Wave 3 lazy-build dispatcher), so there is no first-join "ready dialog briefly visible before overlay composites" path to flicker on. Retired from the active list. Reopen if a similar visual artifact resurfaces in MP playtest.
 
 Related:
+- CQ_Bug_33 (same underlying timing issue, also closed)
 - CQ_Bug_30 (parent issue for first-use menu creation hitching and loading gate lifecycle)
-- Design doc: loading gate "build -> refresh hidden/content-only -> reveal once" contract
+- Design doc: loading gate "build -> refresh hidden/content-only -> reveal once" contract — superseded by lazy-build dispatcher
 
 ## CQ_Bug_31
 Title: Runtime Errors After Gadget Locker / Deploy Interaction
@@ -766,8 +758,7 @@ Expected:
 - Teleporting a live player should not create a noticeable script hitch or broader runtime degradation.
 
 Status:
-- Open.
-- Needs repro.
+- **Closed — no longer reproducing (2026-05-05, user direction).** Retired from the active list. The original suspicion was never tied to a clean repro and the broader v1.358–v1.470 architecture passes (boundary rewrite, lazy-build dispatch, dirty-flag combat HUD, tick-context AllPlayers cache) substantially reshaped the per-tick cost surface that any live-teleport hitch would have shown up against. Reopen if a teleport-induced hitch surfaces in MP playtest.
 
 Current Best Read:
 - This is not isolated enough to assign to one subsystem yet.
@@ -2555,7 +2546,9 @@ Latest findings (2026-04-21):
 
 Status update (2026-04-25, v1.376): user reaffirmed all three scope items remain on the punch list. Investigation still pending MP repro / `FEATURE_PERF_DIAG=true` playtest data.
 
-Status update (2026-05-01, v1.418, Wave 3 Ship 8): scope item (3) — `holdPlayerAtDeploy` global-application concern — is **resolved-by-removal**. The function `holdPlayerAtDeploy` and the `HUD_WARM_REDEPLOY_BLOCK_SECONDS` constant were both deleted along with the loading-gate machinery. Items (1) (death respawn timing) and (2) (`SetRedeployTime(0)` persistence) remain open and unchanged.
+Status update (2026-05-01, v1.418, Wave 3 Ship 8): scope item (3) — `holdPlayerAtDeploy` global-application concern — is **resolved-by-removal**. The function `holdPlayerAtDeploy` and the `HUD_WARM_REDEPLOY_BLOCK_SECONDS` constant were both deleted along with the loading-gate machinery.
+
+Status update (2026-05-05, v1.471): **Closed — design change resolved (user direction).** Items (1) and (2) retired from the active list. The respawn-timer call-site landscape has shifted enough since v1.289 (loading-gate deletion v1.418, HQ Deploy maturation across v1.281–v1.289, vehicle-deploy block-engine-deploy fix v1.466) that the original suspicions about global-application and `SetRedeployTime(0)` persistence no longer apply against the current code shape. Reopen if a respawn-timer anomaly is observed in MP playtest. Memory `project_respawn_redeploy_timer_polish.md` is now stale and should be retired.
 
 ## CQ_Polish_Launcher_Ammo_Per_Launcher_Cap
 Title: `giveRocketCharge` Consumes a Charge at Max Launcher Ammo
@@ -2761,7 +2754,7 @@ Scope:
 - Air Deploy spawns jets with engine-default pitch (flat) regardless of the authored `volume.rotPlane.X`. Yaw is preserved via the post-bind `mod.Teleport`; pitch has no argument in `mod.Teleport` and `mod.SetObjectTransform` is a no-op on `Vehicle`.
 - Sister-spawner plan (per-jet-slot sibling `VehicleSpawner` born with `rotPlane`, relocated per click) was deferred in v1.332: its core assumption is spawner-relocate propagates at altitude, which v1.331 disproved for position. Reviving the plan requires a **narrow probe**: create a runtime `VehicleSpawner` at ground level with non-zero pitch, fire `ForceVehicleSpawnerSpawn` without relocation, observe whether the birthed vehicle inherits the pitch. If yes, the sibling pattern's upper bound is "pitched vehicle at HQ pad" — still a net loss without position. If no, birth-rotation is engine-determined and the sibling pattern cannot help.
 
-Status: **Closed — Accepted (2026-05-03, user direction).** Jet pitch loss on Air Deploy is accepted as-is for V1; the sister-spawner workaround is not pursued and the issue is dropped from the active known-issues backlog. Pilots pitch manually after seat. Reopen if a future engine update exposes a pitch-aware Teleport signature for `Vehicle` objects.
+Status: **Closed — Accepted / Known Shippable (reaffirmed 2026-05-05).** Jet pitch loss on Air Deploy is accepted as-is for V1 — pilots pitch manually after seat. The sister-spawner workaround is not pursued. Documented as a **known V1 limitation, shippable as-is**. Reopen only if a future engine update exposes a pitch-aware Teleport signature for `Vehicle` objects. Original close: 2026-05-03 user direction.
 
 ## CQ_Bug_RemoveEquipment_JS_Error
 Title: `mod.RemoveEquipment` JS error log — scope and repro unconfirmed
@@ -3644,3 +3637,59 @@ Clear sites (4):
 - Global API (NOT touched by this fix): `mod.EnableAllPlayerDeploy(bool)` — used by countdown-flow.ts and conquest-flow.ts for match-lifecycle gating.
 - Architectural comparison: [`conquest_vehicle_deploy_comparisons.md`](./conquest_vehicle_deploy_comparisons.md) §4.5 documents BillDukes' opposite approach (`EnablePlayerDeploy(player, true)` + pre-seat teleport — banned in Conquest by the v1.106-v1.108 / v1.151-v1.154 aircraft OOB regression history).
 - Player-facing surface: Custom Dialogs / Vehicle Deploy entries in [`conquest_player_design_documentation_features.md`](./conquest_player_design_documentation_features.md).
+
+## CQ_Bug_LateJoin_LiveCrash_v1469 (#114)
+Title: Silent server crash when a fresh 2nd-player late-joins during LIVE
+
+**Status: Defenses shipped at v1.471 (Phase A + Phase B + Phase C bundled), pending MP repro validation.** Single repro at v1.469 (2026-05-04); never reproduced on retry.
+
+### Observed (2026-05-04, v1.469, 2-player MP playtest)
+- Server crashed **silently** — no error string surfaced, all players disconnected simultaneously.
+- 2 players in the match (rules out heap pressure as the failure axis).
+- Late-joiner came in during LIVE and joined the **same side** as the existing player.
+- Approximate timing: "couple minutes" into the match (could be sub-2-min or more — not certain).
+- **Fresh 2nd-player join — NOT a reconnect, no pid recycle in play.**
+- **Player crashed before any action** — never deployed, never interacted. Crash window is the pre-deploy interval between engine-bind and the late-joiner's first input.
+- Repro'd once, never reproduced on retry.
+
+### Root cause analysis (none proven; 3 surviving suspects)
+
+The "all players crashed simultaneously + silent + no error string" signature points to an engine-side abort triggered by a script call that hit an invalid state on a late-joiner-specific code path during the pre-deploy window. None of the suspects are individually proven; repro fragility means we likely cannot isolate cleanly. Plan archive (full suspect inventory, sequencing rationale): [`design_doc/5.04.26_late_join_crash_defense_plan.md`](./5.04.26_late_join_crash_defense_plan.md).
+
+- **S1 — `OnPlayerJoinGame` async bare-forward (no try/catch).** [`src/index.ts:133`](../src/index.ts#L133) was bare-forwarded to `onPlayerJoinGameImpl`. After `await mod.Wait(0.1)` at [`src/index/player-join-leave.ts:127`](../src/index/player-join-leave.ts#L127), any throw becomes an unhandled rejection on the script context. Some Frostbite script runtimes treat unhandled rejection as fatal → server abort.
+- **S2 — Cache-mutation race against `runRoundStartDelayHudLoop`.** The 1Hz iteration at [`src/vehicles/deploy-timer-ui.ts:1827-1837`](../src/vehicles/deploy-timer-ui.ts#L1827) walks `State.hudCache.vehicleDeployTimerCache`. Late-joiner appears in `mod.AllPlayers()` immediately on engine-bind. A tick can build a cache entry between bind and our T=0 handler, get it deleted at T=100ms by `resetUiForPlayerOnJoin`, then re-bound by the lazy-build cohort against engine-side widgets still tied to the deleted cache record — the classic stale-handle write that aborts on the engine side.
+- **S3 — T=0 team-bind read on a late-joiner.** [`src/index/player-join-leave.ts:120`](../src/index/player-join-leave.ts#L120) called `safeGetTeamNumberFromPlayer(eventPlayer, 0)` BEFORE the 100ms wait. On a fresh late-join the engine may not have bound the team yet — read returns 0, `perspectiveTeamByPid[joinPid]` left undefined, downstream HUD code reads undefined for the rest of the session. Doesn't crash on its own; compounds with S2.
+- ~~S4 — `OnPlayerDeployed` async bare-forward~~ **ELIMINATED** by user constraint: player never deployed.
+- ~~S5 — `mod.SetRedeployTime` broadcast scope~~ **DROPPED** — was an unverified hypothesis incorrectly framed as a banked fact, not actual carry-over knowledge.
+
+### Resolution shipped at v1.471 — three orthogonal defenses bundled
+
+- **Phase A (S1):** [`src/index.ts:133-141`](../src/index.ts#L133-L141) — `OnPlayerJoinGame` wrapped in outer try/catch with `console.log` on the catch path. Converts an unhandled rejection (suspected silent script-runtime kill → engine abort) into a logged `[OnPlayerJoinGame] <message>` line. Both a candidate fix (if the crash mechanism is unhandled-rejection-as-fatal) AND a diagnostic enabler for the next repro.
+- **Phase B (S2):** `delete State.hudCache.vehicleDeployTimerCache[pid]` relocated from inside `resetUiForPlayerOnJoin` (post-await, T=100ms) to [`onPlayerJoinGameImpl` sync prelude](../src/index/player-join-leave.ts#L131) (pre-await, T=0). Closes the race window where `runRoundStartDelayHudLoop` could fight the lazy-build cohort over a freshly-deleted cache record.
+- **Phase C (S3):** [Post-await idempotent re-read](../src/index/player-join-leave.ts#L137-L144) of `perspectiveTeamByPid` — if the T=0 read returned 0, re-read after the 100ms wait. No-ops on normal joins.
+
+Bundle delta v1.470 → v1.471: **+~1KB** (try/catch wrapper + relocated delete + post-await re-read block). Typecheck clean. SP smoke clean (user-confirmed 2026-05-05).
+
+### What this does NOT cover (followup-eligible if recurs)
+
+- **Wraps for `OnGameModeStarted` and `OnPlayerDeployed`** — the other two async exports. Both have the same structural defense gap as `OnPlayerJoinGame`, but neither fires in the late-joiner pre-deploy crash window. Out of scope for v1.471 per "don't add things beyond what the task requires" guidance. Documented in plan-doc as a follow-up if the next repro shifts the symptom.
+- **Engine-side aborts triggered by `mod.*` calls inside `triggerLazyBuild`** whose try/catch wraps the JS exception but the engine asserts before JS sees it. These would NOT surface on the Phase A console line — would still be silent.
+- **Per-tick iterations** (conquest tick, capture-tickets tick, scoreboardSyncTick, tickBoundaryEnforcement) hitting a late-joiner with partially-built per-pid state and triggering an engine assert through a stale-handle write.
+
+### Verification
+
+1. Build clean (v1.471). Typecheck exit 0.
+2. **No-regression (single-player):** cold-launch, deploy, no console error, HUD builds normally. **User-confirmed clean (2026-05-05).**
+3. **Bug-fix path (multiplayer — pending):** late-join during round-start delay window (Firestorm 0–120s) at varying times across ≥5 separate matches. See [`conquest_mp_ongoing_tests.md`](./conquest_mp_ongoing_tests.md) v1.471 section for the full 8-item MP validation list.
+
+### Diagnostic instructions for next MP repro
+
+If the crash recurs:
+- **First check the runtime console for `[OnPlayerJoinGame] <error message>`.** Any such line is the **smoking gun** — it identifies the actual throw site inside `onPlayerJoinGameImpl`. Capture verbatim and file as a new instrumentation target.
+- **If the crash is silent again despite the wrapper:** the throw is happening outside the wrapper's reach. Most likely vectors: (a) engine-side C++ assert from a `mod.*` call that aborts before JS sees the exception (Phase A would NOT log this — still silent); (b) per-tick iteration hitting partially-built late-joiner state. Investigation pivots to instrumenting sync engine calls during the pre-deploy window.
+
+### Related
+- Plan: [`5.04.26_late_join_crash_defense_plan.md`](./5.04.26_late_join_crash_defense_plan.md) — full suspect inventory, phase analysis, sequencing rationale.
+- MP test list: [`conquest_mp_ongoing_tests.md`](./conquest_mp_ongoing_tests.md) v1.471 section — 8 MP validation items targeting each suspect.
+- `CQ_Bug_HardCrash_LateJoiner_ApplyConfig` (#105) — earlier related crash. **Different scenario** (pre-LIVE, requires Apply Config + late-joiner UI cache collision); resolved v1.382, mechanism deleted v1.418 alongside loading-gate rearchitecture, race not re-stressed at scale post-Ship-8.
+- `CQ_Bug_16Player_Playtest_JS_Memory_Limit` (#109) — different mechanism (heap accumulation, deterministic at scale), but similar "silent termination" surface symptom. v1.469 ruled out heap by 2-player count.

@@ -130,8 +130,15 @@ export async function OnGameModeStarted(): Promise<void> {
 }
 
 // Forwards player-join lifecycle into Conquest join handling.
+// Outer try/catch: an unhandled rejection here can kill the script context and
+// trigger an engine-side server abort (suspected v1.469 late-join crash signature).
+// Swallow + console-log so the next repro yields a grep-able line, not a silent crash.
 export async function OnPlayerJoinGame(eventPlayer: mod.Player): Promise<void> {
-    return onPlayerJoinGameImpl(eventPlayer);
+    try {
+        await onPlayerJoinGameImpl(eventPlayer);
+    } catch (err) {
+        try { console.log(`[OnPlayerJoinGame] ${(err as any)?.message ?? String(err)}`); } catch {}
+    }
 }
 
 // Forwards player-leave lifecycle into cleanup and state teardown handling.

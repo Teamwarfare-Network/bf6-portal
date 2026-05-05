@@ -260,6 +260,28 @@ In-class tiles on the supply box menu render yellow "WAIT" in place of green "RE
 - [ ] **Engineer with zero ammo charges, gate active → gate elapses while menu open.** Pass: ammo tile flips from yellow WAIT to green READY when the gate elapses, even though the tile's `enabled` flag stays false (zero charges). The new `gadgetBlocked` term in the per-tile sig is what guarantees the refresh fires.
 - [ ] **24+ players: full match plays through; no widget orphaning, no script termination, no UI flicker on the gate-elapse transition.**
 
+## Late-join crash defense (shipped v1.471, 2026-05-05)
+
+Targeted defense for the v1.469 silent server crash that occurred when a fresh 2nd-player joined during LIVE and crashed before any action. See [`design_doc/5.04.26_late_join_crash_defense_plan.md`](./5.04.26_late_join_crash_defense_plan.md) for full suspect inventory + analysis. Three orthogonal defenses bundled:
+- **Phase A (S1):** outer try/catch on async `OnPlayerJoinGame` export — converts unhandled rejection (suspected silent script-runtime kill → engine abort) into a logged `console.log` line.
+- **Phase B (S2):** `vehicleDeployTimerCache[pid]` delete relocated from inside `resetUiForPlayerOnJoin` (post-await, T=100ms) to `onPlayerJoinGameImpl` sync prelude (pre-await, T=0). Closes a race where `runRoundStartDelayHudLoop`'s 1Hz iteration could land on a late-joiner's freshly-built cache entry between engine-bind and our handler, get the entry deleted at T=100ms, then re-bound by the lazy-build cohort against engine-side widgets still tied to the deleted cache record.
+- **Phase C (S3):** post-await idempotent re-read of `perspectiveTeamByPid` — if the T=0 `safeGetTeamNumberFromPlayer` returned 0 (engine team-bind lag for late-joiners), re-read after the 100ms wait. No-ops on normal joins.
+
+**SP smoke:** clean — user verified no regressions on cold-launch single-player join. The defenses are dormant on SP (no late-join, no race window, T=0 team read succeeds). MP validation below is the actual test surface.
+
+**Repro fragility:** the original v1.469 crash repro'd once and never reproduced on retry. A negative result (no crash across N late-joins) does not prove any specific defense closed the bug — it could mean the bug was already non-deterministic. **Treat any of the three pass conditions as evidence-of-no-regression, not proof-of-fix.**
+
+- [ ] **Late-join during round-start delay window (TARGET REPRO).** With ≥1 player already in a LIVE match, a 2nd player joins during the active `roundStartAirDelay` / `roundStartAirDeployDelay` / `roundStartForwardDeployDelay` window (Firestorm: first 120s of LIVE — exactly when `runRoundStartDelayHudLoop` is iterating). Pass: late-joiner reaches the deploy screen without server crash; both players survive; no console error from the `[OnPlayerJoinGame]` wrapper. Repeat ≥5 times across separate matches at varying times within the 120s window (e.g., LIVE+10s, +30s, +60s, +90s, +110s).
+- [ ] **Late-join joining the same team as an existing player (matches v1.469 repro shape).** Pass: late-joiner spawns on the deploy screen with the correct ticket-bar perspective (their team's color on the left side of the top HUD); engage panel renders correctly when they approach an objective post-deploy.
+- [ ] **Late-join after gate elapse (LIVE+120s+).** Pass: late-joiner reaches deploy screen normally; no console error; HUD renders correctly. (Phase B's race window has closed by this point, but Phase A and Phase C are still in play; this validates no regression on the no-race path.)
+- [ ] **Phase A diagnostic-line check.** During any late-join test, watch the runtime console for `[OnPlayerJoinGame] <error message>`. **Any such line is the smoking gun** — copy it verbatim and file under `conquest_issues.md` as the throw site to instrument next. (Absence of any line across multiple late-join tests is the "no thrown rejection" signal — Phase A neither caught anything nor fired falsely.)
+- [ ] **Late-join + immediate redeploy / vehicle-spawn cycle.** Late-joiner reaches deploy screen, deploys, dies, redeploys. Pass: full first-life cycle plays without crash. (The original repro happened pre-deploy, so this stretches the test beyond the suspected window.)
+- [ ] **Phase C team-bind check (subtle — observable only if T=0 read fails).** Pass: late-joiner's HUD perspective is correct. If perspective ever flips to enemy-side coloring, perspectiveTeamByPid was never set — Phase C's re-read failed and team-bind needs further investigation. (Will not be observable on most joins because T=0 usually succeeds; this is a long-tail check.)
+- [ ] **24+ player late-join soak.** Open lobby, allow staggered joins across the first 2-3 minutes of LIVE. Pass: no silent crash; no `[OnPlayerJoinGame]` console errors; all joiners reach deploy screen.
+- [ ] **Concurrent late-join burst (≥4 simultaneous joiners during LIVE).** Pass: all complete the join handler without crash; the per-pid sync prelude's `delete vehicleDeployTimerCache[joinPid]` does not interfere across concurrent handlers (each pid is independent).
+
+**If the crash repros despite all three defenses:** the throw is happening outside the wrapper's reach. Most likely vectors: (1) engine-side C++ assert from a `mod.*` call within the lazy-build cohort that aborts before JS sees the exception (Phase A wrapper would NOT log this — it would still be silent); (2) a per-tick iteration (conquest tick, capture-tickets tick, scoreboardSyncTick, tickBoundaryEnforcement) hitting a late-joiner with partially-built per-pid state and triggering an engine assert through a stale-handle write. Investigation should pivot to instrumenting sync engine calls during the pre-deploy window.
+
 ---
 
 ## How to use this file

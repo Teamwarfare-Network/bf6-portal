@@ -33,7 +33,8 @@ function resetUiForPlayerOnJoin(player: mod.Player): void {
     deleteAllByName(wn("TwlConquestStatusDockState", pid));
     deleteAllByName(wn("TwlConquestStatusDockReady", pid));
     deleteVehicleDeployTimerHudArtifactsForPid(pid);
-    delete State.hudCache.vehicleDeployTimerCache[pid];
+    // v1.471 Phase B: vehicleDeployTimerCache delete relocated to onPlayerJoinGameImpl sync
+    // prelude (before the 100ms await) to close a race against runRoundStartDelayHudLoop.
     destroyBoundaryPromptUiForPid(pid);
 }
 
@@ -122,10 +123,25 @@ async function onPlayerJoinGameImpl(eventPlayer: mod.Player) {
             State.conquest.debug.perspectiveTeamByPid[joinPid] = joinTeamNum;
         }
         onPlayerJoinSpawnCharge(joinPid, wasDisconnected);
+        // v1.471 Phase B: pre-await cache wipe. Late-joiner's pid may have a cache entry from
+        // a tick-driven builder that fired between engine-bind and our T=0 handler. Wiping
+        // here (before the 100ms await, not inside resetUiForPlayerOnJoin after it) ensures
+        // the lazy-build cohort owns cache creation start-to-finish without racing
+        // runRoundStartDelayHudLoop's post-await write window.
+        delete State.hudCache.vehicleDeployTimerCache[joinPid];
     }
 
     await mod.Wait(0.1);
     if (!mod.IsPlayerValid(eventPlayer)) return;
+
+    // v1.471 Phase C: re-read team after the 100ms wait if T=0 read returned 0 (engine
+    // assignment lag for late-joiners). Idempotent — only writes if the early read missed.
+    if (joinPid !== undefined && State.conquest.debug.perspectiveTeamByPid[joinPid] === undefined) {
+        const lateTeamNum = safeGetTeamNumberFromPlayer(eventPlayer, 0);
+        if (lateTeamNum === TeamID.Team1 || lateTeamNum === TeamID.Team2) {
+            State.conquest.debug.perspectiveTeamByPid[joinPid] = lateTeamNum;
+        }
+    }
 
     resetUiForPlayerOnJoin(eventPlayer);
     if (joinPid !== undefined && mod.IsPlayerValid(eventPlayer)) {
