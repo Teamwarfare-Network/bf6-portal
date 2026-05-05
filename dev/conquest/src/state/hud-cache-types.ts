@@ -63,22 +63,18 @@ type ReusableTimerWidgetCacheEntry = {
 
 type VehicleDeployTimerRowCacheEntry = {
     playerPlate?: mod.UIWidget;
-    playerShadow?: mod.UIWidget;
     playerText?: mod.UIWidget;
     vehiclePlate?: mod.UIWidget;
-    vehicleShadow?: mod.UIWidget;
     vehicleText?: mod.UIWidget;
     spawnButtonBorder?: mod.UIWidget;
     spawnButtonBlur?: mod.UIWidget;
     spawnButtonFill?: mod.UIWidget;
     spawnButton?: mod.UIWidget;
-    spawnButtonTextShadow?: mod.UIWidget;
     spawnButtonText?: mod.UIWidget;
     groundButtonBorder?: mod.UIWidget;
     groundButtonBlur?: mod.UIWidget;
     groundButtonFill?: mod.UIWidget;
     groundButton?: mod.UIWidget;
-    groundButtonTextShadow?: mod.UIWidget;
     groundButtonText?: mod.UIWidget;
     spawnButtonHovered?: boolean;
     spawnButtonFocused?: boolean;
@@ -108,7 +104,6 @@ type VehicleDeployTimerHudCacheEntry = {
     closeButtonBlur?: mod.UIWidget;
     closeButtonFill?: mod.UIWidget;
     closeButton?: mod.UIWidget;
-    closeButtonTextShadow?: mod.UIWidget;
     closeButtonText?: mod.UIWidget;
     closeButtonHovered?: boolean;
     closeButtonFocused?: boolean;

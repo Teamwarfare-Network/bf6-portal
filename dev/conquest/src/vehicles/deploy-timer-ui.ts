@@ -233,26 +233,21 @@ function deleteVehicleDeployTimerHudArtifactsForPid(pid: number): void {
     deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCloseButtonBlur", pid));
     deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCloseButtonFill", pid));
     deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCloseButtonText", pid));
-    deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCloseButtonTextShadow", pid));
     deleteAllReusableTimerWidgetsByName(getVehicleDeployCloseButtonName(pid));
     for (let i = 0; i < VEHICLE_DEPLOY_TIMER_MAX_ROWS; i++) {
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerPlayerPlate", pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerPlayerText", pid, i));
-        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerPlayerTextShadow", pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerVehiclePlate", pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerVehicleText", pid, i));
-        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerVehicleTextShadow", pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerSpawnButtonBorder", pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerSpawnButtonBlur", pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerSpawnButtonFill", pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerSpawnButtonText", pid, i));
-        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerSpawnButtonTextShadow", pid, i));
         deleteAllReusableTimerWidgetsByName(getVehicleDeploySpawnButtonName(pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerGroundButtonBorder", pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerGroundButtonBlur", pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerGroundButtonFill", pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerGroundButtonText", pid, i));
-        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerGroundButtonTextShadow", pid, i));
         deleteAllReusableTimerWidgetsByName(getVehicleDeployGroundButtonName(pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCheckboxPlate", pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCheckboxHighlight", pid, i));
@@ -260,7 +255,6 @@ function deleteVehicleDeployTimerHudArtifactsForPid(pid: number): void {
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCheckboxBorderBottom", pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCheckboxBorderLeft", pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCheckboxBorderRight", pid, i));
-        deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCheckboxMarkShadow", pid, i));
         deleteAllReusableTimerWidgetsByName(wn("VehicleDeployTimerCheckboxMark", pid, i));
         purgeReusableTimerInstance(`VehicleDeployTimerSlot${i}`, pid);
     }
@@ -291,22 +285,18 @@ function isVehicleDeployTimerRowCacheUsable(row: VehicleDeployTimerRowCacheEntry
     return !!(
         row
         && row.playerPlate
-        && row.playerShadow
         && row.playerText
         && row.vehiclePlate
-        && row.vehicleShadow
         && row.vehicleText
         && row.spawnButtonBorder
         && row.spawnButtonBlur
         && row.spawnButtonFill
         && row.spawnButton
-        && row.spawnButtonTextShadow
         && row.spawnButtonText
         && row.groundButtonBorder
         && row.groundButtonBlur
         && row.groundButtonFill
         && row.groundButton
-        && row.groundButtonTextShadow
         && row.groundButtonText
         && row.timer?.root
         && row.timer?.plate
@@ -325,7 +315,6 @@ function isVehicleDeployTimerHudCacheUsable(cache: VehicleDeployTimerHudCacheEnt
         || !cache.closeButtonBlur
         || !cache.closeButtonFill
         || !cache.closeButton
-        || !cache.closeButtonTextShadow
         || !cache.closeButtonText
     ) {
         return false;
@@ -397,7 +386,6 @@ function ensureVehicleDeployCenteredText(
     parent: mod.UIWidget,
     width: number,
     height: number,
-    shadow: boolean,
     textSize: number = VEHICLE_DEPLOY_TIMER_INFO_TEXT_SIZE
 ): mod.UIWidget | undefined {
     let widget = safeFind(name);
@@ -406,10 +394,7 @@ function ensureVehicleDeployCenteredText(
             name,
             type: "Text",
             playerId: player,
-            position: [
-                shadow ? VEHICLE_DEPLOY_TIMER_INFO_TEXT_SHADOW_OFFSET_X : 0,
-                shadow ? VEHICLE_DEPLOY_TIMER_INFO_TEXT_SHADOW_OFFSET_Y : 0,
-            ],
+            position: [0, 0],
             size: [width, height],
             anchor: mod.UIAnchor.Center,
             visible: false,
@@ -417,8 +402,8 @@ function ensureVehicleDeployCenteredText(
             bgAlpha: 0,
             bgFill: mod.UIBgFill.None,
             textLabel: msg(STR_SYS_UNKNOWN_PLAYER),
-            textColor: shadow ? [0, 0, 0] : [1, 1, 1],
-            textAlpha: shadow ? VEHICLE_DEPLOY_TIMER_INFO_TEXT_SHADOW_ALPHA : 1,
+            textColor: [1, 1, 1],
+            textAlpha: 1,
             textSize,
             textAnchor: mod.UIAnchor.Center,
         });
@@ -428,14 +413,7 @@ function ensureVehicleDeployCenteredText(
     try {
         mod.SetUIWidgetParent(widget, parent);
         mod.SetUIWidgetAnchor(widget, mod.UIAnchor.Center);
-        mod.SetUIWidgetPosition(
-            widget,
-            mod.CreateVector(
-                shadow ? VEHICLE_DEPLOY_TIMER_INFO_TEXT_SHADOW_OFFSET_X : 0,
-                shadow ? VEHICLE_DEPLOY_TIMER_INFO_TEXT_SHADOW_OFFSET_Y : 0,
-                0
-            )
-        );
+        mod.SetUIWidgetPosition(widget, mod.CreateVector(0, 0, 0));
         mod.SetUIWidgetSize(widget, mod.CreateVector(width, height, 0));
         mod.SetUITextAnchor(widget, mod.UIAnchor.Center);
         mod.SetUITextSize(widget, textSize);
@@ -452,7 +430,6 @@ type VehicleDeployActionButtonWidgets = {
     blur?: mod.UIWidget;
     fill?: mod.UIWidget;
     button?: mod.UIWidget;
-    textShadow?: mod.UIWidget;
     text?: mod.UIWidget;
 };
 
@@ -475,7 +452,6 @@ function ensureVehicleDeployActionButtonWidgets(
     const borderName = wn(stem + "Border", pid, rowIndex);
     const blurName = wn(stem + "Blur", pid, rowIndex);
     const fillName = wn(stem + "Fill", pid, rowIndex);
-    const textShadowName = wn(stem + "TextShadow", pid, rowIndex);
     const textName = wn(stem + "Text", pid, rowIndex);
     const buttonPadding = VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_BORDER_PADDING;
     const buttonInnerWidth = Math.max(1, width - (buttonPadding * 2));
@@ -584,24 +560,18 @@ function ensureVehicleDeployActionButtonWidgets(
         }
     }
 
-    const textShadow = border
-        ? ensureVehicleDeployCenteredText(textShadowName, player, border, width, height, true, VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_TEXT_SIZE)
-        : undefined;
     const text = border
-        ? ensureVehicleDeployCenteredText(textName, player, border, width, height, false, VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_TEXT_SIZE)
+        ? ensureVehicleDeployCenteredText(textName, player, border, width, height, VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_TEXT_SIZE)
         : undefined;
-    safeSetUITextLabel(textShadow, msg(labelKey));
     safeSetUITextLabel(text, msg(labelKey));
     safeSetUITextColor(text, COLOR_WHITE);
-    safeSetUITextColor(textShadow, COLOR_DARK_BLACK);
     safeSetUIWidgetVisible(border, false);
     safeSetUIWidgetVisible(blur, false);
     safeSetUIWidgetVisible(fill, false);
     safeSetUIWidgetVisible(button, false);
-    safeSetUIWidgetVisible(textShadow, false);
     safeSetUIWidgetVisible(text, false);
 
-    return { border, blur, fill, button, textShadow, text };
+    return { border, blur, fill, button, text };
 }
 
 // Builds the dedicated live-terminal backplate as root-local chrome so it tracks the row lane exactly.
@@ -672,7 +642,6 @@ function ensureVehicleDeployCloseButtonWidgets(
     const borderName = wn("VehicleDeployTimerCloseButtonBorder", pid);
     const blurName = wn("VehicleDeployTimerCloseButtonBlur", pid);
     const fillName = wn("VehicleDeployTimerCloseButtonFill", pid);
-    const textShadowName = wn("VehicleDeployTimerCloseButtonTextShadow", pid);
     const textName = wn("VehicleDeployTimerCloseButtonText", pid);
     const buttonName = getVehicleDeployCloseButtonName(pid);
     const width = VEHICLE_DEPLOY_TIMER_CLOSE_BUTTON_WIDTH;
@@ -784,24 +753,18 @@ function ensureVehicleDeployCloseButtonWidgets(
         }
     }
 
-    const textShadow = border
-        ? ensureVehicleDeployCenteredText(textShadowName, player, border, width, height, true, VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_TEXT_SIZE)
-        : undefined;
     const text = border
-        ? ensureVehicleDeployCenteredText(textName, player, border, width, height, false, VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_TEXT_SIZE)
+        ? ensureVehicleDeployCenteredText(textName, player, border, width, height, VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_TEXT_SIZE)
         : undefined;
-    safeSetUITextLabel(textShadow, msg(mod.stringkeys.twl.teamSwitch.buttons.cancel));
     safeSetUITextLabel(text, msg(mod.stringkeys.twl.teamSwitch.buttons.cancel));
     safeSetUITextColor(text, COLOR_WHITE);
-    safeSetUITextColor(textShadow, COLOR_DARK_BLACK);
     safeSetUIWidgetVisible(border, false);
     safeSetUIWidgetVisible(blur, false);
     safeSetUIWidgetVisible(fill, false);
     safeSetUIWidgetVisible(button, false);
-    safeSetUIWidgetVisible(textShadow, false);
     safeSetUIWidgetVisible(text, false);
 
-    return { border, blur, fill, button, textShadow, text };
+    return { border, blur, fill, button, text };
 }
 
 function getVehicleDeployActionButtonWidgets(
@@ -814,7 +777,6 @@ function getVehicleDeployActionButtonWidgets(
             blur: row?.spawnButtonBlur,
             fill: row?.spawnButtonFill,
             button: row?.spawnButton,
-            textShadow: row?.spawnButtonTextShadow,
             text: row?.spawnButtonText,
         };
     }
@@ -823,7 +785,6 @@ function getVehicleDeployActionButtonWidgets(
         blur: row?.groundButtonBlur,
         fill: row?.groundButtonFill,
         button: row?.groundButton,
-        textShadow: row?.groundButtonTextShadow,
         text: row?.groundButtonText,
     };
 }
@@ -842,7 +803,6 @@ function setVehicleDeployCloseButtonVisible(
     safeSetUIWidgetVisible(cache.closeButtonBlur, false);
     safeSetUIWidgetVisible(cache.closeButtonFill, false);
     safeSetUIWidgetVisible(cache.closeButton, visible);
-    safeSetUIWidgetVisible(cache.closeButtonTextShadow, visible);
     safeSetUIWidgetVisible(cache.closeButtonText, visible);
     cache.lastCloseButtonVisible = visible;
 }
@@ -859,7 +819,6 @@ function applyVehicleDeployActionButtonVisualState(
     safeSetUIWidgetVisible(widgets.blur, false);
     safeSetUIWidgetVisible(widgets.fill, false);
     safeSetUITextColor(widgets.text, COLOR_WHITE);
-    safeSetUITextColor(widgets.textShadow, COLOR_DARK_BLACK);
     return visualState;
 }
 
@@ -876,7 +835,6 @@ function applyVehicleDeployCloseButtonVisualState(
             blur: cache.closeButtonBlur,
             fill: cache.closeButtonFill,
             button: cache.closeButton,
-            textShadow: cache.closeButtonTextShadow,
             text: cache.closeButtonText,
         },
         active,
@@ -959,7 +917,6 @@ function layoutVehicleDeployRowForState(
             mod.SetUIWidgetPosition(row.playerPlate, mod.CreateVector(leftX, mod.YComponentOf(mod.GetUIWidgetPosition(row.playerPlate)), 0));
             mod.SetUIWidgetSize(row.playerPlate, mod.CreateVector(Math.max(1, leftWidth), VEHICLE_DEPLOY_TIMER_INFO_PLATE_HEIGHT, 0));
         }
-        if (row.playerShadow) mod.SetUIWidgetSize(row.playerShadow, mod.CreateVector(Math.max(1, leftWidth), VEHICLE_DEPLOY_TIMER_INFO_PLATE_HEIGHT, 0));
         if (row.playerText) mod.SetUIWidgetSize(row.playerText, mod.CreateVector(Math.max(1, leftWidth), VEHICLE_DEPLOY_TIMER_INFO_PLATE_HEIGHT, 0));
         if (row.spawnButtonBorder) {
             mod.SetUIWidgetPosition(row.spawnButtonBorder, mod.CreateVector(airButtonX, mod.YComponentOf(mod.GetUIWidgetPosition(row.spawnButtonBorder)), 0));
@@ -977,7 +934,6 @@ function layoutVehicleDeployRowForState(
                 )
             );
         }
-        if (row.spawnButtonTextShadow) mod.SetUIWidgetSize(row.spawnButtonTextShadow, mod.CreateVector(VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_WIDTH, VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_HEIGHT, 0));
         if (row.spawnButtonText) mod.SetUIWidgetSize(row.spawnButtonText, mod.CreateVector(VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_WIDTH, VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_HEIGHT, 0));
         if (row.groundButtonBorder) {
             mod.SetUIWidgetPosition(row.groundButtonBorder, mod.CreateVector(groundButtonX, mod.YComponentOf(mod.GetUIWidgetPosition(row.groundButtonBorder)), 0));
@@ -995,13 +951,11 @@ function layoutVehicleDeployRowForState(
                 )
             );
         }
-        if (row.groundButtonTextShadow) mod.SetUIWidgetSize(row.groundButtonTextShadow, mod.CreateVector(VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_WIDTH, VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_HEIGHT, 0));
         if (row.groundButtonText) mod.SetUIWidgetSize(row.groundButtonText, mod.CreateVector(VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_WIDTH, VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_HEIGHT, 0));
         if (row.vehiclePlate) {
             mod.SetUIWidgetPosition(row.vehiclePlate, mod.CreateVector(vehicleX, mod.YComponentOf(mod.GetUIWidgetPosition(row.vehiclePlate)), 0));
             mod.SetUIWidgetSize(row.vehiclePlate, mod.CreateVector(vehicleWidth, VEHICLE_DEPLOY_TIMER_INFO_PLATE_HEIGHT, 0));
         }
-        if (row.vehicleShadow) mod.SetUIWidgetSize(row.vehicleShadow, mod.CreateVector(vehicleWidth, VEHICLE_DEPLOY_TIMER_INFO_PLATE_HEIGHT, 0));
         if (row.vehicleText) mod.SetUIWidgetSize(row.vehicleText, mod.CreateVector(vehicleWidth, VEHICLE_DEPLOY_TIMER_INFO_PLATE_HEIGHT, 0));
         if (row.timer?.root) {
             mod.SetUIWidgetPosition(row.timer.root, mod.CreateVector(timerX, mod.YComponentOf(mod.GetUIWidgetPosition(row.timer.root)), 0));
@@ -1034,7 +988,6 @@ function setVehicleDeployTimerNameVisible(row: VehicleDeployTimerRowCacheEntry |
     if (!row) return;
     if (row.lastPlayerNameVisible === visible) return;
     safeSetUIWidgetVisible(row.playerPlate, visible);
-    safeSetUIWidgetVisible(row.playerShadow, visible);
     safeSetUIWidgetVisible(row.playerText, visible);
     row.lastPlayerNameVisible = visible;
 }
@@ -1055,7 +1008,6 @@ function setVehicleDeployActionButtonVisible(
     safeSetUIWidgetVisible(widgets.blur, false);
     safeSetUIWidgetVisible(widgets.fill, false);
     safeSetUIWidgetVisible(widgets.button, visible);
-    safeSetUIWidgetVisible(widgets.textShadow, visible);
     safeSetUIWidgetVisible(widgets.text, visible);
     if (mode === "air") {
         row.lastSpawnButtonVisible = visible;
@@ -1157,7 +1109,6 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
         closeButtonBlur: priorCache?.closeButtonBlur,
         closeButtonFill: priorCache?.closeButtonFill,
         closeButton: priorCache?.closeButton,
-        closeButtonTextShadow: priorCache?.closeButtonTextShadow,
         closeButtonText: priorCache?.closeButtonText,
         closeButtonHovered: priorCache?.closeButtonHovered ?? false,
         closeButtonFocused: priorCache?.closeButtonFocused ?? false,
@@ -1197,7 +1148,6 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
     cache.closeButtonBlur = closeButtonWidgets.blur;
     cache.closeButtonFill = closeButtonWidgets.fill;
     cache.closeButton = closeButtonWidgets.button;
-    cache.closeButtonTextShadow = closeButtonWidgets.textShadow;
     cache.closeButtonText = closeButtonWidgets.text;
     applyVehicleDeployCloseButtonVisualState(
         cache,
@@ -1220,24 +1170,13 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
             CLOCK_PLATE_ALPHA,
             COLOR_GRAY_DARK
         );
-        const playerShadow = playerPlate
-            ? ensureVehicleDeployCenteredText(
-                wn("VehicleDeployTimerPlayerTextShadow", pid, i),
-                player,
-                playerPlate,
-                VEHICLE_DEPLOY_TIMER_PLAYER_PLATE_WIDTH,
-                VEHICLE_DEPLOY_TIMER_INFO_PLATE_HEIGHT,
-                true
-            )
-            : undefined;
         const playerText = playerPlate
             ? ensureVehicleDeployCenteredText(
                 wn("VehicleDeployTimerPlayerText", pid, i),
                 player,
                 playerPlate,
                 VEHICLE_DEPLOY_TIMER_PLAYER_PLATE_WIDTH,
-                VEHICLE_DEPLOY_TIMER_INFO_PLATE_HEIGHT,
-                false
+                VEHICLE_DEPLOY_TIMER_INFO_PLATE_HEIGHT
             )
             : undefined;
 
@@ -1253,24 +1192,13 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
             CLOCK_PLATE_ALPHA,
             COLOR_GRAY_DARK
         );
-        const vehicleShadow = vehiclePlate
-            ? ensureVehicleDeployCenteredText(
-                wn("VehicleDeployTimerVehicleTextShadow", pid, i),
-                player,
-                vehiclePlate,
-                VEHICLE_DEPLOY_TIMER_VEHICLE_PLATE_WIDTH,
-                VEHICLE_DEPLOY_TIMER_INFO_PLATE_HEIGHT,
-                true
-            )
-            : undefined;
         const vehicleText = vehiclePlate
             ? ensureVehicleDeployCenteredText(
                 wn("VehicleDeployTimerVehicleText", pid, i),
                 player,
                 vehiclePlate,
                 VEHICLE_DEPLOY_TIMER_VEHICLE_PLATE_WIDTH,
-                VEHICLE_DEPLOY_TIMER_INFO_PLATE_HEIGHT,
-                false
+                VEHICLE_DEPLOY_TIMER_INFO_PLATE_HEIGHT
             )
             : undefined;
 
@@ -1334,22 +1262,18 @@ function ensureVehicleDeployTimerHudForPlayer(player: mod.Player): VehicleDeploy
 
         cache.rows[i] = {
             playerPlate,
-            playerShadow,
             playerText,
             vehiclePlate,
-            vehicleShadow,
             vehicleText,
             spawnButtonBorder: spawnButtonWidgets.border,
             spawnButtonBlur: spawnButtonWidgets.blur,
             spawnButtonFill: spawnButtonWidgets.fill,
             spawnButton: spawnButtonWidgets.button,
-            spawnButtonTextShadow: spawnButtonWidgets.textShadow,
             spawnButtonText: spawnButtonWidgets.text,
             groundButtonBorder: groundButtonWidgets.border,
             groundButtonBlur: groundButtonWidgets.blur,
             groundButtonFill: groundButtonWidgets.fill,
             groundButton: groundButtonWidgets.button,
-            groundButtonTextShadow: groundButtonWidgets.textShadow,
             groundButtonText: groundButtonWidgets.text,
             spawnButtonHovered: priorCache?.rows[i]?.spawnButtonHovered ?? false,
             spawnButtonFocused: priorCache?.rows[i]?.spawnButtonFocused ?? false,
@@ -1409,26 +1333,21 @@ function setVehicleDeployTimerRowVisible(row: VehicleDeployTimerRowCacheEntry | 
     if (row.lastVisibleState === visible) return;
     if (visible) {
         safeSetUIWidgetVisible(row.vehiclePlate, true);
-        safeSetUIWidgetVisible(row.vehicleShadow, true);
         safeSetUIWidgetVisible(row.vehicleText, true);
     } else {
         safeSetUIWidgetVisible(row.vehiclePlate, false);
-        safeSetUIWidgetVisible(row.vehicleShadow, false);
         safeSetUIWidgetVisible(row.vehicleText, false);
         safeSetUIWidgetVisible(row.playerPlate, false);
-        safeSetUIWidgetVisible(row.playerShadow, false);
         safeSetUIWidgetVisible(row.playerText, false);
         safeSetUIWidgetVisible(row.spawnButtonBorder, false);
         safeSetUIWidgetVisible(row.spawnButtonBlur, false);
         safeSetUIWidgetVisible(row.spawnButtonFill, false);
         safeSetUIWidgetVisible(row.spawnButton, false);
-        safeSetUIWidgetVisible(row.spawnButtonTextShadow, false);
         safeSetUIWidgetVisible(row.spawnButtonText, false);
         safeSetUIWidgetVisible(row.groundButtonBorder, false);
         safeSetUIWidgetVisible(row.groundButtonBlur, false);
         safeSetUIWidgetVisible(row.groundButtonFill, false);
         safeSetUIWidgetVisible(row.groundButton, false);
-        safeSetUIWidgetVisible(row.groundButtonTextShadow, false);
         safeSetUIWidgetVisible(row.groundButtonText, false);
         setReusableTimerVisible(row.timer, false);
         row.lastPlayerNameVisible = false;
@@ -1537,20 +1456,14 @@ function renderVehicleDeployTimerRow(
     const spawnLabel = isAirType
         ? mod.stringkeys.twl.ui.airDeploy
         : mod.stringkeys.twl.ui.forwardDeploy;
-    safeSetUITextLabel(row.vehicleShadow, msg(getVehicleDeployTimerLabelKey(slot.vehicleType)));
     safeSetUITextLabel(row.vehicleText, msg(getVehicleDeployTimerLabelKey(slot.vehicleType)));
     safeSetUITextColor(row.vehicleText, COLOR_WHITE);
-    safeSetUITextLabel(row.spawnButtonTextShadow, msg(spawnLabel));
     safeSetUITextLabel(row.spawnButtonText, msg(spawnLabel));
-    safeSetUITextLabel(row.groundButtonTextShadow, msg(mod.stringkeys.twl.ui.hqDeploy));
     safeSetUITextLabel(row.groundButtonText, msg(mod.stringkeys.twl.ui.hqDeploy));
     safeSetUITextColor(row.spawnButtonText, COLOR_WHITE);
-    safeSetUITextColor(row.spawnButtonTextShadow, COLOR_DARK_BLACK);
     safeSetUITextColor(row.groundButtonText, COLOR_WHITE);
-    safeSetUITextColor(row.groundButtonTextShadow, COLOR_DARK_BLACK);
 
     if (showPlayerName && activeOwnerMessage) {
-        safeSetUITextLabel(row.playerShadow, activeOwnerMessage);
         safeSetUITextLabel(row.playerText, activeOwnerMessage);
         safeSetUITextColor(row.playerText, COLOR_WHITE);
     }

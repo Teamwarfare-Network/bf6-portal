@@ -403,24 +403,217 @@ The live menu reuses the deploy-screen HUD family rather than building a separat
 ### 4.4 UI tree shape — side-by-side
 
 ```
-BillDukes                       BountyHunter                Conquest
+BillDukes                       BountyHunter                Conquest (post-v1.463)
 ─────────                       ────────────                ────────
 
 UIContainer (per-player)        (none in BountyHunter       VehicleDeployTimerHudRoot (per-pid)
   TopCenter (0, 170)             — vehicle UI absent;        ├── Live panel border/blur/fill
   AboveGameUI                    spawn UI delegated          ├── Close button {5 sub-widgets}
   └── [B] [B] [B] [B] [B]        to FFASpawnPoints           └── for each row 0..3:
-       ↑ one button per          / FFADropIns utility           ├── Player plate + text {3}
-       discovered vehicle        — see §4.2)                    ├── Vehicle plate + text {3}
-       3-state coloring                                         ├── Spawn button {5}
-       50×50 px, 6 px gap                                       ├── Ground button {5}
-                                                                └── Air/Forward button {5}
+       ↑ one "button"            / FFADropIns utility           ├── Player plate + text {2}
+       per discovered            — see §4.2)                    ├── Vehicle plate + text {2}
+       vehicle, each              ↑                             ├── Spawn button {5}
+       composed of 3                                            └── Ground button {5}
+       widgets (see §4.5)
 ```
 
-Approximate widget count per player (vehicle-deploy surface only):
-- BillDukes: 1 container + N buttons (N = team's discovered vehicles, ~3–10)
+Approximate widget count per player (vehicle-deploy surface only, post-v1.463):
+- BillDukes: 1 panel container + N buttons × 3 widgets each (N = team's discovered vehicles, ~3–10)
 - BountyHunter: 0
-- Conquest: ~10 root widgets + ~17 widgets × 4 rows ≈ 78 widgets per player
+- Conquest: ~9 root widgets (HudRoot, live-panel ×3, close button ×5) + ~14 widgets × 4 rows for plate/text/two-buttons + ~7 widgets × 4 rows for the per-row reusable timer ≈ ~93 widgets per player
+
+### 4.5 Vehicle-spawn button architecture — precise comparison (BillDukes vs Conquest, post-v1.463)
+
+This section is the focused architectural diff between the two projects' "click here to spawn into a vehicle" buttons. BountyHunter has no comparable surface (vehicles are walk-up). Both projects ultimately call `mod.AddUIButton` for the interactive widget, but the surrounding tree, color-state policy, and click-routing model differ substantially.
+
+#### 4.5.1 Per-button widget tree
+
+**BillDukes — `UI.UITextButton` produces 3 widgets per button** ([VehicleUIUniversal.portal (3).ts:1199-1349](../reference_implementations/reference_BillDukes_VehicleDeploy/VehicleUIUniversal.portal%20(3).ts#L1199-L1349)):
+
+```
+UIContentButton (this is the outermost element returned to caller)
+  ├── mod.AddUIContainer  ← invisible wrapper (bgAlpha=0, bgFill=None), holds button + text
+  ├── mod.AddUIButton     ← the interactive widget; bgFill = Solid; carries 5 colour states
+  └── mod.AddUIText       ← the label; sized to (width − padding*2, height − padding*2)
+```
+
+The container, button, and text widgets are siblings under the row panel (`UIContainer`). The container holds the rectangular footprint; the button and text overlay it at the same coordinates with padding subtracted.
+
+Built declaratively from a single `UI.UITextButton.Params` block ([3023-3042](../reference_implementations/reference_BillDukes_VehicleDeploy/VehicleUIUniversal.portal%20(3).ts#L3023-L3042)):
+
+```ts
+childrenParams.push({
+    type: UI.UITextButton,
+    x: btnX, y: btnY,
+    width: BUTTON_SIZE, height: BUTTON_SIZE,
+    anchor: mod.UIAnchor.TopCenter,
+    visible: true, enabled: true,
+    baseColor:    mod.CreateVector(0.0, 0.4, 0.9),
+    hoverColor:   mod.CreateVector(0.5, 0.85, 1.0),
+    pressedColor: mod.CreateVector(0.3, 1.0, 0.5),
+    focusedColor: mod.CreateVector(0.5, 0.85, 1.0),
+    bgColor: mod.CreateVector(0.0, 0.3, 0.4), bgAlpha: 0.9,
+    onClick: async (clickPlayer) => { handleVehicleClick(clickPlayer, ...); },
+    message: mod.Message("{0}", vehicleLabel),
+    textSize: 9, textColor: UI.COLORS.WHITE, textAlpha: 1.0,
+});
+```
+
+The `childrenParams` array is then passed to `new UI.UIContainer({ ..., childrenParams })`, which constructs the panel + every button + every label in one declarative call.
+
+**Conquest — `ensureVehicleDeployActionButtonWidgets` produces 5 widgets per button** ([deploy-timer-ui.ts:436-577](../src/vehicles/deploy-timer-ui.ts#L436-L577)):
+
+```
+Border container (mod.AddUIContainer, bgFill = OutlineThin, bgColor = COLOR_WHITE)
+  ├── Blur container   (mod.AddUIContainer, bgFill = Blur,         child of Border, ALWAYS hidden)
+  ├── Fill container   (mod.AddUIContainer, bgFill = GradientTop,  child of Border, ALWAYS hidden)
+  ├── mod.AddUIButton  (interactive; bgFill = Solid; carries 5 colour states; child of Border)
+  └── mod.AddUIText    (label; child of Border, positioned at full width × height)
+```
+
+Built imperatively across ~140 lines of helper code. Each widget is created via either `safeParseUI` (for plate/text widgets) or a direct `mod.AddUIButton(...)` call (for the interactive widget), then re-parented and reconfigured via individual `mod.SetUIWidgetParent`/`mod.SetUIWidgetPosition`/`mod.SetUIWidgetSize` calls. Excerpt of the button-creation block:
+
+```ts
+mod.AddUIButton(
+    baseName,                                           // pid+rowIndex-namespaced name
+    mod.CreateVector(buttonPadding, buttonPadding, 0),
+    mod.CreateVector(buttonInnerWidth, buttonInnerHeight, 0),
+    mod.UIAnchor.Center,
+    border,                                             // parent: the Border container
+    true, 0,
+    COLOR_GRAY_DARK, 1, mod.UIBgFill.Solid,
+    true,
+    COLOR_GRAY_DARK, 1,                                 // base
+    COLOR_GRAY_DARK, 1,                                 // disabled
+    COLOR_GREEN,     1,                                 // pressed
+    COLOR_BLUE,      1,                                 // hover
+    COLOR_BLUE,      1,                                 // focused
+    mod.UIDepth.AboveGameUI,
+    player
+);
+// then: SetUIWidgetParent + EnableUIButtonEvent×6 + SetUIButtonColor* + SetUIButtonAlpha*
+```
+
+#### 4.5.2 Side-by-side widget count and roles
+
+| Role | BillDukes | Conquest |
+|---|---|---|
+| Outline / border around the button | (none — the button widget itself is the visible rectangle) | **Border** (`OutlineThin`, white outline) — this is the primary visible chrome |
+| Glassy blur layer behind the button | (none) | **Blur** (`UIBgFill.Blur`) — created, parented, but hidden at every visibility-toggle site |
+| Background fill (gradient / solid) | Button widget's own `bgColor`/`bgFill = Solid` | **Fill** (`UIBgFill.GradientTop`) — created but hidden at every visibility-toggle site |
+| Interactive surface (`mod.AddUIButton`) | **Button** — owns `bgColor` AND the 5 color states; click target | **Button** — color states only; sits on top of the Fill (which is hidden anyway, so visually it's directly on the Border) |
+| Text label | **Text** — sibling of button inside the wrapper container | **Text** — sibling of button inside Border |
+| Total widgets per button | **3** | **5** |
+
+Two of Conquest's five widgets per button (**Blur and Fill**) are inert: they are constructed once at HUD warm-up, parented into the Border, but every visibility-toggle path sets them to `false` ([deploy-timer-ui.ts:803-804, 819-820, 1008-1009, 1343-1344, 1348-1349](../src/vehicles/deploy-timer-ui.ts#L803-L820)). Grep confirms no path makes them visible. They are scaffolding from an earlier visual style that is never rendered in the current build.
+
+The visible-on-screen widget count is therefore:
+- BillDukes: 3 (Container, Button, Text)
+- Conquest: 3 effective (Border, Button, Text) — Blur+Fill exist in memory but never render
+
+#### 4.5.3 Color-state mechanism
+
+| Aspect | BillDukes | Conquest |
+|---|---|---|
+| Engine-driven button color states | Yes — `baseColor`/`hoverColor`/`pressedColor`/`focusedColor`/`disabledColor` set on the `mod.AddUIButton` widget at construction. Engine swaps colors on input transitions. | Yes — same `mod.SetUIButtonColor*` / `mod.SetUIButtonAlpha*` calls. Engine swaps on input transitions. |
+| Userland tracking of hover/press/focus | None. Engine handles all visual state internally. The userland never reads or writes hover state. | Yes. `mod.EnableUIButtonEvent(button, HoverIn/HoverOut/FocusIn/FocusOut/ButtonDown/ButtonUp, true)` enables 6 event types ([deploy-timer-ui.ts:540-545](../src/vehicles/deploy-timer-ui.ts#L540-L545)). Per-row cache fields `spawnButtonHovered/Focused/Pressed` and `groundButtonHovered/Focused/Pressed` track state ([state/hud-cache-types.ts:79-86](../src/state/hud-cache-types.ts#L79-L86)). |
+| Sibling-widget visual feedback | None. The button widget is the only thing that changes color. | The **Border**'s `bgColor` is repainted (`COLOR_DARK_BLACK` when active/pressed, `COLOR_WHITE` otherwise) on every hover/press transition via [`applyVehicleDeployActionButtonVisualState`](../src/vehicles/deploy-timer-ui.ts#L831-L845). One sibling widget receives a `mod.SetUIWidgetBgColor` call per state change. |
+| Cached "last visual state" to skip redundant writes | None. | Yes. `lastSpawnButtonVisualState` / `lastGroundButtonVisualState` ([state/hud-cache-types.ts:88-89](../src/state/hud-cache-types.ts#L88-L89)) skip redundant Border repaints when state is unchanged. |
+
+#### 4.5.4 Click routing
+
+**BillDukes — closure callback registered with the engine button** ([VehicleUIUniversal.portal (3).ts:1066-1128](../reference_implementations/reference_BillDukes_VehicleDeploy/VehicleUIUniversal.portal%20(3).ts#L1066-L1128)):
+
+```ts
+// inside class UIButton constructor:
+this._onClick = params.onClick;
+this._unregisterAsButton = registerButton(this._name, this);
+```
+
+Each `UIButton` element is added to a name → instance registry. The top-level `OnPlayerUIButtonEvent` handler (registered as a Portal event) looks up the widget by name, retrieves the `UIButton` instance, and invokes its `_onClick` callback with the clicking player. The `onClick` lambda has direct closure capture of the `vehicleLabel`, `spawnerId`, `vehicleType`, etc.
+
+**Conquest — pattern-matched dispatch through a global event handler chain** ([vehicles/deploy-timer-ui.ts:1581-1843](../src/vehicles/deploy-timer-ui.ts#L1581-L1843)):
+
+```
+mod.OnPlayerUIButtonEvent (Portal callback)
+  → onPlayerUIButtonEventImpl (player-loop-inputs.ts:15)
+    → teamSwitchButtonEvent (interaction/ui-events.ts:4)
+      → tryHandleVehicleDeployTimerButtonEvent (deploy-timer-ui.ts:1581)
+        ├── if widgetName === getVehicleDeployCloseButtonName(pid) → close path
+        ├── parse rowIndex by stripping the prefix off widgetName
+        ├── decide mode = "ground" vs "air" by comparing widgetName.startsWith(...)
+        ├── on FocusIn/FocusOut/HoverIn/HoverOut/ButtonDown → update cache flags + repaint Border
+        └── on ButtonUp → call requestHqVehicleSpawn / requestForwardVehicleSpawn / requestAirVehicleSpawn
+```
+
+There is no per-button callback registry. Routing is by **widget-name pattern matching**: `getVehicleDeploySpawnButtonName(pid, rowIndex)` returns `${UI_VEHICLE_DEPLOY_TIMER_SPAWN_BUTTON_ID}${pid}_${rowIndex}` ([deploy-timer-ui.ts:78-84](../src/vehicles/deploy-timer-ui.ts#L78-L84)). The handler reverses this to recover `pid` and `rowIndex` from the event widget's name string.
+
+| Aspect | BillDukes | Conquest |
+|---|---|---|
+| Event-to-handler binding | Closure callback captured at construction | Widget-name string pattern matched at event time |
+| Handler scope | Per-button instance method | One global handler per UI module, branched by widget-name prefix |
+| Data passed to handler | Captured closure variables (`spawnerId`, `vehicleType`, `matchTypes`, `vehicleLabel`) | `pid` + `rowIndex` extracted from name string; slot data re-resolved via `getVehicleDeployVisibleSlotsForPlayer(player)[rowIndex]` |
+| Hover/Focus/Press events consumed by handler | No — only `ButtonUp` (treated as click). Visual state is engine-internal. | Yes — all 6 event types consumed; userland mirrors hover/focus/press in cache and repaints Border accordingly |
+
+#### 4.5.5 Construction model
+
+| Aspect | BillDukes | Conquest |
+|---|---|---|
+| API style | Declarative (TypeScript class wrappers around `mod.Add*` calls) | Imperative (`mod.Add*` + `safeFind` + `mod.SetUIWidgetParent` + per-property setters) |
+| Idempotency check | None — class instances created fresh; `delete()` cleans up children recursively | `safeFind(name)` first; if widget already exists, skip creation and re-parent/resize. Allows hot-rebuild without leaks |
+| Parent attachment | Constructor takes `parent` param; widget added directly under `parent.uiWidget` via `mod.AddUI*(... parent.uiWidget ...)` | Two-stage: widget created under `cache.root`, then explicitly re-parented via `mod.SetUIWidgetParent(button, border)` |
+| Child ordering / z-layer | Order in `childrenParams` array determines render stack | Per-widget `mod.SetUIWidgetDepth(widget, mod.UIDepth.AboveGameUI)` + parent-child nesting; no array ordering |
+| Receiver (per-player UI scope) | Set at panel construction (`receiver: player`); inherited by every child through `getReceiver` | Set per-widget at every `mod.Add*` call site — `player` is the last argument to each call |
+| Padding model | `padding` param on `UIContentButton`; inner widgets sized to `width − padding*2`, `height − padding*2` | Two stacked padding constants: `BORDER_PADDING = 1` (Border outline thickness), `PADDING_BASE = 1` (inset between Border and Button/Blur/Fill). Each child explicitly positioned at `(1, 1)` with size `width-2 × height-2` |
+
+#### 4.5.6 Panel/parent relationship
+
+**BillDukes** — buttons share one parent `UIContainer` per player ([VehicleUIUniversal.portal (3).ts:3045-3054](../reference_implementations/reference_BillDukes_VehicleDeploy/VehicleUIUniversal.portal%20(3).ts#L3045-L3054)):
+
+```ts
+const panel = new UI.UIContainer({
+    x: UI_PANEL_X, y: UI_PANEL_Y,
+    width: 0, height: 0,
+    anchor: UI_PANEL_ANCHOR,
+    visible: false, bgAlpha: 0.0,
+    depth: mod.UIDepth.AboveGameUI,
+    receiver: player,
+    uiInputModeWhenVisible: true,
+    childrenParams,                  // ← all N button params bundled here
+});
+```
+
+One `panel.show()` / `panel.hide()` reveals/hides every button at once.
+
+**Conquest** — each button has its own Border subtree, all parented to `cache.root` ([deploy-timer-ui.ts:1238-1262](../src/vehicles/deploy-timer-ui.ts#L1238-L1262)):
+
+```
+cache.root (VehicleDeployTimerHudRoot)
+  ├── playerPlate ── playerText
+  ├── vehiclePlate ── vehicleText
+  ├── groundButtonBorder ── {Blur, Fill, Button, Text}    ← independent button subtree
+  └── spawnButtonBorder  ── {Blur, Fill, Button, Text}    ← independent button subtree
+```
+
+Visibility toggling is per-widget via `safeSetUIWidgetVisible(widget, false/true)` — there is no parent-cascade. `setVehicleDeployActionButtonVisible` walks the Border + Blur(stays false) + Fill(stays false) + Button + Text widgets individually ([deploy-timer-ui.ts:1004-1011](../src/vehicles/deploy-timer-ui.ts#L1004-L1011)).
+
+#### 4.5.7 Bottom-line architectural diff
+
+| Dimension | BillDukes | Conquest |
+|---|---|---|
+| Widgets per button (constructed) | 3 | 5 |
+| Widgets per button (visibly rendered) | 3 | 3 (Blur + Fill always hidden) |
+| Click routing | Closure callback in registry | Widget-name pattern matched in global dispatcher |
+| Hover/focus/press | Engine-internal; userland inert | Userland mirrors all 6 events into per-row cache + repaints Border |
+| Construction style | Declarative tree (`childrenParams`) | Imperative per-widget `mod.Add*` + `SetUIWidgetParent` chain |
+| Idempotency | New instance per build | `safeFind`-then-reuse |
+| Parent panel | Single `UIContainer`; one `show()` reveals all | Independent Border subtrees parented to `cache.root`; per-widget visibility |
+| Visibility cascade | Yes — children inherit via container | No — each widget toggled separately |
+| State caching | None (engine handles everything) | Per-row "last visual state" + hovered/focused/pressed flags |
+| Padding model | Single `padding` param on the wrapper | Stacked: `BORDER_PADDING` outside + `PADDING_BASE` inside |
+| Code volume per button | One declarative params block (~20 lines) | One imperative helper (~140 lines) plus shared visual-state helpers |
+
+What this means in practice: BillDukes' approach pushes the most work onto the engine — declare the tree, register a callback, let the engine handle hover/press/focus visuals. Conquest's approach gives userland precise control over the Border outline color (which the engine cannot drive on its own) at the cost of a wider widget tree, more cache state, and a name-pattern-matching dispatcher in place of per-button callbacks.
 
 ---
 
