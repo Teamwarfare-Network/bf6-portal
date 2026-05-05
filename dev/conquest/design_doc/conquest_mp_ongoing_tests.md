@@ -205,6 +205,39 @@ See [`design_doc/5.02.26_conquest_ready_tuning_plan.md`](./5.02.26_conquest_read
 - [ ] **24+ player full match: no script termination, no orphan ready-state inconsistencies.** Pass: cold launch → ready up → match live → players die/respawn during pre-live (e.g. boundary kills) → all surviving ready players still show READY → match starts → live play normal → victory. No regression in adjacent UI surfaces (Player Ready Up Panel, full Ready Dialog, ready-up HUD count).
 - [ ] **Bot disconnect mid-match.** Pass: leaving cleanup still removes the bot's ready state cleanly. No stuck "X is still ready" entry on remaining players' rosters.
 
+## Vehicle Deploy Console Fix — Bug #113 (shipped v1.465 + v1.466, 2026-05-04)
+
+Two-ship fix for `CQ_Bug_Console_DeployScreen_Vehicle_Buttons_Unresponsive (#113)`. Plans: [`5.04.26_conquest_vehicle_deploy_buttondown_fix_plan.md`](./5.04.26_conquest_vehicle_deploy_buttondown_fix_plan.md), [`5.04.26_conquest_vehicle_deploy_block_engine_deploy_plan.md`](./5.04.26_conquest_vehicle_deploy_block_engine_deploy_plan.md). v1.465 moved the Vehicle Deploy click action to fire on the first primary-click event (`ButtonDown` or `ButtonUp`) via `tryConsumeUIButtonPrimaryClickEvent` dedupe. v1.466 added a per-player `mod.EnablePlayerDeploy(player, false)` block during the HQ-claim window so the engine's deploy-on-foot action can't strand the player on foot before the vehicle binds. Per-player only — does NOT touch the global `mod.EnableAllPlayerDeploy` countdown gate.
+
+- [ ] **Console: deploy-screen Vehicle Deploy SPAWN works (the actual bug fix).** Console controller player navigates to a Vehicle Deploy row on the deploy screen, presses A / X. Pass: player stays on deploy screen ~0.5–3s while vehicle spawns, then lands directly in the vehicle. NO on-foot flash. NO orphan vehicle at HQ. NO 10s timeout. Tested across all three deploy modes (HQ Deploy, Forward Deploy, Air Deploy).
+- [ ] **PC mouse regression check.** Same flow on PC mouse — should be behaviorally identical to v1.464 (no observable difference; click registers, vehicle spawns, player seats).
+- [ ] **🚨 PER-PLAYER ISOLATION (CRITICAL).** Two players A and B at deploy screen simultaneously. Player A clicks a Vehicle Deploy button. Player B presses their controller A / spacebar. **Player B MUST be able to deploy normally on foot.** If Player B is blocked, the per-player isolation is broken — the fix is wrong and must be reverted immediately. This is the core safety check that the new `mod.EnablePlayerDeploy(player, false)` block is correctly per-player and not affecting other players.
+- [ ] **3+ players concurrent click.** Three+ players click different Vehicle Deploy slots simultaneously. Each lands in their respective vehicle without interference. No cross-pid debounce or block leakage.
+- [ ] **Disconnect mid-claim + pid recycling.** Player A clicks Vehicle Deploy, then disconnects mid-claim (within the ~3s spawn window). Player B reconnects and is assigned the same recycled pid. Player B MUST be able to deploy normally — the defensive `setVehicleDeployEngineDeployBlockForPid(pid, false)` in `cleanupHudForPid` clears any stale block on disconnect.
+- [ ] **Rapid double-click dedupe.** Rapid-press the same Vehicle Deploy button (5+ clicks in 1s). Pass: only one spawn request fires per debounce window (0.12s); no double-fire; no orphan vehicle.
+- [ ] **Click-then-different-button.** Click Spawn on row 1, then immediately click Ground on row 2. Pass: both register; no cross-debounce (tracker keyed by widget name, not just pid).
+- [ ] **Live-terminal source path unchanged.** Alive on-foot player walks to a deploy terminal, opens the menu, clicks SPAWN. Pass: existing UndeployPlayer → wait → DeployPlayer → ForcePlayerToSeat sequence runs as before. on_foot source bypasses the new deploy block (only deploy_menu source applies it).
+- [ ] **Claim timeout cleanup re-enables deploy.** Player clicks, but the spawn fails to bind within 10s (e.g. dispatch retry exhausted). Pass: claim times out, vehicle (if spawned) is sunk, player's deploy is re-enabled, player can immediately try again or deploy on foot.
+- [ ] **Match restart with active claim (edge case).** While a player has a pending claim, admin force-restarts the match. Pass: the player can still deploy normally on the next round. If they can't (stuck on deploy screen with no buttons working), this is the documented edge case from the v1.466 plan §Risk #2 — disconnect/reconnect to clear, and a follow-up fix will be planned to make the timeout always run the enable regardless of early-return paths.
+- [ ] **24+ player full match validation.** Multiple console players hitting Vehicle Deploy buttons throughout a match. Pass: no script termination, no orphan vehicles accumulating at HQ, no players permanently stuck on deploy screen.
+- [ ] **Mixed PC + console session.** Both input modalities producing identical successful seat behavior. PC mouse and console controller paths converge correctly.
+
+---
+
+## Vehicle Deploy Heap Reclaim — Shadows + Inert Widgets (shipped v1.463 + v1.464, 2026-05-04)
+
+Two-ship UI cleanup pass on the Vehicle Deploy Timer HUD family. Plans: [`5.04.26_conquest_vehicle_deploy_shadow_removal_plan.md`](./5.04.26_conquest_vehicle_deploy_shadow_removal_plan.md), [`5.04.26_conquest_vehicle_deploy_inert_widget_cleanup_plan.md`](./5.04.26_conquest_vehicle_deploy_inert_widget_cleanup_plan.md). v1.463 removed text-shadow widgets from button + label chrome (~17 widgets/pid reclaim, visible visual change — no text drop-shadow). v1.464 removed Blur+Fill widgets that were constructed but never rendered + 7 stale Checkbox* dead-cleanup hooks (~18 widgets/pid reclaim, zero visible change). Cumulative: ~35 widgets/pid reclaim against M1 (the largest per-pid heap allocator).
+
+- [ ] **Visual parity check (v1.463 visual change accepted).** Open the Vehicle Deploy menu (deploy screen + live terminal). Pass: text labels render cleanly without drop-shadow; legibility on the dark blue/gray panel backgrounds is acceptable. If text is hard to read on any background, flag for follow-up backplate addition (separate from this ship).
+- [ ] **Visual identity check (v1.464 zero-change).** Compare screenshots of the deploy menu before v1.464 and after. Pass: no observable difference. The Blur+Fill widgets were already hidden every visibility-toggle path, so their removal is undetectable.
+- [ ] **Hover/press visual feedback unchanged.** Hover and press each Vehicle Deploy button (Spawn, Ground, Air, Close). Pass: the Border outline still repaints on state transitions (white ↔ dark black). Button bg colors still cycle through base / hover / pressed / focused engine states. The visual press-state machinery is unchanged by either ship.
+- [ ] **Live-terminal modal panel backdrop intact.** Open the live terminal in-world (alive player triple-tap on purple smoke). Pass: the modal panel backdrop renders correctly (uses `livePanelBlur` and `livePanelFill` which were preserved — they share the Blur/Fill naming with the removed widgets but ARE used).
+- [ ] **HUD warm-up + reveal cycles.** Multiple cycles of deploy → undeploy → live-terminal-open → live-terminal-close per player at scale. Pass: no missing-widget states; no orphan widgets visible; HUD render plan signature still suppresses redundant rebuilds (`getActiveTimerCount` stable).
+- [ ] **Late-joiner during LIVE.** Player joins after match start. Pass: their vehicle deploy timer HUD warms in via the Wave 3.4 lazy-build path; widgets render correctly with the trimmed widget tree; no missing-row states.
+- [ ] **24+ player match validation.** Pass: no script termination. With both ships landed, total per-pid widget reclaim from M1 is ~35; combined with v1.466's behavioral fix, console deploy flow + per-pid heap should both improve at scale.
+
+---
+
 ## Delay-Elapsed Broadcasts (shipped v1.455, 2026-05-04)
 
 See [`design_doc/5.03.26_conquest_delay_broadcasts_plan.md`](./5.03.26_conquest_delay_broadcasts_plan.md). 4 transient on-screen text widgets fire at each `roundStart*Delay` milestone after LIVE (Firestorm: 30/60/90/120s) announcing vehicle/gadget unlock states. 5s display window per broadcast. Per-PID widgets, lazy-built on first broadcast, hidden after auto-hide timer.
@@ -215,6 +248,17 @@ See [`design_doc/5.03.26_conquest_delay_broadcasts_plan.md`](./5.03.26_conquest_
 - [ ] **Admin resets to fresh setup mid-LIVE.** Pass: `triggerFreshMatchSetup` cancellation hides any visible broadcast. Re-LIVE re-schedules from zero.
 - [ ] **Bot/player disconnect mid-broadcast.** Pass: `cleanupHudForPid` destroys the per-pid widget tree + cancels the per-pid hide timer; no orphan widgets on remaining players' screens; no script termination.
 - [ ] **Heap headroom check across full match.** Pass: 24+ player match runs to completion; M16 (delayBroadcastByPid) does not contribute meaningful heap pressure (~32 widget refs at full lobby; auto-hide timers cancel cleanly). No `Mod has reached its js script memory usage limit` termination.
+
+## Supply Box WAIT label during round-start gadget delay (shipped v1.467, 2026-05-05)
+
+In-class tiles on the supply box menu render yellow "WAIT" in place of green "READY" while `ACTIVE_MAP_CONFIG.roundStartGadgetDelay` is active (Firestorm: first 120s of LIVE). Top-of-menu countdown unchanged. Cooldown timers and off-class red unchanged.
+
+- [ ] **Open supply box at LIVE+10s on Firestorm (gate active).** Pass: viewer's in-class tiles (e.g., Engineer sees Engineer column) show **yellow WAIT** instead of green READY on each ready-now tile. Off-class tiles unchanged (red/dim per existing logic). Cooldown timers (e.g., 00:14 on a tile mid-recharge) unchanged. Top-of-menu countdown line shows correctly.
+- [ ] **Hold the menu open through gate elapse at LIVE+120s.** Pass: at the second the gate elapses, all in-class WAIT tiles flip to green READY within ≤1s (per-second refresh cadence). No widgets stuck on yellow.
+- [ ] **Close + reopen mid-gate.** Pass: every reopen renders WAIT consistently for in-class tiles while gate is active.
+- [ ] **Close + reopen post-gate.** Pass: every reopen renders normal green READY.
+- [ ] **Engineer with zero ammo charges, gate active → gate elapses while menu open.** Pass: ammo tile flips from yellow WAIT to green READY when the gate elapses, even though the tile's `enabled` flag stays false (zero charges). The new `gadgetBlocked` term in the per-tile sig is what guarantees the refresh fires.
+- [ ] **24+ players: full match plays through; no widget orphaning, no script termination, no UI flicker on the gate-elapse transition.**
 
 ---
 

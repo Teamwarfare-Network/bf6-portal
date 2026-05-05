@@ -2304,6 +2304,9 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         const showSelectedAssaultTimer = isAssaultClass && assaultGroupRemaining > 0 && assaultGroup.s === i;
         const hideAssaultTimer = isAssaultClass && assaultGroupRemaining > 0 && assaultGroup.s !== i;
         const focused = focusedKey === `a:${i}`;
+        // showWait: in-class viewer would otherwise see green READY, but the round-start
+        // gadget delay is still active. Swap label to "WAIT" + yellow per v1.467 SP rule.
+        const showWait = gadgetBlocked && isAssaultClass && !showSelectedAssaultTimer && !hideAssaultTimer && remaining <= 0 && assaultGroupRemaining <= 0;
         const sig = [
             enabled ? 1 : 0,
             count,
@@ -2314,24 +2317,28 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             assaultGroupRemaining > 0 ? 1 : 0,
             alreadyHas ? 1 : 0,
             focused ? 1 : 0,
+            gadgetBlocked ? 1 : 0,
         ].join("|");
         if (tile.sig !== sig) {
             const overlayMessage = msg(STR_SYS_COUNTER, count);
             setTileHeaderWidgets(tile, item.labelKey, enabled ? COLOR_READY_GREEN : isAssaultClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
             safeSetUITextLabel(
                 tile.cd,
-                showSelectedAssaultTimer
-                    ? fmtClock(assaultGroupRemaining)
-                    : (remaining > 0 ? fmtClock(remaining) : msg(STR_UI_READY))
+                showWait
+                    ? msg(STR_UI_WAIT)
+                    : showSelectedAssaultTimer
+                        ? fmtClock(assaultGroupRemaining)
+                        : (remaining > 0 ? fmtClock(remaining) : msg(STR_UI_READY))
             );
             safeSetUITextColor(
                 tile.cd,
-                !isAssaultClass ? COLOR_GRAY
-                    : showSelectedAssaultTimer ? COLOR_GRAY
-                        : hideAssaultTimer ? COLOR_GRAY
-                        : remaining > 0 ? COLOR_WARNING_YELLOW
-                            : assaultGroupRemaining > 0 ? COLOR_GRAY
-                                : COLOR_READY_GREEN
+                showWait ? COLOR_WARNING_YELLOW
+                    : !isAssaultClass ? COLOR_GRAY
+                        : showSelectedAssaultTimer ? COLOR_GRAY
+                            : hideAssaultTimer ? COLOR_GRAY
+                            : remaining > 0 ? COLOR_WARNING_YELLOW
+                                : assaultGroupRemaining > 0 ? COLOR_GRAY
+                                    : COLOR_READY_GREEN
             );
             safeSetUIWidgetVisible(tile.cd, !hideAssaultTimer);
             safeSetUITextLabel(tile.cs, overlayMessage);
@@ -2348,6 +2355,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     }
     {
         const focused = focusedKey === "m";
+        const showSmokeWait = gadgetBlocked && isMedicClass && smokeReady;
         const sig = [
             smokeEnabled ? 1 : 0,
             smokeCount,
@@ -2356,11 +2364,12 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             smokeReady ? 1 : 0,
             smokeAlreadyHas ? 1 : 0,
             focused ? 1 : 0,
+            gadgetBlocked ? 1 : 0,
         ].join("|");
         if (cache.m.sig !== sig) {
             setTileHeaderWidgets(cache.m, STR_UI_SMOKE_SCREEN, smokeEnabled ? COLOR_READY_GREEN : isMedicClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
-            safeSetUITextLabel(cache.m.cd, smokeMessage);
-            safeSetUITextColor(cache.m.cd, isMedicClass ? (smokeReady ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW) : COLOR_GRAY);
+            safeSetUITextLabel(cache.m.cd, showSmokeWait ? msg(STR_UI_WAIT) : smokeMessage);
+            safeSetUITextColor(cache.m.cd, showSmokeWait ? COLOR_WARNING_YELLOW : isMedicClass ? (smokeReady ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW) : COLOR_GRAY);
             safeSetUITextLabel(cache.m.cs, smokeOverlayMessage);
             safeSetUITextLabel(cache.m.ct, smokeOverlayMessage);
             safeSetUITextColor(cache.m.s, smokeRemaining > 0 ? COLOR_NOT_READY_RED : COLOR_GRAY);
@@ -2381,6 +2390,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         const count = medicReady ? medicItem.maxCount : 0;
         const showSelectedMedicTimer = isMedicClass && medicRemaining > 0 && state.mS === i;
         const focused = focusedKey === `x:${i}`;
+        const showMedicWait = gadgetBlocked && isMedicClass && medicReady && !showSelectedMedicTimer;
         const sig = [
             enabled ? 1 : 0,
             count,
@@ -2389,11 +2399,12 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             isMedicClass ? 1 : 0,
             medicAlreadyHas ? 1 : 0,
             focused ? 1 : 0,
+            gadgetBlocked ? 1 : 0,
         ].join("|");
         if (tile.sig !== sig) {
             setTileHeaderWidgets(tile, medicItem.labelKey, enabled ? COLOR_READY_GREEN : isMedicClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
-            safeSetUITextLabel(tile.cd, medicRemaining > 0 ? fmtClock(medicRemaining) : msg(STR_UI_READY));
-            safeSetUITextColor(tile.cd, isMedicClass ? (showSelectedMedicTimer ? COLOR_GRAY : (medicReady ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW)) : COLOR_GRAY);
+            safeSetUITextLabel(tile.cd, showMedicWait ? msg(STR_UI_WAIT) : (medicRemaining > 0 ? fmtClock(medicRemaining) : msg(STR_UI_READY)));
+            safeSetUITextColor(tile.cd, showMedicWait ? COLOR_WARNING_YELLOW : isMedicClass ? (showSelectedMedicTimer ? COLOR_GRAY : (medicReady ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW)) : COLOR_GRAY);
             safeSetUIWidgetVisible(tile.cd, !isMedicClass || medicRemaining <= 0 || showSelectedMedicTimer);
             safeSetUITextLabel(tile.cs, msg(STR_SYS_COUNTER, count));
             safeSetUITextLabel(tile.ct, msg(STR_SYS_COUNTER, count));
@@ -2418,6 +2429,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         const launcherCount = pool ? poolCount : (launcherReady ? 1 : 0);
         const showSelectedLauncherTimer = isEngineerClass && launcherRemaining > 0 && launch.s === i;
         const focused = focusedKey === `row:${i}`;
+        const showLauncherWait = gadgetBlocked && isEngineerClass && launcherReady && !showSelectedLauncherTimer;
         const sig = [
             launcherEnabled ? 1 : 0,
             launcherCount,
@@ -2428,11 +2440,12 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             pool ? 1 : 0,
             launcherAlreadyHas ? 1 : 0,
             focused ? 1 : 0,
+            gadgetBlocked ? 1 : 0,
         ].join("|");
         if (row.sig !== sig) {
             setTileHeaderWidgets(row, launcherItem.labelKey, launcherEnabled ? COLOR_READY_GREEN : isEngineerClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
-            safeSetUITextLabel(row.cd, launcherRemaining > 0 ? launcherMessage : msg(STR_UI_READY));
-            safeSetUITextColor(row.cd, isEngineerClass ? (showSelectedLauncherTimer ? COLOR_GRAY : launcherColor) : COLOR_GRAY);
+            safeSetUITextLabel(row.cd, showLauncherWait ? msg(STR_UI_WAIT) : (launcherRemaining > 0 ? launcherMessage : msg(STR_UI_READY)));
+            safeSetUITextColor(row.cd, showLauncherWait ? COLOR_WARNING_YELLOW : isEngineerClass ? (showSelectedLauncherTimer ? COLOR_GRAY : launcherColor) : COLOR_GRAY);
             safeSetUIWidgetVisible(row.cd, !isEngineerClass || launcherRemaining <= 0 || showSelectedLauncherTimer);
             safeSetUITextLabel(row.cs, msg(STR_SYS_COUNTER, launcherCount));
             safeSetUITextLabel(row.ct, msg(STR_SYS_COUNTER, launcherCount));
@@ -2471,6 +2484,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
     const ammoOverlayMessage = msg(STR_SYS_COUNTER, ammoCount);
     {
         const focused = focusedKey === "e";
+        const showAmmoWait = gadgetBlocked && isEngineerClass && hasLauncher && launcherSlotKnown && ammoRemaining <= 0 && !atCap;
         const sig = [
             ammoEnabled ? 1 : 0,
             ammoCount,
@@ -2479,24 +2493,28 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             hasLauncher ? 1 : 0,
             atCap ? 1 : 0,
             focused ? 1 : 0,
+            gadgetBlocked ? 1 : 0,
         ].join("|");
         if (cache.e.sig !== sig) {
             setTileHeaderWidgets(cache.e, STR_UI_LAUNCHER_AMMO, ammoEnabled ? COLOR_READY_GREEN : isEngineerClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
             safeSetUITextLabel(
                 cache.e.cd,
-                !isEngineerClass || !hasLauncher
-                    ? msg(STR_UI_NO_LAUNCHER)
-                    : (ammoRemaining > 0
-                        ? fmtClock(ammoRemaining)
-                        : (atCap ? msg(STR_UI_LAUNCHER_AT_CAP) : msg(STR_UI_READY)))
+                showAmmoWait
+                    ? msg(STR_UI_WAIT)
+                    : !isEngineerClass || !hasLauncher
+                        ? msg(STR_UI_NO_LAUNCHER)
+                        : (ammoRemaining > 0
+                            ? fmtClock(ammoRemaining)
+                            : (atCap ? msg(STR_UI_LAUNCHER_AT_CAP) : msg(STR_UI_READY)))
             );
             safeSetUITextColor(
                 cache.e.cd,
-                !isEngineerClass || !hasLauncher || !launcherSlotKnown
-                    ? COLOR_GRAY
-                    : (ammoRemaining > 0
-                        ? COLOR_WARNING_YELLOW
-                        : (atCap ? COLOR_GRAY : COLOR_READY_GREEN))
+                showAmmoWait ? COLOR_WARNING_YELLOW
+                    : !isEngineerClass || !hasLauncher || !launcherSlotKnown
+                        ? COLOR_GRAY
+                        : (ammoRemaining > 0
+                            ? COLOR_WARNING_YELLOW
+                            : (atCap ? COLOR_GRAY : COLOR_READY_GREEN))
             );
             safeSetUITextLabel(cache.e.cs, ammoOverlayMessage);
             safeSetUITextLabel(cache.e.ct, ammoOverlayMessage);
@@ -2520,6 +2538,7 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
         const count = ready ? reconItem.maxCount : 0;
         const showSelectedReconTimer = i > 0 && isReconClass && reconSharedRemaining > 0 && state.rgS === i;
         const focused = focusedKey === `q:${i}`;
+        const showReconWait = gadgetBlocked && isReconClass && ready && !showSelectedReconTimer;
         const sig = [
             enabled ? 1 : 0,
             count,
@@ -2529,11 +2548,12 @@ function refreshArmMenu(eventPlayer: mod.Player, objId: number, cache: AmmoResup
             i,
             reconAlreadyHas ? 1 : 0,
             focused ? 1 : 0,
+            gadgetBlocked ? 1 : 0,
         ].join("|");
         if (tile.sig !== sig) {
             setTileHeaderWidgets(tile, reconItem.labelKey, enabled ? COLOR_READY_GREEN : isReconClass ? COLOR_GRAY : COLOR_NOT_READY_RED);
-            safeSetUITextLabel(tile.cd, remaining > 0 ? fmtClock(remaining) : msg(STR_UI_READY));
-            safeSetUITextColor(tile.cd, isReconClass ? (showSelectedReconTimer ? COLOR_GRAY : (ready ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW)) : COLOR_GRAY);
+            safeSetUITextLabel(tile.cd, showReconWait ? msg(STR_UI_WAIT) : (remaining > 0 ? fmtClock(remaining) : msg(STR_UI_READY)));
+            safeSetUITextColor(tile.cd, showReconWait ? COLOR_WARNING_YELLOW : isReconClass ? (showSelectedReconTimer ? COLOR_GRAY : (ready ? COLOR_READY_GREEN : COLOR_WARNING_YELLOW)) : COLOR_GRAY);
             safeSetUIWidgetVisible(tile.cd, !isReconClass || i === 0 || reconSharedRemaining <= 0 || showSelectedReconTimer);
             safeSetUITextLabel(tile.cs, msg(STR_SYS_COUNTER, count));
             safeSetUITextLabel(tile.ct, msg(STR_SYS_COUNTER, count));

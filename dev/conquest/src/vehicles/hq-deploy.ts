@@ -57,6 +57,24 @@ function isAirDeployEnabled(): boolean {
 
 
 
+//#region -------------------- Per-Player Engine-Deploy Block --------------------
+
+// v1.466: per-player engine-deploy block. PER-PLAYER ONLY — never call mod.EnableAllPlayerDeploy
+// from this module; that is the global gate owned by countdown-flow and conquest-flow. This
+// helper resolves a single Player from the claim's owner pid and toggles ONLY that player's
+// deploy state. Used during HQ deploy_menu claim lifetime to prevent the engine's deploy-on-foot
+// action (especially the console A button race) from depositing the player on the ground before
+// the requested vehicle spawns. Idempotent. Silent on disconnect (player gone -> no-op).
+function setVehicleDeployEngineDeployBlockForPid(pid: number, blocked: boolean): void {
+    const player = safeFindPlayer(pid);
+    if (!isValidPlayer(player)) return;
+    try { mod.EnablePlayerDeploy(player, !blocked); } catch {}
+}
+
+//#endregion ----------------- Per-Player Engine-Deploy Block --------------------
+
+
+
 //#region -------------------- Request Validation + Dispatch --------------------
 
 type HqRequestResult = { ok: boolean; reason?: string };
@@ -106,6 +124,13 @@ function requestHqVehicleSpawn(player: mod.Player, pid: number, rowIndex: number
     slot.hqSource = source;
     State.hqDeploy.lastRequestAtSecondsByPid[pid] = nowSeconds;
 
+    // v1.466: block engine deploy-on-foot for THIS player only while their claim is in flight.
+    // Resolves the console deploy-on-foot race where the engine deploys the player before the
+    // vehicle spawns, leaving the seat hook unable to fire. on_foot source already has the
+    // player alive — disabling deploy mid-flight there would interfere with the existing
+    // undeploy -> redeploy sequence in beginHqSeatFlow.
+    if (source === "deploy_menu") setVehicleDeployEngineDeployBlockForPid(pid, true);
+
     // Schedule a claim-timeout guard. Covers both spawn_pending (bind never arrives) and
     // seat_pending (bind arrived but OnPlayerDeployed never fires, e.g. player disconnected).
     void scheduleHqClaimTimeout(slotIndex, pid, nowSeconds);
@@ -146,9 +171,14 @@ async function scheduleHqClaimTimeout(slotIndex: number, pid: number, requestedA
     }
     const wasForward = slot.pendingSpawnMode === "forward";
     const wasAir = slot.pendingSpawnMode === "air";
+    const wasDeployMenu = slot.hqSource === "deploy_menu";
     slot.pendingSpawnOwnerPid = undefined;
     slot.pendingSpawnMode = undefined;
     slot.hqSource = undefined;
+    // v1.466: paired re-enable for the per-player deploy block set in requestHq/Forward/Air.
+    // Only deploy_menu source ever had the block applied. on_foot is unaffected (no-op call
+    // would still be safe but we gate to make intent explicit).
+    if (wasDeployMenu) setVehicleDeployEngineDeployBlockForPid(pid, false);
     // Forward/Air claim expired: restore the spawner back to HQ and re-seed so the next click
     // doesn't fire from the now-stale forward/air point (where the orphan vehicle was destroyed).
     if (wasForward) onForwardSpawnSuccess(slot);
@@ -195,6 +225,10 @@ function requestForwardVehicleSpawn(player: mod.Player, pid: number, rowIndex: n
     slot.pendingSpawnMode = "forward";
     slot.hqSource = source;
     State.hqDeploy.lastRequestAtSecondsByPid[pid] = nowSeconds;
+
+    // v1.466: per-player engine-deploy block during deploy_menu claim lifetime. See
+    // requestHqVehicleSpawn for rationale. on_foot path is already alive; not blocked.
+    if (source === "deploy_menu") setVehicleDeployEngineDeployBlockForPid(pid, true);
 
     void scheduleHqClaimTimeout(slotIndex, pid, nowSeconds);
 
@@ -244,6 +278,10 @@ function requestAirVehicleSpawn(player: mod.Player, pid: number, rowIndex: numbe
     slot.pendingSpawnMode = "air";
     slot.hqSource = source;
     State.hqDeploy.lastRequestAtSecondsByPid[pid] = nowSeconds;
+
+    // v1.466: per-player engine-deploy block during deploy_menu claim lifetime. See
+    // requestHqVehicleSpawn for rationale. on_foot path is already alive; not blocked.
+    if (source === "deploy_menu") setVehicleDeployEngineDeployBlockForPid(pid, true);
 
     void scheduleHqClaimTimeout(slotIndex, pid, nowSeconds);
 
@@ -317,6 +355,12 @@ async function beginHqSeatFlow(pid: number, vehicle: mod.Vehicle): Promise<void>
     // screen finishes loading. Each retry waits for deployedByPid to flip true before stopping.
     // Re-zero the redeploy timer defensively in case the deploy-screen transition restored it.
     if (slot.hqSource === "on_foot") { try { mod.SetRedeployTime(player, 0); } catch {} }
+    // v1.466: re-enable per-player deploy IMMEDIATELY before mod.DeployPlayer so the engine
+    // permits the deploy. Symmetric with the disable in requestHq/Forward/Air. The seat hook
+    // at the claim-clear path (onHqSeatPendingPlayerDeployed) also re-enables defensively, but
+    // doing it here is the load-bearing call — mod.DeployPlayer on a deploy-disabled player
+    // is the engine no-op that this entire fix exists to prevent.
+    if (slot.hqSource === "deploy_menu") setVehicleDeployEngineDeployBlockForPid(pid, false);
     try { mod.DeployPlayer(player); } catch {}
     if (slot.hqSource === "on_foot") {
         for (let i = 0; i < 3; i++) {
@@ -344,6 +388,7 @@ function onHqSeatPendingPlayerDeployed(player: mod.Player, pid: number): void {
     // Capture forward/air-mode flags before we clear them so the post-seat restore runs below.
     const wasForward = slot.pendingSpawnMode === "forward";
     const wasAir = slot.pendingSpawnMode === "air";
+    const wasDeployMenu = slot.hqSource === "deploy_menu";
 
     // Snapshot relocation targets BEFORE onForwardSpawnSuccess / onAirSpawnSuccess run --
     // those hooks re-seed nextForwardPos / nextAirPos for the next click. Used by the
@@ -359,6 +404,14 @@ function onHqSeatPendingPlayerDeployed(player: mod.Player, pid: number): void {
     slot.pendingSpawnOwnerPid = undefined;
     slot.pendingSpawnMode = undefined;
     slot.hqSource = undefined;
+
+    // v1.466: defensive paired re-enable. beginHqSeatFlow already re-enabled before DeployPlayer
+    // in the success path; this is idempotent there. Covers the edge case where DeployPlayer
+    // was called inside beginHqSeatFlow but the claim got cleared/replaced before the seat hook
+    // ran (vehicle destroyed mid-flight, etc.) -- without this the player's deploy would stay
+    // disabled until the 10s claim timeout would have re-enabled, which is too late since
+    // the claim was just cleared here.
+    if (wasDeployMenu) setVehicleDeployEngineDeployBlockForPid(pid, false);
 
     if (!vehicle) {
         try { updateVehicleDeployTimerHudForAllPlayers(); } catch {}

@@ -159,7 +159,7 @@ The Vehicle Deploy menu is the shared front-end for all four deploy modes — sa
 - **On-foot live terminal (alive player at purple smoke):** `tryOpenVehicleDeployLiveMenuForPlayer(eventPlayer)` — closes any open arm menu / ready dialog, sets `setVehicleDeployLiveMenuVisibleForPid(pid, true)`, enables UI input mode, calls `revealVehicleDeployTimerHudForPlayer`. Closes via `closeVehicleDeployLiveMenuForPlayer` (restores input mode, hides the timer HUD family).
 - Per-pid state field: `State.players.liveVehicleDeployMenuVisibleByPid[pid]`. Allocator: `setVehicleDeployLiveMenuVisibleForPid`. Deallocator: `resetVehicleDeployLiveMenuStateForPid` (called from `cleanupHudForPid`).
 - Lazy build: `triggerLazyBuild('vehicleDeployTimer', pid)` — built on first deploy menu open. Wave 6 stagger places it at +50ms after `topHudShell` to distribute join cost.
-- Console / controller note: SPAWN buttons currently don't activate from the deploy screen on controller — see [issue #113](./conquest_issues.md). On-foot purple-smoke path works as a workaround.
+- Console / controller note: SPAWN buttons from the deploy screen now work correctly on controller (resolved at v1.466 via two ships — see [issue #113](./conquest_issues.md)). v1.465 moved the click action to fire on the first primary-click event via `tryConsumeUIButtonPrimaryClickEvent` dedupe (matches team-swap pattern that was always console-friendly); v1.466 added a per-player `mod.EnablePlayerDeploy(player, false)` block during the HQ-claim window so the engine's deploy-on-foot action can't strand the player on foot before the vehicle binds. The on-foot purple-smoke path still works identically — no behavior regression in the live-terminal source path. Per-player only via centralized helper `setVehicleDeployEngineDeployBlockForPid(pid, blocked)` in [`src/vehicles/hq-deploy.ts`](../src/vehicles/hq-deploy.ts) — does NOT touch the global `mod.EnableAllPlayerDeploy` countdown gate.
 
 **Mode gates**
 - Vanilla: `isVanillaDeployMode()` — `confirmed.vehicleDeployMethod === VEHICLE_DEPLOY_METHOD_VANILLA`.
@@ -243,6 +243,7 @@ Walk up to a Supply Box at any objective and resupply launcher ammo, deployable 
 - Your class's column lights up — Assault, Engineer, Medic, or Recon.
 - Per-player cooldowns prevent farming; some items use a team-shared pool.
 - Tiles dim after placement and re-arm on cooldown end.
+- Early in the live match (during the round-start gadget delay), in-class tiles show **yellow WAIT** in place of green READY; once the gate elapses, they flip to green READY automatically.
 - Closes on movement, another triple-tap, or the CLOSE button.
 
 The Supply Box is the loadout vending machine — and it's class-aware, so a Medic doesn't see Engineer launcher ammo and vice versa. Each tile has a name, a duration / scope hint ("1 per player", "5m cooldown", "1 per team"), and a live timer when it's on cooldown. Engineers get RPG / AT4 / Stinger ammo charges with a per-launcher refill; Assault gets artillery, beacons, ladders; Medic gets smoke and intercept gadgets; Recon gets drones, C4, and AV grenades. Cooldowns are persisted per player (and per team for shared items), so closing and re-opening the menu doesn't reset them.

@@ -73,6 +73,11 @@ function cleanupHudForPid(pid: number): void {
     }
     deleteVehicleDeployTimerHudArtifactsForPid(pid);
     resetVehicleDeployPrimaryClickTrackerForPid(pid);
+    // v1.466: defensive paired enable for the per-player engine-deploy block. Claim-clear paths
+    // in hq-deploy.ts normally handle this, but if a player disconnects with a stale per-player
+    // deploy block and Portal recycles their pid to a new joiner, the new joiner would inherit
+    // the stuck-on-deploy-screen state. Idempotent: safe to call when no block was set.
+    setVehicleDeployEngineDeployBlockForPid(pid, false);
     destroyBoundaryPromptUiForPid(pid);
     destroyPlayerReadyPanelForPid(pid);
     DelayBroadcast.destroyDelayBroadcastWidgetForPid(pid);

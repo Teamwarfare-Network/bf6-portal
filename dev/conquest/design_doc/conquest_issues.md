@@ -3599,30 +3599,48 @@ Related:
 ## CQ_Bug_Console_DeployScreen_Vehicle_Buttons_Unresponsive (#113)
 Title: Console / controller players cannot trigger HQ / Forward / Air Deploy from the deploy screen's Vehicle Deploy menu
 
-Observed (2026-05-03, console MP playtest):
-- On controller, the SPAWN buttons in the Vehicle Deploy menu surfaced on the deploy screen do not respond to controller input. The menu renders correctly — rows visible, statuses correct, WAIT / READY labels accurate — but pressing A / X on a row produces no spawn request and no audible feedback.
-- The same menu opened on-foot via the purple smoke triple-tap at HQ works correctly on console: identical widget tree, identical row data, controller input registers normally and the SPAWN press fires the corresponding `requestHqVehicleSpawn` / `requestForwardVehicleSpawn` / `requestAirVehicleSpawn` request.
-- PC mouse input works in both contexts (deploy screen + on-foot live terminal).
+**Status: Resolved (v1.465 + v1.466, 2026-05-04). Console MP playtest validation pending.**
 
-Workaround currently in use:
-- Console players who want to HQ / Forward / Air Deploy must spawn on foot first (any spawn point — main base or flag), then triple-tap the purple smoke at HQ to open the same Vehicle Deploy menu via the on-foot live terminal. From the live terminal, controller input registers normally and SPAWN presses fire as expected.
-- Workaround is surfaced on the player-facing known-issues list ([`conquest_player_know_issues_documentation.md`](./conquest_player_know_issues_documentation.md)) so console players know to use the purple smoke path until the underlying input-routing gap is fixed.
+### Originally observed (2026-05-03, console MP playtest)
+- On controller, the SPAWN buttons in the Vehicle Deploy menu surfaced on the deploy screen did not respond correctly to controller input. The menu rendered correctly — rows visible, statuses correct, WAIT / READY labels accurate — but pressing A / X on a row resulted in the player being deployed on foot instead of into the requested vehicle (initially appearing as no response, then after v1.465 partial fix as "vehicle spawns but player still on foot").
+- The same menu opened on-foot via the purple smoke triple-tap at HQ worked correctly on console.
+- PC mouse input worked in both contexts (deploy screen + on-foot live terminal).
 
-Suspected root cause:
-- Input-mode discrepancy between the two open paths. The live-terminal path in `tryOpenVehicleDeployLiveMenuForPlayer` ([`src/vehicles/deploy-live-menu.ts:74`](../src/vehicles/deploy-live-menu.ts#L74)) explicitly calls `setUIInputModeForPlayer(eventPlayer, true)` before revealing the HUD family. The deploy-screen reveal path (via `revealVehicleDeployTimerHudForPlayer` called from `renderCriticalHudForReveal` in [`src/interaction/actions.ts`](../src/interaction/actions.ts)) does NOT enable UI input mode — it relies on the deploy screen itself owning controller cursor focus.
-- On the deploy screen, the engine's controller cursor may not be routed onto custom HUD widgets unless `EnableUIInputMode` (or an equivalent deploy-screen-compatible API) is explicitly invoked. This would explain why the menu renders but buttons don't accept controller input.
-- PC mouse works in both contexts because mouse hover/click is global, not gated by the engine's controller cursor focus model.
+### Investigation arc and actual root cause
 
-Investigation needed:
-- Confirm whether `mod.EnableUIInputMode(player, true)` is safe to call on the deploy screen, or whether it conflicts with deploy-screen-native UI (squad picker, spawn-point selectors, etc.).
-- Probe whether the deploy screen exposes a different controller-cursor-enable API or whether widgets need explicit `mod.SetUIWidgetButtonControllerNav` (or similar) wiring to receive controller focus from the deploy-screen overlay.
-- Cross-check against the squad / spawn-point selectors on the deploy screen — those clearly work on controller, so understanding their input-routing is the model to follow.
-- A minimal repro probe: enable UI input mode on the deploy screen (gated to a single test pid via admin toggle), observe whether the SPAWN buttons start accepting controller input AND whether deploy-screen-native UI is impaired.
+**Initial hypothesis (incorrect).** The first investigation suspected an input-mode / cursor-routing gap: the live-terminal path in `tryOpenVehicleDeployLiveMenuForPlayer` ([`src/vehicles/deploy-live-menu.ts:74`](../src/vehicles/deploy-live-menu.ts#L74)) explicitly calls `setUIInputModeForPlayer(eventPlayer, true)` before revealing the HUD family, while the deploy-screen reveal path (via `revealVehicleDeployTimerHudForPlayer` called from `renderCriticalHudForReveal` in [`src/interaction/actions.ts`](../src/interaction/actions.ts)) does not. This was a reasonable guess but turned out to be wrong — the click WAS being received on console, just consumed by the wrong action.
 
-Related:
+**Actual root cause (discovered 2026-05-04 during the precise button comparison work in [`conquest_vehicle_deploy_comparisons.md`](./conquest_vehicle_deploy_comparisons.md) §4.5).** The Vehicle Deploy buttons enabled all 6 `mod.UIButtonEvent` types but only fired the spawn-request action inside the `ButtonUp` handler at [`src/vehicles/deploy-timer-ui.ts:1633`](../src/vehicles/deploy-timer-ui.ts#L1633). The team-swap button — which always worked on console — fired on the first primary-click event (`ButtonDown` or `ButtonUp`) via the `tryConsumeUIButtonPrimaryClickEvent` dedupe helper at [`src/interaction/ui-primary-click.ts:54`](../src/interaction/ui-primary-click.ts#L54). On console, the engine's "deploy on foot" controller action shares the same physical button as UI clicks; firing the spawn action on `ButtonUp` meant the engine's deploy-on-foot completed first, and the spawn request either never fired (if `ButtonUp` was lost in the deploy-screen-dismissed context) or fired against an already-deployed player (where the seat hook would no-op).
+
+### Two-ship resolution
+
+**v1.465 (ButtonDown dedupe).** Plan: [`5.04.26_conquest_vehicle_deploy_buttondown_fix_plan.md`](./5.04.26_conquest_vehicle_deploy_buttondown_fix_plan.md). Replaced the `ButtonUp`-only firing in both the close button handler ([`src/vehicles/deploy-timer-ui.ts:1542-1546`](../src/vehicles/deploy-timer-ui.ts) pre-edit) and the action button handler with `tryConsumeUIButtonPrimaryClickEvent` calls. New module-local `vehicleDeployLastPrimaryClickByPid` tracker + module-local debounce / release-grace constants. Per-pid cleanup helper `resetVehicleDeployPrimaryClickTrackerForPid(pid)` paired with `cleanupHudForPid` in [`src/index/player-join-leave.ts`](../src/index/player-join-leave.ts). After v1.465: console click WAS recognized — the spawn request fired and the vehicle spawned — but the player still ended up deployed on foot because the engine's deploy-on-foot action completed before the vehicle finished spawning. The 10s claim timeout then sank the orphan vehicle.
+
+**v1.466 (per-player engine deploy block).** Plan: [`5.04.26_conquest_vehicle_deploy_block_engine_deploy_plan.md`](./5.04.26_conquest_vehicle_deploy_block_engine_deploy_plan.md). Closes the residual race by blocking deploy-on-foot for the requesting player only, during the HQ-claim window. New centralized helper `setVehicleDeployEngineDeployBlockForPid(pid: number, blocked: boolean)` in [`src/vehicles/hq-deploy.ts`](../src/vehicles/hq-deploy.ts) — the single source of truth for the API call. Calls `mod.EnablePlayerDeploy(player, !blocked)` (the per-player API) and silently no-ops if the player has disconnected. **Per-player only** — never touches `mod.EnableAllPlayerDeploy` (the global gate owned by countdown-flow.ts and conquest-flow.ts).
+
+Set sites (3 — gated on `source === "deploy_menu"`; on_foot path already has the player alive):
+- `requestHqVehicleSpawn` ([line 132](../src/vehicles/hq-deploy.ts#L132))
+- `requestForwardVehicleSpawn` ([line 231](../src/vehicles/hq-deploy.ts#L231))
+- `requestAirVehicleSpawn` ([line 284](../src/vehicles/hq-deploy.ts#L284))
+
+Clear sites (4):
+- `beginHqSeatFlow` ([line 363](../src/vehicles/hq-deploy.ts#L363)) — load-bearing call IMMEDIATELY before `mod.DeployPlayer(player)` so the engine permits the deploy.
+- `scheduleHqClaimTimeout` ([line 181](../src/vehicles/hq-deploy.ts#L181)) — paired with claim-timeout cleanup.
+- `onHqSeatPendingPlayerDeployed` ([line 414](../src/vehicles/hq-deploy.ts#L414)) — defensive, idempotent with the `beginHqSeatFlow` call.
+- `cleanupHudForPid` ([`src/index/player-join-leave.ts:80`](../src/index/player-join-leave.ts#L80)) — defensive on disconnect, prevents stuck per-player block from surviving pid recycling.
+
+### Risk profile (post-v1.466)
+- Worst-case stuck-on-deploy-screen window in normal flow: 10 seconds (the claim timeout). After 10s the timeout fires and re-enables.
+- Edge case requiring two simultaneous events: admin force-restarts the match (which triggers global `EnableAllPlayerDeploy(false)` → `(true)` cycle) within the 10s window of an active claim, AND the global re-enable does not reset per-player flags. Verifiability is empirical; if observed in playtest, follow-up is to ensure the `scheduleHqClaimTimeout` always runs the enable as the last step regardless of early-return paths.
+- Self-recovery: disconnect + reconnect always works (`cleanupHudForPid` defensive enable).
+
+### Related
 - Live-terminal entry path: `tryOpenVehicleDeployLiveMenuForPlayer` in [`src/vehicles/deploy-live-menu.ts`](../src/vehicles/deploy-live-menu.ts).
 - Deploy-screen reveal path: `revealVehicleDeployTimerHudForPlayer` (called from `renderCriticalHudForReveal` in [`src/interaction/actions.ts`](../src/interaction/actions.ts)).
 - Vehicle Deploy menu rendering: [`src/vehicles/deploy-timer-ui.ts`](../src/vehicles/deploy-timer-ui.ts).
+- Click routing dispatcher: `tryHandleVehicleDeployTimerButtonEvent` in [`src/vehicles/deploy-timer-ui.ts`](../src/vehicles/deploy-timer-ui.ts).
+- Dedupe helper: `tryConsumeUIButtonPrimaryClickEvent` in [`src/interaction/ui-primary-click.ts`](../src/interaction/ui-primary-click.ts).
+- Per-player API: `mod.EnablePlayerDeploy(player, bool)` — verified in [`reference_sdk_1.2.3/code/types/mod/index.d.ts:26394`](../../reference_sdk_1.2.3/code/types/mod/index.d.ts#L26394).
+- Global API (NOT touched by this fix): `mod.EnableAllPlayerDeploy(bool)` — used by countdown-flow.ts and conquest-flow.ts for match-lifecycle gating.
+- Architectural comparison: [`conquest_vehicle_deploy_comparisons.md`](./conquest_vehicle_deploy_comparisons.md) §4.5 documents BillDukes' opposite approach (`EnablePlayerDeploy(player, true)` + pre-seat teleport — banned in Conquest by the v1.106-v1.108 / v1.151-v1.154 aircraft OOB regression history).
 - Player-facing surface: Custom Dialogs / Vehicle Deploy entries in [`conquest_player_design_documentation_features.md`](./conquest_player_design_documentation_features.md).
-
-Status: **Open (2026-05-03).** Surfaced on the player-facing known-issues page with the on-foot purple-smoke workaround documented. Awaits controller-input investigation; not blocking V1 since the workaround path exists and is reliable.

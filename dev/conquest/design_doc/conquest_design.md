@@ -125,6 +125,14 @@ Validated: `mod.Teleport(vehicle, ...)` carries the seated occupant. No visible 
 
 `ForcePlayerToSeat` is reliable only inside the `OnPlayerDeployed` event handler. The Phase 6 HQ Deploy "BountyHunter pattern" enforces this: undeploy → redeploy → seat-on-deploy.
 
+### Per-player engine-deploy block (v1.466 — Bug #113 console seat race fix)
+
+When a player at the deploy screen requests a vehicle through HQ Deploy / Forward Deploy / Air Deploy (deploy_menu source), block the engine's deploy-on-foot action for that specific player only via `mod.EnablePlayerDeploy(player, false)` until the vehicle binds and `beginHqSeatFlow` runs `mod.DeployPlayer(player)` itself. Re-enable on every claim-clear path. **Per-player only — the centralized helper `setVehicleDeployEngineDeployBlockForPid(pid, blocked)` in [`src/vehicles/hq-deploy.ts`](../src/vehicles/hq-deploy.ts) is the single source of truth.** Never use `mod.EnableAllPlayerDeploy` from this code path — that is the global gate owned by countdown-flow.ts and conquest-flow.ts and applies to all players for match-lifecycle reasons.
+
+Why: on console controllers, the same physical button (A on Xbox / X on PlayStation) drives both UI clicks AND the engine's deploy-on-foot action on the deploy screen. Without this block, the engine's deploy completes in the same input frame as the click, depositing the player on foot before the vehicle binds; the seat hook then no-ops because `mod.DeployPlayer` on an already-deployed player is engine-no-op, and the orphan vehicle gets sunk by the 10s claim timeout. Reference: [`5.04.26_conquest_vehicle_deploy_block_engine_deploy_plan.md`](./5.04.26_conquest_vehicle_deploy_block_engine_deploy_plan.md).
+
+Architectural mirror of BillDukes: BillDukes' VehicleDeploy uses `mod.EnablePlayerDeploy(player, true)` + pre-seat teleport (banned in Conquest by the v1.106-v1.108 / v1.151-v1.154 aircraft OOB regression). Conquest now uses the inverse — block deploy until vehicle is ready, then deploy directly into the seat. See `conquest_vehicle_deploy_comparisons.md` §4.5 for the precise comparison.
+
 ---
 
 ## CF Design Rules — Gameplay

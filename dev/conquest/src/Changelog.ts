@@ -3,6 +3,9 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.468: Fix v1.467 typecheck regression: STR_UI_WAIT alias was referenced but never declared in string-keys.ts. Added the alias next to STR_UI_READY.
+// v1.467: Supply box: yellow WAIT label replaces green READY on per-class tiles during round-start gadget delay; flips back to READY on gate elapse. In-class only; preserves cooldowns + off-class red. Per-tile sig now includes gadgetBlocked so transition reliably triggers refresh.
+// v1.466: Vehicle deploy: block engine deploy-on-foot per-player during HQ claim lifetime (resolves console seat race)
 // v1.465: Vehicle deploy: fire button action on ButtonDown via dedupe (fixes console deploy-on-foot race)
 // v1.464: Vehicle deploy: remove inert Blur+Fill widgets + dead Checkbox cleanup hooks (~18 widgets/pid reclaim)
 // v1.463: Vehicle deploy: remove text-shadow widgets from chrome (~21 widgets/pid reclaim)
