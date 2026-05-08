@@ -175,6 +175,23 @@ function tryHandleReadyDialogButtonEvent(
     );
     if (swapHandled !== undefined) return swapHandled;
 
+    // Spectator claim from the admin's full ready dialog (Ship 2 wiring; the panel-side
+    // wiring lives in ui-events-player-ready-panel.ts). syncCoachButtonForDialogPid
+    // engine-disables the button when the slot is taken / match is live / no camera
+    // authored, but enterSpectatorMode defensively re-checks all three gates.
+    const coachHandled = tryHandleReadyDialogPrimaryAction(
+        eventPlayer,
+        playerId,
+        widgetName,
+        eventUIButtonEvent,
+        UI_READY_DIALOG_BUTTON_COACH_ID,
+        () => {
+            hideReadyDialogUI(eventPlayer);
+            enterSpectatorMode(eventPlayer, playerId);
+        }
+    );
+    if (coachHandled !== undefined) return coachHandled;
+
     const confirmHandled = tryHandleReadyDialogPrimaryAction(
         eventPlayer,
         playerId,

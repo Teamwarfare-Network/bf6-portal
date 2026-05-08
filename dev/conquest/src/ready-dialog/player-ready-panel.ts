@@ -215,26 +215,17 @@ function prebuildPlayerReadyPanelHidden(eventPlayer: mod.Player, pid: number): v
         PLAYER_READY_PANEL_BUTTON_WIDTH, PLAYER_READY_PANEL_BUTTON_HEIGHT,
         mod.UIAnchor.BottomCenter, containerBase, eventPlayer
     );
-    const coachLabel = addReadyDialogCenteredText(
+    addReadyDialogCenteredText(
         UI_PLAYER_READY_PANEL_BUTTON_COACH_LABEL_ID + pid,
         PLAYER_READY_PANEL_BUTTON_WIDTH, PLAYER_READY_PANEL_BUTTON_HEIGHT,
         msg(mod.stringkeys.twl.readyDialog.buttons.spectateCoach),
         eventPlayer, coachBorder ?? containerBase, undefined, false
     );
-    // Spectate/Coach disabled treatment per D3 -- verbatim from dialog-build-sections.ts:228-238.
-    const coachButton = safeFind(UI_PLAYER_READY_PANEL_BUTTON_COACH_ID + pid);
-    if (coachButton) {
-        mod.SetUIButtonEnabled(coachButton, false);
-        mod.SetUIWidgetBgColor(coachButton, COLOR_GRAY_DARK);
-        mod.SetUIWidgetBgAlpha(coachButton, 0.45);
-    }
-    if (coachBorder) {
-        mod.SetUIWidgetBgColor(coachBorder, COLOR_GRAY_DARK);
-        mod.SetUIWidgetBgAlpha(coachBorder, 0.45);
-    }
-    if (coachLabel) {
-        mod.SetUITextColor(coachLabel, COLOR_GRAY);
-    }
+    // Ship 2 spectator integration (v1.478+): COACH visual state is owned by
+    // syncCoachButtonForPanelPid called from refreshPlayerReadyPanelContentForPid each
+    // panel show/refresh. No static treatment at build time -- the refresh path runs
+    // before first reveal so the button never flashes a wrong state. State matrix:
+    // enabled iff (camera authored && !isMatchLive && slot vacant).
 
     const closeBorder = addOutlinedButton(
         UI_PLAYER_READY_PANEL_BUTTON_CLOSE_ID + pid,
@@ -323,6 +314,7 @@ function refreshPlayerReadyPanelContentForPid(pid: number): void {
 
     syncPlayerReadyPanelReadyButtonForPid(pid);
     syncPlayerReadyPanelClaimAdminButtonForPid(pid);
+    syncCoachButtonForPanelPid(pid);
 }
 
 // Wave 4 Ship 6 / v1.2: shows the CLAIM ADMIN button only when the admin slot is

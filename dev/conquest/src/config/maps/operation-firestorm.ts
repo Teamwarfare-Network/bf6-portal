@@ -14,6 +14,8 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
         team1MainBaseBufferTriggerId: 502,
         team2MainBaseBufferTriggerId: 503,
         groundCombatZoneTriggerId: 666,
+        spectatorCameraId: 667, // FixedCameraSpectator at (-83.80, 246.37, -72.91) in MP_TWL_Conquest18_FireStorm.spatial.json
+
         mainBaseInteractableObjIds: [1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015],
         mainBaseInteractableAnchors: [
             { objId: 1000, ownerTeamId: TeamID.Team2, pos: mod.CreateVector(543.660, 114.503, -222.605), vfx: VFX_GREEN_SMOKE, rot: mod.CreateVector(-90, 0, 0) },

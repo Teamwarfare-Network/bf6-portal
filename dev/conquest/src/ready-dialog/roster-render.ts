@@ -76,6 +76,7 @@ function renderReadyDialogForViewer(eventPlayer: mod.Player, viewerPid: number):
     refreshReadyDialogRosterForViewer(eventPlayer, viewerPid);
     updateReadyToggleButtonForViewer(eventPlayer, viewerPid);
     updateReadyDialogModeConfigForPid(viewerPid);
+    syncCoachButtonForDialogPid(viewerPid);
 }
 
 // Renders the dialog for all players who currently have it open.

@@ -113,9 +113,21 @@ function tryHandlePlayerReadyPanelButtonEvent(
     );
     if (swapHandled !== undefined) return swapHandled;
 
-    if (widgetName === UI_PLAYER_READY_PANEL_BUTTON_COACH_ID + playerId) {
-        return true;
-    }
+    // Spectator claim (Ship 2). Wired when the active map authored a spectatorCameraId in
+    // MapConfig and the slot is vacant + match is pre-live (gating in syncCoachButtonForPanelPid
+    // suppresses the engine-level click for the disabled cases; enterSpectatorMode also
+    // defensively re-checks all three gates so a slipped click cannot promote a player
+    // mid-match or to a taken slot). Click is consumed regardless so it does not fall
+    // through to other sibling routers.
+    const coachHandled = tryHandlePlayerReadyPanelPrimaryAction(
+        playerId, widgetName, eventUIButtonEvent,
+        UI_PLAYER_READY_PANEL_BUTTON_COACH_ID,
+        () => {
+            closePlayerReadyPanelForViewer(eventPlayer, playerId);
+            enterSpectatorMode(eventPlayer, playerId);
+        }
+    );
+    if (coachHandled !== undefined) return coachHandled;
 
     // Wave 4 Ship 6 / v1.2: CLAIM ADMIN. Only succeeds against a vacant slot
     // (per L17). On success: close panel, restore cursor, broadcast refresh so other

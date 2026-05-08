@@ -228,6 +228,7 @@ function getDesiredBoundaryViolationKind(player: mod.Player): BoundaryPromptKind
 
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return undefined;
+    if (pid === State.players.spectatorPid) return undefined; // Mitigation C: spectator body is parked at HQ, ignore zone state
     const state = State.round.boundary.zoneStateByPid[pid];
     if (!state) return undefined;
 

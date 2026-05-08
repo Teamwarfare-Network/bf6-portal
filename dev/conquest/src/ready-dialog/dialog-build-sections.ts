@@ -215,9 +215,7 @@ function buildReadyDialogBottomButtonsSection(
         containerBase,
         eventPlayer
     );
-    const coachButton = safeFind(coachButtonId);
-    const coachBorder = safeFind(coachButtonId + "_BORDER");
-    const coachLabel = addReadyDialogCenteredText(
+    addReadyDialogCenteredText(
         coachButtonLabelId,
         READY_DIALOG_MAIN_BUTTON_WIDTH,
         READY_DIALOG_MAIN_BUTTON_HEIGHT,
@@ -225,18 +223,10 @@ function buildReadyDialogBottomButtonsSection(
         eventPlayer,
         coachButtonBorder ?? containerBase
     );
-    if (coachButton) {
-        mod.SetUIButtonEnabled(coachButton, false);
-        mod.SetUIWidgetBgColor(coachButton, COLOR_GRAY_DARK);
-        mod.SetUIWidgetBgAlpha(coachButton, 0.45);
-    }
-    if (coachBorder) {
-        mod.SetUIWidgetBgColor(coachBorder, COLOR_GRAY_DARK);
-        mod.SetUIWidgetBgAlpha(coachBorder, 0.45);
-    }
-    if (coachLabel) {
-        mod.SetUITextColor(coachLabel, COLOR_GRAY);
-    }
+    // Ship 2 spectator integration (v1.478+): COACH visual state is owned by
+    // syncCoachButtonForDialogPid called from renderReadyDialogForViewer on each
+    // dialog refresh. State matrix: enabled iff (camera authored && !isMatchLive
+    // && slot vacant).
 
     // UI caching note: the admin toggle is created once with the dialog, while the admin panel contents stay lazy-built.
     if (FEATURE_ADMIN_PANEL) ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, false);

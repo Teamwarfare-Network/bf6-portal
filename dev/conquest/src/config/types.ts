@@ -102,6 +102,7 @@ type MapConfig = {
     team1MainBaseBufferTriggerId?: number;
     team2MainBaseBufferTriggerId?: number;
     groundCombatZoneTriggerId?: number; // Ground combat zone AreaTrigger ObjId (XZ-clipped play area); used for custom script OOB of foot + non-aircraft vehicles.
+    spectatorCameraId?: number; // FixedCamera ObjId used by the single-spectator slot (SPECTATE / COACH button). Per-map authored sky-cam vantage; when omitted, COACH stays disabled on that map.
     mainBaseInteractableObjIds?: number[]; // Phase 7 main-base interactables; even ids map to ready dialog, odd ids map to vehicle menu.
     mainBaseInteractableAnchors?: WorldInteractableAnchorConfig[]; // Explicit Phase 7 terminal marker anchors used for per-player runtime icon spawning.
     gadgetInteractableObjIds?: number[]; // Phase 7 gadget/ammo interactables; all ids map to ammo resupply menu.

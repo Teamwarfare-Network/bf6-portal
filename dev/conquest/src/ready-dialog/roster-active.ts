@@ -62,6 +62,11 @@ function getActivePlayers(): ActivePlayers_t {
         const teamNum = getTeamNumber(mod.GetTeam(p));
         // Only Team 1/2 are considered active for rosters/ready gating.
         if (teamNum !== TeamID.Team1 && teamNum !== TeamID.Team2) continue;
+        // Single-spectator slot: exclude the spectator from the active-roster gate so the
+        // remaining fighters can match-start without the spectator's absence blocking.
+        // The spectator stays on their original team (no SetTeam call) -- this filter is
+        // the only chokepoint that excludes them from areAllActivePlayersReady.
+        if (pid === State.players.spectatorPid) continue;
 
         pidByPlayer.set(p, pid);
         all.push(p);

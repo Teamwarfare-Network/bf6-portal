@@ -427,6 +427,12 @@ interface GameState {
         // deploy, covering the rare case where an expected trigger enter event doesn't fire.
         deployedAtSecondsByPid: Record<number, number>;
         disconnectedByPid: Record<number, boolean>;
+        // Single-spectator slot. Pid of the player currently in spectator mode, or null when vacant.
+        // Allocator: enterSpectatorMode (spectator-action.ts).
+        // Deallocators: onSpectatorPlayerLeave + onSpectatorMatchEnd + onSpectatorFreshSetup.
+        // Read by: getActivePlayers (roster-active.ts), getDesiredBoundaryViolationKind (boundary OOB skip),
+        // syncCoachButtonForPid (slot-state matrix), the OnPlayerDeployed re-attach hook (player-deploy.ts).
+        spectatorPid: number | null;
         uiInputEnabledByPid: Record<number, boolean>;
         liveVehicleDeployMenuVisibleByPid: Record<number, boolean>;
         posDebugTransformSourceByPid: Record<number, PositionDebugTransformSource>;

@@ -103,6 +103,8 @@ import './ready-dialog/countdown-flow';
 import './ready-dialog/auto-start';
 import './ready-dialog/swap-action';
 import './ready-dialog/player-ready-panel';
+import './spectator/spectator-action';
+import './spectator/coach-button-sync';
 import './conquest-flow';
 import './index/capture-shared';
 import './index/capture-sound';

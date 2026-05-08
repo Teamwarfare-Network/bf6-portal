@@ -208,6 +208,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     onPlayerLeaveSpawnCharge(pid);
     delete State.players.readyDialogData[pid];
     Admin.onPlayerLeave(pid);
+    onSpectatorPlayerLeave(pid);
     refreshBuiltReadyDialogCachesForAllPlayers();
 
     if (!isMatchLive()) {

@@ -93,6 +93,7 @@ function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number,
     }
 
     if (!lifecycleTrySetGameOver("pregame-end-match", winner)) return;
+    onSpectatorMatchEnd();
     clearActiveBoundaryViolationsForAllPlayers();
     updateReadyDialogModeConfigForAllHiddenBuiltCaches();
     updateReadyToggleButtonsForAllBuiltReadyDialogs();
@@ -119,6 +120,7 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     DelayBroadcast.cancelDelayBroadcastsForLive();
     cancelPregameCountdown();
     resetReadyStateForAllPlayers();
+    onSpectatorFreshSetup();
 
     lifecycleSetNotReadyBaseline("fresh-setup");
     State.round.liveStartedAtSeconds = undefined;

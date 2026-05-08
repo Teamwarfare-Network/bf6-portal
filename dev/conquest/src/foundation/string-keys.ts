@@ -18,6 +18,8 @@ const STR_RD_VEHICLE_NO_SPAWN = mod.stringkeys.twl.readyDialog.vehicleShortNoSpa
 
 const STR_READYUP_RETURN_TO_BASE_NOT_LIVE = mod.stringkeys.twl.notifications.readyupReturnToBaseNotLive;
 const STR_PLAYER_READIED_UP = mod.stringkeys.twl.notifications.playerReadiedUp;
+const STR_PLAYER_SPECTATING = mod.stringkeys.twl.notifications.playerSpectating;
+const STR_PLAYER_STOPPED_SPECTATING = mod.stringkeys.twl.notifications.playerStoppedSpectating;
 const STR_BOUNDARY_WARNING_ICON = mod.stringkeys.twl.boundary.warningIcon;
 const STR_BOUNDARY_PRELIVE_MAIN_BASE_TITLE_1 = mod.stringkeys.twl.boundary.preLiveMainBaseTitle1;
 const STR_BOUNDARY_PRELIVE_MAIN_BASE_TITLE_2 = mod.stringkeys.twl.boundary.preLiveMainBaseTitle2;

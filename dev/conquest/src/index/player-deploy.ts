@@ -70,6 +70,11 @@ async function onPlayerDeployedImpl(eventPlayer: mod.Player) {
     // call mod.ForcePlayerToSeat inside the OnPlayerDeployed event chain (BountyHunter
     // context -- the only reliable one for ForcePlayerToSeat on freshly-deployed players).
     try { onHqSeatPendingPlayerDeployed(eventPlayer, pid); } catch {}
+    // Spectator camera defensive re-attach: if this pid owns the spectator slot and the
+    // body just (re-)deployed (vehicle-spawn collision, suicide-while-spectating, etc.),
+    // re-apply the Fixed-camera attachment so the spectator's view stays consistent.
+    // Idempotent + cheap; non-spectator deploys short-circuit on the pid-match check.
+    try { if (State.players.spectatorPid === pid) attachSpectatorCameraIfDeployed(eventPlayer, pid); } catch {}
     await spawnReadyDialogInteractPoint(eventPlayer);
 }
 

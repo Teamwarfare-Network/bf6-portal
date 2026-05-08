@@ -136,6 +136,82 @@ Architectural mirror of BillDukes: BillDukes' VehicleDeploy uses `mod.EnablePlay
 
 ---
 
+## Locked Spectator Patterns
+
+The spectator camera is a single-slot, pre-LIVE-only **observer mode** for a coach / referee / replay director who wants to watch a match without occupying a player slot, without holding a vehicle, and without firing weapons. Built on a Godot-authored `FixedCamera` (currently Operation Firestorm only; other 8 maps deferred behind graceful-degradation that keeps the SPECTATE button disabled-grey). Source files: [`src/spectator/spectator-action.ts`](../src/spectator/spectator-action.ts), [`src/spectator/coach-button-sync.ts`](../src/spectator/coach-button-sync.ts). Plan archives: [`5.08.26_conquest_spectator_cam_plan.md`](./5.08.26_conquest_spectator_cam_plan.md), [`5.08.26_conquest_spectator_cam_ship2_plan.md`](./5.08.26_conquest_spectator_cam_ship2_plan.md), [`5.08.26_conquest_spectator_cam_ship3_plan.md`](./5.08.26_conquest_spectator_cam_ship3_plan.md), [`5.08.26_conquest_spectator_cam_ship4_plan.md`](./5.08.26_conquest_spectator_cam_ship4_plan.md).
+
+### Single-slot, claim-only, scalar state
+
+`State.players.spectatorPid: number | null` is a single nullable scalar — **NOT** a per-pid map. Only one spectator can hold the slot at any time. **No auto-promotion ever** (mirrors the admin-slot rule); every match starts with `spectatorPid = null` and stays vacant until someone explicitly clicks SPECTATE. Vacated slots (whether from triple-tap exit, disconnect, match-end, or admin reset) stay vacant until someone explicitly re-claims. A vacant slot enables the SPECTATE button on every viewer's panel + dialog; an occupied slot greys it out for everyone (including the spectator themselves, since clicking it would be a no-op anyway).
+
+Because the slot is single-occupancy, the integration uses **module-local state** (`_spectatorHideRoomObjects[]`, `_spectatorHideRoomCenter`, `_spectatorFreeCameraLoopToken`) instead of per-pid records. This is the canonical reason there is **zero new M-tier storage** for the entire feature — the heap cost is bounded by "1 spectator × 6 spatial handles + 1 token int" regardless of player count.
+
+### Mitigation C — body stays deployed; camera swap only
+
+The empirical I-4 finding (v1.476 probe) is that `mod.SetCameraTypeForPlayer(player, Cameras.Fixed, camId)` on an **undeployed** player is a no-op — the cam swap only takes effect once the player is deployed in-world. So the spectator integration uses **Mitigation C**: the player was already deployed when they clicked SPECTATE (triple-tap on the panel is gated on `isPlayerDeployed`, and the pre-live boundary keeps players at HQ pre-match). We do **NOT** undeploy / redeploy on claim — we just swap the camera, then teleport the body into a sealed underground hide-room so it cannot be seen by other players.
+
+Combat HUD persists per user direction so the spectator watches tickets/flags/captures during the match. Boundary skip ([`enforcement.ts:225+`](../src/boundary/enforcement.ts#L225)) keeps the spectator's body out of the boundary classifier's reach. A defensive `OnPlayerDeployed` re-attach hook ([`player-deploy.ts:72+`](../src/index/player-deploy.ts#L72)) handles the unlikely re-deploy case (mirrors the existing `onHqSeatPendingPlayerDeployed` shape).
+
+The `(mod.Cameras as any).Fixed` cast and `(mod as any).GetFixedCamera(camId)` cast pattern resolve gaps in the project's vendored `bf6-portal-mod-types` (the SDK 1.2.3 enum value + function exist at runtime; the type definitions don't). Same pattern used by [`foundation/gameplay.ts:204`](../src/foundation/gameplay.ts#L204) for `VehicleList.AH6M`.
+
+### PCT-pattern sealed underground hide-room
+
+The body is teleported into a 5mm sealed cube at **absolute `Y = -500`** so it is invisible to other players, cannot fall through gravity, and stays out of the playable airspace. The room is constructed from 4 × `FiringRange_Wall_2048_01` + 1 × `FiringRange_Floor_A` + 1 × `FiringRange_Ceiling_02`. Mesh-bound geometry constants (5mm interior, 6.4m wall height, 0.94 / 0.3 wall face offsets, 0.5 wall overlap, floor / ceiling local mesh bounds) are mesh-asset facts, lifted from PCT's `SpawnDirectorControlRoom` ([reference_implementations/reference_nodone_cinematic_camera/main_module.ts:2486](../reference_implementations/reference_nodone_cinematic_camera/main_module.ts#L2486)) per AGENTS.md non-copy policy (methodology adapted, original implementation).
+
+**Why absolute Y (not camera-relative):** PCT uses `camPos.y - 50`, but PCT's cinematic cameras are authored at ground level. Conquest's spectator cameras are authored mid-air for overlook framing (Operation Firestorm cam 667 sits at Y≈246), and `-50` from there still lands in playable airspace where it would block aircraft. Absolute `Y = -500` is below all authored Conquest terrain and 500 units **above** the destroyed-vehicle sink layer at `Y = -1000` ([`vehicles/vanilla-spawner.ts:100`](../src/vehicles/vanilla-spawner.ts#L100)) — geometry can't clash with sunk wrecks either.
+
+X/Z preserved from the FixedCamera's authored position so the room sits far from spawn areas. A water-fallback path was originally written (PCT's pattern) but dropped at v1.483 — water can't reach Y=-500 on any current map.
+
+### Per-tick free-camera control loop
+
+The spectator drives the same Godot-placed `FixedCamera` via a per-tick `mod.SetObjectTransform` write loop running at ~30 Hz. PCT methodology: **"Camera-as-Owned-FixedCamera"** ([`spec_cam_functionality.md`](../reference_implementations/reference_nodone_cinematic_camera/spec_cam_functionality.md) §6.1). Implementation in `runSpectatorFreeCameraLoop`:
+
+- **Forward / strafe:** read `mod.SoldierStateVector.GetLinearVelocity` + `GetFacingDirection`, decompose velocity onto flat-projected facing for forward and `cross(fwd, up)` for strafe. The body is sealed in a 5mm cube but the engine still reports a non-zero velocity for WASD-pressed motion — that's what we read. Multiplied by `FORWARD_GAIN` / `STRAFE_GAIN` (currently 10.0 each).
+- **Vertical:** explicit `IsJumping` (+Y) / `IsCrouching` (-Y) reads × `VERTICAL_SPEED` (currently 20.0 units/sec). Independent of horizontal; vertical does NOT get the sprint multiplier (so holding Jump = constant rise rate).
+- **Sprint:** `IsSprinting` × `SPRINT_MULTIPLIER` (currently 3.5) on horizontal speed only (final sprint speed = 35).
+- **Look:** `targetYaw = atan2(facingX, facingZ)`; `targetPitch = -asin(facingY)` clamped to ±89°. The pitch is **negated** because the engine's `SetObjectTransform` pitch convention is opposite of `asin(facing.y)` — without the negation, mouse-up tilted the camera down.
+- **Smoothing:** PCT's empirical lerp factors — 0.12 forward/strafe, 0.18 rotation/vertical. Yaw lerp uses an angle-aware variant (`spectatorFreeCamLerpAngle`) that handles the ±π wrap so spinning across north doesn't unwind through 359° of rotation.
+
+**Token-based cancellation:** module-local `_spectatorFreeCameraLoopToken: number`. The loop captures the token at start; each tick checks `if (_spectatorFreeCameraLoopToken !== token) return`. Cleanup hooks (disconnect / match-end / fresh-setup / triple-tap exit) bump the token to terminate the loop within one tick. No promise-cancellation needed.
+
+**Input-restriction policy:** 12 inputs locked while in spectator mode (`SPECTATOR_LOCKED_INPUTS`): Prone, FireWeapon, Reload, Zoom, CycleFire, CyclePrimary, 6 × Select* (CharacterGadget, OpenGadget, Melee, Primary, Secondary, Throwable). **Movement** (MoveForwardBack, MoveLeftRight), **Sprint**, **Jump**, **Crouch**, and **CameraPitch / CameraYaw** are intentionally NOT locked — they drive the free-camera loop. **Interact** is also intentionally NOT locked (see exit pattern below).
+
+### Triple-tap interact exit
+
+Spectator exits the slot by triple-tapping the interact key (same UX as pre-game ready-up). Reuses the existing `InteractMultiClickDetector` ([utils/multi-click.ts:8-48](../src/utils/multi-click.ts#L8-L48)) — a 2-second window, 3-click threshold, polled per `OngoingPlayer` tick on `mod.SoldierStateBool.IsInteracting` transitions. Routing in `ongoingPlayerImpl` ([player-loop-inputs.ts:3-18](../src/index/player-loop-inputs.ts#L3-L18)) checks `isSpectator(pid)` BEFORE the existing ready-dialog dispatch and early-returns to `exitSpectatorMode` so a sealed-in-cube body cannot also spawn a `ReadyDialogInteractPoint`.
+
+**Why Interact is released from the lock list:** the detector polls the `IsInteracting` SoldierStateBool — that bool is the animation state, and `EnableInputRestriction` may suppress the animation, which would prevent the bool from flipping. Releasing Interact guarantees clean state transitions. **Safe** because the body is in a 5mm sealed cube at Y=-500 with no `InteractPoint` authoring in range — there is nothing for an Interact-press to activate.
+
+**Exit ordering** (`exitSpectatorMode`, mirror of `enterSpectatorMode` in reverse): bump free-cam loop token → despawn hide-room → release input lock → restore `Cameras.FirstPerson` → clear `State.players.spectatorPid` → `mod.UndeployPlayer(player)` (back to deploy screen on foot, fresh class selection) → world-log + `mod.DisplayNotificationMessage` self-confirm → refresh panels + dialog + ready-hud-text. **Idempotent** via the `if (State.players.spectatorPid !== pid) return` guard at the top — match-end + triple-tap + disconnect can race without breaking.
+
+**Reload key as exit trigger was rejected.** No `OnPlayerReload` event exists in SDK 1.2.3. No `IsAttemptingToReload` SoldierStateBool exists. `IsReloading` is the animation state, and with `RestrictedInputs.Reload` locked the animation may not play. The triple-tap path is the only proven mechanism that works with input restrictions active.
+
+### Map authoring requirement + graceful degradation
+
+A map gets a working SPECTATE button only when its `MapConfig.spectatorCameraId` field is authored to a valid Godot `FixedCamera` ObjId. `isSpectatorAvailableForActiveMap()` returns `false` otherwise, which causes `isCoachButtonEnabledForPid` to return false, which renders the SPECTATE button disabled-grey on every viewer's panel + dialog (the existing D3 visual treatment from Wave 4). **No script-side error**, no console.log noise — just a button that's there but not clickable. Currently authored: Operation Firestorm only (cam ObjId 667). Other 8 maps deferred until per-map vantage points are scouted in Godot.
+
+### Lifecycle deallocators (3 cleanup paths)
+
+| Trigger | Function | What it does |
+|---|---|---|
+| Spectator disconnects | `onSpectatorPlayerLeave(pid)` from `onPlayerLeaveGameImpl` | Clears slot if pid matches, bumps token, despawns hide-room, marks HUD dirty. |
+| Match ends | `onSpectatorMatchEnd()` from `endMatch` | Clears slot, bumps token, despawns room, releases input lock, restores `FirstPerson` for victory dialog. |
+| Admin reset / fresh setup | `onSpectatorFreshSetup()` from `triggerFreshMatchSetup` | Clears slot, bumps token, despawns room, defensively releases input lock (in case match-end was bypassed). |
+
+Plus the user-driven path: `exitSpectatorMode(player, pid)` from triple-tap. All four are idempotent and null-safe; they can race without leaking state.
+
+### Out of scope (deferred)
+
+- **Player-target tracking** on Jump key (Ship 3b, ~50 LOC) — would lerp camera position toward the picked target's pos.
+- **Raycast wall correction** (Ship 3c, ~80 LOC) — would push the camera away from world geometry on collision.
+- **Multi-spectator support** — would require pid-indexed state. Single-slot is the canonical model.
+- **Mid-match LIVE entry** — claim path is pre-LIVE only by design; observer joining mid-match is not supported.
+- **Spectator team-scoreboard hide** — spectator currently shows on the scoreboard with their original team; deferred until MP feedback indicates whether this is confusing.
+- **Reload-key shortcut for exit** — deferred until empirical SDK test confirms `IsReloading` flips with Reload restricted.
+- **Other 8 maps' Godot FixedCamera authoring** — Firestorm-only at ship.
+
+---
+
 ## CF Design Rules — Gameplay
 
 These are the locked gameplay design decisions. CF = Conquest Function rule. PD = Project Decision.
