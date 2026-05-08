@@ -282,6 +282,15 @@ Targeted defense for the v1.469 silent server crash that occurred when a fresh 2
 
 **If the crash repros despite all three defenses:** the throw is happening outside the wrapper's reach. Most likely vectors: (1) engine-side C++ assert from a `mod.*` call within the lazy-build cohort that aborts before JS sees the exception (Phase A wrapper would NOT log this — it would still be silent); (2) a per-tick iteration (conquest tick, capture-tickets tick, scoreboardSyncTick, tickBoundaryEnforcement) hitting a late-joiner with partially-built per-pid state and triggering an engine assert through a stale-handle write. Investigation should pivot to instrumenting sync engine calls during the pre-deploy window.
 
+## Late-join during countdown fix (shipped v1.474, 2026-05-07)
+
+CQ_Bug_115 fix: removed `areAllActivePlayersReady()` check from `isPregameCountdownStillValid`. Countdown is now uncancellable except by admin reset / match-end. See [`design_doc/5.07.26_late_join_during_countdown_fix_plan.md`](./5.07.26_late_join_during_countdown_fix_plan.md).
+
+- [x] **Late-join during active countdown (TARGET REPRO).** P1 readies up alone or with others; countdown starts. P2 (fresh, never joined this session) joins between 20..LIVE!. Pass: countdown does NOT cancel; reaches LIVE; both P1 and P2 are deployable post-LIVE. P2's HUD builds correctly via the lazy-build cohort that fires on join. **Confirmed working (2-player MP, 2026-05-08).**
+- [ ] **Repeated late-joins.** Run 5+ late-join cycles during separate countdowns at varying times (countdown+2s, +5s, +15s, +19s). Pass: 0 countdown cancellations; all complete to LIVE.
+- [ ] **Admin reset during countdown.** During an active countdown, admin clicks "Reset Match". Pass: `cancelPregameCountdown` cleanup runs (deploy re-enabled, phase back to NOT_READY, countdown UI hidden); lobby returns to ready-up state cleanly.
+- [ ] **Player toggles ready off during countdown.** While countdown is running, an existing player clicks the READY button to toggle off. Pass: `readyByPid` flips to false but countdown does NOT cancel; reaches LIVE normally. (Confirms the not-ready check is fully decoupled from countdown validity.)
+
 ---
 
 ## How to use this file

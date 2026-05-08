@@ -33,7 +33,7 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
             { objId: 1014, ownerTeamId: TeamID.Team1, pos: mod.CreateVector(-774.771, 133.960, 278.100), vfx: VFX_GREEN_SMOKE, rot: mod.CreateVector(-90, 0, 0) },
             { objId: 1015, ownerTeamId: TeamID.Team1, pos: mod.CreateVector(-771.480, 133.919, 279.972), vfx: VFX_VIOLET_SMOKE, rot: mod.CreateVector(-90, 0, 0) },
         ],
-        gadgetInteractableObjIds: [1050, 1051, 1052, 1053, 1054, 1055, 1056, 1057],
+        gadgetInteractableObjIds: [1050, 1051, 1052, 1053, 1054, 1055, 1056, 1057, 1058, 1059],
         gadgetInteractableAnchors: [
             { objId: 1050, ownerTeamId: 0, pos: mod.CreateVector(-310.151, 134.754, -38.6218), vfx: VFX_YELLOW_SMOKE, rot: mod.CreateVector(-90, 0, 0) },
             { objId: 1051, ownerTeamId: 0, pos: mod.CreateVector(-294.866, 134.908, -128.322), vfx: VFX_YELLOW_SMOKE, rot: mod.CreateVector(-90, 0, 0) },
@@ -43,6 +43,8 @@ const MAP_CONFIG_FRAGMENT_OPERATION_FIRESTORM = {
             { objId: 1055, ownerTeamId: 0, pos: mod.CreateVector(79.5491, 120.983, -57.5276), vfx: VFX_YELLOW_SMOKE, rot: mod.CreateVector(-90, 0, 0) },
             { objId: 1056, ownerTeamId: 0, pos: mod.CreateVector(-726.711, 133.687, 203.667), vfx: VFX_YELLOW_SMOKE, rot: mod.CreateVector(-90, 0, 0), disableOnLive: true },
             { objId: 1057, ownerTeamId: 0, pos: mod.CreateVector(602.304, 111.096, -223.565), vfx: VFX_YELLOW_SMOKE, rot: mod.CreateVector(-90, 0, 0), disableOnLive: true },
+            { objId: 1058, ownerTeamId: 0, pos: mod.CreateVector(-462.743, 138.347, 37.2363), vfx: VFX_YELLOW_SMOKE, rot: mod.CreateVector(-90, 0, 0) },
+            { objId: 1059, ownerTeamId: 0, pos: mod.CreateVector(339.316, 113.847, -110.546), vfx: VFX_YELLOW_SMOKE, rot: mod.CreateVector(-90, 0, 0) },
         ],
         aircraftCeiling: 130,
         hudMaxY: 735,

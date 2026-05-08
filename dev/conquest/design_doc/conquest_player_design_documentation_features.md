@@ -11,124 +11,119 @@ Player-readable summaries of the features that make up TWL Conquest. Tone is Ste
 ## TWL Conquest Table of Contents
 
 **Player-facing features**
-- [Custom Dialogs / UI Interfaces](#custom-dialogs--ui-interfaces)
+- [Custom Dialogs / Interfaces](#custom-dialogs--interfaces)
 - [Game Match Flow](#game-match-flow)
 - [Player Ready Up Panel](#player-ready-up-panel)
-- [Configurations in Admin Ready Panel](#configurations-in-admin-ready-panel)
-- [Vehicle Deploy](#vehicle-deploy)
-- [Supply Box](#supply-box)
-- [Conquest HUD / UI](#conquest-hud--ui)
-- [Victory Panel](#victory-panel)
+- [Configurations / Admin Ready Up Panel](#configurations--admin-ready-up-panel)
+- [Vehicle Deploy Modes](#vehicle-deploy-modes)
+- [Supply Box Gadgets](#supply-box-gadgets)
+- [Conquest HUD & UI](#conquest-hud--ui)
+- [End Match Victory Panel](#end-match-victory-panel)
 
 ---
 
 ## Custom Dialogs / Interfaces
 
-Colored smokes mark every static interactive menu in the game; interact with them to open dialogs.
+Walk into and interact with colored smokes to open their menus.
 
-- **Green smoke** → (main base) Ready Up and Team Switcher 
-   - You can also get to these with a triple-tap of the interact button while standing still on foot
-   - If you're admin - this also enables configuration of the mode
-- **Purple smoke** → (main base) Vehicle Redeploy menu (if HQ, Air or Forward Deploy is enabled)
-- **Yellow smoke** → Supply Box. Active during Live around every captured objective; pre-game only at HQ as a loadout preview
+- **Green** → ready up & swap teams (admins configure mode here too)
+   - Triple-tap E while on-foot to access this at any time
+- **Purple** → deploy into a vehicle (HQ / Forward / Air Deploy)
+- **Yellow** → Supply Box in the field during a live game (@HQ pre-game to previews)
 
-Color helps with finding each dialog. Both main bases carry a green and purple smoke pair near player spawners - so ready-up and vehicle deploy are always steps away. The yellow Supply Boxes are in the field, near capture points and accessible during the Live game; the yellow smoke at HQ are just for pre-game previews. 
+Both main bases have a green + purple pair near spawn, so ready-up and vehicle deploy are always a step away. Yellow Supply Boxes are near objectives during the match; the ones at HQ are pre-game-only previews for testing loadouts.
 
 ---
 
 ## Game Match Flow
 
-A match runs through four stages — pre-game configuration, tuning & ready-up, a live 3-2-1 countdown, then live gameplay
+A match runs through four stages:
 
-- **Pre-game:** the admin tunes vehicles and deploy modes; everyone else can spawn, drive, walk around the HQ, and preview gadgets at the HQ Supply Box
-- **Ready Up:** each player clicks READY; the match auto-starts once enough players are ready on both sides
-- **Countdown:** 3-2-1 final countdown in the deploy screen
-- **Live:** victory is triggered either on 0 tickets or clock end
+1. **Pre-game** → Admin configures, vehicles, settings and modes; players warm up, check loadouts and supply box tuning
+2. **Ready Up** → Hit READY when you're good to go; match auto-starts when all players are ready
+3. **Countdown** → 3-2-1 on the deploy screen, also displays vehicle round-timings
+4. **Live** → kill the enemy, capture flags and bleed tickets
 
-First is a pre-game for setup and configuration. The admin uses the configuration dialog to dial in vehicles, deploy modes, and player counts, while everyone else can spawn into the map, test vehicle loadouts, and use the yellow HQ Supply Box to preview gadget tuning. When players hit READY and the minimum-per-side threshold is met, a 3-2-1 countdown locks settings and forces every player to the deploy screen. Live phase activates capture points, ticket bleed, and the Supply Boxes in the field; the round ends when one team hits 0 tickets or the clock expires. Draws are possible if tickets end at the same number.
+Pre-game is the warm-up. Once enough players hit READY, countdown begins and the match goes Live. The round ends once a team reaches 0-tickets, or on clock time out (higher tickets wins or a draw if even).
 
 ---
 
 ## Player Ready Up Panel
 
-Non-admin players get a dialog showing who the admin is, your ready status and capability to team switch
+Shows the current admin, ready status, and lets you swap teams.
 
-- Opens from any of the green smokes at your main base
-- CLAIM ADMIN appears top-right when the admin slot is vacant
-- Shows the current admin (or "No Admin"), and your ready status
-- Switch teams is always available from this dialog, even when live
+- Opens from any green smoke at your main base
+- **'READY'** toggles your status as good to start 
+- **'CLAIM ADMIN'** appears top-right when the admin slot is empty
+- **'CHANGE TEAMS'** works at any time, even mid-match
+   - Triple-tap E while on-foot to access this at any time
 
-Every player starts here at this dialog. CHANGE TEAMS hides the panel and re-deploys you on the other side; READY toggles your status and updates the global "X / Y ready" counter. If the admin disconnects or hands off the slot, CLAIM ADMIN appears for everyone — there's no auto-promotion, the slot stays empty until somebody actively claims it.
+When the admin leaves or gives it up, 'CLAIM ADMIN' appears for everyone — nobody is auto-promoted, somebody has to take it. This is typically whomever hosts the match.
 
 ---
 
 ## Configurations / Admin Ready Up Panel
 
-The match's admin can pre-pick which tanks, jets, helis, and transports each team gets — and toggle deploy modes — right from the Ready Up dialog before the round starts.
+Admin's pre-match control panel. Pick vehicles, modes, and settings before the round starts.
 
-- TWL presets are seeded at the top (e.g. 12v12 Conquest)
-- If teams choose, they can customize beyond these presets by choosing what individual vehicles are deployed.
-- Center checkboxes pick the deploy modes available: Vanilla / HQ / Air / Forward / Supply Boxes
-- Unsaved changes show in red. Click on 'Apply Configuration" to commit changes
-- Only the Admin sees this panel - claiming admin grants permission to do this
+- Start from a TWL preset (e.g. 12v12 Conquest), or customize anything (& everything!)
+- Center checkboxes pick deploy modes: Vanilla / HQ / Air / Forward / Supply Boxes.
+- Unsaved changes turn red → **'APPLY CONFIGURATION'** locks changes in
+- **'GIVE UP ADMIN'** allows you to yield Admin to another player.
 
-The Vehicle Configurations grid is the host's pre-match control panel. They cycle through tank, jet, heli, and transport options per team using left/right arrows on each row, then pick the deploy methods and whether Supply Boxes are on. Picking a Game Mode preset auto-loads its defaults; manual changes flip the mode to "Custom" so you always know whether you're on a known approved template. Once confirmed, this syncs every spawner to the new vehicle types.
+Use left/right arrows on each row to cycle vehicle options per team. A preset loads TWL defaults instantly; tweak any setting and the mode flips to "Custom" so you know you're off-template. 
 
 ---
 
 ## Vehicle Deploy Modes
 
-The Vehicle Deploy menu is your one-stop shop for vehicles — open it from the deploy screen or the purple smoke at HQ. 
+One menu, multiple ways to get a vehicle. Opens on the deploy screen, or via the purple smoke at HQ.
 
-- Opens automatically on the deploy screen, or accessible from the purple smoke at HQs
-- Admin picks the available respawn modes for vehicles: 
-   - **Vanilla** (auto-spawn cycle, just like a public server - walk up to it)
-   - **HQ Deploy** (teleport spawn player into it at HQ + auto-seat)
-      - **Forward Deploy** (ground vehicles dropped at a tuned/randomized forward point)
-      - **Air Deploy** (aircraft dropped airborne in your team's air zone)
-- Voluntary deploys don't cost a ticket or count as a death.
+- Admin picks which modes are on:
+   - **Vanilla** → auto-spawns at HQ, walk up and drive (classic BF).
+   - **HQ Deploy** → request and you're seated at HQ instantly.
+      - **Forward Deploy** → ground vehicles drop at a random forward point.
+      - **Air Deploy** → aircraft drop airborne in your team's sky zone.
+- Vehicle deploys cost no ticket and don't count as a death.
 
-The design philosophy here is built around preventing the capability to camp - if the enemy cannot predict when or where the vehicles spawn, it creates more chances for real combat to occur instead of pad camping. The Vehicle Deploy menu is the shared front-end for all four deploy modes. **Vanilla** is classic Battlefield. If Vanilla is not enabled, HQ Deploy is automatically enabled. **HQ Deploy** flips the classic behavior — nothing auto-spawns, but each player can request a vehicle on demand and is force-seated inside the moment it spawns at HQ. Forward and Air Deploys are extensions of the HQ Deploy functionality. **Forward Deploy** mirrors the behavior for ground vehicles, but pushes them up to a tuned randomized forward point closer to the action; **Air Deploy** mirrors it for jets and helis but they're dropped airborne in your team's sky zone in a tuned randomzied range.
+Built to stop pad-camping — if the enemy can't predict where vehicles appear, you get real fights instead of farming spawns. Vanilla is classic Battlefield. HQ flips it: nothing auto-spawns, but you request and get seated on demand. Forward and Air extend the HQ deploy capabilities — ground vehicles get pushed up to a forward zone, aircraft drop back in your team's sky zone, both at tuned randomized points so its difficult to predict or camp.
 
 ---
 
 ## Supply Box Gadgets
 
-Indicated by Yellow Smoke - walk up to a Supply Box and resupply or swap class specific gadgets. 
+Interact with yellow smoke for a Supply Box. Grab class-specific gadgets.
 
-- Interact with them during a Live match to access rare/exclusive gadgets or resupply launcher ammo.
-- Gadgets are tuned around 'Per-team charges' & 'Per-player cooldowns'
-- Buttons dim when they're on cooldown - timers show when they're usable again
-- Choose which gadget slot is utilized at the top
-- Supply Boxes will be tuned per map, so check them out pre-game in the HQ
+- Live match only at objectives (previewable at HQ pre-game)
+- Per-player cooldowns and per-team charges → tuning varies by map
+- Buttons dim on cooldown; timer shows when they're available again
+- Pick which gadget slot gets used at the top
 
-The Supply Box is a gadget vending machine; it's class-aware and locked to your current choice. Each button has a name, a duration / scope hint ("1 per player", "5m cooldown", "1 per team"), and a live timer when it's on cooldown. Cooldowns are persisted per player (and per team for shared items), so closing and re-opening the menu or accessing a different supply box doesn't reset them.
+A class-aware gadget vending machine. Each button shows its scope ("1 per player", "1 per team"), a cooldown, and a live timer when locked. Cooldowns persist per player (and per team for shared items) — closing / reopening the menu or visiting a different Supply Box won't reset them.
 
 ---
 
 ## Conquest HUD & UI
 
-The on-screen HUD that shows tickets, match clock, capture progress, bleed indicators, vehicle deploy timers, and the team's ticket
+Tickets, clock, capture progress, with an added vehicle ready-status panel
 
-- Top ticket bar: friendly left/blue, enemy right/red; chevrons show bleed rate.
-- Mid-screen: capture-point progress, contested indicators and callouts.
-- Vehicle availability: shows friendly HQ vehicle statuses with WAIT / READY / ACTIVE indicators
-- Crown shows current team in the lead if the match were to end
+- **Ticket bar** → friendly left/blue, enemy right/red. Chevrons show bleed rate
+- **Capture panel** → capture-point progress, status and contest indicators
+- **Vehicle list** → friendly HQ vehicles with WAIT / READY / ACTIVE statuses
+- **Crown** → shown over the team currently in the lead
 
-The combat HUD is very similar to Vanilla BF6: friendly is always on the left in blue and enemy is always on the right in red - both locked in place so you never have to think about which side is yours. Capture-point progress bars show contested statuses and how many players are on a flag. The bleed chevrons appear on the losing team's ticket bar when an objective differential is active. Vehicle deploy timer rows show spawn progress in 10% chunks.
+Bleed chevrons indicate bleed differentials. Vehicle deploy timers show bars filling in 10% increments.
 
 ---
 
 ## End Match Victory Panel
 
-When the match ends, every player gets a results scoreboard showing the winning team, final ticket counts, match length, and a 30-second countdown to the next round.
+End-of-match scoreboard. Winning team, final tickets, rosters, 30 seconds until the next round.
 
-- Crown icon over the winning team; final ticket counts in big digits.
-- Both team rosters and match length displayed.
-- "Screenshot now" prompt — the panel sticks for 30 seconds to ensure results can be collected by captains.
-- Admin action count appears (yellow) only if any admin actions were used.
+- Crown over the winning team. Final ticket counts in big digits
+- Both team rosters and match length
 
-The Victory Panel is the round wrap-up. Tickets are frozen, the winning team gets a crown, the result line spells out the win margin or "Draw" if it's tied, and both team rosters are displayed. The countdown shows when the next round will reset; the panel survives for the full 30 seconds so everyone has time to screenshot and read it. A yellow admin-actions line appears only when the admin actually used test buttons or special config tools during the match.
+The match wraps up here. Tickets freeze, the winner gets a crown, the result line shows the win margin (or "Draw" if tied). The 30-second window is sized for league captains to capture results.
 
 ---
 
@@ -235,8 +230,8 @@ Per-feature working notes for refining the player-facing copy above. Source-file
 - Container is 640w × 280h, centered, with 4-line border chrome mirroring the full dialog.
 - Content rows (centered): Title (large), Game Admin name (or "No Admin"), team-aware ready status line. Game Host row removed v1.459 (Host was never script-authoritative — engine reports closest-to-server player as first-loaded, not the actual server host).
 - Bottom button row: SWAP TEAMS, READY/NOT READY (label flips), SPECTATE/COACH (disabled, greyed — D3 verbatim from full dialog), CLOSE.
-- **Live-disable matrix:** READY button greys + disables on Live (`syncPlayerReadyPanelReadyButtonForPid` checks `isMatchLive()`). CLAIM ADMIN button greys + disables on Live (`syncPlayerReadyPanelClaimAdminButtonForPid`). **SWAP TEAMS button has NO `isMatchLive()` guard** — it stays enabled and clickable throughout Live, which is what the player-facing claim "Switch teams is always available from this dialog, even when live" relies on. SPECTATE/COACH stays disabled regardless of phase (V1 placeholder).
-- "Every player starts here at this dialog" wording is consistent with the headline "Non-admin players get a dialog" because every match starts with `Admin.isAdminVacant() === true` — so every player initially is a non-admin and uses this panel until somebody claims.
+- **Live-disable matrix:** READY button greys + disables on Live (`syncPlayerReadyPanelReadyButtonForPid` checks `isMatchLive()`). CLAIM ADMIN button greys + disables on Live (`syncPlayerReadyPanelClaimAdminButtonForPid`). **SWAP TEAMS button has NO `isMatchLive()` guard** — it stays enabled and clickable throughout Live, which is what the player-facing claim "SWAP TEAMS works any time, even mid-match" relies on. SPECTATE/COACH stays disabled regardless of phase (V1 placeholder).
+- Player-facing copy says *"Every player lands here first"*. Source-side that's true because every match starts with `Admin.isAdminVacant() === true` — every player is initially a non-admin and uses this panel until somebody claims.
 - CLAIM ADMIN button: top-right, 8px padded. Visibility owned by `syncPlayerReadyPanelClaimAdminButtonForPid` which gates on `Admin.isAdminVacant()`. Live-disabled state: greyed + click-disabled, but stays visible (so the viewer understands the slot is vacant and that handoff is locked during Live).
 - Refresh broadcast: any admin transition (claim / give-up / admin-disconnect) calls `refreshAllVisiblePlayerReadyPanels` so every viewer's Game Admin row + CLAIM ADMIN visibility update in lock-step.
 - READY auto-close behavior on the panel mirrors the dialog's path: hide → restore cursor → fire `handleReadyDialogReadyButtonClick` (world log, ready-count, auto-start gate) — single shared handler.
@@ -419,6 +414,106 @@ Items where the player-facing copy makes a claim that doesn't match what's curre
 
 2. **Issue #113 status (console deploy-screen SPAWN buttons).** The Vehicle Deploy exhaustive detail in this doc says #113 is **resolved at v1.466**. The player-facing known-issues doc ([`conquest_player_know_issues_documentation.md`](./conquest_player_know_issues_documentation.md)) and the internal tracking ([`conquest_issues.md`](./conquest_issues.md), [`conquest_issues_summary.md`](./conquest_issues_summary.md)) still list #113 as **Open**. If the v1.466 fix is in place and verified, close #113 in all three docs. If still observable on console, revert this doc's claim to "in progress" and keep the workaround note.
 
-3. **"APPLY" vs "APPLY CONFIGURATION" button label.** Player copy uses *"Apply Configuration"* (mixed case). The actual rendered button label is `"APPLY CONFIGURATION"` (all caps) per [`src/strings.json`](../src/strings.json) `"confirmSettingsLabel"`. Internal exhaustive detail had been writing "APPLY" as shorthand — corrected to match. Player copy can stay mixed-case for readability if preferred, or match the all-caps button rendering for literal accuracy.
+3. **"APPLY CONFIGURATION" button label.** V2 player copy renders the button as **APPLY CONFIGURATION** (all caps, bolded) which matches the actual button text per [`src/strings.json`](../src/strings.json) `"confirmSettingsLabel"`. Resolved at the V1→V2 cutover.
 
-4. **Triple-tap "while standing still" wording.** Player copy says triple-tap works *"while standing still on foot"*. Source-side requirement is **on-ground + on-foot** (`spawnReadyDialogInteractPoint` polls `IsOnGround`); movement during the poll does not block the spawn. The wording is loose but not incorrect — players who try while jumping/falling will fail. If literal accuracy matters, change to "while on the ground on foot"; if intuitive UX guidance matters, leave as-is.
+4. *(Resolved at V1→V2 cutover)* Triple-tap "while standing still" wording was loose in V1; V2 says *"Triple-tap E from on-foot does the same thing"* which matches the source-side requirement (on-ground + on-foot via `spawnReadyDialogInteractPoint`'s `IsOnGround` poll).
+
+---
+
+## V1 archive (player-facing copy, superseded)
+
+The pre-V2 player-facing copy, kept here for reference. Side-by-side comparison and design rationale for the V1→V2 simplification live in [`conquest_player_design_documentation_features_v2_comparison.md`](./conquest_player_design_documentation_features_v2_comparison.md).
+
+### V1 — Custom Dialogs / Interfaces
+
+Colored smokes mark every static interactive menu in the game; interact with them to open dialogs.
+
+- **Green smoke** → (main base) Ready Up and Team Switcher 
+   - You can also get to these with a triple-tap of the interact button while standing still on foot
+   - If you're admin - this also enables configuration of the mode
+- **Purple smoke** → (main base) Vehicle Redeploy menu (if HQ, Air or Forward Deploy is enabled)
+- **Yellow smoke** → Supply Box. Active during Live around every captured objective; pre-game only at HQ as a loadout preview
+
+Color helps with finding each dialog. Both main bases carry a green and purple smoke pair near player spawners - so ready-up and vehicle deploy are always steps away. The yellow Supply Boxes are in the field, near capture points and accessible during the Live game; the yellow smoke at HQ are just for pre-game previews.
+
+### V1 — Game Match Flow
+
+A match runs through four stages — pre-game configuration, tuning & ready-up, a live 3-2-1 countdown, then live gameplay
+
+- **Pre-game:** the admin tunes vehicles and deploy modes; everyone else can spawn, drive, walk around the HQ, and preview gadgets at the HQ Supply Box
+- **Ready Up:** each player clicks READY; the match auto-starts once enough players are ready on both sides
+- **Countdown:** 3-2-1 final countdown in the deploy screen
+- **Live:** victory is triggered either on 0 tickets or clock end
+
+First is a pre-game for setup and configuration. The admin uses the configuration dialog to dial in vehicles, deploy modes, and player counts, while everyone else can spawn into the map, test vehicle loadouts, and use the yellow HQ Supply Box to preview gadget tuning. When players hit READY and the minimum-per-side threshold is met, a 3-2-1 countdown locks settings and forces every player to the deploy screen. Live phase activates capture points, ticket bleed, and the Supply Boxes in the field; the round ends when one team hits 0 tickets or the clock expires. Draws are possible if tickets end at the same number.
+
+### V1 — Player Ready Up Panel
+
+Non-admin players get a dialog showing who the admin is, your ready status and capability to team switch
+
+- Opens from any of the green smokes at your main base
+- CLAIM ADMIN appears top-right when the admin slot is vacant
+- Shows the current admin (or "No Admin"), and your ready status
+- Switch teams is always available from this dialog, even when live
+
+Every player starts here at this dialog. CHANGE TEAMS hides the panel and re-deploys you on the other side; READY toggles your status and updates the global "X / Y ready" counter. If the admin disconnects or hands off the slot, CLAIM ADMIN appears for everyone — there's no auto-promotion, the slot stays empty until somebody actively claims it.
+
+### V1 — Configurations / Admin Ready Up Panel
+
+The match's admin can pre-pick which tanks, jets, helis, and transports each team gets — and toggle deploy modes — right from the Ready Up dialog before the round starts.
+
+- TWL presets are seeded at the top (e.g. 12v12 Conquest)
+- If teams choose, they can customize beyond these presets by choosing what individual vehicles are deployed.
+- Center checkboxes pick the deploy modes available: Vanilla / HQ / Air / Forward / Supply Boxes
+- Unsaved changes show in red. Click on 'Apply Configuration" to commit changes
+- Only the Admin sees this panel - claiming admin grants permission to do this
+
+The Vehicle Configurations grid is the host's pre-match control panel. They cycle through tank, jet, heli, and transport options per team using left/right arrows on each row, then pick the deploy methods and whether Supply Boxes are on. Picking a Game Mode preset auto-loads its defaults; manual changes flip the mode to "Custom" so you always know whether you're on a known approved template. Once confirmed, this syncs every spawner to the new vehicle types.
+
+### V1 — Vehicle Deploy Modes
+
+The Vehicle Deploy menu is your one-stop shop for vehicles — open it from the deploy screen or the purple smoke at HQ. 
+
+- Opens automatically on the deploy screen, or accessible from the purple smoke at HQs
+- Admin picks the available respawn modes for vehicles: 
+   - **Vanilla** (auto-spawn cycle, just like a public server - walk up to it)
+   - **HQ Deploy** (teleport spawn player into it at HQ + auto-seat)
+      - **Forward Deploy** (ground vehicles dropped at a tuned/randomized forward point)
+      - **Air Deploy** (aircraft dropped airborne in your team's air zone)
+- Voluntary deploys don't cost a ticket or count as a death.
+
+The design philosophy here is built around preventing the capability to camp - if the enemy cannot predict when or where the vehicles spawn, it creates more chances for real combat to occur instead of pad camping. The Vehicle Deploy menu is the shared front-end for all four deploy modes. **Vanilla** is classic Battlefield. If Vanilla is not enabled, HQ Deploy is automatically enabled. **HQ Deploy** flips the classic behavior — nothing auto-spawns, but each player can request a vehicle on demand and is force-seated inside the moment it spawns at HQ. Forward and Air Deploys are extensions of the HQ Deploy functionality. **Forward Deploy** mirrors the behavior for ground vehicles, but pushes them up to a tuned randomized forward point closer to the action; **Air Deploy** mirrors it for jets and helis but they're dropped airborne in your team's sky zone in a tuned randomzied range.
+
+### V1 — Supply Box Gadgets
+
+Indicated by Yellow Smoke - walk up to a Supply Box and resupply or swap class specific gadgets. 
+
+- Interact with them during a Live match to access rare/exclusive gadgets or resupply launcher ammo.
+- Gadgets are tuned around 'Per-team charges' & 'Per-player cooldowns'
+- Buttons dim when they're on cooldown - timers show when they're usable again
+- Choose which gadget slot is utilized at the top
+- Supply Boxes will be tuned per map, so check them out pre-game in the HQ
+
+The Supply Box is a gadget vending machine; it's class-aware and locked to your current choice. Each button has a name, a duration / scope hint ("1 per player", "5m cooldown", "1 per team"), and a live timer when it's on cooldown. Cooldowns are persisted per player (and per team for shared items), so closing and re-opening the menu or accessing a different supply box doesn't reset them.
+
+### V1 — Conquest HUD & UI
+
+The on-screen HUD that shows tickets, match clock, capture progress, bleed indicators, vehicle deploy timers, and the team's ticket
+
+- Top ticket bar: friendly left/blue, enemy right/red; chevrons show bleed rate.
+- Mid-screen: capture-point progress, contested indicators and callouts.
+- Vehicle availability: shows friendly HQ vehicle statuses with WAIT / READY / ACTIVE indicators
+- Crown shows current team in the lead if the match were to end
+
+The combat HUD is very similar to Vanilla BF6: friendly is always on the left in blue and enemy is always on the right in red - both locked in place so you never have to think about which side is yours. Capture-point progress bars show contested statuses and how many players are on a flag. The bleed chevrons appear on the losing team's ticket bar when an objective differential is active. Vehicle deploy timer rows show spawn progress in 10% chunks.
+
+### V1 — End Match Victory Panel
+
+When the match ends, every player gets a results scoreboard showing the winning team, final ticket counts, match length, and a 30-second countdown to the next round.
+
+- Crown icon over the winning team; final ticket counts in big digits.
+- Both team rosters and match length displayed.
+- "Screenshot now" prompt — the panel sticks for 30 seconds to ensure results can be collected by captains.
+- Admin action count appears (yellow) only if any admin actions were used.
+
+The Victory Panel is the round wrap-up. Tickets are frozen, the winning team gets a crown, the result line spells out the win margin or "Draw" if it's tied, and both team rosters are displayed. The countdown shows when the next round will reset; the panel survives for the full 30 seconds so everyone has time to screenshot and read it. A yellow admin-actions line appears only when the admin actually used test buttons or special config tools during the match.

@@ -58,7 +58,10 @@ function isPregameCountdownStillValid(expectedToken: number, force?: boolean, al
     if (expectedToken !== State.round.countdown.token) return false;
     if (State.match.isEnded) return false;
     if (!allowRoundActive && isMatchLive()) return false;
-    if (!force && !areAllActivePlayersReady()) return false;
+    // v1.474 (CQ_Bug_115): ready-state no longer cancels the countdown. Once started, only admin
+    // reset (token mismatch via cancelPregameCountdown) or match-end can abort. Late-joiners with
+    // undefined readyByPid previously cancelled it; the bail paths leak EnableAllPlayerDeploy(false)
+    // → all watchers locked out.
     return true;
 }
 
