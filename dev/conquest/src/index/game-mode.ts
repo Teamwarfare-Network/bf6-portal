@@ -52,7 +52,6 @@ async function onGameModeStartedImpl(): Promise<void> {
 
     vehIds.length = 0;
     vehOwners.length = 0;
-    clearSpawnBaseTeamCache();
 
     sendHighlightedWorldLogMessage(
         msg(mod.stringkeys.twl.messages.init),

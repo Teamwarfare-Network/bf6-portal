@@ -75,7 +75,6 @@ async function onVehicleSpawnedImpl(eventVehicle: mod.Vehicle): Promise<void> {
     const slot = State.vehicles.slots[slotIndex];
     if (!slot) return;
 
-    vehicleSpawnBaseTeamByObjId[vehicleObjId] = slot.teamId;
     clearLastDriverByVehicleObjId(vehicleObjId);
 
     // Spawn-position diagnostic message. Gated behind FEATURE_PERF_DIAG (compile-time strip in

@@ -76,6 +76,72 @@ These are diagnostic, not fixes — gating cheap/sized changes to confirm the hy
 
 ---
 
+## Long-match accumulation audit (v1.494 audit, 2026-05-09)
+
+**Why this section exists.** User-reported observation post-v1.491: capture-point enter/exit storms during explicit testing did NOT directly trigger spikes — the 1716ms-frame breach is associated with **time-in-match (20+ minutes at 8–10 players)**, not with event-burst density. This suggests a third failure-mode regime distinct from v1.406 (heap-OOM cumulative crash) and the per-event burst suspects (S1–S10, single-frame fan-out): **monotonic accumulation that progressively weighs down per-frame work over the match.** Static sweep of `src/` to find what stacks up without proper deallocation.
+
+**Audit methodology (no telemetry available — telemetry is what `we cannot add` per user).**
+1. Grep all module-local Records: `^const \w+ByPid`, `^const \w+ByObjId`.
+2. Grep all `State.<path>[<key>] =` write sites with `[pid]` / `[objId]` access.
+3. For each, locate the corresponding `delete` reachable from `onPlayerLeaveGameImpl`, `onVehicleDestroyedImpl`, `endMatch`, or `triggerFreshMatchSetup`.
+4. Confirmed-leak threshold: write site exists; no delete reachable from any reset path; growth rate is bounded by a frequent event (not by a small constant like map config).
+
+**What this audit does NOT cover.** Engine-side state we cannot observe: VFX object retention, world-log ring buffer, capture-sound queue back-pressure, area-trigger entry/exit bookkeeping, voice-over runtime internals. None have a `mod.*` getter to enumerate. The static audit can only catch script-side leaks; if those are all small (as findings below indicate), the v1.491 long-match driver is most likely engine-side state we can mitigate via more aggressive deallocation but cannot directly observe.
+
+### Confirmed leaks (script-side; ranked by per-match growth rate)
+
+| # | Symbol | Source | Allocator event | Growth rate | 20-min match estimate | Severity |
+|---|--------|--------|-----------------|-------------|----------------------|----------|
+| ~~**L1**~~ | ~~`vehicleSpawnBaseTeamByObjId[vehicleObjId]`~~ | (removed entirely v1.496) | (was) every vehicle spawn | (was) ~0.2 spawns/sec | N/A | **DEAD-CODE-DELETED v1.496.** Post-A11 audit found ZERO read sites across `src/` — the cache was entirely write-only. v1.496 removed the declaration ([config/runtime.ts](../src/config/runtime.ts)), the spawn-side write ([vehicle-events.ts](../src/index/vehicle-events.ts)), the v1.495 destroy-side delete (same file), the `clearSpawnBaseTeamCache` helper ([vehicles/registration.ts](../src/vehicles/registration.ts)), and its lone caller ([game-mode.ts](../src/index/game-mode.ts)). Net: −361 bundle bytes vs v1.495. Reclassified as Tier C (zero-reader removal); A11's "leak fix" framing was wrong because GC would have collected entries at game-mode init anyway. |
+| **L2** | `State.players.lockerSlotToggle[pid]` | [interaction/ammo-resupply-menu.ts:1254](../src/interaction/ammo-resupply-menu.ts#L1254) (write), no delete site reachable from leave | First locker-class toggle (lazy on first use) | One entry per pid that ever opened locker; persists across leave | Bounded at concurrent-pid count, but accumulates across join/leave cycles | **Already noted in Lifecycle Map** below as ❌ "design intent — player preference persists across menu close/reopen." The intent doesn't extend to permanent disconnect. ~80 B per entry. |
+| **L3** | `adminPanelLastPrimaryClickByPid` (module-local, NOT in `State.players`) | [admin-panel/events.ts:5](../src/admin-panel/events.ts#L5) | First admin click | One number/pid per admin-claim cycle | Tiny — only grows when admin pid changes; one new entry per claim | **Low** but unbounded across long sessions with admin handoffs. |
+| **L4** | `readyDialogLastPrimaryClickByPid` (module-local) | [interaction/ui-events-ready.ts:8](../src/interaction/ui-events-ready.ts#L8) | First ready-dialog primary click | One number/pid that ever clicked ready-dialog buttons | ~16 entries within a match; grows on rejoin | **Low** but pattern-shared with L3+L5. |
+| **L5** | `playerReadyPanelLastPrimaryClickByPid` (module-local) | [interaction/ui-events-player-ready-panel.ts:30](../src/interaction/ui-events-player-ready-panel.ts#L30) | First player-ready-panel primary click | Same as L4 | Same as L4 | **Low** — same shape. |
+
+**Pattern note for L3-L5.** Compare against `vehicleDeployLastPrimaryClickByPid` (same `UIButtonPrimaryClickTracker` pattern at [vehicles/deploy-timer-ui.ts:12](../src/vehicles/deploy-timer-ui.ts#L12)): this one IS cleaned up at [vehicles/deploy-timer-ui.ts:17](../src/vehicles/deploy-timer-ui.ts#L17) via a paired exported helper called from player-leave. **The 3 leaked trackers (L3-L5) all follow the SAME pattern; the leak is just that 3 of 4 sites forgot to add the cleanup helper.** Mechanical fix: add a `cleanup*ClickTrackerForPid(pid)` helper in each module + call from `onPlayerLeaveGameImpl`.
+
+### Verified clean (passed audit; don't touch)
+
+For completeness, the following passed the audit and are properly paired:
+- `State.hqDeploy.lastRequestAtSecondsByPid` — paired delete at [index/player-join-leave.ts:193](../src/index/player-join-leave.ts#L193) (Tier A7).
+- `vehicleDeployLastPrimaryClickByPid` — paired delete at [vehicles/deploy-timer-ui.ts:17](../src/vehicles/deploy-timer-ui.ts#L17).
+- `topHudRootInitializedByPid` (module-local) — paired delete at [hud/status.ts:120](../src/hud/status.ts#L120).
+- `twlConquestHudEntriesByPid` / `twlConquestHudBootstrapPurgeDoneByPid` (module-locals) — paired deletes at [ui/conquest/hud-core/state.ts:57,84](../src/ui/conquest/hud-core/state.ts#L57).
+- `vehIds` / `vehOwners` arrays (module-local in [vehicles/ownership.ts](../src/vehicles/ownership.ts)) — `popLastDriver` swap-removes on destroy.
+- All `State.conquest.vo.*ByPid` records — paired deletes via `captureVoOnPlayerLeaveOrResetPid` (see Lifecycle Map).
+- `State.round.boundary.*` per-pid records — paired via `resetPlayerBoundaryStateOnUndeployOrReset`.
+- `kpiByPid` — paired via `kpiCleanupForPid`.
+
+### Demoted suspects (re-verified bounded or already clean)
+
+These were initially flagged in the audit but verified bounded or paired:
+
+- **`State.round.armSfx.handle`** — single SFX handle for entire game-mode lifetime; lazy-init at [interaction/ammo-resupply-menu.ts:122](../src/interaction/ammo-resupply-menu.ts#L122). State.round persists across matches without reset, so `armSfx.ready` stays true after first allocation — exactly 1 handle exists. NOT a long-match accumulation source. (Caveat: never `UnspawnObject`'d, so the handle survives until the game-mode tears down — fine since the single handle is reused for every PlaySound call.)
+- **`State.conquest.vo.lastEventAtByThrottleKey`** — only NON-terminal VO events write to this map (terminal events at [index/capture-vo.ts:348-354](../src/index/capture-vo.ts#L348) gated by `if (!event.terminal)`). Ceiling at ~16 pids × ~6 objs × 2 non-terminal phases (contested + capturing) = ~192 entries. Bounded; not unbounded.
+- **`Timers.setTimeout` at [index/player-join-leave.ts:155-156](../src/index/player-join-leave.ts#L155)** — fire-and-forget closures for 50/150ms staggered lazy-build dispatch. Each closure releases after firing. Not monotonic.
+- **`conquestPhase2ACaptureTimingConfiguredByObjId`** at [index/capture-tickets.ts:27](../src/index/capture-tickets.ts#L27) — capacity-bounded at capture-point count (~6); used to ensure each is configured once. Not a leak.
+
+### Summary: what static audit can and cannot explain
+
+The 5 confirmed leaks (L1-L5) are all small. The largest (L1, now FIXED v1.495 / A11) was ~240 entries × ~50 B = ~12 KB per 20-min match. None are individually large enough to explain a 1,716ms-frame CPU spike via heap pressure alone — and **the script restarts at match end, so the v1.491 spike is a within-match accumulation problem, not a multi-match drift problem.**
+
+**Implication.** The v1.491 within-match driver is most likely NOT pure script-side heap accumulation. It is more likely:
+- (a) **Engine-side state we cannot directly observe** — VFX/SFX retention, world-log ring buffer back-pressure, area-trigger entry/exit bookkeeping, capture-sound queue, voice-over runtime — that progressively makes per-frame work heavier *within a single match*; OR
+- (b) **A Tier S burst event** (S1–S10) whose trigger conditions become more likely as more in-match game state has accumulated (e.g. more capture-point churn → larger broadcast clusters → more frequent collisions on the unthrottled forced HUD path).
+
+The remaining leaks (L2–L5) should still be plugged for hygiene; **they are not the prime mover for v1.491.**
+
+### Recommended sequencing (post-audit)
+
+1. ~~**Plug L1 first**~~ — **DEAD-CODE-DELETED v1.496** (supersedes v1.495 A11 paired-delete fix). Post-A11 grep confirmed zero readers; cache deleted entirely. Bundle delta −361 B (vs v1.495). Lesson: verify reader count before classifying a write site as a leak.
+2. **Plug L3-L5 in one ship (A12)** — mechanical pattern; add 1 exported `cleanup*ClickTrackerForPid` helper per module + 3 calls from `onPlayerLeaveGameImpl`. Bundle cost: ~+200 B total. Risk: zero. **Pending user direction on prioritization vs Tier S work.**
+3. **L2 (A13)** — **user-approved 2026-05-09:** server cannot associate rejoiner with previous preference; rejoiner gets fresh defaults. Pending implementation.
+4. **The v1.491 MP playtest with the 3 diagnostic toggles (Combat HUD / Vehicle Overlay / Spectator) is the dominant signal post-A11.** If the spike persists with all three off, the driver is engine-side accumulation we cannot statically audit. **Note:** the script already restarts at match end, and the v1.491 spike manifests *within a single match* — so multi-match restart cadence is NOT a valid mitigation. The within-match scope means we need either (a) more aggressive intra-match resets (e.g. periodic `cleanupHudForPid` + lazy-rebuild), (b) reduction of accumulating engine surfaces (capture-sound queue back-pressure, world-log buffer churn, area-trigger churn), or (c) find a Tier S burst pattern whose conditions become more frequent as match state piles up.
+
+These leaks are wired into the reclaim ladder in [`conquest_optimization_analysis.md`](./conquest_optimization_analysis.md) Tier A as **A11** (L1 vehicle base team cache, **SHIPPED v1.495**), **A12** (L3-L5 click trackers bundled, pending), **A13** (L2 lockerSlotToggle, user-approved 2026-05-09 pending implementation).
+
+---
+
 ## Compile-Time Feature Flags
 
 Source: [`config/conquest-constants.ts`](../src/config/conquest-constants.ts).
@@ -1451,7 +1517,6 @@ Module: Firestorm helicopter deploy/live timer display with direct spawn buttons
 
 ### src/vehicles/registration.ts
 - `registerVehicleToTeam()` (2) — register vehicle to team
-- `clearSpawnBaseTeamCache()` (1) — clear team cache
 
 ### src/vehicles/spawn-volume-math.ts
 - `triangleAreaXZ()` (3) — calculate triangle area

@@ -79,9 +79,6 @@ const MAIN_BASE_BIND_RADIUS_METERS = 150.0;
 // per-map if a future map's HQ spawns spread wider or flags sit closer.
 const DEPLOY_MAIN_BASE_RADIUS_METERS = 100.0;
 
-// Cached per-vehicle spawn inference for later reconciliation on seat entry (best-effort, can go stale).
-const vehicleSpawnBaseTeamByObjId: Record<number, TeamID> = {};
-
 // Vehicle spawner defaults (per-map spawn specs, selected by mode).
 let TEAM1_VEHICLE_SPAWN_SPECS: VehicleSpawnSpec[] = [];
 let TEAM2_VEHICLE_SPAWN_SPECS: VehicleSpawnSpec[] = [];

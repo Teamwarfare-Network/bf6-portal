@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.494)",
+        "title": "teamwarfare . net | TWL Conquest (v1.496)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText3": "The game is NOT Live and you are NOT Ready yet...",
@@ -252,7 +252,7 @@
         "notReady": "NOT READY",
         "swapTeams": "CHANGE TEAMS",
         "spectateCoach": "SPECTATE",
-        "spectateCoachDisabled": "Spectator Disabled",
+        "spectateCoachDisabled": "SPECTATE DISABLED",
         "giveUpAdmin": "GIVE UP ADMIN"
       }
     },
