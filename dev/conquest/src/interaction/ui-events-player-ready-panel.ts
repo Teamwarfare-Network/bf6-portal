@@ -29,6 +29,12 @@ const PLAYER_READY_PANEL_PRIMARY_CLICK_DEBOUNCE_SECONDS = 0.12;
 const PLAYER_READY_PANEL_PRIMARY_CLICK_RELEASE_GRACE_SECONDS = 2.0;
 const playerReadyPanelLastPrimaryClickByPid: UIButtonPrimaryClickTracker = {};
 
+// Per-pid cleanup hook - paired with onPlayerLeaveGameImpl-reachable cleanup in player-join-leave.ts
+// to prevent stale tracker entries surviving disconnect-reconnect on recycled pids.
+function resetPlayerReadyPanelPrimaryClickTrackerForPid(pid: number): void {
+    delete playerReadyPanelLastPrimaryClickByPid[pid];
+}
+
 function tryConsumePlayerReadyPanelPrimaryClickEvent(
     playerId: number,
     widgetName: string,

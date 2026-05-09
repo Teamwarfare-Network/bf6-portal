@@ -74,6 +74,9 @@ function cleanupHudForPid(pid: number): void {
     }
     deleteVehicleDeployTimerHudArtifactsForPid(pid);
     resetVehicleDeployPrimaryClickTrackerForPid(pid);
+    resetAdminPanelPrimaryClickTrackerForPid(pid);
+    resetReadyDialogPrimaryClickTrackerForPid(pid);
+    resetPlayerReadyPanelPrimaryClickTrackerForPid(pid);
     // v1.466: defensive paired enable for the per-player engine-deploy block. Claim-clear paths
     // in hq-deploy.ts normally handle this, but if a player disconnects with a stale per-player
     // deploy block and Portal recycles their pid to a new joiner, the new joiner would inherit
@@ -198,6 +201,7 @@ function onPlayerLeaveGameImpl(eventNumber: number | mod.Player) {
     delete State.players.armS[pid];
     delete State.players.armG[pid];
     delete State.players.armL[pid];
+    delete State.players.lockerSlotToggle[pid];
     delete State.players.uiCachePerfByPid[pid];
     if (FEATURE_PERF_DIAG) cleanupPerfDiagWidgetsForPid(pid);
     delete State.players.posDebugTransformSourceByPid[pid];

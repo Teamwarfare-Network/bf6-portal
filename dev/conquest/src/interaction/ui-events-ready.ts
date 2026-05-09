@@ -7,6 +7,12 @@ const READY_DIALOG_PRIMARY_CLICK_DEBOUNCE_SECONDS = 0.12;
 const READY_DIALOG_PRIMARY_CLICK_RELEASE_GRACE_SECONDS = 2.0;
 const readyDialogLastPrimaryClickByPid: UIButtonPrimaryClickTracker = {};
 
+// Per-pid cleanup hook - paired with onPlayerLeaveGameImpl-reachable cleanup in player-join-leave.ts
+// to prevent stale tracker entries surviving disconnect-reconnect on recycled pids.
+function resetReadyDialogPrimaryClickTrackerForPid(pid: number): void {
+    delete readyDialogLastPrimaryClickByPid[pid];
+}
+
 function tryConsumeReadyDialogPrimaryClickEvent(
     playerId: number,
     widgetName: string,

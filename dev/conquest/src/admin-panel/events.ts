@@ -4,6 +4,12 @@ const ADMIN_PANEL_PRIMARY_CLICK_DEBOUNCE_SECONDS = 0.12;
 const ADMIN_PANEL_PRIMARY_CLICK_RELEASE_GRACE_SECONDS = 2.0;
 const adminPanelLastPrimaryClickByPid: UIButtonPrimaryClickTracker = {};
 
+// Per-pid cleanup hook - paired with onPlayerLeaveGameImpl-reachable cleanup in player-join-leave.ts
+// to prevent stale tracker entries surviving disconnect-reconnect on recycled pids.
+function resetAdminPanelPrimaryClickTrackerForPid(pid: number): void {
+    delete adminPanelLastPrimaryClickByPid[pid];
+}
+
 function tryConsumeAdminPanelPrimaryClickEvent(
     playerId: number,
     widgetName: string,

@@ -10,8 +10,11 @@
 
 **`conquest_optimization_state.md`** — the *facts*:
 
+- **Per-frame CPU fan-out (v1.491 crash hypothesis)** *(added 2026-05-08)* — convergent-scenario analysis + S1–S10 suspect ranking; the per-row evidence backing the Tier S framework in the analysis doc.
+- **Long-match accumulation audit** *(added v1.494, 2026-05-09; punchlist closed v1.500)* — confirmed leaks L1–L5 with file:line citations + verified-clean list + demoted-suspects list. **All 5 confirmed leaks now plugged:** L1 dead-code-deleted v1.496; L2 plugged via A13 in v1.500; L3-L5 plugged via A12 in v1.500. v1.498 first attempt broke via single non-ASCII char (em-dash) in inline comment that survived postbuild's comment-strip pass; v1.499 reverted; v1.500 re-shipped clean with pure-ASCII content + new postbuild guardrail. Records audit lessons: (1) "verify reader count before classifying a write site as a leak" (A11 was incorrectly framed; was Tier C dead code); (2) "Portal sandbox rejects non-ASCII bytes silently — no console error" (v1.498 lesson, now guardrailed at postbuild step 11.5).
+- **Concurrent timer inventory** *(added v1.497, 2026-05-09)* — every `Timers.setTimeout` / `Clocks.CountDownClock` call site (T1–T11) with peak concurrent count per scenario (Peak A countdown-reset, Peak B LIVE-burst, Peak C mid-LIVE active combat).
 - **Compile-Time Feature Flags** — which `FEATURE_*` flags strip which files at build.
-- **Project Stats** — version, file counts, bundle bytes, headroom.
+- **Project Stats** — version, file counts, bundle bytes, headroom. Currently v1.500 / 926,137 bytes / 11.67% headroom.
 - **File Map** — every `.ts` file: lines, bytes, in-bundle status, PPM column.
 - **Function Inventory** — every callable with one-line purpose and usage tag.
 - **Lifecycle Map** — every per-pid state field with allocator + deallocator + status.
@@ -21,14 +24,14 @@
 
 **`conquest_optimization_analysis.md`** — the *reasoning*:
 
-- **TL;DR** — current snapshot in 6 bullets.
+- **TL;DR** — current snapshot in 6 bullets. Currently anchored at v1.497 with three failure-mode regimes documented (heap-OOM v1.406; per-frame CPU v1.491; within-match accumulation, distinct from multi-match drift).
 - **Why memory, not bytes** — heap-vs-bundle constraint analysis.
 - **Per-player multipliers (M1–M16)** — allocator ranking with scale buckets.
 - **One-time overhead (O1–O5)** — non-per-player cost categories.
-- **Reclaim ladder (Tiers A–F)** — concrete levers, ranked by ROI.
+- **Reclaim ladder (Tiers A–F + Tier S)** — concrete levers, ranked by ROI. Tier S targets the per-frame eval budget (1,000ms hard cap; the v1.491 active blocker); A–F target the runtime heap budget (v1.406 16p crash). S3 SHIPPED v1.497 (vehicle deploy timer broadcast 200ms-coalesce).
 - **Why per-PID UI is non-negotiable** — architectural rule.
 - **Verified safe operations (no-go list)** — what reclaim must not do.
-- **Open questions** — decisions waiting on user input.
+- **Open questions** — decisions waiting on user input. All 9 prior open questions answered 2026-05-09; current open list is empty pending playtest results.
 - **Verification plan** — how to confirm a fix.
 
 ## Ratings
@@ -66,6 +69,8 @@ Each tier is a category of memory/heap lever, ordered by ROI per effort:
 | `F` | Naming economy |
 
 **Two budgets, two tiers.** Tier S targets the **per-frame eval budget** (1,000ms hard cap, opaque); Tiers A–F target the **runtime heap budget** (16-player crash, opaque). Both are real and mostly independent — a heap fix is not a CPU fix and vice versa. Tier S is the active blocker as of v1.491 — work on Tier S items first until 8–10p MP stability is restored, then resume Tier A.
+
+**Within-match scope clarification (user 2026-05-09).** The script restarts at match end. The v1.491 1716ms breach manifests *within a single match* (20+ minutes). Multi-match restart cadence is NOT a valid mitigation — within-match accumulation must be addressed via either intra-match resets, engine-surface reduction (capture-sound queue, world-log buffer, area-trigger churn, VFX retention), or a Tier S burst whose trigger frequency rises with in-match state.
 
 Within a tier, items are numbered (`A1`, `A2`, …) with heap impact, bundle impact, effort, risk, and approval status per row.
 

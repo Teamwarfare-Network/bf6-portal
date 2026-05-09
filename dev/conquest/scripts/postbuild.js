@@ -264,6 +264,32 @@ if (footerVersionLine) {
 // 11. Ensure single trailing newline.
 src = src.replace(/\n+$/, "\n");
 
+// 11.5. Sanity check: Portal sandbox rejects scripts containing non-ASCII characters
+//       SILENTLY at load time (no console error, no event handlers register, no functionality).
+//       Hit in v1.498 via a single em-dash in an inline comment after a delete statement
+//       that survived the comment-strip pass at step 10. Fail the build hard so the offending
+//       bundle never ships. Common offenders are em-dash, en-dash, smart quotes, arrows,
+//       and non-breaking space.
+//       Strings with non-ASCII content belong in src/strings.json, which the engine handles
+//       via mod.Message and is not subject to this constraint.
+const nonAsciiMatch = src.match(/[^\x00-\x7F]/);
+if (nonAsciiMatch) {
+  const idx = src.indexOf(nonAsciiMatch[0]);
+  const before = src.substring(0, idx);
+  const lineNumber = before.split("\n").length;
+  const lineStart = before.lastIndexOf("\n") + 1;
+  const lineEndIdx = src.indexOf("\n", idx);
+  const line = src.substring(lineStart, lineEndIdx === -1 ? src.length : lineEndIdx);
+  const codePoint = nonAsciiMatch[0].codePointAt(0).toString(16).toUpperCase().padStart(4, "0");
+  console.error("postbuild: ERROR - non-ASCII character found in dist/bundle.ts at line " + lineNumber);
+  console.error("  Character: U+" + codePoint + " (" + nonAsciiMatch[0] + ")");
+  console.error("  Line: " + line);
+  console.error("  Portal sandbox rejects scripts with non-ASCII characters SILENTLY (no runtime error).");
+  console.error("  Fix: replace with ASCII equivalent. Common offenders: em-dash, en-dash, smart quotes, arrows.");
+  console.error("  Note: full-line // comments are stripped at step 10, but inline comments after code are PRESERVED.");
+  process.exit(1);
+}
+
 fs.writeFileSync(bundlePath, src);
 console.log("postbuild: cleaned bundle.ts (removed markers, incorporated modlib source, moved EOF footer last)");
 

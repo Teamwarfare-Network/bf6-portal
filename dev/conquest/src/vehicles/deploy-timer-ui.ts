@@ -17,6 +17,47 @@ function resetVehicleDeployPrimaryClickTrackerForPid(pid: number): void {
     delete vehicleDeployLastPrimaryClickByPid[pid];
 }
 
+// Throttle state for updateVehicleDeployTimerHudForAllPlayers. The broadcast wrapper is fired
+// from 26 fire-and-forget call sites (HQ deploy state, vehicle spawn/destroy, vehicle enter/exit,
+// match-flow transitions, ready-dialog countdown, admin toggle, player join/leave) plus an
+// unconditional 1Hz call from onLiveTick. Each fire iterates all valid players and rebuilds a
+// per-pid render plan over all 16 vehicle slots (~256 slot-state computes at 16p), so without
+// throttling, vehicle enter/exit storms in active 8–10p combat fan out 5–15 broadcasts/sec.
+//
+// The coalescer collapses bursts within a 200ms window into a single drain. Each call flips
+// vehicleDeployTimerHudDirty=true; the first call within an idle window schedules a drain via
+// Timers.setTimeout; subsequent calls inside the window are O(1) flag-flips and return immediately.
+// At drain time, the flag is consumed (cleared back to false) and forEachValidPlayer runs once.
+// Latest state always wins because the per-player render plan is computed at drain time, not at
+// flag-set time.
+//
+// 200ms window matches the existing combat HUD throttle (TWL_CONQUEST_HUD_MAIN_UPDATE_SECONDS).
+// User-approved 2026-05-09: vehicle deploy timer doesn't need hyper-accurate frame-coincident
+// updates and can catch up within reason. The per-player path
+// (refreshVehicleDeployTimersForPlayerPreservingVisibility) is unchanged and continues to use
+// its lastRenderSignature short-circuit to dedupe redundant DOM writes inside each broadcast.
+//
+// Cleanup at game-mode init (clearVehicleDeployTimerHudCoalesceTimer below, called from
+// index/game-mode.ts) cancels any pending drain so a stale timer can't fire into reset state.
+// Belt-and-suspenders: even if the timer ID can't be cancelled in time, the dirty flag is reset
+// to false, so the drain returns immediately on the falsy check.
+let vehicleDeployTimerHudDirty = false;
+let vehicleDeployTimerHudCoalesceTimerId: number | undefined = undefined;
+const VEHICLE_DEPLOY_TIMER_HUD_COALESCE_MS = 200;
+
+// Game-mode init reset hook for the throttle. Called from the per-mode-init reset block in
+// index/game-mode.ts alongside vehIds.length=0 / vehOwners.length=0 so a pending drain from
+// the prior game-mode lifecycle cannot fire into freshly-reset state. Timers.clearTimeout is
+// idempotent (Timers.clear silently ignores null/undefined/unknown IDs per
+// foundation/bf6-utils/timers.ts:92).
+function clearVehicleDeployTimerHudCoalesceTimer(): void {
+    if (vehicleDeployTimerHudCoalesceTimerId !== undefined) {
+        try { Timers.clearTimeout(vehicleDeployTimerHudCoalesceTimerId); } catch {}
+        vehicleDeployTimerHudCoalesceTimerId = undefined;
+    }
+    vehicleDeployTimerHudDirty = false;
+}
+
 // v1.493: caller (Toggle Deploy Timers Visible button + handler) removed; helpers retained
 // pending dead-code audit. They reference `tester.buttons.deployTimersVisibleOn`/`Off` and
 // `UI_TEST_DEPLOY_TIMERS_TOGGLE_TEXT_ID` which were also deleted, so calling these now would
@@ -1832,10 +1873,27 @@ function updateVehicleDeployTimerHudForPlayer(player: mod.Player): boolean {
     return refreshVehicleDeployTimersForPlayerPreservingVisibility(player);
 }
 
-// Public non-owner refresh path for all viewers.
+// Public non-owner refresh path for all viewers, throttled via 200ms coalescing.
 // Use this for gameplay state changes that should not alter family visibility ownership.
+//
+// Each call flips the dirty flag; the first call within an idle window schedules a drain via
+// Timers.setTimeout(VEHICLE_DEPLOY_TIMER_HUD_COALESCE_MS) and stores the timer ID; subsequent
+// calls inside the window are O(1) flag-flips. At drain time, the flag is consumed, the timer
+// ID cleared, and forEachValidPlayer runs the per-player refresh once. The render plan is
+// computed inside refreshVehicleDeployTimersForPlayerPreservingVisibility at drain time, so
+// the latest state always wins regardless of when the original calls fired.
+//
+// The 200ms ceiling means UI updates can lag up to 200ms after a triggering event. User-approved
+// 2026-05-09 — see throttle-state declaration block near top of file for full rationale.
 function updateVehicleDeployTimerHudForAllPlayers(): void {
-    forEachValidPlayer((player) => refreshVehicleDeployTimersForPlayerPreservingVisibility(player));
+    vehicleDeployTimerHudDirty = true;
+    if (vehicleDeployTimerHudCoalesceTimerId !== undefined) return;
+    vehicleDeployTimerHudCoalesceTimerId = Timers.setTimeout(() => {
+        vehicleDeployTimerHudCoalesceTimerId = undefined;
+        if (!vehicleDeployTimerHudDirty) return;
+        vehicleDeployTimerHudDirty = false;
+        forEachValidPlayer((player) => refreshVehicleDeployTimersForPlayerPreservingVisibility(player));
+    }, VEHICLE_DEPLOY_TIMER_HUD_COALESCE_MS);
 }
 
 // Targeted update for players who currently have the deploy timer HUD visible.

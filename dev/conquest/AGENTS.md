@@ -118,6 +118,31 @@ Implications for authoring:
 - Inline trailing comments DO cost bundle bytes; reserve them for genuinely useful pointers (subtle invariants, non-obvious whys).
 - Don't write critical structural info as an inline trailing comment expecting it to vanish — it doesn't.
 
+## Non-ASCII Characters Are Banned in dist/bundle.ts
+
+**Confirmed via v1.498 silent-load failure (2026-05-09).** The Portal sandbox SILENTLY rejects scripts containing any non-ASCII byte (anything outside `0x00-0x7F`). When this happens:
+- No console error fires.
+- No event handlers register.
+- No script-side functionality runs (no vehicles spawn, no UIs build, no callbacks fire).
+- The mod looks "loaded" in the editor but is effectively dead at runtime.
+
+**Common offenders** (replace with ASCII equivalents):
+- Em-dash `—` (U+2014) → use `-` or `--`
+- En-dash `–` (U+2013) → use `-`
+- Smart quotes `'` `'` `"` `"` (U+2018, U+2019, U+201C, U+201D) → use `'` and `"`
+- Arrow `→` `←` (U+2192, U+2190) → use `->` `<-`
+- Non-breaking space (U+00A0) → use regular space
+- Bullet `•` (U+2022) → use `-` or `*`
+
+**Where this constraint applies:**
+- Source TypeScript files (`src/**/*.ts`) — all CODE must be pure ASCII; INLINE COMMENTS (after code, on the same line) must be pure ASCII because the comment-strip pass at postbuild step 10 only removes `^// ...` line-leading comments, not inline `code; // note`.
+- FULL-LINE comments (`// ...` at line start) ARE stripped at postbuild and don't reach the bundle, but writing pure-ASCII even there is recommended as defense-in-depth in case stripping ever changes.
+
+**Where it does NOT apply:**
+- `src/strings.json` — player-facing strings can contain any Unicode the engine supports. The engine's `mod.Message` system handles these separately from the script bundle.
+
+**Guardrail (2026-05-09).** `scripts/postbuild.js` step 11.5 hard-fails the build with `process.exit(1)` if any non-ASCII byte is found in the emitted bundle, printing the offending line + character + code point. This catches the regression at build time so it never reaches the engine.
+
 ## Code Placement and Structure Policy
 
 1. Place new code in the correct domain file/module for the behavior being changed.
