@@ -1,8 +1,8 @@
 ## Goals
 
-**Performance (mission critical)** — minimize per-tick work; maximize player FPS; avoid frame-time spikes that breach the Mod Evaluator's per-frame eval budget.
+**Performance (mission critical)** — minimize per-tick work; maximize player FPS; avoid frame-time spikes that breach the Mod Evaluator's per-frame eval budget. **Per-frame budget = 1,000ms hard cap; script terminates with `Mod has been running for X ms this frame which exceeds max evaluation time of 1,000ms` if breached.** v1.491 8–10 player MP crash at 1,716ms — see Tier S in `conquest_optimization_analysis.md`.
 
-**Memory (mission critical)** — operate within the Mod Evaluator's JS heap limit at full player counts; every per-pid allocation has a paired deallocation reachable from `onPlayerLeaveGameImpl`; no monotonic growth across join/leave cycles.
+**Memory (mission critical)** — operate within the Mod Evaluator's JS heap limit at full player counts; every per-pid allocation has a paired deallocation reachable from `onPlayerLeaveGameImpl`; no monotonic growth across join/leave cycles. v1.406 16-player crash drove waves 1–6 — see Tiers A–F in `conquest_optimization_analysis.md`.
 
 **Design (nice to have)** — code stays clean, readable, intuitive, maintainable. Subordinate to the two above; don't sacrifice memory or performance for elegance.
 
@@ -57,12 +57,15 @@ Each tier is a category of memory/heap lever, ordered by ROI per effort:
 
 | Tier | Category |
 |------|----------|
-| `A` | Per-player widget cache thinning (highest priority — directly attacks the multiplier) |
+| `S` | **Per-frame CPU spike reclaim (current active blocker post-v1.491 — 1,716ms-frame crash)** — coalesce N-player broadcasts, throttle forced HUD passes |
+| `A` | Per-player widget cache thinning (heap-target — drove waves 1–6 post-v1.406 crash) |
 | `B` | Module-level constant inlining (one-time, cumulatively large) |
 | `C` | Dead code + dead strings (confirmed-zero readers) |
 | `D` | Closure / continuation hygiene |
 | `E` | Opportunistic / readability (zero memory impact) |
 | `F` | Naming economy |
+
+**Two budgets, two tiers.** Tier S targets the **per-frame eval budget** (1,000ms hard cap, opaque); Tiers A–F target the **runtime heap budget** (16-player crash, opaque). Both are real and mostly independent — a heap fix is not a CPU fix and vice versa. Tier S is the active blocker as of v1.491 — work on Tier S items first until 8–10p MP stability is restored, then resume Tier A.
 
 Within a tier, items are numbered (`A1`, `A2`, …) with heap impact, bundle impact, effort, risk, and approval status per row.
 

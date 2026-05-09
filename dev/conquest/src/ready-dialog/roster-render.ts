@@ -57,7 +57,11 @@ function buildReadyDialogRosterSignature(viewer: mod.Player, viewerPlayerId: num
             const entry = entries[i];
             if (entry?.player) {
                 const pid = mod.GetObjId(entry.player);
-                signature += `${pid},${State.players.readyByPid[pid] ? 1 : 0},${isPlayerInMainBaseForReady(pid) ? 1 : 0};`;
+                // The spec marker is required because exitSpectatorMode does NOT clear
+                // readyByPid (player stays ready after exit) -- without this term, the row
+                // would not repaint from "Spectator" back to "READY" on exit.
+                const spec = pid === State.players.spectatorPid ? 1 : 0;
+                signature += `${pid},${State.players.readyByPid[pid] ? 1 : 0},${isPlayerInMainBaseForReady(pid) ? 1 : 0},s${spec};`;
             } else {
                 signature += `empty;`;
             }
@@ -143,11 +147,14 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
         if (t2Base) mod.SetUIWidgetVisible(t2Base, hasP2);
 
         safeSetUITextLabel(t1Name, hasP1 ? getRosterEntryNameMessage(t1Entry) : emptyMsg);
+        const p1IsSpec = !!p1 && mod.GetObjId(p1) === State.players.spectatorPid;
         safeSetUITextLabel(
             t1Ready,
             hasP1
                 ? (p1
-                    ? (State.players.readyByPid[mod.GetObjId(p1)] ? msg(mod.stringkeys.twl.readyDialog.status.ready) : msg(mod.stringkeys.twl.readyDialog.status.notReady))
+                    ? (p1IsSpec
+                        ? msg(mod.stringkeys.twl.readyDialog.status.spectator)
+                        : (State.players.readyByPid[mod.GetObjId(p1)] ? msg(mod.stringkeys.twl.readyDialog.status.ready) : msg(mod.stringkeys.twl.readyDialog.status.notReady)))
                     : msg(mod.stringkeys.twl.readyDialog.status.notReady))
                 : emptyMsg
         );
@@ -155,14 +162,19 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
             t1Base,
             hasP1
                 ? (p1
-                    ? (isPlayerInMainBaseForReady(mod.GetObjId(p1)) ? msg(mod.stringkeys.twl.readyDialog.baseStatus.in) : msg(mod.stringkeys.twl.readyDialog.baseStatus.out))
+                    ? (p1IsSpec
+                        ? emptyMsg
+                        : (isPlayerInMainBaseForReady(mod.GetObjId(p1)) ? msg(mod.stringkeys.twl.readyDialog.baseStatus.in) : msg(mod.stringkeys.twl.readyDialog.baseStatus.out)))
                     : msg(mod.stringkeys.twl.readyDialog.baseStatus.out))
                 : emptyMsg
         );
         if (p1) {
             const p1Id = mod.GetObjId(p1);
-            const p1Ready = !!State.players.readyByPid[p1Id];
-            const p1InBase = isPlayerInMainBaseForReady(p1Id);
+            // Spectator gets uniform green styling regardless of in-base check (their body
+            // is in the underground hide room, not the main base, so isInBase would be false
+            // and clash with the green Spectator status).
+            const p1Ready = p1IsSpec ? true : !!State.players.readyByPid[p1Id];
+            const p1InBase = p1IsSpec ? true : isPlayerInMainBaseForReady(p1Id);
             applyReadyDialogRowColors(t1Name, t1Ready, t1Base, p1Ready, p1InBase);
         } else if (hasP1) {
             applyReadyDialogRowColors(t1Name, t1Ready, t1Base, false, false);
@@ -174,11 +186,14 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
         }
 
         safeSetUITextLabel(t2Name, hasP2 ? getRosterEntryNameMessage(t2Entry) : emptyMsg);
+        const p2IsSpec = !!p2 && mod.GetObjId(p2) === State.players.spectatorPid;
         safeSetUITextLabel(
             t2Ready,
             hasP2
                 ? (p2
-                    ? (State.players.readyByPid[mod.GetObjId(p2)] ? msg(mod.stringkeys.twl.readyDialog.status.ready) : msg(mod.stringkeys.twl.readyDialog.status.notReady))
+                    ? (p2IsSpec
+                        ? msg(mod.stringkeys.twl.readyDialog.status.spectator)
+                        : (State.players.readyByPid[mod.GetObjId(p2)] ? msg(mod.stringkeys.twl.readyDialog.status.ready) : msg(mod.stringkeys.twl.readyDialog.status.notReady)))
                     : msg(mod.stringkeys.twl.readyDialog.status.notReady))
                 : emptyMsg
         );
@@ -186,14 +201,16 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
             t2Base,
             hasP2
                 ? (p2
-                    ? (isPlayerInMainBaseForReady(mod.GetObjId(p2)) ? msg(mod.stringkeys.twl.readyDialog.baseStatus.in) : msg(mod.stringkeys.twl.readyDialog.baseStatus.out))
+                    ? (p2IsSpec
+                        ? emptyMsg
+                        : (isPlayerInMainBaseForReady(mod.GetObjId(p2)) ? msg(mod.stringkeys.twl.readyDialog.baseStatus.in) : msg(mod.stringkeys.twl.readyDialog.baseStatus.out)))
                     : msg(mod.stringkeys.twl.readyDialog.baseStatus.out))
                 : emptyMsg
         );
         if (p2) {
             const p2Id = mod.GetObjId(p2);
-            const p2Ready = !!State.players.readyByPid[p2Id];
-            const p2InBase = isPlayerInMainBaseForReady(p2Id);
+            const p2Ready = p2IsSpec ? true : !!State.players.readyByPid[p2Id];
+            const p2InBase = p2IsSpec ? true : isPlayerInMainBaseForReady(p2Id);
             applyReadyDialogRowColors(t2Name, t2Ready, t2Base, p2Ready, p2InBase);
         } else if (hasP2) {
             applyReadyDialogRowColors(t2Name, t2Ready, t2Base, false, false);

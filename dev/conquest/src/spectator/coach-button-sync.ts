@@ -12,13 +12,16 @@
 //
 // State matrix (both surfaces):
 //
-//   | spectator slot     | match state | camera authored | treatment           |
-//   |--------------------|-------------|-----------------|---------------------|
-//   | vacant             | pre-live    | yes             | enabled, white      |
-//   | vacant             | live        | yes             | disabled, grey      |
-//   | owned by viewer    | any         | yes             | disabled, grey      |
-//   | owned by other     | any         | yes             | disabled, grey      |
-//   | any                | any         | no              | disabled, grey      |
+//   | spectator slot     | camera authored | treatment           |
+//   |--------------------|-----------------|---------------------|
+//   | vacant             | yes             | enabled, white      |
+//   | owned by viewer    | yes             | disabled, grey      |
+//   | owned by other     | yes             | disabled, grey      |
+//   | any                | no              | disabled, grey      |
+//
+// Match-state was previously a gate (pre-live only), but mid-LIVE entry is now allowed --
+// observers can swap into spectator mode while a match is live, eating a CF-117 spawn-
+// charge on the post-exit redeploy.
 //
 // Called from:
 //   - refreshPlayerReadyPanelContentForPid (player-ready-panel.ts) -- per-pid panel refresh
@@ -29,7 +32,6 @@
 
 function isCoachButtonEnabledForPid(pid: number): boolean {
     if (!isSpectatorAvailableForActiveMap()) return false;
-    if (isMatchLive()) return false;
     const slot = State.players.spectatorPid;
     if (slot !== null && slot !== pid) return false; // taken by another pid
     if (slot === pid) return false; // already this pid's slot; click would be a no-op anyway

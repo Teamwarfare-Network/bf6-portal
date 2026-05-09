@@ -174,9 +174,13 @@ function buildVehicleDeployTimerRenderPlan(player: mod.Player, pid: number): Veh
         && slots.length > 0
         && !hasPendingDirectSpawnClaim;
     const adminPanelOpen = State.players.readyDialogData[pid]?.adminPanelVisible === true;
-    const visible = shouldShowRows && warmReady && !adminPanelOpen;
+    // Spectator slot owner sees no vehicle deploy timer HUD -- they're observing, not deploying.
+    // The signature term below propagates claim/exit transitions through the diff cache so the
+    // family's visible flag flips on the next refresh without a manual cache invalidate.
+    const isSpec = isSpectator(pid);
+    const visible = shouldShowRows && warmReady && !adminPanelOpen && !isSpec;
 
-    let signature = `${warmReady ? 1 : 0}|${shouldShowRows ? 1 : 0}|${visible ? 1 : 0}|${State.players.deployedByPid[pid] ? 1 : 0}|${hasPendingDirectSpawnClaim ? 1 : 0}|${liveTerminalOpen ? 1 : 0}|${adminPanelOpen ? 1 : 0}|${State.conquest.lifecyclePhase}|${getRoundStartAirDelayRemainingSeconds()}|${isRoundStartAirDeployDelayActive() ? 1 : 0}|${isRoundStartForwardDeployDelayActive() ? 1 : 0}|dm:${State.round.modeConfig.confirmed.vehicleDeployMethod ?? 0}`;
+    let signature = `${warmReady ? 1 : 0}|${shouldShowRows ? 1 : 0}|${visible ? 1 : 0}|${State.players.deployedByPid[pid] ? 1 : 0}|${hasPendingDirectSpawnClaim ? 1 : 0}|${liveTerminalOpen ? 1 : 0}|${adminPanelOpen ? 1 : 0}|${isSpec ? 1 : 0}|${State.conquest.lifecyclePhase}|${getRoundStartAirDelayRemainingSeconds()}|${isRoundStartAirDeployDelayActive() ? 1 : 0}|${isRoundStartForwardDeployDelayActive() ? 1 : 0}|dm:${State.round.modeConfig.confirmed.vehicleDeployMethod ?? 0}`;
     for (let i = 0; i < slots.length; i++) {
         const slot = slots[i];
         signature += `#${i}:${slot.slotNumber},${slot.vehicleType},${slot.vehicleId},${slot.activeOwnerPid ?? -1},${slot.pendingSpawnOwnerPid ?? -1},${slot.pendingSpawnMode ?? "none"},${getVehicleSlotRespawnRemainingSeconds(slot)},${isVehicleDeploySlotReadyForSpawnButton(slot) ? 1 : 0}`;

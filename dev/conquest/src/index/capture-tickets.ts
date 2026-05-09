@@ -358,13 +358,18 @@ function deriveConquestHudHelpReadyViewModel(pid: number): ConquestHudHelpReadyV
     const isDialogOpen = !!State.players.readyDialogData[pid]?.dialogVisible;
     const isReady = !!State.players.readyByPid[pid];
     const isDeployed = !!State.players.deployedByPid[pid];
+    const isSpec = State.players.spectatorPid === pid;
     const canShow = (!State.match.isEnded)
         && (!State.match.victoryDialogActive)
         && (!State.round.flow.cleanupActive)
         && isDeployed;
-    const showHelp = canShow && (!isMatchLive()) && (!isReady) && (!isDialogOpen);
+    // Spectator never sees the yellow help/ready strip -- they're already ready by virtue
+    // of holding the slot, and the strip is irrelevant guidance for someone in the Fixed
+    // camera view. The isReady check already implicitly excludes them, but the explicit
+    // spec-pid gate makes it deterministic regardless of refresh ordering on claim/exit.
+    const showHelp = canShow && (!isMatchLive()) && (!isReady) && (!isDialogOpen) && (!isSpec);
     // Keep ready acknowledgment visible in top-left status lane even while the dialog is open.
-    const showReady = canShow && (!isMatchLive()) && isReady;
+    const showReady = canShow && (!isMatchLive()) && isReady && (!isSpec);
     return {
         showHelp,
         showReady,

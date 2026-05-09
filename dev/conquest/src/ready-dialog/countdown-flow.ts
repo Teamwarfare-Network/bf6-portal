@@ -17,13 +17,19 @@ function cancelPregameCountdown(): void {
 }
 
 // Undeploys all currently deployed players for countdown lockout.
+// Spectator exception: the spec stays deployed so their Fixed-camera view of the countdown
+// is uninterrupted. The body remains parked in the underground hide room; the subsequent
+// EnableAllPlayerDeploy(false) only blocks NEW deploys, not currently-deployed players, so
+// the spec is unaffected by the gate.
 function undeployAllDeployedPlayers(): void {
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
+    const specPid = State.players.spectatorPid;
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
         if (!isValidPlayer(player)) continue;
         if (!isPlayerDeployed(player)) continue;
+        if (specPid !== null && safeGetPlayerId(player) === specPid) continue;
         try { mod.UndeployPlayer(player); } catch {}
     }
 }

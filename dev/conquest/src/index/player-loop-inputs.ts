@@ -6,9 +6,14 @@ function ongoingPlayerImpl(eventPlayer: mod.Player): void {
 
     // Spectator triple-tap exit. Routes the spectator's triple-tap to exitSpectatorMode
     // and returns early so a sealed-in-cube body cannot also spawn a ReadyDialogInteractPoint.
+    // Disabled while the pregame countdown is running: an accidental triple-tap during the
+    // 10-second countdown should not yank the spec out and miss the LIVE transition. The
+    // detector still ticks so the click-counter state stays in sync with the spec's actual
+    // presses; only the exit dispatch is gated.
     const pid = safeGetPlayerId(eventPlayer);
     if (pid !== undefined && isSpectator(pid)) {
-        if (InteractMultiClickDetector.checkMultiClick(eventPlayer)) exitSpectatorMode(eventPlayer, pid);
+        const tripleTap = InteractMultiClickDetector.checkMultiClick(eventPlayer);
+        if (tripleTap && !State.round.countdown.isActive) exitSpectatorMode(eventPlayer, pid);
         return;
     }
 

@@ -3,6 +3,11 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.491: Spectator: yellow help/ready strip explicitly hidden via spec-pid gate in deriveConquestHudHelpReadyViewModel; immediate refresh on enter/exit eliminates the lag.
+// v1.490: Spectator: stay deployed during pregame countdown (skipped in undeployAllDeployedPlayers); triple-tap exit gated on !countdown.isActive so an accidental tap during countdown doesn't fire.
+// v1.489: Spectator: admin-dialog roster shows the spectator as 'Spectator' (green) instead of READY/NOT READY; base column blanked; row repaints on enter/exit via spec-marker signature term.
+// v1.488: Spectator: hide vehicle deploy timer HUD via render-plan visibility gate; immediate refresh on enter/exit.
+// v1.487: Spectator: allow mid-LIVE entry; vehicle-eject precheck before hide-room teleport so a tank/heli isn't stranded; COACH button live-gate dropped.
 // v1.486: Spectator Ship 4: triple-tap interact exit returns spectator to deploy screen on foot; SPECTATE / COACH button renamed to SPECTATE; Interact released from SPECTATOR_LOCKED_INPUTS so the existing InteractMultiClickDetector can detect cleanly.
 // v1.485: Spectator free-cam sprint multiplier 2.5x->3.5x (sprint speed 25->35).
 // v1.484: Spectator free-cam horizontal gain 3.0->10.0 (sprint stacks at 2.5x to 25).

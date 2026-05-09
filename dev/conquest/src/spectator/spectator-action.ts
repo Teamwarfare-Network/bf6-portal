@@ -433,11 +433,13 @@ function attachSpectatorCameraIfDeployed(eventPlayer: mod.Player, pid: number): 
 // swaps before the broadcast latency window; world-log + broadcast + auto-start last.
 //
 // Re-claim with the same pid is a no-op (defensive against a double-click race past the
-// debounce window). Mid-match clicks are silently rejected (the buttons are also engine-
-// disabled when live, but a slipped click cannot promote a player to spectator after start).
+// debounce window). Pre-LIVE entry attaches at HQ (the original Mitigation C path); LIVE
+// entry attaches mid-match -- the player gets ejected from any vehicle they're in (so the
+// vehicle isn't stranded) before the hide-room teleport. Spawn-charge on the post-exit
+// redeploy follows CF-117 -- exiting spectator during LIVE costs 1 ticket on the next
+// deploy, treated as a normal alive-on-foot deploy charge.
 function enterSpectatorMode(eventPlayer: mod.Player, pid: number): void {
     if (!isSpectatorAvailableForActiveMap()) return;
-    if (isMatchLive()) return;
     const current = State.players.spectatorPid;
     if (current !== null && current !== pid) return; // slot taken by another pid
 
@@ -448,6 +450,17 @@ function enterSpectatorMode(eventPlayer: mod.Player, pid: number): void {
 
     attachSpectatorCameraIfDeployed(eventPlayer, pid);
     applySpectatorInputLock(eventPlayer, true);
+    // Eject from any vehicle BEFORE teleporting the body into the hide-room. Without this,
+    // a mid-LIVE click while the player is in a tank/heli would teleport the soldier into
+    // the underground cube but leave the vehicle stranded mid-map (or worse, drag the
+    // vehicle to Y=-500). ForcePlayerExitVehicle is a no-op when the player is on foot.
+    try {
+        if (safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsInVehicle, false)) {
+            mod.ForcePlayerExitVehicle(eventPlayer);
+        }
+    } catch (e) {
+        try { console.log(`[spectator] vehicle-eject threw for pid=${pid}: ${String(e)}`); } catch {}
+    }
     if (spawnSpectatorHideRoom()) {
         teleportSpectatorIntoHideRoom(eventPlayer);
     }
@@ -472,6 +485,13 @@ function enterSpectatorMode(eventPlayer: mod.Player, pid: number): void {
     refreshAllVisiblePlayerReadyPanels();
     renderReadyDialogForAllVisibleViewers();
     updatePlayersReadyHudTextForAllPlayers();
+    // Hide the vehicle deploy timer HUD on this tick rather than waiting for the next
+    // passive refresh. The render plan's signature includes spectator state so the diff
+    // cache will invalidate; this just triggers the apply.
+    try { updateVehicleDeployTimerHudForPlayer(eventPlayer); } catch {}
+    // Immediate help/ready strip refresh -- without this, the yellow help text waits for
+    // the next HUD render tick to disappear (visible flicker on claim).
+    try { updateHelpTextVisibilityForPid(pid); } catch {}
 
     tryAutoStartMatchIfAllReady(eventPlayer);
 }
@@ -517,6 +537,13 @@ function exitSpectatorMode(eventPlayer: mod.Player, pid: number): void {
     refreshAllVisiblePlayerReadyPanels();
     renderReadyDialogForAllVisibleViewers();
     updatePlayersReadyHudTextForAllPlayers();
+    // Re-show the vehicle deploy timer HUD on this tick. The render plan's signature now
+    // sees isSpectator===false; this just triggers the apply.
+    try { updateVehicleDeployTimerHudForPlayer(eventPlayer); } catch {}
+    // Immediate help/ready strip refresh -- the spec-pid gate cleared, but readyByPid
+    // stays true on exit so the strip will likely remain hidden either way. This call
+    // ensures the row's visibility lands on the same tick as the slot transition.
+    try { updateHelpTextVisibilityForPid(pid); } catch {}
 }
 
 // Disconnect cleanup. Called from onPlayerLeaveGameImpl. Clears the slot if pid matches,
