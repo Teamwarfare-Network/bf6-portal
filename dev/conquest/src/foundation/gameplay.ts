@@ -175,7 +175,7 @@ const READY_DIALOG_GAME_MODE_OPTIONS: number[] = [
     mod.stringkeys.twl.readyDialog.gameModeConquest12v12,
     mod.stringkeys.twl.readyDialog.gameModeConquest16v16,
 ];
-const READY_DIALOG_GAME_MODE_DEFAULT_INDEX = 1;
+const READY_DIALOG_GAME_MODE_DEFAULT_INDEX = 2;
 const READY_DIALOG_GAME_MODE_CUSTOM_KEY = mod.stringkeys.twl.readyDialog.gameModeConquestCustom;
 // Shared vehicle ids for ready-dialog preset authoring and option definitions.
 // Keep the one runtime/type workaround here so map config preset packages can stay obvious.

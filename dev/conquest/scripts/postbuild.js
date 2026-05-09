@@ -244,11 +244,25 @@ src = src.replace(/^[ \t]+/gm, "");
 //      After stripping comments, dead code, and indentation, many blank-line runs accumulate.
 src = src.replace(/\n{3,}/g, "\n\n");
 
-let headerVersionLine = "";
+// Restore full header block (versioning / license / attribution) at the very top of the bundle.
+// Comment-strip pass at step 10 above removes line-leading // comments from the bundle body, so
+// the header content has already been wiped from the concatenated source by this point. Re-inject
+// it AFTER the strip so the license/attribution survives. Strip @ts-nocheck and // Module: lines
+// from the header source (they're build-time directives, not bundle content). Also strip lines
+// starting with `// *policy` \u2014 these are source-only project conventions documenting versioning
+// rules, not content meant for the shipped bundle. Pattern: any leading whitespace + `//` +
+// optional whitespace + `*policy` + anything to end of line.
+let headerContent = "";
 if (fs.existsSync(headerSourcePath)) {
-  const headerSource = fs.readFileSync(headerSourcePath, "utf8").replace(/\r\n/g, "\n");
-  const headerMatch = headerSource.match(/^\/\/ version: .+$/m);
-  headerVersionLine = headerMatch ? headerMatch[0] : "";
+  let headerSource = fs.readFileSync(headerSourcePath, "utf8").replace(/\r\n/g, "\n");
+  headerSource = headerSource.replace(/\uFEFF/g, "");
+  headerSource = headerSource.replace(/^\/\/ @ts-nocheck\n/gm, "");
+  headerSource = headerSource.replace(/^\/\/ Module: .+\n/gm, "");
+  headerSource = headerSource.replace(/^[ \t]*\/\/\s*\*policy[^\n]*\n/gm, "");
+  headerSource = headerSource.replace(/\n{3,}/g, "\n\n");
+  headerSource = headerSource.replace(/^\n+/, "");
+  headerSource = headerSource.replace(/\n+$/, "\n");
+  headerContent = headerSource;
 }
 let footerVersionLine = "";
 if (fs.existsSync(footerSourcePath)) {
@@ -256,7 +270,7 @@ if (fs.existsSync(footerSourcePath)) {
   const footerMatch = footerSource.match(/^\/\/ EOF version: .+$/m);
   footerVersionLine = footerMatch ? footerMatch[0] : "";
 }
-src = `${headerVersionLine ? `${headerVersionLine}\n` : ""}${src.replace(/^\n+/, "")}`;
+src = `${headerContent ? `${headerContent}\n` : ""}${src.replace(/^\n+/, "")}`;
 if (footerVersionLine) {
   src = src.replace(/\n+$/, "\n") + footerVersionLine + "\n";
 }

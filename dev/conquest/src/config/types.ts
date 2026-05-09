@@ -102,23 +102,23 @@ type MapConfig = {
     team1MainBaseBufferTriggerId?: number;
     team2MainBaseBufferTriggerId?: number;
     groundCombatZoneTriggerId?: number; // Ground combat zone AreaTrigger ObjId (XZ-clipped play area); used for custom script OOB of foot + non-aircraft vehicles.
-    spectatorCameraId?: number; // FixedCamera ObjId used by the single-spectator slot (SPECTATE / COACH button). Per-map authored sky-cam vantage; when omitted, COACH stays disabled on that map.
-    mainBaseInteractableObjIds?: number[]; // Phase 7 main-base interactables; even ids map to ready dialog, odd ids map to vehicle menu.
-    mainBaseInteractableAnchors?: WorldInteractableAnchorConfig[]; // Explicit Phase 7 terminal marker anchors used for per-player runtime icon spawning.
-    gadgetInteractableObjIds?: number[]; // Phase 7 gadget/ammo interactables; all ids map to ammo resupply menu.
-    gadgetInteractableAnchors?: WorldInteractableAnchorConfig[]; // Explicit Phase 7 point/gadget marker anchors used when authored runtime position lookup is unreliable.
+    spectatorCameraId?: number; // FixedCamera ObjId used by the single-spectator slot (SPECTATE button)
+    mainBaseInteractableObjIds?: number[]; // main-base interactables; even ids map to ready dialog, odd ids map to vehicle menu.
+    mainBaseInteractableAnchors?: WorldInteractableAnchorConfig[]; // terminal marker anchors used for per-player runtime icon spawning.
+    gadgetInteractableObjIds?: number[]; //gadget/ammo interactables; all ids map to ammo resupply menu.
+    gadgetInteractableAnchors?: WorldInteractableAnchorConfig[]; // Epoint/gadget marker anchors used when authored runtime position lookup is unreliable.
     team1Name: number;
     team2Name: number;
     aircraftCeiling: number;
-    hudMaxY: number; // HUD altitude at the vanilla hard ceiling for this map.
-    hudFloorY: number; // World Y where aircraft HUD reads 0 on this map.
-    useCustomCeiling: boolean; // When true, Ladder mode applies custom ceiling on this map.
+    hudMaxY: number; // legacy heli code: HUD altitude at the vanilla hard ceiling for this map.
+    hudFloorY: number; // legacy heli code: World Y where aircraft HUD reads 0 on this map.
+    useCustomCeiling: boolean; // legacy heli code: When true, mode applies custom ceiling on this map.
     team1TankSpawns: VehicleSpawnAnchorSpec[];
     team2TankSpawns: VehicleSpawnAnchorSpec[];
     team1AircraftSpawnVolumes?: VehicleSpawnVolumeSpec[]; // Add more authored boxes as additional array entries; runtime selects one weighted by usable spawn space.
-    team2AircraftSpawnVolumes?: VehicleSpawnVolumeSpec[]; // Add more authored boxes as additional array entries; runtime selects one weighted by usable spawn space.
+    team2AircraftSpawnVolumes?: VehicleSpawnVolumeSpec[];
     team1TankSpawnVolumes?: VehicleSpawnVolumeSpec[]; // Add more authored boxes as additional array entries; runtime selects one weighted by usable spawn space.
-    team2TankSpawnVolumes?: VehicleSpawnVolumeSpec[]; // Add more authored boxes as additional array entries; runtime selects one weighted by usable spawn space.
+    team2TankSpawnVolumes?: VehicleSpawnVolumeSpec[];
     capturePoints?: CapturePointConfig[];
     team1HeliSpawns?: VehicleSpawnAnchorSpec[];
     team2HeliSpawns?: VehicleSpawnAnchorSpec[];
@@ -127,7 +127,7 @@ type MapConfig = {
     team1FastMoverSpawns?: VehicleSpawnAnchorSpec[];
     team2FastMoverSpawns?: VehicleSpawnAnchorSpec[];
     readyDialogPresetPackages?: Record<number, ReadyDialogPresetPackage>; // Authored by knob key; runtime still maps knob order onto this map's spawn-anchor order.
-    vehicleSpawnYawOffsetDeg: number; // Reserved for future spawn orientation tuning.
+    vehicleSpawnYawOffsetDeg: number;
     gadgetLockerConfig?: GadgetLockerConfig; // Per-map gadget locker layout override; omit to use defaults.
     roundStartAirDelay?: number; // Seconds after live before ANY aircraft deployment (HQ or air) is allowed.
     roundStartAirDeployDelay?: number; // Seconds after live before the air-deploy button unlocks (aircraft HQ allowed after airDelay).

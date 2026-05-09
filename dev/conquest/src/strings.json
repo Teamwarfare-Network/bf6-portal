@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.500)",
+        "title": "teamwarfare . net | TWL Conquest (v1.509)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText3": "The game is NOT Live and you are NOT Ready yet...",
@@ -257,10 +257,10 @@
       }
     },
     "adminPanel": {
-      "accessed": "{0} accessed the Admin Panel",
-      "actionPressed": "{0} pressed {1} in the admin panel",
+      "accessed": "{0} accessed the Debug Panel",
+      "actionPressed": "{0} pressed {1} in the debug panel",
       "actionCountFormat": "({0})",
-      "actionCountVictoryFormat": "Admin Panel Buttons used {0} times",
+      "actionCountVictoryFormat": "Debug Panel Buttons used {0} times",
       "actions": {
         "clockTimeInc": "Clock Time +",
         "clockTimeDec": "Clock Time -",
@@ -281,10 +281,10 @@
         "roundLengthFormat": "Match Length: {0}:{1}{2}"
       },
       "buttons": {
-        "panel": "Admin Panel"
+        "panel": "Debug Panel"
       },
       "tester": {
-        "header": "t1 = left team; t2 = right team",
+        "header": "",
         "buttons": {
           "clockReset": "Reset Clock",
           "roundEnd": "End Match",

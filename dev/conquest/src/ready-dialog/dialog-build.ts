@@ -190,7 +190,7 @@ function createReadyDialogUI(eventPlayer: mod.Player, reveal: boolean = true) {
     );
     const CONTAINER_BASE = safeFind(CONTAINER_BASE_ID);
     if (!CONTAINER_BASE) return;
-    mod.SetUIWidgetBgAlpha(CONTAINER_BASE, 0.995); // Force darker overlay (some clients render blur lighter)
+    mod.SetUIWidgetBgAlpha(CONTAINER_BASE, 0.995);
 
     const borderHalfWidth = (CONTAINER_WIDTH / 2) + CONTAINER_BORDER_PADDING + (CONTAINER_BORDER_THICKNESS / 2);
     const borderHalfHeight = (CONTAINER_HEIGHT / 2) + CONTAINER_BORDER_PADDING + (CONTAINER_BORDER_THICKNESS / 2);

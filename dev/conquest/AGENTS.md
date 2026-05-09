@@ -118,6 +118,26 @@ Implications for authoring:
 - Inline trailing comments DO cost bundle bytes; reserve them for genuinely useful pointers (subtle invariants, non-obvious whys).
 - Don't write critical structural info as an inline trailing comment expecting it to vanish — it doesn't.
 
+### Header re-injection (postbuild step 11)
+
+After the comment-strip pass at step 10, postbuild re-injects the full `src/header-file.ts` content at the very top of `dist/bundle.ts` (versioning + license + attribution). This keeps the legal/credit block visible in the shipped bundle even though all `//` lines were stripped from the body.
+
+The header re-injection runs its own targeted strips before prepending:
+- `// @ts-nocheck` lines — STRIPPED (build-time directive only)
+- `// Module: ...` lines — STRIPPED (bundler artifact)
+- `// *policy[...]` lines — STRIPPED (source-only project conventions; see below)
+
+### Strip-from-bundle marker: `// *<keyword>`
+
+Lines starting with `// *<keyword>` in `src/header-file.ts` are stripped from the bundle by postbuild. This is the project convention for **source-only project conventions** that document rules for whoever's editing but shouldn't ship to the engine.
+
+Currently registered keywords:
+- `// *policy` — versioning policies, file-policy notes, naming rules. Stripped by step 11. Confirmed v1.504.
+
+Pattern: `^[ \t]*\/\/\s*\*<keyword>[^\n]*\n` (gm flag). Adding a new keyword requires editing `scripts/postbuild.js` step 11 to register the additional strip pass.
+
+Scope: this convention only applies to `src/header-file.ts`. Other source files have their `//` line comments stripped at step 10 anyway, so the marker is redundant there.
+
 ## Non-ASCII Characters Are Banned in dist/bundle.ts
 
 **Confirmed via v1.498 silent-load failure (2026-05-09).** The Portal sandbox SILENTLY rejects scripts containing any non-ASCII byte (anything outside `0x00-0x7F`). When this happens:
