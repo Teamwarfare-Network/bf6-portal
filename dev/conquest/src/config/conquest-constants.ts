@@ -4,8 +4,8 @@
 // Compile-time feature flags: when FALSE, associated source files are excluded from the bundle
 // and all external call sites are guarded to no-op. Toggle the matching imports in index.ts.
 const FEATURE_PERF_DIAG = false;
-const FEATURE_POSITION_DEBUG = false;
-const FEATURE_ADMIN_PANEL = false;
+const FEATURE_POSITION_DEBUG = true;
+const FEATURE_ADMIN_PANEL = true;
 const FEATURE_JOIN_PROMPT = false;
 
 // When a player bails from an aircraft with world-Y above this threshold they are killed

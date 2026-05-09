@@ -23,7 +23,7 @@
 
 - **TL;DR** — current snapshot in 6 bullets.
 - **Why memory, not bytes** — heap-vs-bundle constraint analysis.
-- **Per-player multipliers (M1–M15)** — allocator ranking with scale buckets.
+- **Per-player multipliers (M1–M16)** — allocator ranking with scale buckets.
 - **One-time overhead (O1–O5)** — non-per-player cost categories.
 - **Reclaim ladder (Tiers A–F)** — concrete levers, ranked by ROI.
 - **Why per-PID UI is non-negotiable** — architectural rule.
@@ -33,9 +33,9 @@
 
 ## Ratings
 
-### Per-player multipliers — `M1` … `M15`
+### Per-player multipliers — `M1` … `M16`
 
-Allocators that scale with connected player count, ranked by retained heap at 16 players. **`M1` = worst, `M15` = least.** The ID *is* the rank.
+Allocators that scale with connected player count, ranked by retained heap at 16 players. **`M1` = worst, `M16` = least.** The ID *is* the rank.
 
 Each `Mn` carries a **scale bucket**:
 

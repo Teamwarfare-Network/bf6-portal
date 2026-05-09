@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Conquest (v1.491)",
+        "title": "teamwarfare . net | TWL Conquest (v1.494)",
         "subtitle": "Experience Code: - - - -"
       },
       "helpText3": "The game is NOT Live and you are NOT Ready yet...",
@@ -252,6 +252,7 @@
         "notReady": "NOT READY",
         "swapTeams": "CHANGE TEAMS",
         "spectateCoach": "SPECTATE",
+        "spectateCoachDisabled": "Spectator Disabled",
         "giveUpAdmin": "GIVE UP ADMIN"
       }
     },
@@ -267,13 +268,14 @@
         "roundStart": "Start Match",
         "roundEnd": "End Match",
         "positionDebug": "Toggle Position Debug",
-        "deployTimersVisibleToggle": "Toggle Deploy Timers Visible While Deployed",
         "resetGadgetTimers": "Reset Gadget Timers",
         "uiCachePerfToggle": "Toggle UI Cache Panel",
-        "perfDiagToggle": "Toggle Perf Diag",
         "roundLengthDec": "Match Length -",
         "roundLengthInc": "Match Length +",
-        "groundDeployAll": "Ground Deploy All"
+        "groundDeployAll": "Force Spawn Vehicles (Vanilla Only)",
+        "combatHudToggle": "Toggle Combat HUD",
+        "vehicleOverlayToggle": "Toggle Vehicle Overlay",
+        "spectatorToggle": "Toggle Spectator"
       },
       "labels": {
         "roundLengthFormat": "Match Length: {0}:{1}{2}"
@@ -289,12 +291,9 @@
           "roundStart": "Start Match",
           "positionDebug": "Toggle Position Debug",
           "resetGadgetTimers": "Reset Gadget Timers",
-          "deployTimersVisibleOn": "Timers Visible Deployed ON",
-          "deployTimersVisibleOff": "Timers Visible Deployed OFF",
           "uiCachePerfOn": "Toggle UI Cache",
           "uiCachePerfOff": "Toggle UI Cache",
-          "perfDiag": "Toggle Perf Diag",
-          "groundDeployAll": "Ground Deploy All"
+          "groundDeployAll": "Force Spawn Vehicles (Vanilla Only)"
         },
         "labels": {
           "clockTime": "Clock Time -/+ 1m",

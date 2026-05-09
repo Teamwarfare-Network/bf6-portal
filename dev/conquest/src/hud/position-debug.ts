@@ -327,29 +327,32 @@ function setPositionDebugVisibleForPlayer(player: mod.Player, visible: boolean):
     void positionDebugLoop(player, state.posDebugToken);
 }
 
-// Auto-enables position debug for a player who just deployed. Called from deploy handler.
-// Only activates when FEATURE_POSITION_DEBUG is true.
-// CQ_Bug_50: reveal paths (releaseLoadingGate -> revealAllUiFamilies) also land here while the
-// player is still on the deploy screen. Bail out if not deployed so the sync initial sample in
-// setPositionDebugVisibleForPlayer doesn't call GetSoldierState on a non-deployed player and
-// trip the engine error log. The player's real OnPlayerDeployed fires autoStart again.
-// CQ_Bug_51: this function is called from every reveal path (respawn, team-swap re-warm,
-// ready-dialog close-while-deployed) -- it used to unconditionally force posDebugVisible=true,
-// which overwrote the admin-panel toggle shortly after the admin turned position debug off.
-// Now: only force-enable on the first auto-start of the session. After the admin toggle sets
-// posDebugAdminOverride=true, preserve whatever state.posDebugVisible currently holds and just
-// re-attach the loop so it resumes correctly after a death/respawn cycle.
-function autoStartPositionDebugOnDeploy(player: mod.Player): void {
+// v1.492: position-debug auto-start REMOVED per design.
+// The overlay is admin-only, manual-toggle only. The admin must explicitly press
+// `Toggle Position Debug` in the admin panel to bring it up. This function is kept as a
+// no-op so existing reveal-path callers don't break; it has no production effect.
+function autoStartPositionDebugOnDeploy(_player: mod.Player): void {
+    return;
+}
+
+// v1.492: tear down a player's position-debug overlay (loop cancellation + widget hide).
+// Called from `Admin.onAdminPidChanged` when the admin slot changes — without this, the
+// prior admin's overlay loop keeps polling state at 0.5s cadence even though they no
+// longer have admin status. Delegates to setPositionDebugVisibleForPlayer which already
+// token-bumps the loop and hides all 11 widgets via its applyVisible(false) path.
+function tearDownPositionDebugForPid(pid: number): void {
     if (!FEATURE_POSITION_DEBUG) return;
-    if (!isPlayerDeployed(player)) return;
-    const pid = safeGetPlayerId(player);
-    if (pid === undefined) return;
     const state = State.players.readyDialogData[pid];
     if (!state) return;
-    if (!state.posDebugAdminOverride) {
-        state.posDebugVisible = true;
+    state.posDebugAdminOverride = false; // reset so future re-deploy doesn't preserve the off state in a sticky way
+    const player = safeFindPlayer(pid);
+    if (!player) {
+        // Player object missing (disconnected); just bump the token + clear the flag.
+        state.posDebugVisible = false;
+        state.posDebugToken = (state.posDebugToken + 1) % 1000000000;
+        return;
     }
-    setPositionDebugVisibleForPlayer(player, state.posDebugVisible);
+    setPositionDebugVisibleForPlayer(player, false);
 }
 
 //#endregion

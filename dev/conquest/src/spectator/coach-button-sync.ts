@@ -40,6 +40,11 @@ function isCoachButtonEnabledForPid(pid: number): boolean {
 
 // Apply enabled/disabled visual state to a COACH button widget triple. Shared between the
 // panel and dialog surfaces so a future visual tweak lands in one place.
+// v1.493: when admin has disabled spectator globally (`spectatorDisabledByAdmin`), swap
+// the label from "SPECTATE" to "Spectator Disabled" so players see the explicit disabled
+// state instead of just a grey button. The label may wrap to two lines on the existing
+// button width — accepted by user direction. Other disabled paths (slot taken / match
+// live / no camera authored) keep the original "SPECTATE" label with grey treatment.
 function applyCoachButtonState(
     buttonWidget: any,
     borderWidget: any,
@@ -57,6 +62,10 @@ function applyCoachButtonState(
     }
     if (labelWidget) {
         mod.SetUITextColor(labelWidget, enabled ? COLOR_WHITE : COLOR_GRAY);
+        const labelKey = State.conquest.debug.spectatorDisabledByAdmin
+            ? mod.stringkeys.twl.readyDialog.buttons.spectateCoachDisabled
+            : mod.stringkeys.twl.readyDialog.buttons.spectateCoach;
+        try { mod.SetUITextLabel(labelWidget, mod.Message(labelKey)); } catch {}
     }
 }
 

@@ -397,7 +397,11 @@ async function runSpectatorFreeCameraLoop(eventPlayer: mod.Player, pid: number, 
 // Returns true when the active map authored a spectator FixedCamera ObjId. Used by the
 // COACH-button sync (panel + dialog) to gate the enable state. Maps without the field
 // retain the original Wave 4 D3 disabled-grey treatment (graceful degradation).
+// v1.492: also gates on the admin diagnostic toggle. When admin has disabled spectator
+// (Toggle Spectator button), the SPECTATE button on every viewer's panel goes
+// disabled-grey via the existing isCoachButtonEnabledForPid path.
 function isSpectatorAvailableForActiveMap(): boolean {
+    if (State.conquest.debug.spectatorDisabledByAdmin) return false;
     return ACTIVE_MAP_CONFIG?.spectatorCameraId !== undefined;
 }
 

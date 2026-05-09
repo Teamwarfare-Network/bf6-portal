@@ -8,6 +8,19 @@ function forceSpawnAllReadyVehicleSlots(): void {
     applySpawnerEnablementForMatchup(State.round.matchupPresetIndex, true);
 }
 
+// v1.492+: reset all admin diagnostic toggle flags. Called from endMatch +
+// triggerFreshMatchSetup so a new match starts with all UIs visible and spectator
+// available regardless of what state the previous match left them in.
+// v1.493: spectator-toggle button label is no longer dynamic on the admin panel
+// (player-facing SPECTATE buttons own the dynamic label now), so no admin-panel
+// label refresh needed here. The post-reset broadcast on the next admin event or
+// panel/dialog refresh will pick up the fresh state.
+function resetDiagnosticToggleFlags(): void {
+    setConquestHudMode("core");
+    State.conquest.debug.vehicleDeployTimerDisabledByAdmin = false;
+    State.conquest.debug.spectatorDisabledByAdmin = false;
+}
+
 // Binds clock expiry to Conquest end-condition checks for continuous live flow.
 function bindClockExpiryForContinuousMode(): void {
     State.round.clock.expiryHandlers = [
@@ -69,6 +82,10 @@ function endMatch(_triggerPlayer?: mod.Player, _freezeRemainingSeconds?: number,
     SupplyBoxWarmScheduler.cancelWarmStagger();
     BoundaryPromptLivePrebuildScheduler.cancelBoundaryPromptPrebuild();
     DelayBroadcast.cancelDelayBroadcastsForLive();
+    // v1.492: reset diagnostic toggles so the next match starts with all UIs visible and
+    // spectator available. Refresh the spectator-toggle button label if there's a current
+    // admin so their button reflects the reset state on the next dialog open.
+    resetDiagnosticToggleFlags();
     State.round.liveStartedAtSeconds = undefined;
     // Determine winner: use explicit override if provided, otherwise infer from ticket counts.
     let winner: TeamID | 0;
@@ -120,6 +137,8 @@ function triggerFreshMatchSetup(_triggerPlayer?: mod.Player): void {
     DelayBroadcast.cancelDelayBroadcastsForLive();
     cancelPregameCountdown();
     resetReadyStateForAllPlayers();
+    // v1.492: reset diagnostic toggles so a fresh setup pass starts clean.
+    resetDiagnosticToggleFlags();
     onSpectatorFreshSetup();
 
     lifecycleSetNotReadyBaseline("fresh-setup");

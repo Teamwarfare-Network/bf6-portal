@@ -3,6 +3,9 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v1.494: Admin panel v3 fixes: Combat HUD toggle force-applies via updateConquestCombatHudForAllPlayers(true) so pre-game press actually hides tickets/flags/engage; Vehicle Overlay gate refined to hide only when deployed and not in live terminal menu (preserves spawn flow); 3 diagnostic toggles moved to rows 6/7/8 (right after Toggle Position Debug).
+// v1.493: Admin panel v2 adjustments: spectator-disabled label moved from admin button to player-facing SPECTATE buttons; removed Toggle Perf Diag (broken) + Toggle Deploy Timers Visible (superseded) buttons; renamed Ground Deploy All to Force Spawn Vehicles (Vanilla Only); pre-game no-op comment on Toggle Combat HUD.
+// v1.492: Re-enable FEATURE_ADMIN_PANEL + FEATURE_POSITION_DEBUG admin-pid scoped (manual-toggle position debug, no auto-start); add 'Toggle Combat HUD' + 'Toggle Vehicle Overlay' + 'Toggle Spectator' diagnostic admin actions with per-frame short-circuits and dynamic spectator-button label.
 // v1.491: Spectator: yellow help/ready strip explicitly hidden via spec-pid gate in deriveConquestHudHelpReadyViewModel; immediate refresh on enter/exit eliminates the lag.
 // v1.490: Spectator: stay deployed during pregame countdown (skipped in undeployAllDeployedPlayers); triple-tap exit gated on !countdown.isActive so an accidental tap during countdown doesn't fire.
 // v1.489: Spectator: admin-dialog roster shows the spectator as 'Spectator' (green) instead of READY/NOT READY; base column blanked; row repaints on enter/exit via spec-marker signature term.

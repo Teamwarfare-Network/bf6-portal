@@ -229,7 +229,9 @@ function buildReadyDialogBottomButtonsSection(
     // && slot vacant).
 
     // UI caching note: the admin toggle is created once with the dialog, while the admin panel contents stay lazy-built.
-    if (FEATURE_ADMIN_PANEL) ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, false);
+    // v1.492: only the claimed admin pid builds the toggle/panel — keeps the admin-panel widget surface
+    // (and its action-counter N-player broadcast) collapsed to a single pid.
+    if (FEATURE_ADMIN_PANEL && Admin.isAdmin(playerId)) ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, false);
 
     const buttonCancelBorder = addOutlinedButton(
         buttonCancelId,

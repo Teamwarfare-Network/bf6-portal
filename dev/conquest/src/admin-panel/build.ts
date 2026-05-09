@@ -77,6 +77,12 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         row0Y + (buttonSizeY + rowSpacingY) * 5, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36,
         UI_TEST_BUTTON_POS_DEBUG_ID, UI_TEST_POS_DEBUG_TEXT_ID, mod.stringkeys.twl.adminPanel.tester.buttons.positionDebug);
 
+    // v1.494: 3 diagnostic toggle buttons moved up to rows 6/7/8 (was 10/11/12) so the
+    // most-used diagnostic surface lives near the top of the panel. Used to bisect the
+    // v1.491 1716ms-frame issue. All three flags are global (server-wide); position-debug
+    // is admin-only. Combat HUD + Vehicle Overlay + Spectator labels are all static on the
+    // admin panel; the player-facing SPECTATE button picks up a dynamic "Spectator Disabled"
+    // label from coach-button-sync's applyCoachButtonState.
     addTesterActionButton(
         eventPlayer,
         adminContainer,
@@ -85,9 +91,9 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         row0Y + (buttonSizeY + rowSpacingY) * 6,
         (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX),
         36,
-        UI_TEST_BUTTON_DEPLOY_TIMERS_TOGGLE_ID,
-        UI_TEST_DEPLOY_TIMERS_TOGGLE_TEXT_ID,
-        getVehicleDeployTimerAdminToggleLabelKey(playerId)
+        UI_TEST_BUTTON_HUD_TOGGLE_ID,
+        UI_TEST_HUD_TOGGLE_TEXT_ID,
+        mod.stringkeys.twl.adminPanel.actions.combatHudToggle
     );
 
     addTesterActionButton(
@@ -96,6 +102,32 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         playerId,
         testerBaseX,
         row0Y + (buttonSizeY + rowSpacingY) * 7,
+        (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX),
+        36,
+        UI_TEST_BUTTON_VEHICLE_OVERLAY_TOGGLE_ID,
+        UI_TEST_VEHICLE_OVERLAY_TOGGLE_TEXT_ID,
+        mod.stringkeys.twl.adminPanel.actions.vehicleOverlayToggle
+    );
+
+    addTesterActionButton(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 8,
+        (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX),
+        36,
+        UI_TEST_BUTTON_SPECTATOR_TOGGLE_ID,
+        UI_TEST_SPECTATOR_TOGGLE_TEXT_ID,
+        mod.stringkeys.twl.adminPanel.actions.spectatorToggle
+    );
+
+    addTesterActionButton(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        row0Y + (buttonSizeY + rowSpacingY) * 9,
         (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX),
         36,
         UI_TEST_BUTTON_RESET_GADGET_TIMERS_ID,
@@ -108,20 +140,7 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         adminContainer,
         playerId,
         testerBaseX,
-        row0Y + (buttonSizeY + rowSpacingY) * 8,
-        (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX),
-        36,
-        UI_TEST_BUTTON_PERF_DIAG_TOGGLE_ID,
-        UI_TEST_PERF_DIAG_TOGGLE_TEXT_ID,
-        mod.stringkeys.twl.adminPanel.tester.buttons.perfDiag
-    );
-
-    addTesterActionButton(
-        eventPlayer,
-        adminContainer,
-        playerId,
-        testerBaseX,
-        row0Y + (buttonSizeY + rowSpacingY) * 9,
+        row0Y + (buttonSizeY + rowSpacingY) * 10,
         (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX),
         36,
         UI_TEST_BUTTON_GROUND_DEPLOY_ALL_ID,

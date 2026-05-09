@@ -17,19 +17,13 @@ function resetVehicleDeployPrimaryClickTrackerForPid(pid: number): void {
     delete vehicleDeployLastPrimaryClickByPid[pid];
 }
 
-function getVehicleDeployTimerAdminToggleLabelKey(pid: number): number {
-    const state = State.players.readyDialogData[pid];
-    if (state?.vehicleTimersVisibleWhileDeployed) {
-        return mod.stringkeys.twl.adminPanel.tester.buttons.deployTimersVisibleOn;
-    }
-    return mod.stringkeys.twl.adminPanel.tester.buttons.deployTimersVisibleOff;
-}
-
-function syncVehicleDeployTimerAdminToggleLabelForPid(pid: number): void {
-    const label = safeFind(UI_TEST_DEPLOY_TIMERS_TOGGLE_TEXT_ID + pid);
-    if (!label) return;
-    safeSetUITextLabel(label, msg(getVehicleDeployTimerAdminToggleLabelKey(pid)));
-}
+// v1.493: caller (Toggle Deploy Timers Visible button + handler) removed; helpers retained
+// pending dead-code audit. They reference `tester.buttons.deployTimersVisibleOn`/`Off` and
+// `UI_TEST_DEPLOY_TIMERS_TOGGLE_TEXT_ID` which were also deleted, so calling these now would
+// fail at runtime. Kept here as comments until a Tier C cleanup pass formally removes them.
+//
+// function getVehicleDeployTimerAdminToggleLabelKey(pid: number): number { ... }
+// function syncVehicleDeployTimerAdminToggleLabelForPid(pid: number): void { ... }
 
 function getVehicleDeployTimerLabelKey(vehicleType: mod.VehicleList): number {
     switch (vehicleType) {
@@ -1770,6 +1764,24 @@ function refreshVehicleDeployTimersForPlayerPreservingVisibility(player: mod.Pla
     if (!isValidPlayer(player)) return false;
     const pid = safeGetPlayerId(player);
     if (pid === undefined) return false;
+    // v1.492 / v1.494: admin-toggleable diagnostic short-circuit.
+    // Hide the panel ONLY when the player is walking around (deployed + NOT interacting
+    // with the in-world live deploy terminal). Keep visible on the deploy screen
+    // (deployedByPid=false → vehicle spawn flow) and during live-terminal interaction
+    // (inLiveMenu=true → mid-spawn-into-vehicle UX). The cache is shared across all three
+    // surfaces, so the gate must be context-aware to avoid breaking spawn flows.
+    // Re-enable is handled by the natural refresh path on the next call after the flag flips back.
+    if (State.conquest.debug.vehicleDeployTimerDisabledByAdmin) {
+        const isDeployed = !!State.players.deployedByPid[pid];
+        const inLiveMenu = isVehicleDeployLiveTerminalModeForPid(pid);
+        if (isDeployed && !inLiveMenu) {
+            const existing = State.hudCache.vehicleDeployTimerCache[pid];
+            if (existing?.lastVisibleState === true) setVehicleDeployTimerHudFamilyVisible(existing, false);
+            return false;
+        }
+        // Player is on the deploy screen or in the live terminal menu; fall through to the
+        // normal render path so they can still see + click spawn buttons.
+    }
     const cache = ensureVehicleDeployTimerHudForPlayer(player);
     if (!cache || !cache.root) return false;
     const renderPlan = buildVehicleDeployTimerRenderPlan(player, pid);

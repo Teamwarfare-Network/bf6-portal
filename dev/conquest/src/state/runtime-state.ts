@@ -162,6 +162,8 @@ const State: GameState = {
         debug: {
             hudEnabled: true,
             hudModeOverride: undefined,
+            vehicleDeployTimerDisabledByAdmin: false,
+            spectatorDisabledByAdmin: false,
             hudLastUpdatedAtSeconds: -1,
             hudDirty: true,
             pregameReadyHudDirty: false,

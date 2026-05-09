@@ -239,7 +239,9 @@ const GATE_TIMEOUT_SECONDS = 60;
 // Admin Panel
 // Height bumped to 412 to accommodate the CQ_Bug_52 temporary counter row (row 10). Reduce back to
 // 390 when the CQ52 telemetry is removed.
-const ADMIN_PANEL_HEIGHT = 412;
+// v1.492: bumped to 514 to accommodate 3 diagnostic toggle rows (Combat HUD / Vehicle Overlay /
+// Spectator) at indices 10, 11, 12. Each row adds 34px (30 button + 4 spacing).
+const ADMIN_PANEL_HEIGHT = 514;
 const ADMIN_PANEL_PADDING = 5;
 const ADMIN_PANEL_BASE_X = -5;
 const ADMIN_PANEL_BASE_Y = 15;

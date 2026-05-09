@@ -13,7 +13,7 @@ function refreshReadyDialogSectionsForReveal(
     containerBase: mod.UIWidget,
     reveal: boolean
 ): void {
-    if (FEATURE_ADMIN_PANEL) ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, false);
+    if (FEATURE_ADMIN_PANEL && Admin.isAdmin(playerId)) ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, false);
     if (!reveal) return;
     // CQ_Bug_18: cached ready-dialog reveal should be a pure visibility flip.
     // The hidden prebuild path already owns section construction and initial labels.
@@ -44,7 +44,7 @@ function finalizeReadyDialogVisibility(
     const toggleButton = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId);
     const toggleLabel = safeFind(UI_ADMIN_PANEL_BUTTON_LABEL_ID + playerId);
     const toggleBorder = safeFind(UI_ADMIN_PANEL_BUTTON_ID + playerId + "_BORDER");
-    if (FEATURE_ADMIN_PANEL && (!toggleButton || !toggleLabel || !toggleBorder)) {
+    if (FEATURE_ADMIN_PANEL && Admin.isAdmin(playerId) && (!toggleButton || !toggleLabel || !toggleBorder)) {
         ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, reveal);
         return;
     }
@@ -66,7 +66,7 @@ function refreshReadyDialogSectionsWhileHidden(
     playerId: number,
     containerBase: mod.UIWidget
 ): void {
-    if (FEATURE_ADMIN_PANEL) ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, false);
+    if (FEATURE_ADMIN_PANEL && Admin.isAdmin(playerId)) ensureAdminPanelWidgets(eventPlayer, playerId, containerBase, false);
     // CQ_Bug_18: cached ready-dialog open must remain a pure reveal path.
     // Hidden dialog caches are invalidated when roster/map state changes underneath them,
     // so next open rebuilds fresh instead of relabeling a stale cached tree here.

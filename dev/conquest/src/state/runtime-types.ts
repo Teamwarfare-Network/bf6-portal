@@ -232,6 +232,12 @@ type ConquestRuntimeScaffold = {
     debug: {
         hudEnabled: boolean;
         hudModeOverride?: TwlConquestHudMode;
+        // v1.492: admin-toggleable diagnostic flags (set via admin panel buttons; reset on
+        // match-end / fresh-setup). Both default false. Source of truth for the per-frame
+        // CPU-spike diagnostic protocol described in conquest_optimization_state.md
+        // "Per-frame CPU fan-out — v1.491 crash hypothesis".
+        vehicleDeployTimerDisabledByAdmin: boolean;
+        spectatorDisabledByAdmin: boolean;
         hudLastUpdatedAtSeconds: number;
         hudDirty: boolean;
         pregameReadyHudDirty: boolean;
