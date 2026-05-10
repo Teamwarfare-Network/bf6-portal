@@ -1,0 +1,73 @@
+# mod Enumerations
+
+- Generated at (UTC): `2026-03-01 01:48:16 UTC`
+- Source index (raw): `https://raw.githubusercontent.com/battlefield-portal-community/portal-docs/main/docs/santiago/scripting/mod/mod/_index.md`
+- Source docs base: `https://docs.bfportal.gg/santiago/scripting/mod/mod`
+- Category: `Enumerations`
+- Total entries: `63`
+
+## Files
+
+- [AmmoTypes](enumerations/AmmoTypes.md) | `AmmoTypes/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/AmmoTypes`
+- [ArmorTypes](enumerations/ArmorTypes.md) | `ArmorTypes/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/ArmorTypes`
+- [Cameras](enumerations/Cameras.md) | `Cameras/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/Cameras`
+- [CustomNotificationSlots](enumerations/CustomNotificationSlots.md) | `CustomNotificationSlots/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/CustomNotificationSlots`
+- [Factions](enumerations/Factions.md) | `Factions/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/Factions`
+- [Gadgets](enumerations/Gadgets.md) | `Gadgets/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/Gadgets`
+- [InventorySlots](enumerations/InventorySlots.md) | `InventorySlots/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/InventorySlots`
+- [Maps](enumerations/Maps.md) | `Maps/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/Maps`
+- [MeleeWeapons](enumerations/MeleeWeapons.md) | `MeleeWeapons/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/MeleeWeapons`
+- [MiscGadgets](enumerations/MiscGadgets.md) | `MiscGadgets/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/MiscGadgets`
+- [MoveSpeed](enumerations/MoveSpeed.md) | `MoveSpeed/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/MoveSpeed`
+- [MusicEvents](enumerations/MusicEvents.md) | `MusicEvents/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/MusicEvents`
+- [MusicPackages](enumerations/MusicPackages.md) | `MusicPackages/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/MusicPackages`
+- [MusicParams](enumerations/MusicParams.md) | `MusicParams/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/MusicParams`
+- [OpenGadgets](enumerations/OpenGadgets.md) | `OpenGadgets/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/OpenGadgets`
+- [PlayerDamageTypes](enumerations/PlayerDamageTypes.md) | `PlayerDamageTypes/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/PlayerDamageTypes`
+- [PlayerDeathTypes](enumerations/PlayerDeathTypes.md) | `PlayerDeathTypes/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/PlayerDeathTypes`
+- [PlayerFilterTypes](enumerations/PlayerFilterTypes.md) | `PlayerFilterTypes/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/PlayerFilterTypes`
+- [PrimaryWeapons](enumerations/PrimaryWeapons.md) | `PrimaryWeapons/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/PrimaryWeapons`
+- [RestrictedInputs](enumerations/RestrictedInputs.md) | `RestrictedInputs/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RestrictedInputs`
+- [ResupplyTypes](enumerations/ResupplyTypes.md) | `ResupplyTypes/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/ResupplyTypes`
+- [RuntimeSpawn_Abbasid](enumerations/RuntimeSpawn_Abbasid.md) | `RuntimeSpawn_Abbasid/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Abbasid`
+- [RuntimeSpawn_Aftermath](enumerations/RuntimeSpawn_Aftermath.md) | `RuntimeSpawn_Aftermath/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Aftermath`
+- [RuntimeSpawn_Badlands](enumerations/RuntimeSpawn_Badlands.md) | `RuntimeSpawn_Badlands/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Badlands`
+- [RuntimeSpawn_Battery](enumerations/RuntimeSpawn_Battery.md) | `RuntimeSpawn_Battery/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Battery`
+- [RuntimeSpawn_Capstone](enumerations/RuntimeSpawn_Capstone.md) | `RuntimeSpawn_Capstone/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Capstone`
+- [RuntimeSpawn_Common](enumerations/RuntimeSpawn_Common.md) | `RuntimeSpawn_Common/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Common`
+- [RuntimeSpawn_Dumbo](enumerations/RuntimeSpawn_Dumbo.md) | `RuntimeSpawn_Dumbo/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Dumbo`
+- [RuntimeSpawn_Eastwood](enumerations/RuntimeSpawn_Eastwood.md) | `RuntimeSpawn_Eastwood/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Eastwood`
+- [RuntimeSpawn_FireStorm](enumerations/RuntimeSpawn_FireStorm.md) | `RuntimeSpawn_FireStorm/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_FireStorm`
+- [RuntimeSpawn_Granite_Downtown](enumerations/RuntimeSpawn_Granite_Downtown.md) | `RuntimeSpawn_Granite_Downtown/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Granite_Downtown`
+- [RuntimeSpawn_Granite_Marina](enumerations/RuntimeSpawn_Granite_Marina.md) | `RuntimeSpawn_Granite_Marina/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Granite_Marina`
+- [RuntimeSpawn_Granite_ResidentialNorth](enumerations/RuntimeSpawn_Granite_ResidentialNorth.md) | `RuntimeSpawn_Granite_ResidentialNorth/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Granite_ResidentialNorth`
+- [RuntimeSpawn_Granite_TechCenter](enumerations/RuntimeSpawn_Granite_TechCenter.md) | `RuntimeSpawn_Granite_TechCenter/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Granite_TechCenter`
+- [RuntimeSpawn_Limestone](enumerations/RuntimeSpawn_Limestone.md) | `RuntimeSpawn_Limestone/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Limestone`
+- [RuntimeSpawn_Outskirts](enumerations/RuntimeSpawn_Outskirts.md) | `RuntimeSpawn_Outskirts/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Outskirts`
+- [RuntimeSpawn_Sand](enumerations/RuntimeSpawn_Sand.md) | `RuntimeSpawn_Sand/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Sand`
+- [RuntimeSpawn_Tungsten](enumerations/RuntimeSpawn_Tungsten.md) | `RuntimeSpawn_Tungsten/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/RuntimeSpawn_Tungsten`
+- [ScoreboardType](enumerations/ScoreboardType.md) | `ScoreboardType/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/ScoreboardType`
+- [ScreenEffects](enumerations/ScreenEffects.md) | `ScreenEffects/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/ScreenEffects`
+- [SecondaryWeapons](enumerations/SecondaryWeapons.md) | `SecondaryWeapons/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/SecondaryWeapons`
+- [SoldierClass](enumerations/SoldierClass.md) | `SoldierClass/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/SoldierClass`
+- [SoldierStateBool](enumerations/SoldierStateBool.md) | `SoldierStateBool/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/SoldierStateBool`
+- [SoldierStateNumber](enumerations/SoldierStateNumber.md) | `SoldierStateNumber/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/SoldierStateNumber`
+- [SoldierStateVector](enumerations/SoldierStateVector.md) | `SoldierStateVector/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/SoldierStateVector`
+- [SpawnModes](enumerations/SpawnModes.md) | `SpawnModes/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/SpawnModes`
+- [SpotStatus](enumerations/SpotStatus.md) | `SpotStatus/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/SpotStatus`
+- [Stance](enumerations/Stance.md) | `Stance/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/Stance`
+- [StationaryEmplacements](enumerations/StationaryEmplacements.md) | `StationaryEmplacements/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/StationaryEmplacements`
+- [Throwables](enumerations/Throwables.md) | `Throwables/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/Throwables`
+- [Types](enumerations/Types.md) | `Types/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/Types`
+- [UIAnchor](enumerations/UIAnchor.md) | `UIAnchor/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/UIAnchor`
+- [UIBgFill](enumerations/UIBgFill.md) | `UIBgFill/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/UIBgFill`
+- [UIButtonEvent](enumerations/UIButtonEvent.md) | `UIButtonEvent/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/UIButtonEvent`
+- [UIDepth](enumerations/UIDepth.md) | `UIDepth/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/UIDepth`
+- [UIImageType](enumerations/UIImageType.md) | `UIImageType/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/UIImageType`
+- [VehicleList](enumerations/VehicleList.md) | `VehicleList/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/VehicleList`
+- [VehicleStateVector](enumerations/VehicleStateVector.md) | `VehicleStateVector/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/VehicleStateVector`
+- [VoiceOverEvents2D](enumerations/VoiceOverEvents2D.md) | `VoiceOverEvents2D/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/VoiceOverEvents2D`
+- [VoiceOverFlags](enumerations/VoiceOverFlags.md) | `VoiceOverFlags/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/VoiceOverFlags`
+- [WeaponAttachments](enumerations/WeaponAttachments.md) | `WeaponAttachments/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/WeaponAttachments`
+- [Weapons](enumerations/Weapons.md) | `Weapons/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/Weapons`
+- [WorldIconImages](enumerations/WorldIconImages.md) | `WorldIconImages/_index.md` | `https://docs.bfportal.gg/santiago/scripting/mod/mod/WorldIconImages`

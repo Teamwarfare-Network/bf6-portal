@@ -1,0 +1,167 @@
+﻿// @ts-nocheck
+// Module: state/id-helpers -- object/player/team guards and safe widget lookup
+
+//#region -------------------- Shared ID helpers --------------------
+
+// Bundle-saving guard: !isValidPlayer(p) replaces the 154-site pattern
+// `!p || !mod.IsPlayerValid(p)` while preserving the exact same boolean semantics.
+// Declared as a TS type predicate (`p is mod.Player`) so callers get the same
+// post-guard narrowing the inline check used to provide.
+function isValidPlayer(p: mod.Player | null | undefined): p is mod.Player {
+    return !!p && mod.IsPlayerValid(p);
+}
+
+// Fast object-id lookup for call sites that already control validity.
+function getObjId(obj: any): number {
+    return mod.GetObjId(obj);
+}
+
+// Guarded object-id lookup for paths where object validity is uncertain.
+function safeGetObjId(obj: any): number | undefined {
+    if (!obj) return undefined;
+    try {
+        return mod.GetObjId(obj);
+    } catch {
+        return undefined;
+    }
+}
+
+// Guarded pid resolution for disconnect race windows in hot paths.
+function safeGetPlayerId(player: mod.Player | null | undefined): number | undefined {
+    if (!isValidPlayer(player)) return undefined;
+    try {
+        return mod.GetObjId(player);
+    } catch {
+        return undefined;
+    }
+}
+
+// Guarded vehicle lookup for players during seat/undeploy transition windows.
+// Uses vehicle occupancy cache (set on enter, cleared on exit/undeploy) to avoid engine
+// calls during death/transition windows where the engine rejects the query (CQ_Bug_37/38).
+function safeGetVehicleFromPlayer(player: mod.Player | null | undefined): mod.Vehicle | undefined {
+    if (!isValidPlayer(player)) return undefined;
+    if (!isPlayerDeployed(player)) return undefined;
+    const pid = safeGetPlayerId(player);
+    if (pid === undefined) return undefined;
+    if (State.players.posDebugVehicleObjIdByPid[pid] === undefined) return undefined;
+    const seatIndex = safeGetPlayerVehicleSeat(player, -1);
+    if (seatIndex < 0) return undefined;
+    try {
+        return mod.GetVehicleFromPlayer(player);
+    } catch {
+        return undefined;
+    }
+}
+
+// Guarded player seat lookup for transition windows where the engine briefly rejects the query.
+// Skips the engine call entirely when the player has no cached vehicle (CQ_Bug_37).
+function safeGetPlayerVehicleSeat(player: mod.Player | null | undefined, fallback: number = -1): number {
+    if (!isValidPlayer(player)) return fallback;
+    if (!isPlayerDeployed(player)) return fallback;
+    const pid = safeGetPlayerId(player);
+    if (pid === undefined) return fallback;
+    if (State.players.posDebugVehicleObjIdByPid[pid] === undefined) return fallback;
+    try {
+        return mod.GetPlayerVehicleSeat(player);
+    } catch {
+        return fallback;
+    }
+}
+
+// Returns true when the runtime has marked this player id as disconnected.
+function isPidDisconnected(pid: number): boolean {
+    return State.players.disconnectedByPid[pid] === true;
+}
+
+// Normalizes engine Team handles into TeamID enum values.
+function getTeamNumber(team: mod.Team): TeamID | 0 {
+    if (mod.Equals(team, mod.GetTeam(TeamID.Team1))) return TeamID.Team1;
+    if (mod.Equals(team, mod.GetTeam(TeamID.Team2))) return TeamID.Team2;
+    return 0;
+}
+
+// Guarded team lookup for players, with explicit fallback for invalid/unavailable states.
+function safeGetTeamNumberFromPlayer(
+    player: mod.Player | null | undefined,
+    fallback: TeamID | 0 = 0
+): TeamID | 0 {
+    if (!isValidPlayer(player)) return fallback;
+    try {
+        return getTeamNumber(mod.GetTeam(player));
+    } catch {
+        return fallback;
+    }
+}
+
+// Returns deployed-state truth from script runtime for this player.
+function isPlayerDeployed(player: mod.Player): boolean {
+    if (!isValidPlayer(player)) return false;
+    const pid = safeGetPlayerId(player);
+    if (pid === undefined) return false;
+    return !!State.players.deployedByPid[pid];
+}
+
+// Safe GetSoldierState wrappers: avoid engine errors during undeploy/cleanup and keep deploy state in sync.
+function safeGetSoldierStateBool(player: mod.Player, stateKey: any, fallback: boolean = false): boolean {
+    if (!isValidPlayer(player)) return fallback;
+    if (!isPlayerDeployed(player)) return fallback;
+    try {
+        return !!mod.GetSoldierState(player, stateKey);
+    } catch {
+        const pid = safeGetPlayerId(player);
+        if (pid !== undefined) {
+            State.players.deployedByPid[pid] = false;
+        }
+        return fallback;
+    }
+}
+
+// Guarded vector soldier-state lookup that also clears deployed flag on engine access failures.
+function safeGetSoldierStateVector(player: mod.Player, stateKey: any): mod.Vector | undefined {
+    if (!isValidPlayer(player)) return undefined;
+    if (!isPlayerDeployed(player)) return undefined;
+    try {
+        return mod.GetSoldierState(player, stateKey) as unknown as mod.Vector;
+    } catch {
+        const pid = safeGetPlayerId(player);
+        if (pid !== undefined) {
+            State.players.deployedByPid[pid] = false;
+        }
+        return undefined;
+    }
+}
+
+// Resolves the localized team-name key for scoreboard/HUD labels.
+function getTeamNameKey(teamNum: TeamID | 0): number {
+    if (teamNum === TeamID.Team1) return ACTIVE_MAP_CONFIG?.team1Name ?? mod.stringkeys.twl.teams.WEST;
+    if (teamNum === TeamID.Team2) return ACTIVE_MAP_CONFIG?.team2Name ?? mod.stringkeys.twl.teams.EAST;
+    return STR_SYS_UNKNOWN_PLAYER;
+}
+
+// Player-name message helper for UI text paths.
+// CQ_Bug_18 ended up being a ready-dialog reveal-path problem, not the Player-backed message itself,
+// so player-facing UI should use the actual player name again.
+function getUiSafePlayerPidMessage(pid: number | undefined): mod.Message {
+    if (pid === undefined) return msg(STR_SYS_UNKNOWN_PLAYER);
+    const player = safeFindPlayer(pid);
+    if (!player) return msg(STR_SYS_UNKNOWN_PLAYER);
+    return mod.Message(player);
+}
+
+function getUiSafePlayerMessage(player: mod.Player | null | undefined): mod.Message {
+    if (!isValidPlayer(player)) return msg(STR_SYS_UNKNOWN_PLAYER);
+    return mod.Message(player);
+}
+
+// Best-effort UI widget lookup by name from UIRoot, then global fallback.
+function safeFind(name: string): mod.UIWidget | undefined {
+    try {
+        return mod.FindUIWidgetWithName(name, mod.GetUIRoot()) as mod.UIWidget;
+    } catch {
+        return undefined;
+    }
+}
+
+// Outlined button helper: wraps a solid button inside a thin-outline container.
+

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "removeComments": true,
+    "noEmit": true,
+    "types": ["bf6-portal-mod-types"]
+  },
+  "include": ["src/**/*.ts", "dist/**/*.ts"]
+}
