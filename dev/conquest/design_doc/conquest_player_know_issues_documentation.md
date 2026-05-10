@@ -9,6 +9,9 @@ Working list of player-visible issues we're currently tracking.
 ### [Open] Godot Spawner: Cannot spawn directly on flag B in a specific ownership state
 Only occurs when a team owns flag B and flag C but not flag A? This is an underlying Godot spawner limitation quirk. Full fix is expected to occur with a planned custom player spawner system in the future. A cascading failure here can mean Air Deploy or Forward deploy spawns can also fail - to avoid this vehicle spawn failure ensure you have the HQ selected first. *(Bug #100)*
 
+### [Open] Out of bounds classification of player can sometimes cause aircraft to be marked as out of bounds
+Under active investigation and being addressed. You can see this error in the Admin Error Logs when this occurs: ERROR REPORTED BY GETSOLDIERSTATE
+
 ### [Fixed - Needs MP Testing] Match script can terminate at very high player counts due to memory leak
 Rare, under active investigation and being addressed (Currently resolved with ~24 players? Needs verification on higher player counts). *(Bug #109)*
 

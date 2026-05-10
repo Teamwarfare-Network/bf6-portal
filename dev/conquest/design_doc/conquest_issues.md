@@ -111,6 +111,7 @@ Last Tested Build: `v1.474` — single-player verified clean for the late-join-d
 - `CQ_Feat_Squad_Spawn_Zone_Inheritance`: Implemented (v1.370 — closes the last seed gap left open by `CQ_Feat_Event_Driven_Seat_State`. Squad spawn (no slot claim, IsInVehicle probe handles seatKind) previously left zone flags all-false except `inOwnHQ` (anchor probe). A foot squad-spawn deep inside the GCZ would post-grace flag OOB until the player physically crossed a trigger boundary. Fix: at deploy time, find the nearest deployed teammate within `SQUAD_SPAWN_PROXIMITY_RADIUS_METERS = 25` (engine doesn't expose authoritative squad-spawn target — proximity is the proxy); copy `inOwnBuffer`/`inGCZ`/`inEnemyHQ`/`inEnemyBuffer` from their cached state. `inOwnHQ` is NOT inherited — anchor probe owns it (independent reliable signal that may legitimately disagree with a squadmate at the HQ trigger edge). Skip inheritance when the teammate is still inside their own deploy grace window. One-shot at deploy, no per-tick cost. Helpers: `findNearestDeployedTeammatePid`, `tryInheritZonesFromNearbyTeammate`. Plan archive: `design_doc/squad_spawn_zone_inheritance_plan_2026-04-25.md`. Edge cases (squadmate near trigger boundary, inheriting OOB-state from a teammate currently in enemy buffer countdown) accepted and documented in the plan.)
 - `CQ_Bug_LateJoin_LiveCrash_v1469` (#114): **Defenses shipped (v1.471), pending MP confirmation.** Silent server crash on fresh 2nd-player late-join during LIVE pre-deploy window. Three bundled defenses: outer try/catch on `OnPlayerJoinGame` async export (S1), pre-await `vehicleDeployTimerCache[pid]` delete to close race against `runRoundStartDelayHudLoop` (S2), post-await idempotent re-read of `perspectiveTeamByPid` if T=0 returned 0 (S3).
 - `CQ_Bug_LateJoin_During_Countdown` (#115): **Resolved (v1.474), MP-confirmed at 2 players (2026-05-08).** Late-joiner-undefined-ready-state cancelled countdown via per-frame `areAllActivePlayersReady` check; bail paths didn't restore deploy gate. Fix removed the ready check from countdown validity.
+- `CQ_Bug_Aircraft_OOB_Misclassification` (#116): **Open — under active investigation.** Aircraft sometimes flagged out-of-bounds despite occupant being seated correctly. Symptom: admin error log shows `ERROR REPORTED BY GETSOLDIERSTATE`. Original hypothesis (Tier S10 in [`conquest_optimization_analysis.md`](./conquest_optimization_analysis.md)) — `IsInVehicle` SoldierStateBool gap for helicopter passengers — was **invalidated 2026-05-09** when user confirmed via position-debug that helicopter passengers ARE flagged in-vehicle by the engine. Misclassification source is upstream: candidate causes include (a) order-of-operations between vehicle-attribution and altitude-vs-ceiling logic in the boundary classifier, (b) a vehicle-type ceiling filter that rejects helicopters (passenger ceiling vs host vehicle), or (c) a per-player altitude-cap state that lags relative to the current host vehicle. Player-facing entry in [`conquest_player_know_issues_documentation.md`](./conquest_player_know_issues_documentation.md). Related: `CQ_Bug_AircraftBail_OOB` (Y=200 ceiling enforcement design, the boundary surface this surfaces on); `CQ_Feat_Event_Driven_Seat_State` (#69, v1.369 — fixed prior aircraft OOB false-positives via event-driven seat-kind).
 - `CQ_Feat_Event_Driven_Seat_State`: Implemented (v1.369 — structural fix for the v1.367–v1.368 aircraft OOB false-positive bug. After AreaTriggers were enabled in v1.367, ground/foot OOB worked, but aircraft occupants kept getting flagged when flying outside the GCZ. v1.368 attempted a fix by bypassing `safeGetVehicleFromPlayer`'s cache gate and adding a slot-binding fallback for `isAircraftVehicleInstance`; did not work. Root cause matches `CQ_Feat_Zone_Tracker_Refactor` (v1.360): per-tick engine queries (`mod.GetVehicleFromPlayer`, `mod.CompareVehicleName`, `safeGetPlayerVehicleSeat`) are unreliable on this Portal runtime — `safeGetVehicleFromPlayer`'s `posDebugVehicleObjIdByPid` cache lags reality at deploy time (Air Deploy timing race), and `CompareVehicleName` has documented enum-swap reliability gaps (CQ_Bug_43). Fix: add `seatKind: "on_foot" | "ground_vehicle" | "aircraft"` to `PlayerZoneState`, owned exclusively by `setPlayerSeatKind` (called from `onPlayerEnterVehicleImpl`, `onPlayerExitVehicleImpl`, and the deploy-mode seed). Vehicle classification at the event boundary uses `classifyVehicleSeatKind(vehicle)` which looks up `slot.vehicleType` via `vehicleToSlot` and routes to the existing pure-JS `isAircraftVehicleType(enum)` switch — no `mod.CompareVehicleName` calls. The boundary classifier's vehicle block is now a pure read of `state.seatKind`. Non-slot deploys (squad/flag spawn) get a one-shot `mod.GetSoldierState(IsInVehicle)` probe in `seedZoneStateFromSpawnContext` (Andy's reference pattern; reliable). NO per-tick polling — drift after deploy is owned by the OnPlayerEnter/ExitVehicle events. Removed: `isPlayerSeatedInAircraftForBoundary` (v1.368). Plan archive: `design_doc/event_driven_seat_state_plan_2026-04-25.md`. Squad-spawn zone seeding deferred — see plan "Future considerations".)
 
 ## CQ_Bug_58
@@ -3736,3 +3737,39 @@ Title: Late-joiner during pregame countdown cancels it and locks out all watchin
 - Plan archive: [`5.07.26_late_join_during_countdown_fix_plan.md`](./5.07.26_late_join_during_countdown_fix_plan.md) — full pre-flight findings, suspect analysis, fix rationale, follow-up scope.
 - MP test list: [`conquest_mp_ongoing_tests.md`](./conquest_mp_ongoing_tests.md) v1.474 section — 4 MP validation items.
 - `CQ_Bug_LateJoin_LiveCrash_v1469` (#114) — different late-join scenario (silent crash during LIVE pre-deploy window). Both relate to fragile late-joiner state handling but with distinct root causes.
+
+## CQ_Bug_Aircraft_OOB_Misclassification (#116)
+Title: Aircraft sometimes flagged out-of-bounds by the boundary classifier; admin error log shows GETSOLDIERSTATE error
+
+**Status: Open. Under active investigation.**
+
+### Observed
+- Player is seated in an aircraft (helicopter or jet) within the playable airspace.
+- Boundary classifier intermittently flags them out-of-bounds.
+- Admin error log shows `ERROR REPORTED BY GETSOLDIERSTATE` when this occurs.
+- Player-facing entry: [`conquest_player_know_issues_documentation.md`](./conquest_player_know_issues_documentation.md) — "Out of bounds classification of player can sometimes cause aircraft to be marked as out of bounds."
+
+### Initial hypothesis (invalidated)
+- Tier S10 in [`conquest_optimization_analysis.md`](./conquest_optimization_analysis.md) initially proposed: `mod.GetSoldierStateBool(player, SoldierStateBool.IsInVehicle)` returns false for helicopter passengers, causing the safety-net to treat the state-bool gap as "on-foot" while the player is actually in the chopper.
+- **Invalidated 2026-05-09:** user confirmed via the position-debug overlay that helicopter passengers ARE flagged in-vehicle by the engine. So the misclassification is NOT a SoldierStateBool gap.
+
+### Revised hypotheses (active investigation)
+The misclassification source must be upstream of (or independent of) the `IsInVehicle` check. Candidate causes:
+- **(a) Order-of-operations** between vehicle-attribution and altitude-vs-ceiling logic in `getDesiredBoundaryViolationKind`. The vehicle-block path may be evaluated against a stale per-pid `seatKind` that hasn't yet been updated by the latest `OnPlayerEnter/ExitVehicle` event.
+- **(b) Vehicle-type ceiling filter** — a passenger may be carrying their own ceiling expectation while the host vehicle's ceiling is honored (or vice versa). If passengers and pilots are classified differently for ceiling purposes, a passenger could be flagged OOB at altitudes the host pilot is allowed.
+- **(c) Stale per-pid altitude-cap state** that lags the current host vehicle. If the per-pid cap is set on `OnPlayerEnter` and not reset on host-vehicle change, a passenger swapping vehicles mid-air could inherit the wrong cap.
+
+### Where to look
+- [`boundary/enforcement.ts`](../src/boundary/enforcement.ts) — `getDesiredBoundaryViolationKind`, `seedZoneStateFromSpawnContext`, the safety-net Y=200 path.
+- [`state/runtime-types.ts`](../src/state/runtime-types.ts) — `PlayerZoneState.seatKind`, owner pattern.
+- The `setPlayerSeatKind` writers (`onPlayerEnterVehicleImpl`, `onPlayerExitVehicleImpl`, deploy-mode seed) — check for missed transitions or race against vehicle-attribution on rapid hop-vehicle sequences.
+
+### What this does NOT mean
+- It is NOT the v1.491 1716ms-frame CPU spike. The two are separately tracked; this is a correctness bug, the spike is a per-frame budget bug.
+- It does NOT block the v1.491 diagnostic-toggle MP playtest — the toggles target HUD broadcasts, not boundary classification.
+
+### Related
+- Tier S10 in [`conquest_optimization_analysis.md`](./conquest_optimization_analysis.md) — original hypothesis archive + revised investigation direction.
+- `CQ_Feat_Event_Driven_Seat_State` (#69, v1.369) — the prior aircraft-OOB false-positive class. Fix routed `seatKind` through events, not per-tick polling. Same surface, different root cause.
+- `CQ_Bug_AircraftBail_OOB` — original Y=200 ceiling enforcement design. The safety-net this misclassification surfaces against.
+- `CQ_Bug_43` — `mod.CompareVehicleName` engine reliability gap. Same family of engine-side reliability concerns.
