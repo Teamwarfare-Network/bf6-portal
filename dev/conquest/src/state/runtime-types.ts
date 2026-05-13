@@ -114,7 +114,8 @@ type ConquestSpawnChargeReason =
     | "admin_move"
     | "phase_transition"
     | "reconnect"
-    | "vehicle_deploy";
+    | "vehicle_deploy"
+    | "spectator_transition";
 
 type ConquestSpawnChargeTxnState = {
     deploySeq: number;

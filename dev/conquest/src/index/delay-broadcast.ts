@@ -47,14 +47,31 @@ namespace DelayBroadcast {
     // Public: called from conquest-flow.ts startMatch immediately after lifecycleSetLiveBaseline.
     // Reads ACTIVE_MAP_CONFIG and schedules 4 setTimeouts at the configured delay offsets.
     // Idempotent on the call side: cancelDelayBroadcastsForLive() runs first.
+    //
+    // Each broadcast is gated by the same feature-enable flag that the pregame countdown UI
+    // uses for its corresponding "elapsed at +Ns" line (ready-dialog/countdown-flow.ts:108-118).
+    // If a feature is disabled at match start, the elapsed-time activation message must NOT
+    // fire at the +30s / +60s / +90s mark -- broadcasting "Aircraft can now HQ Ground Deploy!"
+    // when HQ deploy was never enabled would be a confusing player-facing lie. The mode config
+    // is locked once LIVE starts (no admin mid-round changes), so reading the confirmed values
+    // here once at startMatch is sufficient -- no need to re-check at fire time.
     export function scheduleDelayBroadcastsForLive(): void {
         cancelDelayBroadcastsForLive();
         _activeToken += 1;
         const token = _activeToken;
-        scheduleOne(token, ACTIVE_MAP_CONFIG.roundStartAirDelay,            mod.stringkeys.twl.countdown.delayAircraftHqBroadcast);
-        scheduleOne(token, ACTIVE_MAP_CONFIG.roundStartAirDeployDelay,      mod.stringkeys.twl.countdown.delayAircraftAirBroadcast);
-        scheduleOne(token, ACTIVE_MAP_CONFIG.roundStartForwardDeployDelay,  mod.stringkeys.twl.countdown.delayForwardBroadcast);
-        scheduleOne(token, ACTIVE_MAP_CONFIG.roundStartGadgetDelay,         mod.stringkeys.twl.countdown.delayGadgetsBroadcast);
+        const deployMethod = State.round.modeConfig.confirmed.vehicleDeployMethod ?? VEHICLE_DEPLOY_METHOD_DEFAULT;
+        if (deployMethod >= VEHICLE_DEPLOY_METHOD_HQ) {
+            scheduleOne(token, ACTIVE_MAP_CONFIG.roundStartAirDelay,            mod.stringkeys.twl.countdown.delayAircraftHqBroadcast);
+        }
+        if (State.round.modeConfig.confirmed.airDeployEnabled === true) {
+            scheduleOne(token, ACTIVE_MAP_CONFIG.roundStartAirDeployDelay,      mod.stringkeys.twl.countdown.delayAircraftAirBroadcast);
+        }
+        if (State.round.modeConfig.confirmed.forwardDeployEnabled === true) {
+            scheduleOne(token, ACTIVE_MAP_CONFIG.roundStartForwardDeployDelay,  mod.stringkeys.twl.countdown.delayForwardBroadcast);
+        }
+        if (isSupplyBoxesEnabled()) {
+            scheduleOne(token, ACTIVE_MAP_CONFIG.roundStartGadgetDelay,         mod.stringkeys.twl.countdown.delayGadgetsBroadcast);
+        }
     }
 
     // Public: called from conquest-flow.ts endMatch + triggerFreshMatchSetup. Bumps the active

@@ -452,6 +452,22 @@ function enterSpectatorMode(eventPlayer: mod.Player, pid: number): void {
     delete State.players.readyNeedsReconfirmByPid[pid];
     markHudDirty();
 
+    // Spec body is teleported into the underground hide-room (Y=-500) but stays "deployed"
+    // from the engine's perspective. Without invulnerability, a grenade thrown by the player
+    // moments before claim, or any other in-flight projectile, can still kill the body via
+    // splash damage applied through engine-tracked damage events. SetPlayerIncomingDamageFactor=0
+    // makes the body unkillable for as long as they hold the spectator slot. Restored to 1
+    // on exit / match-end / fresh-setup (paired call sites below).
+    try { mod.SetPlayerIncomingDamageFactor(eventPlayer, 0); } catch (e) {
+        try { console.log(`[spectator] enter SetPlayerIncomingDamageFactor(0) threw for pid=${pid}: ${String(e)}`); } catch {}
+    }
+
+    // Defensive reason-mark: enterSpectatorMode does not directly trigger an OnPlayerDeployed
+    // event (the body stays deployed; only the camera + body location change). But if the
+    // ForcePlayerExitVehicle below ever interacts with the engine deploy state machine in a
+    // way that fires a spurious deploy event, we want that event exempt from spawn-charge.
+    markNextDeployReason(pid, "spectator_transition");
+
     attachSpectatorCameraIfDeployed(eventPlayer, pid);
     applySpectatorInputLock(eventPlayer, true);
     // Eject from any vehicle BEFORE teleporting the body into the hide-room. Without this,
@@ -520,8 +536,23 @@ function exitSpectatorMode(eventPlayer: mod.Player, pid: number): void {
         try { console.log(`[spectator] exit camera reset threw for pid=${pid}: ${String(e)}`); } catch {}
     }
 
+    // Restore default damage factor before any teleport / undeploy so the body returns to
+    // normal vulnerability the moment they leave the spectator slot. Paired with the
+    // SetPlayerIncomingDamageFactor(0) call in enterSpectatorMode.
+    try { mod.SetPlayerIncomingDamageFactor(eventPlayer, 1); } catch (e) {
+        try { console.log(`[spectator] exit SetPlayerIncomingDamageFactor(1) threw for pid=${pid}: ${String(e)}`); } catch {}
+    }
+
     State.players.spectatorPid = null;
     markHudDirty();
+
+    // Mark the next deploy as a spectator-transition before UndeployPlayer fires. Without
+    // this, the player's next click-to-deploy after returning to the deploy screen would be
+    // resolved as the default reason "deploy" and charge a ticket. The user never died and
+    // never voluntarily redeployed in the gameplay sense -- the undeploy is internal to the
+    // spectator-exit flow, so the cycle as a whole should be ticket-free. Exempted in
+    // onPlayerDeployedSpawnCharge alongside vehicle_deploy and team_switch.
+    markNextDeployReason(pid, "spectator_transition");
 
     // Send the body back to the deploy screen so they re-enter the match on foot. They
     // are still flagged ready (readyByPid[pid] === true from the original claim); leave
@@ -584,6 +615,11 @@ function onSpectatorMatchEnd(): void {
     } catch (e) {
         try { console.log(`[spectator] match-end camera reset threw for pid=${pid}: ${String(e)}`); } catch {}
     }
+    // Restore default damage factor in case the match ended with the spectator slot still
+    // claimed. Without this, the same player on the next match could carry over a 0 factor.
+    try { mod.SetPlayerIncomingDamageFactor(player, 1); } catch (e) {
+        try { console.log(`[spectator] match-end SetPlayerIncomingDamageFactor(1) threw for pid=${pid}: ${String(e)}`); } catch {}
+    }
 }
 
 // Fresh-setup cleanup. Called from triggerFreshMatchSetup (conquest-flow.ts). Clears the
@@ -599,5 +635,12 @@ function onSpectatorFreshSetup(): void {
     despawnSpectatorHideRoom();
     markHudDirty();
     const player = safeFindPlayer(pid);
-    if (player) applySpectatorInputLock(player, false);
+    if (player) {
+        applySpectatorInputLock(player, false);
+        // Defensive damage-factor restore in case fresh-setup is reached without match-end
+        // (e.g., admin reset mid-match). Mirrors onSpectatorMatchEnd.
+        try { mod.SetPlayerIncomingDamageFactor(player, 1); } catch (e) {
+            try { console.log(`[spectator] fresh-setup SetPlayerIncomingDamageFactor(1) threw for pid=${pid}: ${String(e)}`); } catch {}
+        }
+    }
 }

@@ -139,6 +139,7 @@ const State: GameState = {
                 phase_transition: 0,
                 reconnect: 0,
                 vehicle_deploy: 0,
+                spectator_transition: 0,
             },
             chargedCountByReason: {
                 deploy: 0,
@@ -148,6 +149,7 @@ const State: GameState = {
                 phase_transition: 0,
                 reconnect: 0,
                 vehicle_deploy: 0,
+                spectator_transition: 0,
             },
             duplicateChargeSuspicionCount: 0,
             sessionIdentityResetCount: 0,

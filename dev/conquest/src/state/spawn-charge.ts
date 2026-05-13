@@ -11,6 +11,7 @@ function newReasonCounterState(): ConquestSpawnChargeReasonCounters {
         phase_transition: 0,
         reconnect: 0,
         vehicle_deploy: 0,
+        spectator_transition: 0,
     };
 }
 
@@ -30,7 +31,8 @@ function getReasonCode(reason: ConquestSpawnChargeReason): number {
     if (reason === "admin_move") return 4;
     if (reason === "phase_transition") return 5;
     if (reason === "reconnect") return 6;
-    return 7; // vehicle_deploy
+    if (reason === "vehicle_deploy") return 7;
+    return 8; // spectator_transition
 }
 
 // Computes total count across all reason buckets in a counter map.
@@ -41,7 +43,8 @@ function getReasonCounterTotal(counters: ConquestSpawnChargeReasonCounters): num
         + counters.admin_move
         + counters.phase_transition
         + counters.reconnect
-        + counters.vehicle_deploy;
+        + counters.vehicle_deploy
+        + counters.spectator_transition;
 }
 
 // Emits gated debug-world-log snapshots (using existing debug format keys, no new strings).
@@ -209,9 +212,11 @@ function onPlayerDeployedSpawnCharge(eventPlayer: mod.Player, wasAlreadyDeployed
     const reason = resolvePendingReason(pid);
     incrementReasonCounter(State.conquest.spawnCharge.deployCountByReason, reason);
 
-    // Exempt voluntary UX-driven redeploys: alive-on-foot vehicle deploy and team-swap.
+    // Exempt voluntary UX-driven redeploys: alive-on-foot vehicle deploy, team-swap, and
+    // spectator-slot enter/exit transitions (the spectator body never died; it was just
+    // teleported into the hide-room and undeployed back to the deploy screen).
     // Death-respawn / forced-redeploy / admin-move / phase-transition / reconnect still charge.
-    if (reason === "vehicle_deploy" || reason === "team_switch") return;
+    if (reason === "vehicle_deploy" || reason === "team_switch" || reason === "spectator_transition") return;
 
     if (wasAlreadyDeployed) {
         // Duplicate deploy event for a still-deployed player; track suspicion and avoid double-charge.
