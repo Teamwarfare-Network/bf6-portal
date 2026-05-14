@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Gameplay Logic Scripting &#8212; Portal  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=54252990" />
+    <link rel="stylesheet" type="text/css" href="../_static/fonts/inter/stylesheet.css?v=5c3d5910" />
+    <script src="../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="../_static/portal-favicon.png"/>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Example Experiences" href="example_experiences.html" />
+    <link rel="prev" title="Spatial Editor" href="spatial_editor.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/images/portal-logo-with-title.webp" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spatial_editor.html">Spatial Editor</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Gameplay Logic Scripting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#script-debugging">Script Debugging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#custom-ui">Custom UI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ai-behavior">AI Behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#object-spawning">Object Spawning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vfx-spawning">VFX Spawning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#audio-triggering">Audio Triggering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#object-moving">Object Moving</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#player-spawning">Player Spawning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#referencing-objects-in-script">Referencing Objects In Script</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="example_experiences.html">Example Experiences</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tips_tricks.html">Tips &amp; Tricks</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="spatial_editor.html" title="previous chapter">Spatial Editor</a></li>
+      <li>Next: <a href="example_experiences.html" title="next chapter">Example Experiences</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="gameplay-logic-scripting">
+<h1>Gameplay Logic Scripting<a class="headerlink" href="#gameplay-logic-scripting" title="Link to this heading">¶</a></h1>
+<p>Battlefield 6 Portal now supports multiple ways to script custom gameplay logic for your Custom Experiences. For veterans of the previous Portal builder tool, and people looking to dip their toes into scripting, the Blockly logic editing tool is still available in the Portal Web Builder Tool. However for more advanced users, and creators looking to build large bespoke experiences, Portal now supports logic scripting via TypeScript.</p>
+<p>Gameplay scripting can be done either through the Portal Web Tool via Blockly, or in TypeScript.</p>
+<ul class="simple">
+<li><p>TypeScript can be written directly within the Portal Web Tool’s script page, or can be developed externally and uploaded via the script page.</p></li>
+<li><p>More information about TypeScript functions can be found in the <code class="docutils literal notranslate"><span class="pre">index.d.ts</span></code> file contained in the SDK.</p></li>
+</ul>
+<section id="script-debugging">
+<h2>Script Debugging<a class="headerlink" href="#script-debugging" title="Link to this heading">¶</a></h2>
+<p>Local hosting an experience will generate a PortalLog.txt file that can be used to help debug your scripts.</p>
+<ul class="simple">
+<li><p>The PortalLog.txt file can be found at: <code class="docutils literal notranslate"><span class="pre">C:\Users\username\AppData\Local\Temp\Battlefield™</span> <span class="pre">6\PortalLog.txt</span></code></p></li>
+<li><p>Note the specific folder location may differ depending on specifics of your system or install location.</p></li>
+</ul>
+</section>
+<section id="custom-ui">
+<h2>Custom UI<a class="headerlink" href="#custom-ui" title="Link to this heading">¶</a></h2>
+<p>A fully customizable UI system is now available in Portal. It supports interactive as well as non-interactive UI elements, making it possible to build things like menus and stores.</p>
+</section>
+<section id="ai-behavior">
+<h2>AI Behavior<a class="headerlink" href="#ai-behavior" title="Link to this heading">¶</a></h2>
+<p>Custom AI Bots, outside of the normal Backfill or Static bots, can be directly spawned into levels via script, using the <strong>AI_Spawner</strong> object.
+Unlike normal bots, the Custom AI Bots support direct scripting of things like their target, stance, speed, move to location, etc. This allows for a great deal of customization and flexibility.</p>
+</section>
+<section id="object-spawning">
+<h2>Object Spawning<a class="headerlink" href="#object-spawning" title="Link to this heading">¶</a></h2>
+<p>Environmental and Gameplay objects can be spawned at runtime via the <strong>SpawnObject</strong> function.
+Spawnable objects are restricted by map to objects that already exist in that map or are part of the Global object list.</p>
+</section>
+<section id="vfx-spawning">
+<h2>VFX Spawning<a class="headerlink" href="#vfx-spawning" title="Link to this heading">¶</a></h2>
+<p>Visual FX can be spawned using the runtime spawner, or placed in the map using the Spatial editor, and can be triggered at runtime via the <strong>EnableVFX</strong> function.</p>
+</section>
+<section id="audio-triggering">
+<h2>Audio Triggering<a class="headerlink" href="#audio-triggering" title="Link to this heading">¶</a></h2>
+<p>Sound FX can be spawned using the runtime spawner, or placed in the map using the Spatial editor, and can be triggered at runtime via the <strong>PlaySound</strong> function.</p>
+</section>
+<section id="object-moving">
+<h2>Object Moving<a class="headerlink" href="#object-moving" title="Link to this heading">¶</a></h2>
+<p>Objects can be moved at runtime via the <strong>MoveObject</strong> function or the <strong>SetObjectTransform</strong>.</p>
+</section>
+<section id="player-spawning">
+<h2>Player Spawning<a class="headerlink" href="#player-spawning" title="Link to this heading">¶</a></h2>
+<p>Players can be deployed directly into the level using a PlayerSpawner object and the <strong>SpawnPlayerFromSpawnPoint</strong> function.</p>
+</section>
+<section id="referencing-objects-in-script">
+<h2>Referencing Objects In Script<a class="headerlink" href="#referencing-objects-in-script" title="Link to this heading">¶</a></h2>
+<p>Most objects placed in the Spatial Editor have an <strong>ObjId</strong> field which can be set to a unique number. These objects can be referenced in script by using a matching “Get” function like:</p>
+<ul class="simple">
+<li><p><strong>GetSpatialObject</strong></p></li>
+<li><p><strong>GetSpawner</strong></p></li>
+<li><p><strong>GetInteractPoint</strong></p></li>
+</ul>
+<p><strong>Using strings.json</strong></p>
+<ul class="simple">
+<li><p>String files can be manually crafted using key/value pairs in json format. Such strings can be used either via their keys or their values from script.</p></li>
+<li><p>String files can also be auto generated from the web editor after importing the script. It will scrub code for string literals (“Cool Scoreboard Title”) but will not pick up dynamically constructed strings (i.e. “player “ + i + “ kill count: “ + count)</p></li>
+<li><p>Example:</p></li>
+</ul>
+<div class="highlight-typescript notranslate"><div class="highlight"><pre><span></span><span class="c1">// strings.json</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="s2">&quot;scoreboard&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Custom Scoreboard&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1">// script.ts</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">msg1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">mod</span><span class="p">.</span><span class="nx">Message</span><span class="p">(</span><span class="nx">mod</span><span class="p">.</span><span class="nx">stringkeys</span><span class="p">.</span><span class="nx">scoreboard</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">msg2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">mod</span><span class="p">.</span><span class="nx">Message</span><span class="p">(</span><span class="s2">&quot;scoreboard&quot;</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">msg3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">mod</span><span class="p">.</span><span class="nx">Message</span><span class="p">(</span><span class="s2">&quot;Custom Scoreboard&quot;</span><span class="p">);</span>
+
+<span class="c1">// String literals require generating strings json from web editor</span>
+<span class="c1">// if not defined in strings.json</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">playerRank</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Player Rank&quot;</span><span class="p">;</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">rankMsg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">mod</span><span class="p">.</span><span class="nx">Message</span><span class="p">(</span><span class="nx">playerRank</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="spatial_editor.html" title="Previous document">Spatial Editor</a>
+        </li>
+        <li>
+          <a href="example_experiences.html" title="Next document">Example Experiences</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &#169; 2026, Electronic Arts Inc.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

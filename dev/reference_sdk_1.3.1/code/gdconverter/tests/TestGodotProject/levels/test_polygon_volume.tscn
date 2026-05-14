@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3 uid="uid://cs028kjbvulr7"]
+
+[ext_resource type="PackedScene" path="res://PolygonVolume.tscn" id="3_q0afq"]
+
+[node name="MP_Portal_Sand" type="Node3D"]
+
+[node name="PolygonVolume" parent="." instance=ExtResource("3_q0afq")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 6, 7)
+
+[node name="Parent" type="Node3D" parent="."]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 1, 0, 0)
+
+[node name="PolygonVolumeRotated" parent="Parent" instance=ExtResource("3_q0afq")]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 1, 0, 0)
+points = PackedVector2Array(0, 0, 4, 4, 4, -4)

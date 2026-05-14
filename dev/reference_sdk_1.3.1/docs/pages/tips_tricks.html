@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Tips &amp; Tricks &#8212; Portal  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=54252990" />
+    <link rel="stylesheet" type="text/css" href="../_static/fonts/inter/stylesheet.css?v=5c3d5910" />
+    <script src="../_static/documentation_options.js?v=7f41d439"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="../_static/portal-favicon.png"/>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Example Experiences" href="example_experiences.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/images/portal-logo-with-title.webp" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spatial_editor.html">Spatial Editor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gameplay_logic.html">Gameplay Logic Scripting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_experiences.html">Example Experiences</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tips &amp; Tricks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#optimizing-performance">Optimizing Performance</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="example_experiences.html" title="previous chapter">Example Experiences</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="tips-tricks">
+<h1>Tips &amp; Tricks<a class="headerlink" href="#tips-tricks" title="Link to this heading">¶</a></h1>
+<section id="optimizing-performance">
+<h2>Optimizing Performance<a class="headerlink" href="#optimizing-performance" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Vehicle Count</strong></p>
+<ul>
+<li><p>Server performance can be affected when an experience has more than 40 vehicles active at one time, it is recommended to remain below this number.</p></li>
+</ul>
+</li>
+<li><p><strong>Player Iteration</strong></p>
+<ul>
+<li><p>Where possible, store player states using your own variables that are set through events such as OnPlayerEnterCapturePoint and OnPlayerExitCapturePoint. This reduces the need to regularly iterate over all players, for example when updating your custom UI or running gameplay logic.</p></li>
+</ul>
+</li>
+<li><p><strong>Managing UI Widgets</strong></p>
+<ul>
+<li><p>Where possible, maintain variables to track existing widgets instead of recreating them unnecessarily. Regular creation and deletion of widgets may impact performance.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="example_experiences.html" title="Previous document">Example Experiences</a>
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &#169; 2026, Electronic Arts Inc.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

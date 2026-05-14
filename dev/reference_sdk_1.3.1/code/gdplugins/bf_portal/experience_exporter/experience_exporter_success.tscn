@@ -1,0 +1,198 @@
+[gd_scene load_steps=2 format=3 uid="uid://cf1lp00dk3dk6"]
+
+[ext_resource type="Script" uid="uid://cpgbj5014oxso" path="res://addons/bf_portal/experience_exporter/experience_exporter_success.gd" id="1_282lt"]
+
+[node name="Window" type="Window"]
+title = "Success"
+initial_position = 2
+size = Vector2i(1286, 768)
+wrap_controls = true
+exclusive = true
+unresizable = true
+script = ExtResource("1_282lt")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+custom_minimum_size = Vector2(960, 702)
+offset_left = 8.0
+offset_top = 4.0
+offset_right = 1272.0
+offset_bottom = 764.0
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="Label_Success" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Successfully Exported:"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 32
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="HFlowContainer_Exp" type="HFlowContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="Label_WorkspaceFile" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer/MarginContainer/VBoxContainer/HFlowContainer_Exp"]
+custom_minimum_size = Vector2(128, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Workspace File: "
+
+[node name="Label_WorkspaceFileUri" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer/MarginContainer/VBoxContainer/HFlowContainer_Exp"]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(50, 20)
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 16
+text = "<No Workspace Exported!>"
+
+[node name="HFlowContainer_Script" type="HFlowContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(600, 0)
+layout_mode = 2
+
+[node name="Label_ScriptFile" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer/MarginContainer/VBoxContainer/HFlowContainer_Script"]
+custom_minimum_size = Vector2(128, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Script File: "
+
+[node name="Label_ScriptFileUri" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer/MarginContainer/VBoxContainer/HFlowContainer_Script"]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 16
+text = "<No Script Exported!> "
+
+[node name="HFlowContainer_Strings" type="HFlowContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="Label_StringsFile" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer/MarginContainer/VBoxContainer/HFlowContainer_Strings"]
+custom_minimum_size = Vector2(128, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Strings File: "
+
+[node name="Label_StringsFileUri" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer/MarginContainer/VBoxContainer/HFlowContainer_Strings"]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 16
+text = "<No Strings Exported!>"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label_LevelFiles" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(128, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 16
+text = "Level Files:"
+
+[node name="ItemList_LevelFileUris" type="ItemList" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 300)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+allow_search = false
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label_Instructions" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer2"]
+custom_minimum_size = Vector2(578, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 2
+theme_override_font_sizes/font_size = 16
+text = "To use, import the generated files into the Battlefield 6 Web Builder.
+
+You may edit these once you have imported the template experience.
+
+We’d like to give a special Thank You to ViperStudiosAndy for their collaboration on custom modes!"
+autowrap_mode = 2
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 8
+
+[node name="Label_Footer" type="Label" parent="MarginContainer/VBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 10
+size_flags_stretch_ratio = 3.0
+theme_override_font_sizes/font_size = 16
+text = "Select \"Modify Exported Levels\" to choose and open a Godot scene from the experience base folder. 
+Modified experiences must be uploaded individually to the Portal Builder Tool."
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MarginContainer/VBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 8
+alignment = 1
+
+[node name="Button_OpenBuilder" type="Button" parent="MarginContainer/VBoxContainer2/HBoxContainer2"]
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Open Builder Tool"
+
+[node name="HFlowContainer2" type="HFlowContainer" parent="MarginContainer/VBoxContainer2/HBoxContainer2"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+
+[node name="Button_ModifyExported" type="Button" parent="MarginContainer/VBoxContainer2/HBoxContainer2"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Modify Exported Levels"
+
+[node name="HFlowContainer" type="HFlowContainer" parent="MarginContainer/VBoxContainer2/HBoxContainer2"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+
+[node name="Button_ViewFiles" type="Button" parent="MarginContainer/VBoxContainer2/HBoxContainer2"]
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "View Files"
+
+[connection signal="about_to_popup" from="." to="." method="about_to_popup"]
+[connection signal="close_requested" from="." to="." method="_exit"]
+[connection signal="ready" from="." to="." method="_populate"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer2/HBoxContainer2/Button_OpenBuilder" to="." method="_open_builder_tool"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer2/HBoxContainer2/Button_ModifyExported" to="." method="_select_files"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer2/HBoxContainer2/Button_ViewFiles" to="." method="_view_files"]
