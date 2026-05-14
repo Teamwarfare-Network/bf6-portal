@@ -8,6 +8,13 @@
 
 ## Files
 
+**Recurring-work analysis trio (added 2026-05-13)** — parallel coverage of per-tick work from a different lens than the per-frame fan-out + heap-multiplier framework. Cross-references the S1-S10 table in `conquest_optimization_state.md` (see "Per-frame CPU fan-out" section) with parallel R1-R34 risk catalog.
+
+- **`5.12.26_conquest_recurring_work_inventory.md`** — every function that "runs forever" or "runs every tick" itemized with concrete engine-call counts. Section M added 2026-05-13 with src cross-reference findings (capture-sound/VO recipient resolution does AllPlayers per event; pipeline.ts:125 TickContext follow-up; spectator free-cam itemization). Cross-reference table maps R-numbers to S-numbers from the existing Tier S framework.
+- **`5.12.26_conquest_recurring_work_inventory_solutions.md`** — 32+ proposed solutions across 14 problem areas, tier-ranked. Section O added 2026-05-13 with O1 sound/VO recipient caching + O2/O3 pipeline TickContext fixes. Revised Tier 1 ranking 2026-05-13: B2 + O1 + D1 + C1 + A1 + B7.
+- **`5.12.26_conquest_recurring_work_inventory_implementationplan.md`** — concrete implementation plans for 11 Tier 1+2 solutions across 7 waves (now 9 with W0 telemetry + W8 sound/VO caching + W9 hygiene added 2026-05-13). Each wave has design-alternatives reasoning with explicit ACCEPTED/REJECTED rationale.
+- **`5.12.26_conquest_ongoing_player_cost_analysis.md`** — companion to the inventory; OngoingPlayer-specific 7-tier optimization ladder.
+
 **`conquest_optimization_state.md`** — the *facts*:
 
 - **Per-frame CPU fan-out (v1.491 crash hypothesis)** *(added 2026-05-08)* — convergent-scenario analysis + S1–S10 suspect ranking; the per-row evidence backing the Tier S framework in the analysis doc.

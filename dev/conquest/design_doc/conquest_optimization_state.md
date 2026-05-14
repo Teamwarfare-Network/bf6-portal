@@ -14,7 +14,12 @@ The file is meant to grow with the optimization work. Each ship of a Tier A/B/C/
 
 ---
 
-## Per-frame CPU fan-out — v1.491 crash hypothesis (added 2026-05-08)
+## Per-frame CPU fan-out — v1.491 crash hypothesis (added 2026-05-08; cross-linked to recurring-work trio 2026-05-13)
+
+> **Deeper companion analysis added 2026-05-13.** The S1-S10 ranking below remains the primary spike hypothesis but has been supplemented by a parallel "recurring work" risk catalog (R1-R34) that approaches the same problem from a per-tick-work lens rather than a per-frame-fan-out lens. See:
+> - [`5.12.26_conquest_recurring_work_inventory.md`](./5.12.26_conquest_recurring_work_inventory.md) -- 34 R-numbered risks with engine-call counts. Section M added 2026-05-13 with a NEW Tier-S-candidate finding: capture-sound + capture-VO recipient resolution does `mod.AllPlayers()` PER EVENT in flush loop (~4,480 engine calls in one flush during a 10-event capture burst at 64p). Added as S11 to the analysis doc's Tier S table.
+> - [`5.12.26_conquest_recurring_work_inventory_solutions.md`](./5.12.26_conquest_recurring_work_inventory_solutions.md) -- 32+ proposed solutions across 14 problem areas, revised stack rank 2026-05-13 reflecting the user's view (analysis doc 2026-05-09) that S1/S2 alone is unlikely to be the systemic v1.491 driver.
+> - [`5.12.26_conquest_recurring_work_inventory_implementationplan.md`](./5.12.26_conquest_recurring_work_inventory_implementationplan.md) -- 9-wave implementation plan with W0 telemetry, W8 sound/VO snapshot caching, W9 pipeline.ts:125 TickContext follow-up.
 
 > **What happened:** v1.491 MP playtest at 8–10 concurrent players hit `Mod has been running for 1,716ms this frame which exceeds max evaluation time of 1,000ms` and the script terminated. The engine surfaces this when **a single frame's eval exceeds the 1,000ms hard cap**. This is a different regime from the v1.406 16-player heap-OOM that drove waves 1–6 — that crash was about retained per-player allocations; this one is about **synchronous work piled into one frame**.
 >
