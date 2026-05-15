@@ -162,9 +162,9 @@ function markRecentObjectivePresence(pid: number, objId: number, atSeconds: numb
     State.conquest.vo.recentActiveAtSecondsByPid[pid] = atSeconds;
 }
 
-function refreshRecentPresence(now: number): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
+function refreshRecentPresence(now: number, allPlayers?: any, allPlayerCount?: number): void {
+    const players = allPlayers ?? mod.AllPlayers();
+    const count = allPlayerCount ?? mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
         if (!isValidPlayer(player)) continue;
@@ -184,10 +184,15 @@ function wasRecentlyActiveOnObjective(pid: number, objId: number, now: number): 
     return (now - lastSeenAt) <= CONQUEST_CAPTURE_VO_TERMINAL_RECENT_SECONDS;
 }
 
-function getCaptureVoRecipientsForEvent(event: ConquestQueuedVoEvent, now: number): mod.Player[] {
+function getCaptureVoRecipientsForEvent(
+    event: ConquestQueuedVoEvent,
+    now: number,
+    allPlayers?: any,
+    allPlayerCount?: number
+): mod.Player[] {
     const recipients: mod.Player[] = [];
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
+    const players = allPlayers ?? mod.AllPlayers();
+    const count = allPlayerCount ?? mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
         if (!isValidPlayer(player)) continue;
@@ -320,7 +325,9 @@ function flushCaptureVoiceOverQueue(): void {
     State.conquest.vo.lastFlushAtSeconds = now;
 
     if (State.conquest.vo.queue.length <= 0) return;
-    refreshRecentPresence(now);
+    const allPlayers = mod.AllPlayers();
+    const allPlayerCount = mod.CountOf(allPlayers);
+    refreshRecentPresence(now, allPlayers, allPlayerCount);
 
     const queued = State.conquest.vo.queue.splice(0, State.conquest.vo.queue.length);
 
@@ -335,7 +342,7 @@ function flushCaptureVoiceOverQueue(): void {
             continue;
         }
 
-        const recipients = getCaptureVoRecipientsForEvent(event, now);
+        const recipients = getCaptureVoRecipientsForEvent(event, now, allPlayers, allPlayerCount);
         if (recipients.length <= 0) {
             continue;
         }

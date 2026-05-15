@@ -113,10 +113,14 @@ function captureSoundOnCapturePointStateSample(
     });
 }
 
-function getCaptureSoundRecipientsForEvent(event: ConquestQueuedSoundEvent): mod.Player[] {
+function getCaptureSoundRecipientsForEvent(
+    event: ConquestQueuedSoundEvent,
+    allPlayers?: any,
+    allPlayerCount?: number
+): mod.Player[] {
     const recipients: mod.Player[] = [];
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
+    const players = allPlayers ?? mod.AllPlayers();
+    const count = allPlayerCount ?? mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
         if (!isValidPlayer(player)) continue;
@@ -161,6 +165,8 @@ function flushCaptureSoundQueue(): void {
     primeSoundRuntime();
 
     const queued = State.conquest.sound.queue.splice(0, State.conquest.sound.queue.length);
+    const allPlayers = mod.AllPlayers();
+    const allPlayerCount = mod.CountOf(allPlayers);
 
     for (let i = 0; i < queued.length; i++) {
         const event = queued[i];
@@ -168,7 +174,7 @@ function flushCaptureSoundQueue(): void {
             continue;
         }
 
-        const recipients = getCaptureSoundRecipientsForEvent(event);
+        const recipients = getCaptureSoundRecipientsForEvent(event, allPlayers, allPlayerCount);
         if (recipients.length <= 0) {
             continue;
         }
