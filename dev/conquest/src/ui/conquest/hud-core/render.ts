@@ -1,5 +1,6 @@
 ﻿// @ts-nocheck
 // Module: ui/conquest/hud-core/render -- value/visibility render owner for hard-cut combat HUD
+// Phase 2: direct-write helpers skip resolveLiveUITextWidget; diff-cache skips unchanged values
 
 function twlConquestHudClamp01(value: number): number {
     if (value <= 0) return 0;
@@ -7,7 +8,6 @@ function twlConquestHudClamp01(value: number): number {
     return value;
 }
 
-// Applies one shadow-ring text state in a single pass so layered shadows stay synchronized.
 function twlConquestHudRenderShadowRingText(
     ring: Array<mod.UIWidget | undefined> | undefined,
     visible: boolean,
@@ -18,9 +18,8 @@ function twlConquestHudRenderShadowRingText(
         const layer = ring[i];
         safeSetUIWidgetVisible(layer, visible);
         if (!visible) continue;
-        safeSetUITextLabel(layer, label);
-        safeSetUITextColor(layer, TWL_CONQUEST_HUD_COLOR_SHADOW);
-        safeSetUITextAlpha(layer, 1);
+        directSetUITextLabel(layer, label);
+        directSetUITextColor(layer, TWL_CONQUEST_HUD_COLOR_SHADOW);
     }
 }
 
@@ -33,7 +32,6 @@ function twlConquestHudGetFlagLetter(cp: ConquestCapturePointRuntimeState | unde
     return fallback[row] ?? "?";
 }
 
-// Maps fallback objective letters to localized string keys.
 function twlConquestHudGetFlagLetterStringKey(letter: string): number {
     if (letter === "A") return STR_HUD_CONQUEST_FLAG_LETTER_A;
     if (letter === "B") return STR_HUD_CONQUEST_FLAG_LETTER_B;
@@ -45,7 +43,6 @@ function twlConquestHudGetFlagLetterStringKey(letter: string): number {
     return STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN;
 }
 
-// Resolves one mapped capture row index from objective id for deterministic fallback label selection.
 function twlConquestHudGetMappedRowByObjId(objId: number | undefined): number {
     if (objId === undefined) return -1;
     const mappedObjIds = State?.conquest?.capture?.mappedObjIdsInOrder ?? [];
@@ -55,7 +52,6 @@ function twlConquestHudGetMappedRowByObjId(objId: number | undefined): number {
     return -1;
 }
 
-// Resolves a stable A..G fallback letter for one objective id when derived label messages are transiently unavailable.
 function twlConquestHudResolveObjectiveLabelLetter(objId: number | undefined, fallbackRow: number): string {
     if (objId === undefined) return twlConquestHudGetFlagLetter(undefined, fallbackRow);
     const row = twlConquestHudGetMappedRowByObjId(objId);
@@ -273,20 +269,11 @@ function twlConquestHudRenderPlayerFrame(
     if (!entry || !entry.initialized) return;
     const widgets = entry.widgets;
     const perspective = { friendlyTeam: snapshot.friendlyTeam, enemyTeam: snapshot.enemyTeam };
-    const previousSnapshot = entry.lastSnapshot;
+    const prev = entry.lastSnapshot;
+
     safeSetUIWidgetVisible(widgets.ticketBlueBox, true);
     safeSetUIWidgetVisible(widgets.ticketRedBox, true);
-    twlConquestHudRenderShadowRingText(
-        widgets.ticketBlueTeamNameShadowRing,
-        true,
-        msg(getTeamNameKey(snapshot.friendlyTeam))
-    );
     safeSetUIWidgetVisible(widgets.ticketBlueTeamName, true);
-    twlConquestHudRenderShadowRingText(
-        widgets.ticketRedTeamNameShadowRing,
-        true,
-        msg(getTeamNameKey(snapshot.enemyTeam))
-    );
     safeSetUIWidgetVisible(widgets.ticketRedTeamName, true);
     safeSetUIWidgetVisible(widgets.ticketBlueCount, true);
     safeSetUIWidgetVisible(widgets.ticketRedCount, true);
@@ -296,106 +283,93 @@ function twlConquestHudRenderPlayerFrame(
     safeSetUIWidgetVisible(widgets.ticketRedBarTrack, true);
     safeSetUIWidgetVisible(widgets.ticketRedBarFill, true);
 
-    safeSetUITextLabel(
-        widgets.ticketBlueCount,
-        msg(STR_SYS_COUNTER, Math.max(0, Math.floor(snapshot.friendlyTickets)))
-    );
-    safeSetUITextLabel(
-        widgets.ticketRedCount,
-        msg(STR_SYS_COUNTER, Math.max(0, Math.floor(snapshot.enemyTickets)))
-    );
-    const friendlyTeamName = msg(getTeamNameKey(snapshot.friendlyTeam));
-    const enemyTeamName = msg(getTeamNameKey(snapshot.enemyTeam));
-    safeSetUITextLabel(widgets.ticketBlueTeamName, friendlyTeamName);
-    safeSetUITextLabel(widgets.ticketRedTeamName, enemyTeamName);
-    safeSetUITextColor(widgets.ticketBlueTeamName, TWL_CONQUEST_HUD_COLOR_BLUE);
-    safeSetUITextColor(widgets.ticketRedTeamName, TWL_CONQUEST_HUD_COLOR_RED);
-    safeSetUITextColor(widgets.ticketBlueCount, TWL_CONQUEST_HUD_COLOR_BLUE);
-    safeSetUITextColor(widgets.ticketRedCount, TWL_CONQUEST_HUD_COLOR_RED);
+    if (!prev || prev.friendlyTeam !== snapshot.friendlyTeam) {
+        const friendlyTeamName = msg(getTeamNameKey(snapshot.friendlyTeam));
+        twlConquestHudRenderShadowRingText(widgets.ticketBlueTeamNameShadowRing, true, friendlyTeamName);
+        directSetUITextLabel(widgets.ticketBlueTeamName, friendlyTeamName);
+        directSetUITextColor(widgets.ticketBlueTeamName, TWL_CONQUEST_HUD_COLOR_BLUE);
+        directSetUITextColor(widgets.ticketBlueCount, TWL_CONQUEST_HUD_COLOR_BLUE);
+    }
+    if (!prev || prev.enemyTeam !== snapshot.enemyTeam) {
+        const enemyTeamName = msg(getTeamNameKey(snapshot.enemyTeam));
+        twlConquestHudRenderShadowRingText(widgets.ticketRedTeamNameShadowRing, true, enemyTeamName);
+        directSetUITextLabel(widgets.ticketRedTeamName, enemyTeamName);
+        directSetUITextColor(widgets.ticketRedTeamName, TWL_CONQUEST_HUD_COLOR_RED);
+        directSetUITextColor(widgets.ticketRedCount, TWL_CONQUEST_HUD_COLOR_RED);
+    }
 
-    const blueFillWidth = Math.max(0, Math.min(
-        TWL_CONQUEST_HUD_TICKET_BAR_WIDTH,
-        Math.floor(TWL_CONQUEST_HUD_TICKET_BAR_WIDTH * snapshot.friendlyRatio)
-    ));
-    const redFillWidth = Math.max(0, Math.min(
-        TWL_CONQUEST_HUD_TICKET_BAR_WIDTH,
-        Math.floor(TWL_CONQUEST_HUD_TICKET_BAR_WIDTH * snapshot.enemyRatio)
-    ));
-    safeSetUIWidgetSize(
-        widgets.ticketBlueBarFill,
-        mod.CreateVector(blueFillWidth, TWL_CONQUEST_HUD_TICKET_BAR_HEIGHT, 0)
-    );
-    // Reassert left-fill origin each frame so track/fill alignment remains stable after swap rebuilds.
-    safeSetUIWidgetPosition(
-        widgets.ticketBlueBarFill,
-        VEC_ZERO
-    );
-    safeSetUIWidgetPosition(
-        widgets.ticketRedBarFill,
-        mod.CreateVector(TWL_CONQUEST_HUD_TICKET_BAR_WIDTH - redFillWidth, 0, 0)
-    );
-    safeSetUIWidgetSize(
-        widgets.ticketRedBarFill,
-        mod.CreateVector(redFillWidth, TWL_CONQUEST_HUD_TICKET_BAR_HEIGHT, 0)
-    );
+    if (!prev || prev.friendlyTickets !== snapshot.friendlyTickets) {
+        directSetUITextLabel(widgets.ticketBlueCount, msg(STR_SYS_COUNTER, Math.max(0, Math.floor(snapshot.friendlyTickets))));
+    }
+    if (!prev || prev.enemyTickets !== snapshot.enemyTickets) {
+        directSetUITextLabel(widgets.ticketRedCount, msg(STR_SYS_COUNTER, Math.max(0, Math.floor(snapshot.enemyTickets))));
+    }
 
-    const leftLeader = snapshot.leaderTeam !== 0 && snapshot.leaderTeam === snapshot.friendlyTeam;
-    const rightLeader = snapshot.leaderTeam !== 0 && snapshot.leaderTeam === snapshot.enemyTeam;
-    safeSetUIWidgetVisible(widgets.ticketLeadBorderLeft, leftLeader);
-    safeSetUIWidgetVisible(widgets.ticketLeadCrownLeftShadow, leftLeader);
-    safeSetUIWidgetVisible(widgets.ticketLeadCrownLeft, leftLeader);
-    safeSetUIWidgetVisible(widgets.ticketLeadBorderRight, rightLeader);
-    safeSetUIWidgetVisible(widgets.ticketLeadCrownRightShadow, rightLeader);
-    safeSetUIWidgetVisible(widgets.ticketLeadCrownRight, rightLeader);
+    if (!prev || prev.friendlyRatio !== snapshot.friendlyRatio || prev.enemyRatio !== snapshot.enemyRatio) {
+        const blueFillWidth = Math.max(0, Math.min(
+            TWL_CONQUEST_HUD_TICKET_BAR_WIDTH,
+            Math.floor(TWL_CONQUEST_HUD_TICKET_BAR_WIDTH * snapshot.friendlyRatio)
+        ));
+        const redFillWidth = Math.max(0, Math.min(
+            TWL_CONQUEST_HUD_TICKET_BAR_WIDTH,
+            Math.floor(TWL_CONQUEST_HUD_TICKET_BAR_WIDTH * snapshot.enemyRatio)
+        ));
+        safeSetUIWidgetSize(widgets.ticketBlueBarFill, mod.CreateVector(blueFillWidth, TWL_CONQUEST_HUD_TICKET_BAR_HEIGHT, 0));
+        safeSetUIWidgetPosition(widgets.ticketBlueBarFill, VEC_ZERO);
+        safeSetUIWidgetPosition(widgets.ticketRedBarFill, mod.CreateVector(TWL_CONQUEST_HUD_TICKET_BAR_WIDTH - redFillWidth, 0, 0));
+        safeSetUIWidgetSize(widgets.ticketRedBarFill, mod.CreateVector(redFillWidth, TWL_CONQUEST_HUD_TICKET_BAR_HEIGHT, 0));
+    }
 
-    const leftBleedVisible = TWL_CONQUEST_HUD_TICKET_BLEED_ALWAYS_VISIBLE
-        ? TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT
-        : Math.max(0, Math.min(TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT, Math.floor(snapshot.bleedLeftCount)));
-    const rightBleedVisible = TWL_CONQUEST_HUD_TICKET_BLEED_ALWAYS_VISIBLE
-        ? TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT
-        : Math.max(0, Math.min(TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT, Math.floor(snapshot.bleedRightCount)));
-    const hideLeftIndex = -1;
-    const hideRightIndex = -1;
-    const leftChevronShadowRings = widgets.ticketBleedLeftChevronShadowRings ?? [];
-    const rightChevronShadowRings = widgets.ticketBleedRightChevronShadowRings ?? [];
-    for (let i = 0; i < TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; i++) {
-        const leftChevronShadowRing = leftChevronShadowRings[i];
-        const rightChevronShadowRing = rightChevronShadowRings[i];
-        const leftChevron = widgets.ticketBleedLeftChevrons[i];
-        const rightChevron = widgets.ticketBleedRightChevrons[i];
-        const leftVisible = i < leftBleedVisible && i !== hideLeftIndex;
-        const rightVisible = i < rightBleedVisible && i !== hideRightIndex;
-        twlConquestHudRenderShadowRingText(
-            leftChevronShadowRing,
-            leftVisible,
-            msg(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT)
-        );
-        twlConquestHudRenderShadowRingText(
-            rightChevronShadowRing,
-            rightVisible,
-            msg(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT)
-        );
-        safeSetUIWidgetVisible(leftChevron, leftVisible);
-        safeSetUIWidgetVisible(rightChevron, rightVisible);
-        if (leftVisible) {
-            safeSetUITextLabel(leftChevron, msg(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT));
-            // Inverted color: left chevron sits on the blue bar but is colored red so the
-            // opposing team's color shows through. Improves contrast post-shadow-removal
-            // (Wave 6 Ship 1c) and reinforces the "enemy is bleeding you" semantic.
-            safeSetUITextColor(leftChevron, TWL_CONQUEST_HUD_COLOR_BLEED_CHEVRON_RED);
-            safeSetUITextAlpha(leftChevron, 1);
-        }
-        if (rightVisible) {
-            safeSetUITextLabel(rightChevron, msg(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT));
-            // Inverted color: right chevron sits on the red bar but is colored blue (see leftChevron above).
-            safeSetUITextColor(rightChevron, TWL_CONQUEST_HUD_COLOR_BLEED_CHEVRON_BLUE);
-            safeSetUITextAlpha(rightChevron, 1);
+    if (!prev || prev.leaderTeam !== snapshot.leaderTeam) {
+        const leftLeader = snapshot.leaderTeam !== 0 && snapshot.leaderTeam === snapshot.friendlyTeam;
+        const rightLeader = snapshot.leaderTeam !== 0 && snapshot.leaderTeam === snapshot.enemyTeam;
+        safeSetUIWidgetVisible(widgets.ticketLeadBorderLeft, leftLeader);
+        safeSetUIWidgetVisible(widgets.ticketLeadCrownLeftShadow, leftLeader);
+        safeSetUIWidgetVisible(widgets.ticketLeadCrownLeft, leftLeader);
+        safeSetUIWidgetVisible(widgets.ticketLeadBorderRight, rightLeader);
+        safeSetUIWidgetVisible(widgets.ticketLeadCrownRightShadow, rightLeader);
+        safeSetUIWidgetVisible(widgets.ticketLeadCrownRight, rightLeader);
+    }
+
+    if (!prev || prev.bleedLeftCount !== snapshot.bleedLeftCount || prev.bleedRightCount !== snapshot.bleedRightCount) {
+        const leftBleedVisible = TWL_CONQUEST_HUD_TICKET_BLEED_ALWAYS_VISIBLE
+            ? TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT
+            : Math.max(0, Math.min(TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT, Math.floor(snapshot.bleedLeftCount)));
+        const rightBleedVisible = TWL_CONQUEST_HUD_TICKET_BLEED_ALWAYS_VISIBLE
+            ? TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT
+            : Math.max(0, Math.min(TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT, Math.floor(snapshot.bleedRightCount)));
+        const hideLeftIndex = -1;
+        const hideRightIndex = -1;
+        const leftChevronShadowRings = widgets.ticketBleedLeftChevronShadowRings ?? [];
+        const rightChevronShadowRings = widgets.ticketBleedRightChevronShadowRings ?? [];
+        for (let i = 0; i < TWL_CONQUEST_HUD_TICKET_BLEED_CHEVRON_COUNT; i++) {
+            const leftChevronShadowRing = leftChevronShadowRings[i];
+            const rightChevronShadowRing = rightChevronShadowRings[i];
+            const leftChevron = widgets.ticketBleedLeftChevrons[i];
+            const rightChevron = widgets.ticketBleedRightChevrons[i];
+            const leftVisible = i < leftBleedVisible && i !== hideLeftIndex;
+            const rightVisible = i < rightBleedVisible && i !== hideRightIndex;
+            twlConquestHudRenderShadowRingText(leftChevronShadowRing, leftVisible, msg(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT));
+            twlConquestHudRenderShadowRingText(rightChevronShadowRing, rightVisible, msg(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT));
+            safeSetUIWidgetVisible(leftChevron, leftVisible);
+            safeSetUIWidgetVisible(rightChevron, rightVisible);
+            if (leftVisible) {
+                directSetUITextLabel(leftChevron, msg(STR_HUD_CONQUEST_BLEED_CHEVRON_LEFT));
+                directSetUITextColor(leftChevron, TWL_CONQUEST_HUD_COLOR_BLEED_CHEVRON_RED);
+                directSetUITextAlpha(leftChevron, 1);
+            }
+            if (rightVisible) {
+                directSetUITextLabel(rightChevron, msg(STR_HUD_CONQUEST_BLEED_CHEVRON_RIGHT));
+                directSetUITextColor(rightChevron, TWL_CONQUEST_HUD_COLOR_BLEED_CHEVRON_BLUE);
+                directSetUITextAlpha(rightChevron, 1);
+            }
         }
     }
 
     const objectivePercentShadowRings = widgets.objectiveSlotPercentShadowRings ?? [];
     for (let i = 0; i < TWL_CONQUEST_HUD_OBJECTIVE_SLOT_COUNT; i++) {
-        const objective = snapshot.objectives[i];
+        const obj = snapshot.objectives[i];
+        const prevObj = prev ? prev.objectives[i] : undefined;
         const slotRoot = widgets.objectiveSlotRoots[i];
         const slotBorder = widgets.objectiveSlotBorders[i];
         const slotFill = widgets.objectiveSlotFills[i];
@@ -403,259 +377,184 @@ function twlConquestHudRenderPlayerFrame(
         const slotLabel = widgets.objectiveSlotLabels[i];
         const slotPercentShadowRing = objectivePercentShadowRings[i];
         const slotPercent = widgets.objectiveSlotPercents[i];
-        if (!objective || objective.visible !== true) {
-            safeSetUIWidgetVisible(slotRoot, false);
-            safeSetUIWidgetVisible(slotBorder, false);
-            safeSetUIWidgetVisible(slotFill, false);
-            twlConquestHudRenderShadowRingText(
-                slotLabelShadowRing,
-                false,
-                msg(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN)
-            );
-            safeSetUIWidgetVisible(slotLabel, false);
-            twlConquestHudRenderShadowRingText(
-                slotPercentShadowRing,
-                false,
-                msg(STR_SYSTEM_GENERIC_PERCENT, 0)
-            );
-            safeSetUIWidgetVisible(slotPercent, false);
+
+        if (!obj || obj.visible !== true) {
+            if (!prevObj || prevObj.visible !== false) {
+                safeSetUIWidgetVisible(slotRoot, false);
+                safeSetUIWidgetVisible(slotBorder, false);
+                safeSetUIWidgetVisible(slotFill, false);
+                twlConquestHudRenderShadowRingText(slotLabelShadowRing, false, msg(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN));
+                safeSetUIWidgetVisible(slotLabel, false);
+                twlConquestHudRenderShadowRingText(slotPercentShadowRing, false, msg(STR_SYSTEM_GENERIC_PERCENT, 0));
+                safeSetUIWidgetVisible(slotPercent, false);
+            }
             continue;
         }
 
         safeSetUIWidgetVisible(slotRoot, true);
-        safeSetUIWidgetBgColor(slotRoot, objective.slotBgColor ?? TWL_CONQUEST_HUD_COLOR_TRACK);
-        safeSetUIWidgetVisible(slotBorder, objective.borderVisible === true && !!objective.borderColor);
-        if (objective.borderVisible && objective.borderColor) {
-            safeSetUIWidgetBgColor(slotBorder, objective.borderColor);
+        safeSetUIWidgetBgColor(slotRoot, obj.slotBgColor ?? TWL_CONQUEST_HUD_COLOR_TRACK);
+        safeSetUIWidgetVisible(slotBorder, obj.borderVisible === true && !!obj.borderColor);
+        if (obj.borderVisible && obj.borderColor) {
+            safeSetUIWidgetBgColor(slotBorder, obj.borderColor);
             safeSetUIWidgetBgAlpha(slotBorder, TWL_CONQUEST_HUD_OBJECTIVE_BORDER_ALPHA);
         }
 
-        const fillHeight = Math.max(0, Math.min(TWL_CONQUEST_HUD_OBJECTIVE_FILL_HEIGHT, Math.floor(objective.fillHeight)));
-        if (objective.fillVisible && objective.fillColor && fillHeight > 0) {
-            safeSetUIWidgetVisible(slotFill, true);
-            safeSetUIWidgetPosition(
-                slotFill,
-                mod.CreateVector(TWL_CONQUEST_HUD_OBJECTIVE_FILL_INSET_X, objective.fillY, 0)
-            );
-            safeSetUIWidgetSize(
-                slotFill,
-                mod.CreateVector(TWL_CONQUEST_HUD_OBJECTIVE_FILL_WIDTH, fillHeight, 0)
-            );
-            safeSetUIWidgetBgColor(slotFill, objective.fillColor);
-        } else {
-            safeSetUIWidgetVisible(slotFill, false);
+        if (!prevObj || prevObj.progress01 !== obj.progress01 || prevObj.fillVisible !== obj.fillVisible) {
+            const fillHeight = Math.max(0, Math.min(TWL_CONQUEST_HUD_OBJECTIVE_FILL_HEIGHT, Math.floor(obj.fillHeight)));
+            if (obj.fillVisible && obj.fillColor && fillHeight > 0) {
+                safeSetUIWidgetVisible(slotFill, true);
+                safeSetUIWidgetPosition(slotFill, mod.CreateVector(TWL_CONQUEST_HUD_OBJECTIVE_FILL_INSET_X, obj.fillY, 0));
+                safeSetUIWidgetSize(slotFill, mod.CreateVector(TWL_CONQUEST_HUD_OBJECTIVE_FILL_WIDTH, fillHeight, 0));
+                safeSetUIWidgetBgColor(slotFill, obj.fillColor);
+            } else {
+                safeSetUIWidgetVisible(slotFill, false);
+            }
         }
 
-        safeSetUIWidgetVisible(slotLabel, objective.labelVisible === true);
-        if (objective.labelVisible) {
-            const fallbackLabelKey = twlConquestHudGetFlagLetterStringKey(objective.label);
-            const labelMessage = objective.labelMessage ?? msg(fallbackLabelKey);
-            twlConquestHudRenderShadowRingText(
-                slotLabelShadowRing,
-                true,
-                labelMessage
-            );
-            safeSetUITextLabel(slotLabel, labelMessage);
-            safeSetUITextColor(slotLabel, objective.labelColor ?? twlConquestHudGetColorForTeam(objective.ownerTeam, perspective));
-        } else {
-            twlConquestHudRenderShadowRingText(
-                slotLabelShadowRing,
-                false,
-                msg(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN)
-            );
-        }
+        if (!prevObj || prevObj.label !== obj.label || prevObj.labelVisible !== obj.labelVisible || prevObj.percentVisible !== obj.percentVisible) {
+            safeSetUIWidgetVisible(slotLabel, obj.labelVisible === true);
+            if (obj.labelVisible) {
+                const fallbackLabelKey = twlConquestHudGetFlagLetterStringKey(obj.label);
+                const labelMessage = obj.labelMessage ?? msg(fallbackLabelKey);
+                twlConquestHudRenderShadowRingText(slotLabelShadowRing, true, labelMessage);
+                directSetUITextLabel(slotLabel, labelMessage);
+                directSetUITextColor(slotLabel, obj.labelColor ?? twlConquestHudGetColorForTeam(obj.ownerTeam, perspective));
+            } else {
+                twlConquestHudRenderShadowRingText(slotLabelShadowRing, false, msg(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN));
+            }
 
-        safeSetUIWidgetVisible(slotPercent, objective.percentVisible === true);
-        if (objective.percentVisible) {
-            const percentMessage = objective.percentMessage ?? msg(STR_SYSTEM_GENERIC_PERCENT, Math.max(0, Math.min(100, Math.round(objective.progress01 * 100))));
-            twlConquestHudRenderShadowRingText(
-                slotPercentShadowRing,
-                true,
-                percentMessage
-            );
-            safeSetUITextLabel(
-                slotPercent,
-                percentMessage
-            );
-            safeSetUITextColor(slotPercent, objective.percentColor ?? TWL_CONQUEST_HUD_COLOR_WHITE);
-        } else {
-            twlConquestHudRenderShadowRingText(
-                slotPercentShadowRing,
-                false,
-                msg(STR_SYSTEM_GENERIC_PERCENT, 0)
-            );
+            safeSetUIWidgetVisible(slotPercent, obj.percentVisible === true);
+            if (obj.percentVisible) {
+                const percentMessage = obj.percentMessage ?? msg(STR_SYSTEM_GENERIC_PERCENT, Math.max(0, Math.min(100, Math.round(obj.progress01 * 100))));
+                twlConquestHudRenderShadowRingText(slotPercentShadowRing, true, percentMessage);
+                directSetUITextLabel(slotPercent, percentMessage);
+                directSetUITextColor(slotPercent, obj.percentColor ?? TWL_CONQUEST_HUD_COLOR_WHITE);
+            } else {
+                twlConquestHudRenderShadowRingText(slotPercentShadowRing, false, msg(STR_SYSTEM_GENERIC_PERCENT, 0));
+            }
         }
     }
 
     const popout = snapshot.popout;
-    const popoutEnteringVisible = popout.visible === true && previousSnapshot?.popout?.visible !== true;
-    if (!popout.visible) {
-        safeSetUIWidgetVisible(widgets.popoutPercent, false);
-        twlConquestHudRenderShadowRingText(
-            widgets.popoutPercentShadowRing,
-            false,
-            msg(STR_SYSTEM_GENERIC_PERCENT, 0)
-        );
-        safeSetUIWidgetVisible(widgets.popoutLabel, false);
-        twlConquestHudRenderShadowRingText(
-            widgets.popoutLabelShadowRing,
-            false,
-            msg(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN)
-        );
-        safeSetUIWidgetVisible(widgets.popoutFill, false);
-        safeSetUIWidgetVisible(widgets.popoutBorder, false);
-        safeSetUIWidgetVisible(widgets.popoutSlot, false);
-        safeSetUIWidgetVisible(widgets.popoutRoot, false);
-    } else {
-        // Keep root hidden during first visible-frame child updates so the popout lane appears atomically.
-        safeSetUIWidgetVisible(widgets.popoutRoot, !popoutEnteringVisible);
-        safeSetUIWidgetVisible(widgets.popoutSlot, true);
-        safeSetUIWidgetBgColor(widgets.popoutSlot, popout.slotBgColor ?? TWL_CONQUEST_HUD_COLOR_TRACK);
+    const prevPopout = prev ? prev.popout : undefined;
+    const popoutChanged = !prevPopout
+        || prevPopout.visible !== popout.visible
+        || (!popout.visible ? false
+            : (prevPopout.fillY !== popout.fillY
+                || prevPopout.fillHeight !== popout.fillHeight
+                || prevPopout.fillVisible !== popout.fillVisible
+                || prevPopout.borderVisible !== popout.borderVisible
+                || prevPopout.labelVisible !== popout.labelVisible
+                || prevPopout.percentVisible !== popout.percentVisible));
 
-        safeSetUIWidgetVisible(widgets.popoutBorder, popout.borderVisible === true && !!popout.borderColor);
-        if (popout.borderVisible && popout.borderColor) {
-            safeSetUIWidgetBgColor(widgets.popoutBorder, popout.borderColor);
-            safeSetUIWidgetBgAlpha(widgets.popoutBorder, TWL_CONQUEST_HUD_POPOUT_BORDER_ALPHA);
-        }
-
-        const popoutFillHeight = Math.max(0, Math.min(TWL_CONQUEST_HUD_POPOUT_FILL_HEIGHT, Math.floor(popout.fillHeight)));
-        if (popout.fillVisible && popout.fillColor && popoutFillHeight > 0) {
-            safeSetUIWidgetVisible(widgets.popoutFill, true);
-            safeSetUIWidgetPosition(
-                widgets.popoutFill,
-                mod.CreateVector(TWL_CONQUEST_HUD_POPOUT_FILL_X, popout.fillY, 0)
-            );
-            safeSetUIWidgetSize(
-                widgets.popoutFill,
-                mod.CreateVector(TWL_CONQUEST_HUD_POPOUT_FILL_WIDTH, popoutFillHeight, 0)
-            );
-            safeSetUIWidgetBgColor(widgets.popoutFill, popout.fillColor);
-        } else {
+    if (popoutChanged) {
+        const popoutEnteringVisible = popout.visible === true && prevPopout?.visible !== true;
+        if (!popout.visible) {
+            safeSetUIWidgetVisible(widgets.popoutPercent, false);
+            twlConquestHudRenderShadowRingText(widgets.popoutPercentShadowRing, false, msg(STR_SYSTEM_GENERIC_PERCENT, 0));
+            safeSetUIWidgetVisible(widgets.popoutLabel, false);
+            twlConquestHudRenderShadowRingText(widgets.popoutLabelShadowRing, false, msg(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN));
             safeSetUIWidgetVisible(widgets.popoutFill, false);
-        }
-
-        safeSetUIWidgetVisible(widgets.popoutLabel, popout.labelVisible === true);
-        if (popout.labelVisible) {
-            const fallbackPopoutLabel = twlConquestHudResolveObjectiveLabelLetter(popout.objId, 0);
-            const fallbackPopoutLabelKey = twlConquestHudGetFlagLetterStringKey(fallbackPopoutLabel);
-            const labelMessage = popout.labelMessage ?? msg(fallbackPopoutLabelKey);
-            twlConquestHudRenderShadowRingText(
-                widgets.popoutLabelShadowRing,
-                true,
-                labelMessage
-            );
-            safeSetUITextLabel(widgets.popoutLabel, labelMessage);
-            safeSetUITextColor(widgets.popoutLabel, popout.labelColor ?? TWL_CONQUEST_HUD_COLOR_WHITE);
+            safeSetUIWidgetVisible(widgets.popoutBorder, false);
+            safeSetUIWidgetVisible(widgets.popoutSlot, false);
+            safeSetUIWidgetVisible(widgets.popoutRoot, false);
         } else {
-            twlConquestHudRenderShadowRingText(
-                widgets.popoutLabelShadowRing,
-                false,
-                msg(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN)
-            );
-        }
+            safeSetUIWidgetVisible(widgets.popoutRoot, !popoutEnteringVisible);
+            safeSetUIWidgetVisible(widgets.popoutSlot, true);
+            safeSetUIWidgetBgColor(widgets.popoutSlot, popout.slotBgColor ?? TWL_CONQUEST_HUD_COLOR_TRACK);
 
-        safeSetUIWidgetVisible(widgets.popoutPercent, popout.percentVisible === true);
-        if (popout.percentVisible) {
-            const percentMessage = popout.percentMessage ?? msg(STR_SYSTEM_GENERIC_PERCENT, 0);
-            twlConquestHudRenderShadowRingText(
-                widgets.popoutPercentShadowRing,
-                true,
-                percentMessage
-            );
-            safeSetUITextLabel(
-                widgets.popoutPercent,
-                percentMessage
-            );
-            safeSetUITextColor(widgets.popoutPercent, popout.percentColor ?? TWL_CONQUEST_HUD_COLOR_WHITE);
-        } else {
-            twlConquestHudRenderShadowRingText(
-                widgets.popoutPercentShadowRing,
-                false,
-                msg(STR_SYSTEM_GENERIC_PERCENT, 0)
-            );
+            safeSetUIWidgetVisible(widgets.popoutBorder, popout.borderVisible === true && !!popout.borderColor);
+            if (popout.borderVisible && popout.borderColor) {
+                safeSetUIWidgetBgColor(widgets.popoutBorder, popout.borderColor);
+                safeSetUIWidgetBgAlpha(widgets.popoutBorder, TWL_CONQUEST_HUD_POPOUT_BORDER_ALPHA);
+            }
+
+            const popoutFillHeight = Math.max(0, Math.min(TWL_CONQUEST_HUD_POPOUT_FILL_HEIGHT, Math.floor(popout.fillHeight)));
+            if (popout.fillVisible && popout.fillColor && popoutFillHeight > 0) {
+                safeSetUIWidgetVisible(widgets.popoutFill, true);
+                safeSetUIWidgetPosition(widgets.popoutFill, mod.CreateVector(TWL_CONQUEST_HUD_POPOUT_FILL_X, popout.fillY, 0));
+                safeSetUIWidgetSize(widgets.popoutFill, mod.CreateVector(TWL_CONQUEST_HUD_POPOUT_FILL_WIDTH, popoutFillHeight, 0));
+                safeSetUIWidgetBgColor(widgets.popoutFill, popout.fillColor);
+            } else {
+                safeSetUIWidgetVisible(widgets.popoutFill, false);
+            }
+
+            safeSetUIWidgetVisible(widgets.popoutLabel, popout.labelVisible === true);
+            if (popout.labelVisible) {
+                const fallbackPopoutLabel = twlConquestHudResolveObjectiveLabelLetter(popout.objId, 0);
+                const fallbackPopoutLabelKey = twlConquestHudGetFlagLetterStringKey(fallbackPopoutLabel);
+                const labelMessage = popout.labelMessage ?? msg(fallbackPopoutLabelKey);
+                twlConquestHudRenderShadowRingText(widgets.popoutLabelShadowRing, true, labelMessage);
+                directSetUITextLabel(widgets.popoutLabel, labelMessage);
+                directSetUITextColor(widgets.popoutLabel, popout.labelColor ?? TWL_CONQUEST_HUD_COLOR_WHITE);
+            } else {
+                twlConquestHudRenderShadowRingText(widgets.popoutLabelShadowRing, false, msg(STR_HUD_CONQUEST_FLAG_LETTER_UNKNOWN));
+            }
+
+            safeSetUIWidgetVisible(widgets.popoutPercent, popout.percentVisible === true);
+            if (popout.percentVisible) {
+                const percentMessage = popout.percentMessage ?? msg(STR_SYSTEM_GENERIC_PERCENT, 0);
+                twlConquestHudRenderShadowRingText(widgets.popoutPercentShadowRing, true, percentMessage);
+                directSetUITextLabel(widgets.popoutPercent, percentMessage);
+                directSetUITextColor(widgets.popoutPercent, popout.percentColor ?? TWL_CONQUEST_HUD_COLOR_WHITE);
+            } else {
+                twlConquestHudRenderShadowRingText(widgets.popoutPercentShadowRing, false, msg(STR_SYSTEM_GENERIC_PERCENT, 0));
+            }
+            safeSetUIWidgetVisible(widgets.popoutRoot, true);
         }
-        // Reveal root last for one-pass popout lane appearance.
-        safeSetUIWidgetVisible(widgets.popoutRoot, true);
     }
 
     const engage = snapshot.engage;
-    const engageEnteringVisible = engage.visible === true && previousSnapshot?.engage?.visible !== true;
-    if (!engage.visible) {
-        twlConquestHudRenderShadowRingText(
-            widgets.engageFriendlyCountShadowRing,
-            false,
-            msg(STR_SYS_COUNTER, 0)
-        );
-        twlConquestHudRenderShadowRingText(
-            widgets.engageEnemyCountShadowRing,
-            false,
-            msg(STR_SYS_COUNTER, 0)
-        );
-        twlConquestHudRenderShadowRingText(
-            widgets.engageStatusShadowRing,
-            false,
-            msg(STR_HUD_CONQUEST_CAPTURE_STATUS_DEFEND)
-        );
-        safeSetUIWidgetVisible(widgets.engageStatusBox, false);
-        safeSetUIWidgetVisible(widgets.engageStatus, false);
-        safeSetUIWidgetVisible(widgets.engageEnemyCount, false);
-        safeSetUIWidgetVisible(widgets.engageFriendlyCount, false);
-        safeSetUIWidgetVisible(widgets.engageEnemyFill, false);
-        safeSetUIWidgetVisible(widgets.engageFriendlyFill, false);
-        safeSetUIWidgetVisible(widgets.engageTrack, false);
-        safeSetUIWidgetVisible(widgets.engageRoot, false);
-    } else {
-        // Keep root hidden during first visible-frame child updates so the engage lane appears atomically.
-        safeSetUIWidgetVisible(widgets.engageRoot, !engageEnteringVisible);
-        safeSetUIWidgetVisible(widgets.engageTrack, true);
-        safeSetUIWidgetVisible(widgets.engageFriendlyFill, true);
-        safeSetUIWidgetVisible(widgets.engageEnemyFill, true);
-        safeSetUIWidgetVisible(widgets.engageFriendlyCount, true);
-        safeSetUIWidgetVisible(widgets.engageEnemyCount, true);
-        safeSetUIWidgetVisible(widgets.engageStatusBox, true);
-        safeSetUIWidgetVisible(widgets.engageStatus, true);
+    const prevEngage = prev ? prev.engage : undefined;
+    const engageChanged = !prevEngage
+        || prevEngage.visible !== engage.visible
+        || prevEngage.friendlyWidth !== engage.friendlyWidth
+        || prevEngage.enemyWidth !== engage.enemyWidth;
 
-        const friendlyWidth = Math.max(0, Math.min(TWL_CONQUEST_HUD_ENGAGE_TRACK_WIDTH, Math.floor(engage.friendlyWidth)));
-        const enemyWidth = Math.max(0, Math.min(TWL_CONQUEST_HUD_ENGAGE_TRACK_WIDTH - friendlyWidth, Math.floor(engage.enemyWidth)));
-        safeSetUIWidgetSize(
-            widgets.engageFriendlyFill,
-            mod.CreateVector(friendlyWidth, TWL_CONQUEST_HUD_ENGAGE_TRACK_HEIGHT, 0)
-        );
-        safeSetUIWidgetPosition(
-            widgets.engageEnemyFill,
-            mod.CreateVector(friendlyWidth, 0, 0)
-        );
-        safeSetUIWidgetSize(
-            widgets.engageEnemyFill,
-            mod.CreateVector(enemyWidth, TWL_CONQUEST_HUD_ENGAGE_TRACK_HEIGHT, 0)
-        );
+    if (engageChanged) {
+        const engageEnteringVisible = engage.visible === true && prevEngage?.visible !== true;
+        if (!engage.visible) {
+            twlConquestHudRenderShadowRingText(widgets.engageFriendlyCountShadowRing, false, msg(STR_SYS_COUNTER, 0));
+            twlConquestHudRenderShadowRingText(widgets.engageEnemyCountShadowRing, false, msg(STR_SYS_COUNTER, 0));
+            twlConquestHudRenderShadowRingText(widgets.engageStatusShadowRing, false, msg(STR_HUD_CONQUEST_CAPTURE_STATUS_DEFEND));
+            safeSetUIWidgetVisible(widgets.engageStatusBox, false);
+            safeSetUIWidgetVisible(widgets.engageStatus, false);
+            safeSetUIWidgetVisible(widgets.engageEnemyCount, false);
+            safeSetUIWidgetVisible(widgets.engageFriendlyCount, false);
+            safeSetUIWidgetVisible(widgets.engageEnemyFill, false);
+            safeSetUIWidgetVisible(widgets.engageFriendlyFill, false);
+            safeSetUIWidgetVisible(widgets.engageTrack, false);
+            safeSetUIWidgetVisible(widgets.engageRoot, false);
+        } else {
+            safeSetUIWidgetVisible(widgets.engageRoot, !engageEnteringVisible);
+            safeSetUIWidgetVisible(widgets.engageTrack, true);
+            safeSetUIWidgetVisible(widgets.engageFriendlyFill, true);
+            safeSetUIWidgetVisible(widgets.engageEnemyFill, true);
+            safeSetUIWidgetVisible(widgets.engageFriendlyCount, true);
+            safeSetUIWidgetVisible(widgets.engageEnemyCount, true);
+            safeSetUIWidgetVisible(widgets.engageStatusBox, true);
+            safeSetUIWidgetVisible(widgets.engageStatus, true);
 
-        const friendlyCountLabel = engage.friendlyCountLabel ?? msg(STR_SYS_COUNTER, 0);
-        const enemyCountLabel = engage.enemyCountLabel ?? msg(STR_SYS_COUNTER, 0);
-        const statusLabel = engage.statusLabel ?? msg(STR_HUD_CONQUEST_CAPTURE_STATUS_DEFEND);
-        twlConquestHudRenderShadowRingText(
-            widgets.engageFriendlyCountShadowRing,
-            true,
-            friendlyCountLabel
-        );
-        safeSetUITextLabel(widgets.engageFriendlyCount, friendlyCountLabel);
-        twlConquestHudRenderShadowRingText(
-            widgets.engageEnemyCountShadowRing,
-            true,
-            enemyCountLabel
-        );
-        safeSetUITextLabel(widgets.engageEnemyCount, enemyCountLabel);
-        twlConquestHudRenderShadowRingText(
-            widgets.engageStatusShadowRing,
-            true,
-            statusLabel
-        );
-        safeSetUITextLabel(widgets.engageStatus, statusLabel);
-        safeSetUITextColor(widgets.engageFriendlyCount, TWL_CONQUEST_HUD_COLOR_BLUE);
-        safeSetUITextColor(widgets.engageEnemyCount, TWL_CONQUEST_HUD_COLOR_RED);
-        safeSetUITextColor(widgets.engageStatus, TWL_CONQUEST_HUD_COLOR_WHITE);
-        // Reveal root last for one-pass engage lane appearance.
-        safeSetUIWidgetVisible(widgets.engageRoot, true);
+            const friendlyWidth = Math.max(0, Math.min(TWL_CONQUEST_HUD_ENGAGE_TRACK_WIDTH, Math.floor(engage.friendlyWidth)));
+            const enemyWidth = Math.max(0, Math.min(TWL_CONQUEST_HUD_ENGAGE_TRACK_WIDTH - friendlyWidth, Math.floor(engage.enemyWidth)));
+            safeSetUIWidgetSize(widgets.engageFriendlyFill, mod.CreateVector(friendlyWidth, TWL_CONQUEST_HUD_ENGAGE_TRACK_HEIGHT, 0));
+            safeSetUIWidgetPosition(widgets.engageEnemyFill, mod.CreateVector(friendlyWidth, 0, 0));
+            safeSetUIWidgetSize(widgets.engageEnemyFill, mod.CreateVector(enemyWidth, TWL_CONQUEST_HUD_ENGAGE_TRACK_HEIGHT, 0));
+
+            const friendlyCountLabel = engage.friendlyCountLabel ?? msg(STR_SYS_COUNTER, 0);
+            const enemyCountLabel = engage.enemyCountLabel ?? msg(STR_SYS_COUNTER, 0);
+            const statusLabel = engage.statusLabel ?? msg(STR_HUD_CONQUEST_CAPTURE_STATUS_DEFEND);
+            twlConquestHudRenderShadowRingText(widgets.engageFriendlyCountShadowRing, true, friendlyCountLabel);
+            directSetUITextLabel(widgets.engageFriendlyCount, friendlyCountLabel);
+            twlConquestHudRenderShadowRingText(widgets.engageEnemyCountShadowRing, true, enemyCountLabel);
+            directSetUITextLabel(widgets.engageEnemyCount, enemyCountLabel);
+            twlConquestHudRenderShadowRingText(widgets.engageStatusShadowRing, true, statusLabel);
+            directSetUITextLabel(widgets.engageStatus, statusLabel);
+            directSetUITextColor(widgets.engageFriendlyCount, TWL_CONQUEST_HUD_COLOR_BLUE);
+            directSetUITextColor(widgets.engageEnemyCount, TWL_CONQUEST_HUD_COLOR_RED);
+            directSetUITextColor(widgets.engageStatus, TWL_CONQUEST_HUD_COLOR_WHITE);
+            safeSetUIWidgetVisible(widgets.engageRoot, true);
+        }
     }
 
     if (revealRoot) {
@@ -670,4 +569,3 @@ function twlConquestHudRenderPlayerFrame(
         safeSetUIWidgetVisible(widgets.root, false);
     }
 }
-

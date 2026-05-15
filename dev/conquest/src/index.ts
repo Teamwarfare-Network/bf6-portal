@@ -37,6 +37,7 @@ import './ui/conquest/hud-core/state';
 import './ui/conquest/hud-core/lifecycle';
 import './ui/conquest/hud-core/build';
 import './ui/conquest/hud-core/validate';
+import './ui/conquest/hud-core/direct-write';
 import './ui/conquest/hud-core/render';
 import './ui/conquest/hud-core/pipeline';
 import './ui/conquest/hud-core/toggle';
