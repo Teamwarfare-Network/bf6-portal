@@ -116,6 +116,7 @@ import './utils/main-base';
 import './index/game-mode';
 import './index/conquest-scaffold';
 import './index/capture-tickets';
+import './hud/combat-hud-coalesce';
 import './index/player-join-leave';
 import './index/player-deploy';
 import './index/player-loop-inputs';

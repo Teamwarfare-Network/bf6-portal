@@ -254,7 +254,8 @@ function onPlayerDeployedSpawnCharge(eventPlayer: mod.Player, wasAlreadyDeployed
     incrementReasonCounter(State.conquest.spawnCharge.chargedCountByReason, reason);
     mirrorTicketsToEngineScore();
     checkEndCondition();
-    updateConquestCombatHudForAllPlayers(true);
+    markHudDirty();
+    scheduleCombatHudCoalesceDrain();
     maybeEmitDebugSnapshot(reason);
 }
 

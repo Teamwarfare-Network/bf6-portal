@@ -43,8 +43,7 @@ function onPlayerEnterCapturePointImpl(eventPlayer: mod.Player, eventCapturePoin
         // do not wait for the next global live-tick polling pass.
         onCapturePointTick(eventCapturePoint);
         markHudDirty();
-        // Enter/exit should feel atomic: apply top row + popout + engage in one immediate pass.
-        updateConquestCombatHudForAllPlayers(true);
+        scheduleCombatHudCoalesceDrain();
     } catch {
         return;
     }
@@ -62,8 +61,7 @@ function onPlayerExitCapturePointImpl(eventPlayer: mod.Player, eventCapturePoint
         if (exitingObjId !== undefined && currentObjId !== exitingObjId) return;
         delete State.conquest.capture.engagedObjIdByPid[pid];
         markHudDirty();
-        // Enter/exit should feel atomic: apply top row + popout + engage in one immediate pass.
-        updateConquestCombatHudForAllPlayers(true);
+        scheduleCombatHudCoalesceDrain();
     } catch {
         return;
     }

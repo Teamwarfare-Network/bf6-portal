@@ -2000,7 +2000,7 @@ function onCapturePointLost(eventCapturePoint: mod.CapturePoint): void {
 
     onCapturePointLostVoEdge(objId, previousOwnerTeam, cp.ownerProgressTeam);
     markHudDirty();
-    updateConquestCombatHudForAllPlayers(true);
+    scheduleCombatHudCoalesceDrain();
 }
 
 /**
@@ -2050,7 +2050,7 @@ function onCapturePointCaptured(eventCapturePoint: mod.CapturePoint): void {
 
     onCapturePointCapturedVoEdge(objId, ownerTeam);
     markHudDirty();
-    updateConquestCombatHudForAllPlayers(true);
+    scheduleCombatHudCoalesceDrain();
 }
 
 /**

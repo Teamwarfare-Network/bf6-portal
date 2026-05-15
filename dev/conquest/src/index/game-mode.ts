@@ -53,6 +53,7 @@ async function onGameModeStartedImpl(): Promise<void> {
     vehIds.length = 0;
     vehOwners.length = 0;
     clearVehicleDeployTimerHudCoalesceTimer();
+    clearCombatHudCoalesceTimer();
 
     sendHighlightedWorldLogMessage(
         msg(mod.stringkeys.twl.messages.init),
