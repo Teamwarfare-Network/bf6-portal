@@ -38,11 +38,8 @@ export async function OnGameModeStarted(): Promise<void> {
     }
     State.vehicles.configReady = true;
 
-    // Vehicle scoring init + legacy cleanup
-    // Remove legacy UI roots (if any) before we build fresh HUDs; prevents duplicated overlays across restarts.
     deleteLegacyScoreRootsForAllPlayers();
 
-    // Apply initial engine variables/settings used by the mode (authoritative baseline).
     mod.SetGameModeTargetScore(GAMEMODE_TARGET_SCORE_SAFETY_CAP);
     mod.SetVariable(regVehiclesTeam1, mod.EmptyArray());
     mod.SetVariable(regVehiclesTeam2, mod.EmptyArray());
@@ -65,7 +62,6 @@ export async function OnGameModeStarted(): Promise<void> {
         mod.stringkeys.twl.messages.init
     );
 
-    // Ensure HUD exists for anyone already in-game at start
     await mod.Wait(0.1);
     {
         const players = mod.AllPlayers();
@@ -73,18 +69,15 @@ export async function OnGameModeStarted(): Promise<void> {
         for (let i = 0; i < count; i++) {
             const p = mod.ValueInArray(players, i) as mod.Player;
             if (!p || !mod.IsPlayerValid(p)) continue;
-            // Build/rebuild the player's HUD (widgets) and immediately reflect current authoritative state.
             ensureHudForPlayer(p);
         }
     }
 
-    // Reset HUD state
     State.match.isEnded = false;
     State.match.victoryDialogActive = false;
-    State.round.phase = RoundPhase.NotReady; // Reset round phase for a new match.
+    State.round.phase = RoundPhase.NotReady;
     State.round.current = 1;
     resetOvertimeFlagState();
-    // Pregame: tie-breaker eligibility is decided at round start.
     State.flag.tieBreakerEnabledThisRound = false;
     setOvertimeAllFlagVisibility(false);
 
@@ -104,7 +97,6 @@ export async function OnGameModeStarted(): Promise<void> {
 
     State.hudCache.lastHudScoreT1 = undefined;
     State.hudCache.lastHudScoreT2 = undefined;
-    // Init visible counters
     setHudRoundCountersForAllPlayers(State.round.current, MAX_ROUNDS);
     setHudWinCountersForAllPlayers(0, 0);
     State.match.tiesT1 = 0;
@@ -113,16 +105,12 @@ export async function OnGameModeStarted(): Promise<void> {
     syncWinCountersHudFromGameModeScore();
     syncKillsHudFromTrackedTotals(true);
     updateAdminPanelActionCountForAllPlayers();
-    // Broadcast the initial round phase label (e.g., NOT READY) to all HUDs.
     setRoundStateTextForAllPlayers();
     updateHelpTextVisibilityForAllPlayers();
 
-    // Clock init + loop (pregame preview, do not count down yet)
     setRoundClockPreview(getConfiguredRoundLengthSeconds());
 
-    // Vehicle spawners run on their own loop so they don't block the main clock loop.
     void startVehicleSpawnerSystem();
-    // Soft aircraft ceiling enforcement runs on its own loop and only activates after confirm.
     startAircraftCeilingSoftEnforcementLoop();
 
     while (true) {
@@ -194,7 +182,6 @@ export async function OnPlayerJoinGame(eventPlayer: mod.Player) {
 
     const refs = ensureHudForPlayer(eventPlayer);
 
-    // Join-time HUD initialization uses script-authoritative counters; do not pull from engine scores here.
     if (refs) {
         setCounterText(refs.leftWinsText, State.match.winsT1);
         setCounterText(refs.rightWinsText, State.match.winsT2);
@@ -210,21 +197,19 @@ export async function OnPlayerJoinGame(eventPlayer: mod.Player) {
     {
         const cache = ensureClockUIAndGetCache(eventPlayer);
         if (cache) setRoundStateText(cache.roundStateText);
-    updateHelpTextVisibilityForPlayer(eventPlayer);
+        updateHelpTextVisibilityForPlayer(eventPlayer);
     }
     deleteLegacyScoreRootForPlayer(eventPlayer);
     if (joinPid !== undefined) {
         updateTeamNameWidgetsForPid(joinPid);
     }
 
-    // Second join-time refresh after team assignment settles to avoid stale Ready dialog rosters.
     await mod.Wait(0.1);
     if (!mod.IsPlayerValid(eventPlayer)) return;
     renderReadyDialogForAllVisibleViewers();
     updatePlayersReadyHudTextForAllPlayers();
     updateHelpTextVisibilityForAllPlayers();
     rebuildOvertimeUiForPlayer(eventPlayer);
-    // Ensure the round clock digits refresh for reconnecting players.
     State.round.clock.lastDisplayedSeconds = undefined;
     State.round.clock.lastLowTimeState = undefined;
     updateAllPlayersClock();
@@ -278,6 +263,8 @@ export function OnPlayerLeaveGame(eventNumber: number | mod.Player) {
     delete State.players.inMainBaseByPid[pid];
     delete State.players.overTakeoffLimitByPid[pid];
     delete State.players.deployedByPid[pid];
+    delete State.players.deployedAtSecondsByPid[pid];
+    delete State.players.isAliveByPid[pid];
     delete State.players.spawnDisabledWarningVisibleByPid[pid];
     // Also drop dialog-visible tracking if present (viewer is gone).
     delete State.players.teamSwitchData[pid];
@@ -299,10 +286,11 @@ export function OnPlayerLeaveGame(eventNumber: number | mod.Player) {
 
 async function deferForcedUndeploy(player: mod.Player, reason: string): Promise<void> {
     // Defer undeploy by a tick to avoid engine instability during deploy transitions.
+    // safeUndeployPlayer covers null + IsPlayerValid + isPlayerDeployed + try/catch internally;
+    // the outer try/catch is preserved as defense-in-depth around mod.Wait (matches Conquest player-deploy.ts).
     try {
         await mod.Wait(0.1);
-        if (!player || !mod.IsPlayerValid(player)) return;
-        mod.UndeployPlayer(player);
+        safeUndeployPlayer(player);
     } catch {
         // Intentionally silent to keep unstable transitions from crashing the experience.
     }
@@ -311,7 +299,6 @@ async function deferForcedUndeploy(player: mod.Player, reason: string): Promise<
 export async function OnPlayerDeployed(eventPlayer: mod.Player) {
     const pid = safeGetPlayerId(eventPlayer);
     if (pid === undefined) return;
-    // Safety: always restore UI input mode on deploy to avoid stuck UI suppressing messages.
     setUIInputModeForPlayer(eventPlayer, false);
     if (State.round.flow.cleanupActive && !State.round.flow.cleanupAllowDeploy) {
         State.players.deployedByPid[pid] = false;
@@ -326,30 +313,30 @@ export async function OnPlayerDeployed(eventPlayer: mod.Player) {
     }
 
     State.players.deployedByPid[pid] = true;
+    State.players.deployedAtSecondsByPid[pid] = mod.GetMatchTimeElapsed();
+    State.players.isAliveByPid[pid] = true;
     State.players.joinPromptTripleTapArmedByPid[pid] = false;
     updateSpawnDisabledWarningForPlayer(eventPlayer);
-    //Remove existing gadgets and give deployable vehicle supply crates
-    mod.RemoveEquipment(eventPlayer, mod.InventorySlots.GadgetOne);
-    mod.RemoveEquipment(eventPlayer, mod.InventorySlots.GadgetTwo);
-    mod.AddEquipment(
-        eventPlayer,
-        mod.Gadgets.Deployable_Vehicle_Supply_Crate,
-        mod.InventorySlots.GadgetOne
-    );
-    mod.AddEquipment(
-        eventPlayer,
-        mod.Gadgets.Deployable_Vehicle_Supply_Crate,
-        mod.InventorySlots.GadgetTwo
-    );
-    // Rejoin / spawn behavior: players always start NOT READY for the next round gating.
+    try {
+        mod.AddEquipment(
+            eventPlayer,
+            mod.Gadgets.Deployable_Vehicle_Supply_Crate,
+            mod.InventorySlots.GadgetOne
+        );
+    } catch {}
+    try {
+        mod.AddEquipment(
+            eventPlayer,
+            mod.Gadgets.Deployable_Vehicle_Supply_Crate,
+            mod.InventorySlots.GadgetTwo
+        );
+    } catch {}
     State.players.readyByPid[pid] = false;
-    // Design assumption: players spawn in their main base; update immediately for roster display.
     State.players.inMainBaseByPid[pid] = true;
     delete State.players.overTakeoffLimitByPid[pid];
     updatePlayersReadyHudTextForAllPlayers();
     renderReadyDialogForAllVisibleViewers();
     updateHelpTextVisibilityForAllPlayers();
-
     ensureHudForPlayer(eventPlayer);
     await spawnTeamSwitchInteractPoint(eventPlayer);
 }
@@ -362,6 +349,7 @@ export function OnPlayerUndeploy(eventPlayer: mod.Player) {
     if (pid === undefined) return;
     if (isPidDisconnected(pid)) return;
     State.players.deployedByPid[pid] = false;
+    State.players.isAliveByPid[pid] = false;
     State.players.joinPromptTripleTapArmedByPid[pid] = false;
     if (State.players.teamSwitchData[pid]?.dialogVisible) {
         deleteTeamSwitchUI(eventPlayer);
@@ -456,14 +444,17 @@ export function OnPlayerEnterVehicle(eventPlayer: mod.Player, eventVehicle: mod.
 
     const teamNum = getTeamNumber(mod.GetTeam(eventPlayer));
     if (teamNum !== TeamID.Team1 && teamNum !== TeamID.Team2) {
+        // Defensive arg wrap: stale-Player race during join/team-assignment can fire
+        // "Received undefined values" engine errors (Conquest #94 family).
+        const safePlayerName = safePlayerArg(eventPlayer);
         sendHighlightedWorldLogMessage(
-            mod.Message(STR_VEHICLE_REG_PENDING_TEAM, eventPlayer),
+            mod.Message(STR_VEHICLE_REG_PENDING_TEAM, safePlayerName),
             true,
             mod.GetTeam(TeamID.Team1),
             STR_VEHICLE_REG_PENDING_TEAM
         );
         sendHighlightedWorldLogMessage(
-            mod.Message(STR_VEHICLE_REG_PENDING_TEAM, eventPlayer),
+            mod.Message(STR_VEHICLE_REG_PENDING_TEAM, safePlayerName),
             true,
             mod.GetTeam(TeamID.Team2),
             STR_VEHICLE_REG_PENDING_TEAM
@@ -519,25 +510,28 @@ export function OnPlayerEnterVehicle(eventPlayer: mod.Player, eventVehicle: mod.
     const teamNameKey = getTeamNameKey(teamNum);
 
     //Send notifications around different vehicle registration events so players can spot known issue with Vehicle Registrations
+    // Defensive arg wrap: stale-Player race during vehicle entry can fire "Received
+    // undefined values" engine errors when eventPlayer is passed to mod.Message (Conquest #94 family).
+    const safePlayerName = safePlayerArg(eventPlayer);
     let messageKey: number = STR_VEHICLE_REG_NO_CHANGE;
-    let arg0: any = eventPlayer;
+    let arg0: any = safePlayerName;
     let arg1: any = teamNameKey;
     if (!wasRegistered) { //New Vehicle
         messageKey = mod.stringkeys.twl.messages.vehicleRegisteredNew;
         arg0 = teamNameKey;
-        arg1 = eventPlayer;
+        arg1 = safePlayerName;
     } else if (isReturnToSameOwner) { //Old Vehicle Same Player
         messageKey = (registeredTeam !== 0 && registeredTeam !== teamNum)
             ? STR_VEHICLE_STOLEN_REGISTER
             : mod.stringkeys.twl.messages.vehicleReturned;
-        arg0 = eventPlayer;
+        arg0 = safePlayerName;
         arg1 = teamNameKey;
     } else if (shouldTransferOwnership) { //Old Vehicle Different Player
         messageKey = (registeredTeam !== 0 && registeredTeam !== teamNum)
             ? STR_VEHICLE_STOLEN_REGISTER
             : mod.stringkeys.twl.messages.vehicleReRegistered;
         arg0 = teamNameKey;
-        arg1 = eventPlayer;
+        arg1 = safePlayerName;
     }
 
     sendHighlightedWorldLogMessage(
@@ -648,18 +642,7 @@ export async function OnVehicleSpawned(eventVehicle: mod.Vehicle): Promise<void>
     // Reset cached owner so enter events can establish a new owner.
     clearLastDriverByVehicleObjId(vehicleObjId); 
 
-    // Spawn-time registration is authoritative only after a slot binds (before any player enters).
     registerVehicleToTeam(eventVehicle, inferredTeam);
-
-    const teamNameKey = getTeamNameKey(inferredTeam);
-    const x = Math.floor(mod.XComponentOf(pos));
-    const z = Math.floor(mod.ZComponentOf(pos));
-    sendHighlightedWorldLogMessage(
-        mod.Message(mod.stringkeys.twl.messages.vehicleSpawned, teamNameKey, x, z),
-        true,
-        undefined,
-        mod.stringkeys.twl.messages.vehicleSpawned
-    );
 }
 
 // OnVehicleDestroyed:
@@ -749,6 +732,17 @@ export async function OnVehicleDestroyed(eventVehicle: mod.Vehicle) {
         mod.SetVariable(regVehiclesTeam2, arrayRemoveVehicle(mod.GetVariable(regVehiclesTeam2), eventVehicle));
 
         const owner = popLastDriver(eventVehicle);
+
+        // Conquest CQ_Bug_37/38 cache-guard pattern: proactively flip isAliveByPid to false
+        // for the vehicle's last driver (likely victim) so per-tick callsites skip
+        // safeGetSoldierState* calls before OnPlayerUndeploy fires. Closes the race window
+        // for the most common Helis death scenario (vehicle destroyed -> driver dies).
+        if (owner && mod.IsPlayerValid(owner)) {
+            const ownerPid = safeGetPlayerId(owner);
+            if (ownerPid !== undefined) {
+                State.players.isAliveByPid[ownerPid] = false;
+            }
+        }
 
         // Legacy delay removed; send kill message immediately to avoid deferred crash window.
         // await mod.Wait(3.0);

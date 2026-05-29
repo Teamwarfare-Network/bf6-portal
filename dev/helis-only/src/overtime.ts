@@ -751,6 +751,13 @@ function syncOvertimePlayerVehicleState(player: mod.Player, entry: OvertimeFlagP
     if (!player || !mod.IsPlayerValid(player)) return;
     // Keep vehicle membership accurate for in-zone players who enter/exit vehicles.
     // Callers only invoke this for players currently tracked as in-zone.
+    if (!isPlayerAlive(player)) {
+        if (entry.vehicleObjId) {
+            removeOvertimeVehicleOccupant(entry.vehicleObjId);
+            entry.vehicleObjId = 0;
+        }
+        return;
+    }
     const inVehicle = safeGetSoldierStateBool(player, mod.SoldierStateBool.IsInVehicle);
     if (!inVehicle) {
         if (entry.vehicleObjId) {

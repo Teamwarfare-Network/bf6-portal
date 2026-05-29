@@ -42,7 +42,7 @@ function setTrendingWinnerCrownForAllPlayers(): void {
 
 function setAdminPanelActionCountText(widget: mod.UIWidget | undefined, value: number): void {
     if (!widget) return;
-    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.adminPanel.actionCountFormat, Math.floor(value)));
+    safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.adminPanel.actionCountFormat, Math.floor(value)));
 }
 
 //#endregion ----------------- HUD Counter Helpers --------------------
@@ -55,7 +55,7 @@ function setRoundStateText(widget: mod.UIWidget | undefined): void {
     if (!widget) return;
 
     if (State.round.phase === RoundPhase.GameOver) {
-        mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.roundStateGameOver));
+        safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.roundStateGameOver));
         mod.SetUITextColor(widget, COLOR_WARNING_YELLOW);
         return;
     }
@@ -63,7 +63,7 @@ function setRoundStateText(widget: mod.UIWidget | undefined): void {
     const isLive = isRoundLive();
     const stateKey = isLive ? mod.stringkeys.twl.hud.roundStateLive : mod.stringkeys.twl.hud.roundStateNotReady;
 
-    mod.SetUITextLabel(
+    safeSetUITextLabel(
         widget,
         mod.Message(mod.stringkeys.twl.hud.roundStateFormat, mod.stringkeys.twl.hud.roundText, Math.floor(State.round.current), stateKey)
     );
@@ -85,7 +85,7 @@ function setRoundLiveHelpText(
 
     const label = mod.Message(mod.stringkeys.twl.hud.roundLiveHelpFormat, Math.floor(State.round.killsTarget));
     if (text) {
-        mod.SetUITextLabel(text, label);
+        safeSetUITextLabel(text, label);
         mod.SetUITextColor(text, mod.CreateVector(1, 1, 1));
     }
 }
@@ -99,8 +99,8 @@ function getRoundKillsLabelRound(): number {
 function setRoundKillsLabelTextForRefs(refs: HudRefs | undefined): void {
     if (!refs) return;
     const label = mod.Message(mod.stringkeys.twl.hud.labels.roundKillsWithRoundFormat, getRoundKillsLabelRound());
-    if (refs.leftRoundKillsLabel) mod.SetUITextLabel(refs.leftRoundKillsLabel, label);
-    if (refs.rightRoundKillsLabel) mod.SetUITextLabel(refs.rightRoundKillsLabel, label);
+    if (refs.leftRoundKillsLabel) safeSetUITextLabel(refs.leftRoundKillsLabel, label);
+    if (refs.rightRoundKillsLabel) safeSetUITextLabel(refs.rightRoundKillsLabel, label);
 }
 
 function getClockTimeParts(remainingSeconds: number): { minutes: number; secTens: number; secOnes: number } {
@@ -127,10 +127,58 @@ function safeSetUIWidgetVisible(widget: mod.UIWidget | undefined, visible: boole
     }
 }
 
-function safeSetUITextLabel(widget: mod.UIWidget | undefined, label: mod.Message): void {
-    if (!widget) return;
+// Probes whether a widget handle is still live and is a text widget.
+// Calls mod.GetUITextSize defensively; if the engine rejects (stale handle or
+// wrong widget type), returns false. Used by resolveLiveUITextWidget to filter
+// stale handles after dialog/HUD rebuild paths.
+function isUITextWidget(widget: mod.UIWidget | undefined): widget is mod.UIWidget {
+    if (!widget) return false;
     try {
-        mod.SetUITextLabel(widget, label);
+        mod.GetUITextSize(widget);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+// Re-resolves cached UI handles by name so reopen/rebuild paths do not keep
+// writing through stale widget references after dialog/HUD lifecycle changes.
+// Conquest port (hud/status.ts:144) CQ_Bug_18.
+function resolveLiveUITextWidget(widget: mod.UIWidget | undefined): mod.UIWidget | undefined {
+    if (isUITextWidget(widget)) return widget;
+    if (!widget) return undefined;
+    try {
+        const widgetName = mod.GetUIWidgetName(widget);
+        if (!widgetName) return undefined;
+        const liveWidget = safeFind(widgetName);
+        return isUITextWidget(liveWidget) ? liveWidget : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+// Safe text-label write helper used by HUD render paths.
+// Some callers build labels through helper chains that can transiently return
+// undefined/null during UI lifecycle transitions, so normalize or skip before
+// reaching the engine overload boundary. Conquest port (hud/status.ts:161)
+// CQ_Bug_18 v0.764 -- closes "Received undefined values as arguments" engine
+// error class on UI text writes.
+function safeSetUITextLabel(widget: mod.UIWidget | undefined, label: mod.Message | number | undefined | null): void {
+    const liveWidget = resolveLiveUITextWidget(widget);
+    if (!liveWidget) return;
+    if (label === undefined || label === null) return;
+    let resolvedLabel: mod.Message;
+    if (typeof label === "number") {
+        try {
+            resolvedLabel = mod.Message(label);
+        } catch {
+            return;
+        }
+    } else {
+        resolvedLabel = label;
+    }
+    try {
+        mod.SetUITextLabel(liveWidget, resolvedLabel);
     } catch {
         return;
     }
@@ -438,11 +486,11 @@ function updatePlayersReadyHudTextForAllPlayers(): void {
         if (isRoundLive()) {
             const preset = MATCHUP_PRESETS[State.round.matchupPresetIndex];
             label = mod.Message(mod.stringkeys.twl.readyDialog.matchupFormat, preset.leftPlayers, preset.rightPlayers);
-            mod.SetUITextLabel(cache.playersReadyText, label);
+            safeSetUITextLabel(cache.playersReadyText, label);
             mod.SetUITextColor(cache.playersReadyText, COLOR_NORMAL);
         } else {
             label = mod.Message(mod.stringkeys.twl.hud.playersReadyFormat, readyCount, total);
-            mod.SetUITextLabel(cache.playersReadyText, label);
+            safeSetUITextLabel(cache.playersReadyText, label);
             mod.SetUITextColor(cache.playersReadyText, COLOR_WARNING_YELLOW);
         }
     }
@@ -883,7 +931,7 @@ function updateHelpTextVisibilityForPid(pid: number): void {
         const helpLabel = autoReadyHelpActive
             ? mod.Message(STR_HUD_AUTO_READY_HELP_TEXT)
             : mod.Message(mod.stringkeys.twl.hud.helpText);
-        mod.SetUITextLabel(helpText, helpLabel);
+        safeSetUITextLabel(helpText, helpLabel);
     }
 
     const readyContainer = refs.readyStatusContainer ?? safeFind(`Container_ReadyStatus_${pid}`);
@@ -894,7 +942,13 @@ function updateHelpTextVisibilityForPid(pid: number): void {
     const readyText = safeFind(`ReadyStatusText_${pid}`);
     if (readyText) {
         const viewer = safeFindPlayer(pid);
-        const inVehicle = (viewer && isDeployed)
+        // Skip IsInVehicle read during the deploy-settle window to avoid the engine error
+        // log (Conquest #94 pattern). Defaults to "not in vehicle" -- correct for a
+        // just-deployed on-foot player; the auto-ready text branch requires in-vehicle anyway.
+        const deployedAt = State.players.deployedAtSecondsByPid[pid];
+        const isSettled = deployedAt === undefined
+            || (mod.GetMatchTimeElapsed() - deployedAt) >= DEPLOY_SETTLE_GRACE_SECONDS;
+        const inVehicle = (viewer && isDeployed && isSettled && isPlayerAlive(viewer))
             ? safeGetSoldierStateBool(viewer, mod.SoldierStateBool.IsInVehicle)
             : false;
         const autoReadyActive = !!State.players.autoReadyByPid[pid]
@@ -904,7 +958,7 @@ function updateHelpTextVisibilityForPid(pid: number): void {
         const readyLabel = autoReadyActive
             ? mod.Message(STR_HUD_AUTO_READY_TEXT)
             : mod.Message(mod.stringkeys.twl.hud.readyText);
-        mod.SetUITextLabel(readyText, readyLabel);
+        safeSetUITextLabel(readyText, readyLabel);
     }
 }
 
@@ -2843,7 +2897,7 @@ function handleAdminPanelAction(eventPlayer: mod.Player, actionKey: number): voi
     State.admin.actionCount = Math.max(0, Math.floor(State.admin.actionCount) + 1);
     updateAdminPanelActionCountForAllPlayers();
     sendHighlightedWorldLogMessage(
-        mod.Message(mod.stringkeys.twl.adminPanel.actionPressed, eventPlayer, actionKey),
+        mod.Message(mod.stringkeys.twl.adminPanel.actionPressed, safePlayerArg(eventPlayer), actionKey),
         true,
         undefined,
         mod.stringkeys.twl.adminPanel.actionPressed

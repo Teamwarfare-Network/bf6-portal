@@ -214,6 +214,8 @@ async function scheduleRoundEndCleanup(expectedToken: number): Promise<void> {
     await mod.Wait(3);
 
     // Per-player undeploy to avoid global redeploy side effects.
+    // safeUndeployPlayer no-ops on already-undeployed players (precheck) and try/catches engine throws;
+    // the deployedByPid + UIInputMode resets run unconditionally for state hygiene during cleanup.
     const undeployedPlayers = mod.AllPlayers();
     const undeployCount = mod.CountOf(undeployedPlayers);
     for (let i = 0; i < undeployCount; i++) {
@@ -221,11 +223,7 @@ async function scheduleRoundEndCleanup(expectedToken: number): Promise<void> {
         if (!player || !mod.IsPlayerValid(player)) continue;
         const pid = safeGetPlayerId(player);
         if (pid === undefined || isPidDisconnected(pid)) continue;
-        try {
-            mod.UndeployPlayer(player);
-        } catch {
-            continue;
-        }
+        safeUndeployPlayer(player);
         State.players.deployedByPid[pid] = false;
         try {
             setUIInputModeForPlayer(player, false);

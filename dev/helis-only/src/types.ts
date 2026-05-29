@@ -22,6 +22,11 @@ const ROUND_START_SECONDS = 3 * 60; // Round clock starting time.
 const MATCH_END_DELAY_SECONDS = 45; // Victory dialog duration before match end.
 const ROUND_END_REDEPLOY_DELAY_SECONDS = 10; // Redeploy delay between rounds.
 const ROUND_END_CLEANUP_SPAWN_TIMEOUT_SECONDS = 60; // Max wait for cleanup spawns before forcing deploy.
+// Engine deploy state is not immediately queryable after OnPlayerDeployed fires.
+// safeGetSoldierState* calls during this grace window log "player not deployed"
+// engine errors that allocate heap (Conquest #94 / #109 mechanism). 1.5s matches
+// Conquest's GCZ_DEPLOY_GRACE_SECONDS precedent (boundary/enforcement.ts:13).
+const DEPLOY_SETTLE_GRACE_SECONDS = 1.5;
 const ROUND_END_POST_DEPLOY_HOLD_SECONDS = 10; // Keep round-end dialog visible after deploy.
 const READY_UP_MESSAGE_COOLDOWN_SECONDS = 2.0; // Throttle ready-up broadcast spam per player.
 const AUTO_READY_CHECK_INTERVAL_SECONDS = 3; // Auto-ready polling cadence (seconds).

@@ -21,8 +21,9 @@ Helis-only and [Conquest](../conquest/) share a common ancestor — Conquest gre
 - **REFERENCE** these for documentation and design. Consult them for design decisions and consistency:
   - [`bf6-portal\dev\helis-only\design_doc\heli_features.md`](./design_doc/heli_features.md) — file map + function inventory + perf ranking.
   - [`bf6-portal\dev\helis-only\design_doc\heli_v_conquest_comp.md`](./design_doc/heli_v_conquest_comp.md) — comparison with Conquest, with porting recommendations.
-- **REFERENCE** for issues. Log new issues here and update/resolve with details on how they were fixed:
-  - [`bf6-portal\dev\helis-only\design_doc\heli_issues_design.md`](./design_doc/heli_issues_design.md) — known risks + Conquest ports + risk areas.
+- **REFERENCE** for issues. Two complementary docs:
+  - [`bf6-portal\dev\helis-only\design_doc\heli_issues.md`](./design_doc/heli_issues.md) — **Conquest-style active bug tracker** (`H_Bug_N` entries). Bugs that have been observed, hypothesized, attempted-to-fix, with status tracked. **Read this first when picking up a debug session** — it lists ruled-out hypotheses so you don't re-try them. Currently open: `H_Bug_1` (2 engine errors on MP join, source unknown after 4 fix attempts).
+  - [`bf6-portal\dev\helis-only\design_doc\heli_issues_design.md`](./design_doc/heli_issues_design.md) — static-analysis risk inventory + Conquest-port catalogue + developer punchlist.
 - **REFERENCE** for prioritization:
   - [`bf6-portal\dev\helis-only\design_doc\heli_improvement_plan.md`](./design_doc/heli_improvement_plan.md) — effort × value matrix; plan items.
 - **REFERENCE** Conquest's project docs when Conquest has fixed something we still need to fix:

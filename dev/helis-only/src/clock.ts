@@ -90,6 +90,11 @@ function getRegisteredVehicleCount(teamNum: TeamID): number {
     const arr = teamNum === TeamID.Team1
         ? mod.GetVariable(regVehiclesTeam1)
         : mod.GetVariable(regVehiclesTeam2);
+    // CQ_Bug_42 port (v1.073): mod.GetVariable can return a non-array during transient
+    // registry state, and mod.CountOf(undefined) fires "Received undefined values" engine
+    // errors. Called twice per main-loop tick (Team1 + Team2) inside the live-round gate;
+    // matches the user-observed "exactly 2 errors on join" pattern when joining mid-round.
+    if (!arr) return 0;
     return Math.max(0, Math.floor(mod.CountOf(arr)));
 }
 
@@ -161,7 +166,7 @@ const seconds = remaining % 60;
         if (refs?.leftVehiclesAliveText) {
             mod.SetUIWidgetVisible(refs.leftVehiclesAliveText, showVehiclesAlive);
             if (showVehiclesAlive) {
-                mod.SetUITextLabel(
+                safeSetUITextLabel(
                     refs.leftVehiclesAliveText,
                     mod.Message(mod.stringkeys.twl.hud.vehiclesAliveFormat, vehiclesAliveT1)
                 );
@@ -170,7 +175,7 @@ const seconds = remaining % 60;
         if (refs?.rightVehiclesAliveText) {
             mod.SetUIWidgetVisible(refs.rightVehiclesAliveText, showVehiclesAlive);
             if (showVehiclesAlive) {
-                mod.SetUITextLabel(
+                safeSetUITextLabel(
                     refs.rightVehiclesAliveText,
                     mod.Message(mod.stringkeys.twl.hud.vehiclesAliveFormat, vehiclesAliveT2)
                 );
@@ -403,11 +408,11 @@ function buildColon(pid: number, x: number, width: number) {
 }
 
 function setDigitCached(widget: mod.UIWidget, digit: number): void {
-    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.clock.digit, digit));
+    safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.clock.digit, digit));
 }
 
 function setColonCached(widget: mod.UIWidget): void {
-    mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.clock.colon));
+    safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.hud.clock.colon));
 }
 
 function setClockColorCached(cacheEntry: ClockWidgetCacheEntry, color: any): void {

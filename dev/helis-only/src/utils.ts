@@ -11,6 +11,7 @@ class InteractMultiClickDetector {
 
     public static checkMultiClick(player: mod.Player): boolean {
         const playerId = mod.GetObjId(player);
+        if (!isPlayerAlive(player)) return false;
         const isInteracting = safeGetSoldierStateBool(player, mod.SoldierStateBool.IsInteracting);
 
         let state = this.STATES[playerId];

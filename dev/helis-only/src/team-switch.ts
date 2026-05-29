@@ -41,6 +41,15 @@ async function spawnTeamSwitchInteractPoint(eventPlayer: mod.Player) {
     const playerId = mod.GetObjId(eventPlayer);
     if (!State.players.teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
 
+    const deployedAt = State.players.deployedAtSecondsByPid[playerId];
+    if (deployedAt !== undefined) {
+        const remaining = DEPLOY_SETTLE_GRACE_SECONDS - (mod.GetMatchTimeElapsed() - deployedAt);
+        if (remaining > 0) {
+            await mod.Wait(remaining);
+            if (!isPlayerDeployed(eventPlayer)) return;
+        }
+    }
+
     if (
         State.players.teamSwitchData[playerId].interactPoint === null &&
         !State.players.teamSwitchData[playerId].dontShowAgain &&
@@ -49,7 +58,6 @@ async function spawnTeamSwitchInteractPoint(eventPlayer: mod.Player) {
         let isOnGround = safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsOnGround);
 
         while (!isOnGround) {
-            await mod.Wait(0.2);
             if (!isPlayerDeployed(eventPlayer)) return;
             isOnGround = safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsOnGround);
         }
@@ -122,6 +130,7 @@ function removeTeamSwitchInteractPoint(eventPlayer: mod.Player | number) {
 
 function isVelocityBeyond(threshold: number, eventPlayer: mod.Player): boolean {
     if (!isPlayerDeployed(eventPlayer)) return false;
+    if (!isPlayerAlive(eventPlayer)) return false;
     const v = safeGetSoldierStateVector(eventPlayer, mod.SoldierStateVector.GetLinearVelocity);
     if (!v) return false;
     const x = mod.AbsoluteValue(mod.XComponentOf(v));
@@ -132,6 +141,7 @@ function isVelocityBeyond(threshold: number, eventPlayer: mod.Player): boolean {
 
 function checkTeamSwitchInteractPointRemoval(eventPlayer: mod.Player) {
     if (!isPlayerDeployed(eventPlayer)) return;
+    if (!isPlayerAlive(eventPlayer)) return;
     const isDead = safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsDead);
     if (TEAMSWITCHCONFIG.enableTeamSwitch && !isDead) {
         const playerId = mod.GetObjId(eventPlayer);
@@ -178,14 +188,14 @@ function initTeamSwitchData(eventPlayer: mod.Player) {
 
 // Performs an undeploy with a short delay to ensure the engine has applied a prior SetTeam() before changing deploy state.
 // This intentionally does NOT re-deploy the player; the player is expected to choose a spawn point manually.
+// safeUndeployPlayer handles null/IsPlayerValid/isPlayerDeployed checks + try/catch internally;
+// the second call cheaply no-ops on the common success path where the first call already undeployed the player.
 async function forceUndeployPlayer(eventPlayer: mod.Player): Promise<void> {
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
     // Undeploy immediately so the player is forced to the deploy screen right away.
     // Then retry once with a short delay for robustness across transient engine timing.
-    mod.UndeployPlayer(eventPlayer);
+    safeUndeployPlayer(eventPlayer);
     await mod.Wait(0.05);
-    if (!eventPlayer || !mod.IsPlayerValid(eventPlayer)) return;
-    mod.UndeployPlayer(eventPlayer);
+    safeUndeployPlayer(eventPlayer);
 }
 
 function processTeamSwitch(eventPlayer: mod.Player) {
@@ -388,7 +398,7 @@ function teamSwitchButtonEvent(
                     State.players.readyMessageCooldownByPid[pid] = nowSeconds;
                     const counts = getReadyCountsForMessage();
                     sendHighlightedWorldLogMessage(
-                        mod.Message(STR_PLAYER_READIED_UP, eventPlayer, counts.readyCount, counts.totalCount),
+                        mod.Message(STR_PLAYER_READIED_UP, safePlayerArg(eventPlayer), counts.readyCount, counts.totalCount),
                         true,
                         undefined,
                         STR_PLAYER_READIED_UP
@@ -456,7 +466,7 @@ function teamSwitchButtonEvent(
             if (State.round.max !== prevMax) {
                 // Gameplay-gated world log message for best-of changes.
                 sendHighlightedWorldLogMessage(
-                    mod.Message(mod.stringkeys.twl.readyDialog.bestOfChanged, eventPlayer, Math.floor(State.round.max)),
+                    mod.Message(mod.stringkeys.twl.readyDialog.bestOfChanged, safePlayerArg(eventPlayer), Math.floor(State.round.max)),
                     true,
                     undefined,
                     mod.stringkeys.twl.readyDialog.bestOfChanged
@@ -471,7 +481,7 @@ function teamSwitchButtonEvent(
             if (State.round.max !== prevMax) {
                 // Gameplay-gated world log message for best-of changes.
                 sendHighlightedWorldLogMessage(
-                    mod.Message(mod.stringkeys.twl.readyDialog.bestOfChanged, eventPlayer, Math.floor(State.round.max)),
+                    mod.Message(mod.stringkeys.twl.readyDialog.bestOfChanged, safePlayerArg(eventPlayer), Math.floor(State.round.max)),
                     true,
                     undefined,
                     mod.stringkeys.twl.readyDialog.bestOfChanged
@@ -585,7 +595,7 @@ function teamSwitchButtonEvent(
             }
 
             sendHighlightedWorldLogMessage(
-                mod.Message(mod.stringkeys.twl.adminPanel.accessed, eventPlayer),
+                mod.Message(mod.stringkeys.twl.adminPanel.accessed, safePlayerArg(eventPlayer)),
                 true,
                 undefined,
                 mod.stringkeys.twl.adminPanel.accessed

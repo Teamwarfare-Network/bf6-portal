@@ -199,6 +199,17 @@ function isPlayerDeployed(player: mod.Player): boolean {
     return !!State.players.deployedByPid[pid];
 }
 
+// Cache-based isAlive check. Flipped to true by OnPlayerDeployed; flipped to false by
+// OnPlayerUndeploy, OnVehicleDestroyed (proactive via popLastDriver), and safe-wrapper
+// catch blocks. Conquest port (CQ_Bug_37/38 cache-guard pattern from v1.074).
+// Used by per-tick callsites to skip safeGetSoldierState* calls when player is known dead.
+function isPlayerAlive(player: mod.Player | null | undefined): boolean {
+    if (!player) return false;
+    const pid = safeGetPlayerId(player);
+    if (pid === undefined) return false;
+    return State.players.isAliveByPid[pid] === true;
+}
+
 // Safe GetSoldierState wrappers: avoid engine errors during undeploy/cleanup and keep deploy state in sync.
 function safeGetSoldierStateBool(player: mod.Player, stateKey: any, fallback: boolean = false): boolean {
     if (!player || !mod.IsPlayerValid(player)) return fallback;
@@ -209,6 +220,7 @@ function safeGetSoldierStateBool(player: mod.Player, stateKey: any, fallback: bo
         const pid = safeGetPlayerId(player);
         if (pid !== undefined) {
             State.players.deployedByPid[pid] = false;
+            State.players.isAliveByPid[pid] = false;
         }
         return fallback;
     }
@@ -223,9 +235,47 @@ function safeGetSoldierStateVector(player: mod.Player, stateKey: any): mod.Vecto
         const pid = safeGetPlayerId(player);
         if (pid !== undefined) {
             State.players.deployedByPid[pid] = false;
+            State.players.isAliveByPid[pid] = false;
         }
         return undefined;
     }
+}
+
+// Safe wrapper around mod.UndeployPlayer.
+// - Skips the engine call entirely if the player is already undeployed
+//   (precheck eliminates the cosmetic engine error log per Conquest #36 / #39 pattern).
+// - try/catch protects against the engine throwing during transient deploy state.
+// - Returns true if the engine call was attempted; false if precheck skipped it.
+function safeUndeployPlayer(player: mod.Player | null | undefined): boolean {
+    if (!player || !isPlayerDeployed(player)) return false;
+    try {
+        mod.UndeployPlayer(player);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+// UI-safe player-name message wrapper.
+// - Returns mod.Message(player) when the Player ref is valid (engine renders the name).
+// - Returns the "Unknown" string-key fallback when the Player ref has gone stale.
+// - Prevents "Received undefined values as arguments" engine error logs when a stale
+//   Player ref is passed to mod.Message (Conquest #94 / #109 heap-pressure mechanism).
+function getUiSafePlayerMessage(player: mod.Player | null | undefined): mod.Message {
+    if (!player || !mod.IsPlayerValid(player)) return mod.Message(mod.stringkeys.twl.system.unknownPlayer);
+    return mod.Message(player);
+}
+
+// Safe format-arg wrapper for mod.Player passed to mod.Message as msgArg0/1/2.
+// - Returns the Player handle when valid (engine renders the player's name).
+// - Returns the "Unknown" string key fallback when the handle has gone stale.
+// - Prevents "Received undefined values as arguments" engine error logs when a stale
+//   Player ref is passed as a format arg (Conquest #94 / #109 heap-pressure mechanism).
+// Use this anywhere a Player is a FORMAT ARG (msgArg0/1/2). For wrapping a Player as
+// the entire message (msg slot), use getUiSafePlayerMessage instead.
+function safePlayerArg(player: mod.Player | null | undefined): mod.Player | number {
+    if (player && mod.IsPlayerValid(player)) return player;
+    return mod.stringkeys.twl.system.unknownPlayer;
 }
 
 function getTeamNameKey(teamNum: TeamID | 0): number {
@@ -952,6 +1002,15 @@ interface GameState {
         inMainBaseByPid: Record<number, boolean>;
         overTakeoffLimitByPid: Record<number, boolean>;
         deployedByPid: Record<number, boolean>;
+        // Timestamp (match-time-elapsed seconds) of the last OnPlayerDeployed for this pid.
+        // Used by post-deploy grace checks at hud.ts + team-switch.ts to avoid GetSoldierState
+        // engine errors during the race window between OnPlayerDeployed and engine state settling.
+        deployedAtSecondsByPid: Record<number, number>;
+        // Per-pid "is alive" cache flipped by OnPlayerDeployed (true), OnPlayerUndeploy (false),
+        // OnVehicleDestroyed proactive flip via popLastDriver (false), and safe-wrapper catch
+        // blocks (false on engine throw). Conquest port (CQ_Bug_37/38 cache-guard pattern).
+        // Used by per-tick callsites to skip safeGetSoldierState* calls when player is known dead.
+        isAliveByPid: Record<number, boolean>;
         disconnectedByPid: Record<number, boolean>;
         uiInputEnabledByPid: Record<number, boolean>;
         spawnDisabledWarningVisibleByPid: Record<number, boolean>;
@@ -1160,6 +1219,8 @@ const State: GameState = {
         inMainBaseByPid: {},
         overTakeoffLimitByPid: {},
         deployedByPid: {},
+        deployedAtSecondsByPid: {},
+        isAliveByPid: {},
         disconnectedByPid: {},
         uiInputEnabledByPid: {},
         spawnDisabledWarningVisibleByPid: {},

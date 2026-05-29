@@ -4,11 +4,17 @@
 //#region -------------------- Portal Array Helpers (engine arrays) --------------------
 
 function arrayContainsVehicle(arr: any, vehicle: mod.Vehicle): boolean {
+    // CQ_Bug_42 port (v1.073): mod.GetVariable(regVehiclesTeam1/2) can return a non-array
+    // during transient registry state at game start, firing "Received undefined values"
+    // engine errors inside modlib.IsTrueForAny -> mod.CountOf. Guard at the helper level.
+    if (!arr) return false;
     return modlib.IsTrueForAny(arr, (el: any) => mod.Equals(el, vehicle));
 }
 
 function arrayRemoveVehicle(arr: any, vehicle: mod.Vehicle): any {
-    // FilteredArray must remain stable across engine updates; registry correctness depends on it.
+    // CQ_Bug_42 port (v1.073): see arrayContainsVehicle. Conservative fallback returns
+    // an empty array so the caller's SetVariable still receives a valid value.
+    if (!arr) return mod.EmptyArray();
     return modlib.FilteredArray(arr, (el: any) => mod.NotEqualTo(el, vehicle));
 }
 
@@ -104,11 +110,15 @@ function registerVehicleToTeam(vehicle: mod.Vehicle, teamNum: TeamID): void {
     mod.SetVariable(regVehiclesTeam1, arrayRemoveVehicle(mod.GetVariable(regVehiclesTeam1), vehicle));
     mod.SetVariable(regVehiclesTeam2, arrayRemoveVehicle(mod.GetVariable(regVehiclesTeam2), vehicle));
 
-    // Append the vehicle to the chosen team's registry array.
+    // Append the vehicle to the chosen team's registry array. mod.AppendToArray(undefined, x)
+    // can fire "Received undefined values" engine errors during transient registry state
+    // (CQ_Bug_42 family). Coerce to empty array before append.
     if (teamNum === TeamID.Team1) {
-        mod.SetVariable(regVehiclesTeam1, mod.AppendToArray(mod.GetVariable(regVehiclesTeam1), vehicle));
+        const cur = mod.GetVariable(regVehiclesTeam1) ?? mod.EmptyArray();
+        mod.SetVariable(regVehiclesTeam1, mod.AppendToArray(cur, vehicle));
     } else if (teamNum === TeamID.Team2) {
-        mod.SetVariable(regVehiclesTeam2, mod.AppendToArray(mod.GetVariable(regVehiclesTeam2), vehicle));
+        const cur = mod.GetVariable(regVehiclesTeam2) ?? mod.EmptyArray();
+        mod.SetVariable(regVehiclesTeam2, mod.AppendToArray(cur, vehicle));
     }
 }
 

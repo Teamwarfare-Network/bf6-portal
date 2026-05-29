@@ -1788,7 +1788,7 @@ function syncRoundKillsTargetTesterValueForAllPlayers(): void {
         const pid = getObjId(p);
         const widget = mod.FindUIWidgetWithName(UI_TEST_VALUE_ROUND_KILLS_TARGET_ID + pid, mod.GetUIRoot());
         if (!widget) continue;
-        mod.SetUITextLabel(widget, mod.Message(mod.stringkeys.twl.system.genericCounter, Math.floor(State.round.killsTarget)));
+        safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.system.genericCounter, Math.floor(State.round.killsTarget)));
     }
     updateMatchupReadoutsForAllPlayers();
 }
@@ -1952,10 +1952,10 @@ async function positionDebugLoop(player: mod.Player, expectedToken: number): Pro
         const yawRad = Math.atan2(mod.XComponentOf(facing), mod.ZComponentOf(facing));
         const yawDeg = (yawRad * 180) / Math.PI;
 
-        mod.SetUITextLabel(widgets.x, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.XComponentOf(pos))));
-        mod.SetUITextLabel(widgets.y, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.YComponentOf(pos))));
-        mod.SetUITextLabel(widgets.z, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.ZComponentOf(pos))));
-        mod.SetUITextLabel(widgets.rotY, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(yawDeg)));
+        safeSetUITextLabel(widgets.x, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.XComponentOf(pos))));
+        safeSetUITextLabel(widgets.y, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.YComponentOf(pos))));
+        safeSetUITextLabel(widgets.z, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(mod.ZComponentOf(pos))));
+        safeSetUITextLabel(widgets.rotY, mod.Message(mod.stringkeys.twl.system.genericCounter, roundTo3(yawDeg)));
 
         await mod.Wait(2.0);
     }
@@ -2076,8 +2076,8 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
         if (t2Ready) mod.SetUIWidgetVisible(t2Ready, hasP2);
         if (t2Base) mod.SetUIWidgetVisible(t2Base, hasP2);
 
-        mod.SetUITextLabel(t1Name, hasP1 ? getRosterEntryNameMessage(t1Entry) : emptyMsg);
-        mod.SetUITextLabel(
+        safeSetUITextLabel(t1Name, hasP1 ? getRosterEntryNameMessage(t1Entry) : emptyMsg);
+        safeSetUITextLabel(
             t1Ready,
             hasP1
                 ? (p1
@@ -2085,7 +2085,7 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
                     : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
                 : emptyMsg
         );
-        mod.SetUITextLabel(
+        safeSetUITextLabel(
             t1Base,
             hasP1
                 ? (p1
@@ -2107,8 +2107,8 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
             if (t1Base) mod.SetUITextColor(t1Base, COLOR_NORMAL);
         }
 
-        mod.SetUITextLabel(t2Name, hasP2 ? getRosterEntryNameMessage(t2Entry) : emptyMsg);
-        mod.SetUITextLabel(
+        safeSetUITextLabel(t2Name, hasP2 ? getRosterEntryNameMessage(t2Entry) : emptyMsg);
+        safeSetUITextLabel(
             t2Ready,
             hasP2
                 ? (p2
@@ -2116,7 +2116,7 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
                     : mod.Message(mod.stringkeys.twl.readyDialog.status.notReady))
                 : emptyMsg
         );
-        mod.SetUITextLabel(
+        safeSetUITextLabel(
             t2Base,
             hasP2
                 ? (p2
@@ -2150,7 +2150,7 @@ function updateReadyToggleButtonForViewer(viewer: mod.Player, viewerPlayerId: nu
         ? mod.Message(mod.stringkeys.twl.readyDialog.buttons.notReady)
         : mod.Message(mod.stringkeys.twl.readyDialog.buttons.ready);
 
-    mod.SetUITextLabel(labelWidget, labelMsg);
+    safeSetUITextLabel(labelWidget, labelMsg);
 }
 
 // Updates the Auto-Ready toggle button label for the given viewer based on that viewer's current auto-ready state.
@@ -2164,7 +2164,7 @@ function updateAutoReadyToggleButtonForViewer(viewer: mod.Player, viewerPlayerId
         ? mod.Message(mod.stringkeys.twl.readyDialog.buttons.autoReadyDisable)
         : mod.Message(mod.stringkeys.twl.readyDialog.buttons.autoReadyEnable);
 
-    mod.SetUITextLabel(labelWidget, labelMsg);
+    safeSetUITextLabel(labelWidget, labelMsg);
 }
 
 //#endregion ----------------- Ready Dialog - Roster Render + Toggle Labels --------------------
@@ -2178,7 +2178,7 @@ function updateBestOfRoundsLabelForPid(pid: number): void {
     const labelId = UI_READY_DIALOG_BESTOF_LABEL_ID + pid;
     const labelWidget = safeFind(labelId);
     if (!labelWidget) return;
-    mod.SetUITextLabel(labelWidget, mod.Message(mod.stringkeys.twl.readyDialog.bestOfLabel, Math.floor(State.round.max)));
+    safeSetUITextLabel(labelWidget, mod.Message(mod.stringkeys.twl.readyDialog.bestOfLabel, Math.floor(State.round.max)));
 }
 
 function updateBestOfRoundsLabelForAllPlayers(): void {
@@ -2195,7 +2195,7 @@ function updateReadyDialogMapLabelForPid(pid: number): void {
     const valueId = UI_READY_DIALOG_MAP_VALUE_ID + pid;
     const valueWidget = safeFind(valueId);
     if (!valueWidget) return;
-    mod.SetUITextLabel(valueWidget, mod.Message(getMapNameKey(ACTIVE_MAP_KEY)));
+    safeSetUITextLabel(valueWidget, mod.Message(getMapNameKey(ACTIVE_MAP_KEY)));
 }
 
 function updateReadyDialogMapLabelForAllPlayers(): void {
@@ -2212,19 +2212,19 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
     const cfg = State.round.modeConfig;
 
     const gameLabel = safeFind(UI_READY_DIALOG_MODE_GAME_LABEL_ID + pid);
-    if (gameLabel) mod.SetUITextLabel(gameLabel, mod.Message(mod.stringkeys.twl.readyDialog.gameModeLabel));
+    if (gameLabel) safeSetUITextLabel(gameLabel, mod.Message(mod.stringkeys.twl.readyDialog.gameModeLabel));
     const gameValue = safeFind(UI_READY_DIALOG_MODE_GAME_VALUE_ID + pid);
-    if (gameValue) mod.SetUITextLabel(gameValue, mod.Message(cfg.gameMode));
+    if (gameValue) safeSetUITextLabel(gameValue, mod.Message(cfg.gameMode));
 
     const settingsLabel = safeFind(UI_READY_DIALOG_MODE_SETTINGS_LABEL_ID + pid);
-    if (settingsLabel) mod.SetUITextLabel(settingsLabel, mod.Message(mod.stringkeys.twl.readyDialog.modeSettingsLabel));
+    if (settingsLabel) safeSetUITextLabel(settingsLabel, mod.Message(mod.stringkeys.twl.readyDialog.modeSettingsLabel));
     const settingsValue = safeFind(UI_READY_DIALOG_MODE_SETTINGS_VALUE_ID + pid);
     if (settingsValue) {
         const applyCustomCeiling = shouldApplyCustomCeilingForConfig(cfg.gameMode, cfg.aircraftCeilingOverridePending);
         const ceilingValue = applyCustomCeiling
             ? Math.floor(cfg.aircraftCeiling)
             : STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA;
-        mod.SetUITextLabel(
+        safeSetUITextLabel(
             settingsValue,
             mod.Message(cfg.gameSettings, ceilingValue)
         );
@@ -2232,23 +2232,23 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
 
     const vehiclesT1Label = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T1_LABEL_ID + pid);
     if (vehiclesT1Label) {
-        mod.SetUITextLabel(
+        safeSetUITextLabel(
             vehiclesT1Label,
             mod.Message(mod.stringkeys.twl.readyDialog.vehiclesLabelFormat, getTeamNameKey(TeamID.Team1))
         );
     }
     const vehiclesT1Value = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T1_VALUE_ID + pid);
-    if (vehiclesT1Value) mod.SetUITextLabel(vehiclesT1Value, mod.Message(cfg.vehiclesT1));
+    if (vehiclesT1Value) safeSetUITextLabel(vehiclesT1Value, mod.Message(cfg.vehiclesT1));
 
     const vehiclesT2Label = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T2_LABEL_ID + pid);
     if (vehiclesT2Label) {
-        mod.SetUITextLabel(
+        safeSetUITextLabel(
             vehiclesT2Label,
             mod.Message(mod.stringkeys.twl.readyDialog.vehiclesLabelFormat, getTeamNameKey(TeamID.Team2))
         );
     }
     const vehiclesT2Value = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T2_VALUE_ID + pid);
-    if (vehiclesT2Value) mod.SetUITextLabel(vehiclesT2Value, mod.Message(cfg.vehiclesT2));
+    if (vehiclesT2Value) safeSetUITextLabel(vehiclesT2Value, mod.Message(cfg.vehiclesT2));
 }
 
 function updateReadyDialogModeConfigForAllVisibleViewers(): void {
@@ -2694,13 +2694,13 @@ function updateTeamNameWidgetsForPid(pid: number): void {
 
     const hudT1 = safeFind(`TeamLeft_Name_${pid}`);
     const hudT2 = safeFind(`TeamRight_Name_${pid}`);
-    if (hudT1) mod.SetUITextLabel(hudT1, mod.Message(t1NameKey));
-    if (hudT2) mod.SetUITextLabel(hudT2, mod.Message(t2NameKey));
+    if (hudT1) safeSetUITextLabel(hudT1, mod.Message(t1NameKey));
+    if (hudT2) safeSetUITextLabel(hudT2, mod.Message(t2NameKey));
 
     const readyT1 = safeFind(UI_READY_DIALOG_TEAM1_LABEL_ID + pid);
     const readyT2 = safeFind(UI_READY_DIALOG_TEAM2_LABEL_ID + pid);
-    if (readyT1) mod.SetUITextLabel(readyT1, mod.Message(t1NameKey));
-    if (readyT2) mod.SetUITextLabel(readyT2, mod.Message(t2NameKey));
+    if (readyT1) safeSetUITextLabel(readyT1, mod.Message(t1NameKey));
+    if (readyT2) safeSetUITextLabel(readyT2, mod.Message(t2NameKey));
 
     updateReadyDialogModeConfigForPid(pid);
 }
@@ -2721,7 +2721,7 @@ function updateMatchupLabelForPid(pid: number): void {
     const labelWidget = safeFind(labelId);
     if (!labelWidget) return;
     const preset = MATCHUP_PRESETS[State.round.matchupPresetIndex];
-    mod.SetUITextLabel(
+    safeSetUITextLabel(
         labelWidget,
         mod.Message(mod.stringkeys.twl.readyDialog.matchupFormat, preset.leftPlayers, preset.rightPlayers)
     );
@@ -2755,19 +2755,19 @@ function updateMatchupReadoutsForPid(pid: number): void {
     const killsTargetWidget = safeFind(UI_READY_DIALOG_MATCHUP_KILLSTARGET_ID + pid);
     const counts = getAutoStartMinPlayerCounts();
     if (minPlayersWidget) {
-        mod.SetUITextLabel(
+        safeSetUITextLabel(
             minPlayersWidget,
             mod.Message(mod.stringkeys.twl.readyDialog.playersFormat, counts.left, counts.right)
         );
     }
     if (minPlayersTotalWidget) {
-        mod.SetUITextLabel(
+        safeSetUITextLabel(
             minPlayersTotalWidget,
             mod.Message(mod.stringkeys.twl.readyDialog.minPlayersToStartFormat, counts.total)
         );
     }
     if (killsTargetWidget) {
-        mod.SetUITextLabel(
+        safeSetUITextLabel(
             killsTargetWidget,
             mod.Message(mod.stringkeys.twl.readyDialog.targetKillsToWinFormat, Math.floor(State.round.killsTarget))
         );
@@ -2806,28 +2806,28 @@ function updateSettingsSummaryHudForPid(pid: number): void {
     const autoStartCounts = getAutoStartMinPlayerCounts();
 
     if (refs.settingsGameModeText) {
-        mod.SetUITextLabel(refs.settingsGameModeText, mod.Message(STR_HUD_SETTINGS_GAME_MODE_FORMAT, gameModeValue));
+        safeSetUITextLabel(refs.settingsGameModeText, mod.Message(STR_HUD_SETTINGS_GAME_MODE_FORMAT, gameModeValue));
     }
     if (refs.settingsAircraftCeilingText) {
-        mod.SetUITextLabel(refs.settingsAircraftCeilingText, mod.Message(STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT, ceilingValue));
+        safeSetUITextLabel(refs.settingsAircraftCeilingText, mod.Message(STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT, ceilingValue));
     }
     if (refs.settingsVehiclesT1Text) {
-        mod.SetUITextLabel(
+        safeSetUITextLabel(
             refs.settingsVehiclesT1Text,
             mod.Message(STR_HUD_SETTINGS_VEHICLES_TEAM_FORMAT, getTeamNameKey(TeamID.Team1), vehiclesT1Value)
         );
     }
     if (refs.settingsVehiclesT2Text) {
-        mod.SetUITextLabel(
+        safeSetUITextLabel(
             refs.settingsVehiclesT2Text,
             mod.Message(STR_HUD_SETTINGS_VEHICLES_TEAM_FORMAT, getTeamNameKey(TeamID.Team2), vehiclesT2Value)
         );
     }
     if (refs.settingsVehiclesMatchupText) {
-        mod.SetUITextLabel(refs.settingsVehiclesMatchupText, mod.Message(STR_HUD_SETTINGS_VEHICLES_MATCHUP_FORMAT, vehiclesLeft, vehiclesRight));
+        safeSetUITextLabel(refs.settingsVehiclesMatchupText, mod.Message(STR_HUD_SETTINGS_VEHICLES_MATCHUP_FORMAT, vehiclesLeft, vehiclesRight));
     }
     if (refs.settingsPlayersText) {
-        mod.SetUITextLabel(refs.settingsPlayersText, mod.Message(STR_HUD_SETTINGS_PLAYERS_FORMAT, autoStartCounts.left, autoStartCounts.right));
+        safeSetUITextLabel(refs.settingsPlayersText, mod.Message(STR_HUD_SETTINGS_PLAYERS_FORMAT, autoStartCounts.left, autoStartCounts.right));
     }
 }
 
@@ -2850,7 +2850,7 @@ function setAutoStartMinActivePlayers(value: number, eventPlayer?: mod.Player): 
     if (eventPlayer) {
         const counts = getAutoStartMinPlayerCounts();
         sendHighlightedWorldLogMessage(
-            mod.Message(STR_READY_DIALOG_PLAYERS_CHANGED, eventPlayer, counts.left, counts.right),
+            mod.Message(STR_READY_DIALOG_PLAYERS_CHANGED, safePlayerArg(eventPlayer), counts.left, counts.right),
             true,
             undefined,
             STR_READY_DIALOG_PLAYERS_CHANGED
@@ -2886,7 +2886,7 @@ function applyMatchupPresetInternal(
 
     if (announce && eventPlayer) {
         sendHighlightedWorldLogMessage(
-            mod.Message(STR_READY_DIALOG_MATCHUP_CHANGED, eventPlayer, preset.leftPlayers, preset.rightPlayers),
+            mod.Message(STR_READY_DIALOG_MATCHUP_CHANGED, safePlayerArg(eventPlayer), preset.leftPlayers, preset.rightPlayers),
             true,
             undefined,
             STR_READY_DIALOG_MATCHUP_CHANGED
@@ -3389,7 +3389,9 @@ async function showOverTakeoffMessageForAllPlayers(offender: mod.Player): Promis
         : mod.stringkeys.twl.system.unknownPlayer;
     await showGlobalTitleSubtitleMessageForAllPlayers(
         mod.Message(STR_OVERLINE_TAKEOFF_TITLE, offenderToken),
-        mod.Message(STR_OVERLINE_TAKEOFF_SUBTITLE, offenderToken),
+        // takeoffSubtitle has no {0} placeholder; drop the extra arg to silence
+        // engine "Received undefined values" warning on unused format slots.
+        mod.Message(STR_OVERLINE_TAKEOFF_SUBTITLE),
         COLOR_NOT_READY_RED,
         COLOR_WARNING_YELLOW
     );
@@ -3397,7 +3399,11 @@ async function showOverTakeoffMessageForAllPlayers(offender: mod.Player): Promis
 
 function checkTakeoffLimitForAllPlayers(): void {
     if (State.match.isEnded) return;
-    if (isRoundLive()) return;
+    // Skip during any phase other than pregame NotReady, and during round-end cleanup.
+    // Eliminates SoldierState reads on players whose deployedByPid cache is stale
+    // during the post-death undeploy race (Conquest #94 family).
+    if (State.round.phase !== RoundPhase.NotReady) return;
+    if (State.round.flow.cleanupActive) return;
 
     const floorY = Math.floor(State.round.aircraftCeiling.hudFloorY);
     const limitY = floorY + TAKEOFF_LIMIT_HUD_OFFSET;
@@ -3412,6 +3418,9 @@ function checkTakeoffLimitForAllPlayers(): void {
 
         if (!isPlayerDeployed(p)) {
             delete State.players.overTakeoffLimitByPid[pid];
+            continue;
+        }
+        if (!isPlayerAlive(p)) {
             continue;
         }
 
@@ -3458,7 +3467,7 @@ function applyAutoReadyForPid(player: mod.Player, pid: number): boolean {
     if (!State.players.autoReadyByPid[pid]) return false;
     if (State.match.isEnded || isRoundLive()) return false;
 
-    const inVehicle = isPlayerDeployed(player)
+    const inVehicle = (isPlayerDeployed(player) && isPlayerAlive(player))
         ? safeGetSoldierStateBool(player, mod.SoldierStateBool.IsInVehicle)
         : false;
     const inBase = isPlayerInMainBaseForReady(pid);
@@ -3472,7 +3481,7 @@ function applyAutoReadyForPid(player: mod.Player, pid: number): boolean {
 
     if (shouldBeReady) {
         sendHighlightedWorldLogMessage(
-            mod.Message(STR_PLAYER_AUTO_READIED_UP, player),
+            mod.Message(STR_PLAYER_AUTO_READIED_UP, safePlayerArg(player)),
             true,
             undefined,
             STR_PLAYER_AUTO_READIED_UP
@@ -3483,7 +3492,11 @@ function applyAutoReadyForPid(player: mod.Player, pid: number): boolean {
 
 // Applies auto-ready rules for all players who have auto-ready enabled.
 function applyAutoReadyForAllPlayers(): void {
-    if (State.match.isEnded || isRoundLive()) return;
+    if (State.match.isEnded) return;
+    // Match the pregame-only gate pattern: skip during GameOver and cleanupActive
+    // to avoid SoldierState reads on just-died players (Conquest #94 family).
+    if (State.round.phase !== RoundPhase.NotReady) return;
+    if (State.round.flow.cleanupActive) return;
 
     const nowSeconds = Math.floor(mod.GetMatchTimeElapsed());
     if (nowSeconds - lastAutoReadyCheckAtSeconds < AUTO_READY_CHECK_INTERVAL_SECONDS) return;
@@ -3612,7 +3625,10 @@ function getRosterDisplayEntries(): RosterDisplay_t {
 
 function getRosterEntryNameMessage(entry: RosterDisplayEntry | undefined): mod.Message {
     if (!entry) return mod.Message(mod.stringkeys.twl.system.genericCounter, "");
-    if (entry.player) return mod.Message(mod.stringkeys.twl.readyDialog.playerNameFormat, entry.player);
+    // Delegate to getUiSafePlayerMessage which guards against stale Player refs.
+    // Conquest port (roster-active.ts:100 + id-helpers.ts:152) for the "Received undefined
+    // values as arguments" engine error during roster rebuild races (Conquest #94 family).
+    if (entry.player) return getUiSafePlayerMessage(entry.player);
     if (entry.nameKey) return mod.Message(entry.nameKey);
     return mod.Message(mod.stringkeys.twl.system.genericCounter, "");
 }
@@ -3720,7 +3736,7 @@ function setPregameCountdownVisualForAllPlayers(
             const message = (labelValue !== undefined)
                 ? mod.Message(labelKey, labelValue)
                 : mod.Message(labelKey);
-            mod.SetUITextLabel(w, message);
+            safeSetUITextLabel(w, message);
             mod.SetUITextColor(w, color);
             mod.SetUITextSize(w, size);
         }
@@ -3784,7 +3800,7 @@ function ensureOverLineTitleShadowUIAndGetWidget(player: mod.Player): mod.UIWidg
         padding: 0,
         bgAlpha: 0,
         bgFill: mod.UIBgFill.None,
-        textLabel: mod.Message(mod.stringkeys.twl.overLine.title, player),
+        textLabel: mod.Message(mod.stringkeys.twl.overLine.title, safePlayerArg(player)),
         textColor: [0, 0, 0],
         textAlpha: PREGAME_ALERT_TEXT_ALPHA,
         textSize: BIG_TITLE_SIZE,
@@ -3823,7 +3839,8 @@ function ensureOverLineSubtitleShadowUIAndGetWidget(player: mod.Player): mod.UIW
         padding: 0,
         bgAlpha: 0,
         bgFill: mod.UIBgFill.None,
-        textLabel: mod.Message(mod.stringkeys.twl.overLine.subtitle, player),
+        // overLine.subtitle has no {0} placeholder; drop the extra arg.
+        textLabel: mod.Message(mod.stringkeys.twl.overLine.subtitle),
         textColor: [0, 0, 0],
         textAlpha: PREGAME_ALERT_TEXT_ALPHA,
         textSize: BIG_SUBTITLE_SIZE,
@@ -3863,7 +3880,7 @@ function ensureOverLineTitleUIAndGetWidget(player: mod.Player): mod.UIWidget | u
         bgColor: COLOR_GRAY_DARK,
         bgAlpha: 0,
         bgFill: mod.UIBgFill.Blur,
-        textLabel: mod.Message(mod.stringkeys.twl.overLine.title, player),
+        textLabel: mod.Message(mod.stringkeys.twl.overLine.title, safePlayerArg(player)),
         textColor: [1, 0, 0],
         textAlpha: PREGAME_ALERT_TEXT_ALPHA,
         textSize: BIG_TITLE_SIZE,
@@ -3903,7 +3920,8 @@ function ensureOverLineSubtitleUIAndGetWidget(player: mod.Player): mod.UIWidget 
         bgColor: COLOR_GRAY_DARK,
         bgAlpha: 0,
         bgFill: mod.UIBgFill.Blur,
-        textLabel: mod.Message(mod.stringkeys.twl.overLine.subtitle, player),
+        // overLine.subtitle has no {0} placeholder; drop the extra arg.
+        textLabel: mod.Message(mod.stringkeys.twl.overLine.subtitle),
         textColor: [1, 1, 0],
         textAlpha: PREGAME_ALERT_TEXT_ALPHA,
         textSize: BIG_SUBTITLE_SIZE,
@@ -3977,7 +3995,7 @@ function renderBigTitleSubtitleMessageForAllPlayers(
         const titleShadowWidget = ensureOverLineTitleShadowUIAndGetWidget(p);
         if (titleShadowWidget) {
             if (title !== undefined) {
-                mod.SetUITextLabel(titleShadowWidget, title);
+                safeSetUITextLabel(titleShadowWidget, title);
                 mod.SetUITextColor(titleShadowWidget, mod.CreateVector(0, 0, 0));
                 mod.SetUITextSize(titleShadowWidget, layout.titleSize);
                 mod.SetUIWidgetSize(titleShadowWidget, mod.CreateVector(BIG_TITLE_BG_WIDTH, titleBgHeight, 0));
@@ -3994,7 +4012,7 @@ function renderBigTitleSubtitleMessageForAllPlayers(
         const titleWidget = ensureOverLineTitleUIAndGetWidget(p);
         if (titleWidget) {
             if (title !== undefined) {
-                mod.SetUITextLabel(titleWidget, title);
+                safeSetUITextLabel(titleWidget, title);
                 mod.SetUITextColor(titleWidget, titleColor);
                 mod.SetUITextSize(titleWidget, layout.titleSize);
                 mod.SetUIWidgetSize(titleWidget, mod.CreateVector(BIG_TITLE_BG_WIDTH, titleBgHeight, 0));
@@ -4009,7 +4027,7 @@ function renderBigTitleSubtitleMessageForAllPlayers(
         const subtitleShadowWidget = ensureOverLineSubtitleShadowUIAndGetWidget(p);
         if (subtitleShadowWidget) {
             if (subtitle !== undefined) {
-                mod.SetUITextLabel(subtitleShadowWidget, subtitle);
+                safeSetUITextLabel(subtitleShadowWidget, subtitle);
                 mod.SetUITextColor(subtitleShadowWidget, mod.CreateVector(0, 0, 0));
                 mod.SetUITextSize(subtitleShadowWidget, layout.subtitleSize);
                 mod.SetUIWidgetPosition(
@@ -4025,7 +4043,7 @@ function renderBigTitleSubtitleMessageForAllPlayers(
         const subtitleWidget = ensureOverLineSubtitleUIAndGetWidget(p);
         if (subtitleWidget) {
             if (subtitle !== undefined) {
-                mod.SetUITextLabel(subtitleWidget, subtitle);
+                safeSetUITextLabel(subtitleWidget, subtitle);
                 mod.SetUITextColor(subtitleWidget, subtitleColor);
                 mod.SetUITextSize(subtitleWidget, layout.subtitleSize);
                 mod.SetUIWidgetPosition(subtitleWidget, mod.CreateVector(0, layout.subtitleOffsetY, 0));
