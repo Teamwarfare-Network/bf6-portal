@@ -109,6 +109,12 @@ function applyMapConfig(mapKey: MapKey): void {
     refreshOvertimeZonesFromMapConfig();
     // Apply the map's default aircraft ceiling, unless a custom override is active.
     syncAircraftCeilingFromMapConfig();
+    // Seed the per-map default Vehicle Health Multiplier and align the live + confirmed knob to it.
+    // No pending-override flag is needed (vehicle health has no "vanilla" mode).
+    const mapDefaultHealth = ACTIVE_MAP_CONFIG.defaultVehicleHealthMultiplier ?? READY_DIALOG_VEHICLE_HEALTH_MULT_DEFAULT;
+    State.round.mapDefaultVehicleHealthMultiplier = mapDefaultHealth;
+    State.round.modeConfig.vehicleHealthMultiplier = mapDefaultHealth;
+    State.round.modeConfig.confirmed.vehicleHealthMultiplier = mapDefaultHealth;
 
     updateReadyDialogMapLabelForAllPlayers();
     updateTeamNameWidgetsForAllPlayers();
@@ -243,6 +249,17 @@ const UI_READY_DIALOG_MODE_SETTINGS_DEC_LABEL_ID = "UI_READY_DIALOG_MODE_SETTING
 const UI_READY_DIALOG_MODE_SETTINGS_VALUE_ID = "UI_READY_DIALOG_MODE_SETTINGS_VALUE_";
 const UI_READY_DIALOG_MODE_SETTINGS_INC_ID = "UI_READY_DIALOG_MODE_SETTINGS_INC_";
 const UI_READY_DIALOG_MODE_SETTINGS_INC_LABEL_ID = "UI_READY_DIALOG_MODE_SETTINGS_INC_LABEL_";
+// Vehicle Health Multiplier knob widgets -- positioned to the LEFT of the Mode Settings row on the same Y.
+// Layout (visually left-to-right): [-10] [<] Health:NNN% [>] [+10]   Mode Settings: [<] Aircraft Ceiling [>]
+const UI_READY_DIALOG_VEHICLE_HEALTH_DEC10_ID = "UI_READY_DIALOG_VEHICLE_HEALTH_DEC10_";
+const UI_READY_DIALOG_VEHICLE_HEALTH_DEC10_LABEL_ID = "UI_READY_DIALOG_VEHICLE_HEALTH_DEC10_LABEL_";
+const UI_READY_DIALOG_VEHICLE_HEALTH_DEC_ID = "UI_READY_DIALOG_VEHICLE_HEALTH_DEC_";
+const UI_READY_DIALOG_VEHICLE_HEALTH_DEC_LABEL_ID = "UI_READY_DIALOG_VEHICLE_HEALTH_DEC_LABEL_";
+const UI_READY_DIALOG_VEHICLE_HEALTH_VALUE_ID = "UI_READY_DIALOG_VEHICLE_HEALTH_VALUE_";
+const UI_READY_DIALOG_VEHICLE_HEALTH_INC_ID = "UI_READY_DIALOG_VEHICLE_HEALTH_INC_";
+const UI_READY_DIALOG_VEHICLE_HEALTH_INC_LABEL_ID = "UI_READY_DIALOG_VEHICLE_HEALTH_INC_LABEL_";
+const UI_READY_DIALOG_VEHICLE_HEALTH_INC10_ID = "UI_READY_DIALOG_VEHICLE_HEALTH_INC10_";
+const UI_READY_DIALOG_VEHICLE_HEALTH_INC10_LABEL_ID = "UI_READY_DIALOG_VEHICLE_HEALTH_INC10_LABEL_";
 const UI_READY_DIALOG_MODE_VEHICLES_T1_LABEL_ID = "UI_READY_DIALOG_MODE_VEHICLES_T1_LABEL_";
 const UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_ID = "UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_";
 const UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_LABEL_ID = "UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_LABEL_";

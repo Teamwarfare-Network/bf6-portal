@@ -1102,7 +1102,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
             type: "Container",
             playerId: player,
             position: [SETTINGS_CONTAINER_X, SETTINGS_CONTAINER_Y],
-            size: [SETTINGS_TEXT_WIDTH, SETTINGS_LINE_HEIGHT * 6],
+            size: [SETTINGS_TEXT_WIDTH, SETTINGS_LINE_HEIGHT * 7],
             anchor: mod.UIAnchor.TopLeft,
             visible: true,
             padding: 1,
@@ -1143,9 +1143,25 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                     textAnchor: mod.UIAnchor.TopLeft,
                 },
                 {
-                    name: `Settings_VehiclesT1_${pid}`,
+                    name: `Settings_VehicleHealth_${pid}`,
                     type: "Text",
                     position: [6, SETTINGS_LINE_HEIGHT * 2],
+                    size: [SETTINGS_TEXT_WIDTH - 12, 16],
+                    anchor: mod.UIAnchor.TopLeft,
+                    visible: true,
+                    padding: 0,
+                    bgAlpha: 0,
+                    bgFill: mod.UIBgFill.None,
+                    textLabel: mod.Message(STR_HUD_SETTINGS_VEHICLE_HEALTH_FORMAT, 100),
+                    textColor: SETTINGS_TEXT_COLOR,
+                    textAlpha: 1,
+                    textSize: SETTINGS_TEXT_SIZE,
+                    textAnchor: mod.UIAnchor.TopLeft,
+                },
+                {
+                    name: `Settings_VehiclesT1_${pid}`,
+                    type: "Text",
+                    position: [6, SETTINGS_LINE_HEIGHT * 3],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: true,
@@ -1165,7 +1181,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     name: `Settings_VehiclesT2_${pid}`,
                     type: "Text",
-                    position: [6, SETTINGS_LINE_HEIGHT * 3],
+                    position: [6, SETTINGS_LINE_HEIGHT * 4],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: true,
@@ -1185,7 +1201,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     name: `Settings_VehiclesMatchup_${pid}`,
                     type: "Text",
-                    position: [6, SETTINGS_LINE_HEIGHT * 4],
+                    position: [6, SETTINGS_LINE_HEIGHT * 5],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: true,
@@ -1201,7 +1217,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
                 {
                     name: `Settings_Players_${pid}`,
                     type: "Text",
-                    position: [6, SETTINGS_LINE_HEIGHT * 5],
+                    position: [6, SETTINGS_LINE_HEIGHT * 6],
                     size: [SETTINGS_TEXT_WIDTH - 12, 16],
                     anchor: mod.UIAnchor.TopLeft,
                     visible: true,
@@ -2762,6 +2778,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     refs.spawnDisabledLiveText = safeFind(`SpawnDisabledLiveText_${pid}`);
     refs.settingsGameModeText = safeFind(`Settings_GameMode_${pid}`);
     refs.settingsAircraftCeilingText = safeFind(`Settings_Ceiling_${pid}`);
+    refs.settingsVehicleHealthText = safeFind(`Settings_VehicleHealth_${pid}`);
     refs.settingsVehiclesT1Text = safeFind(`Settings_VehiclesT1_${pid}`);
     refs.settingsVehiclesT2Text = safeFind(`Settings_VehiclesT2_${pid}`);
     refs.settingsVehiclesMatchupText = safeFind(`Settings_VehiclesMatchup_${pid}`);

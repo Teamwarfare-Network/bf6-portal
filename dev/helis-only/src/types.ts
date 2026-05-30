@@ -235,6 +235,9 @@ type ReadyDialogModeConfig = {
     gameSettings: number;
     vehiclesT1: number;
     vehiclesT2: number;
+    // Vehicle Health Multiplier: pending value tuned by dec/inc buttons; applied at Confirm.
+    // Float in (0, 4]; default 1.0. UI displays as Math.round(mult * 100) + "%".
+    vehicleHealthMultiplier: number;
     confirmed: {
         gameMode: number;
         gameSettings: number;
@@ -245,6 +248,8 @@ type ReadyDialogModeConfig = {
         vehicleIndexT1: number;
         vehicleIndexT2: number;
         vehicleOverrideEnabled: boolean;
+        // Snapshotted on Confirm; read by OnVehicleSpawned to call mod.SetVehicleMaxHealthMultiplier on each new vehicle.
+        vehicleHealthMultiplier: number;
     };
 };
 
@@ -297,6 +302,14 @@ const READY_DIALOG_AIRCRAFT_CEILING_DEFAULT = 550;
 const READY_DIALOG_AIRCRAFT_CEILING_MIN = -200;
 const READY_DIALOG_AIRCRAFT_CEILING_MAX = 5000;
 const READY_DIALOG_AIRCRAFT_CEILING_STEP = 10;
+// Vehicle Health Multiplier knob bounds: SDK clamps `> 0 && <= 4`; we floor at 0.05 (5%) per UX spec.
+// Step 0.01 = 1% per click (inner <,> buttons); coarse step 0.10 = 10% per click (outer -10/+10 buttons).
+// Display: Math.round(mult * 100) + "%".
+const READY_DIALOG_VEHICLE_HEALTH_MULT_DEFAULT = 1.0;
+const READY_DIALOG_VEHICLE_HEALTH_MULT_MIN = 0.05;
+const READY_DIALOG_VEHICLE_HEALTH_MULT_MAX = 4.0;
+const READY_DIALOG_VEHICLE_HEALTH_MULT_STEP = 0.01;
+const READY_DIALOG_VEHICLE_HEALTH_MULT_STEP_COARSE = 0.10;
 const READY_DIALOG_MODE_PRESET_BEST_OF_VANILLA = 3;
 const READY_DIALOG_MODE_PRESET_BEST_OF_LADDER = 11;
 const READY_DIALOG_MODE_PRESET_MATCHUP_INDEX = 0;
@@ -551,8 +564,11 @@ const STR_READY_DIALOG_PLAYERS_CHANGED = mod.stringkeys.twl.readyDialog.playersC
 const STR_READY_DIALOG_GAME_MODE_CHANGED = mod.stringkeys.twl.readyDialog.gameModeChanged;
 const STR_READY_DIALOG_AIRCRAFT_CEILING_CHANGED = mod.stringkeys.twl.readyDialog.aircraftCeilingChanged;
 const STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA = mod.stringkeys.twl.readyDialog.aircraftCeilingVanilla;
+const STR_READY_DIALOG_VEHICLE_HEALTH_FORMAT = mod.stringkeys.twl.readyDialog.modeSettingVehicleHealthFormat;
+const STR_READY_DIALOG_VEHICLE_HEALTH_CHANGED = mod.stringkeys.twl.readyDialog.vehicleHealthChanged;
 const STR_HUD_SETTINGS_GAME_MODE_FORMAT = mod.stringkeys.twl.hud.settings.gameModeFormat;
 const STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT = mod.stringkeys.twl.hud.settings.aircraftCeilingFormat;
+const STR_HUD_SETTINGS_VEHICLE_HEALTH_FORMAT = mod.stringkeys.twl.hud.settings.vehicleHealthFormat;
 const STR_HUD_SETTINGS_VEHICLES_TEAM_FORMAT = mod.stringkeys.twl.hud.settings.vehiclesTeamFormat;
 const STR_HUD_SETTINGS_VEHICLES_MATCHUP_FORMAT = mod.stringkeys.twl.hud.settings.vehiclesMatchupFormat;
 const STR_HUD_SETTINGS_PLAYERS_FORMAT = mod.stringkeys.twl.hud.settings.playersFormat;

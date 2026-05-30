@@ -508,6 +508,16 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     const MODE_SETTINGS_INC_ID = UI_READY_DIALOG_MODE_SETTINGS_INC_ID + playerId;
     const MODE_SETTINGS_INC_LABEL_ID = UI_READY_DIALOG_MODE_SETTINGS_INC_LABEL_ID + playerId;
 
+    const VEHICLE_HEALTH_DEC10_ID = UI_READY_DIALOG_VEHICLE_HEALTH_DEC10_ID + playerId;
+    const VEHICLE_HEALTH_DEC10_LABEL_ID = UI_READY_DIALOG_VEHICLE_HEALTH_DEC10_LABEL_ID + playerId;
+    const VEHICLE_HEALTH_DEC_ID = UI_READY_DIALOG_VEHICLE_HEALTH_DEC_ID + playerId;
+    const VEHICLE_HEALTH_DEC_LABEL_ID = UI_READY_DIALOG_VEHICLE_HEALTH_DEC_LABEL_ID + playerId;
+    const VEHICLE_HEALTH_VALUE_ID = UI_READY_DIALOG_VEHICLE_HEALTH_VALUE_ID + playerId;
+    const VEHICLE_HEALTH_INC_ID = UI_READY_DIALOG_VEHICLE_HEALTH_INC_ID + playerId;
+    const VEHICLE_HEALTH_INC_LABEL_ID = UI_READY_DIALOG_VEHICLE_HEALTH_INC_LABEL_ID + playerId;
+    const VEHICLE_HEALTH_INC10_ID = UI_READY_DIALOG_VEHICLE_HEALTH_INC10_ID + playerId;
+    const VEHICLE_HEALTH_INC10_LABEL_ID = UI_READY_DIALOG_VEHICLE_HEALTH_INC10_LABEL_ID + playerId;
+
     const VEHICLES_T1_LABEL_ID = UI_READY_DIALOG_MODE_VEHICLES_T1_LABEL_ID + playerId;
     const VEHICLES_T1_DEC_ID = UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_ID + playerId;
     const VEHICLES_T1_DEC_LABEL_ID = UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_LABEL_ID + playerId;
@@ -673,6 +683,124 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     );
     if (MODE_SETTINGS_INC_LABEL) {
         mod.SetUITextSize(MODE_SETTINGS_INC_LABEL, 14);
+    }
+
+    // Vehicle Health Multiplier knob -- same Y as Mode Settings; positioned to the LEFT of the
+    // Mode Settings label. With TopRight anchor, larger X = further left on screen. The VH block
+    // occupies (left-to-right visually): [-10] [<] [Health: NNN%] [>] [+10] then a gap, then the
+    // Mode Settings row. The +10/-10 outer buttons step by 0.10 (10%); the inner </> step by 0.01 (1%).
+    const vehicleHealthOuterGap = 12;       // gap between the rightmost VH widget (+10) and Mode Settings label
+    const vehicleHealthInnerGap = 4;        // gap between the outer (-10/+10) buttons and the inner (</>) buttons
+    const vehicleHealthValueWidth = 100;
+    const vehicleHealthWideButtonWidth = 32; // outer -10/+10 buttons are slightly wider than </> to fit 3-char text
+    const vehicleHealthInc10X = leftSectionLabelX + leftSectionLabelWidth + vehicleHealthOuterGap;
+    const vehicleHealthIncX = vehicleHealthInc10X + vehicleHealthWideButtonWidth + vehicleHealthInnerGap;
+    const vehicleHealthValueX = vehicleHealthIncX + bestOfButtonSizeX;
+    const vehicleHealthDecX = vehicleHealthValueX + vehicleHealthValueWidth;
+    const vehicleHealthDec10X = vehicleHealthDecX + bestOfButtonSizeX + vehicleHealthInnerGap;
+
+    // -10 button (leftmost VH widget)
+    const vehicleHealthDec10Border = addOutlinedButton(
+        VEHICLE_HEALTH_DEC10_ID,
+        vehicleHealthDec10X,
+        modeSettingsY,
+        vehicleHealthWideButtonWidth,
+        bestOfButtonSizeY,
+        mod.UIAnchor.TopRight,
+        CONTAINER_BASE,
+        eventPlayer
+    );
+    const VEHICLE_HEALTH_DEC10_LABEL = addCenteredButtonText(
+        VEHICLE_HEALTH_DEC10_LABEL_ID,
+        vehicleHealthWideButtonWidth,
+        bestOfButtonSizeY,
+        mod.Message(mod.stringkeys.twl.ui.minus10),
+        eventPlayer,
+        vehicleHealthDec10Border ?? CONTAINER_BASE
+    );
+    if (VEHICLE_HEALTH_DEC10_LABEL) {
+        mod.SetUITextSize(VEHICLE_HEALTH_DEC10_LABEL, 13);
+    }
+
+    const vehicleHealthDecBorder = addOutlinedButton(
+        VEHICLE_HEALTH_DEC_ID,
+        vehicleHealthDecX,
+        modeSettingsY,
+        bestOfButtonSizeX,
+        bestOfButtonSizeY,
+        mod.UIAnchor.TopRight,
+        CONTAINER_BASE,
+        eventPlayer
+    );
+    const VEHICLE_HEALTH_DEC_LABEL = addCenteredButtonText(
+        VEHICLE_HEALTH_DEC_LABEL_ID,
+        bestOfButtonSizeX,
+        bestOfButtonSizeY,
+        mod.Message(mod.stringkeys.twl.ui.left),
+        eventPlayer,
+        vehicleHealthDecBorder ?? CONTAINER_BASE
+    );
+    if (VEHICLE_HEALTH_DEC_LABEL) {
+        mod.SetUITextSize(VEHICLE_HEALTH_DEC_LABEL, 14);
+    }
+
+    mod.AddUIText(
+        VEHICLE_HEALTH_VALUE_ID,
+        mod.CreateVector(vehicleHealthValueX, modeSettingsY, 0),
+        mod.CreateVector(vehicleHealthValueWidth, bestOfLabelSizeY, 0),
+        mod.UIAnchor.TopRight,
+        mod.Message(STR_READY_DIALOG_VEHICLE_HEALTH_FORMAT, Math.round(State.round.modeConfig.vehicleHealthMultiplier * 100)),
+        eventPlayer
+    );
+    const VEHICLE_HEALTH_VALUE = mod.FindUIWidgetWithName(VEHICLE_HEALTH_VALUE_ID, mod.GetUIRoot());
+    mod.SetUIWidgetBgAlpha(VEHICLE_HEALTH_VALUE, 0);
+    mod.SetUITextSize(VEHICLE_HEALTH_VALUE, 12);
+    applyReadyDialogLabelTextColor(VEHICLE_HEALTH_VALUE);
+    mod.SetUIWidgetParent(VEHICLE_HEALTH_VALUE, CONTAINER_BASE);
+
+    const vehicleHealthIncBorder = addOutlinedButton(
+        VEHICLE_HEALTH_INC_ID,
+        vehicleHealthIncX,
+        modeSettingsY,
+        bestOfButtonSizeX,
+        bestOfButtonSizeY,
+        mod.UIAnchor.TopRight,
+        CONTAINER_BASE,
+        eventPlayer
+    );
+    const VEHICLE_HEALTH_INC_LABEL = addCenteredButtonText(
+        VEHICLE_HEALTH_INC_LABEL_ID,
+        bestOfButtonSizeX,
+        bestOfButtonSizeY,
+        mod.Message(mod.stringkeys.twl.ui.right),
+        eventPlayer,
+        vehicleHealthIncBorder ?? CONTAINER_BASE
+    );
+    if (VEHICLE_HEALTH_INC_LABEL) {
+        mod.SetUITextSize(VEHICLE_HEALTH_INC_LABEL, 14);
+    }
+
+    // +10 button (rightmost VH widget; visually just left of the Mode Settings label)
+    const vehicleHealthInc10Border = addOutlinedButton(
+        VEHICLE_HEALTH_INC10_ID,
+        vehicleHealthInc10X,
+        modeSettingsY,
+        vehicleHealthWideButtonWidth,
+        bestOfButtonSizeY,
+        mod.UIAnchor.TopRight,
+        CONTAINER_BASE,
+        eventPlayer
+    );
+    const VEHICLE_HEALTH_INC10_LABEL = addCenteredButtonText(
+        VEHICLE_HEALTH_INC10_LABEL_ID,
+        vehicleHealthWideButtonWidth,
+        bestOfButtonSizeY,
+        mod.Message(mod.stringkeys.twl.ui.plus10),
+        eventPlayer,
+        vehicleHealthInc10Border ?? CONTAINER_BASE
+    );
+    if (VEHICLE_HEALTH_INC10_LABEL) {
+        mod.SetUITextSize(VEHICLE_HEALTH_INC10_LABEL, 13);
     }
 
     addRightAlignedLabel(
@@ -2230,6 +2358,15 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
         );
     }
 
+    // Vehicle Health Multiplier value text -- pending value, mirrors what's shown for the ceiling.
+    const vehicleHealthValue = safeFind(UI_READY_DIALOG_VEHICLE_HEALTH_VALUE_ID + pid);
+    if (vehicleHealthValue) {
+        safeSetUITextLabel(
+            vehicleHealthValue,
+            mod.Message(STR_READY_DIALOG_VEHICLE_HEALTH_FORMAT, Math.round(cfg.vehicleHealthMultiplier * 100))
+        );
+    }
+
     const vehiclesT1Label = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T1_LABEL_ID + pid);
     if (vehiclesT1Label) {
         safeSetUITextLabel(
@@ -2526,6 +2663,9 @@ function isReadyDialogModePresetActive(gameModeKey: number): boolean {
     if (State.round.modeConfig.vehicleIndexT1 !== READY_DIALOG_MODE_PRESET_VEHICLE_INDEX) return false;
     if (State.round.modeConfig.vehicleIndexT2 !== READY_DIALOG_MODE_PRESET_VEHICLE_INDEX) return false;
     if (Math.floor(State.round.modeConfig.aircraftCeiling) !== Math.floor(State.round.aircraftCeiling.mapDefaultHudCeiling)) return false;
+    // Health-multiplier check: preset is "active" only when the pending knob matches the map default.
+    // Compare via 2-decimal round to absorb 0.01-step float drift.
+    if (Math.round(State.round.modeConfig.vehicleHealthMultiplier * 100) !== Math.round(State.round.mapDefaultVehicleHealthMultiplier * 100)) return false;
     return true;
 }
 
@@ -2552,6 +2692,8 @@ function applyReadyDialogModePresetForGameMode(gameModeKey: number): boolean {
     State.round.modeConfig.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
     State.round.modeConfig.aircraftCeilingOverridePending = false;
     State.round.modeConfig.gameSettings = mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat;
+    // Reset the Vehicle Health Multiplier knob to the map default when a preset is applied.
+    State.round.modeConfig.vehicleHealthMultiplier = State.round.mapDefaultVehicleHealthMultiplier;
 
     suppressReadyDialogModeAutoSwitch = false;
 
@@ -2583,6 +2725,20 @@ function setReadyDialogAircraftCeiling(nextValue: number, _changedBy?: mod.Playe
     State.round.modeConfig.aircraftCeiling = clamped;
     State.round.modeConfig.aircraftCeilingOverridePending = true;
     State.round.modeConfig.gameSettings = mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat;
+    updateReadyDialogModeConfigForAllVisibleViewers();
+}
+
+// Manual change to Vehicle Health Multiplier; flips game mode to Custom (matches ceiling pattern).
+// Pending value is held in modeConfig.vehicleHealthMultiplier until Confirm snapshots to confirmed.
+// Float-precision-safe clamp: 1e-9 epsilon used because step 0.01 + JS float math otherwise drifts.
+function setReadyDialogVehicleHealthMultiplier(nextValue: number, _changedBy?: mod.Player): void {
+    ensureCustomGameModeForManualChange();
+    const clamped = Math.max(
+        READY_DIALOG_VEHICLE_HEALTH_MULT_MIN,
+        Math.min(READY_DIALOG_VEHICLE_HEALTH_MULT_MAX, nextValue)
+    );
+    // Round to 2 decimal places so accumulated 0.01 steps don't drift (e.g. 1.00 + 0.01 - 0.01 = 0.99999...)
+    State.round.modeConfig.vehicleHealthMultiplier = Math.round(clamped * 100) / 100;
     updateReadyDialogModeConfigForAllVisibleViewers();
 }
 
@@ -2627,6 +2783,7 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
     const cfg = State.round.modeConfig;
     const prevConfirmed = cfg.confirmed.aircraftCeiling;
     const prevGameMode = cfg.confirmed.gameMode;
+    const prevConfirmedHealth = cfg.confirmed.vehicleHealthMultiplier;
     // Confirm is authoritative: it can force Custom if settings diverge from presets
     // and it is the only place we apply ceiling + vehicle overrides.
     if (!isReadyDialogGameModeCustom(cfg.gameMode) && !isReadyDialogModePresetActive(cfg.gameMode)) {
@@ -2650,6 +2807,7 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
         vehicleIndexT1: cfg.vehicleIndexT1,
         vehicleIndexT2: cfg.vehicleIndexT1,
         vehicleOverrideEnabled: !isMapDefaultVehicle,
+        vehicleHealthMultiplier: cfg.vehicleHealthMultiplier,
     };
     refreshOvertimeZonesFromMapConfig();
     // Apply custom ceiling only after the user confirms settings; enforcement runs while enabled.
@@ -2661,9 +2819,11 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
             applyCustomAircraftCeilingHardLimiter();
         }
     }
+    // Player-arg-safety: wrap changedBy through safePlayerArg per the v0.634 CQ_Bug_94 defensive
+    // pattern. The original aircraftCeiling and gameMode broadcasts here were missed by that pass.
     if (changedBy && cfg.confirmed.aircraftCeiling !== prevConfirmed) {
         sendHighlightedWorldLogMessage(
-            mod.Message(STR_READY_DIALOG_AIRCRAFT_CEILING_CHANGED, changedBy, Math.floor(cfg.confirmed.aircraftCeiling)),
+            mod.Message(STR_READY_DIALOG_AIRCRAFT_CEILING_CHANGED, safePlayerArg(changedBy), Math.floor(cfg.confirmed.aircraftCeiling)),
             true,
             undefined,
             STR_READY_DIALOG_AIRCRAFT_CEILING_CHANGED
@@ -2671,10 +2831,18 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
     }
     if (changedBy && cfg.confirmed.gameMode !== prevGameMode) {
         sendHighlightedWorldLogMessage(
-            mod.Message(STR_READY_DIALOG_GAME_MODE_CHANGED, changedBy, cfg.confirmed.gameMode),
+            mod.Message(STR_READY_DIALOG_GAME_MODE_CHANGED, safePlayerArg(changedBy), cfg.confirmed.gameMode),
             true,
             undefined,
             STR_READY_DIALOG_GAME_MODE_CHANGED
+        );
+    }
+    if (changedBy && cfg.confirmed.vehicleHealthMultiplier !== prevConfirmedHealth) {
+        sendHighlightedWorldLogMessage(
+            mod.Message(STR_READY_DIALOG_VEHICLE_HEALTH_CHANGED, safePlayerArg(changedBy), Math.round(cfg.confirmed.vehicleHealthMultiplier * 100)),
+            true,
+            undefined,
+            STR_READY_DIALOG_VEHICLE_HEALTH_CHANGED
         );
     }
     refreshVehicleSpawnSpecsFromModeConfig();
@@ -2810,6 +2978,13 @@ function updateSettingsSummaryHudForPid(pid: number): void {
     }
     if (refs.settingsAircraftCeilingText) {
         safeSetUITextLabel(refs.settingsAircraftCeilingText, mod.Message(STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT, ceilingValue));
+    }
+    // Vehicle Health Multiplier line -- always shown (even at the default 100%).
+    if (refs.settingsVehicleHealthText) {
+        safeSetUITextLabel(
+            refs.settingsVehicleHealthText,
+            mod.Message(STR_HUD_SETTINGS_VEHICLE_HEALTH_FORMAT, Math.round(cfg.confirmed.vehicleHealthMultiplier * 100))
+        );
     }
     if (refs.settingsVehiclesT1Text) {
         safeSetUITextLabel(

@@ -640,9 +640,18 @@ export async function OnVehicleSpawned(eventVehicle: mod.Vehicle): Promise<void>
     vehicleSpawnBaseTeamByObjId[vehicleObjId] = inferredTeam; 
 
     // Reset cached owner so enter events can establish a new owner.
-    clearLastDriverByVehicleObjId(vehicleObjId); 
+    clearLastDriverByVehicleObjId(vehicleObjId);
 
     registerVehicleToTeam(eventVehicle, inferredTeam);
+
+    // Apply the confirmed Vehicle Health Multiplier to this fresh spawn. One-shot per vehicle;
+    // the engine persists the multiplier for the vehicle's lifetime. SDK clamps `> 0 && <= 4`;
+    // try/catch wrap mirrors the BillDukes VehicleUIUniversal precedent (mod docs say a non-throwing
+    // void return but defense-in-depth is cheap and matches the surrounding Helis safety conventions).
+    try {
+        const mult = State.round.modeConfig.confirmed.vehicleHealthMultiplier ?? 1.0;
+        mod.SetVehicleMaxHealthMultiplier(eventVehicle, mult);
+    } catch (_e) {}
 }
 
 // OnVehicleDestroyed:

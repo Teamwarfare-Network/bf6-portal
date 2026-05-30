@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Vehicles (v0.647)",
+        "title": "teamwarfare . net | TWL Vehicles (v0.649)",
         "subtitle": "Experience Code: - - - -"
       },
       "roundText": "ROUND",
@@ -32,6 +32,7 @@
       "settings": {
         "gameModeFormat": "Game Mode: {0}",
         "aircraftCeilingFormat": "Aircraft Ceiling: {0}",
+        "vehicleHealthFormat": "Vehicle Health: {0}%",
         "vehiclesTeamFormat": "Vehicles {0}: {1}",
         "vehiclesMatchupFormat": "Vehicles: {0}v{1}",
         "playersFormat": "Players: {0}v{1}",
@@ -188,6 +189,8 @@
       "gameModeHelisCustom": "Helis Only - Custom",
       "aircraftCeilingVanilla": "Vanilla",
       "modeSettingAircraftCeilingFormat": "Aircraft Ceiling: {0}",
+      "modeSettingVehicleHealthFormat": "Health: {0}%",
+      "vehicleHealthChanged": "{0} changed the Vehicle Health to {1}%",
       "vehicleOptionFalchion": "M77E Falchion (Apache)",
       "vehicleOptionPanthera": "Panthera KHT (Euro)",
       "vehicleOptionBlackHawk": "UH-60 Black Hawk",
@@ -312,6 +315,8 @@
       "minus": "-",
       "left": "<",
       "right": ">",
+      "minus10": "-10",
+      "plus10": "+10",
       "x": "??"
     },
     "victory": {

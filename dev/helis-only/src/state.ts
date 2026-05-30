@@ -723,6 +723,7 @@ type HudRefs = {
 
     settingsGameModeText?: mod.UIWidget;
     settingsAircraftCeilingText?: mod.UIWidget;
+    settingsVehicleHealthText?: mod.UIWidget;
     settingsVehiclesT1Text?: mod.UIWidget;
     settingsVehiclesT2Text?: mod.UIWidget;
     settingsVehiclesMatchupText?: mod.UIWidget;
@@ -909,6 +910,10 @@ interface GameState {
             enforcementToken: number;
             vehicleStates: Record<number, AircraftCeilingVehicleState>;
         };
+        // Per-map default for the Vehicle Health Multiplier knob. Seeded by applyMapConfig
+        // from MapConfig.defaultVehicleHealthMultiplier (falls through to 1.0 when absent).
+        // Used by the Reset/preset paths to restore the knob to its map-specific baseline.
+        mapDefaultVehicleHealthMultiplier: number;
     };
     // Overtime flag capture state (reset on round start/end).
     // Progress is 0..1 (0 = Team2 owns, 1 = Team1 owns, 0.5 = neutral).
@@ -1086,6 +1091,7 @@ const State: GameState = {
             gameSettings: mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat,
             vehiclesT1: READY_DIALOG_VEHICLE_OPTIONS[READY_DIALOG_VEHICLE_T1_DEFAULT_INDEX],
             vehiclesT2: READY_DIALOG_VEHICLE_OPTIONS[READY_DIALOG_VEHICLE_T2_DEFAULT_INDEX],
+            vehicleHealthMultiplier: READY_DIALOG_VEHICLE_HEALTH_MULT_DEFAULT,
             confirmed: {
                 gameMode: READY_DIALOG_GAME_MODE_OPTIONS[READY_DIALOG_GAME_MODE_DEFAULT_INDEX],
                 gameSettings: mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat,
@@ -1096,6 +1102,7 @@ const State: GameState = {
                 vehicleIndexT1: READY_DIALOG_VEHICLE_T1_DEFAULT_INDEX,
                 vehicleIndexT2: READY_DIALOG_VEHICLE_T2_DEFAULT_INDEX,
                 vehicleOverrideEnabled: false,
+                vehicleHealthMultiplier: READY_DIALOG_VEHICLE_HEALTH_MULT_DEFAULT,
             },
         },
         phase: RoundPhase.NotReady,
@@ -1135,6 +1142,7 @@ const State: GameState = {
             enforcementToken: 0,
             vehicleStates: {},
         },
+        mapDefaultVehicleHealthMultiplier: READY_DIALOG_VEHICLE_HEALTH_MULT_DEFAULT,
     },
     flag: {
         stage: OvertimeStage.None,

@@ -537,6 +537,38 @@ function teamSwitchButtonEvent(
             );
             break;
         }
+        case UI_READY_DIALOG_VEHICLE_HEALTH_DEC10_ID + playerId: {
+            if (isRoundLive()) break;
+            setReadyDialogVehicleHealthMultiplier(
+                State.round.modeConfig.vehicleHealthMultiplier - READY_DIALOG_VEHICLE_HEALTH_MULT_STEP_COARSE,
+                eventPlayer
+            );
+            break;
+        }
+        case UI_READY_DIALOG_VEHICLE_HEALTH_DEC_ID + playerId: {
+            if (isRoundLive()) break;
+            setReadyDialogVehicleHealthMultiplier(
+                State.round.modeConfig.vehicleHealthMultiplier - READY_DIALOG_VEHICLE_HEALTH_MULT_STEP,
+                eventPlayer
+            );
+            break;
+        }
+        case UI_READY_DIALOG_VEHICLE_HEALTH_INC_ID + playerId: {
+            if (isRoundLive()) break;
+            setReadyDialogVehicleHealthMultiplier(
+                State.round.modeConfig.vehicleHealthMultiplier + READY_DIALOG_VEHICLE_HEALTH_MULT_STEP,
+                eventPlayer
+            );
+            break;
+        }
+        case UI_READY_DIALOG_VEHICLE_HEALTH_INC10_ID + playerId: {
+            if (isRoundLive()) break;
+            setReadyDialogVehicleHealthMultiplier(
+                State.round.modeConfig.vehicleHealthMultiplier + READY_DIALOG_VEHICLE_HEALTH_MULT_STEP_COARSE,
+                eventPlayer
+            );
+            break;
+        }
         case UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_ID + playerId: {
             if (isRoundLive()) break;
             setReadyDialogVehicleIndexT1(State.round.modeConfig.vehicleIndexT1 - 1);

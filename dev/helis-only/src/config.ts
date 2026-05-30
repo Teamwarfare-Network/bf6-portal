@@ -24,6 +24,9 @@ type MapConfig = {
     hudMaxY: number; // HUD altitude at the vanilla hard ceiling for this map.
     hudFloorY: number; // World Y where aircraft HUD reads 0 on this map.
     useCustomCeiling: boolean; // When true, Ladder mode applies custom ceiling on this map.
+    // Per-map default for the Ready Dialog Vehicle Health Multiplier knob (1.0 = 100%).
+    // Applied at applyMapConfig time; also used when a mode-preset is selected (resets to map default).
+    defaultVehicleHealthMultiplier?: number;
     team1TankSpawns: VehicleSpawnSpec[];
     team2TankSpawns: VehicleSpawnSpec[];
     team1HeliSpawns?: VehicleSpawnSpec[];
@@ -50,6 +53,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudMaxY: 650,
         hudFloorY: 82,
         useCustomCeiling: false,
+        defaultVehicleHealthMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -91,6 +95,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudMaxY: 650,
         hudFloorY: 82,
         useCustomCeiling: false,
+        defaultVehicleHealthMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -132,6 +137,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudMaxY: 650,
         hudFloorY: 82,
         useCustomCeiling: false,
+        defaultVehicleHealthMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -173,6 +179,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudMaxY: 635,
         hudFloorY: 82,
         useCustomCeiling: true,
+        defaultVehicleHealthMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -226,6 +233,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudMaxY: 735,
         hudFloorY: 132,
         useCustomCeiling: true,
+        defaultVehicleHealthMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -281,6 +289,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudMaxY: 635,
         hudFloorY: 139,
         useCustomCeiling: true,
+        defaultVehicleHealthMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -334,6 +343,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudMaxY: 180,
         hudFloorY: 57,
         useCustomCeiling: false,
+        defaultVehicleHealthMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -387,6 +397,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudMaxY: 270,
         hudFloorY: 91,
         useCustomCeiling: true,
+        defaultVehicleHealthMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -440,6 +451,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudMaxY: 650,
         hudFloorY: 82,
         useCustomCeiling: false,
+        defaultVehicleHealthMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
