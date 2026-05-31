@@ -1010,6 +1010,8 @@ interface GameState {
         tieBreakerOverrideUsed: boolean;
         tieBreakerModeIndex: number;
         liveRespawnEnabled: boolean;
+        // Admin-togglable: when true, aircraft is destroyed 1s after the altitude-warning countdown hits 0.
+        ceilingPunishEnabled: boolean;
     };
     debug: {
         highlightedMessageCount: number;
@@ -1051,6 +1053,9 @@ interface GameState {
         altitudeWarningVisibleByPid: Record<number, boolean>;
         // H-P1: per-pid timestamp (mod.GetMatchTimeElapsed seconds) when the warning became visible; used to compute the 3-second countdown.
         altitudeWarningStartedAtSecondsByPid: Record<number, number>;
+        // Once-per-breach sentinel: set when ceiling punish fires, cleared by setAltitudeWarningVisibleForPid on visible->invisible
+        // (any path that ends the exposure event: descend, exit vehicle, undeploy, disconnect).
+        ceilingPunishFiredByPid: Record<number, boolean>;
     };
     vehicles: {
         slots: VehicleSpawnerSlot[];
@@ -1241,6 +1246,7 @@ const State: GameState = {
         tieBreakerOverrideUsed: false,
         tieBreakerModeIndex: ADMIN_TIEBREAKER_MODE_DEFAULT_INDEX,
         liveRespawnEnabled: DEFAULT_LIVE_RESPAWN_ENABLED,
+        ceilingPunishEnabled: DEFAULT_CEILING_PUNISH_ENABLED,
     },
     debug: {
         highlightedMessageCount: 0,
@@ -1269,6 +1275,7 @@ const State: GameState = {
         playerInAircraftByPid: {},
         altitudeWarningVisibleByPid: {},
         altitudeWarningStartedAtSecondsByPid: {},
+        ceilingPunishFiredByPid: {},
     },
     vehicles: {
         slots: [],

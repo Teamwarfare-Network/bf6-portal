@@ -95,7 +95,9 @@ export async function OnGameModeStarted(): Promise<void> {
     State.admin.actionCount = 0;
     State.admin.tieBreakerOverrideUsed = false;
     State.admin.liveRespawnEnabled = DEFAULT_LIVE_RESPAWN_ENABLED;
+    State.admin.ceilingPunishEnabled = DEFAULT_CEILING_PUNISH_ENABLED;
     syncAdminLiveRespawnLabelForAllPlayers();
+    syncAdminCeilingPunishLabelForAllPlayers();
     updateSpawnDisabledWarningForAllPlayers();
 
     State.hudCache.lastHudScoreT1 = undefined;
@@ -274,6 +276,7 @@ export function OnPlayerLeaveGame(eventNumber: number | mod.Player) {
     delete State.players.playerInAircraftByPid[pid];
     delete State.players.altitudeWarningVisibleByPid[pid];
     delete State.players.altitudeWarningStartedAtSecondsByPid[pid];
+    delete State.players.ceilingPunishFiredByPid[pid];
     // Also drop dialog-visible tracking if present (viewer is gone).
     delete State.players.teamSwitchData[pid];
     clearJoinPromptForPlayerId(pid);

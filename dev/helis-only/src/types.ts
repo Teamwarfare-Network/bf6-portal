@@ -364,8 +364,11 @@ const ALTIMETER_HUD_CARD_WIDTH = 130;         // black backplate; tight around "
 const ALTIMETER_HUD_CARD_HEIGHT = 44;
 const ALTIMETER_HUD_TEXT_LEFT_PADDING = 10;   // text X offset inside root (sibling of card, overlays it)
 const ALTIMETER_HUD_TEXT_SIZE = 24;
-// Countdown duration after the warning becomes visible. Decrements once per second to 0; no behavior at 0 yet.
-const ALTITUDE_WARNING_COUNTDOWN_SECONDS = 3;
+// Countdown duration after the warning becomes visible. Decrements once per second to 0.
+// At elapsed >= COUNTDOWN + CEILING_PUNISH_GRACE the aircraft is destroyed (admin-togglable).
+const ALTITUDE_WARNING_COUNTDOWN_SECONDS = 5;
+const CEILING_PUNISH_GRACE_SECONDS = 1;
+const DEFAULT_CEILING_PUNISH_ENABLED = true; // Admin-togglable: destroy aircraft 1s past the 0 mark when ON.
 
 // Pregame countdown tuning (Ready Up -> round start).
 // Units: seconds and UI scale units.
@@ -454,7 +457,7 @@ const READY_DIALOG_LABEL_TEXT_COLOR = COLOR_WHITE;
 const READY_DIALOG_BORDER_COLOR = COLOR_GRAY;
 
 // Admin Panel
-const ADMIN_PANEL_HEIGHT = 728; // v0.666: +34px for the new Warn Buffer row (1 admin-row gap).
+const ADMIN_PANEL_HEIGHT = 762; // v0.702: +34px for the new Ceiling Punish row (1 admin-row gap on top of v0.666's 728).
 const ADMIN_PANEL_PADDING = 5;
 const ADMIN_PANEL_BASE_X = -5;
 const ADMIN_PANEL_BASE_Y = 15;
@@ -529,6 +532,7 @@ const STR_AMMO_RESTOCKED = mod.stringkeys.twl.notifications.ammoRestocked;
 const STR_READYUP_RETURN_TO_BASE_NOT_LIVE = mod.stringkeys.twl.notifications.readyupReturnToBaseNotLive;
 const STR_PLAYER_READIED_UP = mod.stringkeys.twl.notifications.playerReadiedUp;
 const STR_PLAYER_AUTO_READIED_UP = mod.stringkeys.twl.notifications.autoReadiedUp;
+const STR_CEILING_PUNISH_DESTROYED = mod.stringkeys.twl.notifications.ceilingPunishDestroyed;
 const STR_HUD_AUTO_READY_TEXT = mod.stringkeys.twl.hud.autoReadyText;
 const STR_JOIN_PROMPT_TITLE = mod.stringkeys.twl.joinPrompt.title;
 const STR_JOIN_PROMPT_DISMISS = mod.stringkeys.twl.joinPrompt.dismiss;

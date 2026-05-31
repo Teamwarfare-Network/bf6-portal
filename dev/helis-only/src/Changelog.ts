@@ -3,6 +3,28 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.702: ADMIN_PANEL_HEIGHT 728 -> 762 (+34px). v0.701 added the Ceiling Punish row without growing the
+// container -- text widget for the new row landed below the panel clip so the button rendered with no
+// label (button itself was still clickable because outline extended visually). Pattern mirrors v0.666's
+// +34px bump for the Warn Buffer row.
+
+// v0.701: Phase 1 Ceiling Punish + TWL 2v2 130% HP default.
+// (a) Altitude-warning countdown bumped 3s -> 5s (ALTITUDE_WARNING_COUNTDOWN_SECONDS in types.ts).
+// (b) Ceiling Punish: when warning has been visible for COUNTDOWN+GRACE seconds (=6s) and the admin toggle is ON,
+//     the aircraft takes mod.DealDamage(v, 10000) wrapped in try/catch (blows up in mid-air, no sink). Player(s) inside die.
+//     World-log broadcast: "{player} was destroyed for exceeding the aircraft ceiling" via STR_CEILING_PUNISH_DESTROYED.
+//     Once-per-exposure sentinel ceilingPunishFiredByPid in State.players, cleared in setAltitudeWarningVisibleForPid's
+//     visible->invisible branch (covers descend, vehicle exit via OnPlayerExitVehicle, undeploy via OnPlayerUndeploy)
+//     plus a defensive delete in the disconnect handler.
+// (c) Admin Panel: new "Ceiling Punish ON/OFF" toggle row inserted below "Live Redeploy". Default ON
+//     (DEFAULT_CEILING_PUNISH_ENABLED in types.ts, reset to default on match restart in index.ts).
+//     Toggle handler mirrors liveRespawnEnabled pattern (team-switch.ts) and broadcasts ceilingPunishOn/Off action key.
+//     New UI IDs UI_ADMIN_CEILING_PUNISH_BUTTON_ID + UI_ADMIN_CEILING_PUNISH_TEXT_ID added to the visibility cascade list.
+// (d) TWL 2v2 preset now defaults Vehicle Health Multiplier to 130% (was 100%). New helper
+//     getPresetVehicleHealthMultiplierForGameMode used by both applyReadyDialogModePresetForGameMode (assignment)
+//     and isReadyDialogModePresetActive (preset-vs-dirty comparison) so the dirty-state detector stays consistent.
+// Strings: notifications.ceilingPunishDestroyed + adminPanel.actions/labels.ceilingPunishOn/Off.
+
 // v0.700: VH knob shift tune -- v0.699's VH_BLOCK_RIGHT_SHIFT = 40 was "almost perfect" per user, asked to back off 5 units. Reduced to 35.
 
 // v0.699: Ready Dialog VH knob actual right-shift. Previous attempts (v0.697 outerGap 12->8, v0.698 8->2) produced only 10 game units of total shift = visually negligible. User reported no perceptible movement. Added explicit VH_BLOCK_RIGHT_SHIFT constant (40 game units) that translates the entire VH widget group (all 5 widgets: -10, <, value, >, +10) right by that amount via subtraction in the inc10X derivation -- since all other VH X coords cascade from inc10X, the whole block moves as a unit. 40 picked as a noticeable visible shift; user may need to dial up or down based on visual feedback. No widget sizes or button counts changed (per user "don't modify the knobs").

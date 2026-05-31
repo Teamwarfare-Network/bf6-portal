@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Vehicles (v0.700)",
+        "title": "teamwarfare . net | TWL Vehicles (v0.702)",
         "subtitle": "Experience Code: - - - -"
       },
       "roundText": "ROUND",
@@ -149,7 +149,8 @@
       "roundWins": "Current round score is {0}-{1}",
       "teamSwitch": "You have switched teams!",
       "roundCleanupSpawnTimeout": "Spawn timeout after {0}s - deploying anyway.",
-      "playerReadiedUp": "{0} has readied up: {1} / {2} Players Ready"
+      "playerReadiedUp": "{0} has readied up: {1} / {2} Players Ready",
+      "ceilingPunishDestroyed": "{0} was destroyed for exceeding the aircraft ceiling"
     },
     "joinPrompt": {
       "title": "TWL Presents: Vehicle Only Combat",
@@ -279,7 +280,9 @@
         "aircraftBufferDec": "Hard Buffer -",
         "aircraftBufferInc": "Hard Buffer +",
         "aircraftWarnBufferDec": "Warn Buffer -",
-        "aircraftWarnBufferInc": "Warn Buffer +"
+        "aircraftWarnBufferInc": "Warn Buffer +",
+        "ceilingPunishOn": "Ceiling Punish ON",
+        "ceilingPunishOff": "Ceiling Punish OFF"
       },
       "labels": {
         "t1RoundKills": "T1 Round Kills",
@@ -292,7 +295,9 @@
         "tieBreakerModeDisabled": "Disabled / OFF",
         "roundLengthFormat": "Round Length: {0}:{1}{2}",
         "liveRespawnOn": "Live Redeploy ON",
-        "liveRespawnOff": "Live Redeploy OFF"
+        "liveRespawnOff": "Live Redeploy OFF",
+        "ceilingPunishOn": "Ceiling Punish ON",
+        "ceilingPunishOff": "Ceiling Punish OFF"
       },
       "buttons": {
         "panel": "Admin Panel"

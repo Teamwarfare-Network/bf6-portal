@@ -466,6 +466,27 @@ function syncAdminLiveRespawnLabelForAllPlayers(): void {
     }
 }
 
+function getAdminCeilingPunishLabelKey(): number {
+    return State.admin.ceilingPunishEnabled
+        ? mod.stringkeys.twl.adminPanel.labels.ceilingPunishOn
+        : mod.stringkeys.twl.adminPanel.labels.ceilingPunishOff;
+}
+
+function syncAdminCeilingPunishLabelForAllPlayers(): void {
+    const labelKey = getAdminCeilingPunishLabelKey();
+    const players = mod.AllPlayers();
+    const count = mod.CountOf(players);
+    for (let i = 0; i < count; i++) {
+        const player = mod.ValueInArray(players, i) as mod.Player;
+        if (!player || !mod.IsPlayerValid(player)) continue;
+        const pid = safeGetPlayerId(player);
+        if (pid === undefined || isPidDisconnected(pid)) continue;
+        const label = safeFind(UI_ADMIN_CEILING_PUNISH_TEXT_ID + pid);
+        if (!label) continue;
+        safeSetUITextLabel(label, mod.Message(labelKey));
+    }
+}
+
 function clampRoundLengthSeconds(seconds: number): number {
     return Math.max(ADMIN_ROUND_LENGTH_MIN_SECONDS, Math.min(ADMIN_ROUND_LENGTH_MAX_SECONDS, Math.floor(seconds)));
 }

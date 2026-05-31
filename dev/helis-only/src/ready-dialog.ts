@@ -27,6 +27,7 @@ function setAdminPanelChildWidgetsVisible(playerId: number, visible: boolean): v
         UI_ADMIN_TIEBREAKER_MODE_HEADER_ID,
         UI_ADMIN_TIEBREAKER_MODE_LABEL_ID,
         UI_ADMIN_LIVE_RESPAWN_TEXT_ID,
+        UI_ADMIN_CEILING_PUNISH_TEXT_ID,
 
         // Row +/- buttons
         UI_TEST_BUTTON_LEFT_WINS_DEC_ID, UI_TEST_BUTTON_LEFT_WINS_INC_ID,
@@ -38,6 +39,7 @@ function setAdminPanelChildWidgetsVisible(playerId: number, visible: boolean): v
         UI_ADMIN_BUTTON_T2_ROUND_KILLS_DEC_ID, UI_ADMIN_BUTTON_T2_ROUND_KILLS_INC_ID,
         UI_ADMIN_TIEBREAKER_MODE_DEC_ID, UI_ADMIN_TIEBREAKER_MODE_INC_ID,
         UI_ADMIN_LIVE_RESPAWN_BUTTON_ID,
+        UI_ADMIN_CEILING_PUNISH_BUTTON_ID,
         UI_TEST_BUTTON_TIES_DEC_ID, UI_TEST_BUTTON_TIES_INC_ID,
         UI_TEST_BUTTON_CUR_ROUND_DEC_ID, UI_TEST_BUTTON_CUR_ROUND_INC_ID,
         UI_TEST_BUTTON_CLOCK_TIME_DEC_ID, UI_TEST_BUTTON_CLOCK_TIME_INC_ID,
@@ -1781,7 +1783,21 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         getAdminLiveRespawnLabelKey()
     );
 
-    const roundLengthRowY = liveRespawnRowY + (buttonSizeY + rowSpacingY);
+    const ceilingPunishRowY = liveRespawnRowY + (buttonSizeY + rowSpacingY);
+    addTesterActionButton(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        ceilingPunishRowY,
+        (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX),
+        buttonSizeY,
+        UI_ADMIN_CEILING_PUNISH_BUTTON_ID,
+        UI_ADMIN_CEILING_PUNISH_TEXT_ID,
+        getAdminCeilingPunishLabelKey()
+    );
+
+    const roundLengthRowY = ceilingPunishRowY + (buttonSizeY + rowSpacingY);
     addTesterRow(
         eventPlayer,
         adminContainer,
@@ -1850,6 +1866,7 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
 
     syncAdminTieBreakerModeLabelForAllPlayers();
     syncAdminLiveRespawnLabelForAllPlayers();
+    syncAdminCeilingPunishLabelForAllPlayers();
     syncAdminRoundLengthLabelForAllPlayers();
     syncAircraftBufferAdminValueForAllPlayers();
     syncAircraftWarningBufferAdminValueForAllPlayers();
@@ -2626,6 +2643,8 @@ function setAltitudeWarningVisibleForPid(pid: number, visible: boolean): void {
         }
     } else {
         delete State.players.altitudeWarningStartedAtSecondsByPid[pid];
+        // Re-arm ceiling-punish for the next exposure (descend below warning, exit vehicle, undeploy).
+        delete State.players.ceilingPunishFiredByPid[pid];
     }
 }
 
@@ -2797,6 +2816,18 @@ async function runAircraftWarningLoop(): Promise<void> {
                         );
                     }
                 }
+
+                // Ceiling punish: destroy aircraft 1s after countdown hits 0. Once per exposure event
+                // (sentinel cleared in setAltitudeWarningVisibleForPid on visible->invisible). Admin-togglable.
+                if (
+                    State.admin.ceilingPunishEnabled
+                    && elapsed >= ALTITUDE_WARNING_COUNTDOWN_SECONDS + CEILING_PUNISH_GRACE_SECONDS
+                    && !State.players.ceilingPunishFiredByPid[pid]
+                ) {
+                    State.players.ceilingPunishFiredByPid[pid] = true;
+                    try { mod.DealDamage(vehicle, 10000); } catch {}
+                    broadcastStringKey(STR_CEILING_PUNISH_DESTROYED, player);
+                }
             }
         }
     }
@@ -2935,6 +2966,12 @@ function getReadyDialogPresetPlayersPerSide(gameModeKey: number): number {
     return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_VANILLA;
 }
 
+// TWL 2v2 preset defaults to 130% vehicle health; all other presets use the map default.
+function getPresetVehicleHealthMultiplierForGameMode(gameModeKey: number): number {
+    if (isReadyDialogGameModeLadder(gameModeKey)) return 1.3;
+    return State.round.mapDefaultVehicleHealthMultiplier;
+}
+
 function shouldApplyCustomCeilingForGameMode(gameModeKey: number): boolean {
     if (isReadyDialogGameModeVanilla(gameModeKey)) return false;
     if (isReadyDialogGameModeCustom(gameModeKey)) return true;
@@ -2984,9 +3021,10 @@ function isReadyDialogModePresetActive(gameModeKey: number): boolean {
     if (State.round.modeConfig.vehicleIndexT1 !== READY_DIALOG_MODE_PRESET_VEHICLE_INDEX) return false;
     if (State.round.modeConfig.vehicleIndexT2 !== READY_DIALOG_MODE_PRESET_VEHICLE_INDEX) return false;
     if (Math.floor(State.round.modeConfig.aircraftCeiling) !== Math.floor(State.round.aircraftCeiling.mapDefaultHudCeiling)) return false;
-    // Health-multiplier check: preset is "active" only when the pending knob matches the map default.
-    // Compare via 2-decimal round to absorb 0.01-step float drift.
-    if (Math.round(State.round.modeConfig.vehicleHealthMultiplier * 100) !== Math.round(State.round.mapDefaultVehicleHealthMultiplier * 100)) return false;
+    // Health-multiplier check: preset is "active" only when the pending knob matches the preset's expected default.
+    // TWL 2v2 = 130%, everything else = map default. Compare via 2-decimal round to absorb 0.01-step float drift.
+    const expectedHealthMult = getPresetVehicleHealthMultiplierForGameMode(gameModeKey);
+    if (Math.round(State.round.modeConfig.vehicleHealthMultiplier * 100) !== Math.round(expectedHealthMult * 100)) return false;
     return true;
 }
 
@@ -3013,8 +3051,8 @@ function applyReadyDialogModePresetForGameMode(gameModeKey: number): boolean {
     State.round.modeConfig.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
     State.round.modeConfig.aircraftCeilingOverridePending = false;
     State.round.modeConfig.gameSettings = mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat;
-    // Reset the Vehicle Health Multiplier knob to the map default when a preset is applied.
-    State.round.modeConfig.vehicleHealthMultiplier = State.round.mapDefaultVehicleHealthMultiplier;
+    // Vehicle Health Multiplier: TWL 2v2 = 130%, every other preset = map default.
+    State.round.modeConfig.vehicleHealthMultiplier = getPresetVehicleHealthMultiplierForGameMode(gameModeKey);
 
     suppressReadyDialogModeAutoSwitch = false;
 

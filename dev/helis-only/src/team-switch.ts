@@ -889,6 +889,18 @@ function teamSwitchButtonEvent(
             break;
         }
 
+        case UI_ADMIN_CEILING_PUNISH_BUTTON_ID + playerId: {
+            State.admin.ceilingPunishEnabled = !State.admin.ceilingPunishEnabled;
+            syncAdminCeilingPunishLabelForAllPlayers();
+            handleAdminPanelAction(
+                eventPlayer,
+                State.admin.ceilingPunishEnabled
+                    ? mod.stringkeys.twl.adminPanel.actions.ceilingPunishOn
+                    : mod.stringkeys.twl.adminPanel.actions.ceilingPunishOff
+            );
+            break;
+        }
+
         case UI_ADMIN_ROUND_LENGTH_DEC_ID + playerId: {
             if (isRoundLive()) break;
             const next = clampRoundLengthSeconds(getConfiguredRoundLengthSeconds() - ADMIN_ROUND_LENGTH_STEP_SECONDS);
