@@ -1088,6 +1088,93 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         if (upperLeft) refs.roots.push(upperLeft);
     }
 
+    // --- Static HUD: Altimeter card on the lower-left (v0.674) ---
+    // EAGER build, modeled byte-for-byte on Upper_Left_Container_ above (the user explicitly
+    // asked "why can't it work like the upper left branding squares" -- this IS that pattern).
+    // Root is visible:true with a non-zero bgAlpha so the engine treats it as a real laid-out
+    // container (the v0.666-v0.673 lazy-built invisible root never positioned where requested).
+    // CARD child holds the black backplate + "Altitude: YYY" text + small yellow "ALTITUDE
+    // WARNING" label. All children's visibility is toggled by the loop's set*ForPid helpers --
+    // root stays where ensureHudForPlayer placed it.
+    {
+        const altimeterRoot = modlib.ParseUI({
+            name: UI_ALTIMETER_ROOT_ID + pid,
+            type: "Container",
+            playerId: player,
+            position: [ALTIMETER_HUD_ANCHOR_OFFSET_X, ALTIMETER_HUD_ANCHOR_OFFSET_Y],
+            size: [ALTIMETER_HUD_ROOT_WIDTH, ALTIMETER_HUD_ROOT_HEIGHT],
+            anchor: mod.UIAnchor.TopLeft,
+            visible: true,
+            padding: 1,
+            bgColor: [0, 0, 0],
+            bgAlpha: 0.0001,   // effectively invisible but treated as a real container during layout
+            bgFill: mod.UIBgFill.Blur,
+            children: [
+                // Yellow "ALTITUDE WARNING!" label, top of root, hidden by default.
+                // v0.685: label widget is WIDER (200) than the card (130), centered horizontally
+                // above the card so the text overhangs equally left+right. textAnchor: Center
+                // centers the text within the 200-wide widget; CARD_OFFSET_X (35) shifts the card
+                // such that (root_X + 35 + card_W/2) == (root_X + 0 + label_W/2), aligning both
+                // horizontal centers on the screen.
+                {
+                    name: UI_ALTIMETER_WARNING_LABEL_ID + pid,
+                    type: "Text",
+                    position: [ALTIMETER_HUD_LABEL_OFFSET_X, 0],
+                    size: [ALTIMETER_HUD_LABEL_WIDTH, ALTIMETER_HUD_LABEL_HEIGHT],
+                    anchor: mod.UIAnchor.TopLeft,
+                    visible: false,
+                    padding: 0,
+                    bgAlpha: 0,
+                    bgFill: mod.UIBgFill.None,
+                    textLabel: mod.Message(STR_HUD_ALTIMETER_WARNING_LABEL),
+                    textColor: COLOR_WARNING_YELLOW,
+                    textAlpha: 1,
+                    textSize: ALTIMETER_HUD_LABEL_TEXT_SIZE,
+                    textAnchor: mod.UIAnchor.Center,
+                },
+                // Black-backplate card below the label (hidden until player enters aircraft).
+                // v0.684: X = ALTIMETER_HUD_CARD_OFFSET_X (25) -- card is inset within the root so
+                // the warning label (at root X=0) can sit further LEFT of the card without using
+                // negative child positions (which clip silently in this engine).
+                {
+                    name: UI_ALTIMETER_CARD_ID + pid,
+                    type: "Container",
+                    position: [ALTIMETER_HUD_CARD_OFFSET_X, ALTIMETER_HUD_CARD_OFFSET_Y],
+                    size: [ALTIMETER_HUD_CARD_WIDTH, ALTIMETER_HUD_CARD_HEIGHT],
+                    anchor: mod.UIAnchor.TopLeft,
+                    visible: false,
+                    padding: 0,
+                    bgColor: [0, 0, 0],
+                    bgAlpha: 0.75,
+                    bgFill: mod.UIBgFill.Blur,
+                },
+                // "Altitude: YYY" text -- sibling of card, declared AFTER it so it renders on top.
+                // v0.684: X = CARD_OFFSET_X + TEXT_LEFT_PADDING so text sits 10px inside the card.
+                {
+                    name: UI_ALTIMETER_TEXT_ID + pid,
+                    type: "Text",
+                    position: [ALTIMETER_HUD_CARD_OFFSET_X + ALTIMETER_HUD_TEXT_LEFT_PADDING, ALTIMETER_HUD_CARD_OFFSET_Y],
+                    size: [ALTIMETER_HUD_CARD_WIDTH - ALTIMETER_HUD_TEXT_LEFT_PADDING, ALTIMETER_HUD_CARD_HEIGHT],
+                    anchor: mod.UIAnchor.TopLeft,
+                    visible: false,
+                    padding: 0,
+                    bgAlpha: 0,
+                    bgFill: mod.UIBgFill.None,
+                    textLabel: mod.Message(STR_HUD_ALTIMETER_FORMAT, 0),
+                    textColor: COLOR_READY_GREEN,
+                    textAlpha: 1,
+                    textSize: ALTIMETER_HUD_TEXT_SIZE,
+                    textAnchor: mod.UIAnchor.CenterLeft,
+                },
+            ],
+        });
+        if (altimeterRoot) refs.roots.push(altimeterRoot);
+        refs.altimeterRoot = altimeterRoot;
+        refs.altimeterCard = safeFind(UI_ALTIMETER_CARD_ID + pid);
+        refs.altimeterText = safeFind(UI_ALTIMETER_TEXT_ID + pid);
+        refs.altimeterWarningLabel = safeFind(UI_ALTIMETER_WARNING_LABEL_ID + pid);
+    }
+
     // --- Static HUD: Upper-left settings summary (below branding) ---
     {
         const SETTINGS_CONTAINER_X = 5;
@@ -2771,6 +2858,20 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
 
 
+    //#region -------------------- HUD Build/Ensure - Altitude Warning (H-P1) --------------------
+
+    // H-P1: altitude warning widgets are NOT built here -- they are built LAZILY at first
+    // setAltitudeWarningVisibleForPid call. See ensureAltitudeWarningUiForPlayer below.
+    // Confirmed required by the Helis overtime HUD pattern (overtime.ts:1443+1490) and the
+    // Conquest boundary prompt pattern (prompt-ui.ts called from showBoundaryPromptForPlayer):
+    // cockpit-overlay widgets built EAGERLY in ensureHudForPlayer at OnPlayerJoinGame time are
+    // INVISIBLE despite identical construction code. v0.650-v0.655 all hit this. v0.656 fixes by
+    // moving the construction to lazy first-show.
+
+    //#endregion ----------------- HUD Build/Ensure - Altitude Warning (H-P1) --------------------
+
+
+
     //#region -------------------- HUD Build/Ensure - Cache Init + Defaults --------------------
 
     refs.helpTextContainer = safeFind(`Container_HelpText_${pid}`);
@@ -2783,6 +2884,10 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     refs.settingsVehiclesT2Text = safeFind(`Settings_VehiclesT2_${pid}`);
     refs.settingsVehiclesMatchupText = safeFind(`Settings_VehiclesMatchup_${pid}`);
     refs.settingsPlayersText = safeFind(`Settings_Players_${pid}`);
+    // Altitude warning widgets are NOT resolved here -- ensureAltitudeWarningUiForPlayer builds
+    // them lazily on first show + populates refs at that time. Eager safeFind would return undefined
+    // because the widgets don't exist yet.
+
     State.hudCache.hudByPid[pid] = refs;
 
     // Initialize visible numbers immediately
@@ -2812,6 +2917,366 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 }
 
 //#endregion ----------------- HUD Build/Ensure - Cache Init + Defaults --------------------
+
+
+
+//#region -------------------- Altitude Warning HUD (H-P1, standalone) --------------------
+
+// H-P1 altitude warning HUD: a per-pid centered dialog (title + body + countdown digit) shown
+// while a player flies an aircraft above the soft ceiling. This is a STANDALONE widget system
+// with its own root, child widgets, and lifecycle -- it is NOT a part of the overtime/capture
+// HUD, the settings HUD, or any other widget group.
+//
+// Lifecycle: built LAZILY on first call to ensureAltitudeWarningUiForPlayer (triggered from
+// setAltitudeWarningVisibleForPid before toggling visibility). Cockpit-overlay widgets built
+// eagerly in ensureHudForPlayer at OnPlayerJoinGame time render invisibly (v0.650-v0.655);
+// lazy first-show construction is required.
+//
+// Construction recipe (proven independently by Helis's own overtime HUD and by Conquest's
+// boundary prompt -- both render reliably over the cockpit):
+//   1. ONE atomic modlib.ParseUI call: Container root + Text children nested in `children: [...]`
+//   2. safeFind(root) -- early return if construction failed
+//   3. safeSetUIWidgetDepth(root, mod.UIDepth.AboveGameUI)
+//   4. safeFind each child + populate HudRefs for runtime text updates
+// Visibility toggles on the ROOT only -- children inherit.
+function ensureAltitudeWarningUiForPlayer(player: mod.Player): mod.UIWidget | undefined {
+    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    const pid = safeGetPlayerId(player);
+    if (pid === undefined) return undefined;
+
+    const rootName = `Altitude_Warning_Root_${pid}`;
+    const refs = State.hudCache.hudByPid[pid];
+
+    // Idempotent path: widget tree already exists -- just rehydrate refs and return.
+    const existingRoot = safeFind(rootName);
+    if (existingRoot) {
+        if (refs) {
+            refs.altitudeWarningRoot = existingRoot;
+            refs.altitudeWarningCeilingLabel = safeFind(`Altitude_Warning_Ceiling_${pid}`);
+            refs.altitudeWarningTitle = safeFind(`Altitude_Warning_Title_${pid}`);
+            refs.altitudeWarningBody = safeFind(`Altitude_Warning_Body_${pid}`);
+            refs.altitudeWarningCountdown = safeFind(`Altitude_Warning_Countdown_${pid}`);
+        }
+        return existingRoot;
+    }
+
+    // v0.665: Container covers the CENTER ~50% of the screen (960x540 against the 1920x1080
+    // UI reference frame). Pre-v0.665 the backplate was full-screen 3840x2160, which blocked
+    // pilots' peripheral instruments/horizon entirely; pilots still need bearings to descend
+    // safely. The central block is large enough to dominate the player's view but leaves the
+    // edges of the screen unobstructed so altitude/heading/instrument readouts stay visible.
+    // Children's text positions are unchanged (relative to container center; well inside 960x540).
+    try {
+        modlib.ParseUI({
+            name: rootName,
+            type: "Container",
+            playerId: player,
+            position: [0, 0],
+            size: [960, 540],
+            anchor: mod.UIAnchor.Center,
+            visible: false,
+            padding: 0,
+            bgColor: [0, 0, 0],
+            bgAlpha: 1,
+            bgFill: mod.UIBgFill.Solid,
+            children: [
+                // v0.670: "Ceiling: 130" callout, sits ABOVE the title. White text so it reads
+                // as informational rather than alarming. Value is stamped on first show by the
+                // setAltitudeWarningVisibleForPid path (and rewritten there each show in case the
+                // ceiling was changed between rounds).
+                {
+                    name: `Altitude_Warning_Ceiling_${pid}`,
+                    type: "Text",
+                    position: [0, -180],
+                    size: [800, 36],
+                    anchor: mod.UIAnchor.Center,
+                    visible: true,
+                    padding: 0,
+                    bgAlpha: 0,
+                    bgFill: mod.UIBgFill.None,
+                    textLabel: mod.Message(STR_HUD_ALTITUDE_WARNING_CEILING_FORMAT, 0),
+                    textColor: COLOR_WHITE,
+                    textAlpha: 1,
+                    textSize: 24,
+                    textAnchor: mod.UIAnchor.Center,
+                },
+                {
+                    name: `Altitude_Warning_Title_${pid}`,
+                    type: "Text",
+                    position: [0, -120],
+                    size: [800, 60],
+                    anchor: mod.UIAnchor.Center,
+                    visible: true,
+                    padding: 0,
+                    bgAlpha: 0,
+                    bgFill: mod.UIBgFill.None,
+                    textLabel: mod.Message(STR_HUD_ALTITUDE_WARNING_TITLE),
+                    textColor: COLOR_WARNING_YELLOW,
+                    textAlpha: 1,
+                    textSize: 36,
+                    textAnchor: mod.UIAnchor.Center,
+                },
+                {
+                    name: `Altitude_Warning_Body_${pid}`,
+                    type: "Text",
+                    position: [0, -60],
+                    size: [800, 30],
+                    anchor: mod.UIAnchor.Center,
+                    visible: true,
+                    padding: 0,
+                    bgAlpha: 0,
+                    bgFill: mod.UIBgFill.None,
+                    textLabel: mod.Message(STR_HUD_ALTITUDE_WARNING_BODY),
+                    textColor: COLOR_WHITE,
+                    textAlpha: 1,
+                    textSize: 20,
+                    textAnchor: mod.UIAnchor.Center,
+                },
+                {
+                    name: `Altitude_Warning_Countdown_${pid}`,
+                    type: "Text",
+                    position: [0, 10],
+                    size: [400, 100],
+                    anchor: mod.UIAnchor.Center,
+                    visible: true,
+                    padding: 0,
+                    bgAlpha: 0,
+                    bgFill: mod.UIBgFill.None,
+                    textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, ALTITUDE_WARNING_COUNTDOWN_SECONDS),
+                    textColor: COLOR_WARNING_YELLOW,
+                    textAlpha: 1,
+                    textSize: 64,
+                    textAnchor: mod.UIAnchor.Center,
+                },
+            ],
+        });
+    } catch (_e) {
+        return undefined;
+    }
+
+    const root = safeFind(rootName);
+    if (!root) return undefined;
+    safeSetUIWidgetDepth(root, mod.UIDepth.AboveGameUI);
+
+    if (refs) {
+        refs.altitudeWarningRoot = root;
+        refs.altitudeWarningCeilingLabel = safeFind(`Altitude_Warning_Ceiling_${pid}`);
+        refs.altitudeWarningTitle = safeFind(`Altitude_Warning_Title_${pid}`);
+        refs.altitudeWarningBody = safeFind(`Altitude_Warning_Body_${pid}`);
+        refs.altitudeWarningCountdown = safeFind(`Altitude_Warning_Countdown_${pid}`);
+    }
+    return root;
+}
+
+//#endregion ----------------- Altitude Warning HUD (H-P1, standalone) --------------------
+
+
+
+//#region -------------------- Altimeter HUD (v0.666 H-P1, standalone) --------------------
+//
+// Per-pid altimeter card showing the player's current vehicle world Y coordinate. Shown
+// only when the player is in an AIRCRAFT (not tanks/jeeps). Layout:
+//
+//   ┌─────────────────────────┐  ← root container (lazy-built; aligned BottomLeft on screen)
+//   │ ALTITUDE WARNING        │  ← yellow label, visible only when posY > soft
+//   ├─────────────────────────┤
+//   │ Alt: 218                │  ← black backplate card, GREEN by default, YELLOW above soft
+//   └─────────────────────────┘
+//
+// Built LAZILY on first show (runAircraftWarningLoop -> ensureAltimeterUiForPlayer) to avoid
+// the eager-build invisible-widget pattern that bit the black-screen dialog in v0.650-v0.655.
+// Toggled per-pid by setAltimeterVisibleForPid; text + color updated by the loop's diff-gates.
+
+function ensureAltimeterUiForPlayer(player: mod.Player): mod.UIWidget | undefined {
+    if (!player || !mod.IsPlayerValid(player)) return undefined;
+    const pid = safeGetPlayerId(player);
+    if (pid === undefined) return undefined;
+
+    const rootName = UI_ALTIMETER_ROOT_ID + pid;
+    const refs = State.hudCache.hudByPid[pid];
+
+    // Idempotent path: widget tree exists, just rehydrate refs.
+    // v0.673 ROOT CAUSE FIX: also RE-APPLY position / size each call. If a widget persists
+    // across script reloads (or just wasn't rebuilt because safeFind matched), the lazy build
+    // path returns without ever applying the latest ALTIMETER_HUD_ANCHOR_OFFSET_* values --
+    // which is why v0.667->v0.672 position changes appeared to have NO effect for the user.
+    // SetUIWidgetPosition + SetUIWidgetSize hit the LIVE widget; they always win.
+    const existingRoot = safeFind(rootName);
+    if (existingRoot) {
+        const existingCard = safeFind(UI_ALTIMETER_CARD_ID + pid);
+        const existingText = safeFind(UI_ALTIMETER_TEXT_ID + pid);
+        const existingLabel = safeFind(UI_ALTIMETER_WARNING_LABEL_ID + pid);
+        try {
+            mod.SetUIWidgetPosition(existingRoot, mod.CreateVector(ALTIMETER_HUD_ANCHOR_OFFSET_X, ALTIMETER_HUD_ANCHOR_OFFSET_Y, 0));
+            mod.SetUIWidgetSize(existingRoot, mod.CreateVector(ALTIMETER_HUD_ROOT_WIDTH, ALTIMETER_HUD_ROOT_HEIGHT, 0));
+            // v0.686: keep the per-child constants here IN SYNC with the eager-build positions
+            // above (line ~1100). Previously this path hardcoded card.x=0 and label.x=TEXT_LEFT_PADDING,
+            // which silently dragged the card to root_x=0 and mispositioned the label every loop
+            // tick -- explaining the v0.684+ "altimeter not where I put it" reports.
+            if (existingLabel) {
+                mod.SetUIWidgetPosition(existingLabel, mod.CreateVector(ALTIMETER_HUD_LABEL_OFFSET_X, 0, 0));
+                mod.SetUIWidgetSize(existingLabel, mod.CreateVector(ALTIMETER_HUD_LABEL_WIDTH, ALTIMETER_HUD_LABEL_HEIGHT, 0));
+            }
+            if (existingCard) {
+                mod.SetUIWidgetPosition(existingCard, mod.CreateVector(ALTIMETER_HUD_CARD_OFFSET_X, ALTIMETER_HUD_CARD_OFFSET_Y, 0));
+                mod.SetUIWidgetSize(existingCard, mod.CreateVector(ALTIMETER_HUD_CARD_WIDTH, ALTIMETER_HUD_CARD_HEIGHT, 0));
+            }
+            if (existingText) {
+                mod.SetUIWidgetPosition(existingText, mod.CreateVector(ALTIMETER_HUD_CARD_OFFSET_X + ALTIMETER_HUD_TEXT_LEFT_PADDING, ALTIMETER_HUD_CARD_OFFSET_Y, 0));
+                mod.SetUIWidgetSize(existingText, mod.CreateVector(ALTIMETER_HUD_CARD_WIDTH - ALTIMETER_HUD_TEXT_LEFT_PADDING, ALTIMETER_HUD_CARD_HEIGHT, 0));
+            }
+        } catch (_e) {}
+        if (refs) {
+            refs.altimeterRoot = existingRoot;
+            refs.altimeterCard = existingCard;
+            refs.altimeterText = existingText;
+            refs.altimeterWarningLabel = existingLabel;
+        }
+        return existingRoot;
+    }
+
+    // v0.672: TopLeft root anchor (the ONLY left-side root anchor this engine accepts in
+    // ParseUI; CenterLeft/BottomLeft silently fall back). To position lower-left we use a
+    // large Y in ALTIMETER_HUD_ANCHOR_OFFSET_Y (800 of 1080). Same pattern as the existing
+    // Upper_Left_Container_ / Container_TopLeft_CoreUI_ which both use TopLeft + explicit
+    // pixel offsets and render at their named positions reliably.
+    // Children stay TopLeft within the root (sibling text+card -- no nesting drift, see v0.668).
+    try {
+        modlib.ParseUI({
+            name: rootName,
+            type: "Container",
+            playerId: player,
+            position: [ALTIMETER_HUD_ANCHOR_OFFSET_X, ALTIMETER_HUD_ANCHOR_OFFSET_Y],
+            size: [ALTIMETER_HUD_ROOT_WIDTH, ALTIMETER_HUD_ROOT_HEIGHT],
+            anchor: mod.UIAnchor.TopLeft,
+            visible: false,
+            padding: 0,
+            bgAlpha: 0,
+            bgFill: mod.UIBgFill.None,
+            children: [
+                // 1) Yellow "ALTITUDE WARNING" label at top of root, hidden by default.
+                //    Indented to match the altitude text's horizontal position.
+                {
+                    name: UI_ALTIMETER_WARNING_LABEL_ID + pid,
+                    type: "Text",
+                    position: [ALTIMETER_HUD_TEXT_LEFT_PADDING, 0],
+                    size: [ALTIMETER_HUD_LABEL_WIDTH, ALTIMETER_HUD_LABEL_HEIGHT],
+                    anchor: mod.UIAnchor.TopLeft,
+                    visible: false,
+                    padding: 0,
+                    bgAlpha: 0,
+                    bgFill: mod.UIBgFill.None,
+                    textLabel: mod.Message(STR_HUD_ALTIMETER_WARNING_LABEL),
+                    textColor: COLOR_WARNING_YELLOW,
+                    textAlpha: 1,
+                    textSize: ALTIMETER_HUD_LABEL_TEXT_SIZE,
+                    textAnchor: mod.UIAnchor.CenterLeft,
+                },
+                // 2) Black-backplate card -- pure visual backplate, no text inside.
+                {
+                    name: UI_ALTIMETER_CARD_ID + pid,
+                    type: "Container",
+                    position: [0, ALTIMETER_HUD_CARD_OFFSET_Y],
+                    size: [ALTIMETER_HUD_CARD_WIDTH, ALTIMETER_HUD_CARD_HEIGHT],
+                    anchor: mod.UIAnchor.TopLeft,
+                    visible: true,
+                    padding: 0,
+                    bgColor: [0, 0, 0],
+                    bgAlpha: 0.75,
+                    bgFill: mod.UIBgFill.Blur,
+                },
+                // 3) Altitude text -- SIBLING of the card (not nested), overlaid on top.
+                //    Declared after the card so it renders on top in the parent's child order.
+                {
+                    name: UI_ALTIMETER_TEXT_ID + pid,
+                    type: "Text",
+                    position: [ALTIMETER_HUD_TEXT_LEFT_PADDING, ALTIMETER_HUD_CARD_OFFSET_Y],
+                    size: [ALTIMETER_HUD_CARD_WIDTH - ALTIMETER_HUD_TEXT_LEFT_PADDING, ALTIMETER_HUD_CARD_HEIGHT],
+                    anchor: mod.UIAnchor.TopLeft,
+                    visible: true,
+                    padding: 0,
+                    bgAlpha: 0,
+                    bgFill: mod.UIBgFill.None,
+                    textLabel: mod.Message(STR_HUD_ALTIMETER_FORMAT, 0),
+                    textColor: COLOR_READY_GREEN,
+                    textAlpha: 1,
+                    textSize: ALTIMETER_HUD_TEXT_SIZE,
+                    textAnchor: mod.UIAnchor.CenterLeft,
+                },
+            ],
+        });
+    } catch (_e) {
+        return undefined;
+    }
+
+    const root = safeFind(rootName);
+    if (!root) return undefined;
+    safeSetUIWidgetDepth(root, mod.UIDepth.AboveGameUI);
+    // Belt-and-suspenders depth on the card and the label so they ride above the cockpit overlay
+    // even if the parent's depth doesn't cascade (the existing altitude warning dialog needed this).
+    const card = safeFind(UI_ALTIMETER_CARD_ID + pid);
+    const text = safeFind(UI_ALTIMETER_TEXT_ID + pid);
+    const label = safeFind(UI_ALTIMETER_WARNING_LABEL_ID + pid);
+    safeSetUIWidgetDepth(card, mod.UIDepth.AboveGameUI);
+    safeSetUIWidgetDepth(text, mod.UIDepth.AboveGameUI);
+    safeSetUIWidgetDepth(label, mod.UIDepth.AboveGameUI);
+
+    if (refs) {
+        refs.altimeterRoot = root;
+        refs.altimeterCard = card;
+        refs.altimeterText = text;
+        refs.altimeterWarningLabel = label;
+    }
+    return root;
+}
+
+// v0.674: show/hide the altimeter CARD + TEXT (the visible parts). Root stays always-visible
+// as an invisibly-rendered positioning frame so the engine keeps it at its build-time TopLeft
+// (20, 800) position. Toggling visibility on the root itself was unreliable -- v0.673 left the
+// invisible root alive but lazy and engine ended up rendering children wherever.
+function setAltimeterVisibleForPid(pid: number, visible: boolean): void {
+    const refs = State.hudCache.hudByPid[pid];
+    let card = refs?.altimeterCard;
+    let text = refs?.altimeterText;
+    if (!card) {
+        card = safeFind(UI_ALTIMETER_CARD_ID + pid);
+        if (card && refs) refs.altimeterCard = card;
+    }
+    if (!text) {
+        text = safeFind(UI_ALTIMETER_TEXT_ID + pid);
+        if (text && refs) refs.altimeterText = text;
+    }
+    safeSetUIWidgetVisible(card, visible);
+    safeSetUIWidgetVisible(text, visible);
+}
+
+// v0.666: update the "Alt: {Y}" text. Called only when the integer Y changes (diff-gated in loop).
+function updateAltimeterTextForPid(pid: number, posY: number): void {
+    const refs = State.hudCache.hudByPid[pid];
+    if (!refs?.altimeterText) return;
+    safeSetUITextLabel(refs.altimeterText, mod.Message(STR_HUD_ALTIMETER_FORMAT, posY));
+}
+
+// v0.666: green when below soft, yellow when above. Called on stage transition only.
+function setAltimeterStageColorForPid(pid: number, isWarning: boolean): void {
+    const refs = State.hudCache.hudByPid[pid];
+    if (!refs?.altimeterText) return;
+    safeSetUITextColor(refs.altimeterText, isWarning ? COLOR_WARNING_YELLOW : COLOR_READY_GREEN);
+}
+
+// v0.670: toggle the small yellow "ALTITUDE WARNING" label above the altimeter. safeFind fallback
+// for the same reasons as setAltimeterVisibleForPid.
+function setAltimeterWarningLabelVisibleForPid(pid: number, visible: boolean): void {
+    const refs = State.hudCache.hudByPid[pid];
+    let label = refs?.altimeterWarningLabel;
+    if (!label) {
+        label = safeFind(UI_ALTIMETER_WARNING_LABEL_ID + pid);
+        if (label && refs) refs.altimeterWarningLabel = label;
+    }
+    safeSetUIWidgetVisible(label, visible);
+}
+
+//#endregion ----------------- Altimeter HUD (v0.666 H-P1, standalone) --------------------
 
 
 

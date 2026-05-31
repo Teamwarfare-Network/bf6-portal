@@ -1768,9 +1768,59 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         incOffsetX
     );
 
+    // H-P1: Aircraft hard-ceiling buffer (admin-tunable). Static "Hard Buffer" label + separate value widget
+    // showing current meters; -/+ buttons step by AIRCRAFT_HARD_BUFFER_STEP.
+    const aircraftBufferRowY = roundLengthRowY + (buttonSizeY + rowSpacingY);
+    addTesterRowWithValue(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        aircraftBufferRowY,
+        UI_ADMIN_AIRCRAFT_BUFFER_DEC_ID,
+        UI_ADMIN_AIRCRAFT_BUFFER_INC_ID,
+        UI_ADMIN_AIRCRAFT_BUFFER_LABEL_ID,
+        UI_ADMIN_AIRCRAFT_BUFFER_VALUE_ID,
+        STR_ADMIN_AIRCRAFT_BUFFER_LABEL,
+        State.round.aircraftCeiling.hardBufferM,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        ADMIN_PANEL_VALUE_SIZE_X,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
+
+    // v0.666: Aircraft warning buffer (admin-tunable). Gap between soft warning and black-screen
+    // dialog. Same -/+ row as Hard Buffer, stepping by AIRCRAFT_WARNING_BUFFER_STEP.
+    const aircraftWarnBufferRowY = aircraftBufferRowY + (buttonSizeY + rowSpacingY);
+    addTesterRowWithValue(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        aircraftWarnBufferRowY,
+        UI_ADMIN_AIRCRAFT_WARN_BUFFER_DEC_ID,
+        UI_ADMIN_AIRCRAFT_WARN_BUFFER_INC_ID,
+        UI_ADMIN_AIRCRAFT_WARN_BUFFER_LABEL_ID,
+        UI_ADMIN_AIRCRAFT_WARN_BUFFER_VALUE_ID,
+        STR_ADMIN_AIRCRAFT_WARN_BUFFER_LABEL,
+        State.round.aircraftCeiling.warningBufferM,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        ADMIN_PANEL_VALUE_SIZE_X,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
+
     syncAdminTieBreakerModeLabelForAllPlayers();
     syncAdminLiveRespawnLabelForAllPlayers();
     syncAdminRoundLengthLabelForAllPlayers();
+    syncAircraftBufferAdminValueForAllPlayers();
+    syncAircraftWarningBufferAdminValueForAllPlayers();
 }
 
 //#endregion ----------------- Admin Panel UI (Right Side) --------------------
@@ -2403,153 +2453,378 @@ function updateReadyDialogModeConfigForAllVisibleViewers(): void {
 
 //#region -------------------- Aircraft Ceiling (Soft Enforcement) --------------------
 
-// TODO(1.0): Unused; remove before final 1.0 release.
-// Converts the HUD ceiling to world Y using the per-map HUD floor offset.
+// v0.669 H-P1 3-STAGE LAYERED AIRCRAFT CEILING (ceiling-centered re-anchor)
+//
+// The user-facing `aircraftCeiling` setting is now the BLACK-SCREEN threshold -- the central
+// reference point. The warning buffer extends BELOW the ceiling (yellow altimeter + small
+// label) and the hard buffer extends ABOVE it (engine physics pushback). This means when the
+// altimeter readout matches the ceiling setting exactly, the black screen is about to fire --
+// a clean visual correspondence the v0.666 stacked-above layout didn't have.
+//
+// Vertical layout (world Y), Firestorm/TWL example values (floor=132, ceiling=130,
+// warnBuf=5, hardBuf=25):
+//
+//   ground (floorY=132)
+//     ...
+//     WARNING        = floor + ceilingSetting - warningBufferM      = 257
+//                      altimeter text goes YELLOW
+//                      "ALTITUDE WARNING" label appears above altimeter
+//     ... warningBufferM gap (default 5; player flies up through it) ...
+//     BLACK SCREEN   = floor + ceilingSetting                       = 262   <-- CEILING ANCHOR
+//                      960x540 centered black dialog appears
+//     ... hardBufferM gap (default 25; player flies up through it) ...
+//     HARD PHYSICS   = floor + ceilingSetting + hardBufferM         = 287
+//                      mod.SetMaxVehicleHeightLimitScale engages engine pushback
+//
+// Engine scaling note (v0.664 diagnosis, still applies): mod.SetMaxVehicleHeightLimitScale
+// applies the scale to hudMaxY ONLY, NOT to (floorY + hudMaxY). So to land the engine cap
+// at targetWorldY we use scale = targetWorldY / hudMaxY (no floor offset in denominator).
+//
+// Migration from v0.666 layout (warnBuf used to stack ABOVE ceiling): on Firestorm/TWL the
+// hard cap moves from 292 -> 287 (5 units lower) and the black screen moves from 267 -> 262
+// (5 units lower). The warning threshold drops 257 (was 262). Per-map ceilingSetting values
+// may need a small downward retune since "ceiling" now means where physics gives a 25-unit
+// runway instead of where the warning text first appears.
 function getAircraftSoftCeilingWorldY(): number {
+    // WARNING threshold: warningBufferM BELOW the ceiling setting. Yellow + label fire here.
     const floorY = Math.floor(State.round.aircraftCeiling.hudFloorY);
-    const hudCeiling = Math.floor(State.round.modeConfig.confirmed.aircraftCeiling);
-    return floorY + hudCeiling;
+    const softHud = Math.max(1, Math.floor(State.round.modeConfig.confirmed.aircraftCeiling));
+    const warnBuffer = Math.max(0, Math.floor(State.round.aircraftCeiling.warningBufferM));
+    return floorY + softHud - warnBuffer;
 }
 
-// Engine limiter expects a world-Y scale; convert HUD ceiling using the map's HUD floor/max offsets.
-function applyCustomAircraftCeilingHardLimiter(): void {
+// v0.669: BLACK SCREEN threshold = AT the ceiling value (the central anchor). Aircraft only.
+function getAircraftWarningCeilingWorldY(): number {
     const floorY = Math.floor(State.round.aircraftCeiling.hudFloorY);
+    const softHud = Math.max(1, Math.floor(State.round.modeConfig.confirmed.aircraftCeiling));
+    return floorY + softHud;
+}
+
+// v0.669: HARD PHYSICS threshold = ceiling + hardBufferM (above the ceiling).
+function getAircraftHardCeilingWorldY(): number {
+    const floorY = Math.floor(State.round.aircraftCeiling.hudFloorY);
+    const softHud = Math.max(1, Math.floor(State.round.modeConfig.confirmed.aircraftCeiling));
+    const hardBuffer = Math.max(0, Math.floor(State.round.aircraftCeiling.hardBufferM));
+    return floorY + softHud + hardBuffer;
+}
+
+// v0.669 H-P1 layered ceiling -- HARD CAP (engine pushback) at ceiling + hardBufferM.
+// See header comment on getAircraftSoftCeilingWorldY() for the full 3-stage layout + scale derivation.
+function applyCustomAircraftCeilingHardLimiter(): void {
     const baseHud = Math.max(1, Math.floor(State.round.aircraftCeiling.hudMaxY));
-    const targetHud = Math.max(1, Math.floor(State.round.modeConfig.confirmed.aircraftCeiling));
-    // Convert HUD ceiling to world Y using the map-specific HUD floor offset.
-    const baseWorldY = Math.max(1, floorY + baseHud);
-    const targetWorldY = Math.max(1, floorY + targetHud);
-    const scale = targetWorldY / baseWorldY;
+    const targetWorldY = Math.max(1, getAircraftHardCeilingWorldY());
+    // Engine applies scale relative to hudMaxY only (NO floor offset). See v0.664 diagnosis.
+    const scale = targetWorldY / baseHud;
     mod.SetMaxVehicleHeightLimitScale(scale);
 }
 
-// TODO(1.0): Unused; remove before final 1.0 release.
-function getVehicleYawRad(vehicle: mod.Vehicle): number {
-    const facing = mod.GetVehicleState(vehicle, mod.VehicleStateVector.FacingDirection);
-    const x = mod.XComponentOf(facing);
-    const z = mod.ZComponentOf(facing);
-    if (x === 0 && z === 0) return 0;
-    return Math.atan2(x, z);
-}
-
-// TODO(1.0): Unused; remove before final 1.0 release.
-function isAircraftVehicle(vehicle: mod.Vehicle): boolean {
+// v0.662 ROOT CAUSE: mod.CompareVehicleName is unreliable per Conquest CQ_Bug_43 (documented at
+// conquest/boundary/enforcement.ts:140-144 + conquest Changelog v1.368). Confirmed in helis-only
+// v0.661 diagnostic: user in heli with vehicleFoundCount=1 but isAircraftCount=0 -- CompareVehicleName
+// returned false for every entry in the chain despite the user being in an AH64/Eurocopter/UH60.
+//
+// Fix: classify aircraft via slot binding (the spawn system stores the pre-known vehicleType enum
+// in State.vehicles.slots[i].vehicleType, and binds spawned vehicle objIds via vehicleToSlot[objId]).
+// Pure JS switch on the enum is reliable; mod.CompareVehicleName at runtime is not.
+function isAircraftVehicleType(vehicleType: mod.VehicleList): boolean {
     // Jets
-    if (mod.CompareVehicleName(vehicle, mod.VehicleList.F16)) return true;
-    if (mod.CompareVehicleName(vehicle, mod.VehicleList.F22)) return true;
-    if (mod.CompareVehicleName(vehicle, mod.VehicleList.JAS39)) return true;
-    if (mod.CompareVehicleName(vehicle, mod.VehicleList.SU57)) return true;
+    if (vehicleType === mod.VehicleList.F16) return true;
+    if (vehicleType === mod.VehicleList.F22) return true;
+    if (vehicleType === mod.VehicleList.JAS39) return true;
+    if (vehicleType === mod.VehicleList.SU57) return true;
     // Helis + transports
-    if (mod.CompareVehicleName(vehicle, mod.VehicleList.AH64)) return true;
-    if (mod.CompareVehicleName(vehicle, mod.VehicleList.Eurocopter)) return true;
-    if (mod.CompareVehicleName(vehicle, mod.VehicleList.UH60)) return true;
-    if (mod.CompareVehicleName(vehicle, mod.VehicleList.UH60_Pax)) return true;
-    if (mod.CompareVehicleName(vehicle, mod.VehicleList.Cheetah)) return true;
-    if (mod.CompareVehicleName(vehicle, mod.VehicleList.Flyer60)) return true;
+    if (vehicleType === mod.VehicleList.AH64) return true;
+    if (vehicleType === mod.VehicleList.Eurocopter) return true;
+    if (vehicleType === mod.VehicleList.UH60) return true;
+    if (vehicleType === mod.VehicleList.UH60_Pax) return true;
+    if (vehicleType === mod.VehicleList.Cheetah) return true;
+    if (vehicleType === mod.VehicleList.Flyer60) return true;
     return false;
 }
 
-// TODO(1.0): Unused; remove before final 1.0 release.
-function updateSoftCeilingForVehicle(
-    vehicle: mod.Vehicle,
-    state: AircraftCeilingVehicleState,
-    nowSeconds: number,
-    softY: number,
-    hardY: number
-): void {
-    const pos = mod.GetVehicleState(vehicle, mod.VehicleStateVector.VehiclePosition);
-    const posY = mod.YComponentOf(pos);
-    const vel = mod.GetVehicleState(vehicle, mod.VehicleStateVector.LinearVelocity);
-    const velY = mod.YComponentOf(vel);
-
-    const enterY = softY + AIRCRAFT_SOFT_CEILING_ENTER_BUFFER;
-    const exitY = softY - AIRCRAFT_SOFT_CEILING_EXIT_BUFFER;
-
-    if (!state.enforcing && posY > enterY && velY > 0) {
-        state.enforcing = true;
-    }
-    if (state.enforcing && posY < exitY) {
-        state.enforcing = false;
-        return;
-    }
-    if (!state.enforcing || posY <= softY) {
-        return;
-    }
-    if (nowSeconds - state.lastNudgeAt < AIRCRAFT_SOFT_CEILING_NUDGE_INTERVAL_SECONDS) {
-        return;
-    }
-
-    const dtSeconds = Math.max(AIRCRAFT_SOFT_CEILING_NUDGE_INTERVAL_SECONDS, nowSeconds - state.lastNudgeAt);
-    const upwardVel = Math.max(0, velY);
-    let step =
-        upwardVel * dtSeconds * AIRCRAFT_SOFT_CEILING_VELOCITY_SCALE;
-    step = Math.max(AIRCRAFT_SOFT_CEILING_NUDGE_MIN_STEP, Math.min(AIRCRAFT_SOFT_CEILING_NUDGE_MAX_STEP, step));
-    if (posY > hardY) {
-        // If someone gets far above the soft ceiling, increase the nudge to avoid a slow climb.
-        step = Math.min(AIRCRAFT_SOFT_CEILING_NUDGE_MAX_STEP, step * AIRCRAFT_SOFT_CEILING_HARD_STEP_MULTIPLIER);
-    }
-    const targetY = Math.max(softY, posY - step);
-    const newPos = mod.CreateVector(mod.XComponentOf(pos), targetY, mod.ZComponentOf(pos));
-    const yawRad = getVehicleYawRad(vehicle);
-    mod.Teleport(vehicle, newPos, yawRad);
-    state.lastNudgeAt = nowSeconds;
+function isAircraftVehicle(vehicle: mod.Vehicle): boolean {
+    const objId = safeGetObjId(vehicle);
+    if (objId === undefined) return false;
+    const slotIndex = State.vehicles.vehicleToSlot[objId];
+    if (slotIndex === undefined) return false;
+    const slot = State.vehicles.slots[slotIndex];
+    if (!slot) return false;
+    return isAircraftVehicleType(slot.vehicleType);
 }
 
-// TODO(1.0): Unused; remove before final 1.0 release.
-async function runAircraftCeilingSoftEnforcementLoop(expectedToken: number): Promise<void> {
-    while (State.round.aircraftCeiling.enforcementToken === expectedToken) {
-        if (!State.round.aircraftCeiling.customEnabled || AIRCRAFT_CEILING_ENFORCEMENT_MODE !== "soft") {
-            await mod.Wait(AIRCRAFT_SOFT_CEILING_TICK_SECONDS);
+// H-P1: per-pid widget visibility toggle with countdown lifecycle.
+//   On show: stamp startedAtSecondsByPid[pid] = now, seed countdown digit at ALTITUDE_WARNING_COUNTDOWN_SECONDS.
+//   On hide: delete the timestamp so the next ascent starts a fresh window.
+// Diff-gated via altitudeWarningVisibleByPid so repeated calls don't re-fire widget writes.
+function setAltitudeWarningVisibleForPid(pid: number, visible: boolean): void {
+    const previously = !!State.players.altitudeWarningVisibleByPid?.[pid];
+    if (previously === visible) return;
+    State.players.altitudeWarningVisibleByPid[pid] = visible;
+
+    const refs = State.hudCache.hudByPid[pid];
+    if (!refs) return;
+    if (visible) {
+        const player = safeFindPlayer(pid);
+        if (player) ensureAltitudeWarningUiForPlayer(player);
+    }
+    safeSetUIWidgetVisible(refs.altitudeWarningRoot, visible);
+    if (visible) {
+        State.players.altitudeWarningStartedAtSecondsByPid[pid] = mod.GetMatchTimeElapsed();
+        if (refs.altitudeWarningCountdown) {
+            safeSetUITextLabel(
+                refs.altitudeWarningCountdown,
+                mod.Message(mod.stringkeys.twl.system.genericCounter, ALTITUDE_WARNING_COUNTDOWN_SECONDS)
+            );
+        }
+        // v0.670: stamp "Ceiling: X" with the currently-confirmed ceiling setting each time the
+        // dialog shows. The ceiling can change between rounds via the Ready Dialog so we resolve
+        // it fresh per show rather than baking it into the widget at construction time.
+        if (refs.altitudeWarningCeilingLabel) {
+            const ceilingValue = Math.floor(State.round.modeConfig.confirmed.aircraftCeiling);
+            safeSetUITextLabel(
+                refs.altitudeWarningCeilingLabel,
+                mod.Message(STR_HUD_ALTITUDE_WARNING_CEILING_FORMAT, ceilingValue)
+            );
+        }
+    } else {
+        delete State.players.altitudeWarningStartedAtSecondsByPid[pid];
+    }
+}
+
+// v0.666 H-P1 3-STAGE LAYERED ALTITUDE LOOP (5Hz, iterates mod.AllPlayers each tick).
+//
+// Per player each tick:
+//   not in aircraft           → hide altimeter, hide warning label, hide black-screen dialog
+//   in aircraft, posY <= soft → altimeter GREEN with current Y, no label, no dialog
+//   posY > soft, <= warning   → altimeter YELLOW with current Y, "ALTITUDE WARNING" label, no dialog
+//   posY > warning            → altimeter YELLOW + label visible + BLACK SCREEN dialog
+//   (engine hard cap engages at warning + hardBuffer, outside this loop's concern — that's just
+//    SetMaxVehicleHeightLimitScale silently pushing the vehicle back down.)
+//
+// Why AllPlayers each tick (v0.650-v0.652 lesson): the playerInAircraftByPid cache populated by
+// OnPlayerEnterVehicle is unreliable -- the event drops silently when team is unassigned at the
+// time of entry. Iterating AllPlayers and reading IsInVehicle/GetVehicleFromPlayer per-tick reads
+// the engine's authoritative state. At N=2-8 players this is trivially cheap.
+//
+// customEnabled gate (Vanilla mode + useCustomCeiling=false maps): when off, the entire
+// 3-stage warning is suppressed AND the altimeter card hides — the engine's vanilla ceiling
+// applies and the player shouldn't see custom-ceiling chrome.
+async function runAircraftWarningLoop(): Promise<void> {
+    const lastCountdownByPid: Record<number, number> = {};
+    const lastAltimeterTextYByPid: Record<number, number> = {};
+    const lastAltimeterStageByPid: Record<number, number> = {};
+    const lastWarningLabelVisibleByPid: Record<number, boolean> = {};
+
+    const STAGE_GREEN = 0;     // altimeter green, no label, no black screen
+    const STAGE_YELLOW = 1;    // altimeter yellow + "ALTITUDE WARNING" label
+    const STAGE_BLACK = 2;     // STAGE_YELLOW + 960x540 black-screen dialog
+
+    while (true) {
+        await mod.Wait(AIRCRAFT_SOFT_CEILING_TICK_SECONDS);
+
+        if (!State.round.aircraftCeiling.customEnabled) {
+            // Vanilla mode: tear down everything we own.
+            for (const pidStr in State.players.altitudeWarningVisibleByPid) {
+                const pid = Number(pidStr);
+                if (State.players.altitudeWarningVisibleByPid[pid]) {
+                    setAltitudeWarningVisibleForPid(pid, false);
+                    delete lastCountdownByPid[pid];
+                }
+            }
+            const players = mod.AllPlayers();
+            const count = mod.CountOf(players);
+            for (let i = 0; i < count; i++) {
+                const player = mod.ValueInArray(players, i) as mod.Player;
+                const pid = safeGetPlayerId(player);
+                if (pid === undefined) continue;
+                setAltimeterVisibleForPid(pid, false);
+                setAltimeterWarningLabelVisibleForPid(pid, false);
+                delete lastAltimeterTextYByPid[pid];
+                delete lastAltimeterStageByPid[pid];
+                delete lastWarningLabelVisibleByPid[pid];
+            }
             continue;
         }
 
         const softY = getAircraftSoftCeilingWorldY();
-        if (softY <= 0) {
-            await mod.Wait(AIRCRAFT_SOFT_CEILING_TICK_SECONDS);
-            continue;
-        }
-        const hardY = softY + AIRCRAFT_SOFT_CEILING_HARD_BUFFER;
-        const nowSeconds = mod.GetMatchTimeElapsed();
+        const warningY = getAircraftWarningCeilingWorldY();
+        if (softY <= 0) continue;
+        const now = mod.GetMatchTimeElapsed();
 
-        const vehicles = mod.AllVehicles();
-        const count = mod.CountOf(vehicles);
-        const seen: Record<number, boolean> = {};
+        const players = mod.AllPlayers();
+        const count = mod.CountOf(players);
         for (let i = 0; i < count; i++) {
-            const vehicle = mod.ValueInArray(vehicles, i) as mod.Vehicle;
-            if (!vehicle || !isAircraftVehicle(vehicle)) continue;
-            const vehicleId = getVehicleId(vehicle);
-            seen[vehicleId] = true;
-            const state =
-                State.round.aircraftCeiling.vehicleStates[vehicleId] ??
-                (State.round.aircraftCeiling.vehicleStates[vehicleId] = { enforcing: false, lastNudgeAt: -999 });
-            updateSoftCeilingForVehicle(vehicle, state, nowSeconds, softY, hardY);
-        }
+            const player = mod.ValueInArray(players, i) as mod.Player;
+            if (!player || !mod.IsPlayerValid(player)) continue;
+            const pid = safeGetPlayerId(player);
+            if (pid === undefined) continue;
 
-        for (const idStr in State.round.aircraftCeiling.vehicleStates) {
-            const id = Number(idStr);
-            if (!seen[id]) {
-                delete State.round.aircraftCeiling.vehicleStates[id];
+            // IsInVehicle preflight (helis pattern at overtime.ts:761) — GetVehicleFromPlayer
+            // can silently return null without it.
+            const inVehicle = safeGetSoldierStateBool(player, mod.SoldierStateBool.IsInVehicle, false);
+            if (!inVehicle) {
+                if (State.players.altitudeWarningVisibleByPid?.[pid]) {
+                    setAltitudeWarningVisibleForPid(pid, false);
+                    delete lastCountdownByPid[pid];
+                }
+                setAltimeterVisibleForPid(pid, false);
+                setAltimeterWarningLabelVisibleForPid(pid, false);
+                delete lastAltimeterTextYByPid[pid];
+                delete lastAltimeterStageByPid[pid];
+                delete lastWarningLabelVisibleByPid[pid];
+                continue;
+            }
+
+            let vehicle: mod.Vehicle | undefined;
+            try { vehicle = mod.GetVehicleFromPlayer(player); } catch (_e) {}
+            if (!vehicle || !isAircraftVehicle(vehicle)) {
+                // In a vehicle but NOT an aircraft (tank/jeep). Per v0.666 spec: altimeter is
+                // aircraft-only, so hide everything.
+                if (State.players.altitudeWarningVisibleByPid?.[pid]) {
+                    setAltitudeWarningVisibleForPid(pid, false);
+                    delete lastCountdownByPid[pid];
+                }
+                setAltimeterVisibleForPid(pid, false);
+                setAltimeterWarningLabelVisibleForPid(pid, false);
+                delete lastAltimeterTextYByPid[pid];
+                delete lastAltimeterStageByPid[pid];
+                delete lastWarningLabelVisibleByPid[pid];
+                continue;
+            }
+            const pos = mod.GetVehicleState(vehicle, mod.VehicleStateVector.VehiclePosition);
+            const posY = mod.YComponentOf(pos);
+            // v0.667: altimeter shows HUD altitude (posY - hudFloorY) so the displayed number
+            // matches the same scale as the Ready-Dialog ceiling setting. On Firestorm/TWL with
+            // floor=132 and ceiling=130, the altimeter reads 130 exactly when the player crosses
+            // the soft warning at world Y=262. World-Y thresholds (softY/warningY) are unchanged.
+            const floorY = Math.floor(State.round.aircraftCeiling.hudFloorY);
+            const hudAltitudeInt = Math.floor(posY - floorY);
+
+            // Lazy-build altimeter on first show. Same pattern as the black-screen dialog.
+            ensureAltimeterUiForPlayer(player);
+            setAltimeterVisibleForPid(pid, true);
+
+            // Determine 3-stage state (still uses world-Y thresholds — the math doesn't change).
+            const stage = posY > warningY ? STAGE_BLACK : (posY > softY ? STAGE_YELLOW : STAGE_GREEN);
+
+            // Update altimeter text — diff-gated on integer HUD altitude so we don't rewrite 5×/sec
+            // for sub-1m drift.
+            if (lastAltimeterTextYByPid[pid] !== hudAltitudeInt) {
+                lastAltimeterTextYByPid[pid] = hudAltitudeInt;
+                updateAltimeterTextForPid(pid, hudAltitudeInt);
+            }
+            // Update altimeter color (green/yellow) — diff-gated on stage transition.
+            if (lastAltimeterStageByPid[pid] !== stage) {
+                lastAltimeterStageByPid[pid] = stage;
+                setAltimeterStageColorForPid(pid, stage >= STAGE_YELLOW);
+            }
+            // Show/hide small "ALTITUDE WARNING" label above altimeter.
+            const wantLabel = stage >= STAGE_YELLOW;
+            if (lastWarningLabelVisibleByPid[pid] !== wantLabel) {
+                lastWarningLabelVisibleByPid[pid] = wantLabel;
+                setAltimeterWarningLabelVisibleForPid(pid, wantLabel);
+            }
+
+            // Black-screen dialog visibility — toggled by the existing setAltitudeWarningVisibleForPid.
+            const currentlyVisibleBlack = !!State.players.altitudeWarningVisibleByPid?.[pid];
+            const shouldShowBlack = stage === STAGE_BLACK;
+            if (shouldShowBlack && !currentlyVisibleBlack) {
+                setAltitudeWarningVisibleForPid(pid, true);
+            } else if (!shouldShowBlack && currentlyVisibleBlack) {
+                setAltitudeWarningVisibleForPid(pid, false);
+                delete lastCountdownByPid[pid];
+            }
+
+            // Countdown digit update inside the black-screen dialog: only while it's visible.
+            if (State.players.altitudeWarningVisibleByPid?.[pid]) {
+                const startedAt = State.players.altitudeWarningStartedAtSecondsByPid[pid] ?? now;
+                const elapsed = Math.max(0, now - startedAt);
+                const remaining = Math.max(0, ALTITUDE_WARNING_COUNTDOWN_SECONDS - Math.floor(elapsed));
+                if (lastCountdownByPid[pid] !== remaining) {
+                    lastCountdownByPid[pid] = remaining;
+                    const refs = State.hudCache.hudByPid[pid];
+                    if (refs?.altitudeWarningCountdown) {
+                        safeSetUITextLabel(
+                            refs.altitudeWarningCountdown,
+                            mod.Message(mod.stringkeys.twl.system.genericCounter, remaining)
+                        );
+                    }
+                }
             }
         }
-
-        await mod.Wait(AIRCRAFT_SOFT_CEILING_TICK_SECONDS);
     }
 }
 
-// TODO(1.0): Unused; remove before final 1.0 release.
-function startAircraftCeilingSoftEnforcementLoop(): void {
-    State.round.aircraftCeiling.enforcementToken += 1;
-    void runAircraftCeilingSoftEnforcementLoop(State.round.aircraftCeiling.enforcementToken);
+// H-P1: admin-panel Buffer knob action target. Clamps to [MIN, MAX] with STEP increments,
+// writes state, and re-applies the engine cap immediately so the new hard ceiling takes effect.
+// Updates the per-pid value widget on each click.
+function setAircraftHardBuffer(nextValue: number, _changedBy?: mod.Player): void {
+    const clamped = Math.max(
+        AIRCRAFT_HARD_BUFFER_MIN,
+        Math.min(AIRCRAFT_HARD_BUFFER_MAX, Math.floor(nextValue))
+    );
+    if (clamped === State.round.aircraftCeiling.hardBufferM) return;
+    State.round.aircraftCeiling.hardBufferM = clamped;
+    if (State.round.aircraftCeiling.customEnabled) {
+        applyCustomAircraftCeilingHardLimiter();
+    }
+    syncAircraftBufferAdminValueForAllPlayers();
+}
+
+// H-P1: per-pid sync of the Buffer value widget on the Admin Panel.
+function syncAircraftBufferAdminValueForAllPlayers(): void {
+    const players = mod.AllPlayers();
+    const count = mod.CountOf(players);
+    const bufferValue = Math.max(0, Math.floor(State.round.aircraftCeiling.hardBufferM));
+    for (let i = 0; i < count; i++) {
+        const player = mod.ValueInArray(players, i) as mod.Player;
+        if (!player || !mod.IsPlayerValid(player)) continue;
+        const pid = safeGetPlayerId(player);
+        if (pid === undefined || isPidDisconnected(pid)) continue;
+        const widget = safeFind(UI_ADMIN_AIRCRAFT_BUFFER_VALUE_ID + pid);
+        if (!widget) continue;
+        safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.system.genericCounter, bufferValue));
+    }
+}
+
+// v0.666: admin "Warn Buffer" knob action target. Same shape as setAircraftHardBuffer; the
+// warning buffer is the gap between the yellow soft warning and the black-screen dialog.
+// Re-applying the hard limiter is required because the hard cap stacks on top of warningBufferM.
+function setAircraftWarningBuffer(nextValue: number, _changedBy?: mod.Player): void {
+    const clamped = Math.max(
+        AIRCRAFT_WARNING_BUFFER_MIN,
+        Math.min(AIRCRAFT_WARNING_BUFFER_MAX, Math.floor(nextValue))
+    );
+    if (clamped === State.round.aircraftCeiling.warningBufferM) return;
+    State.round.aircraftCeiling.warningBufferM = clamped;
+    if (State.round.aircraftCeiling.customEnabled) {
+        applyCustomAircraftCeilingHardLimiter();
+    }
+    syncAircraftWarningBufferAdminValueForAllPlayers();
+}
+
+// v0.666: per-pid sync of the Warn Buffer value widget on the Admin Panel.
+function syncAircraftWarningBufferAdminValueForAllPlayers(): void {
+    const players = mod.AllPlayers();
+    const count = mod.CountOf(players);
+    const bufferValue = Math.max(0, Math.floor(State.round.aircraftCeiling.warningBufferM));
+    for (let i = 0; i < count; i++) {
+        const player = mod.ValueInArray(players, i) as mod.Player;
+        if (!player || !mod.IsPlayerValid(player)) continue;
+        const pid = safeGetPlayerId(player);
+        if (pid === undefined || isPidDisconnected(pid)) continue;
+        const widget = safeFind(UI_ADMIN_AIRCRAFT_WARN_BUFFER_VALUE_ID + pid);
+        if (!widget) continue;
+        safeSetUITextLabel(widget, mod.Message(mod.stringkeys.twl.system.genericCounter, bufferValue));
+    }
 }
 
 function enableCustomAircraftCeiling(): void {
     State.round.aircraftCeiling.customEnabled = true;
-    State.round.aircraftCeiling.vehicleStates = {};
 }
 
 function disableCustomAircraftCeilingAndRestoreDefault(): void {
     State.round.aircraftCeiling.customEnabled = false;
-    State.round.aircraftCeiling.vehicleStates = {};
     State.round.modeConfig.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
     State.round.modeConfig.gameSettings = mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat;
     State.round.modeConfig.confirmed.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
@@ -2565,8 +2840,7 @@ function syncAircraftCeilingFromMapConfig(): void {
     State.round.aircraftCeiling.hudMaxY = mapMaxHud;
     State.round.aircraftCeiling.hudFloorY = floorY;
     State.round.aircraftCeiling.customEnabled = false;
-    State.round.aircraftCeiling.vehicleStates = {};
-    // Keep the engine ceiling at vanilla scale; soft enforcement is confirm-gated.
+    // Keep the engine ceiling at vanilla scale; layered enforcement is confirm-gated.
     mod.SetMaxVehicleHeightLimitScale(1.0);
 
     State.round.modeConfig.aircraftCeiling = mapDefault;
@@ -2815,9 +3089,10 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
         disableCustomAircraftCeilingAndRestoreDefault();
     } else {
         enableCustomAircraftCeiling();
-        if (AIRCRAFT_CEILING_ENFORCEMENT_MODE === "hard") {
-            applyCustomAircraftCeilingHardLimiter();
-        }
+        // H-P1: layered ceiling always engages the engine cap. The previous AIRCRAFT_CEILING_ENFORCEMENT_MODE
+        // gate has been removed -- both layers (engine hard cap + per-pid warning loop) now always fire when
+        // customEnabled is true.
+        applyCustomAircraftCeilingHardLimiter();
     }
     // Player-arg-safety: wrap changedBy through safePlayerArg per the v0.634 CQ_Bug_94 defensive
     // pattern. The original aircraftCeiling and gameMode broadcasts here were missed by that pass.

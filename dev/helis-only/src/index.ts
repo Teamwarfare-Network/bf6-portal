@@ -111,7 +111,8 @@ export async function OnGameModeStarted(): Promise<void> {
     setRoundClockPreview(getConfiguredRoundLengthSeconds());
 
     void startVehicleSpawnerSystem();
-    startAircraftCeilingSoftEnforcementLoop();
+    // H-P1: per-pid altitude warning loop. Iterates only the playerInAircraftByPid cache (5Hz tick).
+    void runAircraftWarningLoop();
 
     while (true) {
         // Push the initial clock display so every HUD shows the same starting time.
@@ -266,6 +267,10 @@ export function OnPlayerLeaveGame(eventNumber: number | mod.Player) {
     delete State.players.deployedAtSecondsByPid[pid];
     delete State.players.isAliveByPid[pid];
     delete State.players.spawnDisabledWarningVisibleByPid[pid];
+    // H-P1: clean per-pid altitude-warning state on disconnect (mirrors the rest of the per-pid map cleanup).
+    delete State.players.playerInAircraftByPid[pid];
+    delete State.players.altitudeWarningVisibleByPid[pid];
+    delete State.players.altitudeWarningStartedAtSecondsByPid[pid];
     // Also drop dialog-visible tracking if present (viewer is gone).
     delete State.players.teamSwitchData[pid];
     clearJoinPromptForPlayerId(pid);
@@ -354,6 +359,9 @@ export function OnPlayerUndeploy(eventPlayer: mod.Player) {
     if (State.players.teamSwitchData[pid]?.dialogVisible) {
         deleteTeamSwitchUI(eventPlayer);
     }
+    // v0.670: hide altimeter on death / undeploy. The player isn't in an aircraft anymore.
+    setAltimeterVisibleForPid(pid, false);
+    setAltimeterWarningLabelVisibleForPid(pid, false);
     updateHelpTextVisibilityForPid(pid);
 
     removeTeamSwitchInteractPoint(pid);
@@ -548,11 +556,31 @@ export function OnPlayerEnterVehicle(eventPlayer: mod.Player, eventVehicle: mod.
     );
 
     handleOvertimePlayerEnterVehicle(eventPlayer, eventVehicle);
+
+    // H-P1: maintain the per-pid aircraft-occupancy cache. Only aircraft vehicles count;
+    // runAircraftWarningLoop iterates this cache (no AllPlayers / AllVehicles scan).
+    const enteringPid = safeGetPlayerId(eventPlayer);
+    if (enteringPid !== undefined && isAircraftVehicle(eventVehicle)) {
+        State.players.playerInAircraftByPid[enteringPid] = true;
+    }
 }
 
 export function OnPlayerExitVehicle(eventPlayer: mod.Player, eventVehicle: mod.Vehicle) {
     if (!mod.IsPlayerValid(eventPlayer)) return;
     handleOvertimePlayerExitVehicle(eventPlayer, eventVehicle);
+
+    // H-P1: clear aircraft cache + hide any active warning for this pid. All idempotent.
+    // v0.670: also hide altimeter + altimeter warning label here so they vanish the instant
+    // the player gets out. The 5Hz runAircraftWarningLoop would catch this on its next tick,
+    // but OnPlayerExitVehicle is the engine's reliable exit hook (per project memory) so we
+    // belt-and-suspenders the hide immediately.
+    const exitingPid = safeGetPlayerId(eventPlayer);
+    if (exitingPid !== undefined) {
+        delete State.players.playerInAircraftByPid[exitingPid];
+        setAltitudeWarningVisibleForPid(exitingPid, false);
+        setAltimeterVisibleForPid(exitingPid, false);
+        setAltimeterWarningLabelVisibleForPid(exitingPid, false);
+    }
 }
 
 //#endregion -------------------- Exported Event Handlers - Vehicle Entry + Exit --------------------

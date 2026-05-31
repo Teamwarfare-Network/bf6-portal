@@ -729,6 +729,25 @@ type HudRefs = {
     settingsVehiclesMatchupText?: mod.UIWidget;
     settingsPlayersText?: mod.UIWidget;
 
+    // H-P1 altitude warning dialog (per-pid). Container is a full-screen opaque black backplate
+    // that blocks the player's view while shown, with title + body + countdown digit centered.
+    // Built lazily on first show (ensureAltitudeWarningUiForPlayer) -- eager build at OnPlayerJoinGame
+    // produced invisible widgets across v0.650-v0.655; lazy first-show is required for cockpit overlays.
+    altitudeWarningRoot?: mod.UIWidget;
+    altitudeWarningCeilingLabel?: mod.UIWidget;     // v0.670: "Ceiling: 130" text above the title
+    altitudeWarningTitle?: mod.UIWidget;
+    altitudeWarningBody?: mod.UIWidget;
+    altitudeWarningCountdown?: mod.UIWidget;
+
+    // v0.666 H-P1 altimeter HUD (per-pid). Bottom-left card showing "Alt: {Y}" in GREEN when in
+    // aircraft and below soft ceiling; turns YELLOW once posY > soft, with a small "ALTITUDE
+    // WARNING" label appearing above the card. Built lazily on first need (in vehicle) to avoid
+    // the eager-build script crash pattern that bit the altitude warning dialog in v0.650-v0.655.
+    altimeterRoot?: mod.UIWidget;
+    altimeterCard?: mod.UIWidget;
+    altimeterText?: mod.UIWidget;
+    altimeterWarningLabel?: mod.UIWidget;
+
     // Victory results dialog widgets (shown during match end countdown)
     victoryRoot?: mod.UIWidget;
     victoryRestartText?: mod.UIWidget;
@@ -908,7 +927,14 @@ interface GameState {
             hudFloorY: number;
             customEnabled: boolean;
             enforcementToken: number;
-            vehicleStates: Record<number, AircraftCeilingVehicleState>;
+            // H-P1: admin-tunable buffers (world Y units). v0.669 ceiling-centered layout:
+            //   yellow altimeter + "ALTITUDE WARNING" label : posY > ceiling - warningBufferM
+            //   BLACK screen dialog                          : posY > ceiling                    (anchor)
+            //   engine pushback (hard cap)                   : posY > ceiling + hardBufferM
+            // warningBuffer extends BELOW ceiling, hardBuffer extends ABOVE.
+            // See applyCustomAircraftCeilingHardLimiter() header for the full derivation.
+            hardBufferM: number;
+            warningBufferM: number;
         };
         // Per-map default for the Vehicle Health Multiplier knob. Seeded by applyMapConfig
         // from MapConfig.defaultVehicleHealthMultiplier (falls through to 1.0 when absent).
@@ -1019,6 +1045,12 @@ interface GameState {
         disconnectedByPid: Record<number, boolean>;
         uiInputEnabledByPid: Record<number, boolean>;
         spawnDisabledWarningVisibleByPid: Record<number, boolean>;
+        // H-P1: event-driven aircraft-occupancy cache (written by OnPlayerEnter/ExitVehicle, read by runAircraftWarningLoop).
+        playerInAircraftByPid: Record<number, boolean>;
+        // H-P1: diff-gated visibility cache for the altitude-warning widgets (avoids redundant per-tick visibility writes).
+        altitudeWarningVisibleByPid: Record<number, boolean>;
+        // H-P1: per-pid timestamp (mod.GetMatchTimeElapsed seconds) when the warning became visible; used to compute the 3-second countdown.
+        altitudeWarningStartedAtSecondsByPid: Record<number, number>;
     };
     vehicles: {
         slots: VehicleSpawnerSlot[];
@@ -1140,7 +1172,8 @@ const State: GameState = {
             hudFloorY: 0,
             customEnabled: false,
             enforcementToken: 0,
-            vehicleStates: {},
+            hardBufferM: AIRCRAFT_HARD_BUFFER_DEFAULT,
+            warningBufferM: AIRCRAFT_WARNING_BUFFER_DEFAULT,
         },
         mapDefaultVehicleHealthMultiplier: READY_DIALOG_VEHICLE_HEALTH_MULT_DEFAULT,
     },
@@ -1232,6 +1265,9 @@ const State: GameState = {
         disconnectedByPid: {},
         uiInputEnabledByPid: {},
         spawnDisabledWarningVisibleByPid: {},
+        playerInAircraftByPid: {},
+        altitudeWarningVisibleByPid: {},
+        altitudeWarningStartedAtSecondsByPid: {},
     },
     vehicles: {
         slots: [],

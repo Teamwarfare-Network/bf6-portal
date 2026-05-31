@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Vehicles (v0.649)",
+        "title": "teamwarfare . net | TWL Vehicles (v0.687)",
         "subtitle": "Experience Code: - - - -"
       },
       "roundText": "ROUND",
@@ -28,6 +28,15 @@
       "clock": {
         "digit": "{0}",
         "colon": ":"
+      },
+      "altitudeWarning": {
+        "title": "ALTITUDE CEILING BREACHED",
+        "body": "Descend immediately!",
+        "ceilingFormat": "Ceiling: {0}"
+      },
+      "altimeter": {
+        "format": "Altitude: {0}",
+        "warningLabel": "CEILING WARNING!"
       },
       "settings": {
         "gameModeFormat": "Game Mode: {0}",
@@ -266,7 +275,11 @@
         "roundLengthDec": "Round Length -",
         "roundLengthInc": "Round Length +",
         "liveRespawnOn": "Live Respawn ON",
-        "liveRespawnOff": "Live Respawn OFF"
+        "liveRespawnOff": "Live Respawn OFF",
+        "aircraftBufferDec": "Hard Buffer -",
+        "aircraftBufferInc": "Hard Buffer +",
+        "aircraftWarnBufferDec": "Warn Buffer -",
+        "aircraftWarnBufferInc": "Warn Buffer +"
       },
       "labels": {
         "t1RoundKills": "T1 Round Kills",
@@ -300,7 +313,9 @@
           "ties": "T1 + T2 Round Ties",
           "rightKills": "T2 Total Kills",
           "rightWins": "T2 Wins",
-          "roundKillsTarget": "Target Round Kills:"
+          "roundKillsTarget": "Target Round Kills:",
+          "aircraftBuffer": "Hard Buffer",
+          "aircraftWarnBuffer": "Warn Buffer"
         }
       }
     },

@@ -891,6 +891,28 @@ function teamSwitchButtonEvent(
             handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.roundLengthInc);
             break;
         }
+        case UI_ADMIN_AIRCRAFT_BUFFER_DEC_ID + playerId: {
+            // H-P1: admin-tunable buffer above the soft ceiling. Live-applies; no round-live gate (debug knob).
+            setAircraftHardBuffer(State.round.aircraftCeiling.hardBufferM - AIRCRAFT_HARD_BUFFER_STEP, eventPlayer);
+            handleAdminPanelAction(eventPlayer, STR_ADMIN_AIRCRAFT_BUFFER_DEC);
+            break;
+        }
+        case UI_ADMIN_AIRCRAFT_BUFFER_INC_ID + playerId: {
+            setAircraftHardBuffer(State.round.aircraftCeiling.hardBufferM + AIRCRAFT_HARD_BUFFER_STEP, eventPlayer);
+            handleAdminPanelAction(eventPlayer, STR_ADMIN_AIRCRAFT_BUFFER_INC);
+            break;
+        }
+        case UI_ADMIN_AIRCRAFT_WARN_BUFFER_DEC_ID + playerId: {
+            // v0.666: admin-tunable warning buffer (gap between soft and black screen).
+            setAircraftWarningBuffer(State.round.aircraftCeiling.warningBufferM - AIRCRAFT_WARNING_BUFFER_STEP, eventPlayer);
+            handleAdminPanelAction(eventPlayer, STR_ADMIN_AIRCRAFT_WARN_BUFFER_DEC);
+            break;
+        }
+        case UI_ADMIN_AIRCRAFT_WARN_BUFFER_INC_ID + playerId: {
+            setAircraftWarningBuffer(State.round.aircraftCeiling.warningBufferM + AIRCRAFT_WARNING_BUFFER_STEP, eventPlayer);
+            handleAdminPanelAction(eventPlayer, STR_ADMIN_AIRCRAFT_WARN_BUFFER_INC);
+            break;
+        }
 
         default:
             break;

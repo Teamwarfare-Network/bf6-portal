@@ -253,11 +253,6 @@ type ReadyDialogModeConfig = {
     };
 };
 
-type AircraftCeilingVehicleState = {
-    enforcing: boolean;
-    lastNudgeAt: number;
-};
-
 // Matchup presets drive round kill targets and slot enablement; auto-start minimums are independent.
 const MATCHUP_PRESETS: MatchupPreset[] = [
     { leftPlayers: 1, rightPlayers: 1, roundKillsTarget: 1 },
@@ -318,18 +313,59 @@ const READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_2V2 = 2;
 const READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_1V1 = 1;
 const READY_DIALOG_MODE_PRESET_VEHICLE_INDEX = 0;
 let suppressReadyDialogModeAutoSwitch = false;
-// Aircraft ceiling enforcement mode (hard = engine limiter only, soft = scripted nudges).
-const AIRCRAFT_CEILING_ENFORCEMENT_MODE: "hard" | "soft" = "hard";
-// Soft ceiling enforcement: keep the engine's hard limiter above gameplay to avoid sticky flight.
-const AIRCRAFT_SOFT_CEILING_HARD_BUFFER = 100; // Adjustable buffer above the soft ceiling (world Y units).
-const AIRCRAFT_SOFT_CEILING_ENTER_BUFFER = 10; // Start enforcing once above soft+buffer.
-const AIRCRAFT_SOFT_CEILING_EXIT_BUFFER = 20; // Stop enforcing once below soft-buffer.
-const AIRCRAFT_SOFT_CEILING_NUDGE_MIN_STEP = 0.3; // Minimum downward nudge step while enforcing.
-const AIRCRAFT_SOFT_CEILING_NUDGE_MAX_STEP = 6.0; // Maximum downward nudge step while enforcing.
-const AIRCRAFT_SOFT_CEILING_NUDGE_INTERVAL_SECONDS = 0.15; // Minimum time between nudges.
-const AIRCRAFT_SOFT_CEILING_VELOCITY_SCALE = 1.1; // Scale upward velocity to counter climb without a hard cap.
-const AIRCRAFT_SOFT_CEILING_HARD_STEP_MULTIPLIER = 2.0; // Extra push if far above soft+buffer.
-const AIRCRAFT_SOFT_CEILING_TICK_SECONDS = 0.2; // Loop cadence for soft ceiling enforcement.
+// H-P1 layered aircraft ceiling: the Ready-Dialog `aircraftCeiling` knob is now the SOFT (warning) threshold.
+// Engine pushback (mod.SetMaxVehicleHeightLimitScale) applies at soft + hardBufferM (admin-tunable; default 25m).
+// When an occupant crosses the soft ceiling, a big centered ALTITUDE WARNING dialog appears on their per-pid HUD.
+const AIRCRAFT_SOFT_CEILING_HARD_BUFFER = 25; // Default admin-tunable buffer above the soft ceiling (world Y units).
+const AIRCRAFT_SOFT_CEILING_ENTER_BUFFER = 10; // Hysteresis: warning appears once posY > soft + ENTER_BUFFER.
+const AIRCRAFT_SOFT_CEILING_EXIT_BUFFER = 20; // Hysteresis: warning clears once posY < soft - EXIT_BUFFER.
+const AIRCRAFT_SOFT_CEILING_TICK_SECONDS = 0.2; // 5Hz cadence for the per-pid altitude probe.
+// Admin-panel "Hard Buffer" knob bounds (in world Y units, i.e. meters).
+// Hard ceiling (engine pushback) = soft + warningBufferM + hardBufferM. See v0.666 layered design.
+const AIRCRAFT_HARD_BUFFER_DEFAULT = 25;
+const AIRCRAFT_HARD_BUFFER_MIN = 5;
+const AIRCRAFT_HARD_BUFFER_MAX = 200;
+const AIRCRAFT_HARD_BUFFER_STEP = 5;
+// v0.666 H-P1 3-stage layered ceiling: admin-tunable "Warn Buffer" sits between the SOFT warning
+// (yellow altimeter + "ALTITUDE WARNING" label at floor+ceilingSetting) and the BLACK SCREEN
+// dialog (at floor+ceilingSetting+warningBufferM). Hard physics pushback then engages further up
+// at floor+ceilingSetting+warningBufferM+hardBufferM. Default 5m → 5-unit gap between yellow
+// warning appearing and the screen going black.
+const AIRCRAFT_WARNING_BUFFER_DEFAULT = 15;
+const AIRCRAFT_WARNING_BUFFER_MIN = 0;
+const AIRCRAFT_WARNING_BUFFER_MAX = 100;
+const AIRCRAFT_WARNING_BUFFER_STEP = 1;
+// v0.667 altimeter HUD widget — lazy-built per-pid card anchored TopLeft on screen and dropped
+// into the lower-left area (just above the minimap). Shows "Altitude: {Y}" where {Y} is the
+// HUD altitude (posY - hudFloorY) — i.e. same scale as the Ready-Dialog ceiling setting, so a
+// ceiling of 130 lines up with a 130 readout at the soft-warning threshold. Green by default,
+// yellow above soft, with a small "ALTITUDE WARNING" label appearing above the card. Aircraft only.
+// Anchor was BottomLeft in v0.666 but rendered at screen center for the user — TopLeft + explicit
+// Y-from-top is the pattern that's known to work reliably in this codebase.
+// v0.672: ParseUI in this engine ONLY supports TopLeft / TopCenter / TopRight / Center /
+// BottomCenter as ROOT anchors -- CenterLeft / BottomLeft silently fall back, which is why
+// v0.671's CenterLeft swap didn't move the widget (user report: "still have not moved").
+// Reverted to TopLeft (proven pattern: matches Upper_Left_Container_, Container_TopLeft_CoreUI_,
+// MatchTimerRoot_). To drop into the lower-left we just use a large Y. With the 1080 reference,
+// y=800 puts the widget's top edge ~74% down -- widget center at ~Y=845 from top, lower-left.
+// Card backplate spans 220x44 starting at root (0, 34); text overlays it at root (10, 34) so its
+// left edge sits 10px inside the card (no chained anchors -- card and text are siblings).
+const ALTIMETER_HUD_ANCHOR_OFFSET_X = 60;     // pixels in from left edge (TopLeft anchor; root start)
+const ALTIMETER_HUD_ANCHOR_OFFSET_Y = 720;    // pixels DOWN from top (~67% of 1080, lower-left area)
+const ALTIMETER_HUD_ROOT_WIDTH = 220;
+const ALTIMETER_HUD_ROOT_HEIGHT = 90;
+const ALTIMETER_HUD_LABEL_WIDTH = 200;        // "ALTITUDE WARNING!" yellow label width (wider than card so text overhangs)
+const ALTIMETER_HUD_LABEL_HEIGHT = 28;
+const ALTIMETER_HUD_LABEL_TEXT_SIZE = 18;
+const ALTIMETER_HUD_CARD_OFFSET_Y = 24;       // card sits 24px below top of root (under the label)
+const ALTIMETER_HUD_CARD_OFFSET_X = 35;       // v0.685: card+text inset 35px within root so card center (root+35+65) aligns with the wider label's center (root+0+100)
+const ALTIMETER_HUD_LABEL_OFFSET_X = 0;       // warning label X offset within root (0 = root's left edge; label centered horizontally above card via Center textAnchor)
+const ALTIMETER_HUD_CARD_WIDTH = 130;         // black backplate; tight around "Altitude: YYY" text
+const ALTIMETER_HUD_CARD_HEIGHT = 44;
+const ALTIMETER_HUD_TEXT_LEFT_PADDING = 10;   // text X offset inside root (sibling of card, overlays it)
+const ALTIMETER_HUD_TEXT_SIZE = 24;
+// Countdown duration after the warning becomes visible. Decrements once per second to 0; no behavior at 0 yet.
+const ALTITUDE_WARNING_COUNTDOWN_SECONDS = 3;
 
 // Pregame countdown tuning (Ready Up -> round start).
 // Units: seconds and UI scale units.
@@ -418,7 +454,7 @@ const READY_DIALOG_LABEL_TEXT_COLOR = COLOR_WHITE;
 const READY_DIALOG_BORDER_COLOR = COLOR_GRAY;
 
 // Admin Panel
-const ADMIN_PANEL_HEIGHT = 694;
+const ADMIN_PANEL_HEIGHT = 728; // v0.666: +34px for the new Warn Buffer row (1 admin-row gap).
 const ADMIN_PANEL_PADDING = 5;
 const ADMIN_PANEL_BASE_X = -5;
 const ADMIN_PANEL_BASE_Y = 15;
@@ -575,6 +611,19 @@ const STR_HUD_SETTINGS_PLAYERS_FORMAT = mod.stringkeys.twl.hud.settings.playersF
 const STR_HUD_SETTINGS_GAME_MODE_DEFAULT = mod.stringkeys.twl.hud.settings.gameModeDefault;
 const STR_HUD_SETTINGS_VALUE_DEFAULT = mod.stringkeys.twl.hud.settings.valueDefault;
 const STR_HUD_SETTINGS_VALUE_MAP_DEFAULT = mod.stringkeys.twl.hud.settings.valueMapDefault;
+// H-P1 altitude warning + admin Buffer knob strings.
+const STR_HUD_ALTITUDE_WARNING_TITLE = mod.stringkeys.twl.hud.altitudeWarning.title;
+const STR_HUD_ALTITUDE_WARNING_BODY = mod.stringkeys.twl.hud.altitudeWarning.body;
+const STR_HUD_ALTITUDE_WARNING_CEILING_FORMAT = mod.stringkeys.twl.hud.altitudeWarning.ceilingFormat;
+const STR_ADMIN_AIRCRAFT_BUFFER_LABEL = mod.stringkeys.twl.adminPanel.tester.labels.aircraftBuffer;
+const STR_ADMIN_AIRCRAFT_BUFFER_INC = mod.stringkeys.twl.adminPanel.actions.aircraftBufferInc;
+const STR_ADMIN_AIRCRAFT_BUFFER_DEC = mod.stringkeys.twl.adminPanel.actions.aircraftBufferDec;
+// v0.666 H-P1 admin "Warn Buf" knob + altimeter HUD strings.
+const STR_ADMIN_AIRCRAFT_WARN_BUFFER_LABEL = mod.stringkeys.twl.adminPanel.tester.labels.aircraftWarnBuffer;
+const STR_ADMIN_AIRCRAFT_WARN_BUFFER_INC = mod.stringkeys.twl.adminPanel.actions.aircraftWarnBufferInc;
+const STR_ADMIN_AIRCRAFT_WARN_BUFFER_DEC = mod.stringkeys.twl.adminPanel.actions.aircraftWarnBufferDec;
+const STR_HUD_ALTIMETER_FORMAT = mod.stringkeys.twl.hud.altimeter.format;
+const STR_HUD_ALTIMETER_WARNING_LABEL = mod.stringkeys.twl.hud.altimeter.warningLabel;
 const STR_UI_X = mod.stringkeys.twl.ui.x;
 const STR_OVERLINE_TAKEOFF_TITLE = mod.stringkeys.twl.overLine.takeoffTitle;
 const STR_OVERLINE_TAKEOFF_SUBTITLE = mod.stringkeys.twl.overLine.takeoffSubtitle;

@@ -332,6 +332,28 @@ const UI_ADMIN_LIVE_RESPAWN_TEXT_ID = "UI_ADMIN_LIVE_RESPAWN_TEXT_";
 const UI_ADMIN_ROUND_LENGTH_DEC_ID = "UI_ADMIN_ROUND_LENGTH_DEC_";
 const UI_ADMIN_ROUND_LENGTH_INC_ID = "UI_ADMIN_ROUND_LENGTH_INC_";
 const UI_ADMIN_ROUND_LENGTH_LABEL_ID = "UI_ADMIN_ROUND_LENGTH_LABEL_";
+// H-P1: Admin Panel "Hard Buffer" knob for the aircraft hard-ceiling offset (gap between black
+// screen threshold and engine pushback). Static label + separate value widget.
+const UI_ADMIN_AIRCRAFT_BUFFER_DEC_ID = "UI_ADMIN_AIRCRAFT_BUFFER_DEC_";
+const UI_ADMIN_AIRCRAFT_BUFFER_INC_ID = "UI_ADMIN_AIRCRAFT_BUFFER_INC_";
+const UI_ADMIN_AIRCRAFT_BUFFER_LABEL_ID = "UI_ADMIN_AIRCRAFT_BUFFER_LABEL_";
+const UI_ADMIN_AIRCRAFT_BUFFER_VALUE_ID = "UI_ADMIN_AIRCRAFT_BUFFER_VALUE_";
+// v0.666: Admin Panel "Warn Buffer" knob -- gap between the soft warning (yellow altimeter +
+// "ALTITUDE WARNING" label) and the black-screen dialog. Same pattern as Hard Buffer row.
+const UI_ADMIN_AIRCRAFT_WARN_BUFFER_DEC_ID = "UI_ADMIN_AIRCRAFT_WARN_BUFFER_DEC_";
+const UI_ADMIN_AIRCRAFT_WARN_BUFFER_INC_ID = "UI_ADMIN_AIRCRAFT_WARN_BUFFER_INC_";
+const UI_ADMIN_AIRCRAFT_WARN_BUFFER_LABEL_ID = "UI_ADMIN_AIRCRAFT_WARN_BUFFER_LABEL_";
+const UI_ADMIN_AIRCRAFT_WARN_BUFFER_VALUE_ID = "UI_ADMIN_AIRCRAFT_WARN_BUFFER_VALUE_";
+// v0.674: per-pid altimeter widget IDs. EAGER-built in ensureHudForPlayer using the EXACT
+// same pattern as Upper_Left_Container_ (TopLeft anchor, visible:true, visible-bg root) -- the
+// lazy-built v0.666-v0.673 approach never positioned where requested because of some
+// interaction between lazy build + invisible root + position constants that I couldn't pin
+// down across 8 attempts. Renamed to "Altimeter_v674_*" so any persisted widget tree from
+// v0.666-v0.673 is orphaned and ignored by safeFind.
+const UI_ALTIMETER_ROOT_ID = "Altimeter_v674_Root_";
+const UI_ALTIMETER_CARD_ID = "Altimeter_v674_Card_";
+const UI_ALTIMETER_TEXT_ID = "Altimeter_v674_Text_";
+const UI_ALTIMETER_WARNING_LABEL_ID = "Altimeter_v674_WarningLabel_";
 
 // Debug Positioning UI
 const UI_POS_DEBUG_CONTAINER_ID = "UI_POS_DEBUG_CONTAINER_";
