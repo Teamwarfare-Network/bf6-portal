@@ -171,6 +171,37 @@ function ensureAdminPanelWidgets(eventPlayer: mod.Player, playerId: number): voi
     }
 }
 
+// Atomic visibility flip for the Ready Dialog root + sibling chrome widgets (borders, map
+// label/value, debug widget). Both the cold-build path and the cache-hit path call this at the
+// end of their work to flip the dialog visible in one tick rather than letting widgets pop in
+// one-by-one as they're built. Mirrors Conquest's finalizeReadyDialogVisibility pattern
+// (dialog-build.ts:25-54) which fixed the same flicker class via deliberate atomic reveal.
+//
+// The dialog's internal widgets (rosters, headers, buttons) are children of containerBase and
+// inherit visibility from the parent toggle. Sibling chrome (borders parented to containerBase,
+// map label/value/debug widget parented to UIRoot) must be flipped individually.
+function finalizeReadyDialogVisibility(
+    playerId: number,
+    containerBase: mod.UIWidget,
+    reveal: boolean
+): void {
+    mod.SetUIWidgetVisible(containerBase, reveal);
+    const borderTop = safeFind(UI_TEAMSWITCH_BORDER_TOP_ID + playerId);
+    if (borderTop) mod.SetUIWidgetVisible(borderTop, reveal);
+    const borderBottom = safeFind(UI_TEAMSWITCH_BORDER_BOTTOM_ID + playerId);
+    if (borderBottom) mod.SetUIWidgetVisible(borderBottom, reveal);
+    const borderLeft = safeFind(UI_TEAMSWITCH_BORDER_LEFT_ID + playerId);
+    if (borderLeft) mod.SetUIWidgetVisible(borderLeft, reveal);
+    const borderRight = safeFind(UI_TEAMSWITCH_BORDER_RIGHT_ID + playerId);
+    if (borderRight) mod.SetUIWidgetVisible(borderRight, reveal);
+    const mapLabel = safeFind(UI_READY_DIALOG_MAP_LABEL_ID + playerId);
+    if (mapLabel) mod.SetUIWidgetVisible(mapLabel, reveal);
+    const mapValue = safeFind(UI_READY_DIALOG_MAP_VALUE_ID + playerId);
+    if (mapValue) mod.SetUIWidgetVisible(mapValue, reveal);
+    const debugWidget = safeFind(UI_TEAMSWITCH_DEBUG_TIMELIMIT_ID + playerId);
+    if (debugWidget) mod.SetUIWidgetVisible(debugWidget, reveal && SHOW_DEBUG_TIMELIMIT);
+}
+
 function createTeamSwitchUI(eventPlayer: mod.Player) {
     // Steps:
     // 1) Ensure per-player dialog root exists
@@ -190,24 +221,15 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     // This avoids recreating ~100 widgets on every open and makes dialog open near-instant after first build.
     const existingBase = safeFind(UI_TEAMSWITCH_CONTAINER_BASE_ID + playerId);
     if (existingBase) {
-        mod.SetUIWidgetVisible(existingBase, true);
-        const existingBorderTop = safeFind(UI_TEAMSWITCH_BORDER_TOP_ID + playerId);
-        if (existingBorderTop) mod.SetUIWidgetVisible(existingBorderTop, true);
-        const existingBorderBottom = safeFind(UI_TEAMSWITCH_BORDER_BOTTOM_ID + playerId);
-        if (existingBorderBottom) mod.SetUIWidgetVisible(existingBorderBottom, true);
-        const existingBorderLeft = safeFind(UI_TEAMSWITCH_BORDER_LEFT_ID + playerId);
-        if (existingBorderLeft) mod.SetUIWidgetVisible(existingBorderLeft, true);
-        const existingBorderRight = safeFind(UI_TEAMSWITCH_BORDER_RIGHT_ID + playerId);
-        if (existingBorderRight) mod.SetUIWidgetVisible(existingBorderRight, true);
-        const existingDebug = safeFind(UI_TEAMSWITCH_DEBUG_TIMELIMIT_ID + playerId);
-        if (existingDebug) mod.SetUIWidgetVisible(existingDebug, SHOW_DEBUG_TIMELIMIT);
         refreshReadyDialogButtonTextForPid(eventPlayer, playerId, existingBase as mod.UIWidget);
-        const existingMapLabel = safeFind(UI_READY_DIALOG_MAP_LABEL_ID + playerId);
-        if (existingMapLabel) mod.SetUIWidgetVisible(existingMapLabel, true);
-        const existingMapValue = safeFind(UI_READY_DIALOG_MAP_VALUE_ID + playerId);
-        if (existingMapValue) mod.SetUIWidgetVisible(existingMapValue, true);
         updateReadyDialogModeConfigForPid(playerId);
         ensureAdminPanelWidgets(eventPlayer, playerId);
+        // Critical: refresh roster rows with current state BEFORE revealing. Otherwise the
+        // dialog reveals with stale row text/visibility from the previous close, then the
+        // post-reveal renderReadyDialogForViewer in teamSwitchInteractPointActivated updates
+        // them -- visible 1-frame flicker.
+        refreshReadyDialogRosterForViewer(eventPlayer, playerId);
+        finalizeReadyDialogVisibility(playerId, existingBase, true);
         return;
     }
 
@@ -242,13 +264,17 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     //const BUTTON_OPTOUT_ID = UI_TEAMSWITCH_BUTTON_OPTOUT_ID + playerId; //old button/dead
     //const BUTTON_OPTOUT_LABEL_ID = UI_TEAMSWITCH_BUTTON_OPTOUT_LABEL_ID + playerId; //old button/dead
 
+    // Build root HIDDEN; atomic reveal happens via finalizeReadyDialogVisibility at the end.
+    // Children parented to CONTAINER_BASE inherit hidden-ness from the parent (cascade), so they
+    // build "visible: true" but stay visually hidden until the parent flip. Sibling chrome
+    // (borders, map label/value, debug widget) is also built hidden and flipped at the same time.
     mod.AddUIContainer(
         CONTAINER_BASE_ID,
         mod.CreateVector(0, 0, 0),
         mod.CreateVector(CONTAINER_WIDTH, CONTAINER_HEIGHT, 0),
         mod.UIAnchor.Center,
         mod.GetUIRoot(),
-        true,
+        false,
         10,
         mod.CreateVector(0, 0, 0),
         0.995,
@@ -264,14 +290,14 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     const borderLineWidth = CONTAINER_WIDTH + (CONTAINER_BORDER_PADDING * 2) + (CONTAINER_BORDER_OVERLAP * 2);
     const borderLineHeight = CONTAINER_HEIGHT + (CONTAINER_BORDER_PADDING * 2) + (CONTAINER_BORDER_OVERLAP * 2);
 
-    // Top border line
+    // Borders built HIDDEN; flipped together with root via finalizeReadyDialogVisibility at end.
     mod.AddUIContainer(
         BORDER_TOP_ID,
         mod.CreateVector(0, -borderHalfHeight, 0),
         mod.CreateVector(borderLineWidth, CONTAINER_BORDER_THICKNESS, 0),
         mod.UIAnchor.Center,
         CONTAINER_BASE,
-        true,
+        false,
         0,
         READY_DIALOG_BORDER_COLOR,
         1,
@@ -280,14 +306,13 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         eventPlayer
     );
 
-    // Bottom border line
     mod.AddUIContainer(
         BORDER_BOTTOM_ID,
         mod.CreateVector(0, borderHalfHeight, 0),
         mod.CreateVector(borderLineWidth, CONTAINER_BORDER_THICKNESS, 0),
         mod.UIAnchor.Center,
         CONTAINER_BASE,
-        true,
+        false,
         0,
         READY_DIALOG_BORDER_COLOR,
         1,
@@ -296,14 +321,13 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         eventPlayer
     );
 
-    // Left border line
     mod.AddUIContainer(
         BORDER_LEFT_ID,
         mod.CreateVector(-borderHalfWidth, 0, 0),
         mod.CreateVector(CONTAINER_BORDER_THICKNESS, borderLineHeight, 0),
         mod.UIAnchor.Center,
         CONTAINER_BASE,
-        true,
+        false,
         0,
         READY_DIALOG_BORDER_COLOR,
         1,
@@ -312,14 +336,13 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         eventPlayer
     );
 
-    // Right border line
     mod.AddUIContainer(
         BORDER_RIGHT_ID,
         mod.CreateVector(borderHalfWidth, 0, 0),
         mod.CreateVector(CONTAINER_BORDER_THICKNESS, borderLineHeight, 0),
         mod.UIAnchor.Center,
         CONTAINER_BASE,
-        true,
+        false,
         0,
         READY_DIALOG_BORDER_COLOR,
         1,
@@ -449,6 +472,9 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     mod.SetUITextSize(READY_MAP_LABEL, 12);
     applyReadyDialogLabelTextColor(READY_MAP_LABEL);
     mod.SetUIWidgetParent(READY_MAP_LABEL, mod.GetUIRoot());
+    // Sibling chrome (parented to UIRoot, not CONTAINER_BASE) -- hide individually; revealed
+    // atomically by finalizeReadyDialogVisibility at end of build.
+    if (READY_MAP_LABEL) mod.SetUIWidgetVisible(READY_MAP_LABEL, false);
 
     mod.AddUIText(
         READY_MAP_VALUE_ID,
@@ -463,6 +489,7 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     mod.SetUITextSize(READY_MAP_VALUE, 12);
     applyReadyDialogLabelTextColor(READY_MAP_VALUE);
     mod.SetUIWidgetParent(READY_MAP_VALUE, mod.GetUIRoot());
+    if (READY_MAP_VALUE) mod.SetUIWidgetVisible(READY_MAP_VALUE, false);
     updateReadyDialogMapLabelForPid(playerId);
 
     // Best-of rounds control (top-right): minus button, dynamic label, plus button.
@@ -689,11 +716,17 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     // Mode Settings label. With TopRight anchor, larger X = further left on screen. The VH block
     // occupies (left-to-right visually): [-10] [<] [Health: NNN%] [>] [+10] then a gap, then the
     // Mode Settings row. The +10/-10 outer buttons step by 0.10 (10%); the inner </> step by 0.01 (1%).
-    const vehicleHealthOuterGap = 12;       // gap between the rightmost VH widget (+10) and Mode Settings label
+    const vehicleHealthOuterGap = 2;
+    // Translate the entire VH block (all 5 widgets: -10, <, value, >, +10) right by N game units.
+    // Smaller X-from-right (TopRight anchor) = further right on screen. Set this empirically by
+    // looking at the rendered position in-game and adjusting. Going up if more rightward shift is
+    // needed; down if overlapping Mode Settings label area. Earlier outerGap-only tweaks produced
+    // only ~10-unit shifts which were not visibly perceptible.
+    const VH_BLOCK_RIGHT_SHIFT = 35;
     const vehicleHealthInnerGap = 4;        // gap between the outer (-10/+10) buttons and the inner (</>) buttons
     const vehicleHealthValueWidth = 100;
     const vehicleHealthWideButtonWidth = 32; // outer -10/+10 buttons are slightly wider than </> to fit 3-char text
-    const vehicleHealthInc10X = leftSectionLabelX + leftSectionLabelWidth + vehicleHealthOuterGap;
+    const vehicleHealthInc10X = leftSectionLabelX + leftSectionLabelWidth + vehicleHealthOuterGap - VH_BLOCK_RIGHT_SHIFT;
     const vehicleHealthIncX = vehicleHealthInc10X + vehicleHealthWideButtonWidth + vehicleHealthInnerGap;
     const vehicleHealthValueX = vehicleHealthIncX + bestOfButtonSizeX;
     const vehicleHealthDecX = vehicleHealthValueX + vehicleHealthValueWidth;
@@ -1315,52 +1348,49 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     const colNameW = 260;
     const colStatusW = 140;
 
+    // Roster rows built via modlib.ParseUI with visible:false from construction (not via post-hoc
+    // SetUIWidgetVisible). The earlier v0.694 approach used mod.AddUIText (no visible param) then
+    // SetUIWidgetVisible(false) after construction, but the BF6 engine appears to queue widget
+    // creation and may paint the queued widgets BEFORE the deferred visibility update applies --
+    // resulting in placeholder text flickering visibly in each row position. modlib.ParseUI commits
+    // the visible:false flag at creation time, eliminating the race.
+    const emptyRowLabel = mod.Message(mod.stringkeys.twl.system.genericCounter, "");
+    const buildRosterTextHidden = (
+        name: string,
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+        parent: mod.UIWidget
+    ): void => {
+        modlib.ParseUI({
+            name,
+            type: "Text",
+            playerId: eventPlayer,
+            position: [x, y],
+            size: [w, h],
+            anchor: mod.UIAnchor.TopLeft,
+            visible: false,
+            padding: 0,
+            bgAlpha: 0,
+            bgFill: mod.UIBgFill.None,
+            textLabel: emptyRowLabel,
+            textColor: [1, 1, 1],
+            textAlpha: 1,
+            textSize: 14,
+            textAnchor: mod.UIAnchor.TopLeft,
+        });
+        const widget = mod.FindUIWidgetWithName(name, mod.GetUIRoot());
+        if (widget) mod.SetUIWidgetParent(widget, parent);
+    };
     for (let row = 0; row < TEAM_ROSTER_MAX_ROWS; row++) {
         const y = rowStartY + (row * rowH);
-
-        const t1NameId = UI_READY_DIALOG_T1_ROW_NAME_ID + playerId + "_" + row;
-        const t1ReadyId = UI_READY_DIALOG_T1_ROW_READY_ID + playerId + "_" + row;
-        const t1BaseId = UI_READY_DIALOG_T1_ROW_BASE_ID + playerId + "_" + row;
-
-        mod.AddUIText(t1NameId, mod.CreateVector(colNameX, y, 0), mod.CreateVector(colNameW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
-        const T1_NAME = mod.FindUIWidgetWithName(t1NameId, mod.GetUIRoot());
-        mod.SetUIWidgetBgAlpha(T1_NAME, 0);
-        mod.SetUITextSize(T1_NAME, 14);
-        mod.SetUIWidgetParent(T1_NAME, T1_CONTAINER);
-
-        mod.AddUIText(t1ReadyId, mod.CreateVector(colReadyX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
-        const T1_READY = mod.FindUIWidgetWithName(t1ReadyId, mod.GetUIRoot());
-        mod.SetUIWidgetBgAlpha(T1_READY, 0);
-        mod.SetUITextSize(T1_READY, 14);
-        mod.SetUIWidgetParent(T1_READY, T1_CONTAINER);
-
-        mod.AddUIText(t1BaseId, mod.CreateVector(colBaseX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
-        const T1_BASE = mod.FindUIWidgetWithName(t1BaseId, mod.GetUIRoot());
-        mod.SetUIWidgetBgAlpha(T1_BASE, 0);
-        mod.SetUITextSize(T1_BASE, 14);
-        mod.SetUIWidgetParent(T1_BASE, T1_CONTAINER);
-
-        const t2NameId = UI_READY_DIALOG_T2_ROW_NAME_ID + playerId + "_" + row;
-        const t2ReadyId = UI_READY_DIALOG_T2_ROW_READY_ID + playerId + "_" + row;
-        const t2BaseId = UI_READY_DIALOG_T2_ROW_BASE_ID + playerId + "_" + row;
-
-        mod.AddUIText(t2NameId, mod.CreateVector(colNameX, y, 0), mod.CreateVector(colNameW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
-        const T2_NAME = mod.FindUIWidgetWithName(t2NameId, mod.GetUIRoot());
-        mod.SetUIWidgetBgAlpha(T2_NAME, 0);
-        mod.SetUITextSize(T2_NAME, 14);
-        mod.SetUIWidgetParent(T2_NAME, T2_CONTAINER);
-
-        mod.AddUIText(t2ReadyId, mod.CreateVector(colReadyX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
-        const T2_READY = mod.FindUIWidgetWithName(t2ReadyId, mod.GetUIRoot());
-        mod.SetUIWidgetBgAlpha(T2_READY, 0);
-        mod.SetUITextSize(T2_READY, 14);
-        mod.SetUIWidgetParent(T2_READY, T2_CONTAINER);
-
-        mod.AddUIText(t2BaseId, mod.CreateVector(colBaseX, y, 0), mod.CreateVector(colStatusW, rowH, 0), mod.UIAnchor.TopLeft, mod.Message(mod.stringkeys.twl.system.genericCounter, ""), eventPlayer);
-        const T2_BASE = mod.FindUIWidgetWithName(t2BaseId, mod.GetUIRoot());
-        mod.SetUIWidgetBgAlpha(T2_BASE, 0);
-        mod.SetUITextSize(T2_BASE, 14);
-        mod.SetUIWidgetParent(T2_BASE, T2_CONTAINER);
+        buildRosterTextHidden(UI_READY_DIALOG_T1_ROW_NAME_ID + playerId + "_" + row, colNameX, y, colNameW, rowH, T1_CONTAINER);
+        buildRosterTextHidden(UI_READY_DIALOG_T1_ROW_READY_ID + playerId + "_" + row, colReadyX, y, colStatusW, rowH, T1_CONTAINER);
+        buildRosterTextHidden(UI_READY_DIALOG_T1_ROW_BASE_ID + playerId + "_" + row, colBaseX, y, colStatusW, rowH, T1_CONTAINER);
+        buildRosterTextHidden(UI_READY_DIALOG_T2_ROW_NAME_ID + playerId + "_" + row, colNameX, y, colNameW, rowH, T2_CONTAINER);
+        buildRosterTextHidden(UI_READY_DIALOG_T2_ROW_READY_ID + playerId + "_" + row, colReadyX, y, colStatusW, rowH, T2_CONTAINER);
+        buildRosterTextHidden(UI_READY_DIALOG_T2_ROW_BASE_ID + playerId + "_" + row, colBaseX, y, colStatusW, rowH, T2_CONTAINER);
     }
 
     // Populate rows for this viewer .
@@ -1521,7 +1551,9 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         BUTTON_CANCEL_BORDER ?? CONTAINER_BASE
     );
 
-    // Layout constants: adjust cautiously; verify in-game dialog Admin panel widgets are built lazily on first open (see buildAdminPanelWidgets) to prevent a one-tick render flicker.
+    // Atomic reveal: entire dialog tree was built hidden; flip root + chrome to visible in one
+    // engine tick so widgets don't pop in one-by-one during construction.
+    finalizeReadyDialogVisibility(playerId, CONTAINER_BASE, true);
     updateHelpTextVisibilityForPlayer(eventPlayer);
 }
 
@@ -2245,14 +2277,12 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
         const p2 = t2Entry?.player;
 
         // Hide unused placeholder rows (prevents 'unknown string' artifacts and reduces visual noise).
+        // Anti-flicker order: set TEXT first, THEN visibility. If a previously-hidden row had stale
+        // text "OLD_NAME" and refresh flipped visible BEFORE updating text, the engine could paint
+        // one frame with the stale text before the text update applied. Setting text first
+        // guarantees that by the time the widget becomes visible, the text is already correct.
         const hasP1 = !!t1Entry;
         const hasP2 = !!t2Entry;
-        if (t1Name) mod.SetUIWidgetVisible(t1Name, hasP1);
-        if (t1Ready) mod.SetUIWidgetVisible(t1Ready, hasP1);
-        if (t1Base) mod.SetUIWidgetVisible(t1Base, hasP1);
-        if (t2Name) mod.SetUIWidgetVisible(t2Name, hasP2);
-        if (t2Ready) mod.SetUIWidgetVisible(t2Ready, hasP2);
-        if (t2Base) mod.SetUIWidgetVisible(t2Base, hasP2);
 
         safeSetUITextLabel(t1Name, hasP1 ? getRosterEntryNameMessage(t1Entry) : emptyMsg);
         safeSetUITextLabel(
@@ -2314,6 +2344,14 @@ function refreshReadyDialogRosterForViewer(viewer: mod.Player, viewerPlayerId: n
             if (t2Ready) mod.SetUITextColor(t2Ready, COLOR_NORMAL);
             if (t2Base) mod.SetUITextColor(t2Base, COLOR_NORMAL);
         }
+
+        // Visibility flip LAST (after text + colors set). See anti-flicker comment at top of loop.
+        if (t1Name) mod.SetUIWidgetVisible(t1Name, hasP1);
+        if (t1Ready) mod.SetUIWidgetVisible(t1Ready, hasP1);
+        if (t1Base) mod.SetUIWidgetVisible(t1Base, hasP1);
+        if (t2Name) mod.SetUIWidgetVisible(t2Name, hasP2);
+        if (t2Ready) mod.SetUIWidgetVisible(t2Ready, hasP2);
+        if (t2Base) mod.SetUIWidgetVisible(t2Base, hasP2);
     }
 }
 
@@ -2619,32 +2657,41 @@ async function runAircraftWarningLoop(): Promise<void> {
     const STAGE_YELLOW = 1;    // altimeter yellow + "ALTITUDE WARNING" label
     const STAGE_BLACK = 2;     // STAGE_YELLOW + 960x540 black-screen dialog
 
+    // Fix 4 (v0.692): teardown sentinel. When customEnabled flips false, tear down once and
+    // then skip the per-tick AllPlayers iteration until it flips back to true. Saves 5
+    // AllPlayers iterations / sec in Vanilla mode + on any map with useCustomCeiling: false.
+    let teardownComplete = false;
+
     while (true) {
         await mod.Wait(AIRCRAFT_SOFT_CEILING_TICK_SECONDS);
 
         if (!State.round.aircraftCeiling.customEnabled) {
-            // Vanilla mode: tear down everything we own.
-            for (const pidStr in State.players.altitudeWarningVisibleByPid) {
-                const pid = Number(pidStr);
-                if (State.players.altitudeWarningVisibleByPid[pid]) {
-                    setAltitudeWarningVisibleForPid(pid, false);
-                    delete lastCountdownByPid[pid];
+            if (!teardownComplete) {
+                // Vanilla mode: tear down everything we own (one-shot).
+                for (const pidStr in State.players.altitudeWarningVisibleByPid) {
+                    const pid = Number(pidStr);
+                    if (State.players.altitudeWarningVisibleByPid[pid]) {
+                        setAltitudeWarningVisibleForPid(pid, false);
+                        delete lastCountdownByPid[pid];
+                    }
                 }
-            }
-            const players = mod.AllPlayers();
-            const count = mod.CountOf(players);
-            for (let i = 0; i < count; i++) {
-                const player = mod.ValueInArray(players, i) as mod.Player;
-                const pid = safeGetPlayerId(player);
-                if (pid === undefined) continue;
-                setAltimeterVisibleForPid(pid, false);
-                setAltimeterWarningLabelVisibleForPid(pid, false);
-                delete lastAltimeterTextYByPid[pid];
-                delete lastAltimeterStageByPid[pid];
-                delete lastWarningLabelVisibleByPid[pid];
+                const players = mod.AllPlayers();
+                const count = mod.CountOf(players);
+                for (let i = 0; i < count; i++) {
+                    const player = mod.ValueInArray(players, i) as mod.Player;
+                    const pid = safeGetPlayerId(player);
+                    if (pid === undefined) continue;
+                    setAltimeterVisibleForPid(pid, false);
+                    setAltimeterWarningLabelVisibleForPid(pid, false);
+                    delete lastAltimeterTextYByPid[pid];
+                    delete lastAltimeterStageByPid[pid];
+                    delete lastWarningLabelVisibleByPid[pid];
+                }
+                teardownComplete = true;
             }
             continue;
         }
+        teardownComplete = false;  // reset when custom ceiling re-enables (admin Confirm flip)
 
         const softY = getAircraftSoftCeilingWorldY();
         const warningY = getAircraftWarningCeilingWorldY();

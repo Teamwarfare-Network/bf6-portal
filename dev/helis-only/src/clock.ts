@@ -135,6 +135,12 @@ const seconds = remaining % 60;
     const showVehiclesAlive = isRoundLive() && !State.round.flow.cleanupActive && !State.match.isEnded;
     const vehiclesAliveT1 = showVehiclesAlive ? getRegisteredVehicleCount(TeamID.Team1) : 0;
     const vehiclesAliveT2 = showVehiclesAlive ? getRegisteredVehicleCount(TeamID.Team2) : 0;
+    // Fix 2 (v0.692): only toggle visibility when it actually changed. Counts can still update
+    // live each tick because vehicles can be destroyed mid-round.
+    const vehiclesAliveVisibilityChanged = State.hudCache.lastVehiclesAliveVisible !== showVehiclesAlive;
+    // Fix 3 (v0.692): hoist the victoryDialogActive gate above the per-player loop to skip
+    // N function calls per second when the Victory dialog isn't active (vast majority of match).
+    const showVictory = State.match.victoryDialogActive;
 
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
@@ -159,12 +165,12 @@ const seconds = remaining % 60;
             setDigitCached(cacheEntry.secOnes, digits.sO);
         }
 
-        updateVictoryDialogForPlayer(player, remaining);
+        if (showVictory) updateVictoryDialogForPlayer(player, remaining);
 
         const pid = mod.GetObjId(player);
-        const refs = State.hudCache.hudByPid[pid] ?? ensureHudForPlayer(player);
+        const refs = State.hudCache.hudByPid[pid] ?? ensureEagerHudShellForPlayer(player);
         if (refs?.leftVehiclesAliveText) {
-            mod.SetUIWidgetVisible(refs.leftVehiclesAliveText, showVehiclesAlive);
+            if (vehiclesAliveVisibilityChanged) mod.SetUIWidgetVisible(refs.leftVehiclesAliveText, showVehiclesAlive);
             if (showVehiclesAlive) {
                 safeSetUITextLabel(
                     refs.leftVehiclesAliveText,
@@ -173,7 +179,7 @@ const seconds = remaining % 60;
             }
         }
         if (refs?.rightVehiclesAliveText) {
-            mod.SetUIWidgetVisible(refs.rightVehiclesAliveText, showVehiclesAlive);
+            if (vehiclesAliveVisibilityChanged) mod.SetUIWidgetVisible(refs.rightVehiclesAliveText, showVehiclesAlive);
             if (showVehiclesAlive) {
                 safeSetUITextLabel(
                     refs.rightVehiclesAliveText,
@@ -185,6 +191,7 @@ const seconds = remaining % 60;
 
     State.round.clock.lastLowTimeState = lowTime;
     State.round.clock.lastDisplayedSeconds = remaining;
+    State.hudCache.lastVehiclesAliveVisible = showVehiclesAlive;
 }
 
 //#endregion ----------------- Match Clock - Update + State --------------------

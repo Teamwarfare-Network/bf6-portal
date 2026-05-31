@@ -608,9 +608,19 @@ async function startVehicleSpawnerSystem(): Promise<void> {
 
 //#region -------------------- Kills HUD Sync (GameModeScore -> HUD) --------------------
 
-function syncKillsHudFromTrackedTotals(_force: boolean): void {
+function syncKillsHudFromTrackedTotals(force: boolean): void {
     // Total kills are tracked in script variables; GameModeScore is reserved for match wins.
-    // Avoid HUD creation/reposition here; only update cached refs to prevent kill-time crashes.
+    // Pre-build update safety: setCounterText defensive-no-ops on undefined refs, so calling
+    // this before ensureTopHudScoringUiBuiltHidden has fired (e.g. pre-deploy player) is safe.
+    // Values stay authoritative in State; widgets are projections seeded by seedTopHudFromState.
+    if (!force
+        && State.hudCache.lastHudScoreT1 === State.scores.t1TotalKills
+        && State.hudCache.lastHudScoreT2 === State.scores.t2TotalKills) {
+        return;
+    }
+    State.hudCache.lastHudScoreT1 = State.scores.t1TotalKills;
+    State.hudCache.lastHudScoreT2 = State.scores.t2TotalKills;
+
     const players = mod.AllPlayers();
     const count = mod.CountOf(players);
     for (let i = 0; i < count; i++) {

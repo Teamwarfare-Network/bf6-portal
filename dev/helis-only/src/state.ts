@@ -126,7 +126,7 @@ function syncWinCountersHudFromGameModeScore(): void {
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
-        const refs = ensureHudForPlayer(p);
+        const refs = ensureEagerHudShellForPlayer(p);
         if (!refs) continue;
         setCounterText(refs.leftWinsText, t1Wins);
         setCounterText(refs.rightWinsText, t2Wins);
@@ -1068,6 +1068,7 @@ interface GameState {
         lastHudScoreT2?: number;
         lastHudRoundKillsT1?: number;
         lastHudRoundKillsT2?: number;
+        lastVehiclesAliveVisible?: boolean;
         hudByPid: Record<number, HudRefs>;
         clockWidgetCache: Record<number, ClockWidgetCacheEntry>;
         countdownWidgetCache: Record<number, CountdownWidgetCacheEntry>;
@@ -1285,6 +1286,7 @@ const State: GameState = {
         lastHudScoreT2: undefined,
         lastHudRoundKillsT1: undefined,
         lastHudRoundKillsT2: undefined,
+        lastVehiclesAliveVisible: undefined,
         hudByPid: {},
         clockWidgetCache: {},
         countdownWidgetCache: {},

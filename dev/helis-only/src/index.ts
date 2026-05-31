@@ -4,7 +4,10 @@ import './types';
 import './config';
 import './strings';
 import './state';
+import './lazy-build';
 import './hud';
+import './hud-dialog-lazy';
+import './hud-scoring-lazy';
 import './vehicles';
 import './overtime';
 import './clock';
@@ -69,7 +72,7 @@ export async function OnGameModeStarted(): Promise<void> {
         for (let i = 0; i < count; i++) {
             const p = mod.ValueInArray(players, i) as mod.Player;
             if (!p || !mod.IsPlayerValid(p)) continue;
-            ensureHudForPlayer(p);
+            ensureEagerHudShellForPlayer(p);
         }
     }
 
@@ -181,7 +184,7 @@ export async function OnPlayerJoinGame(eventPlayer: mod.Player) {
 
     resetUiForPlayerOnJoin(eventPlayer);
 
-    const refs = ensureHudForPlayer(eventPlayer);
+    const refs = ensureEagerHudShellForPlayer(eventPlayer);
 
     if (refs) {
         setCounterText(refs.leftWinsText, State.match.winsT1);
@@ -342,7 +345,11 @@ export async function OnPlayerDeployed(eventPlayer: mod.Player) {
     updatePlayersReadyHudTextForAllPlayers();
     renderReadyDialogForAllVisibleViewers();
     updateHelpTextVisibilityForAllPlayers();
-    ensureHudForPlayer(eventPlayer);
+    ensureEagerHudShellForPlayer(eventPlayer);
+    // Phase B: build the top-HUD scoring widgets lazily on first deploy. Deploys are naturally
+    // staggered across time, so this avoids the OnPlayerJoinGame dogpile that triggered the
+    // 1000ms frame-budget crash.
+    triggerLazyBuild('topHud', pid);
     await spawnTeamSwitchInteractPoint(eventPlayer);
 }
 
@@ -390,23 +397,20 @@ export function OngoingPlayer(eventPlayer: mod.Player): void {
         checkTeamSwitchInteractPointRemoval(eventPlayer);
     }
 
-    // UI caching warm-up: build the Ready Up dialog once per player so the first real open is snappy.
-    // We build and immediately hide; the dialog becomes visible only when the player opens it via the interact point.
-    const pid = safeGetPlayerId(eventPlayer);
-    if (pid === undefined) return;
-    if (State.players.teamSwitchData[pid] && !State.players.teamSwitchData[pid].uiBuilt) {
-        createTeamSwitchUI(eventPlayer);
-        // Ensure the warm-up build does not count as "open" for refresh logic.
-        State.players.teamSwitchData[pid].dialogVisible = false;
-        deleteTeamSwitchUI(eventPlayer); // now hides (cached) rather than deleting
-        State.players.teamSwitchData[pid].uiBuilt = true;
-    }
+    // Fix 5 (v0.692): Ready Dialog warm-up block removed. The previous warm-up built the entire
+    // ~600-line widget tree on the first OngoingPlayer tick per player; with concurrent joins
+    // that dogpiled (N players * 600 lines in one engine tick) -- same crash signature as the
+    // Phase A/B bugs. Conquest hit and resolved the identical pattern in v1.418 Wave 3 by
+    // ablation (CQ_Bug_32, CQ_Bug_33 closed by deletion). The Ready Dialog now builds on first
+    // triple-tap via createTeamSwitchUI's own idempotent cache check. First triple-tap pays a
+    // one-time ~50ms hitch (player-initiated, naturally staggered, cannot dogpile).
 
     if (isPlayerDeployed(eventPlayer)) {
         if (InteractMultiClickDetector.checkMultiClick(eventPlayer)) {
+            const pid = safeGetPlayerId(eventPlayer);
+            if (pid === undefined) return;
             armJoinPromptTripleTapForPid(pid);
             spawnTeamSwitchInteractPoint(eventPlayer);
-            //mod.DisplayHighlightedWorldLogMessage(mod.Message(mod.stringkeys.twl.notifications.multiclickDetector), mod.GetTeam(eventPlayer));
         }
     }
 }

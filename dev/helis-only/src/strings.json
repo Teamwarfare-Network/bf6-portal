@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Vehicles (v0.687)",
+        "title": "teamwarfare . net | TWL Vehicles (v0.700)",
         "subtitle": "Experience Code: - - - -"
       },
       "roundText": "ROUND",
@@ -198,7 +198,7 @@
       "gameModeHelisCustom": "Helis Only - Custom",
       "aircraftCeilingVanilla": "Vanilla",
       "modeSettingAircraftCeilingFormat": "Aircraft Ceiling: {0}",
-      "modeSettingVehicleHealthFormat": "Health: {0}%",
+      "modeSettingVehicleHealthFormat": "Vehicle HP: {0}%",
       "vehicleHealthChanged": "{0} changed the Vehicle Health to {1}%",
       "vehicleOptionFalchion": "M77E Falchion (Apache)",
       "vehicleOptionPanthera": "Panthera KHT (Euro)",

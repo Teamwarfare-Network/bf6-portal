@@ -260,6 +260,24 @@ function deleteTeamSwitchUI(eventPlayer: mod.Player | number) {
     const mapValue = safeFind(UI_READY_DIALOG_MAP_VALUE_ID + playerId);
     if (mapValue) mod.SetUIWidgetVisible(mapValue, false);
 
+    // Defense-in-depth: explicitly hide all 192 roster row widgets on close. Cascade through
+    // CONTAINER_BASE is unreliable per the codebase's own admission (see admin panel comment
+    // below), and stale visible rows would flicker briefly on the next cache-hit reveal cycle.
+    for (let row = 0; row < TEAM_ROSTER_MAX_ROWS; row++) {
+        const t1Name = safeFind(UI_READY_DIALOG_T1_ROW_NAME_ID + playerId + "_" + row);
+        if (t1Name) mod.SetUIWidgetVisible(t1Name, false);
+        const t1Ready = safeFind(UI_READY_DIALOG_T1_ROW_READY_ID + playerId + "_" + row);
+        if (t1Ready) mod.SetUIWidgetVisible(t1Ready, false);
+        const t1Base = safeFind(UI_READY_DIALOG_T1_ROW_BASE_ID + playerId + "_" + row);
+        if (t1Base) mod.SetUIWidgetVisible(t1Base, false);
+        const t2Name = safeFind(UI_READY_DIALOG_T2_ROW_NAME_ID + playerId + "_" + row);
+        if (t2Name) mod.SetUIWidgetVisible(t2Name, false);
+        const t2Ready = safeFind(UI_READY_DIALOG_T2_ROW_READY_ID + playerId + "_" + row);
+        if (t2Ready) mod.SetUIWidgetVisible(t2Ready, false);
+        const t2Base = safeFind(UI_READY_DIALOG_T2_ROW_BASE_ID + playerId + "_" + row);
+        if (t2Base) mod.SetUIWidgetVisible(t2Base, false);
+    }
+
     // Admin panel is not cached: delete container + children + toggle on close to prevent stray widgets.
     deleteAdminPanelUI(playerId, true);
     setAdminPanelChildWidgetsVisible(playerId, false);

@@ -1,5 +1,23 @@
 // @ts-nocheck
-// Module: hud — HUD counter helpers, build/ensure, victory/round-end dialogs, update helpers
+// Module: hud -- HUD counter helpers, eager HUD shell build/ensure, update helpers, altitude warning.
+//
+// Post-Phase-A/B (v0.690) eager scope of ensureEagerHudShellForPlayer:
+//   - Upper-Left branding container (Upper_Left_Container_)
+//   - Upper-Left settings summary panel (Upper_Left_Settings_ + Settings_* rows)
+//   - Altimeter root + card + warning label (eager since v0.674)
+//   - Spawn-disabled live text (built lazily-first-use via ensureSpawnDisabledLiveText helper)
+//   - Cache write to State.hudCache.hudByPid[pid]
+//   - Settings refs resolution
+//
+// Lazy (NOT built here):
+//   - Top-Center Panels + Counter Widgets + Admin Action Counter
+//       -> hud-scoring-lazy.ts (triggered on OnPlayerDeployed)
+//   - Round-End Dialog + Victory Dialog
+//       -> hud-dialog-lazy.ts (triggered when their update functions fire)
+//   - Ready Dialog + Admin Panel
+//       -> built inline in ready-dialog.ts / team-switch.ts on triple-tap / button click
+//   - Altitude warning dialog
+//       -> ensureAltitudeWarningUiForPlayer (lazy first-show)
 
 //#region -------------------- HUD Counter Helpers --------------------
 
@@ -34,7 +52,7 @@ function setTrendingWinnerCrownForAllPlayers(): void {
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
-        const refs = ensureHudForPlayer(p);
+        const refs = ensureEagerHudShellForPlayer(p);
         if (!refs) continue;
         setTrendingWinnerCrownForRefs(refs);
     }
@@ -375,7 +393,7 @@ function ensureSpawnDisabledLiveText(player: mod.Player): mod.UIWidget | undefin
 }
 
 function setSpawnDisabledLiveTextVisibleForPlayer(player: mod.Player, visible: boolean): void {
-    const refs = ensureHudForPlayer(player);
+    const refs = ensureEagerHudShellForPlayer(player);
     if (!refs || !refs.spawnDisabledLiveText) return;
     safeSetUIWidgetVisible(refs.spawnDisabledLiveText, visible);
 }
@@ -432,7 +450,7 @@ function setRoundStateTextForAllPlayers(): void {
         if (!cache) continue;
         setRoundStateText(cache.roundStateText);
         setRoundLiveHelpText(cache.roundLiveHelpRoot, cache.roundLiveHelpText);
-        const refs = ensureHudForPlayer(p);
+        const refs = ensureEagerHudShellForPlayer(p);
         if (refs) setRoundKillsLabelTextForRefs(refs);
     }
     // Keep the pre-round ready count line in sync with any round-phase HUD refresh.
@@ -572,6 +590,10 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
     if (!player || !mod.IsPlayerValid(player)) return;
     const pid = safeGetPlayerId(player);
     if (pid === undefined || isPidDisconnected(pid)) return;
+    // Phase A: lazy-build the victory dialog widgets if not built yet. Only fire the build when the
+    // dialog actually needs to be shown -- updateVictoryDialogForPlayer is also called from OPJG's
+    // cache-init path as a defensive no-op, and we don't want THAT path to trigger the build.
+    if (State.match.victoryDialogActive) triggerLazyBuild('victoryDialog', pid);
     // Look up cached UI references for this player (if missing, this update becomes a no-op).
     const refs = State.hudCache.hudByPid[pid];
     if (!refs) return;
@@ -837,6 +859,8 @@ function updateRoundEndDialogForPlayer(player: mod.Player, winnerTeamNum: TeamID
     if (!player || !mod.IsPlayerValid(player)) return;
     const pid = safeGetPlayerId(player);
     if (pid === undefined || isPidDisconnected(pid)) return;
+    // Phase A: lazy-build the round-end dialog widgets if not built yet. Idempotent + re-entrancy-guarded.
+    triggerLazyBuild('roundEndDialog', pid);
     const refs = State.hudCache.hudByPid[pid];
     if (!refs) return;
 
@@ -987,7 +1011,7 @@ function updateHelpTextVisibilityForAllPlayers(): void {
 // This function is idempotent and safe to call on join, respawn, or reconnect.
 // Widget references created here are reused and updated elsewhere.
 
-function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
+function ensureEagerHudShellForPlayer(player: mod.Player): HudRefs | undefined {
     // Per-player HUD lifecycle:
     // - HUD widgets are created once per player and then only updated (never recreated) during the match.
     // - This function is safe to call repeatedly (join, respawn, reconnect, admin actions).
@@ -999,7 +1023,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
     // If cached and still valid, return it
     const cached = State.hudCache.hudByPid[pid];
-    if (cached && cached.leftKillsText && cached.rightKillsText) {
+    if (cached && cached.settingsGameModeText) {
         cached.spawnDisabledLiveText = ensureSpawnDisabledLiveText(player);
         const helpContainer = safeFind(`Container_HelpText_${pid}`);
         if (helpContainer) {
@@ -1095,7 +1119,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     // container (the v0.666-v0.673 lazy-built invisible root never positioned where requested).
     // CARD child holds the black backplate + "Altitude: YYY" text + small yellow "ALTITUDE
     // WARNING" label. All children's visibility is toggled by the loop's set*ForPid helpers --
-    // root stays where ensureHudForPlayer placed it.
+    // root stays where ensureEagerHudShellForPlayer placed it.
     {
         const altimeterRoot = modlib.ParseUI({
             name: UI_ALTIMETER_ROOT_ID + pid,
@@ -1328,690 +1352,22 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
     //#region -------------------- HUD Build/Ensure - Top-Center Panels --------------------
 
-    // --- Static HUD: Top-center panels (TeamLeft / Middle / TeamRight) ---
-    {
-        const TOP_PANEL_Y = 44.75 + TOP_HUD_OFFSET_Y;
-        const PANEL_WIDTH = 114.5;
-        const PANEL_HEIGHT = 74;
-        const MID_PANEL_X = 902.75;
-        const LEFT_PANEL_X = 783.86;
-        const RIGHT_PANEL_X = 1021.64;
-        const PANEL_GAP = MID_PANEL_X - LEFT_PANEL_X - PANEL_WIDTH;
-        const ROUND_KILLS_PANEL_SIZE = PANEL_HEIGHT;
-        const ROUND_KILLS_LEFT_X = LEFT_PANEL_X - ROUND_KILLS_PANEL_SIZE - PANEL_GAP;
-        const ROUND_KILLS_RIGHT_X = RIGHT_PANEL_X + PANEL_WIDTH + PANEL_GAP;
-        const TRENDING_CROWN_SIZE = 18;
-        const TRENDING_CROWN_OFFSET_Y = 4;
-        const TRENDING_CROWN_LEFT_X = PANEL_WIDTH - TRENDING_CROWN_SIZE - 10;
-        const TRENDING_CROWN_RIGHT_X = 10;
-        const mid = modlib.ParseUI({
-            // UI element: Container_TopMiddle_CoreUI_${pid}
-            name: `Container_TopMiddle_CoreUI_${pid}`,
-            type: "Container",
-            playerId: player,
-            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-            position: [MID_PANEL_X, TOP_PANEL_Y],
-            size: [PANEL_WIDTH, PANEL_HEIGHT],
-            anchor: mod.UIAnchor.TopLeft,
-            visible: true,
-            padding: 0,
-            bgColor: [0.0314, 0.0431, 0.0431],
-            bgAlpha: 0.75,
-            bgFill: mod.UIBgFill.Blur,
-            children: [
-                {
-                    // UI element: RoundText_${pid}
-                    name: `RoundText_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0.5, -4],
-                    size: [72.5, 24],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgColor: [0.2, 0.2, 0.2],
-                    bgAlpha: 1,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.roundText,
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 16,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // Help/instructions text shown when enabled for this player
-                    name: `Container_HelpText_${pid}`,
-                    type: "Container",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [-165.5, 92], //[-116.5, 92]
-                    size: [450, 20],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgColor: [1, 0.9882, 0.6118],
-                    bgAlpha: 1,
-                    bgFill: mod.UIBgFill.Solid,
-                    children: [
-                        {
-                            // Help/instructions text shown when enabled for this player
-                            name: `HelpText_${pid}`,
-                            type: "Text",
-                            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                            position: [0, 2],
-                            size: [450, 14],
-                            anchor: mod.UIAnchor.TopLeft,
-                            visible: true,
-                            padding: 0,
-                            bgColor: [0.2, 0.2, 0.2],
-                            bgAlpha: 1,
-                            bgFill: mod.UIBgFill.None,
-                            textLabel: mod.stringkeys.twl.hud.helpText,
-                            textColor: [0.251, 0.0941, 0.0667],
-                            textAlpha: 1,
-                            textSize: 12,
-                            textAnchor: mod.UIAnchor.Center,
-                        },
-                    ],
-                },
-                {
-                    // Ready status text shown when the player is READY and the round is not live
-                    name: `Container_ReadyStatus_${pid}`,
-                    type: "Container",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [-165.5, 92], //[-116.5, 92]
-                    size: [450, 20],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: false,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    children: [
-                        {
-                            // Ready status text shown when enabled for this player
-                            name: `ReadyStatusText_${pid}`,
-                            type: "Text",
-                            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                            position: [0, 2],
-                            size: [450, 14],
-                            anchor: mod.UIAnchor.TopLeft,
-                            visible: true,
-                            padding: 0,
-                            bgAlpha: 0,
-                            bgFill: mod.UIBgFill.None,
-                            textLabel: mod.stringkeys.twl.hud.readyText,
-                            textColor: [0.6784, 0.9922, 0.5255],
-                            textAlpha: 1,
-                            textSize: 12,
-                            textAnchor: mod.UIAnchor.Center,
-                        },
-                    ],
-                },
-                {
-                    // UI element: Slash_${pid}
-                    name: `Slash_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [71.5 + ROUND_SLASH_OFFSET_X, -2],
-                    size: [31, 21],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgColor: [0.2, 0.2, 0.2],
-                    bgAlpha: 1,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.system.slash,
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 16,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-            ],
-        });
-        if (mid) refs.roots.push(mid);
-
-        const t1Panel = modlib.ParseUI({
-            // UI element: Container_TopLeft_CoreUI_${pid}
-            name: `Container_TopLeft_CoreUI_${pid}`,
-            type: "Container",
-            playerId: player,
-            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-            position: [LEFT_PANEL_X, TOP_PANEL_Y],
-            size: [PANEL_WIDTH, PANEL_HEIGHT],
-            anchor: mod.UIAnchor.TopLeft,
-            visible: true,
-            padding: 0,
-            bgColor: [0.4392, 0.9216, 1],
-            bgAlpha: 0.75,
-            bgFill: mod.UIBgFill.Blur,
-            children: [
-                {
-                    // Trending winner crown (solid) for Team 1
-                    name: `TeamLeft_Trending_Crown_${pid}`,
-                    type: "Image",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [TRENDING_CROWN_LEFT_X, TRENDING_CROWN_OFFSET_Y],
-                    size: [TRENDING_CROWN_SIZE, TRENDING_CROWN_SIZE],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: false,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    imageType: mod.UIImageType.CrownSolid,
-                    imageColor: [1, 252 / 255, 156 / 255],
-                    imageAlpha: 1,
-                },
-                {
-                    // Team name label for Team 1 (left side)
-                    name: `TeamLeft_Name_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [23.25, 0],
-                    size: [68, 28],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgColor: [0.2, 0.2, 0.2],
-                    bgAlpha: 1,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: getTeamNameKey(TeamID.Team1),
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 18,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // UI element: TeamLeft_Record_${pid}
-                    name: `TeamLeft_Record_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [2.25, 22],
-                    size: [110, 20],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgColor: [0.2, 0.2, 0.2],
-                    bgAlpha: 1,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, 0, 0, 0),
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 18,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // Display variable for round wins on Team 1 (left side)
-                    name: `TeamLeft_Wins_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [31, 45], //26.5, 44
-                    size: [72, 16],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgColor: [0.2, 0.2, 0.2],
-                    bgAlpha: 1,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.labels.roundWins,
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 12,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // Display variable for total kills on Team 1 (left side)
-                    name: `TeamLeft_Kills_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [26.5, 59], //26.5, 58
-                    size: [72, 16],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgColor: [0.2, 0.2, 0.2],
-                    bgAlpha: 1,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.labels.totalKills,
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 12,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-            ],
-        });
-        if (t1Panel) refs.roots.push(t1Panel);
-
-        const t1RoundKillsPanel = modlib.ParseUI({
-            // UI element: Container_TopLeft_RoundKills_${pid}
-            name: `Container_TopLeft_RoundKills_${pid}`,
-            type: "Container",
-            playerId: player,
-            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-            position: [ROUND_KILLS_LEFT_X, TOP_PANEL_Y],
-            size: [ROUND_KILLS_PANEL_SIZE, ROUND_KILLS_PANEL_SIZE],
-            anchor: mod.UIAnchor.TopLeft,
-            visible: true,
-            padding: 0,
-            bgColor: [0.4392, 0.9216, 1],
-            bgAlpha: 0.75,
-            bgFill: mod.UIBgFill.Blur,
-            children: [
-                {
-                    // Crown indicator shown for round winner (Team 1)
-                    name: `TeamLeft_RoundKills_Crown_${pid}`,
-                    type: "Image",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, -35],
-                    size: [45, 45],
-                    anchor: mod.UIAnchor.TopCenter,
-                    visible: false,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    imageType: mod.UIImageType.CrownOutline,
-                    imageColor: [1, 1, 1],
-                    imageAlpha: 1,
-                },
-                {
-                    // Big round-kills counter for Team 1
-                    name: `TeamLeft_RoundKills_CounterText_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 0],
-                    size: [ROUND_KILLS_PANEL_SIZE, 60],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
-                    textColor: COLOR_BLUE,
-                    textAlpha: 1,
-                    textSize: 60,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // Round kills label (bottom of the panel)
-                    name: `TeamLeft_RoundKills_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 53],
-                    size: [ROUND_KILLS_PANEL_SIZE, 18],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.hud.labels.roundKillsWithRoundFormat, getRoundKillsLabelRound()),
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 11,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // Registered vehicles alive (live round only)
-                    name: `TeamLeft_RoundKills_VehiclesAlive_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 76],
-                    size: [ROUND_KILLS_PANEL_SIZE, 12],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: false,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.hud.vehiclesAliveFormat, 0),
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 10,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-            ],
-        });
-        if (t1RoundKillsPanel) refs.roots.push(t1RoundKillsPanel);
-
-        const t2Panel = modlib.ParseUI({
-            // UI element: Container_TopRight_CoreUI_${pid}
-            name: `Container_TopRight_CoreUI_${pid}`,
-            type: "Container",
-            playerId: player,
-            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-            position: [RIGHT_PANEL_X, TOP_PANEL_Y],
-            size: [PANEL_WIDTH, PANEL_HEIGHT],
-            anchor: mod.UIAnchor.TopLeft,
-            visible: true,
-            padding: 0,
-            bgColor: [1, 0.5137, 0.3804],
-            bgAlpha: 0.75,
-            bgFill: mod.UIBgFill.Blur,
-            children: [
-                {
-                    // Trending winner crown (solid) for Team 2
-                    name: `TeamRight_Trending_Crown_${pid}`,
-                    type: "Image",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [TRENDING_CROWN_RIGHT_X, TRENDING_CROWN_OFFSET_Y],
-                    size: [TRENDING_CROWN_SIZE, TRENDING_CROWN_SIZE],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: false,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    imageType: mod.UIImageType.CrownSolid,
-                    imageColor: [1, 252 / 255, 156 / 255],
-                    imageAlpha: 1,
-                },
-                {
-                    // Team name label for Team 2 (right side)
-                    name: `TeamRight_Name_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [23.25, 0],
-                    size: [68, 28],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgColor: [0.2, 0.2, 0.2],
-                    bgAlpha: 1,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: getTeamNameKey(TeamID.Team2),
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 18,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // UI element: TeamRight_Record_${pid}
-                    name: `TeamRight_Record_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [2.25, 22],
-                    size: [110, 20],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgColor: [0.2, 0.2, 0.2],
-                    bgAlpha: 1,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, 0, 0, 0),
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 18,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // Display variable for round wins on Team 2 (right side)
-                    name: `TeamRight_Wins_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [31, 45], //26.5, 44
-                    size: [72, 16],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgColor: [0.2, 0.2, 0.2],
-                    bgAlpha: 1,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.labels.roundWins,
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 12,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // Display variable for total kills on Team 2 (right side)
-                    name: `TeamRight_Kills_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [26.5, 59], //58
-                    size: [72, 16],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgColor: [0.2, 0.2, 0.2],
-                    bgAlpha: 1,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.labels.totalKills,
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 12,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-            ],
-        });
-
-        const t2RoundKillsPanel = modlib.ParseUI({
-            // UI element: Container_TopRight_RoundKills_${pid}
-            name: `Container_TopRight_RoundKills_${pid}`,
-            type: "Container",
-            playerId: player,
-            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-            position: [ROUND_KILLS_RIGHT_X, TOP_PANEL_Y],
-            size: [ROUND_KILLS_PANEL_SIZE, ROUND_KILLS_PANEL_SIZE],
-            anchor: mod.UIAnchor.TopLeft,
-            visible: true,
-            padding: 0,
-            bgColor: [1, 0.5137, 0.3804],
-            bgAlpha: 0.75,
-            bgFill: mod.UIBgFill.Blur,
-            children: [
-                {
-                    // Crown indicator shown for round winner (Team 2)
-                    name: `TeamRight_RoundKills_Crown_${pid}`,
-                    type: "Image",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, -35],
-                    size: [45, 45],
-                    anchor: mod.UIAnchor.TopCenter,
-                    visible: false,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    imageType: mod.UIImageType.CrownOutline,
-                    imageColor: [1, 1, 1],
-                    imageAlpha: 1,
-                },
-                {
-                    // Big round-kills counter for Team 2
-                    name: `TeamRight_RoundKills_CounterText_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 0],
-                    size: [ROUND_KILLS_PANEL_SIZE, 60],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
-                    textColor: COLOR_RED,
-                    textAlpha: 1,
-                    textSize: 60,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // Round kills label (bottom of the panel)
-                    name: `TeamRight_RoundKills_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 53],
-                    size: [ROUND_KILLS_PANEL_SIZE, 18],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.hud.labels.roundKillsWithRoundFormat, getRoundKillsLabelRound()),
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 11,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // Registered vehicles alive (live round only)
-                    name: `TeamRight_RoundKills_VehiclesAlive_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 76],
-                    size: [ROUND_KILLS_PANEL_SIZE, 12],
-                    anchor: mod.UIAnchor.TopLeft,
-                    visible: false,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.hud.vehiclesAliveFormat, 0),
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 10,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-            ],
-        });
-        if (t2RoundKillsPanel) refs.roots.push(t2RoundKillsPanel);
-
-    }
-
-    //#endregion ----------------- HUD Build/Ensure - Top-Center Panels --------------------
+    // TOP-CENTER PANELS WIDGETS -- extracted to hud-scoring-lazy.ts (Phase B, 2026-05-31).
+    // Build deferred until OnPlayerDeployed fires triggerLazyBuild('topHud', pid).
+    // ~540 lines of nested ParseUI no longer run during OnPlayerJoinGame.
 
 
 
     //#region -------------------- HUD Build/Ensure - Admin Action Counter --------------------
 
-    {
-        // Admin action audit counter (top-right)
-        const auditCounter = modlib.ParseUI({
-            name: `AdminPanelActionCount_${pid}`,
-            type: "Text",
-            playerId: player,
-            // position: [x, y] offset; increase X to move right, increase Y to move down
-            position: [20, 22],
-            size: [60, 12],
-            anchor: mod.UIAnchor.TopRight,
-            visible: true,
-            padding: 0,
-            bgAlpha: 0,
-            bgFill: mod.UIBgFill.None,
-            textLabel: mod.Message(mod.stringkeys.twl.adminPanel.actionCountFormat, 0),
-            textColor: [1, 1, 1],
-            textAlpha: 1,
-            textSize: 10,
-            textAnchor: mod.UIAnchor.CenterRight,
-        });
-        if (auditCounter) refs.roots.push(auditCounter);
-    }
-
-    refs.leftRecordText = safeFind(`TeamLeft_Record_${pid}`);
-    refs.rightRecordText = safeFind(`TeamRight_Record_${pid}`);
-    refs.leftRoundKillsText = safeFind(`TeamLeft_RoundKills_CounterText_${pid}`);
-    refs.rightRoundKillsText = safeFind(`TeamRight_RoundKills_CounterText_${pid}`);
-    refs.leftRoundKillsLabel = safeFind(`TeamLeft_RoundKills_${pid}`);
-    refs.rightRoundKillsLabel = safeFind(`TeamRight_RoundKills_${pid}`);
-    refs.leftVehiclesAliveText = safeFind(`TeamLeft_RoundKills_VehiclesAlive_${pid}`);
-    refs.rightVehiclesAliveText = safeFind(`TeamRight_RoundKills_VehiclesAlive_${pid}`);
-    refs.leftRoundKillsCrown = safeFind(`TeamLeft_RoundKills_Crown_${pid}`);
-    refs.rightRoundKillsCrown = safeFind(`TeamRight_RoundKills_Crown_${pid}`);
-    refs.leftTrendingWinnerCrown = safeFind(`TeamLeft_Trending_Crown_${pid}`);
-    refs.rightTrendingWinnerCrown = safeFind(`TeamRight_Trending_Crown_${pid}`);
-    refs.adminPanelActionCountText = safeFind(`AdminPanelActionCount_${pid}`);
-
-    //#endregion ----------------- HUD Build/Ensure - Admin Action Counter --------------------
+    // ADMIN ACTION COUNTER WIDGET + top-hud ref bindings -- extracted to hud-scoring-lazy.ts (Phase B, 2026-05-31).
 
 
 
     //#region -------------------- HUD Build/Ensure - Counter Widgets --------------------
 
-    // --- Counter widgets (digits) ---
-    {
-        const mkCounter = (
-            containerName: string,
-            textName: string,
-            pos: [number, number],
-            size: [number, number],
-            textSize: number
-        ) => {
-            const root = modlib.ParseUI({
-                name: containerName,
-                type: "Container",
-                playerId: player,
-                position: pos,
-                size: size,
-                anchor: mod.UIAnchor.TopLeft,
-                visible: true,
-                padding: 0,
-                bgColor: [0.2, 0.2, 0.2],
-                bgAlpha: 1,
-                bgFill: mod.UIBgFill.None,
-                children: [
-                    {
-                        name: textName,
-                        type: "Text",
-                        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                        position: [0, 0],
-                        size: [size[0], size[1]],
-                        anchor: mod.UIAnchor.Center,
-                        visible: true,
-                        padding: 0,
-                        bgColor: [0.2, 0.2, 0.2],
-                        bgAlpha: 1,
-                        bgFill: mod.UIBgFill.None,
-                        textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, 0),
-                        textColor: [1, 1, 1],
-                        textAlpha: 1,
-                        textSize: textSize,
-                        textAnchor: mod.UIAnchor.Center,
-                    },
-                ],
-            });
-            if (root) refs.roots.push(root);
-            return safeFind(textName);
-        };
-
-        refs.roundCurText = mkCounter(
-            `RoundCounterContainer_${pid}`,
-            `RoundCounterText_${pid}`,
-            [970.93 + ROUND_COUNTER_OFFSET_X, 44.35 + TOP_HUD_OFFSET_Y],
-            [13.95, 18.15],
-            16
-        );
-        refs.roundMaxText = mkCounter(
-            `RoundCounterMaxContainer_${pid}`,
-            `RoundCounterMaxText_${pid}`,
-            [993.03 + ROUND_COUNTER_OFFSET_X, 44.35 + TOP_HUD_OFFSET_Y],
-            [13.95, 18.15],
-            16
-        );
-
-        refs.leftWinsText = mkCounter(
-            `TeamLeft_Wins_Counter_${pid}`,
-            `TeamLeft_Wins_CounterText_${pid}`,
-            [803.03, 84.75 + TOP_HUD_OFFSET_Y],
-            [20, 24],
-            15
-        );
-        refs.rightWinsText = mkCounter(
-            `TeamRight_Wins_Counter_${pid}`,
-            `TeamRight_Wins_CounterText_${pid}`,
-            [1039.76, 84.75 + TOP_HUD_OFFSET_Y],
-            [20, 24],
-            15
-        );
-
-        refs.leftKillsText = mkCounter(
-            `TeamLeft_Kills_Counter_${pid}`,
-            `TeamLeft_Kills_CounterText_${pid}`,
-            [803.03, 98.75 + TOP_HUD_OFFSET_Y],
-            [20, 24],
-            15
-        );
-        refs.rightKillsText = mkCounter(
-            `TeamRight_Kills_Counter_${pid}`,
-            `TeamRight_Kills_CounterText_${pid}`,
-            [1039.76, 98.75 + TOP_HUD_OFFSET_Y],
-            [20, 24],
-            15
-        );
-    }
-
-    //#endregion ----------------- HUD Build/Ensure - Counter Widgets --------------------
+    // COUNTER WIDGETS (digits) -- extracted to hud-scoring-lazy.ts (Phase B, 2026-05-31).
+    // ~90 lines of ParseUI no longer run during OnPlayerJoinGame.
 
 
 
@@ -2022,86 +1378,9 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
         if (spawnDisabledText) refs.roots.push(spawnDisabledText);
     }
 
-    //Code Cleanup: Need to reduce redundant comments, and when manually adjusting position/sizes update directions (e.g. +X is right or left)
-    {
-        const roundEndModal = modlib.ParseUI({
-            // UI element: RoundEndDialogRoot_${pid}
-            name: `RoundEndDialogRoot_${pid}`,
-            type: "Container",
-            playerId: player,
-            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-            position: [0, 150],
-            size: [520, 112],
-            anchor: mod.UIAnchor.TopCenter,
-            visible: false,
-            padding: 0,
-            bgColor: [VICTORY_BG_RGB[0], VICTORY_BG_RGB[1], VICTORY_BG_RGB[2]],
-            bgAlpha: 0.75,
-            bgFill: mod.UIBgFill.Solid,
-            children: [
-                {
-                    // UI element: RoundEndDialog_Round_${pid}
-                    name: `RoundEndDialog_Round_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 16],
-                    size: [340, 24],
-                    anchor: mod.UIAnchor.TopCenter,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.roundEnd.roundNumber, State.round.current),
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 20,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // UI element: RoundEndDialog_Outcome_${pid}
-                    name: `RoundEndDialog_Outcome_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 46],
-                    size: [340, 30],
-                    anchor: mod.UIAnchor.TopCenter,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.roundEnd.draw,
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 26,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // UI element: RoundEndDialog_Detail_${pid}
-                    name: `RoundEndDialog_Detail_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 86],
-                    size: [500, 18],
-                    anchor: mod.UIAnchor.TopCenter,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.roundEnd.draw,
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 14,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-            ],
-        });
-
-        refs.roundEndRoot = roundEndModal;
-        refs.roundEndRoundText = safeFind(`RoundEndDialog_Round_${pid}`);
-        refs.roundEndOutcomeText = safeFind(`RoundEndDialog_Outcome_${pid}`);
-        refs.roundEndDetailText = safeFind(`RoundEndDialog_Detail_${pid}`);
-        if (roundEndModal) refs.roots.push(roundEndModal);
-    }
+    // ROUND-END DIALOG WIDGETS -- extracted to hud-dialog-lazy.ts (Phase A, 2026-05-30).
+    // Build deferred until updateRoundEndDialogForPlayer fires triggerLazyBuild('roundEndDialog', pid)
+    // at round-end. ~80 lines of ParseUI no longer run during OnPlayerJoinGame.
 
     //#endregion ----------------- HUD Build/Ensure - Round-End Dialog --------------------
 
@@ -2109,750 +1388,9 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 
     //#region -------------------- HUD Build/Ensure - Victory Dialog --------------------
 
-    {
-        const modal = modlib.ParseUI({
-                        // UI element: VictoryDialogRoot_${pid}
-                        name: `VictoryDialogRoot_${pid}`,
-            type: "Container",
-            playerId: player,
-            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-            position: [0, 135],
-            size: [VICTORY_DIALOG_WIDTH, VICTORY_DIALOG_HEIGHT],
-            anchor: mod.UIAnchor.Center,
-            visible: false,
-            padding: 0,
-            bgColor: [VICTORY_BG_RGB[0], VICTORY_BG_RGB[1], VICTORY_BG_RGB[2]],
-            bgAlpha: 0.95,
-            bgFill: mod.UIBgFill.Solid,
-            children: [
-                {
-            // UI element: VictoryDialog_Header1_${pid}
-            name: `VictoryDialog_Header1_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 14],
-                    size: [340, 22],
-                    anchor: mod.UIAnchor.TopCenter,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.branding.title,
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 18,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // UI element: VictoryDialog_Header2_${pid}
-                    name: `VictoryDialog_Header2_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 36],
-                    size: [340, 22],
-                    anchor: mod.UIAnchor.TopCenter,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.hud.branding.subtitle,
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 18,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // UI element: VictoryDialog_Screenshot_${pid}
-                    name: `VictoryDialog_Screenshot_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 62],
-                    size: [340, 16],
-                    anchor: mod.UIAnchor.TopCenter,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.stringkeys.twl.victory.screenshotPrompt,
-                    textColor: [1, 1, 0],
-                    textAlpha: 1,
-                    textSize: 12,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // UI element: VictoryDialog_Restart_${pid}
-                    name: `VictoryDialog_Restart_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 82],
-                    size: [340, 16],
-                    anchor: mod.UIAnchor.TopCenter,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.victory.restartInFormat, MATCH_END_DELAY_SECONDS),
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 12,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // UI element: VictoryDialog_TotalTimeRow_${pid}
-                    name: `VictoryDialog_TotalTimeRow_${pid}`,
-                    type: "Container",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 102],
-                    size: [340, 16],
-                    anchor: mod.UIAnchor.TopCenter,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    children: [
-                        {
-                            // UI element: VictoryDialog_TotalTimeLabel_${pid}
-                            name: `VictoryDialog_TotalTimeLabel_${pid}`,
-                            type: "Text",
-                            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                            position: [-45, 0],
-                            size: [130, 16],
-                            anchor: mod.UIAnchor.Center,
-                            visible: true,
-                            padding: 0,
-                            bgAlpha: 0,
-                            bgFill: mod.UIBgFill.None,
-                            textLabel: mod.stringkeys.twl.victory.totalMatchTimeLabel,
-                            textColor: [1, 1, 1],
-                            textAlpha: 1,
-                            textSize: 12,
-                            textAnchor: mod.UIAnchor.Center,
-                        },
-                        {
-                            // UI element: VictoryDialog_TotalTimeDigits_${pid}
-                            name: `VictoryDialog_TotalTimeDigits_${pid}`,
-                            type: "Container",
-                            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                            position: [55, 0],
-                            size: [120, 16],
-                            anchor: mod.UIAnchor.Center,
-                            visible: true,
-                            padding: 0,
-                            bgAlpha: 0,
-                            bgFill: mod.UIBgFill.None,
-                            children: [
-                                {
-                                    // UI element: VictoryDialog_TimeHT_${pid}
-                                    name: `VictoryDialog_TimeHT_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [-45, 0],
-                                    size: [10, 16],
-                                    anchor: mod.UIAnchor.Center,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
-                                    textColor: [1, 1, 1],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // UI element: VictoryDialog_TimeHO_${pid}
-                                    name: `VictoryDialog_TimeHO_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [-35, 0],
-                                    size: [10, 16],
-                                    anchor: mod.UIAnchor.Center,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
-                                    textColor: [1, 1, 1],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // UI element: VictoryDialog_TimeC1_${pid}
-                                    name: `VictoryDialog_TimeC1_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [-25, 0],
-                                    size: [10, 16],
-                                    anchor: mod.UIAnchor.Center,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.colon),
-                                    textColor: [1, 1, 1],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // UI element: VictoryDialog_TimeMT_${pid}
-                                    name: `VictoryDialog_TimeMT_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [-15, 0],
-                                    size: [10, 16],
-                                    anchor: mod.UIAnchor.Center,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
-                                    textColor: [1, 1, 1],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // UI element: VictoryDialog_TimeMO_${pid}
-                                    name: `VictoryDialog_TimeMO_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [-5, 0],
-                                    size: [10, 16],
-                                    anchor: mod.UIAnchor.Center,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
-                                    textColor: [1, 1, 1],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // UI element: VictoryDialog_TimeC2_${pid}
-                                    name: `VictoryDialog_TimeC2_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [5, 0],
-                                    size: [10, 16],
-                                    anchor: mod.UIAnchor.Center,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.colon),
-                                    textColor: [1, 1, 1],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // UI element: VictoryDialog_TimeST_${pid}
-                                    name: `VictoryDialog_TimeST_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [15, 0],
-                                    size: [10, 16],
-                                    anchor: mod.UIAnchor.Center,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
-                                    textColor: [1, 1, 1],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // UI element: VictoryDialog_TimeSO_${pid}
-                                    name: `VictoryDialog_TimeSO_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [25, 0],
-                                    size: [10, 16],
-                                    anchor: mod.UIAnchor.Center,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.clock.digit, 0),
-                                    textColor: [1, 1, 1],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    // UI element: VictoryDialog_Rounds_${pid}
-                    name: `VictoryDialog_Rounds_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 122],
-                    size: [340, 16],
-                    anchor: mod.UIAnchor.TopCenter,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.victory.roundsSummaryFormat, 0, 0),
-                    textColor: [1, 1, 1],
-                    textAlpha: 1,
-                    textSize: 12,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // UI element: VictoryDialog_AdminActions_${pid}
-                    name: `VictoryDialog_AdminActions_${pid}`,
-                    type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 138],
-                    size: [340, 16],
-                    anchor: mod.UIAnchor.TopCenter,
-                    visible: false,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    textLabel: mod.Message(mod.stringkeys.twl.adminPanel.actionCountVictoryFormat, 0),
-                    textColor: [1, 1, 0],
-                    textAlpha: 1,
-                    textSize: 12,
-                    textAnchor: mod.UIAnchor.Center,
-                },
-                {
-                    // UI element: VictoryDialog_TeamsRow_${pid}
-                    name: `VictoryDialog_TeamsRow_${pid}`,
-                    type: "Container",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, 154],
-                    size: [340, 70],
-                    anchor: mod.UIAnchor.TopCenter,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    children: [
-                        {
-                            // UI element: VictoryDialog_TeamLeft_${pid}
-                            name: `VictoryDialog_TeamLeft_${pid}`,
-                            type: "Container",
-                            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                            position: [-85, 0],
-                            size: [160, 122],
-                            anchor: mod.UIAnchor.TopCenter,
-                            visible: true,
-                            padding: 0,
-                            bgColor: [VICTORY_TEAM1_BG_RGB[0], VICTORY_TEAM1_BG_RGB[1], VICTORY_TEAM1_BG_RGB[2]],
-                            bgAlpha: 0.95,
-                            bgFill: mod.UIBgFill.Solid,
-                            children: [
-                                {
-                                    // UI element: VictoryDialog_LeftOutcome_${pid}
-                                    name: `VictoryDialog_LeftOutcome_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [0, 6],
-                                    size: [150, 22],
-                                    anchor: mod.UIAnchor.TopCenter,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, getTeamNameKey(TeamID.Team1), mod.stringkeys.twl.victory.loses),
-                                    textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
-                                    textAlpha: 1,
-                                    textSize: 18,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // Winning crown (shown only for the winning team)
-                                    name: `VictoryDialog_LeftCrown_${pid}`,
-                                    type: "Image",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [VICTORY_CROWN_OFFSET_X_LEFT, VICTORY_CROWN_OFFSET_Y],
-                                    size: [VICTORY_CROWN_SIZE, VICTORY_CROWN_SIZE],
-                                    anchor: mod.UIAnchor.TopCenter,
-                                    visible: false,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    imageType: mod.UIImageType.CrownSolid,
-                                    imageColor: VICTORY_CROWN_COLOR_RGB,
-                                    imageAlpha: 1,
-                                },
-                                {
-                                    // UI element: VictoryDialog_LeftRecord_${pid}
-                                    name: `VictoryDialog_LeftRecord_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [0, 30],
-                                    size: [150, 16],
-                                    anchor: mod.UIAnchor.TopCenter,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, 0, 0, 0),
-                                    textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
-                                    textAlpha: 1,
-                                    textSize: 18,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // UI element: VictoryDialog_LeftRoundWins_${pid}
-                                    name: `VictoryDialog_LeftRoundWins_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [0, 50],
-                                    size: [150, 16],
-                                    anchor: mod.UIAnchor.TopCenter,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.roundWinsFormat, 0),
-                                    textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // UI element: VictoryDialog_LeftRoundLosses_${pid}
-                                    name: `VictoryDialog_LeftRoundLosses_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [0, 68],
-                                    size: [150, 16],
-                                    anchor: mod.UIAnchor.TopCenter,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.roundLossesFormat, 0),
-                                    textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // UI element: VictoryDialog_LeftRoundTies_${pid}
-                                    name: `VictoryDialog_LeftRoundTies_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [0, 86],
-                                    size: [150, 16],
-                                    anchor: mod.UIAnchor.TopCenter,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.roundTiesFormat, 0),
-                                    textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // UI element: VictoryDialog_LeftTotalKills_${pid}
-                                    name: `VictoryDialog_LeftTotalKills_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [0, 104],
-                                    size: [150, 16],
-                                    anchor: mod.UIAnchor.TopCenter,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.totalKillsFormat, 0),
-                                    textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                            ],
-                        },
-                        {
-                            // UI element: VictoryDialog_TeamRight_${pid}
-                            name: `VictoryDialog_TeamRight_${pid}`,
-                            type: "Container",
-                            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                            position: [85, 0],
-                            size: [160, 122],
-                            anchor: mod.UIAnchor.TopCenter,
-                            visible: true,
-                            padding: 0,
-                            bgColor: [VICTORY_TEAM2_BG_RGB[0], VICTORY_TEAM2_BG_RGB[1], VICTORY_TEAM2_BG_RGB[2]],
-                            bgAlpha: 0.95,
-                            bgFill: mod.UIBgFill.Solid,
-                            children: [
-                                {
-                                    // UI element: VictoryDialog_RightOutcome_${pid}
-                                    name: `VictoryDialog_RightOutcome_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [0, 6],
-                                    size: [150, 22],
-                                    anchor: mod.UIAnchor.TopCenter,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.teamOutcomeFormat, getTeamNameKey(TeamID.Team2), mod.stringkeys.twl.victory.wins),
-                                    textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
-                                    textAlpha: 1,
-                                    textSize: 18,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // Winning crown (shown only for the winning team)
-                                    name: `VictoryDialog_RightCrown_${pid}`,
-                                    type: "Image",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [VICTORY_CROWN_OFFSET_X_RIGHT, VICTORY_CROWN_OFFSET_Y],
-                                    size: [VICTORY_CROWN_SIZE, VICTORY_CROWN_SIZE],
-                                    anchor: mod.UIAnchor.TopCenter,
-                                    visible: false,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    imageType: mod.UIImageType.CrownSolid,
-                                    imageColor: VICTORY_CROWN_COLOR_RGB,
-                                    imageAlpha: 1,
-                                },
-                                {
-                                    // UI element: VictoryDialog_RightRecord_${pid}
-                                    name: `VictoryDialog_RightRecord_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [0, 30],
-                                    size: [150, 16],
-                                    anchor: mod.UIAnchor.TopCenter,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.hud.roundRecordFormat, 0, 0, 0),
-                                    textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
-                                    textAlpha: 1,
-                                    textSize: 18,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // UI element: VictoryDialog_RightRoundWins_${pid}
-                                    name: `VictoryDialog_RightRoundWins_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [0, 50],
-                                    size: [150, 16],
-                                    anchor: mod.UIAnchor.TopCenter,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.roundWinsFormat, 0),
-                                    textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // UI element: VictoryDialog_RightRoundLosses_${pid}
-                                    name: `VictoryDialog_RightRoundLosses_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [0, 68],
-                                    size: [150, 16],
-                                    anchor: mod.UIAnchor.TopCenter,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.roundLossesFormat, 0),
-                                    textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // UI element: VictoryDialog_RightRoundTies_${pid}
-                                    name: `VictoryDialog_RightRoundTies_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [0, 86],
-                                    size: [150, 16],
-                                    anchor: mod.UIAnchor.TopCenter,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.roundTiesFormat, 0),
-                                    textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                                {
-                                    // UI element: VictoryDialog_RightTotalKills_${pid}
-                                    name: `VictoryDialog_RightTotalKills_${pid}`,
-                                    type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                    position: [0, 104],
-                                    size: [150, 16],
-                                    anchor: mod.UIAnchor.TopCenter,
-                                    visible: true,
-                                    padding: 0,
-                                    bgAlpha: 0,
-                                    bgFill: mod.UIBgFill.None,
-                                    textLabel: mod.Message(mod.stringkeys.twl.victory.totalKillsFormat, 0),
-                                    textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
-                                    textAlpha: 1,
-                                    textSize: 12,
-                                    textAnchor: mod.UIAnchor.Center,
-                                },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    // UI element: VictoryDialog_RosterRow_${pid}
-                    name: `VictoryDialog_RosterRow_${pid}`,
-                    type: "Container",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                    position: [0, VICTORY_DIALOG_ROSTER_ROW_Y],
-                    size: [VICTORY_DIALOG_ROSTER_ROW_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT_MAX],
-                    anchor: mod.UIAnchor.TopCenter,
-                    visible: true,
-                    padding: 0,
-                    bgAlpha: 0,
-                    bgFill: mod.UIBgFill.None,
-                    children: [
-                        {
-                            // UI element: VictoryDialog_RosterLeft_${pid}
-                            name: `VictoryDialog_RosterLeft_${pid}`,
-                            type: "Container",
-                            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                            position: [-85, 0],
-                            size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT_MAX],
-                            anchor: mod.UIAnchor.TopCenter,
-                            visible: true,
-                            padding: 0,
-                            bgColor: [VICTORY_TEAM1_BG_RGB[0], VICTORY_TEAM1_BG_RGB[1], VICTORY_TEAM1_BG_RGB[2]],
-                            bgAlpha: 0.95,
-                            bgFill: mod.UIBgFill.Solid,
-                            children: (function () {
-                                const rows: any[] = [];
-                                for (let i = 0; i < TEAM_ROSTER_MAX_ROWS; i++) {
-                                    rows.push({
-                                        name: `VictoryDialog_LeftRoster_${pid}_${i}`,
-                                        type: "Text",
-                                        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                        position: [0, VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP + i * VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
-                                        size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
-                                        anchor: mod.UIAnchor.TopCenter,
-                                        visible: true,
-                                        padding: 0,
-                                        bgAlpha: 0,
-                                        bgFill: mod.UIBgFill.None,
-                                        textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
-                                        textColor: [VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]],
-                                        textAlpha: 1,
-                                        textSize: 11,
-                                        textAnchor: mod.UIAnchor.Center,
-                                    });
-                                }
-                                return rows;
-                            })(),
-                        },
-                        {
-                            // UI element: VictoryDialog_RosterRight_${pid}
-                            name: `VictoryDialog_RosterRight_${pid}`,
-                            type: "Container",
-                            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                            position: [85, 0],
-                            size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT_MAX],
-                            anchor: mod.UIAnchor.TopCenter,
-                            visible: true,
-                            padding: 0,
-                            bgColor: [VICTORY_TEAM2_BG_RGB[0], VICTORY_TEAM2_BG_RGB[1], VICTORY_TEAM2_BG_RGB[2]],
-                            bgAlpha: 0.95,
-                            bgFill: mod.UIBgFill.Solid,
-                            children: (function () {
-                                const rows: any[] = [];
-                                for (let i = 0; i < TEAM_ROSTER_MAX_ROWS; i++) {
-                                    rows.push({
-                                        name: `VictoryDialog_RightRoster_${pid}_${i}`,
-                                        type: "Text",
-                                        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
-                                        position: [0, VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP + i * VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
-                                        size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
-                                        anchor: mod.UIAnchor.TopCenter,
-                                        visible: true,
-                                        padding: 0,
-                                        bgAlpha: 0,
-                                        bgFill: mod.UIBgFill.None,
-                                        textLabel: mod.Message(mod.stringkeys.twl.system.genericCounter, ""),
-                                        textColor: [VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]],
-                                        textAlpha: 1,
-                                        textSize: 11,
-                                        textAnchor: mod.UIAnchor.Center,
-                                    });
-                                }
-                                return rows;
-                            })(),
-                        },
-                    ],
-                },
-            ],
-        });
-
-        if (modal) refs.roots.push(modal);
-
-        refs.victoryRoot = safeFind(`VictoryDialogRoot_${pid}`);
-        refs.victoryRestartText = safeFind(`VictoryDialog_Restart_${pid}`);
-
-        refs.victoryTimeHoursTens = safeFind(`VictoryDialog_TimeHT_${pid}`);
-        refs.victoryTimeHoursOnes = safeFind(`VictoryDialog_TimeHO_${pid}`);
-        refs.victoryTimeMinutesTens = safeFind(`VictoryDialog_TimeMT_${pid}`);
-        refs.victoryTimeMinutesOnes = safeFind(`VictoryDialog_TimeMO_${pid}`);
-        refs.victoryTimeSecondsTens = safeFind(`VictoryDialog_TimeST_${pid}`);
-        refs.victoryTimeSecondsOnes = safeFind(`VictoryDialog_TimeSO_${pid}`);
-
-        refs.victoryRoundsSummaryText = safeFind(`VictoryDialog_Rounds_${pid}`);
-        refs.victoryAdminActionsText = safeFind(`VictoryDialog_AdminActions_${pid}`);
-
-        refs.victoryLeftOutcomeText = safeFind(`VictoryDialog_LeftOutcome_${pid}`);
-        refs.victoryLeftRoundWinsText = safeFind(`VictoryDialog_LeftRoundWins_${pid}`);
-        refs.victoryLeftRoundLossesText = safeFind(`VictoryDialog_LeftRoundLosses_${pid}`);
-        refs.victoryLeftRoundTiesText = safeFind(`VictoryDialog_LeftRoundTies_${pid}`);
-        refs.victoryLeftTotalKillsText = safeFind(`VictoryDialog_LeftTotalKills_${pid}`);
-        refs.victoryLeftCrown = safeFind(`VictoryDialog_LeftCrown_${pid}`);
-
-        refs.victoryRightOutcomeText = safeFind(`VictoryDialog_RightOutcome_${pid}`);
-        refs.victoryRightRoundWinsText = safeFind(`VictoryDialog_RightRoundWins_${pid}`);
-        refs.victoryRightRoundLossesText = safeFind(`VictoryDialog_RightRoundLosses_${pid}`);
-        refs.victoryRightRoundTiesText = safeFind(`VictoryDialog_RightRoundTies_${pid}`);
-        refs.victoryLeftRecordText = safeFind(`VictoryDialog_LeftRecord_${pid}`);
-        refs.victoryRightRecordText = safeFind(`VictoryDialog_RightRecord_${pid}`);
-        refs.victoryRightTotalKillsText = safeFind(`VictoryDialog_RightTotalKills_${pid}`);
-        refs.victoryRightCrown = safeFind(`VictoryDialog_RightCrown_${pid}`);
-        refs.victoryRosterRow = safeFind(`VictoryDialog_RosterRow_${pid}`);
-        refs.victoryRosterLeftContainer = safeFind(`VictoryDialog_RosterLeft_${pid}`);
-        refs.victoryRosterRightContainer = safeFind(`VictoryDialog_RosterRight_${pid}`);
-
-        refs.victoryLeftRosterText = [];
-        refs.victoryRightRosterText = [];
-        for (let i = 0; i < TEAM_ROSTER_MAX_ROWS; i++) {
-            refs.victoryLeftRosterText.push(safeFind(`VictoryDialog_LeftRoster_${pid}_${i}`));
-            refs.victoryRightRosterText.push(safeFind(`VictoryDialog_RightRoster_${pid}_${i}`));
-        }
-    }
+    // VICTORY DIALOG WIDGETS -- extracted to hud-dialog-lazy.ts (Phase A, 2026-05-30).
+    // Build deferred until updateVictoryDialogForPlayer fires triggerLazyBuild('victoryDialog', pid)
+    // at match-end. ~745 lines of ParseUI no longer run during OnPlayerJoinGame.
 
     //#endregion ----------------- HUD Build/Ensure - Victory Dialog --------------------
 
@@ -2864,7 +1402,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     // setAltitudeWarningVisibleForPid call. See ensureAltitudeWarningUiForPlayer below.
     // Confirmed required by the Helis overtime HUD pattern (overtime.ts:1443+1490) and the
     // Conquest boundary prompt pattern (prompt-ui.ts called from showBoundaryPromptForPlayer):
-    // cockpit-overlay widgets built EAGERLY in ensureHudForPlayer at OnPlayerJoinGame time are
+    // cockpit-overlay widgets built EAGERLY in ensureEagerHudShellForPlayer at OnPlayerJoinGame time are
     // INVISIBLE despite identical construction code. v0.650-v0.655 all hit this. v0.656 fixes by
     // moving the construction to lazy first-show.
 
@@ -2891,26 +1429,10 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
     State.hudCache.hudByPid[pid] = refs;
 
     // Initialize visible numbers immediately
-    setCounterText(refs.roundCurText, State.round.current);
-    setCounterText(refs.roundMaxText, State.round.max);
-    setCounterText(refs.leftWinsText, State.match.winsT1);
-    setCounterText(refs.rightWinsText, State.match.winsT2);
-
-    setCounterText(refs.leftRoundKillsText, State.scores.t1RoundKills);
-    setCounterText(refs.rightRoundKillsText, State.scores.t2RoundKills);
-    setRoundKillsLabelTextForRefs(refs);
-    setRoundWinCrownForRefs(refs, State.round.lastWinnerTeam, State.round.flow.roundEndDialogVisible);
-    setTrendingWinnerCrownForRefs(refs);
-
-    // Total kills are tracked separately from GameModeScore (which is used for match wins)
-    setCounterText(refs.leftKillsText, State.scores.t1TotalKills);
-    setCounterText(refs.rightKillsText, State.scores.t2TotalKills);
-    setAdminPanelActionCountText(refs.adminPanelActionCountText, State.admin.actionCount);
+    // Top-HUD value seeding + reparent + depth -- moved into hud-scoring-lazy.ts
+    // (seedTopHudFromState + ensureTopHudRootForPid + setHudHelpDepthForPid run in there).
+    // Settings summary stays eager:
     updateSettingsSummaryHudForPid(pid);
-
-    ensureTopHudRootForPid(pid, player);
-    setHudHelpDepthForPid(pid);
-
     updateVictoryDialogForPlayer(player, getRemainingSeconds());
 
     return refs;
@@ -2929,7 +1451,7 @@ function ensureHudForPlayer(player: mod.Player): HudRefs | undefined {
 //
 // Lifecycle: built LAZILY on first call to ensureAltitudeWarningUiForPlayer (triggered from
 // setAltitudeWarningVisibleForPid before toggling visibility). Cockpit-overlay widgets built
-// eagerly in ensureHudForPlayer at OnPlayerJoinGame time render invisibly (v0.650-v0.655);
+// eagerly in ensureEagerHudShellForPlayer at OnPlayerJoinGame time render invisibly (v0.650-v0.655);
 // lazy first-show construction is required.
 //
 // Construction recipe (proven independently by Helis's own overtime HUD and by Conquest's
@@ -3295,7 +1817,7 @@ function setHudRoundCountersForAllPlayers(cur: number, max: number): void {
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
-        const refs = ensureHudForPlayer(p);
+        const refs = ensureEagerHudShellForPlayer(p);
         if (!refs) continue;
         setCounterText(refs.roundCurText, State.round.current);
         setCounterText(refs.roundMaxText, State.round.max);
@@ -3324,7 +1846,7 @@ function setHudWinCountersForAllPlayers(t1Wins: number, t2Wins: number): void {
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
-        const refs = ensureHudForPlayer(p);
+        const refs = ensureEagerHudShellForPlayer(p);
         if (!refs) continue;
         setCounterText(refs.leftWinsText, lw);
         setCounterText(refs.rightWinsText, rw);
@@ -3345,7 +1867,7 @@ function syncRoundRecordHudForAllPlayers(): void {
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
-        const refs = ensureHudForPlayer(p);
+        const refs = ensureEagerHudShellForPlayer(p);
         if (!refs) continue;
         setRoundRecordText(refs.leftRecordText, State.match.winsT1, State.match.lossesT1, State.match.tiesT1);
         setRoundRecordText(refs.rightRecordText, State.match.winsT2, State.match.lossesT2, State.match.tiesT2);
@@ -3368,7 +1890,7 @@ function updateAdminPanelActionCountForAllPlayers(): void {
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
-        const refs = ensureHudForPlayer(p);
+        const refs = ensureEagerHudShellForPlayer(p);
         if (!refs) continue;
         setAdminPanelActionCountText(refs.adminPanelActionCountText, State.admin.actionCount);
     }
