@@ -27,6 +27,9 @@ type MapConfig = {
     // Per-map default for the Ready Dialog Vehicle Health Multiplier knob (1.0 = 100%).
     // Applied at applyMapConfig time; also used when a mode-preset is selected (resets to map default).
     defaultVehicleHealthMultiplier?: number;
+    // v0.725 Per-map default for the Ready Dialog Soldier HP Multiplier knob (1.0 = 100%).
+    // Applied at applyMapConfig time; per-preset overrides live in getPresetSoldierHpMultiplierForGameMode.
+    defaultSoldierHpMultiplier?: number;
     team1TankSpawns: VehicleSpawnSpec[];
     team2TankSpawns: VehicleSpawnSpec[];
     team1HeliSpawns?: VehicleSpawnSpec[];
@@ -54,6 +57,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudFloorY: 82,
         useCustomCeiling: false,
         defaultVehicleHealthMultiplier: 1.0,
+        defaultSoldierHpMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -96,6 +100,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudFloorY: 82,
         useCustomCeiling: false,
         defaultVehicleHealthMultiplier: 1.0,
+        defaultSoldierHpMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -138,6 +143,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudFloorY: 82,
         useCustomCeiling: false,
         defaultVehicleHealthMultiplier: 1.0,
+        defaultSoldierHpMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -180,6 +186,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudFloorY: 82,
         useCustomCeiling: true,
         defaultVehicleHealthMultiplier: 1.0,
+        defaultSoldierHpMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -213,13 +220,13 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         team1HeliSpawns: [                        //posX      posY      posZ                             rotX      rotY      rotZ
             { slotNumber: 1, pos: mod.CreateVector(-500.019,  81.257,  -292.899), rot: mod.CreateVector( 0.0,      98.404,   0.0),       vehicle: mod.VehicleList.AH64         },
             { slotNumber: 2, pos: mod.CreateVector(-498.055,  82.222,  -328.527), rot: mod.CreateVector( 0.0,      50.634,   0.0),       vehicle: mod.VehicleList.Eurocopter   },
-            { slotNumber: 3, pos: mod.CreateVector(-512.883,  80.713,  -269.728), rot: mod.CreateVector( 0.0,      61.967,   0.0),       vehicle: mod.VehicleList.AH64         },
+            { slotNumber: 3, pos: mod.CreateVector(-512.883,  80.713,  -269.728), rot: mod.CreateVector( 0.0,      61.967,   0.0),       vehicle: VEHICLE_AH6M         },
             { slotNumber: 4, pos: mod.CreateVector(-481.267,  82.761,  -345.178), rot: mod.CreateVector( 0.0,      29.312,   0.0),       vehicle: mod.VehicleList.UH60         },
         ],
         team2HeliSpawns: [                        //posX      posY      posZ                             posX      posY      posZ
             { slotNumber: 1, pos: mod.CreateVector( 454.968,  84.306,  -612.495), rot: mod.CreateVector( 0.0,     -4.780,    0.0),       vehicle: mod.VehicleList.AH64         },
             { slotNumber: 2, pos: mod.CreateVector( 461.746,  83.898,  -585.902), rot: mod.CreateVector( 0.0,     -157.452,  0.0),       vehicle: mod.VehicleList.Eurocopter   },
-            { slotNumber: 3, pos: mod.CreateVector( 496.253,  83.173,  -600.711), rot: mod.CreateVector( 0.0,     -90.251,   0.0),       vehicle: mod.VehicleList.AH64         },
+            { slotNumber: 3, pos: mod.CreateVector( 496.253,  83.173,  -600.711), rot: mod.CreateVector( 0.0,     -90.251,   0.0),       vehicle: VEHICLE_AH6M_PAX     },
             { slotNumber: 4, pos: mod.CreateVector( 427.213,  85.239,  -587.691), rot: mod.CreateVector( 0.0,     -92.212,   0.0),       vehicle: mod.VehicleList.UH60_Pax     },
         ],
     },
@@ -234,6 +241,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudFloorY: 132,
         useCustomCeiling: true,
         defaultVehicleHealthMultiplier: 1.0,
+        defaultSoldierHpMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -268,14 +276,14 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         team1HeliSpawns: [                        //posX      posY      posZ                             rotX      rotY      rotZ
             { slotNumber: 1, pos: mod.CreateVector(-811.597,  132.815,  234.165), rot: mod.CreateVector( 0.0,      105.178,  0.0),       vehicle: mod.VehicleList.AH64         },
             { slotNumber: 2, pos: mod.CreateVector(-767.544,  132.853,  172.755), rot: mod.CreateVector( 0.0,     -167.657,  0.0),       vehicle: mod.VehicleList.Eurocopter   },
-            { slotNumber: 3, pos: mod.CreateVector(-782.131,  132.861,  198.011), rot: mod.CreateVector( 0.0,      48.206,   0.0),       vehicle: mod.VehicleList.AH64         },
+            { slotNumber: 3, pos: mod.CreateVector(-782.131,  132.861,  198.011), rot: mod.CreateVector( 0.0,      48.206,   0.0),       vehicle: VEHICLE_AH6M         },
             { slotNumber: 4, pos: mod.CreateVector(-738.726,  132.861,  209.182), rot: mod.CreateVector( 0.0,      115.606,  0.0),       vehicle: mod.VehicleList.UH60         },
 
         ],
         team2HeliSpawns: [                        //posX      posY      posZ                             posX      posY      posZ
             { slotNumber: 1, pos: mod.CreateVector( 553.976,  111.283, -256.070), rot: mod.CreateVector( 0.0,     -49.401,   0.0),       vehicle: mod.VehicleList.AH64         },
             { slotNumber: 2, pos: mod.CreateVector( 571.639,  111.174, -202.065), rot: mod.CreateVector( 0.0,     -46.728,   0.0),       vehicle: mod.VehicleList.Eurocopter   },
-            { slotNumber: 3, pos: mod.CreateVector( 647.500,  110.562, -276.828), rot: mod.CreateVector( 0.0,     -126.059,  0.0),       vehicle: mod.VehicleList.AH64         },
+            { slotNumber: 3, pos: mod.CreateVector( 647.500,  110.562, -276.828), rot: mod.CreateVector( 0.0,     -126.059,  0.0),       vehicle: VEHICLE_AH6M_PAX     },
             { slotNumber: 4, pos: mod.CreateVector( 636.239,  110.580, -258.841), rot: mod.CreateVector( 0.0,     -129.259,  0.0),       vehicle: mod.VehicleList.UH60_Pax     },
         ],
     },
@@ -290,6 +298,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudFloorY: 139,
         useCustomCeiling: true,
         defaultVehicleHealthMultiplier: 1.0,
+        defaultSoldierHpMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -323,13 +332,13 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         team1HeliSpawns: [                        //posX      posY      posZ                             rotX      rotY      rotZ
             { slotNumber: 1, pos: mod.CreateVector(-277.906,  130.461,  95.484),  rot: mod.CreateVector( 0.0,      130.773,  0.0),       vehicle: mod.VehicleList.AH64         },
             { slotNumber: 2, pos: mod.CreateVector(-284.413,  130.632,  85.634),  rot: mod.CreateVector( 0.0,      137.714,  0.0),       vehicle: mod.VehicleList.Eurocopter   },
-            { slotNumber: 3, pos: mod.CreateVector(-326.491,  129.927,  82.657),  rot: mod.CreateVector( 0.0,     -23.622,   0.0),       vehicle: mod.VehicleList.AH64         },
+            { slotNumber: 3, pos: mod.CreateVector(-326.491,  129.927,  82.657),  rot: mod.CreateVector( 0.0,     -23.622,   0.0),       vehicle: VEHICLE_AH6M         },
             { slotNumber: 4, pos: mod.CreateVector(-348.578,  129.416,  77.118),  rot: mod.CreateVector( 0.0,     -22.475,   0.0),       vehicle: mod.VehicleList.UH60         },
         ],
         team2HeliSpawns: [                        //posX      posY      posZ                             posX      posY      posZ
             { slotNumber: 1, pos: mod.CreateVector( 255.257,  139.435,  459.687), rot: mod.CreateVector( 0.0,     -147.497,  0.0),       vehicle: mod.VehicleList.AH64         },
             { slotNumber: 2, pos: mod.CreateVector( 268.319,  139.781,  452.979), rot: mod.CreateVector( 0.0,     -154.694,  0.0),       vehicle: mod.VehicleList.Eurocopter   },
-            { slotNumber: 3, pos: mod.CreateVector( 288.061,  139.34,   447.63),  rot: mod.CreateVector( 0.0,     -152.953,  0.0),       vehicle: mod.VehicleList.AH64         },
+            { slotNumber: 3, pos: mod.CreateVector( 288.061,  139.34,   447.63),  rot: mod.CreateVector( 0.0,     -152.953,  0.0),       vehicle: VEHICLE_AH6M_PAX     },
             { slotNumber: 4, pos: mod.CreateVector( 315.307,  136.512,  490.611), rot: mod.CreateVector( 0.0,     -144.246,  0.0),       vehicle: mod.VehicleList.UH60_Pax     },
         ],
     },
@@ -344,6 +353,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudFloorY: 57,
         useCustomCeiling: false,
         defaultVehicleHealthMultiplier: 1.0,
+        defaultSoldierHpMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -377,13 +387,13 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         team1HeliSpawns: [                        //posX      posY      posZ                             rotX      rotY      rotZ
             { slotNumber: 1, pos: mod.CreateVector(-294.619,  51.391,  -462.816), rot: mod.CreateVector( 0.0,      90.308,   0.0),       vehicle: mod.VehicleList.AH64         },
             { slotNumber: 2, pos: mod.CreateVector(-248.193,  50.765,  -484.679), rot: mod.CreateVector( 0.0,      48.708,   0.0),       vehicle: mod.VehicleList.Eurocopter   },
-            { slotNumber: 3, pos: mod.CreateVector(-330.070,  52.162,  -440.936), rot: mod.CreateVector( 0.0,      90.418,   0.0),       vehicle: mod.VehicleList.AH64         },
+            { slotNumber: 3, pos: mod.CreateVector(-330.070,  52.162,  -440.936), rot: mod.CreateVector( 0.0,      90.418,   0.0),       vehicle: VEHICLE_AH6M         },
             { slotNumber: 4, pos: mod.CreateVector(-235.514,  50.891,  -503.161), rot: mod.CreateVector( 0.0,      59.224,   0.0),       vehicle: mod.VehicleList.UH60         },
         ],
         team2HeliSpawns: [                        //posX      posY      posZ                             posX      posY      posZ
             { slotNumber: 1, pos: mod.CreateVector( 182.774,  57.278,  -232.360), rot: mod.CreateVector( 0.0,     -104.021,  0.0),       vehicle: mod.VehicleList.AH64         },
             { slotNumber: 2, pos: mod.CreateVector( 173.916,  57.278,  -214.198), rot: mod.CreateVector( 0.0,     -178.439,  0.0),       vehicle: mod.VehicleList.Eurocopter   },
-            { slotNumber: 3, pos: mod.CreateVector( 186.823,  57.278,  -211.892), rot: mod.CreateVector( 0.0,     -178.709,  0.0),       vehicle: mod.VehicleList.AH64         },
+            { slotNumber: 3, pos: mod.CreateVector( 186.823,  57.278,  -211.892), rot: mod.CreateVector( 0.0,     -178.709,  0.0),       vehicle: VEHICLE_AH6M_PAX     },
             { slotNumber: 4, pos: mod.CreateVector( 179.475,  57.278,  -195.944), rot: mod.CreateVector( 0.0,     -90.0,     0.0),       vehicle: mod.VehicleList.UH60_Pax     },
         ],
     },
@@ -398,6 +408,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudFloorY: 91,
         useCustomCeiling: true,
         defaultVehicleHealthMultiplier: 1.0,
+        defaultSoldierHpMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A
@@ -431,13 +442,13 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         team1HeliSpawns: [                        //posX      posY      posZ                             rotX      rotY      rotZ
             { slotNumber: 1, pos: mod.CreateVector(-329.600,  91.704,  -102.008), rot: mod.CreateVector( 0.0,      101.481,  0.0),       vehicle: mod.VehicleList.AH64         },
             { slotNumber: 2, pos: mod.CreateVector(-319.809,  91.704,  -86.577),  rot: mod.CreateVector( 0.0,      121.801,  0.0),       vehicle: mod.VehicleList.Eurocopter   },
-            { slotNumber: 3, pos: mod.CreateVector(-313.32,   92.297,  -73.7171), rot: mod.CreateVector( 0.0,      113.958,  0.0),       vehicle: mod.VehicleList.AH64         },
+            { slotNumber: 3, pos: mod.CreateVector(-313.32,   92.297,  -73.7171), rot: mod.CreateVector( 0.0,      113.958,  0.0),       vehicle: VEHICLE_AH6M         },
             { slotNumber: 4, pos: mod.CreateVector(-352.007,  92.395,  -126.313), rot: mod.CreateVector( 0.0,      23.305,   0.0),       vehicle: mod.VehicleList.UH60         },
         ],
         team2HeliSpawns: [                        //posX      posY      posZ                             posX      posY      posZ
             { slotNumber: 1, pos: mod.CreateVector( 210.864,  90.152,   10.986),  rot: mod.CreateVector( 0.0,     -125.319,  0.0),       vehicle: mod.VehicleList.AH64         },
             { slotNumber: 2, pos: mod.CreateVector( 202.300,  90.151,   23.839),  rot: mod.CreateVector( 0.0,     -129.553,  0.0),       vehicle: mod.VehicleList.Eurocopter   },
-            { slotNumber: 3, pos: mod.CreateVector( 225.784,  91.31,    36.228),  rot: mod.CreateVector( 0.0,      140.278,  0.0),       vehicle: mod.VehicleList.AH64         },
+            { slotNumber: 3, pos: mod.CreateVector( 225.784,  91.31,    36.228),  rot: mod.CreateVector( 0.0,      140.278,  0.0),       vehicle: VEHICLE_AH6M_PAX     },
             { slotNumber: 4, pos: mod.CreateVector( 232.906,  90.271,  -8.33),    rot: mod.CreateVector( 0.0,     -131.309,  0.0),       vehicle: mod.VehicleList.UH60_Pax     },
         ],
     },
@@ -452,6 +463,7 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         hudFloorY: 82,
         useCustomCeiling: false,
         defaultVehicleHealthMultiplier: 1.0,
+        defaultSoldierHpMultiplier: 1.0,
         // ObjId pattern per zone: AreaTrigger 200+, Sector 300+, WorldIcon 400+, CapturePoint 600+.
         overtimeZones: [
             { areaTriggerObjId: 200, sectorId: 300, worldIconObjId: 400, capturePointObjId: 600 }, // A

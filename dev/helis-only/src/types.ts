@@ -238,6 +238,9 @@ type ReadyDialogModeConfig = {
     // Vehicle Health Multiplier: pending value tuned by dec/inc buttons; applied at Confirm.
     // Float in (0, 4]; default 1.0. UI displays as Math.round(mult * 100) + "%".
     vehicleHealthMultiplier: number;
+    // v0.725 Soldier HP Multiplier: pending value tuned by -10/-/+/+10 buttons; applied at Confirm.
+    // Float in [0.05, 5.0]; default 1.0. UI displays as Math.round(mult * 100) + "%".
+    soldierHpMultiplier: number;
     confirmed: {
         gameMode: number;
         gameSettings: number;
@@ -250,6 +253,8 @@ type ReadyDialogModeConfig = {
         vehicleOverrideEnabled: boolean;
         // Snapshotted on Confirm; read by OnVehicleSpawned to call mod.SetVehicleMaxHealthMultiplier on each new vehicle.
         vehicleHealthMultiplier: number;
+        // v0.725 Snapshotted on Confirm; read by OnPlayerDeployed to call SetPlayerMaxHealth+Heal on each new deploy.
+        soldierHpMultiplier: number;
     };
 };
 
@@ -268,29 +273,67 @@ const DEFAULT_MATCHUP_PRESET_INDEX = findMatchupPresetIndex(
     ROUND_KILLS_TARGET
 );
 
+// v0.730 game mode cycler reordering. Index 0 must match the default modeConfig state seed below
+// (T1=T2=Falchion, best-of-3, matchup index 0, players/side=2) so first-open isn't immediately
+// dirty -- Attack Helis - BF6 Vanilla stays at index 0. Practice/Ladder reverted to 1v1 matchup
+// in v0.730 so the state seed (matchup 0) matches the preset. Vanilla family clusters first
+// (indices 0-2), TWL family (3-6), Custom last (7). Little Birds - TWL 2v2 is new at index 5.
 const READY_DIALOG_GAME_MODE_OPTIONS: number[] = [
-    mod.stringkeys.twl.readyDialog.gameModeHelisPractice,
-    mod.stringkeys.twl.readyDialog.gameModeHelisLadder,
-    mod.stringkeys.twl.readyDialog.gameModeHelisTwl1v1,
-    mod.stringkeys.twl.readyDialog.gameModeHelisCustom,
+    mod.stringkeys.twl.readyDialog.gameModeHelisPractice,        // 0: Attack Helis - BF6 Vanilla
+    mod.stringkeys.twl.readyDialog.gameModeLittleBirdsVanilla,   // 1: Little Birds - BF6 Vanilla
+    mod.stringkeys.twl.readyDialog.gameModeHelisOnlyVanilla,     // 2: All Helis - BF6 Vanilla
+    mod.stringkeys.twl.readyDialog.gameModeHelisLadder,          // 3: Attack Helis - TWL 2v2
+    mod.stringkeys.twl.readyDialog.gameModeHelisTwl1v1,          // 4: Attack Helis - TWL 1v1
+    mod.stringkeys.twl.readyDialog.gameModeLittleBirdsTwl2v2,    // 5: Little Birds - TWL 2v2 (new)
+    mod.stringkeys.twl.readyDialog.gameModeLittleBirdsTwl1v1,    // 6: Little Birds - TWL 1v1
+    mod.stringkeys.twl.readyDialog.gameModeHelisCustom,          // 7: Helis Only - Custom
 ];
+// v0.727 Ready Dialog cycler vehicle list. UH-60 PAX inserted at index 3 between BlackHawk and AH-6M.
+// Order: [Falchion, Panthera, BlackHawk, BlackHawk Pax, LittleBird, LittleBird PAX, Map Default].
+// Map Default MUST stay last -- READY_DIALOG_VEHICLE_MAP_DEFAULT_INDEX is computed as length-1.
+// The parallel READY_DIALOG_VEHICLE_LIST below must match index-for-index.
+// The Map Default slot's enum value (last entry) is never actually spawned -- the Map Default code
+// path in refreshVehicleSpawnSpecsFromModeConfig short-circuits before reading it -- but it's set
+// to AH64 (a valid enum) so any defensive read returns a sane value.
 const READY_DIALOG_VEHICLE_OPTIONS: number[] = [
     mod.stringkeys.twl.readyDialog.vehicleOptionFalchion,
     mod.stringkeys.twl.readyDialog.vehicleOptionPanthera,
     mod.stringkeys.twl.readyDialog.vehicleOptionBlackHawk,
+    mod.stringkeys.twl.readyDialog.vehicleOptionBlackHawkPax,
+    mod.stringkeys.twl.readyDialog.vehicleOptionLittleBird,
+    mod.stringkeys.twl.readyDialog.vehicleOptionLittleBirdPax,
     mod.stringkeys.twl.readyDialog.vehicleOptionMapDefault,
 ];
+// AH6M / AH6M_Pax exist at runtime but are absent from bf6-portal-mod-types@1.3.1's VehicleList
+// enum (see conquest/src/foundation/gameplay.ts:204 precedent). Cast through `as any`.
+const VEHICLE_AH6M = (mod.VehicleList as any).AH6M as mod.VehicleList;
+const VEHICLE_AH6M_PAX = (mod.VehicleList as any).AH6M_Pax as mod.VehicleList;
 const READY_DIALOG_VEHICLE_LIST: mod.VehicleList[] = [
     mod.VehicleList.AH64,
     mod.VehicleList.Eurocopter,
     mod.VehicleList.UH60,
+    mod.VehicleList.UH60_Pax,
+    VEHICLE_AH6M,
+    VEHICLE_AH6M_PAX,
     mod.VehicleList.AH64,
 ];
 const READY_DIALOG_VEHICLE_MAP_DEFAULT_INDEX = READY_DIALOG_VEHICLE_OPTIONS.length - 1;
+// v0.727 named vehicle cycler indices. Defined as constants so preset code reads symbolically.
+const READY_DIALOG_VEHICLE_INDEX_FALCHION = 0;
+const READY_DIALOG_VEHICLE_INDEX_PANTHERA = 1;
+const READY_DIALOG_VEHICLE_INDEX_BLACKHAWK = 2;
+const READY_DIALOG_VEHICLE_INDEX_BLACKHAWK_PAX = 3;
+const READY_DIALOG_VEHICLE_INDEX_LITTLEBIRD = 4;
+const READY_DIALOG_VEHICLE_INDEX_LITTLEBIRD_PAX = 5;
+// v0.730 game mode indices (match READY_DIALOG_GAME_MODE_OPTIONS ordering above).
 const READY_DIALOG_GAME_MODE_DEFAULT_INDEX = 0;
-const READY_DIALOG_GAME_MODE_LADDER_INDEX = 1;
-const READY_DIALOG_GAME_MODE_TWL_1V1_INDEX = 2;
-const READY_DIALOG_GAME_MODE_CUSTOM_INDEX = 3;
+const READY_DIALOG_GAME_MODE_LITTLE_BIRDS_VANILLA_INDEX = 1;
+const READY_DIALOG_GAME_MODE_HELIS_ONLY_VANILLA_INDEX = 2;
+const READY_DIALOG_GAME_MODE_LADDER_INDEX = 3;
+const READY_DIALOG_GAME_MODE_TWL_1V1_INDEX = 4;
+const READY_DIALOG_GAME_MODE_LITTLE_BIRDS_TWL_2V2_INDEX = 5;
+const READY_DIALOG_GAME_MODE_LITTLE_BIRDS_TWL_1V1_INDEX = 6;
+const READY_DIALOG_GAME_MODE_CUSTOM_INDEX = 7;
 const READY_DIALOG_VEHICLE_T1_DEFAULT_INDEX = 0;
 const READY_DIALOG_VEHICLE_T2_DEFAULT_INDEX = 0;
 const READY_DIALOG_AIRCRAFT_CEILING_DEFAULT = 550;
@@ -305,13 +348,24 @@ const READY_DIALOG_VEHICLE_HEALTH_MULT_MIN = 0.05;
 const READY_DIALOG_VEHICLE_HEALTH_MULT_MAX = 4.0;
 const READY_DIALOG_VEHICLE_HEALTH_MULT_STEP = 0.01;
 const READY_DIALOG_VEHICLE_HEALTH_MULT_STEP_COARSE = 0.10;
+// v0.725 Soldier HP Multiplier knob bounds: SDK clamps SetPlayerMaxHealth at 1..500; we floor at
+// 0.05 (5%) per UX spec. Step 0.01 = 1% per click (inner <,> buttons); coarse 0.10 = 10% per click
+// (outer -10/+10). MAX is 5.0 -- not subject to the vehicle 400% cap. Multiplier applied JS-side
+// against SOLDIER_BASE_MAX_HEALTH (vanilla BF6 = 100); engine clamp is the hard backstop.
+const READY_DIALOG_SOLDIER_HP_MULT_DEFAULT = 1.0;
+const READY_DIALOG_SOLDIER_HP_MULT_MIN = 0.05;  // 5%
+const READY_DIALOG_SOLDIER_HP_MULT_MAX = 5.0;   // 500% -- engine SetPlayerMaxHealth caps at 500
+const READY_DIALOG_SOLDIER_HP_MULT_STEP = 0.01;
+const READY_DIALOG_SOLDIER_HP_MULT_STEP_COARSE = 0.10;
+const SOLDIER_BASE_MAX_HEALTH = 100; // Vanilla BF6 soldier max; multiplier applied against this.
 const READY_DIALOG_MODE_PRESET_BEST_OF_VANILLA = 3;
 const READY_DIALOG_MODE_PRESET_BEST_OF_LADDER = 11;
 const READY_DIALOG_MODE_PRESET_MATCHUP_INDEX = 0;
 const READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_VANILLA = 2;
 const READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_2V2 = 2;
 const READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_1V1 = 1;
-const READY_DIALOG_MODE_PRESET_VEHICLE_INDEX = 0;
+// v0.727: per-preset vehicle indices now live in getPresetVehicleIndicesForGameMode in ready-dialog.ts.
+// Index references: READY_DIALOG_VEHICLE_INDEX_FALCHION/_LITTLEBIRD/_LITTLEBIRD_PAX/etc are defined above.
 let suppressReadyDialogModeAutoSwitch = false;
 // H-P1 layered aircraft ceiling: the Ready-Dialog `aircraftCeiling` knob is now the SOFT (warning) threshold.
 // Engine pushback (mod.SetMaxVehicleHeightLimitScale) applies at soft + hardBufferM (admin-tunable; default 25m).
@@ -606,9 +660,12 @@ const STR_READY_DIALOG_AIRCRAFT_CEILING_CHANGED = mod.stringkeys.twl.readyDialog
 const STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA = mod.stringkeys.twl.readyDialog.aircraftCeilingVanilla;
 const STR_READY_DIALOG_VEHICLE_HEALTH_FORMAT = mod.stringkeys.twl.readyDialog.modeSettingVehicleHealthFormat;
 const STR_READY_DIALOG_VEHICLE_HEALTH_CHANGED = mod.stringkeys.twl.readyDialog.vehicleHealthChanged;
+const STR_READY_DIALOG_SOLDIER_HP_FORMAT = mod.stringkeys.twl.readyDialog.modeSettingSoldierHpFormat;
+const STR_READY_DIALOG_SOLDIER_HP_CHANGED = mod.stringkeys.twl.readyDialog.soldierHpChanged;
 const STR_HUD_SETTINGS_GAME_MODE_FORMAT = mod.stringkeys.twl.hud.settings.gameModeFormat;
 const STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT = mod.stringkeys.twl.hud.settings.aircraftCeilingFormat;
 const STR_HUD_SETTINGS_VEHICLE_HEALTH_FORMAT = mod.stringkeys.twl.hud.settings.vehicleHealthFormat;
+const STR_HUD_SETTINGS_SOLDIER_HP_FORMAT = mod.stringkeys.twl.hud.settings.soldierHpFormat;
 const STR_HUD_SETTINGS_VEHICLES_TEAM_FORMAT = mod.stringkeys.twl.hud.settings.vehiclesTeamFormat;
 const STR_HUD_SETTINGS_VEHICLES_MATCHUP_FORMAT = mod.stringkeys.twl.hud.settings.vehiclesMatchupFormat;
 const STR_HUD_SETTINGS_PLAYERS_FORMAT = mod.stringkeys.twl.hud.settings.playersFormat;

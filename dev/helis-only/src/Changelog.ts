@@ -3,6 +3,170 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.731: Fix tanks-at-heli-pads bug + tie-breaker zone letter bug for any mode added after the
+// original 3 (Practice/Ladder/Custom). isHeliGameMode in strings.ts was a hardcoded 3-mode list
+// inherited from Conquest's mixed tank+heli ancestry; flipped it to return true unconditionally
+// since this is helis-only. Three downstream callers all benefit from the same fix:
+//   - refreshVehicleSpawnSpecsFromModeConfig (strings.ts:58): false caused tank specs to be
+//     applied to spawner slots on the next Confirm. After Confirm any subsequent respawn -- or
+//     a matchup-change force-spawn -- produced tanks at heli pad positions. Bug was masked when
+//     every preset used matchupPresetIndex=0 because force-spawn rarely fired; broke open in
+//     v0.728+ when All Helis (4v4) and Little Birds TWL 2v2 (2v2) introduced matchup>0 presets.
+//   - getOvertimeZoneLettersForGameMode (overtime.ts:28): false returned the tank zone letters
+//     (A-G) instead of the heli letter (H). Twl1v1 and the 4 v0.727+ modes had been quietly
+//     showing the wrong tie-breaker zones since they were added.
+//   - isHelisOvertimeSingleZoneMode (overtime.ts:69): false skipped the "H zone visible from
+//     round start" pre-active path -- so Twl1v1 + v0.727+ modes didn't pre-display the H zone.
+// MapConfig.team1TankSpawns / team2TankSpawns are now unreachable code paths -- kept in config.ts
+// for reference / future tank-experimentation but no current code reads them.
+
+// v0.730: Decouple matchup from players/side again; add Little Birds - TWL 2v2; reorder cycler.
+//   - strings.json: new gameModeLittleBirdsTwl2v2 -> "Little Birds - TWL 2v2".
+//   - types.ts: cycler reordered to user's spec -- Attack BF6 Vanilla, Little Birds BF6 Vanilla,
+//     All Helis BF6 Vanilla, Attack TWL 2v2, Attack TWL 1v1, Little Birds TWL 2v2, Little Birds
+//     TWL 1v1, Custom. Index 0 still Attack Helis - BF6 Vanilla so default state seed matches.
+//     Index constants updated to reflect new positions; Custom moves to 7.
+//   - ready-dialog.ts: new isReadyDialogGameModeLittleBirdsTwl2v2 predicate; included in TwlPreset
+//     family (best-of-11, map's useCustomCeiling).
+//   - getPresetMatchupIndexForGameMode (v0.730 simplified): All Helis = 4v4, Little Birds TWL 2v2
+//     = 2v2, everything else = 1v1. v0.729's "matchup mirrors players/side" rule is reverted --
+//     Attack BF6 Vanilla and Attack TWL 2v2 go back to 1v1 matchup but keep 2 players/side.
+//   - getReadyDialogPresetPlayersPerSide: Little Birds TWL 2v2 returns 2 (matches 2v2 in name).
+//   - getPresetVehicleHealthMultiplierForGameMode: Attack Helis TWL 1v1 ships at 160% (was 100%).
+//     Ladder + Twl1v1 both 160% now; Vanilla family + Little Birds family + Custom stay at map default.
+//   - getPresetSoldierHpMultiplierForGameMode: Little Birds TWL 2v2 returns 5.0 (clone of TWL 1v1).
+//   - getPresetVehicleIndicesForGameMode: Little Birds TWL 2v2 returns {AH-6M, AH-6M PAX} (clone).
+
+// v0.729: Align matchup row with players/side across all presets so vehicle-slot count matches
+// player count. Two getter updates, no new helpers:
+//   - getPresetMatchupIndexForGameMode: Practice (Attack Helis BF6 Vanilla) -> 1 (2v2),
+//     Ladder (Attack Helis TWL 2v2) -> 1 (2v2). Twl1v1 + Little Birds family stay at 0 (1v1).
+//   - getReadyDialogPresetPlayersPerSide: LittleBirdsVanilla -> 1 (was 2). LittleBirdsTwl1v1
+//     was already 1. Effect: both Little Birds modes are now clean 1v1 across both rows.
+// Behavioral impact: Attack Helis - BF6 Vanilla and Attack Helis - TWL 2v2 now spawn 2 vehicle
+// slots per team (was 1). Round-kills target follows from MATCHUP_PRESETS[1].roundKillsTarget=2.
+
+// v0.728: Rename "Helis Only - BF6 Vanilla" -> "All Helis - BF6 Vanilla" and flip its preset to
+// 4v4. SLUG `gameModeHelisOnlyVanilla` is preserved (internal-only; keeping it stable avoids
+// constant renames across types.ts + ready-dialog.ts). Three concrete changes:
+//   - strings.json: gameModeHelisOnlyVanilla display string updated.
+//   - getReadyDialogPresetPlayersPerSide: HelisOnlyVanilla branch returns 4 (was 2).
+//   - new getPresetMatchupIndexForGameMode helper (mirrors getPresetVehicleIndicesForGameMode
+//     pattern): returns 3 (= MATCHUP_PRESETS[3] = 4v4, 4 kills/round) for HelisOnlyVanilla, 0
+//     otherwise. Wired into both applyReadyDialogModePresetForGameMode (apply) and
+//     isReadyDialogModePresetActive (snap-back detection). First preset to use a non-zero
+//     matchup index; matchup row in the dialog now flips to "4 v 4" when this mode is selected,
+//     and 4 vehicle spawn slots per team become active (was 1 per team for all other presets).
+
+// v0.727: Expand to 7 game-mode presets, support asymmetric T1/T2 vehicles, swap map-default
+// heli slot 3 from second-Apache to Little Bird, add UH-60 Pax to cycler. User-driven rework
+// of the mode lineup to introduce "family" branding: Attack Helis (current behavior, renamed),
+// Helis Only (new — Map Default heli per team), Little Birds (new — MH6 T1 / MH6 PAX T2).
+//
+// Mode roster (7 entries; cycler order matches user message; Custom stays last):
+//   0 gameModeHelisPractice      "Attack Helis - BF6 Vanilla"     (renamed; was "Helis Only - BF6 Vanilla")
+//   1 gameModeHelisLadder        "Attack Helis - TWL 2v2"          (renamed; was "Helis Only - TWL 2v2")
+//   2 gameModeHelisTwl1v1        "Attack Helis - TWL 1v1"          (renamed; was "Helis Only - TWL 1v1")
+//   3 gameModeHelisOnlyVanilla   "Helis Only - BF6 Vanilla"        (NEW: cloned from Practice; T1=T2=Map Default)
+//   4 gameModeLittleBirdsVanilla "Little Birds - BF6 Vanilla"      (NEW: cloned from Practice; T1=MH6 T2=MH6 PAX; soldier HP 500%)
+//   5 gameModeLittleBirdsTwl1v1  "Little Birds - TWL 1v1"          (NEW: cloned from Twl1v1; T1=MH6 T2=MH6 PAX; soldier HP 500%)
+//   6 gameModeHelisCustom        "Helis Only - Custom"             (unchanged; index moved from 3 to 6)
+// All renamed mode SLUGS preserved; only display strings changed -- avoids cascading constant renames.
+// Default mode index stays 0 so the seed modeConfig (T1=T2=Falchion=Apache) matches "Attack Helis -
+// BF6 Vanilla" preset values exactly; no first-open dirty-state.
+//
+// Cycler expansion (vehicle list): UH-60 Pax inserted at index 3 between BlackHawk and AH-6M.
+// New order: [Falchion, Panthera, BlackHawk, BlackHawk Pax, AH-6M, AH-6M PAX, Map Default]. The
+// READY_DIALOG_VEHICLE_INDEX_FALCHION/_LITTLEBIRD/_LITTLEBIRD_PAX/etc named constants replace the
+// single READY_DIALOG_MODE_PRESET_VEHICLE_INDEX (removed) so per-preset code reads symbolically.
+//
+// Per-team asymmetric vehicles (Little Birds T1≠T2): the v0.621 T2=T1 force on confirm is DROPPED.
+// confirmReadyDialogModeConfig now snapshots T1 and T2 independently; vehicleOverrideEnabled is
+// derived as (!t1IsMapDefault || !t2IsMapDefault). refreshVehicleSpawnSpecsFromModeConfig checks
+// each team's index against MAP_DEFAULT separately and either applies that team's override or falls
+// back to that team's map-default heli set. Behavioral impact for Custom: T1 and T2 are now truly
+// independent in the dialog UI (cycler already had separate T1/T2 buttons; the constraint was vestigial).
+//
+// New helper: getPresetVehicleIndicesForGameMode(gameModeKey): {t1, t2} replaces the single PRESET
+// vehicle constant. Helis Only Vanilla -> {Map Default, Map Default}; Little Birds Vanilla/Twl1v1 ->
+// {MH6, MH6 PAX}; everything else (Attack Helis variants) -> {Falchion, Falchion}.
+//
+// Mode predicate refactor: isReadyDialogGameModeVanilla and isReadyDialogGameModeTwlPreset are now
+// "family" helpers. Vanilla family = Practice / HelisOnlyVanilla / LittleBirdsVanilla (forces vanilla
+// ceiling). TWL family = Ladder / Twl1v1 / LittleBirdsTwl1v1 (uses map's useCustomCeiling, best-of-11).
+// Three new atoms isReadyDialogGameModeHelisOnlyVanilla / _LittleBirdsVanilla / _LittleBirdsTwl1v1
+// added; isReadyDialogGameModeVanillaPractice introduced as the specific-mode predicate where the
+// family check would over-match.
+//
+// Soldier HP defaults: Little Birds presets ship at 500% (MH-6 has thin armor + low ammo, so the
+// on-foot phase between heli kills survives a moment longer). All other presets stay 100%.
+//
+// Map-default heli loadout (per-map, applies to the 5 maps with team1HeliSpawns / team2HeliSpawns):
+//   Slot 1: AH-64 (Apache) -- unchanged
+//   Slot 2: Eurocopter -- unchanged
+//   Slot 3: T1=AH-6M (was AH-64), T2=AH-6M_Pax (was AH-64) -- NEW
+//   Slot 4: T1=UH-60, T2=UH-60_Pax -- unchanged
+// Maps without explicit heli spawns (Blackwell/Defense/Golf/Area22B) still use the
+// buildHeliSpawnsFromTankSpawns fallback; the Map Default mode on those maps mirrors the
+// fallback (AH-64/Eurocopter/AH-64/UH-60_Pax-or-UH-60). Slot 3 change in config.ts is via
+// VEHICLE_AH6M / VEHICLE_AH6M_PAX globals (declared in types.ts) referenced through the bundle
+// scope -- config.ts source has @ts-nocheck so cross-file ref is allowed at the source level.
+
+// v0.726: Restore AH-6M Little Bird and AH-6M PAX to the Ready Dialog vehicle cycler. Three
+// minimal edits:
+//   - strings.json: 2 new readyDialog keys -- vehicleOptionLittleBird="AH-6M" and
+//     vehicleOptionLittleBirdPax="AH-6M PAX" (Conquest-exact naming per user direction).
+//   - types.ts: insert both options + their mod.VehicleList.AH6M / AH6M_Pax enums into
+//     READY_DIALOG_VEHICLE_OPTIONS and the parallel READY_DIALOG_VEHICLE_LIST, BEFORE the
+//     Map Default entry. Cycler order is now: Falchion, Panthera, BlackHawk, AH-6M, AH-6M PAX,
+//     Map Default. READY_DIALOG_VEHICLE_MAP_DEFAULT_INDEX is length-1 (auto-updated). The
+//     setter wrap math uses .length so no cycler-bound fix needed. PRESET_VEHICLE_INDEX stays
+//     at 0 (Falchion) so preset reset behavior is unchanged.
+//   - ready-dialog.ts isAircraftVehicleType: add AH6M + AH6M_Pax cases so the ceiling
+//     enforcement loop (warning UI + black-screen + DealDamage) treats them as aircraft.
+//
+// AH6M / AH6M_Pax enums are directly exported by SDK 1.3.1 (reference_sdk_1.3.1 index.d.ts
+// lines 25575-25576) -- no `(mod.VehicleList as any)` cast needed despite the Conquest
+// pattern doing so (Conquest's local snapshot was older).
+//
+// Per-map config.ts heli spawn slots (team1HeliSpawns / team2HeliSpawns) are intentionally
+// untouched per user direction "cycler only" -- Map Default mode continues to spawn the
+// current AH64/Eurocopter/AH64/UH60(_Pax) slot loadout. Operators select Little Bird via
+// the cycler override path, which applyVehicleOverrideToSpawns then propagates to all slots.
+
+// v0.725: Soldier HP Multiplier slider added to the Ready Dialog. Near-verbatim twin of the
+// Vehicle Health slider (shipped v0.648-v0.721), placed on the Game Mode row directly ABOVE
+// the Vehicle HP row in the same far-left columns. 5 widgets per pid: [-10] [<] val [>] [+10].
+// Fine step 1% (inner </>), coarse step 10% (outer -10/+10). Range 5%-500% (engine
+// SetPlayerMaxHealth caps at 1..500 -- NOT the vehicle 400% cap). Default 100%.
+//
+// Confirmed-only apply: setReadyDialogSoldierHpMultiplier mutates pending; confirmReadyDialogModeConfig
+// snapshots pending -> confirmed; OnPlayerDeployed reads confirmed and calls SetPlayerMaxHealth +
+// Heal on each deploy. Per-life: already-alive soldiers keep current life; next deploy is at new max.
+// SetPlayerMaxHealth raises the ceiling but does NOT refill current health (same race the vehicle
+// path hit in v0.714), so Heal afterward lifts current to the new max in the same try/catch.
+//
+// Per-mode preset defaults: explicit per-preset branches in getPresetSoldierHpMultiplierForGameMode,
+// each returning 1.0 (TWL 2v2 / TWL 1v1 / Vanilla all locked at 100% per user direction). Custom +
+// safety fallback uses mapDefaultSoldierHpMultiplier. Future ladder-balance tuning is a single-line
+// edit per row. Per-map defaultSoldierHpMultiplier added to MapConfig (all 9 maps set to 1.0).
+//
+// Snap-back parity: isReadyDialogModePresetActive now also checks Math.round(soldierHp*100)
+// against the preset's expected value; applyReadyDialogModePresetForGameMode resets soldierHp
+// to the preset value alongside other knobs.
+//
+// Dirty-state parity: soldierHpDirty added to ReadyDialogModeConfigDiffState; folded into
+// hasUnsavedChanges OR-chain; applyDirtyStateColorsForPid colors the value widget red/green via
+// setValueColor on UI_READY_DIALOG_SOLDIER_HP_VALUE_ID. No-cascade contract preserved (editing
+// soldier HP only paints the soldier HP row red, not other rows).
+//
+// World-log on confirm: STR_READY_DIALOG_SOLDIER_HP_CHANGED broadcast when confirmed delta exists.
+// HUD summary: new "Soldier HP: NNN%" row in the upper-left settings panel between Vehicle HP and
+// Vehicles T1 (container bumped from 7 rows to 8). HudRefs.settingsSoldierHpText bound.
+//
+// New strings: hud.settings.soldierHpFormat, readyDialog.modeSettingSoldierHpFormat,
+// readyDialog.soldierHpChanged. New UI id prefixes: 9 SOLDIER_HP_* in strings.ts.
+
 // v0.724: Four polish items on the v0.723 ceiling-lockout work.
 //
 // 1. DEFAULT_CEILING_PUNISH_ENABLED flipped false -> true. Punish toggle now defaults ON at

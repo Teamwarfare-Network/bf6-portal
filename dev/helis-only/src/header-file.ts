@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Module: File header, versioning, license, attribution
 
-// version: 0.724 | Date: 06.01.26 | Time: 04:53 UTC
+// version: 0.731 | Date: 06.01.26 | Time: 07:04 UTC
 // *policy: version policy header file: src/header-file.ts
 // *policy: version policy footer file: src/footer-file.ts
 // *policy: version policy strings file: src/strings.json

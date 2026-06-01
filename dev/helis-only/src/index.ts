@@ -361,6 +361,18 @@ export async function OnPlayerDeployed(eventPlayer: mod.Player) {
             mod.InventorySlots.GadgetTwo
         );
     } catch {}
+    // v0.725 Soldier HP multiplier: apply on each deploy (per-Player, resets every life).
+    // SetPlayerMaxHealth raises the ceiling but does NOT refill current health (same race the
+    // vehicle path hit in v0.714), so Heal afterward lifts current to the new max. Guard on
+    // !== 1.0: a fresh soldier already defaults to SOLDIER_BASE_MAX_HEALTH, so 100% needs no
+    // engine call. Engine clamps the passed value to 1..500; our 0.05..5.0 UI bounds line up.
+    try {
+        const hpMult = State.round.modeConfig.confirmed.soldierHpMultiplier ?? 1.0;
+        if (hpMult !== 1.0) {
+            mod.SetPlayerMaxHealth(eventPlayer, Math.round(SOLDIER_BASE_MAX_HEALTH * hpMult));
+            mod.Heal(eventPlayer, 99999);
+        }
+    } catch (_e) {}
     State.players.readyByPid[pid] = false;
     State.players.inMainBaseByPid[pid] = true;
     delete State.players.overTakeoffLimitByPid[pid];

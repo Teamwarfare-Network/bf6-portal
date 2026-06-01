@@ -8,13 +8,21 @@ function getMapNameKey(mapKey: MapKey): number {
     return MAP_NAME_STRINGKEYS[mapKey] ?? mod.stringkeys.twl.system.unknownPlayer;
 }
 
-// Determines whether the current mode selection should use heli spawns.
-function isHeliGameMode(gameModeKey: number): boolean {
-    return (
-        gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisLadder
-        || gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisPractice
-        || gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisCustom
-    );
+// v0.731: This is the helis-only experience -- every mode is a heli mode by definition. The
+// hardcoded list shape was inherited from Conquest (which shipped both tank and heli modes from a
+// shared MapConfig type). Returning true unconditionally fixes three quiet bugs at the same time:
+//   - refreshVehicleSpawnSpecsFromModeConfig was falling through to tank specs for any mode not
+//     in the hardcoded list (Twl1v1 since it was added, plus all v0.727+ new modes), causing
+//     tanks to spawn at heli pads after Confirm.
+//   - getOvertimeZoneLettersForGameMode was returning tank zone letters (A-G) for those same
+//     modes when it should have returned the heli letters (H).
+//   - isHelisOvertimeSingleZoneMode was missing the "H zone visible from round start" pre-active
+//     path for those same modes.
+// The dead tank fallback in refreshVehicleSpawnSpecsFromModeConfig (and the team{1,2}TankSpawns in
+// every MapConfig) become explicitly unreachable -- they remain for reference / future tank-mode
+// experimentation, but no current code path reads them.
+function isHeliGameMode(_gameModeKey: number): boolean {
+    return true;
 }
 
 // Builds a basic heli spawn list from tank spawn positions when no map-specific heli list exists yet.
@@ -51,20 +59,24 @@ function applyVehicleOverrideToSpawns(spawns: VehicleSpawnSpec[], vehicle: mod.V
     }));
 }
 
+// v0.727: per-team independent vehicle override. Each team's heli spawn set is checked separately
+// against MAP_DEFAULT -- Little Birds presets (T1=MH6, T2=MH6 PAX) and Helis Only Vanilla (T1=T2=Map
+// Default) both flow through here cleanly.
 function refreshVehicleSpawnSpecsFromModeConfig(): void {
     const useHelis = isHeliGameMode(State.round.modeConfig.confirmed.gameMode);
     if (useHelis) {
         const baseT1 = resolveHeliSpawnsForTeam(ACTIVE_MAP_CONFIG, TeamID.Team1);
         const baseT2 = resolveHeliSpawnsForTeam(ACTIVE_MAP_CONFIG, TeamID.Team2);
-        if (State.round.modeConfig.confirmed.vehicleOverrideEnabled) {
-            // Global override: use a single heli selection for all heli spawn slots.
-            const overrideVehicle = getReadyDialogVehicleListByIndex(State.round.modeConfig.confirmed.vehicleIndexT1);
-            TEAM1_VEHICLE_SPAWN_SPECS = applyVehicleOverrideToSpawns(baseT1, overrideVehicle);
-            TEAM2_VEHICLE_SPAWN_SPECS = applyVehicleOverrideToSpawns(baseT2, overrideVehicle);
-            return;
-        }
-        TEAM1_VEHICLE_SPAWN_SPECS = baseT1;
-        TEAM2_VEHICLE_SPAWN_SPECS = baseT2;
+        const t1Idx = State.round.modeConfig.confirmed.vehicleIndexT1;
+        const t2Idx = State.round.modeConfig.confirmed.vehicleIndexT2;
+        const t1IsMapDefault = t1Idx === READY_DIALOG_VEHICLE_MAP_DEFAULT_INDEX;
+        const t2IsMapDefault = t2Idx === READY_DIALOG_VEHICLE_MAP_DEFAULT_INDEX;
+        TEAM1_VEHICLE_SPAWN_SPECS = t1IsMapDefault
+            ? baseT1
+            : applyVehicleOverrideToSpawns(baseT1, getReadyDialogVehicleListByIndex(t1Idx));
+        TEAM2_VEHICLE_SPAWN_SPECS = t2IsMapDefault
+            ? baseT2
+            : applyVehicleOverrideToSpawns(baseT2, getReadyDialogVehicleListByIndex(t2Idx));
         return;
     }
     TEAM1_VEHICLE_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team1TankSpawns;
@@ -115,6 +127,11 @@ function applyMapConfig(mapKey: MapKey): void {
     State.round.mapDefaultVehicleHealthMultiplier = mapDefaultHealth;
     State.round.modeConfig.vehicleHealthMultiplier = mapDefaultHealth;
     State.round.modeConfig.confirmed.vehicleHealthMultiplier = mapDefaultHealth;
+    // v0.725 Soldier HP per-map default; parallel to vehicle health seed above.
+    const mapDefaultSoldierHp = ACTIVE_MAP_CONFIG.defaultSoldierHpMultiplier ?? READY_DIALOG_SOLDIER_HP_MULT_DEFAULT;
+    State.round.mapDefaultSoldierHpMultiplier = mapDefaultSoldierHp;
+    State.round.modeConfig.soldierHpMultiplier = mapDefaultSoldierHp;
+    State.round.modeConfig.confirmed.soldierHpMultiplier = mapDefaultSoldierHp;
 
     updateReadyDialogMapLabelForAllPlayers();
     updateTeamNameWidgetsForAllPlayers();
@@ -260,6 +277,16 @@ const UI_READY_DIALOG_VEHICLE_HEALTH_INC_ID = "UI_READY_DIALOG_VEHICLE_HEALTH_IN
 const UI_READY_DIALOG_VEHICLE_HEALTH_INC_LABEL_ID = "UI_READY_DIALOG_VEHICLE_HEALTH_INC_LABEL_";
 const UI_READY_DIALOG_VEHICLE_HEALTH_INC10_ID = "UI_READY_DIALOG_VEHICLE_HEALTH_INC10_";
 const UI_READY_DIALOG_VEHICLE_HEALTH_INC10_LABEL_ID = "UI_READY_DIALOG_VEHICLE_HEALTH_INC10_LABEL_";
+// v0.725 Soldier HP Multiplier widget IDs. Same 5-widget shape as Vehicle HP: [-10] [<] val [>] [+10].
+const UI_READY_DIALOG_SOLDIER_HP_DEC10_ID = "UI_READY_DIALOG_SOLDIER_HP_DEC10_";
+const UI_READY_DIALOG_SOLDIER_HP_DEC10_LABEL_ID = "UI_READY_DIALOG_SOLDIER_HP_DEC10_LABEL_";
+const UI_READY_DIALOG_SOLDIER_HP_DEC_ID = "UI_READY_DIALOG_SOLDIER_HP_DEC_";
+const UI_READY_DIALOG_SOLDIER_HP_DEC_LABEL_ID = "UI_READY_DIALOG_SOLDIER_HP_DEC_LABEL_";
+const UI_READY_DIALOG_SOLDIER_HP_VALUE_ID = "UI_READY_DIALOG_SOLDIER_HP_VALUE_";
+const UI_READY_DIALOG_SOLDIER_HP_INC_ID = "UI_READY_DIALOG_SOLDIER_HP_INC_";
+const UI_READY_DIALOG_SOLDIER_HP_INC_LABEL_ID = "UI_READY_DIALOG_SOLDIER_HP_INC_LABEL_";
+const UI_READY_DIALOG_SOLDIER_HP_INC10_ID = "UI_READY_DIALOG_SOLDIER_HP_INC10_";
+const UI_READY_DIALOG_SOLDIER_HP_INC10_LABEL_ID = "UI_READY_DIALOG_SOLDIER_HP_INC10_LABEL_";
 const UI_READY_DIALOG_MODE_VEHICLES_T1_LABEL_ID = "UI_READY_DIALOG_MODE_VEHICLES_T1_LABEL_";
 const UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_ID = "UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_";
 const UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_LABEL_ID = "UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_LABEL_";

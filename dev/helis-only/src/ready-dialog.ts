@@ -547,6 +547,17 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     const VEHICLE_HEALTH_INC10_ID = UI_READY_DIALOG_VEHICLE_HEALTH_INC10_ID + playerId;
     const VEHICLE_HEALTH_INC10_LABEL_ID = UI_READY_DIALOG_VEHICLE_HEALTH_INC10_LABEL_ID + playerId;
 
+    // v0.725 Soldier HP per-pid ID locals. Mirror VH shape exactly.
+    const SOLDIER_HP_DEC10_ID = UI_READY_DIALOG_SOLDIER_HP_DEC10_ID + playerId;
+    const SOLDIER_HP_DEC10_LABEL_ID = UI_READY_DIALOG_SOLDIER_HP_DEC10_LABEL_ID + playerId;
+    const SOLDIER_HP_DEC_ID = UI_READY_DIALOG_SOLDIER_HP_DEC_ID + playerId;
+    const SOLDIER_HP_DEC_LABEL_ID = UI_READY_DIALOG_SOLDIER_HP_DEC_LABEL_ID + playerId;
+    const SOLDIER_HP_VALUE_ID = UI_READY_DIALOG_SOLDIER_HP_VALUE_ID + playerId;
+    const SOLDIER_HP_INC_ID = UI_READY_DIALOG_SOLDIER_HP_INC_ID + playerId;
+    const SOLDIER_HP_INC_LABEL_ID = UI_READY_DIALOG_SOLDIER_HP_INC_LABEL_ID + playerId;
+    const SOLDIER_HP_INC10_ID = UI_READY_DIALOG_SOLDIER_HP_INC10_ID + playerId;
+    const SOLDIER_HP_INC10_LABEL_ID = UI_READY_DIALOG_SOLDIER_HP_INC10_LABEL_ID + playerId;
+
     const VEHICLES_T1_LABEL_ID = UI_READY_DIALOG_MODE_VEHICLES_T1_LABEL_ID + playerId;
     const VEHICLES_T1_DEC_ID = UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_ID + playerId;
     const VEHICLES_T1_DEC_LABEL_ID = UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_LABEL_ID + playerId;
@@ -836,6 +847,113 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     );
     if (VEHICLE_HEALTH_INC10_LABEL) {
         mod.SetUITextSize(VEHICLE_HEALTH_INC10_LABEL, 13);
+    }
+
+    // v0.725 Soldier HP knob block. Same 5-widget shape and same X-block math as the VH block,
+    // but rendered on gameModeY (the Game Mode row above Mode Settings). Lands directly above
+    // the VH row in the empty far-left columns of the Game Mode row -- the Game Mode value/buttons
+    // sit in the right columns (leftSectionLeftButtonX / leftSectionValueX / leftSectionRightButtonX),
+    // so no collision.
+    const soldierHpDec10Border = addOutlinedButton(
+        SOLDIER_HP_DEC10_ID,
+        vehicleHealthDec10X,
+        gameModeY,
+        vehicleHealthWideButtonWidth,
+        bestOfButtonSizeY,
+        mod.UIAnchor.TopRight,
+        CONTAINER_BASE,
+        eventPlayer
+    );
+    const SOLDIER_HP_DEC10_LABEL = addCenteredButtonText(
+        SOLDIER_HP_DEC10_LABEL_ID,
+        vehicleHealthWideButtonWidth,
+        bestOfButtonSizeY,
+        mod.Message(mod.stringkeys.twl.ui.minus10),
+        eventPlayer,
+        soldierHpDec10Border ?? CONTAINER_BASE
+    );
+    if (SOLDIER_HP_DEC10_LABEL) {
+        mod.SetUITextSize(SOLDIER_HP_DEC10_LABEL, 13);
+    }
+
+    const soldierHpDecBorder = addOutlinedButton(
+        SOLDIER_HP_DEC_ID,
+        vehicleHealthDecX,
+        gameModeY,
+        bestOfButtonSizeX,
+        bestOfButtonSizeY,
+        mod.UIAnchor.TopRight,
+        CONTAINER_BASE,
+        eventPlayer
+    );
+    const SOLDIER_HP_DEC_LABEL = addCenteredButtonText(
+        SOLDIER_HP_DEC_LABEL_ID,
+        bestOfButtonSizeX,
+        bestOfButtonSizeY,
+        mod.Message(mod.stringkeys.twl.ui.left),
+        eventPlayer,
+        soldierHpDecBorder ?? CONTAINER_BASE
+    );
+    if (SOLDIER_HP_DEC_LABEL) {
+        mod.SetUITextSize(SOLDIER_HP_DEC_LABEL, 14);
+    }
+
+    mod.AddUIText(
+        SOLDIER_HP_VALUE_ID,
+        mod.CreateVector(vehicleHealthValueX, gameModeY, 0),
+        mod.CreateVector(vehicleHealthValueWidth, bestOfLabelSizeY, 0),
+        mod.UIAnchor.TopRight,
+        mod.Message(STR_READY_DIALOG_SOLDIER_HP_FORMAT, Math.round(State.round.modeConfig.soldierHpMultiplier * 100)),
+        eventPlayer
+    );
+    const SOLDIER_HP_VALUE = mod.FindUIWidgetWithName(SOLDIER_HP_VALUE_ID, mod.GetUIRoot());
+    mod.SetUIWidgetBgAlpha(SOLDIER_HP_VALUE, 0);
+    mod.SetUITextSize(SOLDIER_HP_VALUE, 12);
+    applyReadyDialogLabelTextColor(SOLDIER_HP_VALUE);
+    mod.SetUIWidgetParent(SOLDIER_HP_VALUE, CONTAINER_BASE);
+
+    const soldierHpIncBorder = addOutlinedButton(
+        SOLDIER_HP_INC_ID,
+        vehicleHealthIncX,
+        gameModeY,
+        bestOfButtonSizeX,
+        bestOfButtonSizeY,
+        mod.UIAnchor.TopRight,
+        CONTAINER_BASE,
+        eventPlayer
+    );
+    const SOLDIER_HP_INC_LABEL = addCenteredButtonText(
+        SOLDIER_HP_INC_LABEL_ID,
+        bestOfButtonSizeX,
+        bestOfButtonSizeY,
+        mod.Message(mod.stringkeys.twl.ui.right),
+        eventPlayer,
+        soldierHpIncBorder ?? CONTAINER_BASE
+    );
+    if (SOLDIER_HP_INC_LABEL) {
+        mod.SetUITextSize(SOLDIER_HP_INC_LABEL, 14);
+    }
+
+    const soldierHpInc10Border = addOutlinedButton(
+        SOLDIER_HP_INC10_ID,
+        vehicleHealthInc10X,
+        gameModeY,
+        vehicleHealthWideButtonWidth,
+        bestOfButtonSizeY,
+        mod.UIAnchor.TopRight,
+        CONTAINER_BASE,
+        eventPlayer
+    );
+    const SOLDIER_HP_INC10_LABEL = addCenteredButtonText(
+        SOLDIER_HP_INC10_LABEL_ID,
+        vehicleHealthWideButtonWidth,
+        bestOfButtonSizeY,
+        mod.Message(mod.stringkeys.twl.ui.plus10),
+        eventPlayer,
+        soldierHpInc10Border ?? CONTAINER_BASE
+    );
+    if (SOLDIER_HP_INC10_LABEL) {
+        mod.SetUITextSize(SOLDIER_HP_INC10_LABEL, 13);
     }
 
     addRightAlignedLabel(
@@ -2530,6 +2648,7 @@ type ReadyDialogModeConfigDiffState = {
     gameModeDirty: boolean;
     aircraftCeilingDirty: boolean;
     vehicleHealthDirty: boolean;
+    soldierHpDirty: boolean;
     vehiclesT1Dirty: boolean;
     vehiclesT2Dirty: boolean;
 };
@@ -2548,11 +2667,14 @@ function buildReadyDialogModeConfigDiffState(): ReadyDialogModeConfigDiffState {
     const aircraftCeilingDirty = Math.floor(cfg.aircraftCeiling) !== Math.floor(c.aircraftCeiling);
     const vehicleHealthDirty =
         Math.round(cfg.vehicleHealthMultiplier * 100) !== Math.round(c.vehicleHealthMultiplier * 100);
+    // v0.725 Soldier HP dirty diff -- parallel to vehicle health, same 2-decimal compare.
+    const soldierHpDirty =
+        Math.round(cfg.soldierHpMultiplier * 100) !== Math.round(c.soldierHpMultiplier * 100);
     const vehiclesT1Dirty = cfg.vehicleIndexT1 !== c.vehicleIndexT1;
     const vehiclesT2Dirty = cfg.vehicleIndexT2 !== c.vehicleIndexT2;
     const hasUnsavedChanges =
-        gameModeDirty || aircraftCeilingDirty || vehicleHealthDirty || vehiclesT1Dirty || vehiclesT2Dirty;
-    return { hasUnsavedChanges, gameModeDirty, aircraftCeilingDirty, vehicleHealthDirty, vehiclesT1Dirty, vehiclesT2Dirty };
+        gameModeDirty || aircraftCeilingDirty || vehicleHealthDirty || soldierHpDirty || vehiclesT1Dirty || vehiclesT2Dirty;
+    return { hasUnsavedChanges, gameModeDirty, aircraftCeilingDirty, vehicleHealthDirty, soldierHpDirty, vehiclesT1Dirty, vehiclesT2Dirty };
 }
 
 // Three-color scheme per Q3 answer: labels stay white (untouched here), confirmed values green, dirty values red.
@@ -2578,6 +2700,7 @@ function applyDirtyStateColorsForPid(pid: number): void {
         setValueColor(UI_READY_DIALOG_MODE_SETTINGS_VALUE_ID, diff.aircraftCeilingDirty);
     }
     setValueColor(UI_READY_DIALOG_VEHICLE_HEALTH_VALUE_ID, diff.vehicleHealthDirty);
+    setValueColor(UI_READY_DIALOG_SOLDIER_HP_VALUE_ID, diff.soldierHpDirty);
     setValueColor(UI_READY_DIALOG_MODE_VEHICLES_T1_VALUE_ID, diff.vehiclesT1Dirty);
     setValueColor(UI_READY_DIALOG_MODE_VEHICLES_T2_VALUE_ID, diff.vehiclesT2Dirty);
     const notice = safeFind(UI_READY_DIALOG_UNSAVED_NOTICE_ID + pid);
@@ -2626,6 +2749,15 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
         safeSetUITextLabel(
             vehicleHealthValue,
             mod.Message(STR_READY_DIALOG_VEHICLE_HEALTH_FORMAT, Math.round(cfg.vehicleHealthMultiplier * 100))
+        );
+    }
+
+    // v0.725 Soldier HP value text -- pending value, parallel to vehicle health above.
+    const soldierHpValue = safeFind(UI_READY_DIALOG_SOLDIER_HP_VALUE_ID + pid);
+    if (soldierHpValue) {
+        safeSetUITextLabel(
+            soldierHpValue,
+            mod.Message(STR_READY_DIALOG_SOLDIER_HP_FORMAT, Math.round(cfg.soldierHpMultiplier * 100))
         );
     }
 
@@ -2757,6 +2889,8 @@ function isAircraftVehicleType(vehicleType: mod.VehicleList): boolean {
     if (vehicleType === mod.VehicleList.Eurocopter) return true;
     if (vehicleType === mod.VehicleList.UH60) return true;
     if (vehicleType === mod.VehicleList.UH60_Pax) return true;
+    if (vehicleType === (mod.VehicleList as any).AH6M) return true;
+    if (vehicleType === (mod.VehicleList as any).AH6M_Pax) return true;
     if (vehicleType === mod.VehicleList.Cheetah) return true;
     if (vehicleType === mod.VehicleList.Flyer60) return true;
     return false;
@@ -3122,8 +3256,19 @@ function syncAircraftCeilingFromMapConfig(): void {
 
 //#region -------------------- Ready Dialog - Mode Presets + Confirm --------------------
 
-function isReadyDialogGameModeVanilla(gameModeKey: number): boolean {
+// v0.727: mode predicates split into per-mode atoms + family helpers. The "family" predicates
+// (isReadyDialogGameModeVanilla, isReadyDialogGameModeTwlPreset) determine ceiling/best-of behavior;
+// the per-mode atoms feed the per-preset getters below.
+function isReadyDialogGameModeVanillaPractice(gameModeKey: number): boolean {
     return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisPractice;
+}
+
+function isReadyDialogGameModeHelisOnlyVanilla(gameModeKey: number): boolean {
+    return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisOnlyVanilla;
+}
+
+function isReadyDialogGameModeLittleBirdsVanilla(gameModeKey: number): boolean {
+    return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeLittleBirdsVanilla;
 }
 
 function isReadyDialogGameModeLadder(gameModeKey: number): boolean {
@@ -3134,28 +3279,100 @@ function isReadyDialogGameModeTwl1v1(gameModeKey: number): boolean {
     return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisTwl1v1;
 }
 
+function isReadyDialogGameModeLittleBirdsTwl2v2(gameModeKey: number): boolean {
+    return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeLittleBirdsTwl2v2;
+}
+
+function isReadyDialogGameModeLittleBirdsTwl1v1(gameModeKey: number): boolean {
+    return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeLittleBirdsTwl1v1;
+}
+
 function isReadyDialogGameModeCustom(gameModeKey: number): boolean {
     return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisCustom;
 }
 
+// Family helper: any "vanilla-derived" mode. These force vanilla aircraft ceiling regardless of map.
+// Used by shouldApplyCustomCeilingForGameMode + getPresetSoldierHpMultiplierForGameMode.
+function isReadyDialogGameModeVanilla(gameModeKey: number): boolean {
+    return isReadyDialogGameModeVanillaPractice(gameModeKey)
+        || isReadyDialogGameModeHelisOnlyVanilla(gameModeKey)
+        || isReadyDialogGameModeLittleBirdsVanilla(gameModeKey);
+}
+
+// Family helper: any "TWL-derived" preset. These use map's useCustomCeiling flag + best-of-11.
 function isReadyDialogGameModeTwlPreset(gameModeKey: number): boolean {
-    return isReadyDialogGameModeLadder(gameModeKey) || isReadyDialogGameModeTwl1v1(gameModeKey);
+    return isReadyDialogGameModeLadder(gameModeKey)
+        || isReadyDialogGameModeTwl1v1(gameModeKey)
+        || isReadyDialogGameModeLittleBirdsTwl2v2(gameModeKey)
+        || isReadyDialogGameModeLittleBirdsTwl1v1(gameModeKey);
 }
 
 function getReadyDialogPresetPlayersPerSide(gameModeKey: number): number {
-    if (isReadyDialogGameModeTwl1v1(gameModeKey)) {
-        return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_1V1;
-    }
-    if (isReadyDialogGameModeLadder(gameModeKey)) {
-        return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_2V2;
-    }
+    // 1v1-style modes.
+    if (isReadyDialogGameModeLittleBirdsVanilla(gameModeKey)) return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_1V1;
+    if (isReadyDialogGameModeLittleBirdsTwl1v1(gameModeKey)) return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_1V1;
+    if (isReadyDialogGameModeTwl1v1(gameModeKey)) return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_1V1;
+    // All Helis - BF6 Vanilla ships as 4v4 (slug kept as gameModeHelisOnlyVanilla; display renamed v0.728).
+    if (isReadyDialogGameModeHelisOnlyVanilla(gameModeKey)) return 4;
+    // 2v2-style modes (TWL Ladder, Practice Vanilla, new Little Birds TWL 2v2).
+    if (isReadyDialogGameModeLadder(gameModeKey)) return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_2V2;
+    if (isReadyDialogGameModeLittleBirdsTwl2v2(gameModeKey)) return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_2V2;
     return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_VANILLA;
 }
 
-// TWL 2v2 preset defaults to 160% vehicle health; all other presets use the map default.
+// v0.728 Per-preset matchup index. Returns the MATCHUP_PRESETS row to apply on preset activation.
+// All Helis - BF6 Vanilla is 4v4 (index 3 -> 4 vehicle slots/team, 4 kills/round). Everything else
+// stays at index 0 (1v1, 1 kill/round) preserving the pre-v0.728 default. Note: the matchup row
+// controls vehicle-slot count and per-round kills target, NOT auto-start min players (that's
+// getReadyDialogPresetPlayersPerSide above).
+function getPresetMatchupIndexForGameMode(gameModeKey: number): number {
+    // v0.730: matchup row decoupled from players/side. Attack Helis BF6 Vanilla + TWL 2v2 reverted
+    // to 1v1 matchup (1 vehicle slot/team) but keep 2 players/side. All Helis = 4v4. Little Birds
+    // TWL 2v2 = 2v2 matchup (2 slots/team).
+    if (isReadyDialogGameModeHelisOnlyVanilla(gameModeKey)) return 3;        // 4v4
+    if (isReadyDialogGameModeLittleBirdsTwl2v2(gameModeKey)) return 1;       // Little Birds - TWL 2v2 -> 2v2
+    // Everything else stays at the 1v1 default (incl. Attack Helis Practice + Ladder + Twl1v1,
+    // Little Birds Vanilla + Twl1v1).
+    return READY_DIALOG_MODE_PRESET_MATCHUP_INDEX;                           // 0 (1v1)
+}
+
+// v0.730 Attack Helis - TWL ladder modes (2v2 + 1v1) both ship at 160% vehicle health. Every other
+// preset uses the map default.
 function getPresetVehicleHealthMultiplierForGameMode(gameModeKey: number): number {
     if (isReadyDialogGameModeLadder(gameModeKey)) return 1.6;
+    if (isReadyDialogGameModeTwl1v1(gameModeKey)) return 1.6;
     return State.round.mapDefaultVehicleHealthMultiplier;
+}
+
+// v0.727 Soldier HP per-preset defaults. Little Birds presets ship with 500% soldier HP so the
+// on-foot phase between heli kills survives a moment longer (MH-6 has thin armor + low ammo).
+// Attack Helis / Helis Only family: 100%. Custom + safety fallback uses the per-map default.
+function getPresetSoldierHpMultiplierForGameMode(gameModeKey: number): number {
+    if (isReadyDialogGameModeLittleBirdsVanilla(gameModeKey)) return 5.0;    // Little Birds - BF6 Vanilla
+    if (isReadyDialogGameModeLittleBirdsTwl2v2(gameModeKey)) return 5.0;     // Little Birds - TWL 2v2
+    if (isReadyDialogGameModeLittleBirdsTwl1v1(gameModeKey)) return 5.0;     // Little Birds - TWL 1v1
+    if (isReadyDialogGameModeLadder(gameModeKey)) return 1.0;                // Attack Helis - TWL 2v2
+    if (isReadyDialogGameModeTwl1v1(gameModeKey)) return 1.0;                // Attack Helis - TWL 1v1
+    if (isReadyDialogGameModeVanillaPractice(gameModeKey)) return 1.0;       // Attack Helis - BF6 Vanilla
+    if (isReadyDialogGameModeHelisOnlyVanilla(gameModeKey)) return 1.0;      // All Helis - BF6 Vanilla
+    return State.round.mapDefaultSoldierHpMultiplier;                        // Custom + safety fallback
+}
+
+// v0.727 Per-team vehicle cycler indices per preset. Returns { t1, t2 } cycler indices that the
+// preset should apply on activation. Replaces the single READY_DIALOG_MODE_PRESET_VEHICLE_INDEX
+// constant so Little Birds presets can ship asymmetric T1=MH6 / T2=MH6 PAX, and Helis Only Vanilla
+// can ship T1=T2=Map Default.
+function getPresetVehicleIndicesForGameMode(gameModeKey: number): { t1: number; t2: number } {
+    if (isReadyDialogGameModeHelisOnlyVanilla(gameModeKey)) {
+        return { t1: READY_DIALOG_VEHICLE_MAP_DEFAULT_INDEX, t2: READY_DIALOG_VEHICLE_MAP_DEFAULT_INDEX };
+    }
+    if (isReadyDialogGameModeLittleBirdsVanilla(gameModeKey)
+        || isReadyDialogGameModeLittleBirdsTwl2v2(gameModeKey)
+        || isReadyDialogGameModeLittleBirdsTwl1v1(gameModeKey)) {
+        return { t1: READY_DIALOG_VEHICLE_INDEX_LITTLEBIRD, t2: READY_DIALOG_VEHICLE_INDEX_LITTLEBIRD_PAX };
+    }
+    // Attack Helis variants (Practice, Ladder, Twl1v1): Falchion (Apache) for both teams.
+    return { t1: READY_DIALOG_VEHICLE_INDEX_FALCHION, t2: READY_DIALOG_VEHICLE_INDEX_FALCHION };
 }
 
 function shouldApplyCustomCeilingForGameMode(gameModeKey: number): boolean {
@@ -3237,21 +3454,27 @@ function detectAndApplyMatchingPreset(): void {
 }
 
 // True only when all preset values match the selected mode (best-of, matchup, players, vehicles, ceiling).
+// v0.727: T1/T2 vehicle indices now come from getPresetVehicleIndicesForGameMode so Little Birds
+// presets can check T1=MH6 and T2=MH6 PAX independently.
 function isReadyDialogModePresetActive(gameModeKey: number): boolean {
     if (isReadyDialogGameModeCustom(gameModeKey)) return false;
     const expectedBestOf = isReadyDialogGameModeTwlPreset(gameModeKey)
         ? READY_DIALOG_MODE_PRESET_BEST_OF_LADDER
         : READY_DIALOG_MODE_PRESET_BEST_OF_VANILLA;
     if (Math.floor(State.round.max) !== expectedBestOf) return false;
-    if (State.round.matchupPresetIndex !== READY_DIALOG_MODE_PRESET_MATCHUP_INDEX) return false;
+    if (State.round.matchupPresetIndex !== getPresetMatchupIndexForGameMode(gameModeKey)) return false;
     if (State.round.autoStartMinActivePlayers !== getReadyDialogPresetPlayersPerSide(gameModeKey)) return false;
-    if (State.round.modeConfig.vehicleIndexT1 !== READY_DIALOG_MODE_PRESET_VEHICLE_INDEX) return false;
-    if (State.round.modeConfig.vehicleIndexT2 !== READY_DIALOG_MODE_PRESET_VEHICLE_INDEX) return false;
+    const expectedVehicles = getPresetVehicleIndicesForGameMode(gameModeKey);
+    if (State.round.modeConfig.vehicleIndexT1 !== expectedVehicles.t1) return false;
+    if (State.round.modeConfig.vehicleIndexT2 !== expectedVehicles.t2) return false;
     if (Math.floor(State.round.modeConfig.aircraftCeiling) !== Math.floor(State.round.aircraftCeiling.mapDefaultHudCeiling)) return false;
     // Health-multiplier check: preset is "active" only when the pending knob matches the preset's expected default.
     // TWL 2v2 = 160%, everything else = map default. Compare via 2-decimal round to absorb 0.01-step float drift.
     const expectedHealthMult = getPresetVehicleHealthMultiplierForGameMode(gameModeKey);
     if (Math.round(State.round.modeConfig.vehicleHealthMultiplier * 100) !== Math.round(expectedHealthMult * 100)) return false;
+    // Soldier HP check: parallel to vehicle health.
+    const expectedSoldierHp = getPresetSoldierHpMultiplierForGameMode(gameModeKey);
+    if (Math.round(State.round.modeConfig.soldierHpMultiplier * 100) !== Math.round(expectedSoldierHp * 100)) return false;
     return true;
 }
 
@@ -3265,21 +3488,25 @@ function applyReadyDialogModePresetForGameMode(gameModeKey: number): boolean {
         : READY_DIALOG_MODE_PRESET_BEST_OF_VANILLA;
 
     setHudRoundCountersForAllPlayers(State.round.current, bestOfRounds);
-    applyMatchupPresetInternal(READY_DIALOG_MODE_PRESET_MATCHUP_INDEX, undefined, false, true);
+    applyMatchupPresetInternal(getPresetMatchupIndexForGameMode(gameModeKey), undefined, false, true);
 
     State.round.autoStartMinActivePlayers = getReadyDialogPresetPlayersPerSide(gameModeKey);
     updateMatchupReadoutsForAllPlayers();
 
-    State.round.modeConfig.vehicleIndexT1 = READY_DIALOG_MODE_PRESET_VEHICLE_INDEX;
-    State.round.modeConfig.vehicleIndexT2 = READY_DIALOG_MODE_PRESET_VEHICLE_INDEX;
-    State.round.modeConfig.vehiclesT1 = READY_DIALOG_VEHICLE_OPTIONS[READY_DIALOG_MODE_PRESET_VEHICLE_INDEX];
-    State.round.modeConfig.vehiclesT2 = READY_DIALOG_VEHICLE_OPTIONS[READY_DIALOG_MODE_PRESET_VEHICLE_INDEX];
+    // v0.727 per-team vehicle indices (Little Birds presets ship asymmetric T1/T2).
+    const presetVehicles = getPresetVehicleIndicesForGameMode(gameModeKey);
+    State.round.modeConfig.vehicleIndexT1 = presetVehicles.t1;
+    State.round.modeConfig.vehicleIndexT2 = presetVehicles.t2;
+    State.round.modeConfig.vehiclesT1 = READY_DIALOG_VEHICLE_OPTIONS[presetVehicles.t1];
+    State.round.modeConfig.vehiclesT2 = READY_DIALOG_VEHICLE_OPTIONS[presetVehicles.t2];
 
     State.round.modeConfig.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
     State.round.modeConfig.aircraftCeilingOverridePending = false;
     State.round.modeConfig.gameSettings = mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat;
     // Vehicle Health Multiplier: TWL 2v2 = 160%, every other preset = map default.
     State.round.modeConfig.vehicleHealthMultiplier = getPresetVehicleHealthMultiplierForGameMode(gameModeKey);
+    // Soldier HP: Little Birds presets = 500%, every other preset = 100%.
+    State.round.modeConfig.soldierHpMultiplier = getPresetSoldierHpMultiplierForGameMode(gameModeKey);
 
     suppressReadyDialogModeAutoSwitch = false;
 
@@ -3336,6 +3563,17 @@ function setReadyDialogVehicleHealthMultiplier(nextValue: number, _changedBy?: m
     updateReadyDialogModeConfigForAllVisibleViewers();
 }
 
+// v0.725 Soldier HP setter -- twin of setReadyDialogVehicleHealthMultiplier.
+function setReadyDialogSoldierHpMultiplier(nextValue: number, _changedBy?: mod.Player): void {
+    ensureCustomGameModeForManualChange();
+    const clamped = Math.max(
+        READY_DIALOG_SOLDIER_HP_MULT_MIN,
+        Math.min(READY_DIALOG_SOLDIER_HP_MULT_MAX, nextValue)
+    );
+    State.round.modeConfig.soldierHpMultiplier = Math.round(clamped * 100) / 100;
+    updateReadyDialogModeConfigForAllVisibleViewers();
+}
+
 function setReadyDialogVehicleIndexT1(nextIndex: number): void {
     const count = READY_DIALOG_VEHICLE_OPTIONS.length;
     if (count <= 0) return;
@@ -3378,6 +3616,7 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
     const prevConfirmed = cfg.confirmed.aircraftCeiling;
     const prevGameMode = cfg.confirmed.gameMode;
     const prevConfirmedHealth = cfg.confirmed.vehicleHealthMultiplier;
+    const prevConfirmedSoldierHp = cfg.confirmed.soldierHpMultiplier;
     // Confirm is authoritative: it can force Custom if settings diverge from presets
     // and it is the only place we apply ceiling + vehicle overrides.
     if (!isReadyDialogGameModeCustom(cfg.gameMode) && !isReadyDialogModePresetActive(cfg.gameMode)) {
@@ -3410,21 +3649,23 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
         applyCustomCeiling = shouldApplyCustomCeilingForConfig(cfg.gameMode, nextCeilingOverrideEnabled);
     }
 
-    const isMapDefaultVehicle = cfg.vehicleIndexT1 === READY_DIALOG_VEHICLE_MAP_DEFAULT_INDEX;
-    // Keep the selected heli override consistent across teams when confirming.
-    cfg.vehicleIndexT2 = cfg.vehicleIndexT1;
-    cfg.vehiclesT2 = cfg.vehiclesT1;
+    // v0.727: independent per-team vehicle selection (Little Birds presets need T1=MH6, T2=MH6 PAX).
+    // vehicleOverrideEnabled is true when EITHER team is not on Map Default; the actual per-team
+    // override is computed in refreshVehicleSpawnSpecsFromModeConfig from each index directly.
+    const t1IsMapDefault = cfg.vehicleIndexT1 === READY_DIALOG_VEHICLE_MAP_DEFAULT_INDEX;
+    const t2IsMapDefault = cfg.vehicleIndexT2 === READY_DIALOG_VEHICLE_MAP_DEFAULT_INDEX;
     cfg.confirmed = {
         gameMode: cfg.gameMode,
         gameSettings: cfg.gameSettings,
         vehiclesT1: cfg.vehiclesT1,
-        vehiclesT2: cfg.vehiclesT1,
+        vehiclesT2: cfg.vehiclesT2,
         aircraftCeiling: cfg.aircraftCeiling,
         aircraftCeilingOverrideEnabled: nextCeilingOverrideEnabled,
         vehicleIndexT1: cfg.vehicleIndexT1,
-        vehicleIndexT2: cfg.vehicleIndexT1,
-        vehicleOverrideEnabled: !isMapDefaultVehicle,
+        vehicleIndexT2: cfg.vehicleIndexT2,
+        vehicleOverrideEnabled: !t1IsMapDefault || !t2IsMapDefault,
         vehicleHealthMultiplier: cfg.vehicleHealthMultiplier,
+        soldierHpMultiplier: cfg.soldierHpMultiplier,
     };
     refreshOvertimeZonesFromMapConfig();
     // Apply custom ceiling only after the user confirms settings; enforcement runs while enabled.
@@ -3461,6 +3702,14 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
             true,
             undefined,
             STR_READY_DIALOG_VEHICLE_HEALTH_CHANGED
+        );
+    }
+    if (changedBy && cfg.confirmed.soldierHpMultiplier !== prevConfirmedSoldierHp) {
+        sendHighlightedWorldLogMessage(
+            mod.Message(STR_READY_DIALOG_SOLDIER_HP_CHANGED, safePlayerArg(changedBy), Math.round(cfg.confirmed.soldierHpMultiplier * 100)),
+            true,
+            undefined,
+            STR_READY_DIALOG_SOLDIER_HP_CHANGED
         );
     }
     refreshVehicleSpawnSpecsFromModeConfig();
@@ -3607,6 +3856,12 @@ function updateSettingsSummaryHudForPid(pid: number): void {
         safeSetUITextLabel(
             refs.settingsVehicleHealthText,
             mod.Message(STR_HUD_SETTINGS_VEHICLE_HEALTH_FORMAT, Math.round(cfg.confirmed.vehicleHealthMultiplier * 100))
+        );
+    }
+    if (refs.settingsSoldierHpText) {
+        safeSetUITextLabel(
+            refs.settingsSoldierHpText,
+            mod.Message(STR_HUD_SETTINGS_SOLDIER_HP_FORMAT, Math.round(cfg.confirmed.soldierHpMultiplier * 100))
         );
     }
     if (refs.settingsVehiclesT1Text) {

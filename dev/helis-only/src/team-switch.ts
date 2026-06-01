@@ -604,6 +604,38 @@ function teamSwitchButtonEvent(
             );
             break;
         }
+        case UI_READY_DIALOG_SOLDIER_HP_DEC10_ID + playerId: {
+            if (isRoundLive()) break;
+            setReadyDialogSoldierHpMultiplier(
+                State.round.modeConfig.soldierHpMultiplier - READY_DIALOG_SOLDIER_HP_MULT_STEP_COARSE,
+                eventPlayer
+            );
+            break;
+        }
+        case UI_READY_DIALOG_SOLDIER_HP_DEC_ID + playerId: {
+            if (isRoundLive()) break;
+            setReadyDialogSoldierHpMultiplier(
+                State.round.modeConfig.soldierHpMultiplier - READY_DIALOG_SOLDIER_HP_MULT_STEP,
+                eventPlayer
+            );
+            break;
+        }
+        case UI_READY_DIALOG_SOLDIER_HP_INC_ID + playerId: {
+            if (isRoundLive()) break;
+            setReadyDialogSoldierHpMultiplier(
+                State.round.modeConfig.soldierHpMultiplier + READY_DIALOG_SOLDIER_HP_MULT_STEP,
+                eventPlayer
+            );
+            break;
+        }
+        case UI_READY_DIALOG_SOLDIER_HP_INC10_ID + playerId: {
+            if (isRoundLive()) break;
+            setReadyDialogSoldierHpMultiplier(
+                State.round.modeConfig.soldierHpMultiplier + READY_DIALOG_SOLDIER_HP_MULT_STEP_COARSE,
+                eventPlayer
+            );
+            break;
+        }
         case UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_ID + playerId: {
             if (isRoundLive()) break;
             setReadyDialogVehicleIndexT1(State.round.modeConfig.vehicleIndexT1 - 1);
