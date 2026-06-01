@@ -3,6 +3,103 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.733: Two UX tweaks on top of v0.732's matchup/players pending-confirmed refactor.
+//
+// Tweak 1 -- matchup + players +/- now updates the visible value alongside the red dirty color.
+// Regression from v0.732: when setReadyDialogMatchupPreset and setAutoStartMinActivePlayers were
+// split out of the old live-state setters, they kept the dirty-color refresh (via
+// updateReadyDialogModeConfigForAllVisibleViewers -> applyDirtyStateColorsForPid) but dropped the
+// matchup row label / kills-target subtitle / players row label / min-players subtitle refresh.
+// User couldn't see what value they were setting -- only the red highlight indicated a change.
+// Fix: call updateMatchupLabelForAllPlayers + updateMatchupReadoutsForAllPlayers from both pending
+// setters AND from applyReadyDialogModePresetForGameMode so cycler navigation refreshes those rows.
+//
+// Tweak 2 -- "Restart Needed" indicator. After Confirm changes vehicle-identity settings (matchup,
+// vehicleIndexT1, vehicleIndexT2), the spawner config updates but live vehicles in the world stay
+// as they were -- only newly-enabled slots force-spawn, existing live vehicles keep their old type
+// until they die. The user needs to press Restart to refresh the active set. v0.733 adds a sticky
+// state flag + UI indicator:
+//   - state.ts: State.round.needsRestartForVehicleChange (boolean, default false).
+//   - strings.json: new readyDialog.restartNeededWarning = "Vehicles changed - Restart Needed".
+//   - strings.ts: new UI_READY_DIALOG_RESTART_NEEDED_NOTICE_ID per-pid widget prefix.
+//   - ready-dialog.ts createTeamSwitchUI: new red Text widget below the existing ceiling-lock notice
+//     (confirmY + 2*(bestOfButtonSizeY + 4)), parented to CONTAINER_BASE, hidden by default.
+//   - confirmReadyDialogModeConfig: captures prevConfirmedT1/T2 alongside prevConfirmedMatchup/Players;
+//     if any vehicle-identity field differs from prev confirmed, sets the flag true. Triggers a
+//     dialog refresh (updateReadyDialogModeConfigForAllVisibleViewers) so the indicator paints
+//     immediately and dirty colors clear from the newly-confirmed values.
+//   - round-flow.ts triggerFreshRoundSetup (Restart button handler): clears the flag at the top
+//     and triggers a dialog refresh -- after this runs, the world matches confirmed again.
+//   - applyDirtyStateColorsForPid: drives two paint operations from the flag: colors the Restart
+//     button label red (was white) AND reveals the warning text widget.
+// Ceiling / vehicle HP / soldier HP changes intentionally DON'T set the flag -- those propagate
+// per-spawn (HP) or instantly (ceiling) and don't need a world refresh.
+
+// v0.732: Architectural refactor -- promote matchupPresetIndex + autoStartMinActivePlayers into the
+// modeConfig pending/confirmed pattern. Side effects (slot enablement, force-spawn, kills-target
+// update, auto-start gate change) now fire ONLY on Confirm. Cycler navigation no longer materializes
+// vehicles into a half-committed world. Both rows in the Ready Dialog gain red/green dirty-state
+// coloring matching the rest. Plan stored at design_doc/6.01.26_matchup_players_pending_confirmed_plan.md.
+//
+// Root issue this fixes (carried over from v0.728-v0.730 cycler navigation symptoms):
+//  - Picking a preset that bumps matchup > 0 (All Helis 4v4 / Little Birds TWL 2v2) used to call
+//    applyMatchupPresetInternal inline, which force-spawned vehicles using STALE slot.vehicleType
+//    inherited from the previous confirmed mode. Result: 4v4 preview spawned Apaches everywhere
+//    when previously confirmed was Little Birds, or Little Birds spawned when previously confirmed
+//    was Attack Helis. Wrong helis at the wrong pads.
+//  - Worse: the in-flight force-spawn raced with the Restart button's sinkAndDestroyAllEmptyVehiclesForRestart
+//    cleanup. Newly-spawned helis materialized AFTER cleanup walked mod.AllVehicles(), so they never
+//    got teleported. Restart left orphan helis on the map.
+//  - Both symptoms eliminated by deferring all spawn-side-effect to Confirm.
+//
+// Implementation (single combined v0.732 ship, build-checkpointed across 7 steps A-G):
+//  - types.ts: ReadyDialogModeConfig gains pending + confirmed pairs for matchupPresetIndex +
+//    autoStartMinActivePlayers. Live State.round.matchupPresetIndex / autoStartMinActivePlayers
+//    remain as the "applied/playable" values; the new fields are the previewed knobs.
+//  - state.ts: modeConfig literal seeds the four new fields from DEFAULT_MATCHUP_PRESET_INDEX +
+//    DEFAULT_AUTO_START_MIN_ACTIVE_PLAYERS (both pending and confirmed seeded identically).
+//  - ready-dialog.ts setters split into pending-mutator + live-applier pairs:
+//      - setAutoStartMinActivePlayers(value): mutates pending only; drops the pre-v0.732 inline
+//        announce + tryAutoStartRoundIfAllReady (both fire from Confirm now).
+//      - setReadyDialogMatchupPreset(index): NEW pending-only setter. Keeps the cooldown for UI
+//        throttle. Drops the live-state mutation + force-spawn + announce.
+//      - applyMatchupPresetToLiveState(index): NEW live-state applier. Body is the old
+//        applyMatchupPresetInternal contents -- mutates State.round.matchupPresetIndex +
+//        killsTarget + lastMatchupChangeAtSeconds, refreshes setRoundStateText/killsTargetTester,
+//        then calls applySpawnerEnablementForMatchup(index, true) to enable + force-spawn slots.
+//      - applyMatchupPreset(index, eventPlayer): back-compat wrapper -> setReadyDialogMatchupPreset.
+//      - applyReadyDialogModePresetForGameMode: now sets pending matchup + pending players
+//        alongside the other pending fields (vehicleHealthMultiplier, soldierHpMultiplier, etc.).
+//        Drops the inline applyMatchupPresetInternal call -- previously the source of the spawn race.
+//  - confirmReadyDialogModeConfig: ORDERING IS LOAD-BEARING. After cfg.confirmed snapshot, the
+//    sequence is (1) refreshVehicleSpawnSpecsFromModeConfig -> rebuilds TEAM*_VEHICLE_SPAWN_SPECS
+//    arrays from confirmed cycler indices; (2) applyVehicleSpawnSpecsToExistingSlots -> writes new
+//    slot.vehicleType onto every spawner; (3) applyMatchupPresetToLiveState -> enables/disables
+//    slots + force-spawns newly enabled ones using the just-updated vehicle types; (4) live
+//    State.round.autoStartMinActivePlayers update; (5) UI refresh; (6) announce logs for matchup
+//    + players if confirmed differs from prev; (7) tryAutoStartRoundIfAllReady in case the new
+//    players/side threshold means the round can fire now.
+//  - Dirty state: ReadyDialogModeConfigDiffState gains matchupDirty + playersDirty flags. Folded
+//    into hasUnsavedChanges OR-chain. applyDirtyStateColorsForPid colors 4 widgets red/green:
+//    matchup label ("Vehicles: X v Y"), kills-target subtitle, players label ("Players: X v Y"),
+//    min-players subtitle.
+//  - Render switch: updateMatchupLabelForPid + updateMatchupReadoutsForPid read PENDING
+//    modeConfig values so the dialog updates immediately on +/- press. updateSettingsSummaryHudForPid
+//    (upper-left mini-HUD) reads CONFIRMED values -- matches the established pattern (gameMode,
+//    aircraftCeiling, vehicle HP, soldier HP all do the same split).
+//  - getAutoStartMinPlayerCounts: parameterized with optional override so callers pick the lifecycle
+//    stage explicitly. Default = live State.round (auto-start gate caller unchanged).
+//  - isReadyDialogModePresetActive: snap-back detection now reads pending modeConfig matchup +
+//    players (was live). This is the user's current edit state -- correct semantics for snap-back.
+//  - ensureCustomGameModeForManualChange: invoked from both new pending-setters; matches the
+//    existing pattern for aircraft ceiling / vehicle HP / soldier HP setters.
+//  - triggerFreshRoundSetup (Restart button): unchanged. Pending edits survive Restart per design --
+//    Restart is "fresh round," not "reset settings to defaults."
+//
+// Build checkpointing within v0.732 -- per-step npm run build + npx tsc --noEmit:
+//   Step A (schema) -> green; Step B (setters) -> green; Step C (confirm) -> green; Step D (dirty) ->
+//   green; Step E (render) -> green; Step F (parity check) -> green; Step G (this entry + bump) -> green.
+
 // v0.731: Fix tanks-at-heli-pads bug + tie-breaker zone letter bug for any mode added after the
 // original 3 (Practice/Ladder/Custom). isHeliGameMode in strings.ts was a hardcoded 3-mode list
 // inherited from Conquest's mixed tank+heli ancestry; flipped it to return true unconditionally

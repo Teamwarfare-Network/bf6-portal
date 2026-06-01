@@ -241,6 +241,15 @@ type ReadyDialogModeConfig = {
     // v0.725 Soldier HP Multiplier: pending value tuned by -10/-/+/+10 buttons; applied at Confirm.
     // Float in [0.05, 5.0]; default 1.0. UI displays as Math.round(mult * 100) + "%".
     soldierHpMultiplier: number;
+    // v0.732 Matchup preset index (vehicles per side, kills target). Pending value; applied at Confirm.
+    // Index into MATCHUP_PRESETS array; default 0 (1v1, 1 kill). Pre-v0.732 this lived in State.round
+    // and updates fired spawn-on-enable immediately -- moved into modeConfig so cycler navigation no
+    // longer materializes vehicles before the user confirms. See design_doc/6.01.26_matchup_players_pending_confirmed_plan.md.
+    matchupPresetIndex: number;
+    // v0.732 Auto-start min players per side. Pending value; applied at Confirm. Pre-v0.732 this lived
+    // in State.round and setter triggered tryAutoStartRoundIfAllReady immediately -- moved into
+    // modeConfig so cycler navigation doesn't race the auto-start gate.
+    autoStartMinActivePlayers: number;
     confirmed: {
         gameMode: number;
         gameSettings: number;
@@ -255,6 +264,10 @@ type ReadyDialogModeConfig = {
         vehicleHealthMultiplier: number;
         // v0.725 Snapshotted on Confirm; read by OnPlayerDeployed to call SetPlayerMaxHealth+Heal on each new deploy.
         soldierHpMultiplier: number;
+        // v0.732 Snapshotted on Confirm; applied to State.round.matchupPresetIndex which drives slot enablement + kills target.
+        matchupPresetIndex: number;
+        // v0.732 Snapshotted on Confirm; applied to State.round.autoStartMinActivePlayers which drives the auto-start gate.
+        autoStartMinActivePlayers: number;
     };
 };
 

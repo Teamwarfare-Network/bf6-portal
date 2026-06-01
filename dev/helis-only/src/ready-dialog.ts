@@ -1188,6 +1188,36 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     const CEILING_LOCK_NOTICE = safeFind(CEILING_LOCK_NOTICE_ID);
     if (CEILING_LOCK_NOTICE) mod.SetUIWidgetParent(CEILING_LOCK_NOTICE, CONTAINER_BASE);
 
+    // v0.734 Red "Vehicles changed - Restart Needed" notice -- right-aligned under the Restart button.
+    // TopRight anchor + same x offset (-3) as the Restart button so its right edge sits flush with the
+    // button's right edge. textAnchor CenterRight keeps the text right-aligned inside the 250-wide box.
+    // Y is one row below the button (matches the ceiling-lock notice's vertical offset). Doesn't
+    // overlap the centered notices (unsaved + ceiling-lock) because those use TopCenter with width 700;
+    // this one sits in the right margin to the right of where those notices end. Visible only when
+    // State.round.needsRestartForVehicleChange is true (set by Confirm when matchup/vehicle indices
+    // changed; cleared by Restart click).
+    const RESTART_NEEDED_NOTICE_ID = UI_READY_DIALOG_RESTART_NEEDED_NOTICE_ID + playerId;
+    const restartNeededNoticeWidth = 250;
+    modlib.ParseUI({
+        name: RESTART_NEEDED_NOTICE_ID,
+        type: "Text",
+        playerId: eventPlayer,
+        position: [resetButtonX, confirmY + bestOfButtonSizeY + 4],
+        size: [restartNeededNoticeWidth, bestOfButtonSizeY],
+        anchor: mod.UIAnchor.TopRight,
+        visible: false,
+        padding: 0,
+        bgAlpha: 0,
+        bgFill: mod.UIBgFill.None,
+        textLabel: mod.Message(mod.stringkeys.twl.readyDialog.restartNeededWarning),
+        textColor: COLOR_NOT_READY_RED,
+        textAlpha: 1,
+        textSize: 12,
+        textAnchor: mod.UIAnchor.CenterRight,
+    });
+    const RESTART_NEEDED_NOTICE = safeFind(RESTART_NEEDED_NOTICE_ID);
+    if (RESTART_NEEDED_NOTICE) mod.SetUIWidgetParent(RESTART_NEEDED_NOTICE, CONTAINER_BASE);
+
     // Best-of: minus button (left of label)
     const bestOfDecBorder = addOutlinedButton(
         BESTOF_DEC_ID,
@@ -2651,6 +2681,8 @@ type ReadyDialogModeConfigDiffState = {
     soldierHpDirty: boolean;
     vehiclesT1Dirty: boolean;
     vehiclesT2Dirty: boolean;
+    matchupDirty: boolean;
+    playersDirty: boolean;
 };
 
 function buildReadyDialogModeConfigDiffState(): ReadyDialogModeConfigDiffState {
@@ -2672,9 +2704,14 @@ function buildReadyDialogModeConfigDiffState(): ReadyDialogModeConfigDiffState {
         Math.round(cfg.soldierHpMultiplier * 100) !== Math.round(c.soldierHpMultiplier * 100);
     const vehiclesT1Dirty = cfg.vehicleIndexT1 !== c.vehicleIndexT1;
     const vehiclesT2Dirty = cfg.vehicleIndexT2 !== c.vehicleIndexT2;
+    // v0.732 matchup + players dirty diff. matchupPresetIndex drives both the "Vehicles: X v Y" row
+    // and the "Target Kills to win Round: K" subtitle (kills target is derived from MATCHUP_PRESETS).
+    const matchupDirty = cfg.matchupPresetIndex !== c.matchupPresetIndex;
+    const playersDirty = cfg.autoStartMinActivePlayers !== c.autoStartMinActivePlayers;
     const hasUnsavedChanges =
-        gameModeDirty || aircraftCeilingDirty || vehicleHealthDirty || soldierHpDirty || vehiclesT1Dirty || vehiclesT2Dirty;
-    return { hasUnsavedChanges, gameModeDirty, aircraftCeilingDirty, vehicleHealthDirty, soldierHpDirty, vehiclesT1Dirty, vehiclesT2Dirty };
+        gameModeDirty || aircraftCeilingDirty || vehicleHealthDirty || soldierHpDirty
+        || vehiclesT1Dirty || vehiclesT2Dirty || matchupDirty || playersDirty;
+    return { hasUnsavedChanges, gameModeDirty, aircraftCeilingDirty, vehicleHealthDirty, soldierHpDirty, vehiclesT1Dirty, vehiclesT2Dirty, matchupDirty, playersDirty };
 }
 
 // Three-color scheme per Q3 answer: labels stay white (untouched here), confirmed values green, dirty values red.
@@ -2703,6 +2740,11 @@ function applyDirtyStateColorsForPid(pid: number): void {
     setValueColor(UI_READY_DIALOG_SOLDIER_HP_VALUE_ID, diff.soldierHpDirty);
     setValueColor(UI_READY_DIALOG_MODE_VEHICLES_T1_VALUE_ID, diff.vehiclesT1Dirty);
     setValueColor(UI_READY_DIALOG_MODE_VEHICLES_T2_VALUE_ID, diff.vehiclesT2Dirty);
+    // v0.732 matchup row (vehicles/team + kills target subtitle) + players row (players/side + min-players subtitle).
+    setValueColor(UI_READY_DIALOG_MATCHUP_LABEL_ID, diff.matchupDirty);
+    setValueColor(UI_READY_DIALOG_MATCHUP_KILLSTARGET_ID, diff.matchupDirty);
+    setValueColor(UI_READY_DIALOG_MATCHUP_MINPLAYERS_ID, diff.playersDirty);
+    setValueColor(UI_READY_DIALOG_MATCHUP_MINPLAYERS_TOTAL_ID, diff.playersDirty);
     const notice = safeFind(UI_READY_DIALOG_UNSAVED_NOTICE_ID + pid);
     if (notice) mod.SetUIWidgetVisible(notice, diff.hasUnsavedChanges);
     // v0.723: yellow tip widget visibility -- shows ONLY when locked AND unsaved changes exist
@@ -2719,6 +2761,17 @@ function applyDirtyStateColorsForPid(pid: number): void {
     }
     const confirmLabel = safeFind(UI_READY_DIALOG_MODE_CONFIRM_LABEL_ID + pid);
     if (confirmLabel) mod.SetUITextColor(confirmLabel, confirmDisabled ? COLOR_GRAY : COLOR_WHITE);
+
+    // v0.733 Restart-needed indicator. Highlights the Restart button label red + reveals the
+    // "Vehicles changed - Restart Needed" notice when a Confirm since the last Restart click changed
+    // vehicle-identity settings (matchup / vehicle T1 / vehicle T2). Cleared on Restart click via
+    // triggerFreshRoundSetup. Independent of dirty state -- this fires AFTER Confirm has committed
+    // the change.
+    const needsRestart = State.round.needsRestartForVehicleChange;
+    const resetLabel = safeFind(UI_READY_DIALOG_MODE_RESET_LABEL_ID + pid);
+    if (resetLabel) mod.SetUITextColor(resetLabel, needsRestart ? COLOR_NOT_READY_RED : COLOR_WHITE);
+    const restartNeededNotice = safeFind(UI_READY_DIALOG_RESTART_NEEDED_NOTICE_ID + pid);
+    if (restartNeededNotice) mod.SetUIWidgetVisible(restartNeededNotice, needsRestart);
 }
 
 function updateReadyDialogModeConfigForPid(pid: number): void {
@@ -3462,8 +3515,11 @@ function isReadyDialogModePresetActive(gameModeKey: number): boolean {
         ? READY_DIALOG_MODE_PRESET_BEST_OF_LADDER
         : READY_DIALOG_MODE_PRESET_BEST_OF_VANILLA;
     if (Math.floor(State.round.max) !== expectedBestOf) return false;
-    if (State.round.matchupPresetIndex !== getPresetMatchupIndexForGameMode(gameModeKey)) return false;
-    if (State.round.autoStartMinActivePlayers !== getReadyDialogPresetPlayersPerSide(gameModeKey)) return false;
+    // v0.732 matchup + players checks now read PENDING modeConfig (pre-v0.732 read live State.round).
+    // Snap-back logic needs to compare against the user's current pending edits, not the previously-
+    // applied live state. The applied state still matches if no Confirm has happened yet, but in flux.
+    if (State.round.modeConfig.matchupPresetIndex !== getPresetMatchupIndexForGameMode(gameModeKey)) return false;
+    if (State.round.modeConfig.autoStartMinActivePlayers !== getReadyDialogPresetPlayersPerSide(gameModeKey)) return false;
     const expectedVehicles = getPresetVehicleIndicesForGameMode(gameModeKey);
     if (State.round.modeConfig.vehicleIndexT1 !== expectedVehicles.t1) return false;
     if (State.round.modeConfig.vehicleIndexT2 !== expectedVehicles.t2) return false;
@@ -3478,7 +3534,10 @@ function isReadyDialogModePresetActive(gameModeKey: number): boolean {
     return true;
 }
 
-// Applies the full mode preset (the only place we intentionally sync multiple settings at once).
+// v0.732 Applies the full mode preset as PENDING values only -- no live-state mutation, no spawn. The
+// user clicks Confirm to materialize everything. Sets pending matchupPresetIndex + autoStartMinActivePlayers
+// alongside the other pending fields. Pre-v0.732 this function called applyMatchupPresetInternal which force-
+// spawned vehicles inline; that race is the bug the v0.732 refactor exists to eliminate.
 function applyReadyDialogModePresetForGameMode(gameModeKey: number): boolean {
     if (isReadyDialogGameModeCustom(gameModeKey)) return false;
 
@@ -3488,10 +3547,10 @@ function applyReadyDialogModePresetForGameMode(gameModeKey: number): boolean {
         : READY_DIALOG_MODE_PRESET_BEST_OF_VANILLA;
 
     setHudRoundCountersForAllPlayers(State.round.current, bestOfRounds);
-    applyMatchupPresetInternal(getPresetMatchupIndexForGameMode(gameModeKey), undefined, false, true);
 
-    State.round.autoStartMinActivePlayers = getReadyDialogPresetPlayersPerSide(gameModeKey);
-    updateMatchupReadoutsForAllPlayers();
+    // v0.732 pending matchup + players. Live state untouched until Confirm.
+    State.round.modeConfig.matchupPresetIndex = getPresetMatchupIndexForGameMode(gameModeKey);
+    State.round.modeConfig.autoStartMinActivePlayers = getReadyDialogPresetPlayersPerSide(gameModeKey);
 
     // v0.727 per-team vehicle indices (Little Birds presets ship asymmetric T1/T2).
     const presetVehicles = getPresetVehicleIndicesForGameMode(gameModeKey);
@@ -3510,6 +3569,11 @@ function applyReadyDialogModePresetForGameMode(gameModeKey: number): boolean {
 
     suppressReadyDialogModeAutoSwitch = false;
 
+    // v0.733 also refresh matchup row + players row so cycling the game mode shows the new
+    // matchup/players values immediately. Pre-v0.733 these updated via the inline applyMatchupPresetInternal
+    // call; v0.732 dropped that call without restoring the UI refresh.
+    updateMatchupLabelForAllPlayers();
+    updateMatchupReadoutsForAllPlayers();
     updateReadyDialogModeConfigForAllVisibleViewers();
     updateSettingsSummaryHudForAllPlayers();
     return true;
@@ -3617,6 +3681,16 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
     const prevGameMode = cfg.confirmed.gameMode;
     const prevConfirmedHealth = cfg.confirmed.vehicleHealthMultiplier;
     const prevConfirmedSoldierHp = cfg.confirmed.soldierHpMultiplier;
+    // v0.732 capture previous matchup + players for change-announce; live State.round values are
+    // mutated below via applyMatchupPresetToLiveState + direct assignment so we must snapshot pre-mutation.
+    const prevConfirmedMatchup = cfg.confirmed.matchupPresetIndex;
+    const prevConfirmedPlayers = cfg.confirmed.autoStartMinActivePlayers;
+    // v0.733 capture previous vehicle indices for the Restart-needed indicator. If any of these
+    // change after Confirm, the live world still contains the previous mode's vehicles -- Confirm
+    // updates spawner config + force-spawns newly-enabled slots, but doesn't despawn existing live
+    // vehicles. needsRestartForVehicleChange flips true so the Restart button highlights red.
+    const prevConfirmedT1 = cfg.confirmed.vehicleIndexT1;
+    const prevConfirmedT2 = cfg.confirmed.vehicleIndexT2;
     // Confirm is authoritative: it can force Custom if settings diverge from presets
     // and it is the only place we apply ceiling + vehicle overrides.
     if (!isReadyDialogGameModeCustom(cfg.gameMode) && !isReadyDialogModePresetActive(cfg.gameMode)) {
@@ -3666,6 +3740,8 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
         vehicleOverrideEnabled: !t1IsMapDefault || !t2IsMapDefault,
         vehicleHealthMultiplier: cfg.vehicleHealthMultiplier,
         soldierHpMultiplier: cfg.soldierHpMultiplier,
+        matchupPresetIndex: cfg.matchupPresetIndex,
+        autoStartMinActivePlayers: cfg.autoStartMinActivePlayers,
     };
     refreshOvertimeZonesFromMapConfig();
     // Apply custom ceiling only after the user confirms settings; enforcement runs while enabled.
@@ -3712,9 +3788,69 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
             STR_READY_DIALOG_SOLDIER_HP_CHANGED
         );
     }
+    // v0.732 ORDERING IS LOAD-BEARING: slot.vehicleType must be rewritten BEFORE slot enablement +
+    // force-spawn. refreshVehicleSpawnSpecsFromModeConfig builds the new TEAM*_VEHICLE_SPAWN_SPECS arrays
+    // from confirmed cycler indices; applyVehicleSpawnSpecsToExistingSlots writes those types onto the
+    // existing spawner slots; THEN applyMatchupPresetToLiveState calls applySpawnerEnablementForMatchup
+    // which force-spawns newly-enabled slots. If matchup were applied first, the new spawns would inherit
+    // stale slot.vehicleType from the previous confirmed mode -- this is the exact bug v0.732 fixes.
     refreshVehicleSpawnSpecsFromModeConfig();
     applyVehicleSpawnSpecsToExistingSlots();
+    applyMatchupPresetToLiveState(cfg.confirmed.matchupPresetIndex);
+    State.round.autoStartMinActivePlayers = cfg.confirmed.autoStartMinActivePlayers;
+    updateMatchupLabelForAllPlayers();
+    updateMatchupReadoutsForAllPlayers();
     updateSettingsSummaryHudForAllPlayers();
+    // v0.732 announce matchup + players changes on Confirm (was inline on setter pre-v0.732).
+    if (changedBy && cfg.confirmed.matchupPresetIndex !== prevConfirmedMatchup) {
+        const preset = MATCHUP_PRESETS[cfg.confirmed.matchupPresetIndex];
+        sendHighlightedWorldLogMessage(
+            mod.Message(STR_READY_DIALOG_MATCHUP_CHANGED, safePlayerArg(changedBy), preset.leftPlayers, preset.rightPlayers),
+            true,
+            undefined,
+            STR_READY_DIALOG_MATCHUP_CHANGED
+        );
+    }
+    if (changedBy && cfg.confirmed.autoStartMinActivePlayers !== prevConfirmedPlayers) {
+        const counts = getAutoStartMinPlayerCounts();
+        sendHighlightedWorldLogMessage(
+            mod.Message(STR_READY_DIALOG_PLAYERS_CHANGED, safePlayerArg(changedBy), counts.left, counts.right),
+            true,
+            undefined,
+            STR_READY_DIALOG_PLAYERS_CHANGED
+        );
+    }
+    // v0.734 set the Restart-needed sticky flag on vehicle-identity OR HP-multiplier changes. All four
+    // categories share the same problem: Confirm updates spawner/deploy config but doesn't refresh
+    // already-spawned vehicles or already-deployed soldiers. Specifically:
+    //   - matchupPresetIndex / vehicleIndexT1/T2: live vehicles keep their old type (Confirm only force-
+    //     spawns newly-enabled slots; existing vehicles keep their pre-Confirm vehicle type).
+    //   - vehicleHealthMultiplier: live vehicles keep their old max HP (OnVehicleSpawned applies the
+    //     multiplier per-spawn; existing vehicles aren't re-multiplied).
+    //   - soldierHpMultiplier: live soldiers keep their old max HP (OnPlayerDeployed applies the
+    //     multiplier per-deploy; existing soldiers aren't re-applied until next death/redeploy).
+    // Compare HP values via 2-decimal round to absorb 0.01-step float drift (same pattern as the
+    // dirty-state diff).
+    const matchupOrVehicleChanged =
+        cfg.confirmed.matchupPresetIndex !== prevConfirmedMatchup
+        || cfg.confirmed.vehicleIndexT1 !== prevConfirmedT1
+        || cfg.confirmed.vehicleIndexT2 !== prevConfirmedT2;
+    const hpChanged =
+        Math.round(cfg.confirmed.vehicleHealthMultiplier * 100) !== Math.round(prevConfirmedHealth * 100)
+        || Math.round(cfg.confirmed.soldierHpMultiplier * 100) !== Math.round(prevConfirmedSoldierHp * 100);
+    if (matchupOrVehicleChanged || hpChanged) {
+        State.round.needsRestartForVehicleChange = true;
+    }
+    // v0.733 trigger a dialog refresh so dirty colors clear (pending == confirmed now) and the new
+    // restart-needed indicator paints. updateReadyDialogModeConfigForAllVisibleViewers calls
+    // applyDirtyStateColorsForPid which drives both effects in a single pass.
+    updateReadyDialogModeConfigForAllVisibleViewers();
+
+    // v0.732 re-evaluate auto-start in case the new players/side threshold or matchup-driven kills target
+    // means the round can fire now. Pre-v0.732 this lived inline in the matchup/players setters.
+    if (changedBy) {
+        tryAutoStartRoundIfAllReady(changedBy);
+    }
 }
 
 //#endregion ----------------- Ready Dialog - Mode Presets + Confirm --------------------
@@ -3751,11 +3887,14 @@ function updateTeamNameWidgetsForAllPlayers(): void {
     updateSettingsSummaryHudForAllPlayers();
 }
 
+// v0.732 The matchup row (and kills-target subtitle below) reads from PENDING modeConfig so the dialog
+// reflects user navigation in real time. Live State.round.matchupPresetIndex stays as the applied/
+// playable value (drives spawner enablement) until Confirm fires.
 function updateMatchupLabelForPid(pid: number): void {
     const labelId = UI_READY_DIALOG_MATCHUP_LABEL_ID + pid;
     const labelWidget = safeFind(labelId);
     if (!labelWidget) return;
-    const preset = MATCHUP_PRESETS[State.round.matchupPresetIndex];
+    const preset = MATCHUP_PRESETS[State.round.modeConfig.matchupPresetIndex];
     safeSetUITextLabel(
         labelWidget,
         mod.Message(mod.stringkeys.twl.readyDialog.matchupFormat, preset.leftPlayers, preset.rightPlayers)
@@ -3773,22 +3912,28 @@ function updateMatchupLabelForAllPlayers(): void {
     }
 }
 
-// Resolves the per-side + total player requirements from the auto-start setting.
-// Special case: value 0 represents "1 vs 0" to allow solo starts.
-function getAutoStartMinPlayerCounts(): { left: number; right: number; total: number } {
-    const perSide = Math.floor(State.round.autoStartMinActivePlayers);
+// v0.732 Resolves the per-side + total player requirements. Accepts a pending/confirmed/live value so
+// each caller picks the right lifecycle stage. Default reads live State.round.autoStartMinActivePlayers
+// for back-compat with the auto-start gate caller. Special case: value 0 represents "1 vs 0" to allow
+// solo starts.
+function getAutoStartMinPlayerCounts(perSideOverride?: number): { left: number; right: number; total: number } {
+    const raw = perSideOverride !== undefined ? perSideOverride : State.round.autoStartMinActivePlayers;
+    const perSide = Math.floor(raw);
     if (perSide <= 0) {
         return { left: 1, right: 0, total: 1 };
     }
     return { left: perSide, right: perSide, total: perSide * 2 };
 }
 
-// Updates per-player Ready dialog readouts (target kills + players-per-side) for a single pid.
+// v0.732 Reads PENDING modeConfig values so the dialog updates immediately on +/- presses. Kills target
+// is derived from MATCHUP_PRESETS[pendingMatchupIndex].roundKillsTarget (pre-v0.732 read State.round.killsTarget
+// which was set inline by the matchup setter; now killsTarget only updates on Confirm).
 function updateMatchupReadoutsForPid(pid: number): void {
     const minPlayersWidget = safeFind(UI_READY_DIALOG_MATCHUP_MINPLAYERS_ID + pid);
     const minPlayersTotalWidget = safeFind(UI_READY_DIALOG_MATCHUP_MINPLAYERS_TOTAL_ID + pid);
     const killsTargetWidget = safeFind(UI_READY_DIALOG_MATCHUP_KILLSTARGET_ID + pid);
-    const counts = getAutoStartMinPlayerCounts();
+    const counts = getAutoStartMinPlayerCounts(State.round.modeConfig.autoStartMinActivePlayers);
+    const pendingMatchup = MATCHUP_PRESETS[State.round.modeConfig.matchupPresetIndex];
     if (minPlayersWidget) {
         safeSetUITextLabel(
             minPlayersWidget,
@@ -3804,7 +3949,7 @@ function updateMatchupReadoutsForPid(pid: number): void {
     if (killsTargetWidget) {
         safeSetUITextLabel(
             killsTargetWidget,
-            mod.Message(mod.stringkeys.twl.readyDialog.targetKillsToWinFormat, Math.floor(State.round.killsTarget))
+            mod.Message(mod.stringkeys.twl.readyDialog.targetKillsToWinFormat, Math.floor(pendingMatchup.roundKillsTarget))
         );
     }
 }
@@ -3835,10 +3980,12 @@ function updateSettingsSummaryHudForPid(pid: number): void {
     const vehiclesT1Value = cfg.confirmed.vehiclesT1;
     const vehiclesT2Value = cfg.confirmed.vehiclesT2;
 
-    const preset = MATCHUP_PRESETS[State.round.matchupPresetIndex] ?? MATCHUP_PRESETS[0];
+    // v0.732 HUD reflects CONFIRMED matchup + players (not pending). Matches the established pattern
+    // for other modeConfig fields -- HUD only updates when the user has actually committed the change.
+    const preset = MATCHUP_PRESETS[cfg.confirmed.matchupPresetIndex] ?? MATCHUP_PRESETS[0];
     const vehiclesLeft = preset?.leftPlayers ?? 1;
     const vehiclesRight = preset?.rightPlayers ?? 1;
-    const autoStartCounts = getAutoStartMinPlayerCounts();
+    const autoStartCounts = getAutoStartMinPlayerCounts(cfg.confirmed.autoStartMinActivePlayers);
 
     if (refs.settingsGameModeText) {
         safeSetUITextLabel(refs.settingsGameModeText, mod.Message(STR_HUD_SETTINGS_GAME_MODE_FORMAT, gameModeValue));
@@ -3894,69 +4041,64 @@ function updateSettingsSummaryHudForAllPlayers(): void {
     }
 }
 
-function setAutoStartMinActivePlayers(value: number, eventPlayer?: mod.Player): void {
+// v0.732 Pending-only setter for auto-start min players per side. Mutates modeConfig.autoStartMinActivePlayers;
+// the live State.round.autoStartMinActivePlayers stays unchanged until the user clicks Confirm. Drops the
+// pre-v0.732 tryAutoStartRoundIfAllReady trigger and the announce log -- both fire from confirmReadyDialogModeConfig
+// now. ensureCustomGameModeForManualChange() flips the game-mode label to Custom when the pending value diverges
+// from the active preset, matching aircraftCeiling / vehicleHP setter behavior.
+function setAutoStartMinActivePlayers(value: number, _eventPlayer?: mod.Player): void {
     const clamped = Math.max(AUTO_START_MIN_ACTIVE_PLAYERS_MIN, Math.min(AUTO_START_MIN_ACTIVE_PLAYERS_MAX, Math.floor(value)));
-    if (clamped === State.round.autoStartMinActivePlayers) return;
+    if (clamped === State.round.modeConfig.autoStartMinActivePlayers) return;
     ensureCustomGameModeForManualChange();
-    State.round.autoStartMinActivePlayers = clamped;
+    State.round.modeConfig.autoStartMinActivePlayers = clamped;
+    // v0.733 also refresh the players row readouts so the +/- press updates the visible value
+    // immediately. updateReadyDialogModeConfigForAllVisibleViewers only refreshes the game-mode/
+    // ceiling/HP/vehicle rows; the matchup + players rows have their own render functions.
     updateMatchupReadoutsForAllPlayers();
-    if (eventPlayer) {
-        const counts = getAutoStartMinPlayerCounts();
-        sendHighlightedWorldLogMessage(
-            mod.Message(STR_READY_DIALOG_PLAYERS_CHANGED, safePlayerArg(eventPlayer), counts.left, counts.right),
-            true,
-            undefined,
-            STR_READY_DIALOG_PLAYERS_CHANGED
-        );
-        tryAutoStartRoundIfAllReady(eventPlayer);
-    }
+    updateReadyDialogModeConfigForAllVisibleViewers();
 }
 
-// Applies the selected matchup preset, updates UI/state, and re-enables spawners (not-live only).
-function applyMatchupPresetInternal(
-    index: number,
-    eventPlayer?: mod.Player,
-    announce: boolean = true,
-    bypassCooldown: boolean = false
-): void {
+// v0.732 Pending-only setter for the matchup preset (vehicles/team + kills target). Mutates
+// modeConfig.matchupPresetIndex; live State.round.matchupPresetIndex (and spawner enablement, kills target)
+// stays unchanged until Confirm. Kept the cooldown -- still throttles UI flicker on rapid +/-. Drops the
+// pre-v0.732 force-spawn + announce + tryAutoStartRoundIfAllReady -- those fire from confirmReadyDialogModeConfig.
+function setReadyDialogMatchupPreset(index: number, _eventPlayer?: mod.Player, bypassCooldown: boolean = false): void {
     const clamped = Math.max(0, Math.min(MATCHUP_PRESETS.length - 1, Math.floor(index)));
-    if (clamped === State.round.matchupPresetIndex) return;
-    if (State.vehicles.spawnSequenceInProgress) return;
+    if (clamped === State.round.modeConfig.matchupPresetIndex) return;
     const now = Math.floor(mod.GetMatchTimeElapsed());
     if (!bypassCooldown && now - State.round.lastMatchupChangeAtSeconds < MATCHUP_CHANGE_COOLDOWN_SECONDS) return;
-    if (announce) {
-        ensureCustomGameModeForManualChange();
-    }
-    const preset = MATCHUP_PRESETS[clamped];
-    State.round.matchupPresetIndex = clamped;
+    ensureCustomGameModeForManualChange();
+    State.round.modeConfig.matchupPresetIndex = clamped;
     State.round.lastMatchupChangeAtSeconds = now;
-    State.round.killsTarget = preset.roundKillsTarget;
-
+    // v0.733 also refresh the matchup row label ("Vehicles: X v Y") + the kills-target subtitle
+    // so the +/- press updates the visible value immediately. Without these, the user only sees the
+    // red dirty-color flip without seeing what the new value is.
     updateMatchupLabelForAllPlayers();
     updateMatchupReadoutsForAllPlayers();
-    setRoundStateTextForAllPlayers();
-    syncRoundKillsTargetTesterValueForAllPlayers();
-
-    if (announce && eventPlayer) {
-        sendHighlightedWorldLogMessage(
-            mod.Message(STR_READY_DIALOG_MATCHUP_CHANGED, safePlayerArg(eventPlayer), preset.leftPlayers, preset.rightPlayers),
-            true,
-            undefined,
-            STR_READY_DIALOG_MATCHUP_CHANGED
-        );
-    }
-
-    applySpawnerEnablementForMatchup(clamped, true);
-
-    // If the new minimum is satisfied, auto-start when all active players are ready.
-    if (announce && eventPlayer) {
-        tryAutoStartRoundIfAllReady(eventPlayer);
-    }
+    updateReadyDialogModeConfigForAllVisibleViewers();
 }
 
-// Applies the selected matchup preset, updates UI/state, and re-enables spawners (not-live only).
+// v0.732 Live-state applier for matchup preset. Called from confirmReadyDialogModeConfig only. Mutates
+// State.round.matchupPresetIndex + State.round.killsTarget, refreshes the LIVE matchup label/readouts,
+// and triggers slot enablement + force-spawn via applySpawnerEnablementForMatchup. Returns the matchup
+// preset object so the caller can use roundKillsTarget for downstream logic if needed.
+function applyMatchupPresetToLiveState(index: number): MatchupPreset {
+    const clamped = Math.max(0, Math.min(MATCHUP_PRESETS.length - 1, Math.floor(index)));
+    const preset = MATCHUP_PRESETS[clamped];
+    State.round.matchupPresetIndex = clamped;
+    State.round.lastMatchupChangeAtSeconds = Math.floor(mod.GetMatchTimeElapsed());
+    State.round.killsTarget = preset.roundKillsTarget;
+    setRoundStateTextForAllPlayers();
+    syncRoundKillsTargetTesterValueForAllPlayers();
+    applySpawnerEnablementForMatchup(clamped, true);
+    return preset;
+}
+
+// v0.732 Backward-compat wrapper -- kept temporarily for any straggling caller. Routes manual cycler clicks
+// through the new pending-only setter. (The +/- buttons in the dialog already call applyMatchupPreset; this
+// wrapper just forwards to setReadyDialogMatchupPreset.)
 function applyMatchupPreset(index: number, eventPlayer: mod.Player): void {
-    applyMatchupPresetInternal(index, eventPlayer, true, false);
+    setReadyDialogMatchupPreset(index, eventPlayer, false);
 }
 
 /* Dead function - commenting out for now to ensure we can kill it

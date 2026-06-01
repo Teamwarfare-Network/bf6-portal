@@ -305,6 +305,13 @@ function triggerFreshRoundSetup(triggerPlayer?: mod.Player): void {
     if (isRoundLive()) return;
     if (State.round.flow.cleanupActive) return;
 
+    // v0.733 clear the Restart-needed indicator. This handler IS the Restart -- after this runs,
+    // the world's live vehicles match the current confirmed config again. applyDirtyStateColorsForPid
+    // (driven via updateReadyDialogModeConfigForAllVisibleViewers below) will repaint the Restart
+    // button label white + hide the warning text.
+    State.round.needsRestartForVehicleChange = false;
+    updateReadyDialogModeConfigForAllVisibleViewers();
+
     // Ensure we are in a pre-round state and clear any round-end UI.
     State.round.phase = RoundPhase.NotReady;
     State.round.flow.roundEndUiLockdown = false;

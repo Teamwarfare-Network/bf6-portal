@@ -893,6 +893,12 @@ interface GameState {
         autoStartMinActivePlayers: number;
         matchupPresetIndex: number;
         lastMatchupChangeAtSeconds: number;
+        // v0.733 Sticky flag: true if any Confirm since the last Restart click changed a vehicle-related
+        // confirmed value (matchupPresetIndex or vehicleIndexT1 or vehicleIndexT2). Drives the red highlight
+        // on the Restart button + the "Vehicles changed - Restart Needed" warning text below it. Cleared on
+        // Restart click. Only vehicle-IDENTITY changes flip this; ceiling / vehicle HP / soldier HP
+        // changes apply per-spawn (vehicle HP) or instantly (ceiling) and don't need a Restart.
+        needsRestartForVehicleChange: boolean;
         modeConfig: ReadyDialogModeConfig;
         phase: RoundPhase;
         lastWinnerTeam: TeamID | 0;
@@ -1130,6 +1136,7 @@ const State: GameState = {
         autoStartMinActivePlayers: DEFAULT_AUTO_START_MIN_ACTIVE_PLAYERS,
         matchupPresetIndex: DEFAULT_MATCHUP_PRESET_INDEX,
         lastMatchupChangeAtSeconds: -999,
+        needsRestartForVehicleChange: false,
         modeConfig: {
             gameModeIndex: READY_DIALOG_GAME_MODE_DEFAULT_INDEX,
             aircraftCeiling: READY_DIALOG_AIRCRAFT_CEILING_DEFAULT,
@@ -1142,6 +1149,8 @@ const State: GameState = {
             vehiclesT2: READY_DIALOG_VEHICLE_OPTIONS[READY_DIALOG_VEHICLE_T2_DEFAULT_INDEX],
             vehicleHealthMultiplier: READY_DIALOG_VEHICLE_HEALTH_MULT_DEFAULT,
             soldierHpMultiplier: READY_DIALOG_SOLDIER_HP_MULT_DEFAULT,
+            matchupPresetIndex: DEFAULT_MATCHUP_PRESET_INDEX,
+            autoStartMinActivePlayers: DEFAULT_AUTO_START_MIN_ACTIVE_PLAYERS,
             confirmed: {
                 gameMode: READY_DIALOG_GAME_MODE_OPTIONS[READY_DIALOG_GAME_MODE_DEFAULT_INDEX],
                 gameSettings: mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat,
@@ -1154,6 +1163,8 @@ const State: GameState = {
                 vehicleOverrideEnabled: false,
                 vehicleHealthMultiplier: READY_DIALOG_VEHICLE_HEALTH_MULT_DEFAULT,
                 soldierHpMultiplier: READY_DIALOG_SOLDIER_HP_MULT_DEFAULT,
+                matchupPresetIndex: DEFAULT_MATCHUP_PRESET_INDEX,
+                autoStartMinActivePlayers: DEFAULT_AUTO_START_MIN_ACTIVE_PLAYERS,
             },
         },
         phase: RoundPhase.NotReady,

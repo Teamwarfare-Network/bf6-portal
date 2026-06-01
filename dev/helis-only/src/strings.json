@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Vehicles (v0.731)",
+        "title": "teamwarfare . net | TWL Vehicles (v0.736)",
         "subtitle": "Experience Code: - - - -"
       },
       "roundText": "ROUND",
@@ -199,6 +199,7 @@
       "resetSettingsLabel": "RESTART / FRESH SETUP",
       "unsavedChangesLabel": "Unsaved changes! Press 'Confirm & Apply Mode Changes' to save",
       "ceilingVanillaLockedWarning": "Cannot save - Server Restart must occur to re-enable Vanilla Ceiling settings",
+      "restartNeededWarning": "HP or Vehicle Change - Restart Needed",
       "gameModeHelisLadder": "Attack Helis - TWL 2v2",
       "gameModeHelisTwl1v1": "Attack Helis - TWL 1v1",
       "gameModeHelisPractice": "Attack Helis - BF6 Vanilla",

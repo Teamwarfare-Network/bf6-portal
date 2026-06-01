@@ -526,24 +526,29 @@ function teamSwitchButtonEvent(
         }
         case UI_READY_DIALOG_MATCHUP_DEC_ID + playerId: {
             if (isRoundLive()) break;
-            const next = Math.max(0, State.round.matchupPresetIndex - 1);
+            // v0.736 read PENDING modeConfig (was live State.round.matchupPresetIndex). Setter
+            // compares incoming value against pending and early-returns if equal -- reading live
+            // here let pending drift one step past live, after which every subsequent click
+            // computed `live - 1` -> equal to current pending -> no-op. User got stuck at +/-1
+            // from where live was. Same logic applied to +/-/MINPLAYERS handlers below.
+            const next = Math.max(0, State.round.modeConfig.matchupPresetIndex - 1);
             applyMatchupPreset(next, eventPlayer);
             break;
         }
         case UI_READY_DIALOG_MATCHUP_INC_ID + playerId: {
             if (isRoundLive()) break;
-            const next = Math.min(MATCHUP_PRESETS.length - 1, State.round.matchupPresetIndex + 1);
+            const next = Math.min(MATCHUP_PRESETS.length - 1, State.round.modeConfig.matchupPresetIndex + 1);
             applyMatchupPreset(next, eventPlayer);
             break;
         }
         case UI_READY_DIALOG_MINPLAYERS_DEC_ID + playerId: {
             if (isRoundLive()) break;
-            setAutoStartMinActivePlayers(State.round.autoStartMinActivePlayers - 1, eventPlayer);
+            setAutoStartMinActivePlayers(State.round.modeConfig.autoStartMinActivePlayers - 1, eventPlayer);
             break;
         }
         case UI_READY_DIALOG_MINPLAYERS_INC_ID + playerId: {
             if (isRoundLive()) break;
-            setAutoStartMinActivePlayers(State.round.autoStartMinActivePlayers + 1, eventPlayer);
+            setAutoStartMinActivePlayers(State.round.modeConfig.autoStartMinActivePlayers + 1, eventPlayer);
             break;
         }
         case UI_READY_DIALOG_MODE_GAME_DEC_ID + playerId: {
