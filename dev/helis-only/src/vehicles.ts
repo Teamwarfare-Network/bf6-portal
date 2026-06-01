@@ -177,6 +177,41 @@ function findVehicleById(vehicleId: number): mod.Vehicle | undefined {
     return undefined;
 }
 
+// v0.721: Restart-button cleanup. Teleports an empty vehicle to (X, -1000, Z) then deals lethal
+// damage 1.5s later so the explosion VFX renders underground. v0.704/v0.705 attempts used slot
+// iteration + a 15m radius gate; v0.721 drops both per user direction ("teleport ALL empty
+// vehicles regardless of position"). Suspect cause of prior failure: those gates may have
+// silently filtered out every vehicle. No spawner-flag manipulation in this version -- if v0.721
+// still shows vehicles blowing up at the pad, the next step is investigating the abandonment
+// flags (see heli_issues.md H_Bug_4 ranked hypotheses).
+async function sinkAndDestroyEmptyVehicle(v: mod.Vehicle): Promise<void> {
+    let x = 0;
+    let z = 0;
+    try {
+        const pos = mod.GetObjectPosition(v);
+        x = mod.XComponentOf(pos);
+        z = mod.ZComponentOf(pos);
+    } catch {}
+    try { mod.Teleport(v, mod.CreateVector(x, -1000, z), 0); } catch {}
+    await mod.Wait(1.5);
+    try { mod.DealDamage(v, 9999); } catch {}
+}
+
+// Walks every vehicle in the world, sink-and-destroys each one that has no occupant.
+// IsVehicleOccupied throws -> default to occupied=true (skip) so we never yank a player.
+function sinkAndDestroyAllEmptyVehiclesForRestart(): void {
+    const all = mod.AllVehicles();
+    const count = mod.CountOf(all);
+    for (let i = 0; i < count; i++) {
+        const v = mod.ValueInArray(all, i) as mod.Vehicle;
+        if (!v) continue;
+        let occupied = true;
+        try { occupied = mod.IsVehicleOccupied(v); } catch {}
+        if (occupied) continue;
+        void sinkAndDestroyEmptyVehicle(v);
+    }
+}
+
 // Creates a spawner object, applies map-specific yaw, configures vehicle type, and registers the slot state.
 function addVehicleSpawnerSlot(teamId: TeamID, slotNumber: number, spawnPos: mod.Vector, spawnRot: mod.Vector, vehicleType: mod.VehicleList): number {
     const yaw = mod.YComponentOf(spawnRot) + VEHICLE_SPAWN_YAW_OFFSET_DEG;

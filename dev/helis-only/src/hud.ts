@@ -1,6 +1,12 @@
 // @ts-nocheck
 // Module: hud -- HUD counter helpers, eager HUD shell build/ensure, update helpers, altitude warning.
 //
+// Widget position convention (also applies to hud-dialog-lazy.ts, hud-scoring-lazy.ts, clock.ts):
+//   position: [x, y] is anchor-relative. +X = right of anchor, +Y = down from anchor.
+//   For non-center anchors, verify visually in-game -- TopCenter children with negative X don't
+//   always render exactly where the math suggests (v0.684 diagnosed negative-X clipping on
+//   TopLeft-anchored parents).
+//
 // Post-Phase-A/B (v0.690) eager scope of ensureEagerHudShellForPlayer:
 //   - Upper-Left branding container (Upper_Left_Container_)
 //   - Upper-Left settings summary panel (Upper_Left_Settings_ + Settings_* rows)
@@ -370,7 +376,6 @@ function ensureSpawnDisabledLiveText(player: mod.Player): mod.UIWidget | undefin
         name: `SpawnDisabledLiveText_${pid}`,
         type: "Text",
         playerId: player,
-        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
         position: [0, SPAWN_DISABLED_TEXT_POS_Y],
         size: [SPAWN_DISABLED_TEXT_WIDTH, SPAWN_DISABLED_TEXT_HEIGHT],
         anchor: mod.UIAnchor.BottomCenter,
@@ -590,9 +595,11 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
     if (!player || !mod.IsPlayerValid(player)) return;
     const pid = safeGetPlayerId(player);
     if (pid === undefined || isPidDisconnected(pid)) return;
-    // Phase A: lazy-build the victory dialog widgets if not built yet. Only fire the build when the
-    // dialog actually needs to be shown -- updateVictoryDialogForPlayer is also called from OPJG's
-    // cache-init path as a defensive no-op, and we don't want THAT path to trigger the build.
+    // Phase A gate: this function is called both from round-flow.ts at match-end AND from
+    // ensureEagerHudShellForPlayer's cache-init path as a defensive no-op for late joiners.
+    // The gate ensures the OPJG path doesn't fire the lazy build -- only the real match-end
+    // path should. Without this gate, the Victory dialog widget tree builds during the join
+    // tick, defeating Phase A.
     if (State.match.victoryDialogActive) triggerLazyBuild('victoryDialog', pid);
     // Look up cached UI references for this player (if missing, this update becomes a no-op).
     const refs = State.hudCache.hudByPid[pid];
@@ -1023,6 +1030,10 @@ function ensureEagerHudShellForPlayer(player: mod.Player): HudRefs | undefined {
 
     // If cached and still valid, return it
     const cached = State.hudCache.hudByPid[pid];
+    // Cache invariant: settingsGameModeText is the load-bearing eager ref. Settings widgets are
+    // the only ones populated unconditionally at the end of the eager build, so they're the
+    // reliable "did we run the eager pass?" sentinel. Do NOT change this to a top-HUD ref --
+    // those are lazy (Phase B) and undefined until OnPlayerDeployed fires triggerLazyBuild('topHud').
     if (cached && cached.settingsGameModeText) {
         cached.spawnDisabledLiveText = ensureSpawnDisabledLiveText(player);
         const helpContainer = safeFind(`Container_HelpText_${pid}`);
@@ -1059,7 +1070,6 @@ function ensureEagerHudShellForPlayer(player: mod.Player): HudRefs | undefined {
             name: rootName,
             type: "Container",
             playerId: player,
-            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
             position: [5, 5 + TOP_HUD_OFFSET_Y],
             size: [200, 30],
             anchor: mod.UIAnchor.TopLeft,
@@ -1070,10 +1080,8 @@ function ensureEagerHudShellForPlayer(player: mod.Player): HudRefs | undefined {
             bgFill: mod.UIBgFill.Blur,
             children: [
                 {
-                    // UI element: Upper_Left_Text_${pid}
                     name: `Upper_Left_Text_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [5, -5.5],
                     size: [200, 17],
                     anchor: mod.UIAnchor.CenterLeft,
@@ -1089,10 +1097,8 @@ function ensureEagerHudShellForPlayer(player: mod.Player): HudRefs | undefined {
                     textAnchor: mod.UIAnchor.Center,
                 },
                 {
-                    // UI element: Upper_Left_Text_2_${pid}
                     name: `Upper_Left_Text_2_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [7.25, 12.5],
                     size: [200, 16.5],
                     anchor: mod.UIAnchor.TopLeft,
@@ -1478,6 +1484,7 @@ function ensureAltitudeWarningUiForPlayer(player: mod.Player): mod.UIWidget | un
             refs.altitudeWarningTitle = safeFind(`Altitude_Warning_Title_${pid}`);
             refs.altitudeWarningBody = safeFind(`Altitude_Warning_Body_${pid}`);
             refs.altitudeWarningCountdown = safeFind(`Altitude_Warning_Countdown_${pid}`);
+            refs.altitudeWarningDestroyedLabel = safeFind(`Altitude_Warning_Destroyed_${pid}`);
         }
         return existingRoot;
     }
@@ -1568,6 +1575,31 @@ function ensureAltitudeWarningUiForPlayer(player: mod.Player): mod.UIWidget | un
                     textColor: COLOR_WARNING_YELLOW,
                     textAlpha: 1,
                     textSize: 64,
+                    textAnchor: mod.UIAnchor.Center,
+                },
+                // v0.709: red "YOU WILL BE DESTROYED!" line below the countdown. visible captured at
+                // BUILD TIME from the current admin state. modlib.ParseUI post-construction visibility
+                // flips don't commit on the same JS tick as the build -- v0.706 (built visible:false,
+                // tried to toggle on at first show) and v0.708 (built visible:true, tried to toggle off
+                // at first show) BOTH failed to apply correctly on the first dialog open. Subsequent
+                // shows work because the widget is fully committed by then. By capturing admin state
+                // at build time, the initial render is correct with no same-tick toggle needed.
+                // setAltitudeWarningVisibleForPid still toggles on each show as a best-effort update
+                // for cases where the admin button is pressed between shows.
+                {
+                    name: `Altitude_Warning_Destroyed_${pid}`,
+                    type: "Text",
+                    position: [0, 120],
+                    size: [800, 36],
+                    anchor: mod.UIAnchor.Center,
+                    visible: State.admin.ceilingPunishEnabled,
+                    padding: 0,
+                    bgAlpha: 0,
+                    bgFill: mod.UIBgFill.None,
+                    textLabel: mod.Message(STR_HUD_ALTITUDE_WARNING_DESTROYED),
+                    textColor: COLOR_NOT_READY_RED,
+                    textAlpha: 1,
+                    textSize: 28,
                     textAnchor: mod.UIAnchor.Center,
                 },
             ],
@@ -1912,25 +1944,3 @@ function handleAdminPanelAction(eventPlayer: mod.Player, actionKey: number): voi
 
 
 
-//#region -------------------- Legacy UI Cleanup (old score_root_* containers) --------------------
-
-// Code Cleanup: Is this still needed???
-function deleteLegacyScoreRootForPlayer(player: mod.Player): void {
-    const name = "score_root_" + getObjId(player);
-    try {
-        mod.DeleteUIWidget(mod.FindUIWidgetWithName(name));
-    } catch { }
-}
-
-function deleteLegacyScoreRootsForAllPlayers(): void {
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
-
-    for (let i = 0; i < count; i++) {
-        const p = mod.ValueInArray(players, i) as mod.Player;
-        if (!p) continue;
-        if (!mod.IsPlayerValid(p)) continue;
-        deleteLegacyScoreRootForPlayer(p);
-    }
-}
-//#endregion ----------------- Legacy UI Cleanup (old score_root_* containers) --------------------

@@ -41,8 +41,6 @@ export async function OnGameModeStarted(): Promise<void> {
     }
     State.vehicles.configReady = true;
 
-    deleteLegacyScoreRootsForAllPlayers();
-
     mod.SetGameModeTargetScore(GAMEMODE_TARGET_SCORE_SAFETY_CAP);
     mod.SetVariable(regVehiclesTeam1, mod.EmptyArray());
     mod.SetVariable(regVehiclesTeam2, mod.EmptyArray());
@@ -119,13 +117,35 @@ export async function OnGameModeStarted(): Promise<void> {
     // H-P1: per-pid altitude warning loop. Iterates only the playerInAircraftByPid cache (5Hz tick).
     void runAircraftWarningLoop();
 
+    // Main tick loop (1Hz). Concurrent tick loops also running in this script:
+    //   - runAircraftWarningLoop      5Hz  ready-dialog.ts  altimeter + altitude warning per-pid
+    //   - runOvertimeCaptureLoop      4Hz  overtime.ts      only during active overtime (started by overtime activation)
+    //   - pollVehicleSpawnerSlots     1Hz  vehicles.ts      respawn tracking + slot/vehicle binding repair
+    // Main-base entry/exit is event-driven via OnAreaTriggerEnter/Exit -- not a polling loop.
+    //
+    // Add work to THIS loop only if it needs the 1Hz cadence. Faster cadence -> add to a
+    // dedicated loop (don't speed up this one). Slower cadence -> throttle inside the helper.
     while (true) {
+        // v0.712 tick-context AllPlayers cache: fetch ONCE per tick and pass to helpers that
+        // would otherwise each call mod.AllPlayers() independently. Was 3 bridge calls/sec
+        // (clock + takeoff + autoready); now 1. updateOvertimeStage doesn't take the cache
+        // because it doesn't iterate players directly -- delegates to sub-helpers internally.
+        const tickPlayers = mod.AllPlayers();
+        const tickCount = mod.CountOf(tickPlayers);
+
         // Push the initial clock display so every HUD shows the same starting time.
-        updateAllPlayersClock();
+        updateAllPlayersClock(tickPlayers, tickCount);
         updateOvertimeStage();
-        checkTakeoffLimitForAllPlayers();
-        applyAutoReadyForAllPlayers();
-        syncKillsHudFromTrackedTotals(false);
+        // F6 (v0.711): hoist the phase gate that both helpers below check internally. Saves 2
+        // function-call-and-return cycles/sec post-round-start (their internal short-circuits
+        // already returned immediately). Same behavior; just one fewer call frame.
+        if (State.round.phase === RoundPhase.NotReady && !State.round.flow.cleanupActive && !State.match.isEnded) {
+            checkTakeoffLimitForAllPlayers(tickPlayers, tickCount);
+            applyAutoReadyForAllPlayers(tickPlayers, tickCount);
+        }
+        // syncKillsHudFromTrackedTotals NOT called here (v0.711 Bundle A): every increment site
+        // (OnVehicleDestroyed + admin T1/T2 +/- buttons) already calls it with force=true at the
+        // mutation site. The polled call was pure redundancy after v0.692's cache check.
 
         if (State.match.victoryDialogActive) {
             const elapsedSinceVictory = Math.floor(mod.GetMatchTimeElapsed()) - Math.floor(State.match.victoryStartElapsedSecondsSnapshot);
@@ -205,7 +225,6 @@ export async function OnPlayerJoinGame(eventPlayer: mod.Player) {
         if (cache) setRoundStateText(cache.roundStateText);
         updateHelpTextVisibilityForPlayer(eventPlayer);
     }
-    deleteLegacyScoreRootForPlayer(eventPlayer);
     if (joinPid !== undefined) {
         updateTeamNameWidgetsForPid(joinPid);
     }
@@ -409,7 +428,12 @@ export function OngoingPlayer(eventPlayer: mod.Player): void {
     // one-time ~50ms hitch (player-initiated, naturally staggered, cannot dogpile).
 
     if (isPlayerDeployed(eventPlayer)) {
-        if (InteractMultiClickDetector.checkMultiClick(eventPlayer)) {
+        // v0.711 seatKind gate: skip the triple-tap polling while the player is in a vehicle.
+        // Interact points can't be spawned/activated from a vehicle anyway, and the detector's
+        // IsInteracting bridge call is the highest-cost per-tick read in OngoingPlayer. Player
+        // detector state is cleared on OnPlayerExitVehicle so the next polling tick re-arms cleanly.
+        const inVehicle = safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsInVehicle, false);
+        if (!inVehicle && InteractMultiClickDetector.checkMultiClick(eventPlayer)) {
             const pid = safeGetPlayerId(eventPlayer);
             if (pid === undefined) return;
             armJoinPromptTripleTapForPid(pid);
@@ -588,6 +612,16 @@ export function OnPlayerExitVehicle(eventPlayer: mod.Player, eventVehicle: mod.V
         setAltimeterVisibleForPid(exitingPid, false);
         setAltimeterWarningLabelVisibleForPid(exitingPid, false);
     }
+    // v0.711 seatKind gate: clear the multi-click detector's per-player state. The gate in
+    // OngoingPlayer skipped polling while in vehicle, leaving lastIsInteracting stale; clearing
+    // here means the next polling tick starts fresh so the first post-exit triple-tap counts.
+    InteractMultiClickDetector.clearState(eventPlayer);
+    // v0.713 re-arm: spawnTeamSwitchInteractPoint's v0.713 in-vehicle gate causes the function
+    // to early-return when called from OnPlayerDeployed if the player squad-spawned into a
+    // chopper. Re-call it on vehicle exit so the interact point appears once the player lands.
+    // Idempotent -- internal guard at team-switch.ts:53 (interactPoint === null) makes this a
+    // no-op if the interact point already exists for this player.
+    void spawnTeamSwitchInteractPoint(eventPlayer);
 }
 
 //#endregion -------------------- Exported Event Handlers - Vehicle Entry + Exit --------------------
@@ -634,7 +668,27 @@ export async function OnVehicleSpawned(eventVehicle: mod.Vehicle): Promise<void>
             return;
         }
     }
-    
+
+    // v0.714: apply HP multiplier + Heal IMMEDIATELY now that the vehicle is known to survive
+    // (past the unspawn/replace branches above). Two reasons this moved out of its old location
+    // at the bottom of the function:
+    //   (1) The old position was AFTER the inferredTeam early-return at the line below "Bail
+    //       out if the vehicle didn't spawn near a known team base" -- vehicles that failed team
+    //       inference survived but never got SetMaxHealthMultiplier called. They displayed as
+    //       "full" health but were at the engine's default max (e.g., 100), not the configured
+    //       max (e.g., 130 at TWL 2v2 130%). Apply here so the mult lands on every surviving
+    //       vehicle regardless of bind/inference outcome.
+    //   (2) Adding Heal after SetMax defeats the engine timing race where SetMax raised the max
+    //       but the engine had already set initial current to the OLD default max -- producing
+    //       intermittent partial-health spawns at mults > 1.0. Heal clamps current to current
+    //       max, so post-Heal the vehicle is always full at the new max.
+    // try/catch already wraps for SDK safety per the BillDukes precedent.
+    try {
+        const mult = State.round.modeConfig.confirmed.vehicleHealthMultiplier ?? 1.0;
+        mod.SetVehicleMaxHealthMultiplier(eventVehicle, mult);
+        mod.Heal(eventVehicle, 99999);
+    } catch (_e) {}
+
     // Primary path: bind to a spawner slot that is expecting this spawn.
     let inferredTeam = bindSpawnedVehicleToSlot(eventVehicle, posObject);
 
@@ -678,15 +732,8 @@ export async function OnVehicleSpawned(eventVehicle: mod.Vehicle): Promise<void>
     clearLastDriverByVehicleObjId(vehicleObjId);
 
     registerVehicleToTeam(eventVehicle, inferredTeam);
-
-    // Apply the confirmed Vehicle Health Multiplier to this fresh spawn. One-shot per vehicle;
-    // the engine persists the multiplier for the vehicle's lifetime. SDK clamps `> 0 && <= 4`;
-    // try/catch wrap mirrors the BillDukes VehicleUIUniversal precedent (mod docs say a non-throwing
-    // void return but defense-in-depth is cheap and matches the surrounding Helis safety conventions).
-    try {
-        const mult = State.round.modeConfig.confirmed.vehicleHealthMultiplier ?? 1.0;
-        mod.SetVehicleMaxHealthMultiplier(eventVehicle, mult);
-    } catch (_e) {}
+    // (HP multiplier + Heal moved earlier in this function -- see v0.714 comment block above
+    // for the why. Applied unconditionally to any surviving vehicle, before team inference.)
 }
 
 // OnVehicleDestroyed:

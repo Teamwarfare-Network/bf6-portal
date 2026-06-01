@@ -41,11 +41,9 @@ function ensureRoundEndDialogUiBuiltHidden(player: mod.Player): void {
     }
 
     const roundEndModal = modlib.ParseUI({
-        // UI element: RoundEndDialogRoot_${pid}
         name: `RoundEndDialogRoot_${pid}`,
         type: "Container",
         playerId: player,
-        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
         position: [0, 150],
         size: [520, 112],
         anchor: mod.UIAnchor.TopCenter,
@@ -56,10 +54,8 @@ function ensureRoundEndDialogUiBuiltHidden(player: mod.Player): void {
         bgFill: mod.UIBgFill.Solid,
         children: [
             {
-                // UI element: RoundEndDialog_Round_${pid}
                 name: `RoundEndDialog_Round_${pid}`,
                 type: "Text",
-                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 16],
                 size: [340, 24],
                 anchor: mod.UIAnchor.TopCenter,
@@ -74,10 +70,8 @@ function ensureRoundEndDialogUiBuiltHidden(player: mod.Player): void {
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                // UI element: RoundEndDialog_Outcome_${pid}
                 name: `RoundEndDialog_Outcome_${pid}`,
                 type: "Text",
-                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 46],
                 size: [340, 30],
                 anchor: mod.UIAnchor.TopCenter,
@@ -92,10 +86,8 @@ function ensureRoundEndDialogUiBuiltHidden(player: mod.Player): void {
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                // UI element: RoundEndDialog_Detail_${pid}
                 name: `RoundEndDialog_Detail_${pid}`,
                 type: "Text",
-                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 86],
                 size: [500, 18],
                 anchor: mod.UIAnchor.TopCenter,
@@ -148,11 +140,9 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
     }
 
     const modal = modlib.ParseUI({
-        // UI element: VictoryDialogRoot_${pid}
         name: `VictoryDialogRoot_${pid}`,
         type: "Container",
         playerId: player,
-        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
         position: [0, 135],
         size: [VICTORY_DIALOG_WIDTH, VICTORY_DIALOG_HEIGHT],
         anchor: mod.UIAnchor.Center,
@@ -163,10 +153,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
         bgFill: mod.UIBgFill.Solid,
         children: [
             {
-                // UI element: VictoryDialog_Header1_${pid}
                 name: `VictoryDialog_Header1_${pid}`,
                 type: "Text",
-                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 14],
                 size: [340, 22],
                 anchor: mod.UIAnchor.TopCenter,
@@ -181,10 +169,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                // UI element: VictoryDialog_Header2_${pid}
                 name: `VictoryDialog_Header2_${pid}`,
                 type: "Text",
-                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 36],
                 size: [340, 22],
                 anchor: mod.UIAnchor.TopCenter,
@@ -199,10 +185,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                // UI element: VictoryDialog_Screenshot_${pid}
                 name: `VictoryDialog_Screenshot_${pid}`,
                 type: "Text",
-                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 62],
                 size: [340, 16],
                 anchor: mod.UIAnchor.TopCenter,
@@ -217,10 +201,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                // UI element: VictoryDialog_Restart_${pid}
                 name: `VictoryDialog_Restart_${pid}`,
                 type: "Text",
-                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 82],
                 size: [340, 16],
                 anchor: mod.UIAnchor.TopCenter,
@@ -235,10 +217,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                // UI element: VictoryDialog_TotalTimeRow_${pid}
                 name: `VictoryDialog_TotalTimeRow_${pid}`,
                 type: "Container",
-                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 102],
                 size: [340, 16],
                 anchor: mod.UIAnchor.TopCenter,
@@ -248,10 +228,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                 bgFill: mod.UIBgFill.None,
                 children: [
                     {
-                        // UI element: VictoryDialog_TotalTimeLabel_${pid}
                         name: `VictoryDialog_TotalTimeLabel_${pid}`,
                         type: "Text",
-                        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                         position: [-45, 0],
                         size: [130, 16],
                         anchor: mod.UIAnchor.Center,
@@ -266,10 +244,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                         textAnchor: mod.UIAnchor.Center,
                     },
                     {
-                        // UI element: VictoryDialog_TotalTimeDigits_${pid}
                         name: `VictoryDialog_TotalTimeDigits_${pid}`,
                         type: "Container",
-                        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                         position: [55, 0],
                         size: [120, 16],
                         anchor: mod.UIAnchor.Center,
@@ -279,10 +255,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                         bgFill: mod.UIBgFill.None,
                         children: [
                             {
-                                // UI element: VictoryDialog_TimeHT_${pid}
                                 name: `VictoryDialog_TimeHT_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [-45, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -297,10 +271,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                // UI element: VictoryDialog_TimeHO_${pid}
                                 name: `VictoryDialog_TimeHO_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [-35, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -315,10 +287,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                // UI element: VictoryDialog_TimeC1_${pid}
                                 name: `VictoryDialog_TimeC1_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [-25, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -333,10 +303,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                // UI element: VictoryDialog_TimeMT_${pid}
                                 name: `VictoryDialog_TimeMT_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [-15, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -351,10 +319,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                // UI element: VictoryDialog_TimeMO_${pid}
                                 name: `VictoryDialog_TimeMO_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [-5, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -369,10 +335,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                // UI element: VictoryDialog_TimeC2_${pid}
                                 name: `VictoryDialog_TimeC2_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [5, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -387,10 +351,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                // UI element: VictoryDialog_TimeST_${pid}
                                 name: `VictoryDialog_TimeST_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [15, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -405,10 +367,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                // UI element: VictoryDialog_TimeSO_${pid}
                                 name: `VictoryDialog_TimeSO_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [25, 0],
                                 size: [10, 16],
                                 anchor: mod.UIAnchor.Center,
@@ -427,10 +387,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                 ],
             },
             {
-                // UI element: VictoryDialog_Rounds_${pid}
                 name: `VictoryDialog_Rounds_${pid}`,
                 type: "Text",
-                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 122],
                 size: [340, 16],
                 anchor: mod.UIAnchor.TopCenter,
@@ -445,10 +403,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                // UI element: VictoryDialog_AdminActions_${pid}
                 name: `VictoryDialog_AdminActions_${pid}`,
                 type: "Text",
-                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 138],
                 size: [340, 16],
                 anchor: mod.UIAnchor.TopCenter,
@@ -463,10 +419,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                 textAnchor: mod.UIAnchor.Center,
             },
             {
-                // UI element: VictoryDialog_TeamsRow_${pid}
                 name: `VictoryDialog_TeamsRow_${pid}`,
                 type: "Container",
-                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 154],
                 size: [340, 70],
                 anchor: mod.UIAnchor.TopCenter,
@@ -476,10 +430,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                 bgFill: mod.UIBgFill.None,
                 children: [
                     {
-                        // UI element: VictoryDialog_TeamLeft_${pid}
                         name: `VictoryDialog_TeamLeft_${pid}`,
                         type: "Container",
-                        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                         position: [-85, 0],
                         size: [160, 122],
                         anchor: mod.UIAnchor.TopCenter,
@@ -490,10 +442,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                         bgFill: mod.UIBgFill.Solid,
                         children: [
                             {
-                                // UI element: VictoryDialog_LeftOutcome_${pid}
                                 name: `VictoryDialog_LeftOutcome_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [0, 6],
                                 size: [150, 22],
                                 anchor: mod.UIAnchor.TopCenter,
@@ -511,7 +461,6 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 // Winning crown (shown only for the winning team)
                                 name: `VictoryDialog_LeftCrown_${pid}`,
                                 type: "Image",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [VICTORY_CROWN_OFFSET_X_LEFT, VICTORY_CROWN_OFFSET_Y],
                                 size: [VICTORY_CROWN_SIZE, VICTORY_CROWN_SIZE],
                                 anchor: mod.UIAnchor.TopCenter,
@@ -524,10 +473,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 imageAlpha: 1,
                             },
                             {
-                                // UI element: VictoryDialog_LeftRecord_${pid}
                                 name: `VictoryDialog_LeftRecord_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [0, 30],
                                 size: [150, 16],
                                 anchor: mod.UIAnchor.TopCenter,
@@ -542,10 +489,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                // UI element: VictoryDialog_LeftRoundWins_${pid}
                                 name: `VictoryDialog_LeftRoundWins_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [0, 50],
                                 size: [150, 16],
                                 anchor: mod.UIAnchor.TopCenter,
@@ -560,10 +505,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                // UI element: VictoryDialog_LeftRoundLosses_${pid}
                                 name: `VictoryDialog_LeftRoundLosses_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [0, 68],
                                 size: [150, 16],
                                 anchor: mod.UIAnchor.TopCenter,
@@ -578,10 +521,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                // UI element: VictoryDialog_LeftRoundTies_${pid}
                                 name: `VictoryDialog_LeftRoundTies_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [0, 86],
                                 size: [150, 16],
                                 anchor: mod.UIAnchor.TopCenter,
@@ -596,10 +537,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                // UI element: VictoryDialog_LeftTotalKills_${pid}
                                 name: `VictoryDialog_LeftTotalKills_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [0, 104],
                                 size: [150, 16],
                                 anchor: mod.UIAnchor.TopCenter,
@@ -616,10 +555,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                         ],
                     },
                     {
-                        // UI element: VictoryDialog_TeamRight_${pid}
                         name: `VictoryDialog_TeamRight_${pid}`,
                         type: "Container",
-                        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                         position: [85, 0],
                         size: [160, 122],
                         anchor: mod.UIAnchor.TopCenter,
@@ -630,10 +567,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                         bgFill: mod.UIBgFill.Solid,
                         children: [
                             {
-                                // UI element: VictoryDialog_RightOutcome_${pid}
                                 name: `VictoryDialog_RightOutcome_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [0, 6],
                                 size: [150, 22],
                                 anchor: mod.UIAnchor.TopCenter,
@@ -651,7 +586,6 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 // Winning crown (shown only for the winning team)
                                 name: `VictoryDialog_RightCrown_${pid}`,
                                 type: "Image",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [VICTORY_CROWN_OFFSET_X_RIGHT, VICTORY_CROWN_OFFSET_Y],
                                 size: [VICTORY_CROWN_SIZE, VICTORY_CROWN_SIZE],
                                 anchor: mod.UIAnchor.TopCenter,
@@ -664,10 +598,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 imageAlpha: 1,
                             },
                             {
-                                // UI element: VictoryDialog_RightRecord_${pid}
                                 name: `VictoryDialog_RightRecord_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [0, 30],
                                 size: [150, 16],
                                 anchor: mod.UIAnchor.TopCenter,
@@ -682,10 +614,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                // UI element: VictoryDialog_RightRoundWins_${pid}
                                 name: `VictoryDialog_RightRoundWins_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [0, 50],
                                 size: [150, 16],
                                 anchor: mod.UIAnchor.TopCenter,
@@ -700,10 +630,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                // UI element: VictoryDialog_RightRoundLosses_${pid}
                                 name: `VictoryDialog_RightRoundLosses_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [0, 68],
                                 size: [150, 16],
                                 anchor: mod.UIAnchor.TopCenter,
@@ -718,10 +646,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                // UI element: VictoryDialog_RightRoundTies_${pid}
                                 name: `VictoryDialog_RightRoundTies_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [0, 86],
                                 size: [150, 16],
                                 anchor: mod.UIAnchor.TopCenter,
@@ -736,10 +662,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 textAnchor: mod.UIAnchor.Center,
                             },
                             {
-                                // UI element: VictoryDialog_RightTotalKills_${pid}
                                 name: `VictoryDialog_RightTotalKills_${pid}`,
                                 type: "Text",
-                                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                 position: [0, 104],
                                 size: [150, 16],
                                 anchor: mod.UIAnchor.TopCenter,
@@ -758,10 +682,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                 ],
             },
             {
-                // UI element: VictoryDialog_RosterRow_${pid}
                 name: `VictoryDialog_RosterRow_${pid}`,
                 type: "Container",
-                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, VICTORY_DIALOG_ROSTER_ROW_Y],
                 size: [VICTORY_DIALOG_ROSTER_ROW_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT_MAX],
                 anchor: mod.UIAnchor.TopCenter,
@@ -771,10 +693,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                 bgFill: mod.UIBgFill.None,
                 children: [
                     {
-                        // UI element: VictoryDialog_RosterLeft_${pid}
                         name: `VictoryDialog_RosterLeft_${pid}`,
                         type: "Container",
-                        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                         position: [-85, 0],
                         size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT_MAX],
                         anchor: mod.UIAnchor.TopCenter,
@@ -789,7 +709,6 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 rows.push({
                                     name: `VictoryDialog_LeftRoster_${pid}_${i}`,
                                     type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP + i * VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
                                     size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
                                     anchor: mod.UIAnchor.TopCenter,
@@ -808,10 +727,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                         })(),
                     },
                     {
-                        // UI element: VictoryDialog_RosterRight_${pid}
                         name: `VictoryDialog_RosterRight_${pid}`,
                         type: "Container",
-                        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                         position: [85, 0],
                         size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT_MAX],
                         anchor: mod.UIAnchor.TopCenter,
@@ -826,7 +743,6 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
                                 rows.push({
                                     name: `VictoryDialog_RightRoster_${pid}_${i}`,
                                     type: "Text",
-                                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                                     position: [0, VICTORY_DIALOG_ROSTER_ROW_PADDING_TOP + i * VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
                                     size: [VICTORY_DIALOG_ROSTER_CONTAINER_WIDTH, VICTORY_DIALOG_ROSTER_ROW_HEIGHT],
                                     anchor: mod.UIAnchor.TopCenter,

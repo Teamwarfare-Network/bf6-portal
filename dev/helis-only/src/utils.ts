@@ -45,6 +45,14 @@ class InteractMultiClickDetector {
         state.clickCount = 0;
         return true;
     }
+
+    // v0.711: clear cached state for a player. Called from OnPlayerExitVehicle so the seatKind
+    // gate in OngoingPlayer (which skips checkMultiClick while in vehicle) doesn't leave a stale
+    // lastIsInteracting reading after the player exits the vehicle. Next polling tick re-arms.
+    public static clearState(player: mod.Player): void {
+        const playerId = mod.GetObjId(player);
+        delete this.STATES[playerId];
+    }
 }
 
 //#endregion ----------------- MultiClickDetector (triple tap interact) --------------------

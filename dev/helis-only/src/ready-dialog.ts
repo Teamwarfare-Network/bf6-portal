@@ -1024,6 +1024,52 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         mod.SetUITextSize(MODE_RESET_LABEL, 12);
     }
 
+    // v0.724: notices centered on the dialog (TopCenter anchor, position X=0, textAnchor Center).
+    // Prior TopRight anchor with offset placed them visually left-of-center; recenter both for parity.
+    const UNSAVED_NOTICE_ID = UI_READY_DIALOG_UNSAVED_NOTICE_ID + playerId;
+    const unsavedNoticeWidth = 700;
+    modlib.ParseUI({
+        name: UNSAVED_NOTICE_ID,
+        type: "Text",
+        playerId: eventPlayer,
+        position: [0, confirmY],
+        size: [unsavedNoticeWidth, bestOfButtonSizeY],
+        anchor: mod.UIAnchor.TopCenter,
+        visible: false,
+        padding: 0,
+        bgAlpha: 0,
+        bgFill: mod.UIBgFill.None,
+        textLabel: mod.Message(mod.stringkeys.twl.readyDialog.unsavedChangesLabel),
+        textColor: COLOR_NOT_READY_RED,
+        textAlpha: 1,
+        textSize: 12,
+        textAnchor: mod.UIAnchor.Center,
+    });
+    const UNSAVED_NOTICE = safeFind(UNSAVED_NOTICE_ID);
+    if (UNSAVED_NOTICE) mod.SetUIWidgetParent(UNSAVED_NOTICE, CONTAINER_BASE);
+
+    // Yellow ceiling-vanilla-lock tip. Same centered layout, one row below the red notice.
+    const CEILING_LOCK_NOTICE_ID = UI_READY_DIALOG_CEILING_LOCK_NOTICE_ID + playerId;
+    modlib.ParseUI({
+        name: CEILING_LOCK_NOTICE_ID,
+        type: "Text",
+        playerId: eventPlayer,
+        position: [0, confirmY + bestOfButtonSizeY + 4],
+        size: [unsavedNoticeWidth, bestOfButtonSizeY],
+        anchor: mod.UIAnchor.TopCenter,
+        visible: false,
+        padding: 0,
+        bgAlpha: 0,
+        bgFill: mod.UIBgFill.None,
+        textLabel: mod.Message(mod.stringkeys.twl.readyDialog.ceilingVanillaLockedWarning),
+        textColor: COLOR_WARNING_YELLOW,
+        textAlpha: 1,
+        textSize: 12,
+        textAnchor: mod.UIAnchor.Center,
+    });
+    const CEILING_LOCK_NOTICE = safeFind(CEILING_LOCK_NOTICE_ID);
+    if (CEILING_LOCK_NOTICE) mod.SetUIWidgetParent(CEILING_LOCK_NOTICE, CONTAINER_BASE);
+
     // Best-of: minus button (left of label)
     const bestOfDecBorder = addOutlinedButton(
         BESTOF_DEC_ID,
@@ -1663,8 +1709,164 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         row0Y + (buttonSizeY + rowSpacingY) * 13, (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX), 36,
         UI_TEST_BUTTON_POS_DEBUG_ID, UI_TEST_POS_DEBUG_TEXT_ID, mod.stringkeys.twl.adminPanel.tester.buttons.positionDebug);
 
+    // Plan 2 row reorder (v0.703): Tie-Breaker rows moved to the bottom of the admin section.
+    // Top-to-bottom order is now: Live Redeploy -> Ceiling Punish -> Round Length -> Hard Buffer
+    // -> Warn Buffer -> Tie-Breaker Setting -> Tie-Breaker Randomization Override (label + 7 buttons).
+    // Rationale: everyday toggles live at the top; the busy 7-flag override is bottom-anchored.
+
+    const liveRespawnRowY = row0Y + (buttonSizeY + rowSpacingY) * 14;
+    addTesterActionButton(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        liveRespawnRowY,
+        (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX),
+        buttonSizeY,
+        UI_ADMIN_LIVE_RESPAWN_BUTTON_ID,
+        UI_ADMIN_LIVE_RESPAWN_TEXT_ID,
+        getAdminLiveRespawnLabelKey()
+    );
+
+    const ceilingPunishRowY = liveRespawnRowY + (buttonSizeY + rowSpacingY);
+    addTesterActionButton(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        ceilingPunishRowY,
+        (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX),
+        buttonSizeY,
+        UI_ADMIN_CEILING_PUNISH_BUTTON_ID,
+        UI_ADMIN_CEILING_PUNISH_TEXT_ID,
+        getAdminCeilingPunishLabelKey()
+    );
+
+    const roundLengthRowY = ceilingPunishRowY + (buttonSizeY + rowSpacingY);
+    // v0.719: roundLengthFormat = "Round Length: {0}:{1}{2}" has 3 placeholders. Without the
+    // format args at build time, mod.Message(labelKey) was firing with 0 args -> engine error.
+    // Pass the time parts now; syncAdminRoundLengthLabelForAllPlayers below will re-format on
+    // every tick/admin-change but the build-time call must also satisfy the format contract.
+    const initialRoundLengthTime = getClockTimeParts(getConfiguredRoundLengthSeconds());
+    addTesterRow(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        roundLengthRowY,
+        UI_ADMIN_ROUND_LENGTH_DEC_ID,
+        UI_ADMIN_ROUND_LENGTH_INC_ID,
+        UI_ADMIN_ROUND_LENGTH_LABEL_ID,
+        mod.stringkeys.twl.adminPanel.labels.roundLengthFormat,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX,
+        initialRoundLengthTime.minutes,
+        initialRoundLengthTime.secTens,
+        initialRoundLengthTime.secOnes
+    );
+
+    // H-P1: Aircraft hard-ceiling buffer (admin-tunable). Static "Hard Buffer" label + separate value widget
+    // showing current meters; -/+ buttons step by AIRCRAFT_HARD_BUFFER_STEP.
+    const aircraftBufferRowY = roundLengthRowY + (buttonSizeY + rowSpacingY);
+    addTesterRowWithValue(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        aircraftBufferRowY,
+        UI_ADMIN_AIRCRAFT_BUFFER_DEC_ID,
+        UI_ADMIN_AIRCRAFT_BUFFER_INC_ID,
+        UI_ADMIN_AIRCRAFT_BUFFER_LABEL_ID,
+        UI_ADMIN_AIRCRAFT_BUFFER_VALUE_ID,
+        STR_ADMIN_AIRCRAFT_BUFFER_LABEL,
+        State.round.aircraftCeiling.hardBufferM,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        ADMIN_PANEL_VALUE_SIZE_X,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
+
+    // v0.666: Aircraft warning buffer (admin-tunable). Gap between soft warning and black-screen
+    // dialog. Same -/+ row as Hard Buffer, stepping by AIRCRAFT_WARNING_BUFFER_STEP.
+    const aircraftWarnBufferRowY = aircraftBufferRowY + (buttonSizeY + rowSpacingY);
+    addTesterRowWithValue(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        aircraftWarnBufferRowY,
+        UI_ADMIN_AIRCRAFT_WARN_BUFFER_DEC_ID,
+        UI_ADMIN_AIRCRAFT_WARN_BUFFER_INC_ID,
+        UI_ADMIN_AIRCRAFT_WARN_BUFFER_LABEL_ID,
+        UI_ADMIN_AIRCRAFT_WARN_BUFFER_VALUE_ID,
+        STR_ADMIN_AIRCRAFT_WARN_BUFFER_LABEL,
+        State.round.aircraftCeiling.warningBufferM,
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        ADMIN_PANEL_VALUE_SIZE_X,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
+
+    // Tie-Breaker Setting toggle (2nd to last). Extra TIEBREAKER_BOTTOM_GAP visually separates the
+    // toggles cluster above from the busy 7-flag override block below.
+    const TIEBREAKER_BOTTOM_GAP = 12;
+    const tieBreakerModeRowY = aircraftWarnBufferRowY + (buttonSizeY + rowSpacingY) + TIEBREAKER_BOTTOM_GAP;
+    addTesterRow(
+        eventPlayer,
+        adminContainer,
+        playerId,
+        testerBaseX,
+        tieBreakerModeRowY,
+        UI_ADMIN_TIEBREAKER_MODE_DEC_ID,
+        UI_ADMIN_TIEBREAKER_MODE_INC_ID,
+        UI_ADMIN_TIEBREAKER_MODE_LABEL_ID,
+        getTieBreakerModeLabelKey(),
+        buttonSizeX,
+        buttonSizeY,
+        labelSizeX,
+        decOffsetX,
+        labelOffsetX,
+        incOffsetX
+    );
+
+    const tieBreakerHeaderId = UI_ADMIN_TIEBREAKER_MODE_HEADER_ID + playerId;
+    const tieBreakerHeaderY = tieBreakerModeRowY + 2;
+    const tieBreakerLabelHeight = 12;
+    mod.AddUIText(
+        tieBreakerHeaderId,
+        mod.CreateVector(testerBaseX + labelOffsetX, tieBreakerHeaderY, 0),
+        mod.CreateVector(labelSizeX, tieBreakerLabelHeight, 0),
+        mod.UIAnchor.TopLeft,
+        mod.Message(mod.stringkeys.twl.adminPanel.labels.tieBreakerSettingHeader),
+        eventPlayer
+    );
+    const tieBreakerHeaderLabel = mod.FindUIWidgetWithName(tieBreakerHeaderId, mod.GetUIRoot());
+    mod.SetUIWidgetBgAlpha(tieBreakerHeaderLabel, 0);
+    applyAdminPanelLabelTextColor(tieBreakerHeaderLabel);
+    mod.SetUITextSize(tieBreakerHeaderLabel, 11);
+    mod.SetUIWidgetParent(tieBreakerHeaderLabel, adminContainer);
+
+    const tieBreakerModeLabel = safeFind(UI_ADMIN_TIEBREAKER_MODE_LABEL_ID + playerId);
+    if (tieBreakerModeLabel) {
+        const tieBreakerModeLabelY = tieBreakerModeRowY + buttonSizeY - 14;
+        mod.SetUIWidgetPosition(tieBreakerModeLabel, mod.CreateVector(testerBaseX + labelOffsetX, tieBreakerModeLabelY, 0));
+        safeSetUIWidgetSize(tieBreakerModeLabel, mod.CreateVector(labelSizeX, tieBreakerLabelHeight, 0));
+        mod.SetUITextSize(tieBreakerModeLabel, 11);
+    }
+
+    // Tie-Breaker Randomization Override label + 7 flag buttons (LAST).
     const overrideLabelId = UI_ADMIN_TIEBREAKER_LABEL_ID + playerId;
-    const overrideLabelY = row0Y + (buttonSizeY + rowSpacingY) * 14 + 2;
+    const overrideLabelY = tieBreakerModeRowY + (buttonSizeY + rowSpacingY) + 2;
     modlib.ParseUI({
         name: overrideLabelId,
         type: "Text",
@@ -1725,145 +1927,6 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         }
     }
 
-    const tieBreakerModeRowY = overrideButtonsY + overrideButtonSize + rowSpacingY;
-    addTesterRow(
-        eventPlayer,
-        adminContainer,
-        playerId,
-        testerBaseX,
-        tieBreakerModeRowY,
-        UI_ADMIN_TIEBREAKER_MODE_DEC_ID,
-        UI_ADMIN_TIEBREAKER_MODE_INC_ID,
-        UI_ADMIN_TIEBREAKER_MODE_LABEL_ID,
-        getTieBreakerModeLabelKey(),
-        buttonSizeX,
-        buttonSizeY,
-        labelSizeX,
-        decOffsetX,
-        labelOffsetX,
-        incOffsetX
-    );
-
-    const tieBreakerHeaderId = UI_ADMIN_TIEBREAKER_MODE_HEADER_ID + playerId;
-    const tieBreakerHeaderY = tieBreakerModeRowY + 2;
-    const tieBreakerLabelHeight = 12;
-    mod.AddUIText(
-        tieBreakerHeaderId,
-        mod.CreateVector(testerBaseX + labelOffsetX, tieBreakerHeaderY, 0),
-        mod.CreateVector(labelSizeX, tieBreakerLabelHeight, 0),
-        mod.UIAnchor.TopLeft,
-        mod.Message(mod.stringkeys.twl.adminPanel.labels.tieBreakerSettingHeader),
-        eventPlayer
-    );
-    const tieBreakerHeaderLabel = mod.FindUIWidgetWithName(tieBreakerHeaderId, mod.GetUIRoot());
-    mod.SetUIWidgetBgAlpha(tieBreakerHeaderLabel, 0);
-    applyAdminPanelLabelTextColor(tieBreakerHeaderLabel);
-    mod.SetUITextSize(tieBreakerHeaderLabel, 11);
-    mod.SetUIWidgetParent(tieBreakerHeaderLabel, adminContainer);
-
-    const tieBreakerModeLabel = safeFind(UI_ADMIN_TIEBREAKER_MODE_LABEL_ID + playerId);
-    if (tieBreakerModeLabel) {
-        const tieBreakerModeLabelY = tieBreakerModeRowY + buttonSizeY - 14;
-        mod.SetUIWidgetPosition(tieBreakerModeLabel, mod.CreateVector(testerBaseX + labelOffsetX, tieBreakerModeLabelY, 0));
-        safeSetUIWidgetSize(tieBreakerModeLabel, mod.CreateVector(labelSizeX, tieBreakerLabelHeight, 0));
-        mod.SetUITextSize(tieBreakerModeLabel, 11);
-    }
-
-    const liveRespawnRowY = tieBreakerModeRowY + (buttonSizeY + rowSpacingY);
-    addTesterActionButton(
-        eventPlayer,
-        adminContainer,
-        playerId,
-        testerBaseX,
-        liveRespawnRowY,
-        (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX),
-        buttonSizeY,
-        UI_ADMIN_LIVE_RESPAWN_BUTTON_ID,
-        UI_ADMIN_LIVE_RESPAWN_TEXT_ID,
-        getAdminLiveRespawnLabelKey()
-    );
-
-    const ceilingPunishRowY = liveRespawnRowY + (buttonSizeY + rowSpacingY);
-    addTesterActionButton(
-        eventPlayer,
-        adminContainer,
-        playerId,
-        testerBaseX,
-        ceilingPunishRowY,
-        (buttonSizeX + 8 + labelSizeX + 8 + buttonSizeX),
-        buttonSizeY,
-        UI_ADMIN_CEILING_PUNISH_BUTTON_ID,
-        UI_ADMIN_CEILING_PUNISH_TEXT_ID,
-        getAdminCeilingPunishLabelKey()
-    );
-
-    const roundLengthRowY = ceilingPunishRowY + (buttonSizeY + rowSpacingY);
-    addTesterRow(
-        eventPlayer,
-        adminContainer,
-        playerId,
-        testerBaseX,
-        roundLengthRowY,
-        UI_ADMIN_ROUND_LENGTH_DEC_ID,
-        UI_ADMIN_ROUND_LENGTH_INC_ID,
-        UI_ADMIN_ROUND_LENGTH_LABEL_ID,
-        mod.stringkeys.twl.adminPanel.labels.roundLengthFormat,
-        buttonSizeX,
-        buttonSizeY,
-        labelSizeX,
-        decOffsetX,
-        labelOffsetX,
-        incOffsetX
-    );
-
-    // H-P1: Aircraft hard-ceiling buffer (admin-tunable). Static "Hard Buffer" label + separate value widget
-    // showing current meters; -/+ buttons step by AIRCRAFT_HARD_BUFFER_STEP.
-    const aircraftBufferRowY = roundLengthRowY + (buttonSizeY + rowSpacingY);
-    addTesterRowWithValue(
-        eventPlayer,
-        adminContainer,
-        playerId,
-        testerBaseX,
-        aircraftBufferRowY,
-        UI_ADMIN_AIRCRAFT_BUFFER_DEC_ID,
-        UI_ADMIN_AIRCRAFT_BUFFER_INC_ID,
-        UI_ADMIN_AIRCRAFT_BUFFER_LABEL_ID,
-        UI_ADMIN_AIRCRAFT_BUFFER_VALUE_ID,
-        STR_ADMIN_AIRCRAFT_BUFFER_LABEL,
-        State.round.aircraftCeiling.hardBufferM,
-        buttonSizeX,
-        buttonSizeY,
-        labelSizeX,
-        ADMIN_PANEL_VALUE_SIZE_X,
-        decOffsetX,
-        labelOffsetX,
-        incOffsetX
-    );
-
-    // v0.666: Aircraft warning buffer (admin-tunable). Gap between soft warning and black-screen
-    // dialog. Same -/+ row as Hard Buffer, stepping by AIRCRAFT_WARNING_BUFFER_STEP.
-    const aircraftWarnBufferRowY = aircraftBufferRowY + (buttonSizeY + rowSpacingY);
-    addTesterRowWithValue(
-        eventPlayer,
-        adminContainer,
-        playerId,
-        testerBaseX,
-        aircraftWarnBufferRowY,
-        UI_ADMIN_AIRCRAFT_WARN_BUFFER_DEC_ID,
-        UI_ADMIN_AIRCRAFT_WARN_BUFFER_INC_ID,
-        UI_ADMIN_AIRCRAFT_WARN_BUFFER_LABEL_ID,
-        UI_ADMIN_AIRCRAFT_WARN_BUFFER_VALUE_ID,
-        STR_ADMIN_AIRCRAFT_WARN_BUFFER_LABEL,
-        State.round.aircraftCeiling.warningBufferM,
-        buttonSizeX,
-        buttonSizeY,
-        labelSizeX,
-        ADMIN_PANEL_VALUE_SIZE_X,
-        decOffsetX,
-        labelOffsetX,
-        incOffsetX
-    );
-
     syncAdminTieBreakerModeLabelForAllPlayers();
     syncAdminLiveRespawnLabelForAllPlayers();
     syncAdminCeilingPunishLabelForAllPlayers();
@@ -1893,7 +1956,14 @@ function addTesterRow(
     labelSizeX: number,
     decOffsetX: number,
     labelOffsetX: number,
-    incOffsetX: number
+    incOffsetX: number,
+    // v0.719: optional format args for labelKey -- required when labelKey is a format string with
+    // placeholders (e.g. roundLengthFormat = "Round Length: {0}:{1}{2}" has 3 placeholders).
+    // Without these, mod.Message(labelKey) is called with 0 args while the format expects 3 ->
+    // engine error log on admin panel open. Per the SDK 3-format-arg cap, max 3 args supported.
+    labelArg0?: any,
+    labelArg1?: any,
+    labelArg2?: any
 ): void {
     // Steps:
     // 1) Ensure per-player dialog root exists
@@ -1935,8 +2005,18 @@ function addTesterRow(
         mod.SetUITextColor(MINUS_TEXT, ADMIN_PANEL_BUTTON_TEXT_COLOR);
     }
 
+    // v0.719: build the label message with whatever format args the caller supplied. The 4
+    // overloads match mod.Message's SDK signatures (0-3 format args). Avoids the engine error
+    // when labelKey is a format string with placeholders but no args are passed.
+    const labelMessage = (labelArg2 !== undefined)
+        ? mod.Message(labelKey, labelArg0, labelArg1, labelArg2)
+        : (labelArg1 !== undefined)
+            ? mod.Message(labelKey, labelArg0, labelArg1)
+            : (labelArg0 !== undefined)
+                ? mod.Message(labelKey, labelArg0)
+                : mod.Message(labelKey);
     mod.AddUIText(labelId, mod.CreateVector(baseX + labelOffsetX, baseY + 11, 0), mod.CreateVector(labelSizeX, buttonSizeY - 22, 0),
-        mod.UIAnchor.TopLeft, mod.Message(labelKey), eventPlayer);
+        mod.UIAnchor.TopLeft, labelMessage, eventPlayer);
     mod.SetUITextSize(mod.FindUIWidgetWithName(labelId, mod.GetUIRoot()), 12);
     const LABEL = mod.FindUIWidgetWithName(labelId, mod.GetUIRoot());
     mod.SetUIWidgetBgAlpha(LABEL, 0);
@@ -2441,6 +2521,83 @@ function updateReadyDialogMapLabelForAllPlayers(): void {
     }
 }
 
+// Per-field dirty-state shape (Plan 2). buildReadyDialogModeConfigDiffState compares the pending
+// modeConfig against confirmed; applyDirtyStateColorsForPid uses it to color value widgets and
+// toggle the "Unsaved changes!" notice. T2 mirrors T1 on confirm so vehiclesT2Dirty effectively
+// tracks the T1 delta, but we compute it independently for safety.
+type ReadyDialogModeConfigDiffState = {
+    hasUnsavedChanges: boolean;
+    gameModeDirty: boolean;
+    aircraftCeilingDirty: boolean;
+    vehicleHealthDirty: boolean;
+    vehiclesT1Dirty: boolean;
+    vehiclesT2Dirty: boolean;
+};
+
+function buildReadyDialogModeConfigDiffState(): ReadyDialogModeConfigDiffState {
+    const cfg = State.round.modeConfig;
+    const c = cfg.confirmed;
+    const gameModeDirty = cfg.gameMode !== c.gameMode;
+    // v0.717: numeric value only -- override flag is internal implementation state and shouldn't
+    // contribute to dirty signal. ensureCustomGameModeForManualChange has a load-bearing side
+    // effect that sets pending.overridePending = true when flipping to Custom from a preset
+    // with useCustomCeiling=true (preserves the Custom mode's ceiling display so it doesn't
+    // flip from numeric to "Vanilla" when user edits any other knob). The flag mutation is
+    // necessary for display consistency but should NOT cascade into a false dirty signal --
+    // editing HP shouldn't paint the ceiling red. User only cares about the numeric value.
+    const aircraftCeilingDirty = Math.floor(cfg.aircraftCeiling) !== Math.floor(c.aircraftCeiling);
+    const vehicleHealthDirty =
+        Math.round(cfg.vehicleHealthMultiplier * 100) !== Math.round(c.vehicleHealthMultiplier * 100);
+    const vehiclesT1Dirty = cfg.vehicleIndexT1 !== c.vehicleIndexT1;
+    const vehiclesT2Dirty = cfg.vehicleIndexT2 !== c.vehicleIndexT2;
+    const hasUnsavedChanges =
+        gameModeDirty || aircraftCeilingDirty || vehicleHealthDirty || vehiclesT1Dirty || vehiclesT2Dirty;
+    return { hasUnsavedChanges, gameModeDirty, aircraftCeilingDirty, vehicleHealthDirty, vehiclesT1Dirty, vehiclesT2Dirty };
+}
+
+// Three-color scheme per Q3 answer: labels stay white (untouched here), confirmed values green, dirty values red.
+// Also toggles the "Unsaved changes!" notice visibility (Q4: hidden when nothing dirty).
+function applyDirtyStateColorsForPid(pid: number): void {
+    const diff = buildReadyDialogModeConfigDiffState();
+    const setValueColor = (idBase: string, dirty: boolean) => {
+        const w = safeFind(idBase + pid);
+        if (w) mod.SetUITextColor(w, dirty ? COLOR_NOT_READY_RED : COLOR_READY_GREEN);
+    };
+    // v0.723: ceiling-vanilla-locked check. If sticky hasEverAppliedCustom AND pending would
+    // resolve to Vanilla, the ceiling value renders YELLOW (not green/red) -- communicates the
+    // confirm-time lockout without needing to wait for the user to try Confirm.
+    const cfg = State.round.modeConfig;
+    const pendingWouldBeVanilla = !shouldApplyCustomCeilingForConfig(cfg.gameMode, cfg.aircraftCeilingOverridePending);
+    const ceilingLocked = State.round.aircraftCeiling.hasEverAppliedCustom && pendingWouldBeVanilla;
+
+    setValueColor(UI_READY_DIALOG_MODE_GAME_VALUE_ID, diff.gameModeDirty);
+    if (ceilingLocked) {
+        const sw = safeFind(UI_READY_DIALOG_MODE_SETTINGS_VALUE_ID + pid);
+        if (sw) mod.SetUITextColor(sw, COLOR_WARNING_YELLOW);
+    } else {
+        setValueColor(UI_READY_DIALOG_MODE_SETTINGS_VALUE_ID, diff.aircraftCeilingDirty);
+    }
+    setValueColor(UI_READY_DIALOG_VEHICLE_HEALTH_VALUE_ID, diff.vehicleHealthDirty);
+    setValueColor(UI_READY_DIALOG_MODE_VEHICLES_T1_VALUE_ID, diff.vehiclesT1Dirty);
+    setValueColor(UI_READY_DIALOG_MODE_VEHICLES_T2_VALUE_ID, diff.vehiclesT2Dirty);
+    const notice = safeFind(UI_READY_DIALOG_UNSAVED_NOTICE_ID + pid);
+    if (notice) mod.SetUIWidgetVisible(notice, diff.hasUnsavedChanges);
+    // v0.723: yellow tip widget visibility -- shows ONLY when locked AND unsaved changes exist
+    // (per user choice: "only when both fire"). Keeps quiet in steady-state; nags during edits.
+    const ceilingLockNotice = safeFind(UI_READY_DIALOG_CEILING_LOCK_NOTICE_ID + pid);
+    if (ceilingLockNotice) mod.SetUIWidgetVisible(ceilingLockNotice, ceilingLocked && diff.hasUnsavedChanges);
+    // v0.724: gray out the Confirm button when the ceiling-lock would silently reject the save.
+    // Disables click events too -- redundant with the team-switch.ts case-statement guard, but
+    // means the visual cue and the click suppression are computed from the same condition.
+    const confirmDisabled = ceilingLocked && diff.hasUnsavedChanges;
+    const confirmBtn = safeFind(UI_READY_DIALOG_MODE_CONFIRM_ID + pid);
+    if (confirmBtn) {
+        try { mod.EnableUIButtonEvent(confirmBtn, mod.UIButtonEvent.ButtonUp, !confirmDisabled); } catch {}
+    }
+    const confirmLabel = safeFind(UI_READY_DIALOG_MODE_CONFIRM_LABEL_ID + pid);
+    if (confirmLabel) mod.SetUITextColor(confirmLabel, confirmDisabled ? COLOR_GRAY : COLOR_WHITE);
+}
+
 function updateReadyDialogModeConfigForPid(pid: number): void {
     const cfg = State.round.modeConfig;
 
@@ -2491,9 +2648,17 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
     }
     const vehiclesT2Value = safeFind(UI_READY_DIALOG_MODE_VEHICLES_T2_VALUE_ID + pid);
     if (vehiclesT2Value) safeSetUITextLabel(vehiclesT2Value, mod.Message(cfg.vehiclesT2));
+
+    // Plan 2: recolor value widgets (green=confirmed, red=dirty) + toggle "Unsaved changes!" notice.
+    applyDirtyStateColorsForPid(pid);
 }
 
 function updateReadyDialogModeConfigForAllVisibleViewers(): void {
+    // v0.715: try to snap-back from Custom to a matching preset BEFORE rendering, so the label
+    // (and the per-pid render that reads State.round.modeConfig.gameMode) sees the correct
+    // value when the user edits a knob and then edits it back to the preset value. See
+    // detectAndApplyMatchingPreset at ready-dialog.ts:~3114 for the full why.
+    detectAndApplyMatchingPreset();
     for (const pidStr in State.players.teamSwitchData) {
         const pid = Number(pidStr);
         const state = State.players.teamSwitchData[pid];
@@ -2641,6 +2806,12 @@ function setAltitudeWarningVisibleForPid(pid: number, visible: boolean): void {
                 mod.Message(STR_HUD_ALTITUDE_WARNING_CEILING_FORMAT, ceilingValue)
             );
         }
+        // v0.706: show the red "YOU WILL BE DESTROYED!" line only when ceiling punish is ON. If the
+        // admin toggle flips OFF mid-exposure the line stays visible until next show -- acceptable
+        // since the punishment isn't going to fire anyway (admin gate also checked in the loop).
+        if (refs.altitudeWarningDestroyedLabel) {
+            safeSetUIWidgetVisible(refs.altitudeWarningDestroyedLabel, State.admin.ceilingPunishEnabled);
+        }
     } else {
         delete State.players.altitudeWarningStartedAtSecondsByPid[pid];
         // Re-arm ceiling-punish for the next exposure (descend below warning, exit vehicle, undeploy).
@@ -2672,6 +2843,17 @@ async function runAircraftWarningLoop(): Promise<void> {
     const lastAltimeterStageByPid: Record<number, number> = {};
     const lastWarningLabelVisibleByPid: Record<number, boolean> = {};
 
+    // Three-stage altitude warning, per v0.666 H-P1 layered ceiling spec.
+    // Thresholds (world-Y, derived from State.round.modeConfig.confirmed.aircraftCeiling):
+    //   - STAGE_GREEN  altimeter green text, no warning  (posY <= softY)
+    //   - STAGE_YELLOW altimeter yellow + "ALT WARNING"  (softY < posY <= warningY)
+    //   - STAGE_BLACK  STAGE_YELLOW + 960x540 black-screen dialog with countdown (posY > warningY)
+    //
+    // softY    = floorY + ceiling - warningBufferM   (configurable via admin warn buffer)
+    // warningY = floorY + ceiling                    (the "you are AT the ceiling" line)
+    // hardY    = floorY + ceiling + hardBufferM      (engine pushback via SetMaxVehicleHeightLimitScale)
+    //
+    // Hysteresis: see AIRCRAFT_SOFT_CEILING_ENTER_BUFFER / EXIT_BUFFER for stage-flip thresholds.
     const STAGE_GREEN = 0;     // altimeter green, no label, no black screen
     const STAGE_YELLOW = 1;    // altimeter yellow + "ALTITUDE WARNING" label
     const STAGE_BLACK = 2;     // STAGE_YELLOW + 960x540 black-screen dialog
@@ -2899,6 +3081,10 @@ function syncAircraftWarningBufferAdminValueForAllPlayers(): void {
 
 function enableCustomAircraftCeiling(): void {
     State.round.aircraftCeiling.customEnabled = true;
+    // v0.723: sticky flag for the session. Once a custom ceiling has been applied, the engine
+    // is observed not to revert to Vanilla (mod.SetMaxVehicleHeightLimitScale(1.0) is one-way).
+    // Setting this true gates the UI warning AND the confirm-path lockout.
+    State.round.aircraftCeiling.hasEverAppliedCustom = true;
 }
 
 function disableCustomAircraftCeilingAndRestoreDefault(): void {
@@ -2966,9 +3152,9 @@ function getReadyDialogPresetPlayersPerSide(gameModeKey: number): number {
     return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_VANILLA;
 }
 
-// TWL 2v2 preset defaults to 130% vehicle health; all other presets use the map default.
+// TWL 2v2 preset defaults to 160% vehicle health; all other presets use the map default.
 function getPresetVehicleHealthMultiplierForGameMode(gameModeKey: number): number {
-    if (isReadyDialogGameModeLadder(gameModeKey)) return 1.3;
+    if (isReadyDialogGameModeLadder(gameModeKey)) return 1.6;
     return State.round.mapDefaultVehicleHealthMultiplier;
 }
 
@@ -3005,8 +3191,49 @@ function ensureCustomGameModeForManualChange(): void {
     }
     State.round.modeConfig.gameModeIndex = READY_DIALOG_GAME_MODE_CUSTOM_INDEX;
     State.round.modeConfig.gameMode = READY_DIALOG_GAME_MODE_OPTIONS[READY_DIALOG_GAME_MODE_CUSTOM_INDEX];
+    // v0.715: suppress detectAndApplyMatchingPreset during this nested refresh. The knob
+    // mutation that triggered us hasn't happened yet -- if snap-back ran now, it would see
+    // the unchanged preset-matching values and undo this flip-to-Custom. The setter's OUTER
+    // refresh (post-mutation, at the bottom of e.g. setReadyDialogVehicleHealthMultiplier) is
+    // where snap-back should evaluate. detectAndApplyMatchingPreset checks this same flag and
+    // early-returns -- same semantics as how applyReadyDialogModePresetForGameMode uses it.
+    suppressReadyDialogModeAutoSwitch = true;
     updateReadyDialogModeConfigForAllVisibleViewers();
+    suppressReadyDialogModeAutoSwitch = false;
     updateSettingsSummaryHudForAllPlayers();
+}
+
+// v0.715: complement to ensureCustomGameModeForManualChange. When the user is in Custom mode
+// (most likely because they edited a knob that flipped them out of a preset), check whether
+// the current pending values now match a known preset -- if so, snap the game mode label back
+// to that preset. Without this, editing a knob and editing it back leaves the label stuck on
+// "Custom" forever even though all values match TWL 2v2 (or whichever preset was active).
+//
+// Called from updateReadyDialogModeConfigForAllVisibleViewers so every refresh path naturally
+// runs this check, regardless of which knob setter triggered the refresh.
+//
+// Edge case: multiple presets matching simultaneously is structurally prevented by per-mode
+// autoStartMinActivePlayers + per-mode best-of values (see isReadyDialogModePresetActive at
+// line 3116) -- TWL 2v2 = 2 players/side, TWL 1v1 = 1, Vanilla Practice = different best-of.
+// First match wins for safety; deterministic given the strict per-mode checks.
+function detectAndApplyMatchingPreset(): void {
+    if (suppressReadyDialogModeAutoSwitch) return;
+    if (State.round.modeConfig.gameModeIndex !== READY_DIALOG_GAME_MODE_CUSTOM_INDEX) return;
+    for (let i = 0; i < READY_DIALOG_GAME_MODE_OPTIONS.length; i++) {
+        if (i === READY_DIALOG_GAME_MODE_CUSTOM_INDEX) continue;
+        const modeKey = READY_DIALOG_GAME_MODE_OPTIONS[i];
+        if (isReadyDialogModePresetActive(modeKey)) {
+            State.round.modeConfig.gameModeIndex = i;
+            State.round.modeConfig.gameMode = modeKey;
+            // v0.717: do NOT mutate aircraftCeilingOverridePending here. v0.716 cleared it as
+            // a patch for ceiling-stays-red on snap-back, but the right fix (in v0.717) was to
+            // simplify the ceiling dirty check to look at numeric value only -- so the flag
+            // mismatch never paints red in the first place. Cascading the flag clear violated
+            // the "only flip game mode, don't cascade other knobs" rule. Snap-back now only
+            // touches the game mode label.
+            return;
+        }
+    }
 }
 
 // True only when all preset values match the selected mode (best-of, matchup, players, vehicles, ceiling).
@@ -3022,7 +3249,7 @@ function isReadyDialogModePresetActive(gameModeKey: number): boolean {
     if (State.round.modeConfig.vehicleIndexT2 !== READY_DIALOG_MODE_PRESET_VEHICLE_INDEX) return false;
     if (Math.floor(State.round.modeConfig.aircraftCeiling) !== Math.floor(State.round.aircraftCeiling.mapDefaultHudCeiling)) return false;
     // Health-multiplier check: preset is "active" only when the pending knob matches the preset's expected default.
-    // TWL 2v2 = 130%, everything else = map default. Compare via 2-decimal round to absorb 0.01-step float drift.
+    // TWL 2v2 = 160%, everything else = map default. Compare via 2-decimal round to absorb 0.01-step float drift.
     const expectedHealthMult = getPresetVehicleHealthMultiplierForGameMode(gameModeKey);
     if (Math.round(State.round.modeConfig.vehicleHealthMultiplier * 100) !== Math.round(expectedHealthMult * 100)) return false;
     return true;
@@ -3051,7 +3278,7 @@ function applyReadyDialogModePresetForGameMode(gameModeKey: number): boolean {
     State.round.modeConfig.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
     State.round.modeConfig.aircraftCeilingOverridePending = false;
     State.round.modeConfig.gameSettings = mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat;
-    // Vehicle Health Multiplier: TWL 2v2 = 130%, every other preset = map default.
+    // Vehicle Health Multiplier: TWL 2v2 = 160%, every other preset = map default.
     State.round.modeConfig.vehicleHealthMultiplier = getPresetVehicleHealthMultiplierForGameMode(gameModeKey);
 
     suppressReadyDialogModeAutoSwitch = false;
@@ -3071,7 +3298,15 @@ function setReadyDialogGameModeIndex(nextIndex: number, applyPreset: boolean = t
         const applied = applyReadyDialogModePresetForGameMode(State.round.modeConfig.gameMode);
         if (applied) return;
     }
+    // v0.718: suppress detectAndApplyMatchingPreset during the fall-through update. When user
+    // explicitly picks Custom via the cycler, applyReadyDialogModePresetForGameMode returns
+    // false (no preset values to apply) and we fall through here. Without suppression, the
+    // snap-back helper inside updateReadyDialogModeConfigForAllVisibleViewers sees that pending
+    // values still match the previous preset and snaps gameMode RIGHT BACK -- making the cycler
+    // dead-end at the last preset before Custom. User's explicit selection must stick.
+    suppressReadyDialogModeAutoSwitch = true;
     updateReadyDialogModeConfigForAllVisibleViewers();
+    suppressReadyDialogModeAutoSwitch = false;
     updateSettingsSummaryHudForAllPlayers();
 }
 
@@ -3149,9 +3384,32 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
         cfg.gameModeIndex = READY_DIALOG_GAME_MODE_CUSTOM_INDEX;
         cfg.gameMode = READY_DIALOG_GAME_MODE_OPTIONS[READY_DIALOG_GAME_MODE_CUSTOM_INDEX];
     }
-    const nextCeilingOverrideEnabled =
-        cfg.confirmed.aircraftCeilingOverrideEnabled || cfg.aircraftCeilingOverridePending;
-    const applyCustomCeiling = shouldApplyCustomCeilingForConfig(cfg.gameMode, nextCeilingOverrideEnabled);
+    // v0.716: confirmed.overrideEnabled is now a DIRECT COPY of pending.overridePending, not
+    // a sticky-OR with the previous confirmed value. The old sticky-OR meant once-true-always-true:
+    // user could never disable an override via Confirm because picking a preset (which clears
+    // pending.overridePending=false) would still resolve to true via OR. Symptom: pick a new
+    // preset and Confirm -- ceiling value stayed red because confirmed.overrideEnabled remained
+    // true while pending.overridePending was false from the preset application. Direct copy
+    // means Confirm now respects whatever the user actually has pending.
+    let nextCeilingOverrideEnabled = cfg.aircraftCeilingOverridePending;
+    let applyCustomCeiling = shouldApplyCustomCeilingForConfig(cfg.gameMode, nextCeilingOverrideEnabled);
+
+    // v0.723: ceiling-revert lockout. mod.SetMaxVehicleHeightLimitScale(1.0) is observed to be
+    // one-way -- once a custom scale has been applied this session, the engine refuses to revert
+    // to Vanilla without a server restart. Keep JS state in sync with engine state by restoring
+    // the previously-confirmed ceiling values (and the gameMode that selected them) whenever the
+    // user tries to confirm a config that would result in Vanilla. UI yellow tip in the Ready
+    // Dialog warns the user beforehand so the block isn't surprising.
+    if (State.round.aircraftCeiling.hasEverAppliedCustom && !applyCustomCeiling) {
+        cfg.gameMode = cfg.confirmed.gameMode;
+        const restoredIdx = READY_DIALOG_GAME_MODE_OPTIONS.indexOf(cfg.gameMode);
+        cfg.gameModeIndex = restoredIdx >= 0 ? restoredIdx : READY_DIALOG_GAME_MODE_CUSTOM_INDEX;
+        cfg.aircraftCeiling = cfg.confirmed.aircraftCeiling;
+        cfg.aircraftCeilingOverridePending = cfg.confirmed.aircraftCeilingOverrideEnabled;
+        nextCeilingOverrideEnabled = cfg.aircraftCeilingOverridePending;
+        applyCustomCeiling = shouldApplyCustomCeilingForConfig(cfg.gameMode, nextCeilingOverrideEnabled);
+    }
+
     const isMapDefaultVehicle = cfg.vehicleIndexT1 === READY_DIALOG_VEHICLE_MAP_DEFAULT_INDEX;
     // Keep the selected heli override consistent across teams when confirming.
     cfg.vehicleIndexT2 = cfg.vehicleIndexT1;
@@ -3337,7 +3595,12 @@ function updateSettingsSummaryHudForPid(pid: number): void {
         safeSetUITextLabel(refs.settingsGameModeText, mod.Message(STR_HUD_SETTINGS_GAME_MODE_FORMAT, gameModeValue));
     }
     if (refs.settingsAircraftCeilingText) {
-        safeSetUITextLabel(refs.settingsAircraftCeilingText, mod.Message(STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT, ceilingValue));
+        // Punish reads "On" only when a custom ceiling is actually applied AND the admin toggle is enabled.
+        // Vanilla (no enforced ceiling) -> always "Off" because there's nothing to punish against.
+        const punishKey = applyCustomCeiling && State.admin.ceilingPunishEnabled
+            ? STR_HUD_SETTINGS_PUNISH_ON
+            : STR_HUD_SETTINGS_PUNISH_OFF;
+        safeSetUITextLabel(refs.settingsAircraftCeilingText, mod.Message(STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT, ceilingValue, punishKey));
     }
     // Vehicle Health Multiplier line -- always shown (even at the default 100%).
     if (refs.settingsVehicleHealthText) {
@@ -3932,7 +4195,7 @@ async function showOverTakeoffMessageForAllPlayers(offender: mod.Player): Promis
     );
 }
 
-function checkTakeoffLimitForAllPlayers(): void {
+function checkTakeoffLimitForAllPlayers(cachedPlayers?: any, cachedCount?: number): void {
     if (State.match.isEnded) return;
     // Skip during any phase other than pregame NotReady, and during round-end cleanup.
     // Eliminates SoldierState reads on players whose deployedByPid cache is stale
@@ -3943,8 +4206,10 @@ function checkTakeoffLimitForAllPlayers(): void {
     const floorY = Math.floor(State.round.aircraftCeiling.hudFloorY);
     const limitY = floorY + TAKEOFF_LIMIT_HUD_OFFSET;
 
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
+    // v0.712: accept a tick-context AllPlayers snapshot from the main loop; fall through to a
+    // fresh fetch when called from non-tick paths (currently none, but keep the helper safe).
+    const players = cachedPlayers ?? mod.AllPlayers();
+    const count = cachedCount ?? mod.CountOf(players);
     for (let i = 0; i < count; i++) {
         const p = mod.ValueInArray(players, i) as mod.Player;
         if (!p || !mod.IsPlayerValid(p)) continue;
@@ -4026,7 +4291,7 @@ function applyAutoReadyForPid(player: mod.Player, pid: number): boolean {
 }
 
 // Applies auto-ready rules for all players who have auto-ready enabled.
-function applyAutoReadyForAllPlayers(): void {
+function applyAutoReadyForAllPlayers(cachedPlayers?: any, cachedCount?: number): void {
     if (State.match.isEnded) return;
     // Match the pregame-only gate pattern: skip during GameOver and cleanupActive
     // to avoid SoldierState reads on just-died players (Conquest #94 family).
@@ -4037,8 +4302,10 @@ function applyAutoReadyForAllPlayers(): void {
     if (nowSeconds - lastAutoReadyCheckAtSeconds < AUTO_READY_CHECK_INTERVAL_SECONDS) return;
     lastAutoReadyCheckAtSeconds = nowSeconds;
 
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
+    // v0.712: accept a tick-context AllPlayers snapshot from the main loop; fall through to a
+    // fresh fetch when called from non-tick paths (currently none, but keep the helper safe).
+    const players = cachedPlayers ?? mod.AllPlayers();
+    const count = cachedCount ?? mod.CountOf(players);
     let anyChanged = false;
 
     for (let i = 0; i < count; i++) {

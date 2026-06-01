@@ -1,7 +1,7 @@
 # Helis Issues
 
-Last Updated: 2026-05-31 (v0.696)
-Last Tested Build: `v0.696` — SP testing, Ready Dialog roster-cell flicker (see `H_Bug_3`) substantially reduced after four attempts (v0.693 atomic reveal, v0.694 post-construction hide, v0.695 cache-hit refresh + text-then-visibility order, v0.696 modlib.ParseUI hidden-construction). User reports residual flicker reduced to "good enough for now" but not eliminated. Issue parked as PARTIALLY FIXED — see `H_Bug_3`.
+Last Updated: 2026-05-31 (v0.708)
+Last Tested Build: `v0.708` — SP testing. v0.701–v0.707 shipped Plan 1 (ceiling punish + admin toggle + TWL 2v2 130% HP), Plan 2 (3-color dirty state + Unsaved-changes notice + admin panel row reorder + ceiling punish default OFF), and the "YOU WILL BE DESTROYED!" red line below the ceiling-punish countdown. v0.708 disabled the Restart pad-sink feature after two failed attempts — see `H_Bug_4`. Open bugs: `H_Bug_1` (2 engine errors on MP join, 5 fix attempts), `H_Bug_4` (pad-sink feature disabled, needs diagnostic build before next attempt). Partially fixed: `H_Bug_3` (Ready Dialog roster flicker, "good enough for now").
 
 This file is the Conquest-style bug tracker for Helis (parallel to [`conquest/design_doc/conquest_issues.md`](../../conquest/design_doc/conquest_issues.md)). It catalogues bugs that have been **actively investigated** — observed, hypothesized, attempted-to-fix, with status tracked. For static-analysis-found patterns and risk inventory, see [`heli_issues_design.md`](./heli_issues_design.md).
 
@@ -209,6 +209,63 @@ Status:
 - Substantial reduction in flicker visibility; user accepts as "good enough for now."
 - Not closed — residual flicker remains and the engine-behavior hypotheses above are untested.
 - **Acceptance criterion**: complete elimination would require either (a) a comprehensive `mod.AddUIText` → `modlib.ParseUI` audit across the entire dialog build, or (b) restructuring `createTeamSwitchUI` to use one big nested-tree `modlib.ParseUI` call (Conquest pattern). Either is a meaningful refactor; weighed against current user-acceptable visual quality.
+
+---
+
+## H_Bug_4
+Title: Restart-Button Pad-Sink Cleanup Has No Visible Effect (FEATURE DISABLED)
+
+Observed:
+- User pressed the "RESTART / FRESH SETUP" button in the Ready Dialog with helicopters sitting on the spawner pads.
+- Intent (v0.704–v0.705): pre-sink each on-pad chopper to (X, -1000, Z) so the subsequent destroy fires underground -- silent, no pad-position explosion VFX.
+- Result: choppers blew up visibly on the pad, identical to before the feature was added. User reports: "I still am not seeing the choppers on the pad teleport before being destroyed once I press Restart" (v0.705).
+- Status as of v0.708: **feature DISABLED**. The call to `sinkOnPadVehiclesForRestart()` was removed from [round-flow.ts triggerFreshRoundSetup](../src/round-flow.ts); helper functions kept as dead code in [vehicles.ts](../src/vehicles.ts) with diagnosis block for next session.
+
+Candidate sources investigated and addressed (in chronological order):
+
+1. **v0.704 — teleport-only helper, relied on cleanup loop's DealDamage 10s later — FAILED**
+   - Hypothesis: iterate `State.vehicles.slots`, for each `slot.vehicleId !== -1` look up vehicle and `mod.Teleport(v, X, -1000, Z)`. The existing `scheduleRoundEndCleanup`'s `await mod.Wait(ROUND_END_REDEPLOY_DELAY_SECONDS)` (10s) before DealDamage gives the teleport plenty of time to land.
+   - Result: user reported vehicles still blew up on the pad. Possible reasons (not investigated): engine reverts teleport over 10s; slot.vehicleId not always set at click time so the slot-iteration loop skipped them; explosion VFX re-anchors to last visible pad position after long delay.
+
+2. **v0.705 — full Conquest port (teleport + 1.5s + DealDamage in helper) — FAILED**
+   - Hypothesis: faithful port of `conquest/src/vehicles/vanilla-spawner.ts:85 sinkAndDestroyVehicle`. Async helper that teleports, awaits 1.5s for teleport to land, then DealDamage 9999. Also switched iteration from `State.vehicles.slots` to `mod.AllVehicles()` with nearest-`slot.spawnPos` distance check (≤15m radius) -- catches vehicles that exist but aren't slot-bound.
+   - Result: user reported same outcome -- vehicles still blew up on the pad.
+
+Engine behavior NOT YET LEARNED (would require a diagnostic build):
+- Does `sinkOnPadVehiclesForRestart` actually execute at the moment Restart is pressed? (No proof either way.)
+- Is `State.vehicles.slots` populated at that moment, or could it be empty in the test context?
+- Does `mod.Teleport(vehicle, ...)` silently reject when the vehicle is bound to a `VehicleSpawner`?
+- Does the engine's abandonment system (`mod.SetVehicleSpawnerApplyDamageToAbandonVehicle = true`, `mod.SetVehicleSpawnerAbandonVehiclesOutOfCombatArea = true` at [vehicles.ts:162-163](../src/vehicles.ts#L162)) revert the teleport before t=1.5s when the vehicle is dragged to y=-1000?
+- Are players still inside choppers at Restart click? User said "players likely won't be in these" but this hasn't been verified in-context.
+
+Fix (NOT YET APPLIED, feature DISABLED):
+- v0.708 disabled the feature by removing the helper call from `triggerFreshRoundSetup`. Helper functions `sinkAndDestroyVehicleAtPad` + `sinkOnPadVehiclesForRestart` remain in `vehicles.ts` as dead code with a `STATUS: DISABLED` comment block.
+- Untried approaches when picked up later (rank by likelihood):
+  1. **DIAGNOSTIC BUILD FIRST.** Add `broadcastStringKey` calls inside `sinkOnPadVehiclesForRestart` that print: (a) "RESTART SINK fired, N total vehicles, M slots"; (b) per-vehicle "veh at dist D from slot S, teleport result=OK|threw"; (c) at t=1.5 inside the async helper "post-teleport veh Y={Y}". Visible in world log. One Restart press will reveal which assumption is wrong.
+  2. If teleport is being reverted by abandonment: temporarily `mod.SetVehicleSpawnerApplyDamageToAbandonVehicle(spawner, false)` for the slot before teleport, then restore after destroy.
+  3. If a player-in-vehicle blocks vehicle teleport: undeploy or `ForcePlayerToSeat` out first, then teleport. Memory note "Pre-seat player teleport is banned" is about a different code path but suggests engine teleport timing is finicky.
+  4. **Alternative entirely**: check if BF6 Portal has a `mod.DespawnObject` / similar API that removes the vehicle without VFX -- would sidestep teleport entirely. Worth API surface review before another sink attempt.
+
+Related:
+- [Conquest sinkAndDestroyVehicle](../../conquest/src/vehicles/vanilla-spawner.ts) — reference implementation that works reliably IN CONQUEST. The Conquest callers (startup Abrams cleanup, countdown-reset, HQ deploy slot reclaim) are all contexts where the vehicle has NO player inside and the spawner has been quiesced. The helis Restart context may differ on either dimension.
+- Memory `project_getobjectposition_unreliable_on_destroy` — Conquest's hard-won v1.283 finding: `mod.GetObjectPosition` returns bad X/Z at countdown-reset; must prefer `slot.spawnPos`. v0.705 helper followed this pattern (used slot.spawnPos as fallback) but didn't verify it was actually hitting that code path.
+
+Evidence:
+- v0.704 ship + user report: "I didn't see it occur after I hit Restart and then they blew up on the pad."
+- v0.705 ship + user report: "I also still am not seeing the choppers on the pad teleport before being destroyed once I press Restart. I'm worried you don't know what you're doing here."
+- v0.708 feature disabled per user: "I'm fine with that feature not being in right now. I want notes on what went wrong, and notes on what to try next time. But I want to ship a version of this code without that feature now."
+- Version history: `src/Changelog.ts` v0.704, v0.705, v0.708 entries.
+
+Reproduction:
+- Enable the feature by re-adding the `sinkOnPadVehiclesForRestart()` call to `triggerFreshRoundSetup` (currently removed at the comment block "v0.708: Restart pad-sink feature DISABLED").
+- Press the Restart/Fresh Setup button with helicopters spawned and sitting on their pads.
+- Expected with feature WORKING: vehicles disappear from pad immediately, faint distant explosion ~1.5s later (or no audible/visible explosion).
+- Actual with both v0.704 and v0.705 attempts: vehicles explode visibly at pad position, no apparent teleport.
+
+Status:
+- **FEATURE DISABLED** as of 2026-05-31 / v0.708.
+- Two attempts failed; both attempts were speculative without diagnostics. Next session should add the diagnostic broadcast BEFORE attempting another fix.
+- Acceptance criterion: pressing Restart with on-pad choppers should produce no visible explosion at pad position and no audible explosion sound. Vehicles should appear to simply disappear.
 
 ---
 

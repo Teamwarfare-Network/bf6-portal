@@ -3,6 +3,382 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.724: Four polish items on the v0.723 ceiling-lockout work.
+//
+// 1. DEFAULT_CEILING_PUNISH_ENABLED flipped false -> true. Punish toggle now defaults ON at
+//    server start; admin can still flip off via the Admin Panel. Settings HUD "Punish: On/Off"
+//    line will read "On" by default at session start (assuming Custom/Ladder ceiling applies).
+//
+// 2. Confirm button grays out + click-disables when the ceiling lockout would silently reject
+//    the save. Detected in applyDirtyStateColorsForPid via the same ceilingLocked AND dirty
+//    condition that drives the yellow tip widget. Visual: confirm label flips white -> gray
+//    (COLOR_GRAY). Click: mod.EnableUIButtonEvent(confirmBtn, ButtonUp, false) suppresses the
+//    event. Defense-in-depth: team-switch.ts confirm case also re-checks the condition and
+//    breaks early -- if the engine event-disable is flaky (Conquest's known asymmetric event
+//    reliability pattern), the case-statement guard catches the click anyway.
+//
+// 3. Ceiling-lock warning string updated to lead with "Cannot save - ": the new value is
+//    "Cannot save - Server Restart must occur to re-enable Vanilla Ceiling settings". Makes
+//    the rejection consequence explicit before the explanation.
+//
+// 4. Red "Unsaved changes!" notice + yellow ceiling-lock notice recentered. Both were anchored
+//    TopRight with X-offset from the right edge of the dialog, which placed them visually
+//    LEFT-of-center on screen. Switched both to TopCenter anchor, position [0, Y], textAnchor
+//    Center, and widened from 430 -> 700 to accommodate the longer "Cannot save - " prefix.
+//    Both now sit centered over the dialog center axis (= screen center axis since the dialog
+//    itself is screen-centered).
+
+// v0.723: Custom-ceiling-applied lockout (UI + code-level lock). Premise: once a custom ceiling
+// has been applied via Confirm this session, mod.SetMaxVehicleHeightLimitScale(1.0) is observed
+// to NOT actually revert the engine cap -- a server restart is required to get back to Vanilla.
+// Until v0.723 the JS state allowed "revert", silently desyncing from engine state.
+//
+// Sticky session flag: State.round.aircraftCeiling.hasEverAppliedCustom (init false, set true
+// the first time enableCustomAircraftCeiling fires). Never cleared.
+//
+// Lockout at confirm: in confirmReadyDialogModeConfig, before copying pending -> confirmed, check
+// if sticky AND pending would resolve to Vanilla (shouldApplyCustomCeilingForConfig returns false).
+// If so, restore cfg.gameMode + gameModeIndex + aircraftCeiling + aircraftCeilingOverridePending
+// from cfg.confirmed -- effectively rejects the ceiling-related portion of the confirm and keeps
+// the prior custom ceiling. Other knobs (HP, vehicles, best-of) confirm normally. Per user choice:
+// "prevent the change from occuring. Keep the old setting in place."
+//
+// UI signaling:
+//   1. Ceiling row value text turns YELLOW (COLOR_WARNING_YELLOW) whenever sticky AND pending
+//      would be Vanilla. Overrides the normal green=confirmed / red=dirty coloring for that row
+//      only -- communicates "this won't apply" without waiting for Confirm.
+//   2. New yellow tip widget under the red "Unsaved changes!" notice. Reads "Server Restart must
+//      occur to re-enable Vanilla Ceiling settings". Visibility gated on sticky AND pending-vanilla
+//      AND hasUnsavedChanges (per user choice: "only when both fire"). Quiet in steady-state.
+//
+// New string key: readyDialog.ceilingVanillaLockedWarning. New UI id prefix:
+// UI_READY_DIALOG_CEILING_LOCK_NOTICE_. New widget built once per player in the Ready Dialog
+// construction path, parented to CONTAINER_BASE one row below the existing UNSAVED_NOTICE.
+
+// v0.722: Upper-left settings HUD ceiling line now also shows punish state. Format changed from
+// "Aircraft Ceiling: {0}" to "Ceiling: {0} / Punish: {1}". Two new string keys added under
+// hud.settings: punishOn="On", punishOff="Off". Punish reads "On" only when a custom ceiling is
+// actually applied (shouldApplyCustomCeilingForConfig) AND State.admin.ceilingPunishEnabled is
+// true -- so Vanilla always displays "Punish: Off" regardless of the admin toggle (since there's
+// no enforced ceiling to punish against), and Custom/Ladder follow the admin toggle.
+//
+// Also wired updateSettingsSummaryHudForAllPlayers() into the admin Ceiling Punish toggle path
+// (team-switch.ts UI_ADMIN_CEILING_PUNISH_BUTTON_ID handler) so the upper-left widget refreshes
+// in real time when admin flips the toggle. Without this the label would lag until the next
+// ready-dialog config update happened to touch it.
+
+// v0.721: TWL 2v2 vehicle HP default raised 130% -> 160% (one-line change in ready-dialog.ts
+// getPresetVehicleHealthMultiplierForGameMode, plus three comment updates noting the new %).
+//
+// v0.721: Restart-button pad-sink REVIVED (H_Bug_4 was DISABLED in v0.708). v0.704/v0.705 both
+// failed because the iterator gated on State.vehicles.slots being populated AND on each vehicle
+// being within 15m of a slot.spawnPos -- if either gate dropped, the helper returned without
+// teleporting anything, and the existing scheduleRoundEndCleanup DealDamage path destroyed
+// vehicles in place at the pad (matching the observed symptom). v0.721 drops both gates per
+// user direction: walk mod.AllVehicles() unconditionally, skip occupied (mod.IsVehicleOccupied
+// throws -> default to occupied=true so we never yank a player), sink the rest.
+//
+// New helpers in vehicles.ts: sinkAndDestroyEmptyVehicle (teleport + 1.5s await + DealDamage,
+// no slot.spawnPos parameter -- trusts GetObjectPosition with (0, -1000, 0) fallback since the
+// Restart context isn't the countdown-reset case where GetObjectPosition returns bad X/Z) and
+// sinkAndDestroyAllEmptyVehiclesForRestart (the iterator). Called from triggerFreshRoundSetup
+// in round-flow.ts BEFORE the existing scheduleRoundEndCleanup, which still runs and handles
+// any vehicle we skipped (occupied ones get their normal in-place destroy).
+//
+// DELIBERATELY NOT included this version: spawner-abandonment-flag toggle around the sink
+// window. That was Option B in 5.31.26_restart_empty_vehicle_sink_plan.md; user rejected the
+// speculative theory and chose Option A (simplification only). If v0.721 still shows vehicles
+// blowing up at the pad in MP, the flag toggle becomes the v0.722 hypothesis with a clean
+// signal that the gates weren't the cause.
+//
+// Dead-code cleanup: removed sinkAndDestroyVehicleAtPad + sinkOnPadVehiclesForRestart + the
+// 35-line STATUS: DISABLED triage block from vehicles.ts, and the now-orphaned
+// RESTART_PAD_SINK_RADIUS_METERS constant + its 4-line preamble comment from types.ts.
+
+// v0.720: H_Bug_1 FIX -- root-caused the chronic "Received undefined values as arguments" engine
+// error logged exactly 2x per MP player join. Source: deleteLegacyScoreRootForPlayer in hud.ts
+// called mod.DeleteUIWidget(mod.FindUIWidgetWithName("score_root_" + pid)) with NO undefined guard.
+// Grep across src/ found ZERO create sites for "score_root_*" -- the widget never existed in this
+// codebase (pure dead legacy from a prior HUD design; prior author had even left a "Is this still
+// needed???" comment). mod.FindUIWidgetWithName returned undefined, mod.DeleteUIWidget(undefined)
+// fired the engine arg-validator error, and the engine's double-log pattern produced 2 lines per
+// call. OPJG (index.ts:230) called it once per join -> 2 errors per join, matching user-reported
+// symptom exactly. Fired before joiner could deploy (before any second mod.Wait in OPJG), also
+// matching "before they can spawn" timing.
+//
+// Fix: deleted the function entirely along with its deleteLegacyScoreRootsForAllPlayers wrapper
+// and the 2 call sites (OnGameModeStarted at index.ts:44 and OnPlayerJoinGame at index.ts:230).
+// Pure dead-code removal; nothing functional could break because there was nothing to clean up.
+//
+// Audit ruled out before landing on this: clock.ts ensureClockUIAndGetCache textLabel patterns
+// (widespread, would produce many more errors); overtime.ts ensureOvertimeHudForPlayer (format/
+// arg counts verified, also gated behind OvertimeStage >= Visible which is false during join);
+// ensureEagerHudShellForPlayer Settings/Matchup/Players formats (verified); deleteJoinPromptWidget
+// chain (guarded with safeFind + early return); safeSetUIWidgetVisible (guarded);
+// updateTeamNameWidgetsForPid (each find guarded). deleteLegacyScoreRootForPlayer was the only
+// unguarded find->mutate pattern remaining in the OPJG path.
+
+// v0.719: Fix admin-panel-open engine error log about parameter count. Root cause: addTesterRow
+// (the shared helper used by multiple admin rows) builds the label widget via
+// mod.AddUIText(..., mod.Message(labelKey), ...) -- passing the labelKey with ZERO format args.
+// This works for rows whose labelKey is a simple string (no placeholders, e.g. Tie-Breaker mode
+// labels, Hard Buffer, Warn Buffer). BUT the round-length row uses
+// mod.stringkeys.twl.adminPanel.labels.roundLengthFormat = "Round Length: {0}:{1}{2}" which has
+// 3 placeholders -- so mod.Message was being called with 0 args for a 3-placeholder format,
+// triggering the engine error on admin panel open. syncAdminRoundLengthLabelForAllPlayers (also
+// at the end of buildAdminPanelWidgets) immediately rebuilds the label correctly, masking the
+// runtime visual but leaving the error log entry.
+//
+// Fix: extended addTesterRow signature with 3 optional format args (matching the SDK's 3-arg cap
+// per design_doc/5.27.26_heli_message_param_limit_plan.md). The round-length call site now
+// passes getClockTimeParts(getConfiguredRoundLengthSeconds()) so the build-time mod.Message has
+// the args it needs. Other addTesterRow call sites (tie-breaker mode rows whose label is a
+// simple string) are unaffected -- they don't pass the optional args, mod.Message uses the
+// 1-arg overload, no engine complaint.
+
+// v0.718: Fix game mode cycler dead-ending at the last preset before Custom. v0.715's snap-back
+// helper (detectAndApplyMatchingPreset) was firing inside setReadyDialogGameModeIndex's
+// fall-through path when user explicitly picked Custom -- since picking Custom doesn't apply a
+// preset (applyReadyDialogModePresetForGameMode early-returns false for Custom), we fell through
+// to updateReadyDialog... which triggered snap-back. The snap-back saw that pending values still
+// matched the previous preset (e.g. Vanilla Practice values had just been confirmed) and snapped
+// gameMode back to Vanilla -- user could never actually select Custom via the cycler.
+//
+// Fix: wrap the fall-through updateReadyDialog... call in suppressReadyDialogModeAutoSwitch.
+// User's explicit cycler selection now sticks regardless of whether pending values incidentally
+// match a preset. Same flag is used by ensureCustomGameModeForManualChange for the same reason
+// (prevent the nested update from undoing the just-set state).
+//
+// Wrap math at line 3221 was already correct: ((nextIndex % count) + count) % count handles
+// both INC past last and DEC before first. The cycler is now fully circular.
+
+// v0.717: Fix cascading ceiling-red caused by HP-edit. v0.716 Fix 2 (snap-back clearing the
+// override-pending flag) was patching the wrong place -- it muted the symptom only on snap-back
+// but the cascade still painted ceiling red whenever user edited HP/other knobs (without
+// snap-back firing). Worse, when user reverted HP and snap-back fired, my flag-clear made
+// ceiling go GREEN again, looking like "you changed my ceiling without asking" because it
+// flipped between red and green as the user edited unrelated knobs.
+//
+// Root cause: ensureCustomGameModeForManualChange has a load-bearing side effect that sets
+// pending.aircraftCeilingOverridePending = true when flipping to Custom from a preset that
+// uses a custom ceiling. This is needed for DISPLAY consistency (otherwise the ceiling field
+// would flip from numeric to "Vanilla" when user edits any other knob). But the dirty-state
+// detector was looking at pending.overridePending vs confirmed.overrideEnabled as a dirty
+// signal -- so the side effect leaked into a false red signal on ceiling.
+//
+// Correct fix: simplify aircraftCeilingDirty check to look at numeric value only. The override
+// flag is internal implementation state; user only cares about the visible ceiling value.
+// Display consistency from the ensureCustom side effect is preserved. Flag mutations don't
+// cascade into dirty-state coloring.
+//
+// Also reverted v0.716 Fix 2's snap-back override-flag clear -- no longer needed with the
+// numeric-only dirty check. Cascading flag mutations violate the "only flip game mode, don't
+// cascade other knobs" rule that the user just clarified.
+//
+// v0.716 Fix 1 (confirm direct copy instead of sticky-OR) KEPT -- that was correct semantics
+// for confirm and unrelated to the cascade issue.
+
+// v0.716: Two aircraft-ceiling dirty-state fixes (both surface as "ceiling value stays RED when
+// it should be GREEN").
+//
+// Fix 1 (the bigger bug): confirmReadyDialogModeConfig's sticky-OR on the override flag.
+// Old code: const nextCeilingOverrideEnabled = cfg.confirmed.aircraftCeilingOverrideEnabled
+//                                              || cfg.aircraftCeilingOverridePending;
+// Once confirmed.overrideEnabled was ever true, OR with anything kept it true forever -- the
+// user could never disable a confirmed override. Combined with the fact that picking any preset
+// sets pending.aircraftCeilingOverridePending = false (preset clears it), the sequence
+// "had override on, switch to a preset, confirm" produced: confirmed=true, pending=false ->
+// permanent mismatch -> ceiling stays RED. Fixed by direct copy: confirmed.overrideEnabled now
+// just mirrors pending.overridePending. Confirm respects whatever the user actually has pending.
+//
+// Fix 2: detectAndApplyMatchingPreset (v0.715 helper) now also clears
+// pending.aircraftCeilingOverridePending when snapping back to a preset, mirroring what the
+// preset-application path does. Without this, the snap-back case (edit ceiling, edit back,
+// snap-back fires) left overridePending=true while the numeric ceiling matched -- still RED.
+//
+// Both shipped together because the symptom looked the same to the user ("ceiling stays red")
+// but two distinct paths caused it.
+
+// v0.715: Snap-back from Custom to a matching preset when knobs revert. Before: editing any
+// knob flipped game mode to "Helis Only - Custom" (via ensureCustomGameModeForManualChange);
+// editing the knob BACK to the preset's value left the label stuck on "Custom" forever even
+// though all pending values matched TWL 2v2 (or any other preset). Now: a complement helper
+// detectAndApplyMatchingPreset runs at every modeConfig refresh -- if currently Custom AND all
+// pending values match a known preset, snap the gameMode back to that preset. Iterates
+// non-Custom presets; first match wins (presets are structurally non-overlapping via per-mode
+// autoStartMinActivePlayers + best-of values).
+//
+// Race guard: ensureCustomGameModeForManualChange internally calls updateReadyDialog... BEFORE
+// the knob mutation in the setter completes. If snap-back ran during that nested call, it would
+// see the pre-mutation (still-matching) values and undo the flip-to-Custom. Reused the existing
+// suppressReadyDialogModeAutoSwitch flag during the nested call -- detectAndApplyMatchingPreset
+// checks the same flag and early-returns, matching how applyReadyDialogModePresetForGameMode
+// uses the flag during full-preset application.
+//
+// Nice side effect: resolves a visual inconsistency from v0.703 dirty-state work -- the value
+// widget could turn GREEN (matches confirmed) while the label still said "Custom" (sticky).
+// Now both signals agree.
+//
+// Diagnosis + design doc: design_doc/5.31.26_custom_mode_snap_back_plan.md
+// Neither helis nor Conquest had this snap-back; it's NEW behavior, not a Conquest port.
+
+// v0.714: Fix intermittent vehicle-spawns-without-full-health bug for HP multipliers > 1.0
+// (most visible on TWL 2v2 default 130%). Two-part code bolster in OnVehicleSpawned:
+//   (1) Added mod.Heal(vehicle, 99999) after mod.SetVehicleMaxHealthMultiplier. SDK has no
+//       SetVehicleCurrentHealth API -- Heal (clamped to current max) is the only way to lift
+//       current health post-spawn. SetMaxHealthMultiplier raised the max ceiling but did NOT
+//       refill current. Engine timing race: sometimes the engine's "set initial current = max"
+//       step ran AFTER our SetMax call (current locked at default max=100, max raised to 130 ->
+//       partial display); sometimes BEFORE (engine saw new max during init -> full). Heal closes
+//       the race -- current always lifted to max post-call regardless of timing.
+//   (2) Moved the SetMax + Heal call to fire IMMEDIATELY after the vehicle is known to survive
+//       the unspawn/replace branches, BEFORE the "if (inferredTeam !== Team1/Team2) return"
+//       early exit. Old position: bottom of function, after team inference. Bug: vehicles that
+//       failed team inference (line 707 early return) survived without ever having the mult
+//       applied -- they displayed as "full" but were at engine default max (e.g., 100), not the
+//       configured 130. New position covers every surviving vehicle.
+// Try/catch wrap mirrors the existing BillDukes precedent. SDK clamps mult > 0 && <= 4.
+
+// v0.713: P0 crash fix -- squad-spawn-into-chopper killed the entire server script (7/7 repro).
+// Root cause: spawnTeamSwitchInteractPoint in team-switch.ts had a synchronous busy-loop polling
+// SoldierStateBool.IsOnGround with NO await inside. When a player squad-spawned onto a teammate
+// who was in a chopper, the new player was "deployed AND in-vehicle" simultaneously -- IsOnGround
+// returned false (player is in vehicle, not on ground), the loop spun forever, and the 1000ms
+// sandbox eval budget breached, killing the whole script for all players. Pre-existing bug (the
+// while loop has been there since at least v0.641); only exposed by systematic testing of
+// squad-spawn-into-vehicle which wasn't part of prior playtests. NOT introduced by recent
+// optimizations -- v0.711's seatKind gate caught the same pattern at OngoingPlayer's call site
+// but missed OnPlayerDeployed's call site (the chopper-spawn trigger).
+//
+// Three-layer fix in spawnTeamSwitchInteractPoint + OnPlayerExitVehicle:
+//   (a) Early-return at function entry when IsInVehicle (interact point can't be triggered from
+//       inside a vehicle anyway). Primary fix -- covers all callers in one place.
+//   (b) Async yield + 30s hard cap (300 iterations * 0.1s) inside the IsOnGround while loop --
+//       defense-in-depth so any future scenario that leaves a player not-on-ground for extended
+//       time cannot burn the eval budget again.
+//   (c) Re-call spawnTeamSwitchInteractPoint from OnPlayerExitVehicle -- restores the interact
+//       point when the squad-spawned player exits their chopper and lands. Idempotent via the
+//       existing interactPoint === null guard.
+// Full diagnosis + related-risk audit + process reflection:
+// design_doc/5.31.26_squad_spawn_chopper_crash_plan.md
+
+// v0.712: Per-tick optimization Bundle B -- tick-context mod.AllPlayers() cache. Main 1Hz loop
+// (index.ts) was calling mod.AllPlayers() three times per tick (once each from updateAllPlayersClock,
+// checkTakeoffLimitForAllPlayers, applyAutoReadyForAllPlayers). Hoisted to a single call at the
+// top of the tick; the 3 helpers now accept optional (cachedPlayers, cachedCount) params and fall
+// through to a fresh fetch when called from non-tick paths (admin clock/kill buttons in
+// team-switch.ts, initial seed in index.ts, post-kill sync in OnVehicleDestroyed). updateOvertimeStage
+// is NOT in the cache path -- its top-level body doesn't iterate players directly; the sub-helpers
+// it delegates to (refreshOvertimeUiVisibilityForAllPlayers, updateOvertimeHudForAllPlayers) still
+// fetch their own AllPlayers. Mirrors Conquest's tick-context pattern (CQ_Perf_TickContext_AllPlayers_Cache,
+// v1.219). Net: 2 mod.AllPlayers() bridge calls/sec eliminated; behavior unchanged.
+
+// v0.711: Per-tick optimization Bundle A. Three pure-removal/gating fixes:
+// (1) F6 hoist phase gate above checkTakeoffLimitForAllPlayers + applyAutoReadyForAllPlayers in
+//     the main 1Hz loop (index.ts:130). Both helpers already short-circuit internally on
+//     phase != NotReady || cleanupActive; hoisting saves 2 function-call cycles/sec post-round-start
+//     without changing behavior.
+// (2) Delete the polled syncKillsHudFromTrackedTotals(false) call from the main loop. Every kill
+//     increment site (OnVehicleDestroyed at index.ts:780, admin T1/T2 +/- in team-switch.ts:709-725)
+//     already calls the sync immediately after mutating State.scores.tNTotalKills. The polled call
+//     was pure redundancy after v0.692's cache check.
+// (3) seatKind gate in OngoingPlayer: skip InteractMultiClickDetector.checkMultiClick polling when
+//     the player is in a vehicle (interact points can't activate from vehicles anyway, and the
+//     IsInteracting bridge call is the highest-cost per-tick read in OngoingPlayer). New
+//     InteractMultiClickDetector.clearState method called from OnPlayerExitVehicle ensures the
+//     next polling tick re-arms cleanly (no stale lastIsInteracting from the pre-entry tick).
+// All three are pure gating/removal -- no behavior change observable to players in the steady state.
+
+// v0.710: Comments audit (Bundle 1 + Bundle 2 from 5.31.26_heli_comments_audit_plan.md). No code
+// behavior changes; pure documentation pass. ADDED: cache-invariant comment on ensureEagerHudShell's
+// cached.settingsGameModeText check (A1), strengthened Phase A gate explainer on updateVictoryDialog's
+// triggerLazyBuild call (A2), tick cadence map above the main 1Hz loop in OnGameModeStarted (A4 --
+// note: no runMainBaseAreaTriggerLoop exists, main-base detection is event-driven), STAGE constants
+// context block above STAGE_GREEN/YELLOW/BLACK in runAircraftWarningLoop (A5). REMOVED: 86 inline
+// "// position: [x, y] offset; direction depends on anchor" repeats across hud.ts + hud-dialog-lazy.ts
+// + hud-scoring-lazy.ts + clock.ts (C1), 51 inline "// UI element: WidgetName" comments that
+// duplicated the next-line name: field across the same modlib.ParseUI blocks (C2). Added a canonical
+// position-convention note at the top of hud.ts referencing the other affected files. Plan items
+// SKIPPED as obsolete: A3 (warm-up deleted in v0.692, no code to comment), B1 (current comment
+// matches the proposed replacement), B2 (parameter is already named `force`, no rename needed).
+
+// v0.709: Fix YOU WILL BE DESTROYED line showing on first dialog open even when ceiling punish is
+// OFF. Root cause: modlib.ParseUI post-construction visibility flips do not commit on the same JS
+// tick as the lazy build. v0.706 built visible:false and tried to toggle ON at first show -- failed
+// (red text never appeared). v0.707/v0.708 built visible:true and tried to toggle OFF at first show
+// -- failed (red text appeared when punish was OFF), but worked on second show (widget fully
+// committed by then -- user reported "shows up the first time the dialog appears, it goes away the
+// 2nd time"). Fix: capture State.admin.ceilingPunishEnabled at BUILD TIME so initial render is
+// correct without any same-tick toggle. The runtime toggle in setAltitudeWarningVisibleForPid is
+// kept as a best-effort update for cases where the admin button is pressed between dialog shows.
+
+// v0.708: Restart pad-sink feature DISABLED per user. Two attempts (v0.704 teleport-only +
+// scheduleRoundEndCleanup DealDamage at 10s; v0.705 full Conquest port with teleport + 1.5s wait
+// + DealDamage in helper) both FAILED -- user reported choppers still visibly blowing up on the
+// pad. Both attempts were speculative without diagnostic instrumentation. Per user "I'm fine with
+// that feature not being in right now. I want notes on what went wrong, and notes on what to try
+// next time": removed the sinkOnPadVehiclesForRestart() call from triggerFreshRoundSetup
+// (round-flow.ts). Helper functions sinkAndDestroyVehicleAtPad + sinkOnPadVehiclesForRestart
+// remain in vehicles.ts as dead code with a STATUS: DISABLED comment block listing the diagnosis
+// hypotheses and ranked next-attempt steps. Full triage notes in heli_issues.md H_Bug_4. Next
+// session should ship a diagnostic build (broadcast world-log strings from inside the helper to
+// reveal which assumption is wrong) BEFORE attempting another fix.
+
+// v0.707: Fix YOU WILL BE DESTROYED! line not rendering -- v0.706 built it visible:false then
+// relied on setAltitudeWarningVisibleForPid to toggle it on. User reported no red text even with
+// punish ON. Hypothesis: engine doesn't reliably toggle a child that started life hidden in the
+// modlib.ParseUI tree (the other children that DO render reliably are all visible:true). Switched
+// to visible:true at construction; the runtime toggle in setAltitudeWarningVisibleForPid now only
+// HIDES it when ceilingPunishEnabled is false (which is the easier direction -- visible-by-default
+// children reliably accept a visibility flip from the engine's perspective).
+
+// v0.706: Ceiling-punish black-screen dialog gets a new red "YOU WILL BE DESTROYED!" line below
+// the countdown number. Only shown when State.admin.ceilingPunishEnabled is true (warning is just
+// a 5s timeout if punish is off). New string twl.hud.altitudeWarning.destroyedWarning + new
+// per-pid widget Altitude_Warning_Destroyed_{pid} in the existing ParseUI children block, built
+// with visible:false. Visibility set by setAltitudeWarningVisibleForPid on the visible->true
+// transition (same path that stamps the "Ceiling: X" label). Toggling ceilingPunishEnabled OFF
+// mid-exposure won't immediately hide the line, but the punish gate in runAircraftWarningLoop
+// also checks the toggle so no destruction fires.
+
+// v0.705: Restart pad cleanup -- faithful Conquest port. v0.704's design (teleport-only, rely on
+// scheduleRoundEndCleanup's DealDamage 10s later) failed: user reported vehicles blew up on the pad
+// visibly. Root cause likely one of: (a) engine moved the vehicle back over 10s, (b) slot-bound
+// iteration missed vehicles whose binding wasn't set yet, (c) explosion VFX re-anchored to pad
+// after the long delay. Replaced with full Conquest pattern: new async sinkAndDestroyVehicleAtPad
+// teleports + awaits 1.5s + DealDamage in one helper. Also switched from slot.vehicleId iteration
+// to mod.AllVehicles() with nearest-slot.spawnPos distance check -- catches vehicles that exist
+// but aren't slot-bound. Fire-and-forget per vehicle so multiple sink chains run in parallel.
+
+// v0.704: Restart-button pad cleanup hygiene. New sinkOnPadSlotVehiclesForRestart() in vehicles.ts
+// iterates State.vehicles.slots, finds each bound chopper still within RESTART_PAD_SINK_RADIUS_METERS
+// (=15m) of slot.spawnPos, and teleports it to (X, -1000, Z) using the live X/Z (or slot.spawnPos
+// X/Z if GetObjectPosition fails). Called from triggerFreshRoundSetup BEFORE scheduleRoundEndCleanup
+// so the existing DealDamage loop (~10s later via ROUND_END_REDEPLOY_DELAY_SECONDS) destroys the
+// underground vehicle silently. Drifted (>15m) choppers are skipped and blow up in place per user's
+// "blow up where it is" rule. Round-end cleanup at scheduleRoundEndCleanup (line 200) untouched --
+// only Restart triggers the pre-sink. Pattern adapted from conquest's sinkAndDestroyVehicle
+// (vehicles/vanilla-spawner.ts:85), simplified by leveraging the cleanup loop's existing wait.
+
+// v0.703: Plan 2 — dirty-state value coloring + Unsaved-changes notice + admin panel row reorder + ceiling punish default OFF.
+// (a) Three-color scheme on Ready Dialog value widgets: labels stay white, confirmed values render GREEN
+//     (COLOR_READY_GREEN), dirty values render RED (COLOR_NOT_READY_RED). Affects 5 value widgets: game mode,
+//     mode settings (ceiling), vehicle HP, vehicles T1, vehicles T2. New helper buildReadyDialogModeConfigDiffState
+//     compares pending modeConfig vs cfg.confirmed per-field; applyDirtyStateColorsForPid runs at the end of
+//     updateReadyDialogModeConfigForPid (called on every dialog refresh + after Confirm + after Reset via caller).
+// (b) "Unsaved changes! Press 'Confirm & Apply Mode Changes' to save" notice text added to the dialog, positioned
+//     to the LEFT of the Confirm button (TopRight anchor, +unsavedNoticeGap from confirm). Built HIDDEN via
+//     modlib.ParseUI{visible: false} to avoid the post-construction SetUIWidgetVisible race. Visibility flipped
+//     by applyDirtyStateColorsForPid based on diff.hasUnsavedChanges (Q4: hidden when clean).
+// (c) Admin Panel row reorder: Tie-Breaker Setting toggle moved to 2nd-to-last; Tie-Breaker Randomization Override
+//     label + 7 flag buttons moved to LAST (was at top of section). Top-to-bottom is now: Live Redeploy ->
+//     Ceiling Punish -> Round Length -> Hard Buffer -> Warn Buffer -> Tie-Breaker Setting -> Tie-Breaker Override
+//     (7 flags A-G). Explicit TIEBREAKER_BOTTOM_GAP = 12 visually separates toggles cluster from the busy
+//     7-flag block. ADMIN_PANEL_HEIGHT bumped 762 -> 780 (+18) to fit the rearranged bottom anchor.
+// (d) DEFAULT_CEILING_PUNISH_ENABLED flipped true -> false per user. Resets on match restart.
+// Strings: notifications.ceilingPunishDestroyed (untouched), readyDialog.unsavedChangesLabel added, new UI ID
+// constant UI_READY_DIALOG_UNSAVED_NOTICE_ID added in strings.ts.
+
 // v0.702: ADMIN_PANEL_HEIGHT 728 -> 762 (+34px). v0.701 added the Ceiling Punish row without growing the
 // container -- text widget for the new row landed below the panel clip so the button rendered with no
 // label (button itself was still clickable because outline extended visually). Pattern mirrors v0.666's

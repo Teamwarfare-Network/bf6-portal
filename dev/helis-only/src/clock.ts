@@ -109,7 +109,7 @@ function getRegisteredVehicleCount(teamNum: TeamID): number {
  * - This should remain a lightweight pass that only updates widgets when the displayed value changes.
  */
 
-function updateAllPlayersClock(): void {
+function updateAllPlayersClock(cachedPlayers?: any, cachedCount?: number): void {
     const remaining = isRoundLive() ? getRemainingSeconds() : getConfiguredRoundLengthSeconds();
 
     if (!State.round.clock.expiryFired && remaining <= 0) {
@@ -142,8 +142,10 @@ const seconds = remaining % 60;
     // N function calls per second when the Victory dialog isn't active (vast majority of match).
     const showVictory = State.match.victoryDialogActive;
 
-    const players = mod.AllPlayers();
-    const count = mod.CountOf(players);
+    // v0.712: accept a tick-context AllPlayers snapshot from the main loop; fall through to a
+    // fresh fetch when called from non-tick paths (admin clock buttons, OnGameModeStarted init).
+    const players = cachedPlayers ?? mod.AllPlayers();
+    const count = cachedCount ?? mod.CountOf(players);
 
     for (let i = 0; i < count; i++) {
         const player = mod.ValueInArray(players, i) as mod.Player;
@@ -247,7 +249,6 @@ const pid = mod.GetObjId(player);
         type: "Container",
         playerId: player,
         anchor: mod.UIAnchor.TopCenter,
-        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
         position: [CLOCK_POSITION_X, CLOCK_POSITION_Y],
         size: [CLOCK_WIDTH, CLOCK_HEIGHT],
         visible: true,
@@ -268,7 +269,6 @@ const pid = mod.GetObjId(player);
         type: "Container",
         playerId: player,
         anchor: mod.UIAnchor.TopCenter,
-        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
         position: [CLOCK_POSITION_X, CLOCK_POSITION_Y + CLOCK_HEIGHT - 10],
         size: [CLOCK_WIDTH, 34],
         visible: true,
@@ -278,7 +278,6 @@ const pid = mod.GetObjId(player);
                 name: "RoundStateText_" + pid,
                 type: "Text",
                 anchor: mod.UIAnchor.TopCenter,
-                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 0],
                 size: [CLOCK_WIDTH, 18],
                 visible: true,
@@ -295,7 +294,6 @@ const pid = mod.GetObjId(player);
                 name: "PlayersReadyText_" + pid,
                 type: "Text",
                 anchor: mod.UIAnchor.TopCenter,
-                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 14],
                 size: [CLOCK_WIDTH, 18],
                 visible: false,
@@ -319,7 +317,6 @@ const pid = mod.GetObjId(player);
         type: "Container",
         playerId: player,
         anchor: mod.UIAnchor.TopCenter,
-        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
         position: [CLOCK_POSITION_X, CLOCK_POSITION_Y + ROUND_LIVE_HELP_OFFSET_Y],
         size: [ROUND_LIVE_HELP_WIDTH, ROUND_LIVE_HELP_HEIGHT],
         visible: false,
@@ -329,7 +326,6 @@ const pid = mod.GetObjId(player);
                 name: "RoundLiveHelpText_" + pid,
                 type: "Text",
                 anchor: mod.UIAnchor.TopCenter,
-                // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                 position: [0, 0],
                 size: [ROUND_LIVE_HELP_WIDTH, ROUND_LIVE_HELP_HEIGHT],
                 visible: true,
@@ -387,7 +383,6 @@ function buildDigit(part: string, pid: number, x: number, width: number) {
         name: "MatchTimer" + part + "_" + pid,
         type: "Text",
         anchor: mod.UIAnchor.Center,
-        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
         position: [x, 0],
         size: [width, CLOCK_HEIGHT],
         visible: true,
@@ -403,7 +398,6 @@ function buildColon(pid: number, x: number, width: number) {
         name: "MatchTimerColon_" + pid,
         type: "Text",
         anchor: mod.UIAnchor.Center,
-        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
         position: [x, 0],
         size: [width, CLOCK_HEIGHT],
         visible: true,

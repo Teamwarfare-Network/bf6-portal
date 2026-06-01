@@ -38,6 +38,15 @@ interface teamSwitchData_t {
 
 async function spawnTeamSwitchInteractPoint(eventPlayer: mod.Player) {
     if (!isPlayerDeployed(eventPlayer)) return;
+    // v0.713 fix (P0 crash): squad-spawn-into-chopper put the player in a "deployed AND
+    // in-vehicle" state. The IsOnGround poll below would spin forever (player is never on
+    // ground while in a vehicle), busting the 1000ms sandbox eval budget and killing the
+    // entire script for all players. The interact point can't be triggered from inside a
+    // vehicle anyway -- the player has to exit first to triple-tap. Skip the spawn entirely
+    // when in-vehicle. OnPlayerExitVehicle re-calls this function so the interact point
+    // appears the moment the player lands. Full diagnosis:
+    // design_doc/5.31.26_squad_spawn_chopper_crash_plan.md
+    if (safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsInVehicle, false)) return;
     const playerId = mod.GetObjId(eventPlayer);
     if (!State.players.teamSwitchData[playerId]) initTeamSwitchData(eventPlayer);
 
@@ -57,8 +66,16 @@ async function spawnTeamSwitchInteractPoint(eventPlayer: mod.Player) {
     ) {
         let isOnGround = safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsOnGround);
 
+        // v0.713 defense-in-depth: the in-vehicle gate at function entry is the primary fix
+        // for the squad-spawn-into-chopper crash. This loop adds an async yield + hard cap
+        // (300 iterations * 0.1s = 30s max wait) so any FUTURE scenario that leaves a player
+        // not-on-ground for an extended time can never burn the 1000ms eval budget. Yielding
+        // each tick also lets the player's actual landing be observed at engine cadence.
+        let iterations = 0;
         while (!isOnGround) {
+            if (iterations++ > 300) return;
             if (!isPlayerDeployed(eventPlayer)) return;
+            await mod.Wait(0.1);
             isOnGround = safeGetSoldierStateBool(eventPlayer, mod.SoldierStateBool.IsOnGround);
         }
 
@@ -609,6 +626,15 @@ function teamSwitchButtonEvent(
         }
         case UI_READY_DIALOG_MODE_CONFIRM_ID + playerId: {
             if (isRoundLive()) break;
+            // v0.724: ceiling-lock guard. applyDirtyStateColorsForPid disables the button event
+            // when this same condition holds, but we double-check here in case the event toggle
+            // didn't take effect (engine event-disable is not 100% reliable per Conquest CQ_Bug_*).
+            const cfg = State.round.modeConfig;
+            const pendingWouldBeVanilla = !shouldApplyCustomCeilingForConfig(cfg.gameMode, cfg.aircraftCeilingOverridePending);
+            if (State.round.aircraftCeiling.hasEverAppliedCustom && pendingWouldBeVanilla) {
+                const diff = buildReadyDialogModeConfigDiffState();
+                if (diff.hasUnsavedChanges) break;
+            }
             confirmReadyDialogModeConfig(eventPlayer);
             updateReadyDialogModeConfigForAllVisibleViewers();
             break;
@@ -892,6 +918,7 @@ function teamSwitchButtonEvent(
         case UI_ADMIN_CEILING_PUNISH_BUTTON_ID + playerId: {
             State.admin.ceilingPunishEnabled = !State.admin.ceilingPunishEnabled;
             syncAdminCeilingPunishLabelForAllPlayers();
+            updateSettingsSummaryHudForAllPlayers();
             handleAdminPanelAction(
                 eventPlayer,
                 State.admin.ceilingPunishEnabled

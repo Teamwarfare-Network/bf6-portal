@@ -331,6 +331,12 @@ function triggerFreshRoundSetup(triggerPlayer?: mod.Player): void {
         mod.stringkeys.twl.notifications.roundOverRedeploying
     );
 
+    // v0.721: Sink + silently destroy every UNOCCUPIED vehicle before the standard cleanup runs.
+    // Drops the v0.704/v0.705 slot iteration + 15m radius gate (those gates were the suspected
+    // reason no vehicles ever got sunk). scheduleRoundEndCleanup still runs after, handling any
+    // vehicle this skipped (occupied ones get their normal in-place destroy).
+    sinkAndDestroyAllEmptyVehiclesForRestart();
+
     void scheduleRoundEndCleanup(redeployToken);
 }
 

@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Vehicles (v0.702)",
+        "title": "teamwarfare . net | TWL Vehicles (v0.724)",
         "subtitle": "Experience Code: - - - -"
       },
       "roundText": "ROUND",
@@ -32,7 +32,8 @@
       "altitudeWarning": {
         "title": "ALTITUDE CEILING BREACHED",
         "body": "Descend immediately!",
-        "ceilingFormat": "Ceiling: {0}"
+        "ceilingFormat": "Ceiling: {0}",
+        "destroyedWarning": "YOU WILL BE DESTROYED!"
       },
       "altimeter": {
         "format": "Altitude: {0}",
@@ -40,14 +41,16 @@
       },
       "settings": {
         "gameModeFormat": "Game Mode: {0}",
-        "aircraftCeilingFormat": "Aircraft Ceiling: {0}",
+        "aircraftCeilingFormat": "Ceiling: {0} / Punish: {1}",
         "vehicleHealthFormat": "Vehicle Health: {0}%",
         "vehiclesTeamFormat": "Vehicles {0}: {1}",
         "vehiclesMatchupFormat": "Vehicles: {0}v{1}",
         "playersFormat": "Players: {0}v{1}",
         "gameModeDefault": "Helis Only - BF6 Vanilla",
         "valueDefault": "Default",
-        "valueMapDefault": "Map Default"
+        "valueMapDefault": "Map Default",
+        "punishOn": "On",
+        "punishOff": "Off"
       }
     },
     "roundEnd": {
@@ -193,6 +196,8 @@
       "vehiclesLabelFormat": "Vehicles {0}:",
       "confirmSettingsLabel": "CONFIRM & APPLY MODE CHANGES",
       "resetSettingsLabel": "RESTART / FRESH SETUP",
+      "unsavedChangesLabel": "Unsaved changes! Press 'Confirm & Apply Mode Changes' to save",
+      "ceilingVanillaLockedWarning": "Cannot save - Server Restart must occur to re-enable Vanilla Ceiling settings",
       "gameModeHelisLadder": "Helis Only - TWL 2v2",
       "gameModeHelisTwl1v1": "Helis Only - TWL 1v1",
       "gameModeHelisPractice": "Helis Only - BF6 Vanilla",

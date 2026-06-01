@@ -368,7 +368,7 @@ const ALTIMETER_HUD_TEXT_SIZE = 24;
 // At elapsed >= COUNTDOWN + CEILING_PUNISH_GRACE the aircraft is destroyed (admin-togglable).
 const ALTITUDE_WARNING_COUNTDOWN_SECONDS = 5;
 const CEILING_PUNISH_GRACE_SECONDS = 1;
-const DEFAULT_CEILING_PUNISH_ENABLED = true; // Admin-togglable: destroy aircraft 1s past the 0 mark when ON.
+const DEFAULT_CEILING_PUNISH_ENABLED = true; // Admin-togglable: destroy aircraft 1s past the 0 mark when ON. Default ON per user (v0.724).
 
 // Pregame countdown tuning (Ready Up -> round start).
 // Units: seconds and UI scale units.
@@ -457,7 +457,7 @@ const READY_DIALOG_LABEL_TEXT_COLOR = COLOR_WHITE;
 const READY_DIALOG_BORDER_COLOR = COLOR_GRAY;
 
 // Admin Panel
-const ADMIN_PANEL_HEIGHT = 762; // v0.702: +34px for the new Ceiling Punish row (1 admin-row gap on top of v0.666's 728).
+const ADMIN_PANEL_HEIGHT = 780; // v0.703: +18px on top of v0.702's 762. Plan 2 row reorder moved Tie-Breaker rows to the bottom of the section (was at top); the new arrangement is ~12px taller because of the explicit TIEBREAKER_BOTTOM_GAP between the toggles cluster and the override block.
 const ADMIN_PANEL_PADDING = 5;
 const ADMIN_PANEL_BASE_X = -5;
 const ADMIN_PANEL_BASE_Y = 15;
@@ -615,10 +615,13 @@ const STR_HUD_SETTINGS_PLAYERS_FORMAT = mod.stringkeys.twl.hud.settings.playersF
 const STR_HUD_SETTINGS_GAME_MODE_DEFAULT = mod.stringkeys.twl.hud.settings.gameModeDefault;
 const STR_HUD_SETTINGS_VALUE_DEFAULT = mod.stringkeys.twl.hud.settings.valueDefault;
 const STR_HUD_SETTINGS_VALUE_MAP_DEFAULT = mod.stringkeys.twl.hud.settings.valueMapDefault;
+const STR_HUD_SETTINGS_PUNISH_ON = mod.stringkeys.twl.hud.settings.punishOn;
+const STR_HUD_SETTINGS_PUNISH_OFF = mod.stringkeys.twl.hud.settings.punishOff;
 // H-P1 altitude warning + admin Buffer knob strings.
 const STR_HUD_ALTITUDE_WARNING_TITLE = mod.stringkeys.twl.hud.altitudeWarning.title;
 const STR_HUD_ALTITUDE_WARNING_BODY = mod.stringkeys.twl.hud.altitudeWarning.body;
 const STR_HUD_ALTITUDE_WARNING_CEILING_FORMAT = mod.stringkeys.twl.hud.altitudeWarning.ceilingFormat;
+const STR_HUD_ALTITUDE_WARNING_DESTROYED = mod.stringkeys.twl.hud.altitudeWarning.destroyedWarning;
 const STR_ADMIN_AIRCRAFT_BUFFER_LABEL = mod.stringkeys.twl.adminPanel.tester.labels.aircraftBuffer;
 const STR_ADMIN_AIRCRAFT_BUFFER_INC = mod.stringkeys.twl.adminPanel.actions.aircraftBufferInc;
 const STR_ADMIN_AIRCRAFT_BUFFER_DEC = mod.stringkeys.twl.adminPanel.actions.aircraftBufferDec;

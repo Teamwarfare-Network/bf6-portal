@@ -53,11 +53,9 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
         const TRENDING_CROWN_LEFT_X = PANEL_WIDTH - TRENDING_CROWN_SIZE - 10;
         const TRENDING_CROWN_RIGHT_X = 10;
         const mid = modlib.ParseUI({
-            // UI element: Container_TopMiddle_CoreUI_${pid}
             name: `Container_TopMiddle_CoreUI_${pid}`,
             type: "Container",
             playerId: player,
-            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
             position: [MID_PANEL_X, TOP_PANEL_Y],
             size: [PANEL_WIDTH, PANEL_HEIGHT],
             anchor: mod.UIAnchor.TopLeft,
@@ -68,10 +66,8 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
             bgFill: mod.UIBgFill.Blur,
             children: [
                 {
-                    // UI element: RoundText_${pid}
                     name: `RoundText_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0.5, -4],
                     size: [72.5, 24],
                     anchor: mod.UIAnchor.TopLeft,
@@ -90,7 +86,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Help/instructions text shown when enabled for this player
                     name: `Container_HelpText_${pid}`,
                     type: "Container",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [-165.5, 92], //[-116.5, 92]
                     size: [450, 20],
                     anchor: mod.UIAnchor.TopLeft,
@@ -104,7 +99,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                             // Help/instructions text shown when enabled for this player
                             name: `HelpText_${pid}`,
                             type: "Text",
-                            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [0, 2],
                             size: [450, 14],
                             anchor: mod.UIAnchor.TopLeft,
@@ -125,7 +119,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Ready status text shown when the player is READY and the round is not live
                     name: `Container_ReadyStatus_${pid}`,
                     type: "Container",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [-165.5, 92], //[-116.5, 92]
                     size: [450, 20],
                     anchor: mod.UIAnchor.TopLeft,
@@ -138,7 +131,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                             // Ready status text shown when enabled for this player
                             name: `ReadyStatusText_${pid}`,
                             type: "Text",
-                            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                             position: [0, 2],
                             size: [450, 14],
                             anchor: mod.UIAnchor.TopLeft,
@@ -155,10 +147,8 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     ],
                 },
                 {
-                    // UI element: Slash_${pid}
                     name: `Slash_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [71.5 + ROUND_SLASH_OFFSET_X, -2],
                     size: [31, 21],
                     anchor: mod.UIAnchor.TopLeft,
@@ -178,11 +168,9 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
         if (mid) refs.roots.push(mid);
 
         const t1Panel = modlib.ParseUI({
-            // UI element: Container_TopLeft_CoreUI_${pid}
             name: `Container_TopLeft_CoreUI_${pid}`,
             type: "Container",
             playerId: player,
-            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
             position: [LEFT_PANEL_X, TOP_PANEL_Y],
             size: [PANEL_WIDTH, PANEL_HEIGHT],
             anchor: mod.UIAnchor.TopLeft,
@@ -196,7 +184,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Trending winner crown (solid) for Team 1
                     name: `TeamLeft_Trending_Crown_${pid}`,
                     type: "Image",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [TRENDING_CROWN_LEFT_X, TRENDING_CROWN_OFFSET_Y],
                     size: [TRENDING_CROWN_SIZE, TRENDING_CROWN_SIZE],
                     anchor: mod.UIAnchor.TopLeft,
@@ -212,7 +199,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Team name label for Team 1 (left side)
                     name: `TeamLeft_Name_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [23.25, 0],
                     size: [68, 28],
                     anchor: mod.UIAnchor.TopLeft,
@@ -228,10 +214,8 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     textAnchor: mod.UIAnchor.Center,
                 },
                 {
-                    // UI element: TeamLeft_Record_${pid}
                     name: `TeamLeft_Record_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [2.25, 22],
                     size: [110, 20],
                     anchor: mod.UIAnchor.TopLeft,
@@ -250,7 +234,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Display variable for round wins on Team 1 (left side)
                     name: `TeamLeft_Wins_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [31, 45], //26.5, 44
                     size: [72, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -269,7 +252,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Display variable for total kills on Team 1 (left side)
                     name: `TeamLeft_Kills_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [26.5, 59], //26.5, 58
                     size: [72, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -289,11 +271,9 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
         if (t1Panel) refs.roots.push(t1Panel);
 
         const t1RoundKillsPanel = modlib.ParseUI({
-            // UI element: Container_TopLeft_RoundKills_${pid}
             name: `Container_TopLeft_RoundKills_${pid}`,
             type: "Container",
             playerId: player,
-            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
             position: [ROUND_KILLS_LEFT_X, TOP_PANEL_Y],
             size: [ROUND_KILLS_PANEL_SIZE, ROUND_KILLS_PANEL_SIZE],
             anchor: mod.UIAnchor.TopLeft,
@@ -307,7 +287,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Crown indicator shown for round winner (Team 1)
                     name: `TeamLeft_RoundKills_Crown_${pid}`,
                     type: "Image",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, -35],
                     size: [45, 45],
                     anchor: mod.UIAnchor.TopCenter,
@@ -323,7 +302,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Big round-kills counter for Team 1
                     name: `TeamLeft_RoundKills_CounterText_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 0],
                     size: [ROUND_KILLS_PANEL_SIZE, 60],
                     anchor: mod.UIAnchor.TopLeft,
@@ -341,7 +319,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Round kills label (bottom of the panel)
                     name: `TeamLeft_RoundKills_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 53],
                     size: [ROUND_KILLS_PANEL_SIZE, 18],
                     anchor: mod.UIAnchor.TopLeft,
@@ -359,7 +336,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Registered vehicles alive (live round only)
                     name: `TeamLeft_RoundKills_VehiclesAlive_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 76],
                     size: [ROUND_KILLS_PANEL_SIZE, 12],
                     anchor: mod.UIAnchor.TopLeft,
@@ -378,11 +354,9 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
         if (t1RoundKillsPanel) refs.roots.push(t1RoundKillsPanel);
 
         const t2Panel = modlib.ParseUI({
-            // UI element: Container_TopRight_CoreUI_${pid}
             name: `Container_TopRight_CoreUI_${pid}`,
             type: "Container",
             playerId: player,
-            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
             position: [RIGHT_PANEL_X, TOP_PANEL_Y],
             size: [PANEL_WIDTH, PANEL_HEIGHT],
             anchor: mod.UIAnchor.TopLeft,
@@ -396,7 +370,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Trending winner crown (solid) for Team 2
                     name: `TeamRight_Trending_Crown_${pid}`,
                     type: "Image",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [TRENDING_CROWN_RIGHT_X, TRENDING_CROWN_OFFSET_Y],
                     size: [TRENDING_CROWN_SIZE, TRENDING_CROWN_SIZE],
                     anchor: mod.UIAnchor.TopLeft,
@@ -412,7 +385,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Team name label for Team 2 (right side)
                     name: `TeamRight_Name_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [23.25, 0],
                     size: [68, 28],
                     anchor: mod.UIAnchor.TopLeft,
@@ -428,10 +400,8 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     textAnchor: mod.UIAnchor.Center,
                 },
                 {
-                    // UI element: TeamRight_Record_${pid}
                     name: `TeamRight_Record_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [2.25, 22],
                     size: [110, 20],
                     anchor: mod.UIAnchor.TopLeft,
@@ -450,7 +420,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Display variable for round wins on Team 2 (right side)
                     name: `TeamRight_Wins_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [31, 45], //26.5, 44
                     size: [72, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -469,7 +438,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Display variable for total kills on Team 2 (right side)
                     name: `TeamRight_Kills_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [26.5, 59], //58
                     size: [72, 16],
                     anchor: mod.UIAnchor.TopLeft,
@@ -488,11 +456,9 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
         });
 
         const t2RoundKillsPanel = modlib.ParseUI({
-            // UI element: Container_TopRight_RoundKills_${pid}
             name: `Container_TopRight_RoundKills_${pid}`,
             type: "Container",
             playerId: player,
-            // position: [x, y] offset; direction depends on anchor, so verify visually in-game
             position: [ROUND_KILLS_RIGHT_X, TOP_PANEL_Y],
             size: [ROUND_KILLS_PANEL_SIZE, ROUND_KILLS_PANEL_SIZE],
             anchor: mod.UIAnchor.TopLeft,
@@ -506,7 +472,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Crown indicator shown for round winner (Team 2)
                     name: `TeamRight_RoundKills_Crown_${pid}`,
                     type: "Image",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, -35],
                     size: [45, 45],
                     anchor: mod.UIAnchor.TopCenter,
@@ -522,7 +487,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Big round-kills counter for Team 2
                     name: `TeamRight_RoundKills_CounterText_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 0],
                     size: [ROUND_KILLS_PANEL_SIZE, 60],
                     anchor: mod.UIAnchor.TopLeft,
@@ -540,7 +504,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Round kills label (bottom of the panel)
                     name: `TeamRight_RoundKills_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 53],
                     size: [ROUND_KILLS_PANEL_SIZE, 18],
                     anchor: mod.UIAnchor.TopLeft,
@@ -558,7 +521,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     // Registered vehicles alive (live round only)
                     name: `TeamRight_RoundKills_VehiclesAlive_${pid}`,
                     type: "Text",
-                    // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                     position: [0, 76],
                     size: [ROUND_KILLS_PANEL_SIZE, 12],
                     anchor: mod.UIAnchor.TopLeft,
@@ -642,7 +604,6 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
                     {
                         name: textName,
                         type: "Text",
-                        // position: [x, y] offset; direction depends on anchor, so verify visually in-game
                         position: [0, 0],
                         size: [size[0], size[1]],
                         anchor: mod.UIAnchor.Center,

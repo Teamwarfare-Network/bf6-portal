@@ -738,6 +738,7 @@ type HudRefs = {
     altitudeWarningTitle?: mod.UIWidget;
     altitudeWarningBody?: mod.UIWidget;
     altitudeWarningCountdown?: mod.UIWidget;
+    altitudeWarningDestroyedLabel?: mod.UIWidget;     // v0.706: red "YOU WILL BE DESTROYED!" line below countdown, gated on ceilingPunishEnabled
 
     // v0.666 H-P1 altimeter HUD (per-pid). Bottom-left card showing "Alt: {Y}" in GREEN when in
     // aircraft and below soft ceiling; turns YELLOW once posY > soft, with a small "ALTITUDE
@@ -926,6 +927,10 @@ interface GameState {
             hudMaxY: number;
             hudFloorY: number;
             customEnabled: boolean;
+            // v0.723: sticky session flag. Set true the first time enableCustomAircraftCeiling()
+            // fires. Never cleared (would require server restart). Drives the ceiling-revert lockout
+            // in confirmReadyDialogModeConfig and the yellow "Vanilla locked" warning UI.
+            hasEverAppliedCustom: boolean;
             enforcementToken: number;
             // H-P1: admin-tunable buffers (world Y units). v0.669 ceiling-centered layout:
             //   yellow altimeter + "ALTITUDE WARNING" label : posY > ceiling - warningBufferM
@@ -1177,6 +1182,7 @@ const State: GameState = {
             hudMaxY: READY_DIALOG_AIRCRAFT_CEILING_DEFAULT,
             hudFloorY: 0,
             customEnabled: false,
+            hasEverAppliedCustom: false,
             enforcementToken: 0,
             hardBufferM: AIRCRAFT_HARD_BUFFER_DEFAULT,
             warningBufferM: AIRCRAFT_WARNING_BUFFER_DEFAULT,
