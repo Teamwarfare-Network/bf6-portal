@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Module: File header, versioning, license, attribution
 
-// version: 0.736 | Date: 06.01.26 | Time: 21:35 UTC
+// version: 0.737 | Date: 06.01.26 | Time: 22:19 UTC
 // *policy: version policy header file: src/header-file.ts
 // *policy: version policy footer file: src/footer-file.ts
 // *policy: version policy strings file: src/strings.json
@@ -34,8 +34,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Authors: UberDuberSoldat, Polynorblu, Dox
-// Code generation, assistance and support by: ChatGPT (OpenAI, GPT-5.2, GPT-5.2-Codex)
+// Authors: UberDuberSoldat, Polykatana, Dox
+// Code generation, assistance and support by Anthropic (Claude Code, Opus, Sonnet) and OpenAI (GPT, GPT-Codex)
 //
 // BF6 Portal Community Tools used/referenced:
 //  - Portal Community Discord: https://discord.com/invite/battlefield-portal-community-870246147455877181
@@ -48,3 +48,4 @@
 //  - BF6 User Interface Tool builder by EagleNait: https://tools.bfportal.gg/ui-builder/
 //  - Custom Conquest Template by andy6170: https://bfportal.gg/experiences/custom-conquest-template/
 //  - Asset Browser by WillToth: https://bf6props.pages.dev/ -- https://github.com/The-Sir-Community/prop_stats/releases/tag/v1.1.2.0
+//  - Portal Cinematic Camera by Nodone: https://discord.com/channels/870246147455877181/1485327163157905604 -- https://github.com/Nodone00/portal-cinematic-toolkit

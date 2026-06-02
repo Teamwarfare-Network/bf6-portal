@@ -232,6 +232,16 @@ function processTeamSwitch(eventPlayer: mod.Player) {
     const newTeamNum = (currentTeamNum === TeamID.Team2) ? TeamID.Team1 : TeamID.Team2;
     mod.SetTeam(eventPlayer, mod.GetTeam(newTeamNum));
 
+    // v0.737 repaint every team-anchored HUD surface for this pid so panel BGs + text colors flip to
+    // match the new own/enemy mapping. SetTeam mutates the engine team binding synchronously, so
+    // safeGetTeamNumberFromPlayer inside the fixups reads the post-switch team. Without this hook the
+    // player would see stale colors (panels painted from the OLD team's POV) until next build of each
+    // surface -- e.g. they'd see opponent panel in blue until match end repainted the victory dialog.
+    const pid = safeGetPlayerId(eventPlayer);
+    if (pid !== undefined) {
+        repaintAllViewerTeamColorsForPid(pid);
+    }
+
     // Force a rapid return to the deploy screen so the player respawns on the new team.
     // Note: do not modify redeploy timers globally; we only force an undeploy so the player can choose spawn manually.
     // Ensure team switching does not grant faster-than-normal respawn timing.

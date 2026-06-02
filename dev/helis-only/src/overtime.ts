@@ -1599,6 +1599,48 @@ function deleteOvertimeUiForPlayerId(pid: number): void {
     delete State.flag.lastUiSnapshotByPid[pid];
 }
 
+// v0.737 Overtime HUD palette. Build-time literals at lines 1693/1710 (count box BGs), 1727/1757
+// (percent box BGs), 1881/1902 (count borders), 1936/1952 (player-zone bar fills), and 2062/2078
+// (global HUD bar fills) seed today's T1=blue / T2=red. The fixup below overwrites the 10 widgets
+// for the viewer's pid so own-team always paints blue. Bar background (COLOR_BLUE_DARK at lines
+// 1919/2045) is the neutral empty-bar color, NOT team-anchored -- skipped.
+const OVERTIME_COUNT_OWN_BG = mod.CreateVector(OVERTIME_COUNT_T1_RGB[0], OVERTIME_COUNT_T1_RGB[1], OVERTIME_COUNT_T1_RGB[2]);
+const OVERTIME_COUNT_ENEMY_BG = mod.CreateVector(OVERTIME_COUNT_T2_RGB[0], OVERTIME_COUNT_T2_RGB[1], OVERTIME_COUNT_T2_RGB[2]);
+
+function applyViewerTeamColorsForOvertimeHudPid(pid: number): void {
+    // In-zone HUD (per-pid when player has entered the overtime trigger).
+    const countsLeft = safeFind(`OvertimeFlag_CountsLeft_${pid}`);
+    const countsRight = safeFind(`OvertimeFlag_CountsRight_${pid}`);
+    const percentLeftBg = safeFind(`OvertimeFlag_PercentLeft_${pid}`);
+    const percentRightBg = safeFind(`OvertimeFlag_PercentRight_${pid}`);
+    const countsLeftBorder = safeFind(`OvertimeFlag_CountsLeft_Border_${pid}`);
+    const countsRightBorder = safeFind(`OvertimeFlag_CountsRight_Border_${pid}`);
+    const barFillT1 = safeFind(`OvertimeFlag_BarFillT1_${pid}`);
+    const barFillT2 = safeFind(`OvertimeFlag_BarFillT2_${pid}`);
+    // Global HUD (currently never shown; updateOvertimeGlobalHudForAllPlayers force-hides it).
+    // Touched for parity in case future work re-enables it.
+    const globalBarFillT1 = safeFind(`OvertimeGlobal_BarFillT1_${pid}`);
+    const globalBarFillT2 = safeFind(`OvertimeGlobal_BarFillT2_${pid}`);
+
+    // Left widgets paint T1's color; right widgets paint T2's color. Each side's color resolves to
+    // own/enemy by comparing viewer's team to the source team.
+    const leftBoxBg = getViewerOwnTeamColor(pid, TeamID.Team1, OVERTIME_COUNT_OWN_BG, OVERTIME_COUNT_ENEMY_BG);
+    const rightBoxBg = getViewerOwnTeamColor(pid, TeamID.Team2, OVERTIME_COUNT_OWN_BG, OVERTIME_COUNT_ENEMY_BG);
+    const leftAccent = getViewerOwnTeamColor(pid, TeamID.Team1, COLOR_BLUE, COLOR_RED);
+    const rightAccent = getViewerOwnTeamColor(pid, TeamID.Team2, COLOR_BLUE, COLOR_RED);
+
+    if (countsLeft) try { mod.SetUIWidgetBgColor(countsLeft, leftBoxBg); } catch {}
+    if (countsRight) try { mod.SetUIWidgetBgColor(countsRight, rightBoxBg); } catch {}
+    if (percentLeftBg) try { mod.SetUIWidgetBgColor(percentLeftBg, leftBoxBg); } catch {}
+    if (percentRightBg) try { mod.SetUIWidgetBgColor(percentRightBg, rightBoxBg); } catch {}
+    if (countsLeftBorder) try { mod.SetUIWidgetBgColor(countsLeftBorder, leftAccent); } catch {}
+    if (countsRightBorder) try { mod.SetUIWidgetBgColor(countsRightBorder, rightAccent); } catch {}
+    if (barFillT1) try { mod.SetUIWidgetBgColor(barFillT1, leftAccent); } catch {}
+    if (barFillT2) try { mod.SetUIWidgetBgColor(barFillT2, rightAccent); } catch {}
+    if (globalBarFillT1) try { mod.SetUIWidgetBgColor(globalBarFillT1, leftAccent); } catch {}
+    if (globalBarFillT2) try { mod.SetUIWidgetBgColor(globalBarFillT2, rightAccent); } catch {}
+}
+
 function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | undefined {
     // In-zone HUD: status, counts, and capture bar.
     // Text widgets are built via modlib.ParseUI; the bar uses AddUIContainer for dynamic width updates.
@@ -1634,6 +1676,8 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
             barFillT2: safeFind(`OvertimeFlag_BarFillT2_${pid}`),
         };
         State.flag.uiByPid[pid] = refs;
+        // v0.737 paint viewer-relative colors on existing-widget re-bind path too.
+        applyViewerTeamColorsForOvertimeHudPid(pid);
         return refs;
     }
 
@@ -1979,6 +2023,8 @@ function ensureOvertimeHudForPlayer(player: mod.Player): OvertimeFlagHudRefs | u
         barFillT2: safeFind(`OvertimeFlag_BarFillT2_${pid}`),
     };
     State.flag.uiByPid[pid] = refs;
+    // v0.737 paint viewer-relative colors immediately after build.
+    applyViewerTeamColorsForOvertimeHudPid(pid);
     return refs;
 }
 
@@ -2091,6 +2137,8 @@ function ensureOvertimeGlobalHudForPlayer(player: mod.Player): OvertimeFlagGloba
         barFillT2: safeFind(`OvertimeGlobal_BarFillT2_${pid}`),
     };
     State.flag.globalUiByPid[pid] = refs;
+    // v0.737 paint viewer-relative colors on global HUD too (currently hidden but kept for parity).
+    applyViewerTeamColorsForOvertimeHudPid(pid);
     return refs;
 }
 

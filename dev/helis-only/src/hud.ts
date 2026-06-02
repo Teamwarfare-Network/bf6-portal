@@ -844,9 +844,12 @@ function getRoundEndDetailForViewer(
             return undefined;
     }
 
-    const teamColor = winnerTeamNum === TeamID.Team1
-        ? COLOR_BLUE
-        : (winnerTeamNum === TeamID.Team2 ? COLOR_RED : COLOR_WHITE);
+    // v0.737 viewer-relative detail color: own team's win paints blue ("WE WIN"), enemy win paints
+    // red ("ENEMY WINS"). Pre-v0.737 this was T1-anchored (T1 win = blue regardless of viewer). The
+    // message text itself is already viewer-aware via the WIN/LOSE key switch above; this line makes
+    // the color match the message. The draw / no-winner case already early-returns at the top of the
+    // function (line ~820) with COLOR_WHITE, so winnerTeamNum is guaranteed non-zero here.
+    const teamColor = viewerTeamNum === winnerTeamNum ? COLOR_BLUE : COLOR_RED;
     return { key, color: teamColor, value };
 }
 

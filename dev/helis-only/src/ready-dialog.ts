@@ -204,6 +204,22 @@ function finalizeReadyDialogVisibility(
     if (debugWidget) mod.SetUIWidgetVisible(debugWidget, reveal && SHOW_DEBUG_TIMELIMIT);
 }
 
+// v0.737 Ready dialog roster palette. Build-time BG color (READY_PANEL_T1_BG_COLOR /
+// READY_PANEL_T2_BG_COLOR) seeds today's deep blue / deep red; the fixup below overwrites with
+// viewer-relative values. The two panels stay where they are (T1 roster on left, T2 roster on
+// right) -- only their background color flips per viewer.
+function applyViewerTeamColorsForReadyDialogPid(pid: number): void {
+    const t1Container = safeFind(UI_READY_DIALOG_TEAM1_CONTAINER_ID + pid);
+    const t2Container = safeFind(UI_READY_DIALOG_TEAM2_CONTAINER_ID + pid);
+    if (!t1Container && !t2Container) return; // dialog never built for this pid
+    // Left container shows T1 roster; right container shows T2 roster. Color follows whether the
+    // viewer's team matches the source team that container represents.
+    const leftBg = getViewerOwnTeamColor(pid, TeamID.Team1, READY_PANEL_T1_BG_COLOR, READY_PANEL_T2_BG_COLOR);
+    const rightBg = getViewerOwnTeamColor(pid, TeamID.Team2, READY_PANEL_T1_BG_COLOR, READY_PANEL_T2_BG_COLOR);
+    if (t1Container) try { mod.SetUIWidgetBgColor(t1Container, leftBg); } catch {}
+    if (t2Container) try { mod.SetUIWidgetBgColor(t2Container, rightBg); } catch {}
+}
+
 function createTeamSwitchUI(eventPlayer: mod.Player) {
     // Steps:
     // 1) Ensure per-player dialog root exists
@@ -232,6 +248,9 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         // them -- visible 1-frame flicker.
         refreshReadyDialogRosterForViewer(eventPlayer, playerId);
         finalizeReadyDialogVisibility(playerId, existingBase, true);
+        // v0.737 paint roster panel BGs viewer-relative on dialog re-open too. Team may have
+        // changed since the dialog was last built.
+        applyViewerTeamColorsForReadyDialogPid(playerId);
         return;
     }
 
@@ -1751,6 +1770,8 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     // engine tick so widgets don't pop in one-by-one during construction.
     finalizeReadyDialogVisibility(playerId, CONTAINER_BASE, true);
     updateHelpTextVisibilityForPlayer(eventPlayer);
+    // v0.737 paint roster panel BGs viewer-relative (own team always blue).
+    applyViewerTeamColorsForReadyDialogPid(playerId);
 }
 
 //#endregion ----------------- Dialog Buttons (Left Side) - Cancel --------------------

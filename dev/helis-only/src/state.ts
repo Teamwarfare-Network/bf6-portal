@@ -192,6 +192,35 @@ function safeGetTeamNumberFromPlayer(
     }
 }
 
+// v0.737 Viewer-relative team color resolver. Given a viewer pid and a "source team" identity
+// (whose data is being painted), returns ownColor when the viewer's team matches the source team,
+// else enemyColor. Fallback: when viewer has no team (joining / pre-deploy / spectator / team=0)
+// returns ownColor if sourceTeam===Team1, else enemyColor -- matches historical T1=ownColor /
+// T2=enemyColor default so no-team viewers see what they used to see. Polymorphic on color type
+// so callers can pass [R,G,B] tuples OR mod.Vector colors per their palette.
+function getViewerOwnTeamColor<T>(viewerPid: number, sourceTeam: TeamID, ownColor: T, enemyColor: T): T {
+    const player = safeFindPlayer(viewerPid);
+    if (!player || !mod.IsPlayerValid(player)) {
+        return sourceTeam === TeamID.Team1 ? ownColor : enemyColor;
+    }
+    const viewerTeam = safeGetTeamNumberFromPlayer(player);
+    if (viewerTeam !== TeamID.Team1 && viewerTeam !== TeamID.Team2) {
+        return sourceTeam === TeamID.Team1 ? ownColor : enemyColor;
+    }
+    return viewerTeam === sourceTeam ? ownColor : enemyColor;
+}
+
+// v0.737 Central orchestrator: re-applies all viewer-relative team colors for a pid. Called from
+// processTeamSwitch after a team change settles so every team-anchored surface repaints in one
+// pass. The per-surface fixup functions are registered here (one call each); adding a new
+// team-color surface = add it here and to its build function.
+function repaintAllViewerTeamColorsForPid(pid: number): void {
+    applyViewerTeamColorsForScoreBannerPid(pid);
+    applyViewerTeamColorsForReadyDialogPid(pid);
+    applyViewerTeamColorsForVictoryDialogPid(pid);
+    applyViewerTeamColorsForOvertimeHudPid(pid);
+}
+
 function isPlayerDeployed(player: mod.Player): boolean {
     if (!player || !mod.IsPlayerValid(player)) return false;
     const pid = safeGetPlayerId(player);

@@ -36,7 +36,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Authors: UberDuberSoldat, Polynorblu, Dox
+// Authors: UberDuberSoldat, Polykatana, Dox
 // Code generation, assistance and support by Anthropic (Claude Code, Opus 4.7, Sonnet 4.6) and OpenAI (GPT-5.5, GPT-5.5-Codex)
 //
 // BF6 Portal Community Tools used, referenced or integrated:

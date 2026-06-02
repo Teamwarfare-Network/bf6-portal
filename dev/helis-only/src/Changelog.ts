@@ -3,6 +3,52 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.737: Viewer-relative team colors -- your team is always blue, enemy always red, on every
+// team-anchored HUD surface. Layout intentionally NOT flipped this round (T1 data stays on the
+// left, T2 data stays on the right) -- only colors flip per viewer. Plan stored at
+// design_doc/6.01.26_own_team_blue_color_swap_plan.md. Scope-down from H-P3 in
+// design_doc/5.27.26_heli_proposed_features.md -- the full layout flip is parked for the future.
+//
+// 37 color writes touched across 5 files. Approach: build-time literals stay as today's values
+// (act as the seed); a per-surface fixup function runs at the END of each lazy-build entry point
+// and writes viewer-relative colors via mod.SetUIWidgetBgColor / mod.SetUITextColor. A central
+// orchestrator repaintAllViewerTeamColorsForPid(pid) calls all 4 surface fixups in one pass and is
+// invoked from processTeamSwitch after the SetTeam mutation so the swapping pid sees their colors
+// flip immediately.
+//
+// Surface inventory and where each fixup lives:
+//   - Score banner: hud-scoring-lazy.ts applyViewerTeamColorsForScoreBannerPid -- 6 widgets
+//     (4 panel BGs at lines 179/282/365/467 + 2 round-kills counter text colors at 313/498).
+//   - Ready dialog roster: ready-dialog.ts applyViewerTeamColorsForReadyDialogPid -- 2 panel BGs
+//     (lines 1482/1496). Roster row text colors stay state-based (green/red/white).
+//   - Victory dialog: hud-dialog-lazy.ts applyViewerTeamColorsForVictoryDialogPid -- 4 panel BGs
+//     (main + roster sub-panels lines 440/565/703/737) + 12 outcome/record/wins/losses/ties/
+//     totalKills text widgets + 32 roster row widgets (16 per side). Outcome WINS!/LOSES color
+//     also flips per viewer.
+//   - Overtime HUD: overtime.ts applyViewerTeamColorsForOvertimeHudPid -- 10 widgets (4 count box
+//     BGs lines 1693/1710/1727/1757, 2 count borders 1881/1902, 2 player-zone bar fills
+//     1936/1952, 2 global HUD bar fills 2062/2078). Bar empty-bar BG at 1919/2045 is the neutral
+//     dark color and is NOT team-anchored -- skipped despite the COLOR_BLUE_DARK name.
+//   - Round-end dialog: hud.ts getRoundEndDetailForViewer -- 1 inline color computation; was
+//     `winnerTeamNum === T1 ? blue : red`, becomes `viewerTeamNum === winnerTeamNum ? blue : red`.
+//     Already inside a per-viewer function so no fixup wrapper needed.
+//
+// Helper: state.ts getViewerOwnTeamColor<T>(viewerPid, sourceTeam, ownColor, enemyColor): T --
+// reads viewer's team via safeGetTeamNumberFromPlayer. Returns ownColor if viewer.team===sourceTeam,
+// else enemyColor. Fallback for no-team / pre-deploy / spectator viewers: T1 source = ownColor,
+// matching the historical T1=blue/T2=red default. Polymorphic on color type so RGB tuples AND
+// mod.Vector colors both work without conversion at the call site.
+//
+// Team-switch repaint: team-switch.ts processTeamSwitch invokes repaintAllViewerTeamColorsForPid
+// AFTER mod.SetTeam mutates the engine team binding (synchronously). The fixups read the post-
+// switch team so panel colors flip in the same frame as the switch -- no stale "blue panel from
+// my old team" lag after the swap.
+//
+// Out of scope for v0.737 (deferred future H-P3 work): data placement / layout flip (T1 data
+// could move to right when viewer is T2), world-log message rewording, faction-name to
+// "Your Team" label rewrite, engine-owned UI (kill feed, minimap) -- those are server-truth or
+// engine-truth surfaces we can't override per-pid. Documented in plan doc.
+
 // v0.733: Two UX tweaks on top of v0.732's matchup/players pending-confirmed refactor.
 //
 // Tweak 1 -- matchup + players +/- now updates the visible value alongside the red dirty color.

@@ -19,6 +19,37 @@
 // when this function runs. A player who joins mid-round still sees correct scoring as soon as
 // they deploy + the lazy build fires.
 
+// v0.737 Score banner palette. The build-time literals at lines 179/282/365/467 (panel BGs) +
+// 313/498 (round-kills counter text) seed today's colors; the fixup pass below overwrites with
+// viewer-relative values so a T2 viewer sees their team panel painted blue. Layout stays as today
+// (T1 data left, T2 data right) -- only colors flip.
+const SCORE_BANNER_OWN_PANEL_BG = mod.CreateVector(0.4392, 0.9216, 1);
+const SCORE_BANNER_ENEMY_PANEL_BG = mod.CreateVector(1, 0.5137, 0.3804);
+
+// Step B fixup: repaints the score banner's 4 team-anchored panel BGs + 2 round-kills counter
+// text colors so the viewer's team always reads blue. Called at end of ensureTopHudScoringUiBuiltHidden
+// (initial paint) AND from repaintAllViewerTeamColorsForPid (team-switch repaint). Idempotent.
+function applyViewerTeamColorsForScoreBannerPid(pid: number): void {
+    const leftPanel = safeFind(`Container_TopLeft_CoreUI_${pid}`);
+    const leftRoundKillsPanel = safeFind(`Container_TopLeft_RoundKills_${pid}`);
+    const rightPanel = safeFind(`Container_TopRight_CoreUI_${pid}`);
+    const rightRoundKillsPanel = safeFind(`Container_TopRight_RoundKills_${pid}`);
+    const leftRoundKillsText = safeFind(`TeamLeft_RoundKills_CounterText_${pid}`);
+    const rightRoundKillsText = safeFind(`TeamRight_RoundKills_CounterText_${pid}`);
+    // Left panels show T1 data; right panels show T2 data. Layout doesn't flip. Color resolves by
+    // whether the viewer's team matches the data's source team.
+    const leftBg = getViewerOwnTeamColor(pid, TeamID.Team1, SCORE_BANNER_OWN_PANEL_BG, SCORE_BANNER_ENEMY_PANEL_BG);
+    const rightBg = getViewerOwnTeamColor(pid, TeamID.Team2, SCORE_BANNER_OWN_PANEL_BG, SCORE_BANNER_ENEMY_PANEL_BG);
+    const leftText = getViewerOwnTeamColor(pid, TeamID.Team1, COLOR_BLUE, COLOR_RED);
+    const rightText = getViewerOwnTeamColor(pid, TeamID.Team2, COLOR_BLUE, COLOR_RED);
+    if (leftPanel) try { mod.SetUIWidgetBgColor(leftPanel, leftBg); } catch {}
+    if (leftRoundKillsPanel) try { mod.SetUIWidgetBgColor(leftRoundKillsPanel, leftBg); } catch {}
+    if (rightPanel) try { mod.SetUIWidgetBgColor(rightPanel, rightBg); } catch {}
+    if (rightRoundKillsPanel) try { mod.SetUIWidgetBgColor(rightRoundKillsPanel, rightBg); } catch {}
+    if (leftRoundKillsText) try { mod.SetUITextColor(leftRoundKillsText, leftText); } catch {}
+    if (rightRoundKillsText) try { mod.SetUITextColor(rightRoundKillsText, rightText); } catch {}
+}
+
 function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
     if (!player || !mod.IsPlayerValid(player)) return;
     const pid = safeGetPlayerId(player);
@@ -33,6 +64,7 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
         ensureTopHudRootForPid(pid, player);
         setHudHelpDepthForPid(pid);
         seedTopHudFromState(refs);
+        applyViewerTeamColorsForScoreBannerPid(pid);
         return;
     }
 
@@ -675,6 +707,7 @@ function ensureTopHudScoringUiBuiltHidden(player: mod.Player): void {
     ensureTopHudRootForPid(pid, player);
     setHudHelpDepthForPid(pid);
     seedTopHudFromState(refs);
+    applyViewerTeamColorsForScoreBannerPid(pid);
 }
 
 function bindTopHudRefsByName(refs: HudRefs, pid: number): void {

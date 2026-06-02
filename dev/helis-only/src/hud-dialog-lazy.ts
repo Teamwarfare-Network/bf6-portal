@@ -122,6 +122,68 @@ function ensureRoundEndDialogUiBuiltHidden(player: mod.Player): void {
 //
 // Trigger: updateVictoryDialogForPlayer (called from updateVictoryDialogForAllPlayers at match-end
 // + once-per-second while the dialog is active).
+// v0.737 Victory dialog palette. Build-time literals at lines 443/568/706/740 (panel BGs) and the
+// 14 sites referencing VICTORY_TEAM*_TEXT_RGB seed today's T1=dark-blue / T2=dark-red. The fixup
+// below overwrites for the viewer's pid so own-team always paints with blue palette, enemy with red.
+// Pre-built mod.Vector instances (one alloc each, reused per call) -- SetUIWidgetBgColor /
+// SetUITextColor want Vector, not [R,G,B] tuple.
+const VICTORY_OWN_PANEL_BG = mod.CreateVector(VICTORY_TEAM1_BG_RGB[0], VICTORY_TEAM1_BG_RGB[1], VICTORY_TEAM1_BG_RGB[2]);
+const VICTORY_ENEMY_PANEL_BG = mod.CreateVector(VICTORY_TEAM2_BG_RGB[0], VICTORY_TEAM2_BG_RGB[1], VICTORY_TEAM2_BG_RGB[2]);
+const VICTORY_OWN_TEXT = mod.CreateVector(VICTORY_TEAM1_TEXT_RGB[0], VICTORY_TEAM1_TEXT_RGB[1], VICTORY_TEAM1_TEXT_RGB[2]);
+const VICTORY_ENEMY_TEXT = mod.CreateVector(VICTORY_TEAM2_TEXT_RGB[0], VICTORY_TEAM2_TEXT_RGB[1], VICTORY_TEAM2_TEXT_RGB[2]);
+
+function applyViewerTeamColorsForVictoryDialogPid(pid: number): void {
+    const refs = State.hudCache.hudByPid[pid];
+    if (!refs || !refs.victoryRoot) return; // victory dialog never built for this pid
+    // Panel BGs: T1 sub-panel + T1 roster sub-panel on left; T2 sub-panel + T2 roster sub-panel on right.
+    const leftPanelBg = getViewerOwnTeamColor(pid, TeamID.Team1, VICTORY_OWN_PANEL_BG, VICTORY_ENEMY_PANEL_BG);
+    const rightPanelBg = getViewerOwnTeamColor(pid, TeamID.Team2, VICTORY_OWN_PANEL_BG, VICTORY_ENEMY_PANEL_BG);
+    const t1Main = safeFind(`VictoryDialog_TeamLeft_${pid}`);
+    const t2Main = safeFind(`VictoryDialog_TeamRight_${pid}`);
+    if (t1Main) try { mod.SetUIWidgetBgColor(t1Main, leftPanelBg); } catch {}
+    if (t2Main) try { mod.SetUIWidgetBgColor(t2Main, rightPanelBg); } catch {}
+    if (refs.victoryRosterLeftContainer) try { mod.SetUIWidgetBgColor(refs.victoryRosterLeftContainer, leftPanelBg); } catch {}
+    if (refs.victoryRosterRightContainer) try { mod.SetUIWidgetBgColor(refs.victoryRosterRightContainer, rightPanelBg); } catch {}
+    // Text colors: 6 widgets per team side (outcome, record, roundWins, roundLosses, roundTies, totalKills)
+    // plus the 16-row roster on each side. Left-side widgets paint the T1 own-or-enemy color; right-side
+    // widgets paint the T2 own-or-enemy color. Layout doesn't flip; only the color follows the viewer.
+    const leftText = getViewerOwnTeamColor(pid, TeamID.Team1, VICTORY_OWN_TEXT, VICTORY_ENEMY_TEXT);
+    const rightText = getViewerOwnTeamColor(pid, TeamID.Team2, VICTORY_OWN_TEXT, VICTORY_ENEMY_TEXT);
+    const leftTextWidgets = [
+        refs.victoryLeftOutcomeText,
+        refs.victoryLeftRecordText,
+        refs.victoryLeftRoundWinsText,
+        refs.victoryLeftRoundLossesText,
+        refs.victoryLeftRoundTiesText,
+        refs.victoryLeftTotalKillsText,
+    ];
+    const rightTextWidgets = [
+        refs.victoryRightOutcomeText,
+        refs.victoryRightRecordText,
+        refs.victoryRightRoundWinsText,
+        refs.victoryRightRoundLossesText,
+        refs.victoryRightRoundTiesText,
+        refs.victoryRightTotalKillsText,
+    ];
+    for (const w of leftTextWidgets) {
+        if (w) try { mod.SetUITextColor(w, leftText); } catch {}
+    }
+    for (const w of rightTextWidgets) {
+        if (w) try { mod.SetUITextColor(w, rightText); } catch {}
+    }
+    // Roster rows: 16 per team side, all in arrays on the refs object.
+    if (refs.victoryLeftRosterText) {
+        for (const w of refs.victoryLeftRosterText) {
+            if (w) try { mod.SetUITextColor(w, leftText); } catch {}
+        }
+    }
+    if (refs.victoryRightRosterText) {
+        for (const w of refs.victoryRightRosterText) {
+            if (w) try { mod.SetUITextColor(w, rightText); } catch {}
+        }
+    }
+}
+
 function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
     if (!player || !mod.IsPlayerValid(player)) return;
     const pid = safeGetPlayerId(player);
@@ -136,6 +198,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
         if (!refs.victoryRoot) {
             bindVictoryDialogRefsByName(refs, pid);
         }
+        // v0.737 re-apply viewer-relative colors even on existing-widget path (team may have changed).
+        applyViewerTeamColorsForVictoryDialogPid(pid);
         return;
     }
 
@@ -767,6 +831,8 @@ function ensureVictoryDialogUiBuiltHidden(player: mod.Player): void {
 
     if (modal) refs.roots.push(modal);
     bindVictoryDialogRefsByName(refs, pid);
+    // v0.737 paint viewer-relative colors immediately after build so own team always shows blue.
+    applyViewerTeamColorsForVictoryDialogPid(pid);
 }
 
 // Re-binds all victory-dialog refs onto the cached HudRefs entry by widget name. Called both at
