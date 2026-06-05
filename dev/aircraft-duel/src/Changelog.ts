@@ -1,0 +1,851 @@
+// @ts-nocheck
+// Module: compact runtime changelog
+
+//#region -------------------- Changelog / History --------------------
+
+// v0.737: Viewer-relative team colors -- your team is always blue, enemy always red, on every
+// team-anchored HUD surface. Layout intentionally NOT flipped this round (T1 data stays on the
+// left, T2 data stays on the right) -- only colors flip per viewer. Plan stored at
+// design_doc/6.01.26_own_team_blue_color_swap_plan.md. Scope-down from H-P3 in
+// design_doc/5.27.26_heli_proposed_features.md -- the full layout flip is parked for the future.
+//
+// 37 color writes touched across 5 files. Approach: build-time literals stay as today's values
+// (act as the seed); a per-surface fixup function runs at the END of each lazy-build entry point
+// and writes viewer-relative colors via mod.SetUIWidgetBgColor / mod.SetUITextColor. A central
+// orchestrator repaintAllViewerTeamColorsForPid(pid) calls all 4 surface fixups in one pass and is
+// invoked from processTeamSwitch after the SetTeam mutation so the swapping pid sees their colors
+// flip immediately.
+//
+// Surface inventory and where each fixup lives:
+//   - Score banner: hud-scoring-lazy.ts applyViewerTeamColorsForScoreBannerPid -- 6 widgets
+//     (4 panel BGs at lines 179/282/365/467 + 2 round-kills counter text colors at 313/498).
+//   - Ready dialog roster: ready-dialog.ts applyViewerTeamColorsForReadyDialogPid -- 2 panel BGs
+//     (lines 1482/1496). Roster row text colors stay state-based (green/red/white).
+//   - Victory dialog: hud-dialog-lazy.ts applyViewerTeamColorsForVictoryDialogPid -- 4 panel BGs
+//     (main + roster sub-panels lines 440/565/703/737) + 12 outcome/record/wins/losses/ties/
+//     totalKills text widgets + 32 roster row widgets (16 per side). Outcome WINS!/LOSES color
+//     also flips per viewer.
+//   - Overtime HUD: overtime.ts applyViewerTeamColorsForOvertimeHudPid -- 10 widgets (4 count box
+//     BGs lines 1693/1710/1727/1757, 2 count borders 1881/1902, 2 player-zone bar fills
+//     1936/1952, 2 global HUD bar fills 2062/2078). Bar empty-bar BG at 1919/2045 is the neutral
+//     dark color and is NOT team-anchored -- skipped despite the COLOR_BLUE_DARK name.
+//   - Round-end dialog: hud.ts getRoundEndDetailForViewer -- 1 inline color computation; was
+//     `winnerTeamNum === T1 ? blue : red`, becomes `viewerTeamNum === winnerTeamNum ? blue : red`.
+//     Already inside a per-viewer function so no fixup wrapper needed.
+//
+// Helper: state.ts getViewerOwnTeamColor<T>(viewerPid, sourceTeam, ownColor, enemyColor): T --
+// reads viewer's team via safeGetTeamNumberFromPlayer. Returns ownColor if viewer.team===sourceTeam,
+// else enemyColor. Fallback for no-team / pre-deploy / spectator viewers: T1 source = ownColor,
+// matching the historical T1=blue/T2=red default. Polymorphic on color type so RGB tuples AND
+// mod.Vector colors both work without conversion at the call site.
+//
+// Team-switch repaint: team-switch.ts processTeamSwitch invokes repaintAllViewerTeamColorsForPid
+// AFTER mod.SetTeam mutates the engine team binding (synchronously). The fixups read the post-
+// switch team so panel colors flip in the same frame as the switch -- no stale "blue panel from
+// my old team" lag after the swap.
+//
+// Out of scope for v0.737 (deferred future H-P3 work): data placement / layout flip (T1 data
+// could move to right when viewer is T2), world-log message rewording, faction-name to
+// "Your Team" label rewrite, engine-owned UI (kill feed, minimap) -- those are server-truth or
+// engine-truth surfaces we can't override per-pid. Documented in plan doc.
+
+// v0.733: Two UX tweaks on top of v0.732's matchup/players pending-confirmed refactor.
+//
+// Tweak 1 -- matchup + players +/- now updates the visible value alongside the red dirty color.
+// Regression from v0.732: when setReadyDialogMatchupPreset and setAutoStartMinActivePlayers were
+// split out of the old live-state setters, they kept the dirty-color refresh (via
+// updateReadyDialogModeConfigForAllVisibleViewers -> applyDirtyStateColorsForPid) but dropped the
+// matchup row label / kills-target subtitle / players row label / min-players subtitle refresh.
+// User couldn't see what value they were setting -- only the red highlight indicated a change.
+// Fix: call updateMatchupLabelForAllPlayers + updateMatchupReadoutsForAllPlayers from both pending
+// setters AND from applyReadyDialogModePresetForGameMode so cycler navigation refreshes those rows.
+//
+// Tweak 2 -- "Restart Needed" indicator. After Confirm changes vehicle-identity settings (matchup,
+// vehicleIndexT1, vehicleIndexT2), the spawner config updates but live vehicles in the world stay
+// as they were -- only newly-enabled slots force-spawn, existing live vehicles keep their old type
+// until they die. The user needs to press Restart to refresh the active set. v0.733 adds a sticky
+// state flag + UI indicator:
+//   - state.ts: State.round.needsRestartForVehicleChange (boolean, default false).
+//   - strings.json: new readyDialog.restartNeededWarning = "Vehicles changed - Restart Needed".
+//   - strings.ts: new UI_READY_DIALOG_RESTART_NEEDED_NOTICE_ID per-pid widget prefix.
+//   - ready-dialog.ts createTeamSwitchUI: new red Text widget below the existing ceiling-lock notice
+//     (confirmY + 2*(bestOfButtonSizeY + 4)), parented to CONTAINER_BASE, hidden by default.
+//   - confirmReadyDialogModeConfig: captures prevConfirmedT1/T2 alongside prevConfirmedMatchup/Players;
+//     if any vehicle-identity field differs from prev confirmed, sets the flag true. Triggers a
+//     dialog refresh (updateReadyDialogModeConfigForAllVisibleViewers) so the indicator paints
+//     immediately and dirty colors clear from the newly-confirmed values.
+//   - round-flow.ts triggerFreshRoundSetup (Restart button handler): clears the flag at the top
+//     and triggers a dialog refresh -- after this runs, the world matches confirmed again.
+//   - applyDirtyStateColorsForPid: drives two paint operations from the flag: colors the Restart
+//     button label red (was white) AND reveals the warning text widget.
+// Ceiling / vehicle HP / soldier HP changes intentionally DON'T set the flag -- those propagate
+// per-spawn (HP) or instantly (ceiling) and don't need a world refresh.
+
+// v0.732: Architectural refactor -- promote matchupPresetIndex + autoStartMinActivePlayers into the
+// modeConfig pending/confirmed pattern. Side effects (slot enablement, force-spawn, kills-target
+// update, auto-start gate change) now fire ONLY on Confirm. Cycler navigation no longer materializes
+// vehicles into a half-committed world. Both rows in the Ready Dialog gain red/green dirty-state
+// coloring matching the rest. Plan stored at design_doc/6.01.26_matchup_players_pending_confirmed_plan.md.
+//
+// Root issue this fixes (carried over from v0.728-v0.730 cycler navigation symptoms):
+//  - Picking a preset that bumps matchup > 0 (All Helis 4v4 / Little Birds TWL 2v2) used to call
+//    applyMatchupPresetInternal inline, which force-spawned vehicles using STALE slot.vehicleType
+//    inherited from the previous confirmed mode. Result: 4v4 preview spawned Apaches everywhere
+//    when previously confirmed was Little Birds, or Little Birds spawned when previously confirmed
+//    was Attack Helis. Wrong helis at the wrong pads.
+//  - Worse: the in-flight force-spawn raced with the Restart button's sinkAndDestroyAllEmptyVehiclesForRestart
+//    cleanup. Newly-spawned helis materialized AFTER cleanup walked mod.AllVehicles(), so they never
+//    got teleported. Restart left orphan helis on the map.
+//  - Both symptoms eliminated by deferring all spawn-side-effect to Confirm.
+//
+// Implementation (single combined v0.732 ship, build-checkpointed across 7 steps A-G):
+//  - types.ts: ReadyDialogModeConfig gains pending + confirmed pairs for matchupPresetIndex +
+//    autoStartMinActivePlayers. Live State.round.matchupPresetIndex / autoStartMinActivePlayers
+//    remain as the "applied/playable" values; the new fields are the previewed knobs.
+//  - state.ts: modeConfig literal seeds the four new fields from DEFAULT_MATCHUP_PRESET_INDEX +
+//    DEFAULT_AUTO_START_MIN_ACTIVE_PLAYERS (both pending and confirmed seeded identically).
+//  - ready-dialog.ts setters split into pending-mutator + live-applier pairs:
+//      - setAutoStartMinActivePlayers(value): mutates pending only; drops the pre-v0.732 inline
+//        announce + tryAutoStartRoundIfAllReady (both fire from Confirm now).
+//      - setReadyDialogMatchupPreset(index): NEW pending-only setter. Keeps the cooldown for UI
+//        throttle. Drops the live-state mutation + force-spawn + announce.
+//      - applyMatchupPresetToLiveState(index): NEW live-state applier. Body is the old
+//        applyMatchupPresetInternal contents -- mutates State.round.matchupPresetIndex +
+//        killsTarget + lastMatchupChangeAtSeconds, refreshes setRoundStateText/killsTargetTester,
+//        then calls applySpawnerEnablementForMatchup(index, true) to enable + force-spawn slots.
+//      - applyMatchupPreset(index, eventPlayer): back-compat wrapper -> setReadyDialogMatchupPreset.
+//      - applyReadyDialogModePresetForGameMode: now sets pending matchup + pending players
+//        alongside the other pending fields (vehicleHealthMultiplier, soldierHpMultiplier, etc.).
+//        Drops the inline applyMatchupPresetInternal call -- previously the source of the spawn race.
+//  - confirmReadyDialogModeConfig: ORDERING IS LOAD-BEARING. After cfg.confirmed snapshot, the
+//    sequence is (1) refreshVehicleSpawnSpecsFromModeConfig -> rebuilds TEAM*_VEHICLE_SPAWN_SPECS
+//    arrays from confirmed cycler indices; (2) applyVehicleSpawnSpecsToExistingSlots -> writes new
+//    slot.vehicleType onto every spawner; (3) applyMatchupPresetToLiveState -> enables/disables
+//    slots + force-spawns newly enabled ones using the just-updated vehicle types; (4) live
+//    State.round.autoStartMinActivePlayers update; (5) UI refresh; (6) announce logs for matchup
+//    + players if confirmed differs from prev; (7) tryAutoStartRoundIfAllReady in case the new
+//    players/side threshold means the round can fire now.
+//  - Dirty state: ReadyDialogModeConfigDiffState gains matchupDirty + playersDirty flags. Folded
+//    into hasUnsavedChanges OR-chain. applyDirtyStateColorsForPid colors 4 widgets red/green:
+//    matchup label ("Vehicles: X v Y"), kills-target subtitle, players label ("Players: X v Y"),
+//    min-players subtitle.
+//  - Render switch: updateMatchupLabelForPid + updateMatchupReadoutsForPid read PENDING
+//    modeConfig values so the dialog updates immediately on +/- press. updateSettingsSummaryHudForPid
+//    (upper-left mini-HUD) reads CONFIRMED values -- matches the established pattern (gameMode,
+//    aircraftCeiling, vehicle HP, soldier HP all do the same split).
+//  - getAutoStartMinPlayerCounts: parameterized with optional override so callers pick the lifecycle
+//    stage explicitly. Default = live State.round (auto-start gate caller unchanged).
+//  - isReadyDialogModePresetActive: snap-back detection now reads pending modeConfig matchup +
+//    players (was live). This is the user's current edit state -- correct semantics for snap-back.
+//  - ensureCustomGameModeForManualChange: invoked from both new pending-setters; matches the
+//    existing pattern for aircraft ceiling / vehicle HP / soldier HP setters.
+//  - triggerFreshRoundSetup (Restart button): unchanged. Pending edits survive Restart per design --
+//    Restart is "fresh round," not "reset settings to defaults."
+//
+// Build checkpointing within v0.732 -- per-step npm run build + npx tsc --noEmit:
+//   Step A (schema) -> green; Step B (setters) -> green; Step C (confirm) -> green; Step D (dirty) ->
+//   green; Step E (render) -> green; Step F (parity check) -> green; Step G (this entry + bump) -> green.
+
+// v0.731: Fix tanks-at-heli-pads bug + tie-breaker zone letter bug for any mode added after the
+// original 3 (Practice/Ladder/Custom). isHeliGameMode in strings.ts was a hardcoded 3-mode list
+// inherited from Conquest's mixed tank+heli ancestry; flipped it to return true unconditionally
+// since this is helis-only. Three downstream callers all benefit from the same fix:
+//   - refreshVehicleSpawnSpecsFromModeConfig (strings.ts:58): false caused tank specs to be
+//     applied to spawner slots on the next Confirm. After Confirm any subsequent respawn -- or
+//     a matchup-change force-spawn -- produced tanks at heli pad positions. Bug was masked when
+//     every preset used matchupPresetIndex=0 because force-spawn rarely fired; broke open in
+//     v0.728+ when All Helis (4v4) and Little Birds TWL 2v2 (2v2) introduced matchup>0 presets.
+//   - getOvertimeZoneLettersForGameMode (overtime.ts:28): false returned the tank zone letters
+//     (A-G) instead of the heli letter (H). Twl1v1 and the 4 v0.727+ modes had been quietly
+//     showing the wrong tie-breaker zones since they were added.
+//   - isHelisOvertimeSingleZoneMode (overtime.ts:69): false skipped the "H zone visible from
+//     round start" pre-active path -- so Twl1v1 + v0.727+ modes didn't pre-display the H zone.
+// MapConfig.team1TankSpawns / team2TankSpawns are now unreachable code paths -- kept in config.ts
+// for reference / future tank-experimentation but no current code reads them.
+
+// v0.730: Decouple matchup from players/side again; add Little Birds - TWL 2v2; reorder cycler.
+//   - strings.json: new gameModeLittleBirdsTwl2v2 -> "Little Birds - TWL 2v2".
+//   - types.ts: cycler reordered to user's spec -- Attack BF6 Vanilla, Little Birds BF6 Vanilla,
+//     All Helis BF6 Vanilla, Attack TWL 2v2, Attack TWL 1v1, Little Birds TWL 2v2, Little Birds
+//     TWL 1v1, Custom. Index 0 still Attack Helis - BF6 Vanilla so default state seed matches.
+//     Index constants updated to reflect new positions; Custom moves to 7.
+//   - ready-dialog.ts: new isReadyDialogGameModeLittleBirdsTwl2v2 predicate; included in TwlPreset
+//     family (best-of-11, map's useCustomCeiling).
+//   - getPresetMatchupIndexForGameMode (v0.730 simplified): All Helis = 4v4, Little Birds TWL 2v2
+//     = 2v2, everything else = 1v1. v0.729's "matchup mirrors players/side" rule is reverted --
+//     Attack BF6 Vanilla and Attack TWL 2v2 go back to 1v1 matchup but keep 2 players/side.
+//   - getReadyDialogPresetPlayersPerSide: Little Birds TWL 2v2 returns 2 (matches 2v2 in name).
+//   - getPresetVehicleHealthMultiplierForGameMode: Attack Helis TWL 1v1 ships at 160% (was 100%).
+//     Ladder + Twl1v1 both 160% now; Vanilla family + Little Birds family + Custom stay at map default.
+//   - getPresetSoldierHpMultiplierForGameMode: Little Birds TWL 2v2 returns 5.0 (clone of TWL 1v1).
+//   - getPresetVehicleIndicesForGameMode: Little Birds TWL 2v2 returns {AH-6M, AH-6M PAX} (clone).
+
+// v0.729: Align matchup row with players/side across all presets so vehicle-slot count matches
+// player count. Two getter updates, no new helpers:
+//   - getPresetMatchupIndexForGameMode: Practice (Attack Helis BF6 Vanilla) -> 1 (2v2),
+//     Ladder (Attack Helis TWL 2v2) -> 1 (2v2). Twl1v1 + Little Birds family stay at 0 (1v1).
+//   - getReadyDialogPresetPlayersPerSide: LittleBirdsVanilla -> 1 (was 2). LittleBirdsTwl1v1
+//     was already 1. Effect: both Little Birds modes are now clean 1v1 across both rows.
+// Behavioral impact: Attack Helis - BF6 Vanilla and Attack Helis - TWL 2v2 now spawn 2 vehicle
+// slots per team (was 1). Round-kills target follows from MATCHUP_PRESETS[1].roundKillsTarget=2.
+
+// v0.728: Rename "Helis Only - BF6 Vanilla" -> "All Helis - BF6 Vanilla" and flip its preset to
+// 4v4. SLUG `gameModeHelisOnlyVanilla` is preserved (internal-only; keeping it stable avoids
+// constant renames across types.ts + ready-dialog.ts). Three concrete changes:
+//   - strings.json: gameModeHelisOnlyVanilla display string updated.
+//   - getReadyDialogPresetPlayersPerSide: HelisOnlyVanilla branch returns 4 (was 2).
+//   - new getPresetMatchupIndexForGameMode helper (mirrors getPresetVehicleIndicesForGameMode
+//     pattern): returns 3 (= MATCHUP_PRESETS[3] = 4v4, 4 kills/round) for HelisOnlyVanilla, 0
+//     otherwise. Wired into both applyReadyDialogModePresetForGameMode (apply) and
+//     isReadyDialogModePresetActive (snap-back detection). First preset to use a non-zero
+//     matchup index; matchup row in the dialog now flips to "4 v 4" when this mode is selected,
+//     and 4 vehicle spawn slots per team become active (was 1 per team for all other presets).
+
+// v0.727: Expand to 7 game-mode presets, support asymmetric T1/T2 vehicles, swap map-default
+// heli slot 3 from second-Apache to Little Bird, add UH-60 Pax to cycler. User-driven rework
+// of the mode lineup to introduce "family" branding: Attack Helis (current behavior, renamed),
+// Helis Only (new — Map Default heli per team), Little Birds (new — MH6 T1 / MH6 PAX T2).
+//
+// Mode roster (7 entries; cycler order matches user message; Custom stays last):
+//   0 gameModeHelisPractice      "Attack Helis - BF6 Vanilla"     (renamed; was "Helis Only - BF6 Vanilla")
+//   1 gameModeHelisLadder        "Attack Helis - TWL 2v2"          (renamed; was "Helis Only - TWL 2v2")
+//   2 gameModeHelisTwl1v1        "Attack Helis - TWL 1v1"          (renamed; was "Helis Only - TWL 1v1")
+//   3 gameModeHelisOnlyVanilla   "Helis Only - BF6 Vanilla"        (NEW: cloned from Practice; T1=T2=Map Default)
+//   4 gameModeLittleBirdsVanilla "Little Birds - BF6 Vanilla"      (NEW: cloned from Practice; T1=MH6 T2=MH6 PAX; soldier HP 500%)
+//   5 gameModeLittleBirdsTwl1v1  "Little Birds - TWL 1v1"          (NEW: cloned from Twl1v1; T1=MH6 T2=MH6 PAX; soldier HP 500%)
+//   6 gameModeHelisCustom        "Helis Only - Custom"             (unchanged; index moved from 3 to 6)
+// All renamed mode SLUGS preserved; only display strings changed -- avoids cascading constant renames.
+// Default mode index stays 0 so the seed modeConfig (T1=T2=Falchion=Apache) matches "Attack Helis -
+// BF6 Vanilla" preset values exactly; no first-open dirty-state.
+//
+// Cycler expansion (vehicle list): UH-60 Pax inserted at index 3 between BlackHawk and AH-6M.
+// New order: [Falchion, Panthera, BlackHawk, BlackHawk Pax, AH-6M, AH-6M PAX, Map Default]. The
+// READY_DIALOG_VEHICLE_INDEX_FALCHION/_LITTLEBIRD/_LITTLEBIRD_PAX/etc named constants replace the
+// single READY_DIALOG_MODE_PRESET_VEHICLE_INDEX (removed) so per-preset code reads symbolically.
+//
+// Per-team asymmetric vehicles (Little Birds T1≠T2): the v0.621 T2=T1 force on confirm is DROPPED.
+// confirmReadyDialogModeConfig now snapshots T1 and T2 independently; vehicleOverrideEnabled is
+// derived as (!t1IsMapDefault || !t2IsMapDefault). refreshVehicleSpawnSpecsFromModeConfig checks
+// each team's index against MAP_DEFAULT separately and either applies that team's override or falls
+// back to that team's map-default heli set. Behavioral impact for Custom: T1 and T2 are now truly
+// independent in the dialog UI (cycler already had separate T1/T2 buttons; the constraint was vestigial).
+//
+// New helper: getPresetVehicleIndicesForGameMode(gameModeKey): {t1, t2} replaces the single PRESET
+// vehicle constant. Helis Only Vanilla -> {Map Default, Map Default}; Little Birds Vanilla/Twl1v1 ->
+// {MH6, MH6 PAX}; everything else (Attack Helis variants) -> {Falchion, Falchion}.
+//
+// Mode predicate refactor: isReadyDialogGameModeVanilla and isReadyDialogGameModeTwlPreset are now
+// "family" helpers. Vanilla family = Practice / HelisOnlyVanilla / LittleBirdsVanilla (forces vanilla
+// ceiling). TWL family = Ladder / Twl1v1 / LittleBirdsTwl1v1 (uses map's useCustomCeiling, best-of-11).
+// Three new atoms isReadyDialogGameModeHelisOnlyVanilla / _LittleBirdsVanilla / _LittleBirdsTwl1v1
+// added; isReadyDialogGameModeVanillaPractice introduced as the specific-mode predicate where the
+// family check would over-match.
+//
+// Soldier HP defaults: Little Birds presets ship at 500% (MH-6 has thin armor + low ammo, so the
+// on-foot phase between heli kills survives a moment longer). All other presets stay 100%.
+//
+// Map-default heli loadout (per-map, applies to the 5 maps with team1HeliSpawns / team2HeliSpawns):
+//   Slot 1: AH-64 (Apache) -- unchanged
+//   Slot 2: Eurocopter -- unchanged
+//   Slot 3: T1=AH-6M (was AH-64), T2=AH-6M_Pax (was AH-64) -- NEW
+//   Slot 4: T1=UH-60, T2=UH-60_Pax -- unchanged
+// Maps without explicit heli spawns (Blackwell/Defense/Golf/Area22B) still use the
+// buildHeliSpawnsFromTankSpawns fallback; the Map Default mode on those maps mirrors the
+// fallback (AH-64/Eurocopter/AH-64/UH-60_Pax-or-UH-60). Slot 3 change in config.ts is via
+// VEHICLE_AH6M / VEHICLE_AH6M_PAX globals (declared in types.ts) referenced through the bundle
+// scope -- config.ts source has @ts-nocheck so cross-file ref is allowed at the source level.
+
+// v0.726: Restore AH-6M Little Bird and AH-6M PAX to the Ready Dialog vehicle cycler. Three
+// minimal edits:
+//   - strings.json: 2 new readyDialog keys -- vehicleOptionLittleBird="AH-6M" and
+//     vehicleOptionLittleBirdPax="AH-6M PAX" (Conquest-exact naming per user direction).
+//   - types.ts: insert both options + their mod.VehicleList.AH6M / AH6M_Pax enums into
+//     READY_DIALOG_VEHICLE_OPTIONS and the parallel READY_DIALOG_VEHICLE_LIST, BEFORE the
+//     Map Default entry. Cycler order is now: Falchion, Panthera, BlackHawk, AH-6M, AH-6M PAX,
+//     Map Default. READY_DIALOG_VEHICLE_MAP_DEFAULT_INDEX is length-1 (auto-updated). The
+//     setter wrap math uses .length so no cycler-bound fix needed. PRESET_VEHICLE_INDEX stays
+//     at 0 (Falchion) so preset reset behavior is unchanged.
+//   - ready-dialog.ts isAircraftVehicleType: add AH6M + AH6M_Pax cases so the ceiling
+//     enforcement loop (warning UI + black-screen + DealDamage) treats them as aircraft.
+//
+// AH6M / AH6M_Pax enums are directly exported by SDK 1.3.1 (reference_sdk_1.3.1 index.d.ts
+// lines 25575-25576) -- no `(mod.VehicleList as any)` cast needed despite the Conquest
+// pattern doing so (Conquest's local snapshot was older).
+//
+// Per-map config.ts heli spawn slots (team1HeliSpawns / team2HeliSpawns) are intentionally
+// untouched per user direction "cycler only" -- Map Default mode continues to spawn the
+// current AH64/Eurocopter/AH64/UH60(_Pax) slot loadout. Operators select Little Bird via
+// the cycler override path, which applyVehicleOverrideToSpawns then propagates to all slots.
+
+// v0.725: Soldier HP Multiplier slider added to the Ready Dialog. Near-verbatim twin of the
+// Vehicle Health slider (shipped v0.648-v0.721), placed on the Game Mode row directly ABOVE
+// the Vehicle HP row in the same far-left columns. 5 widgets per pid: [-10] [<] val [>] [+10].
+// Fine step 1% (inner </>), coarse step 10% (outer -10/+10). Range 5%-500% (engine
+// SetPlayerMaxHealth caps at 1..500 -- NOT the vehicle 400% cap). Default 100%.
+//
+// Confirmed-only apply: setReadyDialogSoldierHpMultiplier mutates pending; confirmReadyDialogModeConfig
+// snapshots pending -> confirmed; OnPlayerDeployed reads confirmed and calls SetPlayerMaxHealth +
+// Heal on each deploy. Per-life: already-alive soldiers keep current life; next deploy is at new max.
+// SetPlayerMaxHealth raises the ceiling but does NOT refill current health (same race the vehicle
+// path hit in v0.714), so Heal afterward lifts current to the new max in the same try/catch.
+//
+// Per-mode preset defaults: explicit per-preset branches in getPresetSoldierHpMultiplierForGameMode,
+// each returning 1.0 (TWL 2v2 / TWL 1v1 / Vanilla all locked at 100% per user direction). Custom +
+// safety fallback uses mapDefaultSoldierHpMultiplier. Future ladder-balance tuning is a single-line
+// edit per row. Per-map defaultSoldierHpMultiplier added to MapConfig (all 9 maps set to 1.0).
+//
+// Snap-back parity: isReadyDialogModePresetActive now also checks Math.round(soldierHp*100)
+// against the preset's expected value; applyReadyDialogModePresetForGameMode resets soldierHp
+// to the preset value alongside other knobs.
+//
+// Dirty-state parity: soldierHpDirty added to ReadyDialogModeConfigDiffState; folded into
+// hasUnsavedChanges OR-chain; applyDirtyStateColorsForPid colors the value widget red/green via
+// setValueColor on UI_READY_DIALOG_SOLDIER_HP_VALUE_ID. No-cascade contract preserved (editing
+// soldier HP only paints the soldier HP row red, not other rows).
+//
+// World-log on confirm: STR_READY_DIALOG_SOLDIER_HP_CHANGED broadcast when confirmed delta exists.
+// HUD summary: new "Soldier HP: NNN%" row in the upper-left settings panel between Vehicle HP and
+// Vehicles T1 (container bumped from 7 rows to 8). HudRefs.settingsSoldierHpText bound.
+//
+// New strings: hud.settings.soldierHpFormat, readyDialog.modeSettingSoldierHpFormat,
+// readyDialog.soldierHpChanged. New UI id prefixes: 9 SOLDIER_HP_* in strings.ts.
+
+// v0.724: Four polish items on the v0.723 ceiling-lockout work.
+//
+// 1. DEFAULT_CEILING_PUNISH_ENABLED flipped false -> true. Punish toggle now defaults ON at
+//    server start; admin can still flip off via the Admin Panel. Settings HUD "Punish: On/Off"
+//    line will read "On" by default at session start (assuming Custom/Ladder ceiling applies).
+//
+// 2. Confirm button grays out + click-disables when the ceiling lockout would silently reject
+//    the save. Detected in applyDirtyStateColorsForPid via the same ceilingLocked AND dirty
+//    condition that drives the yellow tip widget. Visual: confirm label flips white -> gray
+//    (COLOR_GRAY). Click: mod.EnableUIButtonEvent(confirmBtn, ButtonUp, false) suppresses the
+//    event. Defense-in-depth: team-switch.ts confirm case also re-checks the condition and
+//    breaks early -- if the engine event-disable is flaky (Conquest's known asymmetric event
+//    reliability pattern), the case-statement guard catches the click anyway.
+//
+// 3. Ceiling-lock warning string updated to lead with "Cannot save - ": the new value is
+//    "Cannot save - Server Restart must occur to re-enable Vanilla Ceiling settings". Makes
+//    the rejection consequence explicit before the explanation.
+//
+// 4. Red "Unsaved changes!" notice + yellow ceiling-lock notice recentered. Both were anchored
+//    TopRight with X-offset from the right edge of the dialog, which placed them visually
+//    LEFT-of-center on screen. Switched both to TopCenter anchor, position [0, Y], textAnchor
+//    Center, and widened from 430 -> 700 to accommodate the longer "Cannot save - " prefix.
+//    Both now sit centered over the dialog center axis (= screen center axis since the dialog
+//    itself is screen-centered).
+
+// v0.723: Custom-ceiling-applied lockout (UI + code-level lock). Premise: once a custom ceiling
+// has been applied via Confirm this session, mod.SetMaxVehicleHeightLimitScale(1.0) is observed
+// to NOT actually revert the engine cap -- a server restart is required to get back to Vanilla.
+// Until v0.723 the JS state allowed "revert", silently desyncing from engine state.
+//
+// Sticky session flag: State.round.aircraftCeiling.hasEverAppliedCustom (init false, set true
+// the first time enableCustomAircraftCeiling fires). Never cleared.
+//
+// Lockout at confirm: in confirmReadyDialogModeConfig, before copying pending -> confirmed, check
+// if sticky AND pending would resolve to Vanilla (shouldApplyCustomCeilingForConfig returns false).
+// If so, restore cfg.gameMode + gameModeIndex + aircraftCeiling + aircraftCeilingOverridePending
+// from cfg.confirmed -- effectively rejects the ceiling-related portion of the confirm and keeps
+// the prior custom ceiling. Other knobs (HP, vehicles, best-of) confirm normally. Per user choice:
+// "prevent the change from occuring. Keep the old setting in place."
+//
+// UI signaling:
+//   1. Ceiling row value text turns YELLOW (COLOR_WARNING_YELLOW) whenever sticky AND pending
+//      would be Vanilla. Overrides the normal green=confirmed / red=dirty coloring for that row
+//      only -- communicates "this won't apply" without waiting for Confirm.
+//   2. New yellow tip widget under the red "Unsaved changes!" notice. Reads "Server Restart must
+//      occur to re-enable Vanilla Ceiling settings". Visibility gated on sticky AND pending-vanilla
+//      AND hasUnsavedChanges (per user choice: "only when both fire"). Quiet in steady-state.
+//
+// New string key: readyDialog.ceilingVanillaLockedWarning. New UI id prefix:
+// UI_READY_DIALOG_CEILING_LOCK_NOTICE_. New widget built once per player in the Ready Dialog
+// construction path, parented to CONTAINER_BASE one row below the existing UNSAVED_NOTICE.
+
+// v0.722: Upper-left settings HUD ceiling line now also shows punish state. Format changed from
+// "Aircraft Ceiling: {0}" to "Ceiling: {0} / Punish: {1}". Two new string keys added under
+// hud.settings: punishOn="On", punishOff="Off". Punish reads "On" only when a custom ceiling is
+// actually applied (shouldApplyCustomCeilingForConfig) AND State.admin.ceilingPunishEnabled is
+// true -- so Vanilla always displays "Punish: Off" regardless of the admin toggle (since there's
+// no enforced ceiling to punish against), and Custom/Ladder follow the admin toggle.
+//
+// Also wired updateSettingsSummaryHudForAllPlayers() into the admin Ceiling Punish toggle path
+// (team-switch.ts UI_ADMIN_CEILING_PUNISH_BUTTON_ID handler) so the upper-left widget refreshes
+// in real time when admin flips the toggle. Without this the label would lag until the next
+// ready-dialog config update happened to touch it.
+
+// v0.721: TWL 2v2 vehicle HP default raised 130% -> 160% (one-line change in ready-dialog.ts
+// getPresetVehicleHealthMultiplierForGameMode, plus three comment updates noting the new %).
+//
+// v0.721: Restart-button pad-sink REVIVED (H_Bug_4 was DISABLED in v0.708). v0.704/v0.705 both
+// failed because the iterator gated on State.vehicles.slots being populated AND on each vehicle
+// being within 15m of a slot.spawnPos -- if either gate dropped, the helper returned without
+// teleporting anything, and the existing scheduleRoundEndCleanup DealDamage path destroyed
+// vehicles in place at the pad (matching the observed symptom). v0.721 drops both gates per
+// user direction: walk mod.AllVehicles() unconditionally, skip occupied (mod.IsVehicleOccupied
+// throws -> default to occupied=true so we never yank a player), sink the rest.
+//
+// New helpers in vehicles.ts: sinkAndDestroyEmptyVehicle (teleport + 1.5s await + DealDamage,
+// no slot.spawnPos parameter -- trusts GetObjectPosition with (0, -1000, 0) fallback since the
+// Restart context isn't the countdown-reset case where GetObjectPosition returns bad X/Z) and
+// sinkAndDestroyAllEmptyVehiclesForRestart (the iterator). Called from triggerFreshRoundSetup
+// in round-flow.ts BEFORE the existing scheduleRoundEndCleanup, which still runs and handles
+// any vehicle we skipped (occupied ones get their normal in-place destroy).
+//
+// DELIBERATELY NOT included this version: spawner-abandonment-flag toggle around the sink
+// window. That was Option B in 5.31.26_restart_empty_vehicle_sink_plan.md; user rejected the
+// speculative theory and chose Option A (simplification only). If v0.721 still shows vehicles
+// blowing up at the pad in MP, the flag toggle becomes the v0.722 hypothesis with a clean
+// signal that the gates weren't the cause.
+//
+// Dead-code cleanup: removed sinkAndDestroyVehicleAtPad + sinkOnPadVehiclesForRestart + the
+// 35-line STATUS: DISABLED triage block from vehicles.ts, and the now-orphaned
+// RESTART_PAD_SINK_RADIUS_METERS constant + its 4-line preamble comment from types.ts.
+
+// v0.720: H_Bug_1 FIX -- root-caused the chronic "Received undefined values as arguments" engine
+// error logged exactly 2x per MP player join. Source: deleteLegacyScoreRootForPlayer in hud.ts
+// called mod.DeleteUIWidget(mod.FindUIWidgetWithName("score_root_" + pid)) with NO undefined guard.
+// Grep across src/ found ZERO create sites for "score_root_*" -- the widget never existed in this
+// codebase (pure dead legacy from a prior HUD design; prior author had even left a "Is this still
+// needed???" comment). mod.FindUIWidgetWithName returned undefined, mod.DeleteUIWidget(undefined)
+// fired the engine arg-validator error, and the engine's double-log pattern produced 2 lines per
+// call. OPJG (index.ts:230) called it once per join -> 2 errors per join, matching user-reported
+// symptom exactly. Fired before joiner could deploy (before any second mod.Wait in OPJG), also
+// matching "before they can spawn" timing.
+//
+// Fix: deleted the function entirely along with its deleteLegacyScoreRootsForAllPlayers wrapper
+// and the 2 call sites (OnGameModeStarted at index.ts:44 and OnPlayerJoinGame at index.ts:230).
+// Pure dead-code removal; nothing functional could break because there was nothing to clean up.
+//
+// Audit ruled out before landing on this: clock.ts ensureClockUIAndGetCache textLabel patterns
+// (widespread, would produce many more errors); overtime.ts ensureOvertimeHudForPlayer (format/
+// arg counts verified, also gated behind OvertimeStage >= Visible which is false during join);
+// ensureEagerHudShellForPlayer Settings/Matchup/Players formats (verified); deleteJoinPromptWidget
+// chain (guarded with safeFind + early return); safeSetUIWidgetVisible (guarded);
+// updateTeamNameWidgetsForPid (each find guarded). deleteLegacyScoreRootForPlayer was the only
+// unguarded find->mutate pattern remaining in the OPJG path.
+
+// v0.719: Fix admin-panel-open engine error log about parameter count. Root cause: addTesterRow
+// (the shared helper used by multiple admin rows) builds the label widget via
+// mod.AddUIText(..., mod.Message(labelKey), ...) -- passing the labelKey with ZERO format args.
+// This works for rows whose labelKey is a simple string (no placeholders, e.g. Tie-Breaker mode
+// labels, Hard Buffer, Warn Buffer). BUT the round-length row uses
+// mod.stringkeys.twl.adminPanel.labels.roundLengthFormat = "Round Length: {0}:{1}{2}" which has
+// 3 placeholders -- so mod.Message was being called with 0 args for a 3-placeholder format,
+// triggering the engine error on admin panel open. syncAdminRoundLengthLabelForAllPlayers (also
+// at the end of buildAdminPanelWidgets) immediately rebuilds the label correctly, masking the
+// runtime visual but leaving the error log entry.
+//
+// Fix: extended addTesterRow signature with 3 optional format args (matching the SDK's 3-arg cap
+// per design_doc/5.27.26_heli_message_param_limit_plan.md). The round-length call site now
+// passes getClockTimeParts(getConfiguredRoundLengthSeconds()) so the build-time mod.Message has
+// the args it needs. Other addTesterRow call sites (tie-breaker mode rows whose label is a
+// simple string) are unaffected -- they don't pass the optional args, mod.Message uses the
+// 1-arg overload, no engine complaint.
+
+// v0.718: Fix game mode cycler dead-ending at the last preset before Custom. v0.715's snap-back
+// helper (detectAndApplyMatchingPreset) was firing inside setReadyDialogGameModeIndex's
+// fall-through path when user explicitly picked Custom -- since picking Custom doesn't apply a
+// preset (applyReadyDialogModePresetForGameMode early-returns false for Custom), we fell through
+// to updateReadyDialog... which triggered snap-back. The snap-back saw that pending values still
+// matched the previous preset (e.g. Vanilla Practice values had just been confirmed) and snapped
+// gameMode back to Vanilla -- user could never actually select Custom via the cycler.
+//
+// Fix: wrap the fall-through updateReadyDialog... call in suppressReadyDialogModeAutoSwitch.
+// User's explicit cycler selection now sticks regardless of whether pending values incidentally
+// match a preset. Same flag is used by ensureCustomGameModeForManualChange for the same reason
+// (prevent the nested update from undoing the just-set state).
+//
+// Wrap math at line 3221 was already correct: ((nextIndex % count) + count) % count handles
+// both INC past last and DEC before first. The cycler is now fully circular.
+
+// v0.717: Fix cascading ceiling-red caused by HP-edit. v0.716 Fix 2 (snap-back clearing the
+// override-pending flag) was patching the wrong place -- it muted the symptom only on snap-back
+// but the cascade still painted ceiling red whenever user edited HP/other knobs (without
+// snap-back firing). Worse, when user reverted HP and snap-back fired, my flag-clear made
+// ceiling go GREEN again, looking like "you changed my ceiling without asking" because it
+// flipped between red and green as the user edited unrelated knobs.
+//
+// Root cause: ensureCustomGameModeForManualChange has a load-bearing side effect that sets
+// pending.aircraftCeilingOverridePending = true when flipping to Custom from a preset that
+// uses a custom ceiling. This is needed for DISPLAY consistency (otherwise the ceiling field
+// would flip from numeric to "Vanilla" when user edits any other knob). But the dirty-state
+// detector was looking at pending.overridePending vs confirmed.overrideEnabled as a dirty
+// signal -- so the side effect leaked into a false red signal on ceiling.
+//
+// Correct fix: simplify aircraftCeilingDirty check to look at numeric value only. The override
+// flag is internal implementation state; user only cares about the visible ceiling value.
+// Display consistency from the ensureCustom side effect is preserved. Flag mutations don't
+// cascade into dirty-state coloring.
+//
+// Also reverted v0.716 Fix 2's snap-back override-flag clear -- no longer needed with the
+// numeric-only dirty check. Cascading flag mutations violate the "only flip game mode, don't
+// cascade other knobs" rule that the user just clarified.
+//
+// v0.716 Fix 1 (confirm direct copy instead of sticky-OR) KEPT -- that was correct semantics
+// for confirm and unrelated to the cascade issue.
+
+// v0.716: Two aircraft-ceiling dirty-state fixes (both surface as "ceiling value stays RED when
+// it should be GREEN").
+//
+// Fix 1 (the bigger bug): confirmReadyDialogModeConfig's sticky-OR on the override flag.
+// Old code: const nextCeilingOverrideEnabled = cfg.confirmed.aircraftCeilingOverrideEnabled
+//                                              || cfg.aircraftCeilingOverridePending;
+// Once confirmed.overrideEnabled was ever true, OR with anything kept it true forever -- the
+// user could never disable a confirmed override. Combined with the fact that picking any preset
+// sets pending.aircraftCeilingOverridePending = false (preset clears it), the sequence
+// "had override on, switch to a preset, confirm" produced: confirmed=true, pending=false ->
+// permanent mismatch -> ceiling stays RED. Fixed by direct copy: confirmed.overrideEnabled now
+// just mirrors pending.overridePending. Confirm respects whatever the user actually has pending.
+//
+// Fix 2: detectAndApplyMatchingPreset (v0.715 helper) now also clears
+// pending.aircraftCeilingOverridePending when snapping back to a preset, mirroring what the
+// preset-application path does. Without this, the snap-back case (edit ceiling, edit back,
+// snap-back fires) left overridePending=true while the numeric ceiling matched -- still RED.
+//
+// Both shipped together because the symptom looked the same to the user ("ceiling stays red")
+// but two distinct paths caused it.
+
+// v0.715: Snap-back from Custom to a matching preset when knobs revert. Before: editing any
+// knob flipped game mode to "Helis Only - Custom" (via ensureCustomGameModeForManualChange);
+// editing the knob BACK to the preset's value left the label stuck on "Custom" forever even
+// though all pending values matched TWL 2v2 (or any other preset). Now: a complement helper
+// detectAndApplyMatchingPreset runs at every modeConfig refresh -- if currently Custom AND all
+// pending values match a known preset, snap the gameMode back to that preset. Iterates
+// non-Custom presets; first match wins (presets are structurally non-overlapping via per-mode
+// autoStartMinActivePlayers + best-of values).
+//
+// Race guard: ensureCustomGameModeForManualChange internally calls updateReadyDialog... BEFORE
+// the knob mutation in the setter completes. If snap-back ran during that nested call, it would
+// see the pre-mutation (still-matching) values and undo the flip-to-Custom. Reused the existing
+// suppressReadyDialogModeAutoSwitch flag during the nested call -- detectAndApplyMatchingPreset
+// checks the same flag and early-returns, matching how applyReadyDialogModePresetForGameMode
+// uses the flag during full-preset application.
+//
+// Nice side effect: resolves a visual inconsistency from v0.703 dirty-state work -- the value
+// widget could turn GREEN (matches confirmed) while the label still said "Custom" (sticky).
+// Now both signals agree.
+//
+// Diagnosis + design doc: design_doc/5.31.26_custom_mode_snap_back_plan.md
+// Neither helis nor Conquest had this snap-back; it's NEW behavior, not a Conquest port.
+
+// v0.714: Fix intermittent vehicle-spawns-without-full-health bug for HP multipliers > 1.0
+// (most visible on TWL 2v2 default 130%). Two-part code bolster in OnVehicleSpawned:
+//   (1) Added mod.Heal(vehicle, 99999) after mod.SetVehicleMaxHealthMultiplier. SDK has no
+//       SetVehicleCurrentHealth API -- Heal (clamped to current max) is the only way to lift
+//       current health post-spawn. SetMaxHealthMultiplier raised the max ceiling but did NOT
+//       refill current. Engine timing race: sometimes the engine's "set initial current = max"
+//       step ran AFTER our SetMax call (current locked at default max=100, max raised to 130 ->
+//       partial display); sometimes BEFORE (engine saw new max during init -> full). Heal closes
+//       the race -- current always lifted to max post-call regardless of timing.
+//   (2) Moved the SetMax + Heal call to fire IMMEDIATELY after the vehicle is known to survive
+//       the unspawn/replace branches, BEFORE the "if (inferredTeam !== Team1/Team2) return"
+//       early exit. Old position: bottom of function, after team inference. Bug: vehicles that
+//       failed team inference (line 707 early return) survived without ever having the mult
+//       applied -- they displayed as "full" but were at engine default max (e.g., 100), not the
+//       configured 130. New position covers every surviving vehicle.
+// Try/catch wrap mirrors the existing BillDukes precedent. SDK clamps mult > 0 && <= 4.
+
+// v0.713: P0 crash fix -- squad-spawn-into-chopper killed the entire server script (7/7 repro).
+// Root cause: spawnTeamSwitchInteractPoint in team-switch.ts had a synchronous busy-loop polling
+// SoldierStateBool.IsOnGround with NO await inside. When a player squad-spawned onto a teammate
+// who was in a chopper, the new player was "deployed AND in-vehicle" simultaneously -- IsOnGround
+// returned false (player is in vehicle, not on ground), the loop spun forever, and the 1000ms
+// sandbox eval budget breached, killing the whole script for all players. Pre-existing bug (the
+// while loop has been there since at least v0.641); only exposed by systematic testing of
+// squad-spawn-into-vehicle which wasn't part of prior playtests. NOT introduced by recent
+// optimizations -- v0.711's seatKind gate caught the same pattern at OngoingPlayer's call site
+// but missed OnPlayerDeployed's call site (the chopper-spawn trigger).
+//
+// Three-layer fix in spawnTeamSwitchInteractPoint + OnPlayerExitVehicle:
+//   (a) Early-return at function entry when IsInVehicle (interact point can't be triggered from
+//       inside a vehicle anyway). Primary fix -- covers all callers in one place.
+//   (b) Async yield + 30s hard cap (300 iterations * 0.1s) inside the IsOnGround while loop --
+//       defense-in-depth so any future scenario that leaves a player not-on-ground for extended
+//       time cannot burn the eval budget again.
+//   (c) Re-call spawnTeamSwitchInteractPoint from OnPlayerExitVehicle -- restores the interact
+//       point when the squad-spawned player exits their chopper and lands. Idempotent via the
+//       existing interactPoint === null guard.
+// Full diagnosis + related-risk audit + process reflection:
+// design_doc/5.31.26_squad_spawn_chopper_crash_plan.md
+
+// v0.712: Per-tick optimization Bundle B -- tick-context mod.AllPlayers() cache. Main 1Hz loop
+// (index.ts) was calling mod.AllPlayers() three times per tick (once each from updateAllPlayersClock,
+// checkTakeoffLimitForAllPlayers, applyAutoReadyForAllPlayers). Hoisted to a single call at the
+// top of the tick; the 3 helpers now accept optional (cachedPlayers, cachedCount) params and fall
+// through to a fresh fetch when called from non-tick paths (admin clock/kill buttons in
+// team-switch.ts, initial seed in index.ts, post-kill sync in OnVehicleDestroyed). updateOvertimeStage
+// is NOT in the cache path -- its top-level body doesn't iterate players directly; the sub-helpers
+// it delegates to (refreshOvertimeUiVisibilityForAllPlayers, updateOvertimeHudForAllPlayers) still
+// fetch their own AllPlayers. Mirrors Conquest's tick-context pattern (CQ_Perf_TickContext_AllPlayers_Cache,
+// v1.219). Net: 2 mod.AllPlayers() bridge calls/sec eliminated; behavior unchanged.
+
+// v0.711: Per-tick optimization Bundle A. Three pure-removal/gating fixes:
+// (1) F6 hoist phase gate above checkTakeoffLimitForAllPlayers + applyAutoReadyForAllPlayers in
+//     the main 1Hz loop (index.ts:130). Both helpers already short-circuit internally on
+//     phase != NotReady || cleanupActive; hoisting saves 2 function-call cycles/sec post-round-start
+//     without changing behavior.
+// (2) Delete the polled syncKillsHudFromTrackedTotals(false) call from the main loop. Every kill
+//     increment site (OnVehicleDestroyed at index.ts:780, admin T1/T2 +/- in team-switch.ts:709-725)
+//     already calls the sync immediately after mutating State.scores.tNTotalKills. The polled call
+//     was pure redundancy after v0.692's cache check.
+// (3) seatKind gate in OngoingPlayer: skip InteractMultiClickDetector.checkMultiClick polling when
+//     the player is in a vehicle (interact points can't activate from vehicles anyway, and the
+//     IsInteracting bridge call is the highest-cost per-tick read in OngoingPlayer). New
+//     InteractMultiClickDetector.clearState method called from OnPlayerExitVehicle ensures the
+//     next polling tick re-arms cleanly (no stale lastIsInteracting from the pre-entry tick).
+// All three are pure gating/removal -- no behavior change observable to players in the steady state.
+
+// v0.710: Comments audit (Bundle 1 + Bundle 2 from 5.31.26_heli_comments_audit_plan.md). No code
+// behavior changes; pure documentation pass. ADDED: cache-invariant comment on ensureEagerHudShell's
+// cached.settingsGameModeText check (A1), strengthened Phase A gate explainer on updateVictoryDialog's
+// triggerLazyBuild call (A2), tick cadence map above the main 1Hz loop in OnGameModeStarted (A4 --
+// note: no runMainBaseAreaTriggerLoop exists, main-base detection is event-driven), STAGE constants
+// context block above STAGE_GREEN/YELLOW/BLACK in runAircraftWarningLoop (A5). REMOVED: 86 inline
+// "// position: [x, y] offset; direction depends on anchor" repeats across hud.ts + hud-dialog-lazy.ts
+// + hud-scoring-lazy.ts + clock.ts (C1), 51 inline "// UI element: WidgetName" comments that
+// duplicated the next-line name: field across the same modlib.ParseUI blocks (C2). Added a canonical
+// position-convention note at the top of hud.ts referencing the other affected files. Plan items
+// SKIPPED as obsolete: A3 (warm-up deleted in v0.692, no code to comment), B1 (current comment
+// matches the proposed replacement), B2 (parameter is already named `force`, no rename needed).
+
+// v0.709: Fix YOU WILL BE DESTROYED line showing on first dialog open even when ceiling punish is
+// OFF. Root cause: modlib.ParseUI post-construction visibility flips do not commit on the same JS
+// tick as the lazy build. v0.706 built visible:false and tried to toggle ON at first show -- failed
+// (red text never appeared). v0.707/v0.708 built visible:true and tried to toggle OFF at first show
+// -- failed (red text appeared when punish was OFF), but worked on second show (widget fully
+// committed by then -- user reported "shows up the first time the dialog appears, it goes away the
+// 2nd time"). Fix: capture State.admin.ceilingPunishEnabled at BUILD TIME so initial render is
+// correct without any same-tick toggle. The runtime toggle in setAltitudeWarningVisibleForPid is
+// kept as a best-effort update for cases where the admin button is pressed between dialog shows.
+
+// v0.708: Restart pad-sink feature DISABLED per user. Two attempts (v0.704 teleport-only +
+// scheduleRoundEndCleanup DealDamage at 10s; v0.705 full Conquest port with teleport + 1.5s wait
+// + DealDamage in helper) both FAILED -- user reported choppers still visibly blowing up on the
+// pad. Both attempts were speculative without diagnostic instrumentation. Per user "I'm fine with
+// that feature not being in right now. I want notes on what went wrong, and notes on what to try
+// next time": removed the sinkOnPadVehiclesForRestart() call from triggerFreshRoundSetup
+// (round-flow.ts). Helper functions sinkAndDestroyVehicleAtPad + sinkOnPadVehiclesForRestart
+// remain in vehicles.ts as dead code with a STATUS: DISABLED comment block listing the diagnosis
+// hypotheses and ranked next-attempt steps. Full triage notes in heli_issues.md H_Bug_4. Next
+// session should ship a diagnostic build (broadcast world-log strings from inside the helper to
+// reveal which assumption is wrong) BEFORE attempting another fix.
+
+// v0.707: Fix YOU WILL BE DESTROYED! line not rendering -- v0.706 built it visible:false then
+// relied on setAltitudeWarningVisibleForPid to toggle it on. User reported no red text even with
+// punish ON. Hypothesis: engine doesn't reliably toggle a child that started life hidden in the
+// modlib.ParseUI tree (the other children that DO render reliably are all visible:true). Switched
+// to visible:true at construction; the runtime toggle in setAltitudeWarningVisibleForPid now only
+// HIDES it when ceilingPunishEnabled is false (which is the easier direction -- visible-by-default
+// children reliably accept a visibility flip from the engine's perspective).
+
+// v0.706: Ceiling-punish black-screen dialog gets a new red "YOU WILL BE DESTROYED!" line below
+// the countdown number. Only shown when State.admin.ceilingPunishEnabled is true (warning is just
+// a 5s timeout if punish is off). New string twl.hud.altitudeWarning.destroyedWarning + new
+// per-pid widget Altitude_Warning_Destroyed_{pid} in the existing ParseUI children block, built
+// with visible:false. Visibility set by setAltitudeWarningVisibleForPid on the visible->true
+// transition (same path that stamps the "Ceiling: X" label). Toggling ceilingPunishEnabled OFF
+// mid-exposure won't immediately hide the line, but the punish gate in runAircraftWarningLoop
+// also checks the toggle so no destruction fires.
+
+// v0.705: Restart pad cleanup -- faithful Conquest port. v0.704's design (teleport-only, rely on
+// scheduleRoundEndCleanup's DealDamage 10s later) failed: user reported vehicles blew up on the pad
+// visibly. Root cause likely one of: (a) engine moved the vehicle back over 10s, (b) slot-bound
+// iteration missed vehicles whose binding wasn't set yet, (c) explosion VFX re-anchored to pad
+// after the long delay. Replaced with full Conquest pattern: new async sinkAndDestroyVehicleAtPad
+// teleports + awaits 1.5s + DealDamage in one helper. Also switched from slot.vehicleId iteration
+// to mod.AllVehicles() with nearest-slot.spawnPos distance check -- catches vehicles that exist
+// but aren't slot-bound. Fire-and-forget per vehicle so multiple sink chains run in parallel.
+
+// v0.704: Restart-button pad cleanup hygiene. New sinkOnPadSlotVehiclesForRestart() in vehicles.ts
+// iterates State.vehicles.slots, finds each bound chopper still within RESTART_PAD_SINK_RADIUS_METERS
+// (=15m) of slot.spawnPos, and teleports it to (X, -1000, Z) using the live X/Z (or slot.spawnPos
+// X/Z if GetObjectPosition fails). Called from triggerFreshRoundSetup BEFORE scheduleRoundEndCleanup
+// so the existing DealDamage loop (~10s later via ROUND_END_REDEPLOY_DELAY_SECONDS) destroys the
+// underground vehicle silently. Drifted (>15m) choppers are skipped and blow up in place per user's
+// "blow up where it is" rule. Round-end cleanup at scheduleRoundEndCleanup (line 200) untouched --
+// only Restart triggers the pre-sink. Pattern adapted from conquest's sinkAndDestroyVehicle
+// (vehicles/vanilla-spawner.ts:85), simplified by leveraging the cleanup loop's existing wait.
+
+// v0.703: Plan 2 — dirty-state value coloring + Unsaved-changes notice + admin panel row reorder + ceiling punish default OFF.
+// (a) Three-color scheme on Ready Dialog value widgets: labels stay white, confirmed values render GREEN
+//     (COLOR_READY_GREEN), dirty values render RED (COLOR_NOT_READY_RED). Affects 5 value widgets: game mode,
+//     mode settings (ceiling), vehicle HP, vehicles T1, vehicles T2. New helper buildReadyDialogModeConfigDiffState
+//     compares pending modeConfig vs cfg.confirmed per-field; applyDirtyStateColorsForPid runs at the end of
+//     updateReadyDialogModeConfigForPid (called on every dialog refresh + after Confirm + after Reset via caller).
+// (b) "Unsaved changes! Press 'Confirm & Apply Mode Changes' to save" notice text added to the dialog, positioned
+//     to the LEFT of the Confirm button (TopRight anchor, +unsavedNoticeGap from confirm). Built HIDDEN via
+//     modlib.ParseUI{visible: false} to avoid the post-construction SetUIWidgetVisible race. Visibility flipped
+//     by applyDirtyStateColorsForPid based on diff.hasUnsavedChanges (Q4: hidden when clean).
+// (c) Admin Panel row reorder: Tie-Breaker Setting toggle moved to 2nd-to-last; Tie-Breaker Randomization Override
+//     label + 7 flag buttons moved to LAST (was at top of section). Top-to-bottom is now: Live Redeploy ->
+//     Ceiling Punish -> Round Length -> Hard Buffer -> Warn Buffer -> Tie-Breaker Setting -> Tie-Breaker Override
+//     (7 flags A-G). Explicit TIEBREAKER_BOTTOM_GAP = 12 visually separates toggles cluster from the busy
+//     7-flag block. ADMIN_PANEL_HEIGHT bumped 762 -> 780 (+18) to fit the rearranged bottom anchor.
+// (d) DEFAULT_CEILING_PUNISH_ENABLED flipped true -> false per user. Resets on match restart.
+// Strings: notifications.ceilingPunishDestroyed (untouched), readyDialog.unsavedChangesLabel added, new UI ID
+// constant UI_READY_DIALOG_UNSAVED_NOTICE_ID added in strings.ts.
+
+// v0.702: ADMIN_PANEL_HEIGHT 728 -> 762 (+34px). v0.701 added the Ceiling Punish row without growing the
+// container -- text widget for the new row landed below the panel clip so the button rendered with no
+// label (button itself was still clickable because outline extended visually). Pattern mirrors v0.666's
+// +34px bump for the Warn Buffer row.
+
+// v0.701: Phase 1 Ceiling Punish + TWL 2v2 130% HP default.
+// (a) Altitude-warning countdown bumped 3s -> 5s (ALTITUDE_WARNING_COUNTDOWN_SECONDS in types.ts).
+// (b) Ceiling Punish: when warning has been visible for COUNTDOWN+GRACE seconds (=6s) and the admin toggle is ON,
+//     the aircraft takes mod.DealDamage(v, 10000) wrapped in try/catch (blows up in mid-air, no sink). Player(s) inside die.
+//     World-log broadcast: "{player} was destroyed for exceeding the aircraft ceiling" via STR_CEILING_PUNISH_DESTROYED.
+//     Once-per-exposure sentinel ceilingPunishFiredByPid in State.players, cleared in setAltitudeWarningVisibleForPid's
+//     visible->invisible branch (covers descend, vehicle exit via OnPlayerExitVehicle, undeploy via OnPlayerUndeploy)
+//     plus a defensive delete in the disconnect handler.
+// (c) Admin Panel: new "Ceiling Punish ON/OFF" toggle row inserted below "Live Redeploy". Default ON
+//     (DEFAULT_CEILING_PUNISH_ENABLED in types.ts, reset to default on match restart in index.ts).
+//     Toggle handler mirrors liveRespawnEnabled pattern (team-switch.ts) and broadcasts ceilingPunishOn/Off action key.
+//     New UI IDs UI_ADMIN_CEILING_PUNISH_BUTTON_ID + UI_ADMIN_CEILING_PUNISH_TEXT_ID added to the visibility cascade list.
+// (d) TWL 2v2 preset now defaults Vehicle Health Multiplier to 130% (was 100%). New helper
+//     getPresetVehicleHealthMultiplierForGameMode used by both applyReadyDialogModePresetForGameMode (assignment)
+//     and isReadyDialogModePresetActive (preset-vs-dirty comparison) so the dirty-state detector stays consistent.
+// Strings: notifications.ceilingPunishDestroyed + adminPanel.actions/labels.ceilingPunishOn/Off.
+
+// v0.700: VH knob shift tune -- v0.699's VH_BLOCK_RIGHT_SHIFT = 40 was "almost perfect" per user, asked to back off 5 units. Reduced to 35.
+
+// v0.699: Ready Dialog VH knob actual right-shift. Previous attempts (v0.697 outerGap 12->8, v0.698 8->2) produced only 10 game units of total shift = visually negligible. User reported no perceptible movement. Added explicit VH_BLOCK_RIGHT_SHIFT constant (40 game units) that translates the entire VH widget group (all 5 widgets: -10, <, value, >, +10) right by that amount via subtraction in the inc10X derivation -- since all other VH X coords cascade from inc10X, the whole block moves as a unit. 40 picked as a noticeable visible shift; user may need to dial up or down based on visual feedback. No widget sizes or button counts changed (per user "don't modify the knobs").
+
+// v0.698: Ready Dialog Vehicle HP knob shift -- maximum-available shift. v0.697's outerGap 12->8 only moved the block 4 game units (visually negligible). User reported the knob still appears too far from "Mode Settings :" label. Reduced vehicleHealthOuterGap further from 8 to 2 (taking the maximum useful shift before the +10 button overlaps Mode Settings label). Added explainer comment noting the hard layout constraint: the visible gap between "Vehicle HP: 100%" text and "Mode Settings :" label is dominated by the > button (26u) + +10 button (32u) = ~58 game units, NOT the configurable outerGap. Reducing outerGap further saves only a few units. Larger visible shift would require restructuring (e.g., moving +10/-10 buttons to a separate row, or removing the +10/-10 in favor of just </> for finer-grain only). Flagged for future user discussion if v0.698 still appears insufficient.
+
+// v0.697: Ready Dialog Vehicle HP knob polish. (1) Shifted the VH knob block (-10/</value/>/+10) 4 units right toward the Mode Settings column by reducing vehicleHealthOuterGap from 12 to 8 (matches READY_DIALOG_CONFIRM_BUTTON_GAP, the established gap between adjacent-but-distinct control groups). (2) Renamed label from "Health: {0}%" to "Vehicle HP: {0}%" via strings.json modeSettingVehicleHealthFormat update. The HUD settings panel string twl.hud.settings.vehicleHealthFormat ("Vehicle Health: {0}%") is intentionally unchanged. Value field width stays at 100 -- "Vehicle HP: 100%" at textSize 12 is wider than "Health: 100%" but should fit; widening the value field would push the -10 button left and defeat the shift-right intent.
+
+// v0.696: Ready Dialog roster flicker -- actual root cause fixed. v0.694's "build with mod.AddUIText then SetUIWidgetVisible(false)" sequence was NOT enough: BF6 Portal engine appears to queue widget creation and may paint queued widgets BEFORE the deferred visibility update applies, so each row briefly flickered through placeholder "<unknown string>" text in the player-name cells. Fix: replaced the 192 mod.AddUIText calls with modlib.ParseUI({type: "Text", visible: false, ...}) which commits the hidden flag at creation time, eliminating the race. Refactored into local buildRosterTextHidden helper to keep the loop body compact (was 42 lines per iteration, now 6 calls). Same pattern as Conquest's roster build in dialog-build-roster.ts. Also added defense-in-depth in deleteTeamSwitchUI: explicitly hides all 192 roster row widgets on close (codebase comment acknowledges container-visibility cascade is unreliable; this prevents stale visible rows from showing on the next in-session cache-hit reveal). Note: BF6 Portal has no widget persistence across map loads -- every map load is a fresh script with fresh widgets -- so v0.694/v0.695 cache-hit improvements only affect in-session dialog open/close cycles, not cross-game. Net diff: +35/-44 LoC (helper extraction is net negative); +21 LoC in team-switch.ts for the close-time hide loop. Type-check clean.
+
+// v0.695: Ready Dialog roster flicker -- two more root causes addressed. (Cause 1) Cache-hit path of createTeamSwitchUI did not call refreshReadyDialogRosterForViewer before finalizeReadyDialogVisibility, so dialog reveal on re-open showed stale row text/visibility from previous close until teamSwitchInteractPointActivated:102's post-reveal renderReadyDialogForViewer fired (1-frame flicker of stale roster). Fix: add refreshReadyDialogRosterForViewer call before the finalize reveal in the cache-hit path. (Cause 2) refreshReadyDialogRosterForViewer set per-row VISIBILITY before TEXT -- for a previously-hidden row with stale text "OLD_NAME", refresh flipped visible=true with stale text still in widget, then text update applied a frame later. Fix: reordered the refresh loop to set text + colors FIRST, then visibility flip LAST. By the time the widget becomes visible, the text is already correct -- no stale-text-then-update flicker. Combined effect: empty roster slots stay hidden; filled slots reveal with real player names + correct ready/base status in a single atomic frame. Net diff: +14/-7 LoC in src/ready-dialog.ts.
+
+// v0.694: Ready Dialog roster row placeholder flicker fix. v0.693 atomic reveal worked for chrome (root + borders + map label/value) but the 192 roster row widgets (TEAM_ROSTER_MAX_ROWS=16 * 6 widgets/row * 2 teams) were still relying on parent cascade hiding via CONTAINER_BASE. Each row's name/ready/base text widget was built via mod.AddUIText with placeholder mod.Message(genericCounter, "") -- which the engine renders as "<unknown string>" (or empty) for the brief window between widget construction and refreshReadyDialogRosterForViewer populating real text + setting per-row visibility. With ~600 lines of widget construction in createTeamSwitchUI, the build phase can span engine frames, so the placeholders flickered visibly in roster cells where player names would appear. Fix: explicit mod.SetUIWidgetVisible(false) on each of the 6 row widgets right after construction + reparent (no reliance on parent cascade for these high-volume widgets). refreshReadyDialogRosterForViewer still runs before finalize reveal and sets visibility per row (true for active players, false for empty slots). Net effect: filled rows reveal with real player names already populated; empty rows stay hidden. No flicker. Net diff: +6 lines (6 new SetUIWidgetVisible calls + explainer comment) in src/ready-dialog.ts.
+
+// v0.693: Ready Dialog atomic reveal -- fixes the widget pop-in flicker when first opening the dialog via triple-tap. Previously createTeamSwitchUI built CONTAINER_BASE_ID + 4 borders + map label/value with visible:true, so each widget appeared visually as it was constructed (~hundreds of widgets popping in sequentially). Now mirrors Conquest's finalizeReadyDialogVisibility pattern (dialog-build.ts:25-54): root container + 4 borders built visible:false at construction; sibling chrome (map label/value, parented to UIRoot not CONTAINER_BASE) explicitly hidden via SetUIWidgetVisible(false) right after build; entire tree atomically revealed in one tick at end of createTeamSwitchUI via new helper finalizeReadyDialogVisibility(playerId, containerBase, reveal). Children parented to CONTAINER_BASE (rosters, headers, buttons) inherit hidden-ness from parent cascade and stay built-visible. Cache-hit path (existing-dialog reopen) also refactored to use the same helper (replacing 8 inline SetUIWidgetVisible calls with one helper call). Debug widget (SHOW_DEBUG_TIMELIMIT=true only) gating preserved inside the helper. No behavior change beyond the flicker fix; cache-hit reopens still instant. Net diff: +27/-25 LoC, all in src/ready-dialog.ts. Type-check clean.
+
+// v0.692: Per-tick optimization bundle (plan: design_doc/5.31.26_heli_per_tick_optimization_bundle.md). Five low-risk gates/caches across 4 files. (Fix 1) syncKillsHudFromTrackedTotals(force) in vehicles.ts wires the existing-but-unused State.hudCache.lastHudScoreT1/T2 cache; main-loop tick now skips the AllPlayers iteration when totals are unchanged (mirrors syncRoundKillsHud pattern). Renamed _force -> force. Call sites unchanged (admin +/- buttons + kill-attribution path were already passing the right value). (Fix 2) updateAllPlayersClock in clock.ts adds new State.hudCache.lastVehiclesAliveVisible field + gates the per-player SetUIWidgetVisible calls on vehiclesAliveVisibilityChanged; eliminates redundant visibility toggles when the round phase doesn't flip (~16 toggles/sec deduped at 8 players). (Fix 3) updateAllPlayersClock hoists const showVictory = State.match.victoryDialogActive above the per-player loop and gates updateVictoryDialogForPlayer on it; skips N function calls/sec when Victory dialog isn't active (matches Conquest's existing pattern at game-mode.ts:116). (Fix 4) runAircraftWarningLoop in ready-dialog.ts adds local teardownComplete sentinel; when customEnabled=false the AllPlayers iteration runs once then short-circuits subsequent ticks until customEnabled flips back true (saves 5 AllPlayers iterations/sec in Vanilla mode + any map with useCustomCeiling=false). (Fix 5) OngoingPlayer Ready Dialog warm-up block deleted from index.ts. Previously: createTeamSwitchUI + immediate hide on first OngoingPlayer tick per player, gated by state.uiBuilt. Risk: OngoingPlayer fires per-player every engine tick, so concurrent joins dogpiled ~600 lines * N ParseUI in the same frame -- identical CQ_Bug_40 crash signature to the bugs Phase A+B fixed. Conquest hit and resolved the same pattern in v1.418 Wave 3 by deletion (CQ_Bug_32, CQ_Bug_33 closed by ablation). Ready Dialog now builds on first triple-tap via createTeamSwitchUI's own idempotent cache check; first triple-tap pays a one-time ~50ms hitch (player-initiated, naturally staggered, cannot dogpile). teamSwitchData_t.uiBuilt field is now dead code (left in place to keep bundle minimal). Net diff: +20/-14 LoC across vehicles.ts, state.ts, clock.ts, ready-dialog.ts, index.ts. No new abstractions, no signature changes, no behavior change visible to players. Type-check clean; bundle ASCII verified.
+
+// v0.691: Phase E cleanup of lazy-load HUD refactor. Renamed ensureHudForPlayer -> ensureEagerHudShellForPlayer across 7 code files (hud.ts, index.ts, state.ts, clock.ts, hud-scoring-lazy.ts, hud-dialog-lazy.ts -- 17 call sites updated). The new name reflects post-Phase-A/B scope: this function only builds the eager HUD shell (branding, settings summary, altimeter, settings refs, cache write); top-HUD scoring, round-end dialog, victory dialog, ready dialog, admin panel, altitude warning, and overtime HUD are all built lazily on their respective triggers. Updated hud.ts file-header comment to enumerate eager vs lazy surfaces. Added design_doc/heli_lazy_load_architecture.md handoff doc covering: eager-vs-lazy surface table, registry mechanics, ensure-function contract, cache invariant explanation, trigger timing reference, debugging checklist for "widget didn't appear", anti-patterns to avoid, and future work (Phase C/D deferred + MP concurrent-join validation + instrumentation). historical Changelog + design_doc references to ensureHudForPlayer left untouched (they're historical). No behavior change vs v0.690; cosmetic only.
+
+// v0.690: Phase B of lazy-load HUD refactor (plan: design_doc/5.30.26_heli_lazy_load_hud_refactor_plan.md). Extracted Top-Center Panels (~540 lines), Counter Widgets (~90 lines), and Admin Action Counter (~40 lines) from ensureHudForPlayer into new file src/hud-scoring-lazy.ts as ensureTopHudScoringUiBuiltHidden(player). Helper bindTopHudRefsByName(refs, pid) rebinds all 19 top-HUD refs by safefind; seedTopHudFromState(refs) seeds counter values from State (round/wins/round-kills/total-kills/admin-action-counter/crowns/round-kills-labels). Idempotency check via safeFind for Container_TopMiddle_CoreUI_<pid> + refs.leftKillsText/rightKillsText. Cache invariant in ensureHudForPlayer changed from cached.leftKillsText && cached.rightKillsText to cached.settingsGameModeText (settings widgets stay eager so this is the load-bearing eager ref). Wired into lazy-build.ts as 'topHud' surface (teardownTrigger: 'disconnect'). Trigger: triggerLazyBuild('topHud', pid) added at end of OnPlayerDeployed after ensureHudForPlayer -- player deploys are naturally staggered across time so the ~670 lines of widget construction spread instead of dogpiling at the join tick. Pre-build update safety: setCounterText et al. defensive-check undefined widget refs so pre-deploy updates no-op cleanly; values stay authoritative in State and get seeded from current State on the lazy build. Combined with Phase A (v0.688): total ~1505 lines of widget construction now deferred off OnPlayerJoinGame. This bundle is the rest of the concurrent-join 1000ms eval-budget crash mitigation (CQ_Bug_40 equivalent). Settings summary (Upper-Left + Settings panel) + Altimeter + branding stay eager per user spec. Phase C (Ready Dialog + Admin Panel registry routing) is the only remaining refactor item; non-blocking for crash fix.
+
+// v0.689: Phase A type-check fix -- TypeScript flagged 2 errors in lazy-build.ts _resolveLazyBuildHandler for the 'readyDialog' case (refs to ensureReadyDialogUiBuiltHidden, which doesn't exist until Phase C). The typeof guard worked at runtime but tsc still required the name to resolve. Replaced the case body with a no-op stub matching the adminPanel pattern, with a comment explaining Phase C will wire the real handler. No runtime behavior change vs v0.688; cleans IDE error highlights on dist/bundle.ts.
+
+// v0.688: Phase A of lazy-load HUD refactor (plan: design_doc/5.30.26_heli_lazy_load_hud_refactor_plan.md). Extracted Round-End Dialog (~80 lines of ParseUI at hud.ts:2027-2104) and Victory Dialog (~745 lines of ParseUI at hud.ts:2112-2856) from ensureHudForPlayer into new file src/hud-dialog-lazy.ts as ensureRoundEndDialogUiBuiltHidden(player) and ensureVictoryDialogUiBuiltHidden(player). Both are idempotent (safeFind early-return if root already exists) and re-bind refs onto State.hudCache.hudByPid[pid] via the new bindVictoryDialogRefsByName(refs, pid) helper. Wired into lazy-build.ts _resolveLazyBuildHandler for surfaces 'roundEndDialog' + 'victoryDialog' (dropped typeof guards from Phase 0). Trigger sites: triggerLazyBuild('roundEndDialog', pid) added at top of updateRoundEndDialogForPlayer (called only from round-flow.ts:530 at round-end); triggerLazyBuild('victoryDialog', pid) added at top of updateVictoryDialogForPlayer, GATED by State.match.victoryDialogActive so OPJG's cache-init defensive updateVictoryDialogForPlayer call does NOT fire the build (only the real round-flow.ts:364 match-end call does). Net: ~835 lines of widget construction no longer run during OnPlayerJoinGame -- mitigates the concurrent-join 1000ms eval-budget breach by moving the biggest single hitch off the join tick. updateVictoryDialogForPlayer / updateRoundEndDialogForPlayer already defensive-check every ref so pre-build updates no-op cleanly. Region markers preserved in hud.ts with extraction comments. Phase B (top-HUD scoring extraction) and Phase C (Ready Dialog + Admin Panel registry routing) are intentionally deferred to follow-on bundles per plan.
+
+// v0.686: H-P1 altimeter REAL bug found: the v0.673 idempotent SetUIWidgetPosition path (runs every loop tick via ensureAltimeterUiForPlayer) HARDCODED card.x=0 and label.x=ALTIMETER_HUD_TEXT_LEFT_PADDING instead of using the proper CARD_OFFSET_X / LABEL_OFFSET_X constants. So every loop tick was dragging the card to root_x=0 (screen X=70 in v0.684, screen X=60 in v0.685) -- overriding the eager-build positioning. Fix: idempotent path now uses (ALTIMETER_HUD_CARD_OFFSET_X, ALTIMETER_HUD_CARD_OFFSET_Y) for the card and (ALTIMETER_HUD_LABEL_OFFSET_X, 0) for the label, matching the eager-build positions exactly. Visible result: card finally lands at screen X=95 (= root_X 60 + CARD_OFFSET_X 35) as the math says.
+// v0.685: H-P1 altimeter "ALTITUDE WARNING!" label CENTERED above the altimeter card per user spec ("the top text will hang over above the altimeter left and right, but they're both visually centered together"). All-positive offsets: root X=60, label width=200 at root [0,0] with textAnchor: Center (label text center sits at root+100 = screen 160), card width=130 at root [35,24] (card center at root+35+65 = screen 160) -- both align. v0.684's CARD_OFFSET_X stays at 35 to compensate for the root moving left. Card stays at screen X=95 (where altimeter was prior to this re-anchoring), text inside card at screen X=105 (10px inset). Label text "ALTITUDE WARNING!" overhangs the card ~35px on each side as designed.
+// v0.684: H-P1 altimeter warning label STILL wouldn't move left -- diagnosed: negative child positions inside a TopLeft-anchored parent appear to clip silently in this engine (v0.681 -10 and v0.682 -25 both rendered at the same place, which is what the user saw). Restructured with all positive offsets: ALTIMETER_HUD_ANCHOR_OFFSET_X 95 -> 70 (whole root moves left 25), new ALTIMETER_HUD_CARD_OFFSET_X = 25 (card+text inset 25 within root, keeping them at the SAME screen X as before), ALTIMETER_HUD_LABEL_OFFSET_X -25 -> 0 (label now at root's left edge = screen X 70, which is where the user wanted it).
+// v0.683: H-P1 AIRCRAFT_WARNING_BUFFER_DEFAULT 5 -> 15 per user. Black screen now fires 15m above the soft warning (was 5m), so the new layout on Firestorm/TWL (ceiling=130, hardBuf=25) is: warning 115 / black 130 / hard 155 in HUD altitude.
+// v0.682: H-P1 altimeter polish per user testing screenshot: (1) Whole altimeter root moved left 5 (X 100 -> 95). (2) Warning label "ALTITUDE WARNING!" moved an additional 15 left within root (LABEL_OFFSET_X -10 -> -25) so its net absolute shift is 20 left -- target is centered above the altimeter card.
+// v0.681: H-P1 altimeter polish: (1) Warning label moved further left via new ALTIMETER_HUD_LABEL_OFFSET_X = -10 (negative pushes the label 10px LEFT of the root's left edge). (2) Altimeter card+text moved up 10 via ALTIMETER_HUD_CARD_OFFSET_Y 34 -> 24 (warning label stays at y=0 per user spec; ~4px overlap with label baseline if both visible -- acceptable).
+// v0.680: H-P1 altimeter polish: (1) Warning label "ALTITUDE WARNING!" moved left 10 (x=0 instead of x=10) so it aligns with the card's left edge, not the altitude text's inset. (2) Card backplate trimmed further 160 -> 130 so it hugs the "Altitude: YYY" text more tightly.
+// v0.679: H-P1 altimeter polish per user testing screenshot. (1) X indent doubled 50 -> 100 (more room from left edge). (2) Card backplate width trimmed 220 -> 160 -- pre-fix the black plate extended ~80px past the right edge of "Altitude: YYY" text creating dead empty space; now it sits tight around the text. Warning label width unchanged at 220 (no backplate; just yellow text "ALTITUDE WARNING" that can extend past the card).
+// v0.678: H-P1 altimeter nudge X 40 -> 50 + Y 730 -> 720 per user (right 10, up 10).
+// v0.677: H-P1 altimeter X indent doubled 20 -> 40 (move right per user request).
+// v0.676: H-P1 altimeter Y nudge 750 -> 730 (move up another 20px per user request).
+// v0.675: H-P1 altimeter Y nudge 800 -> 750 (move up ~50px per user request, now ~69% down the 1080 reference).
+// v0.674: H-P1 altimeter REBUILT to match the upper-left branding squares pattern (user explicit hint: "why can't it work just like the upper left branding squares?"). v0.666-v0.673 used a LAZY-built widget tree (built on first show, inside runAircraftWarningLoop). Position constants never actually positioned the widget where requested across 8 attempts. v0.674 abandons lazy build entirely: altimeter widget tree is now EAGER-built INSIDE ensureHudForPlayer (called at OnPlayerJoinGame) using the exact same modlib.ParseUI signature shape as Upper_Left_Container_ -- TopLeft anchor, visible:true, padding:1, bgColor [0,0,0] bgAlpha 0.0001 bgFill Blur (effectively invisible but treated as a real laid-out container by the engine). Children (warning label, card, text) live inside this always-laid-out root. setAltimeterVisibleForPid now toggles CARD + TEXT visibility instead of the root (root stays always-on as the positioning frame). Renamed widget IDs to "Altimeter_v674_*" so any persisted widget tree from v0.666-v0.673 is orphaned by safeFind. Removed reliance on lazy ensureAltimeterUiForPlayer's cold-build path (the function still exists and runs harmlessly via the v0.673 idempotent SetUIWidgetPosition fallback). Position (20, 800) on the 1080 reference -- ~74% down the left side.
+// v0.673: H-P1 altimeter ROOT CAUSE for v0.667->v0.672 "widget never moves" reports. The lazy ensureAltimeterUiForPlayer's idempotent path (`if (existingRoot) { rehydrate refs; return; }`) returned the existing widget WITHOUT ever re-applying the ALTIMETER_HUD_ANCHOR_OFFSET_* constants. Since widgets persist across script reloads in this engine, the widget was permanently locked at its FIRST-build position (probably v0.666 BottomLeft attempt, which silently fell back to ~top-left). Every position tweak from v0.667 onward only affected the COLD-build path -- which never ran because the widget already existed. Fix: in the idempotent path, after safeFind, RE-APPLY mod.SetUIWidgetPosition + mod.SetUIWidgetSize for the root + card + text + warning label using the current constants. Hits the LIVE widget; always wins. Wrapped in try/catch so a missing API method can't kill the lazy ensure.
+// v0.672: H-P1 altimeter ACTUALLY moves down the left side now. User report: "the elements still have not moved. Do not guess. Do not assume." Investigation: my v0.671 CenterLeft anchor was silently rejected by modlib.ParseUI -- the engine ONLY accepts TopLeft / TopCenter / TopRight / Center / BottomCenter as ROOT anchors. CenterLeft / BottomLeft are never used as root anchors anywhere in this codebase; they only appear as CHILD anchors inside parent containers. So v0.671's CenterLeft fell back to (effectively) TopLeft with the old offset and rendered HIGHER than v0.670, not lower. Reverted to TopLeft (the proven left-side root pattern -- matches Upper_Left_Container_, Container_TopLeft_CoreUI_, MatchTimerRoot_, all of which work). Bumped ALTIMETER_HUD_ANCHOR_OFFSET_X 10 -> 20 (a little more left-edge buffer) and ALTIMETER_HUD_ANCHOR_OFFSET_Y 200 -> 800 (large Y to actually drop the widget into the lower portion: 800 of 1080 = ~74% from top, widget center at screen Y~845, well below the middle).
+// v0.671: H-P1 altimeter root anchor TopLeft -> CenterLeft (user report: v0.670 still rendered in the top-left corner with TopLeft + y=270). CenterLeft anchors the root to the screen's left-edge-vertical-center; positive Y offset drops it BELOW center. New defaults: anchor (10, 200) -> widget center at screen (10, 740) on the 1080 reference -- lower-left area, well below the middle. Children stay TopLeft within root (sibling text+card layout unchanged from v0.668; warning label still sits above the card).
+// v0.670: H-P1 two fixes. (1) Altimeter persisted after exiting the aircraft (user report). Belt-and-suspenders fix in 3 places: (a) setAltimeterVisibleForPid + setAltimeterWarningLabelVisibleForPid now fall back to safeFind by widget name when the in-memory ref drifted (so a stale ref doesn't make the hide a no-op); (b) OnPlayerExitVehicle now explicitly hides both altimeter widgets the instant the engine fires the exit event (per memory: that event is reliable, OnPlayerEnterVehicle is the unreliable one); (c) OnPlayerUndeploy also hides them on death/redeploy. The 5Hz runAircraftWarningLoop continues to manage visibility in the normal case; these are belt for the case where IsInVehicle lies briefly post-exit. (2) Added a "Ceiling: X" callout to the black-screen dialog -- new text widget above the existing "ALTITUDE WARNING" title at position [0, -180], white text, font size 24. Value is stamped on every show from State.round.modeConfig.confirmed.aircraftCeiling so it always matches the current ceiling setting. Required: new string key twl.hud.altitudeWarning.ceilingFormat = "Ceiling: {0}", new STR_HUD_ALTITUDE_WARNING_CEILING_FORMAT, new HudRefs.altitudeWarningCeilingLabel field. Idempotent path also rehydrates the new ref.
+// v0.669: H-P1 ceiling layout RE-ANCHORED so the user-facing aircraftCeiling setting is now the BLACK-SCREEN threshold (the central anchor), with warningBufferM extending BELOW it and hardBufferM extending ABOVE. Was v0.666: both buffers stacked above ceiling -> ceiling = where the YELLOW warning fires, black at +warnBuf, hard at +warnBuf+hardBuf. Now: warning at ceiling-warnBuf, black AT ceiling, hard at ceiling+hardBuf. The visual hook: when the altimeter reads exactly the ceiling setting (e.g. "Altitude: 130" on Firestorm/TWL ceiling=130), the black screen is just firing -- that's now the moment of "you ARE at the ceiling". On Firestorm/TWL the new positions are: warning at world Y 257 (HUD 125), black at 262 (HUD 130 = ceiling), hard at 287 (HUD 155). Felt hard cap drops 5 units (was 292, now 287) since warnBuf no longer stacks under hard. Only the 3 helper functions changed (getAircraftSoftCeilingWorldY / getAircraftWarningCeilingWorldY / getAircraftHardCeilingWorldY); the runAircraftWarningLoop 3-stage state machine is unchanged -- its softY/warningY variables now hold the new absolute positions but the stage transitions on posY > softY / posY > warningY still work correctly. State comment updated.
+// v0.668: H-P1 altimeter layout fix + repositioning. User report after v0.667: backplate appeared in the upper-left while the altitude text rendered near the middle of the screen -- the card and text were not visually unified. Root cause: text widget was NESTED inside the card Container, and chained TopLeft anchors (root TopLeft -> card TopLeft inside root -> text CenterLeft inside card) appear not to propagate cleanly in modlib.ParseUI. FIXED by flattening the hierarchy: card and text are now SIBLINGS under root, both anchored TopLeft within root with explicit offsets. Text is declared after the card in the children array so it renders on top. Reposition per user spec: root moved from (5, 750) -> (10, 270) -- 10px screen-edge buffer + ~1/4 down the 1080 reference. Text sits at root (10, 34) so its left edge is at screen X=20 (the "20-unit indent" the user requested). Card now spans the full 220px root width (was 180px) so the backplate fully contains the text horizontally.
+// v0.667: H-P1 altimeter polish. (a) Label changed from "Alt: {Y}" -> "Altitude: {Y}" (string key twl.hud.altimeter.format updated; card width widened 160->180 to fit). (b) Displayed value changed from raw world-Y -> HUD altitude (posY - hudFloorY). On Firestorm/TWL with floor=132 and ceiling=130, the altimeter now reads 130 EXACTLY when the player crosses the soft warning at world Y=262, so the readout matches the Ready-Dialog ceiling setting's scale. World-Y thresholds (softY/warningY/hardY) are unchanged -- only the displayed text uses the HUD-altitude convention. (c) Root anchor switched from BottomLeft (user reported it rendering at screen center in v0.666) to TopLeft + explicit Y-from-top, which is the pattern that works reliably in this codebase. New position [5, 750] = 5px in from the left edge, 750px from the top (~70% of 1080, lower-left area just above the typical minimap). (d) Text alignment inside the card switched from Center -> CenterLeft with a 10px left padding, so "Altitude: 130" sits flush against the left of the card.
+// v0.666: H-P1 3-stage layered aircraft ceiling + new altimeter HUD widget + new admin "Warn Buffer" knob. Replaces the v0.664 single-stage warning. Layout (Firestorm/TWL example floor=132 ceiling=130 warnBuf=5 hardBuf=25): soft warning at floor+ceiling=262 (altimeter card turns YELLOW + "ALTITUDE WARNING" label appears above it); BLACK SCREEN dialog at floor+ceiling+warnBuf=267; engine pushback at floor+ceiling+warnBuf+hardBuf=292. Hard-cap scale math FIXED per the user-approved v0.664-Option A direction: SetMaxVehicleHeightLimitScale receives targetWorldY / hudMaxY (NO floor offset in denominator), so the felt cap now actually lands at the intended position instead of ~243. New altimeter widget: lazy-built per-pid card anchored BottomLeft at (20, 432) — shows "Alt: {Y}" in GREEN when in aircraft below soft, YELLOW above. Aircraft-only (hidden in tanks/jeeps/on-foot). Built lazily on first show to avoid the eager-build invisible-widget pattern. New admin "Warn Buffer" knob (default 5m, MIN 0 MAX 100 STEP 1) sits below the existing "Hard Buffer" row in the admin panel; existing "Buffer" knob renamed to "Hard Buffer" for clarity. ADMIN_PANEL_HEIGHT bumped 694->728 to fit the new row. All new HudRefs (altimeterRoot/Card/Text/WarningLabel) + State.round.aircraftCeiling.warningBufferM threaded through state.ts. Per-map ceilingSetting values MAY need retuning since the engine cap now sits higher than it did in v0.664 (was 243, now 292 on Firestorm/TWL).
+// v0.665: H-P1 altitude warning backplate shrunk from full-screen 3840x2160 to centered 960x540 (~50% of the 1920x1080 UI reference frame). User feedback after v0.663/v0.664: pilots still need peripheral bearings (instruments, horizon, altitude readout) to descend safely, so a full-screen blackout removes too much information. The 960x540 central block still dominates the player's view (forcing them to react to the warning) but leaves all four edges of the screen unobstructed. Text children unchanged -- their relative positions [0,-120] / [0,-60] / [0,10] sit well inside the new 960x540 footprint and remain centered on the screen.
+// v0.664: H-P1 soft-warning re-anchored to FELT hard cap (not floor+ceilingSetting). User report after v0.663: on Firestorm/TWL default (floor=132, hudMaxY=735, ceiling=130, buffer=25) the engine pushback engaged at world Y ~243 but the dialog only appeared at >262, so the player hit physics before being warned. Diagnosis: mod.SetMaxVehicleHeightLimitScale applies the scale relative to hudMaxY (not floorY+hudMaxY), so felt hard cap = hudMaxY * scale = 735 * (132+130+25)/(132+735) = 735 * 0.331 = ~243. Pre-v0.664 soft was 132+130=262, sitting ABOVE the felt cap of 243 -- inverted. Fix per user direction "don't change the math of where the hard ceilings are calculated; move the soft": applyCustomAircraftCeilingHardLimiter untouched (preserves every map's tuned position), getAircraftSoftCeilingWorldY rewritten to mirror the scale calculation and return baseHud * scale - hardBuffer, i.e. (felt hard cap) - buffer. New Firestorm/TWL layout: soft warning at ~218, engine cap at ~243 (unchanged), 25-unit gap. Comments added to both functions calling out the contract and warning future edits not to drift the formulas. Removed stale "TODO(1.0): Unused" tag (function is now load-bearing).
+// v0.663: H-P1 polish + diagnostic cleanup -- user confirmed warning dialog now renders in v0.662. Polish: (a) altitude warning Container is now a full-screen 3840x2160 opaque black backplate (bgColor [0,0,0], bgAlpha 1, bgFill Solid) -- blocks the player's view while shown so they can't use the obstructed view as a sight-line advantage; (b) toggle is now simple above/below the soft ceiling -- when posY > softY warning shows, when posY <= softY it hides (no hysteresis per user spec: "toggles based on being above or below"); (c) restored customEnabled gate (vanilla maps + Vanilla mode = no warning); (d) removed the diagnostic static-Y trigger (was enterY=150 / exitY=140), removed the 2 persistent diag rows (AltWarning_DiagLoop/Step) from the settings summary, removed 3 writeAltWarningDiag* helper functions, removed altWarningDiagLoop/Step from HudRefs. Children remain centered within the full-screen container (their relative positions [0,-120] / [0,-60] / [0,10] put them near the visual center).
+// v0.662: H-P1 ROOT CAUSE FIX -- v0.661 diagnostic proved the chain breaks at isAircraftVehicle: user in heli showed Row1 X-tick climbing, Y-validPlayer=1, Z-inVehicle=1, Row2 X-vehicleFound=1, Y-isAircraft=0. So GetVehicleFromPlayer returned a vehicle but mod.CompareVehicleName returned false for every enum check. This matches Conquest's documented CQ_Bug_43 (boundary/enforcement.ts:140-144, Changelog v1.368): "CompareVehicleName has documented reliability gaps". Conquest avoids CompareVehicleName entirely and classifies aircraft via slot-binding: State.vehicles.vehicleToSlot[objId] -> State.vehicles.slots[i].vehicleType (the pre-known enum the script itself set at slot configure time) -> pure JS switch. Helis has the same slot infrastructure (index.ts:647 binds vehicleToSlot at spawn). Replaced isAircraftVehicle to use slot-binding + a new pure-JS isAircraftVehicleType(enum) switch. NOT FOR RELEASE -- diagnostic rows still active.
+// v0.661: H-P1 DIAGNOSTIC refined per user observation -- in v0.660, only Row 1 X (tickCount) climbed; Y/Z stayed 0 even when flying, proving the loop is alive but mod.GetVehicleFromPlayer or isAircraftVehicle is failing for the user. v0.661 (a) adds the IsInVehicle preflight that helis's OWN working pattern at overtime.ts:761 uses BEFORE GetVehicleFromPlayer -- GetVehicleFromPlayer may silently return null without this; (b) restructures the 2 diag rows to show the per-chain-step counters so we pinpoint where the chain breaks:  Row 1 X=tickCount Y=validPlayerCount Z=inVehicleCount.  Row 2 X=vehicleFoundCount Y=isAircraftCount Z=floor(maxAircraftY). Whichever value stays 0 while flying tells us which API call is failing. NOT FOR RELEASE.
+// v0.660: H-P1 DIAGNOSTIC moved to persistent HUD widgets -- world log notifications were not reaching user (likely the AGENTS.md:104 "world log silently fires inconsistently" behavior, or some other gating). Replaced with two eagerly-built per-pid text widgets in the existing settings summary atomic ParseUI tree (rows 7-8, same pattern as the already-working Settings_* rows that user can see): AltWarning_DiagLoop_<pid> = "ADMIN POS X:<tickCount> Y:<maxAircraftY> Z:<aircraftCount>" updated every loop tick (5Hz); AltWarning_DiagStep_<pid> = "ADMIN POS X:<pid> Y:<visible 1/0> Z:<stepCode>" updated on each setAltitudeWarningVisibleForPid call. stepCode 10=entered, 13=ensure ok, 14=ensure failed, 15=visibility toggled. The loop diag value should tick upward visibly on every player's upper-left HUD. If the value freezes or never appears, the loop isn't alive. Per AGENTS.md:104-105, persistent HUD widget overlay is the canonical reliable diagnostic surface for Helis. Removed all 5+ sendNotificationMessage probe calls. NOT FOR RELEASE.
+// v0.659: H-P1 DIAGNOSTIC bootstrap+unconditional probe -- user reports NO messages from v0.658 probes, suggesting either the loop crashed silently or notifications were gated despite the isGameplay=true fix. v0.659 adds: (a) a one-shot bootstrap probe at loop entry (stepCode 0, X=0, Y=0, Z=0) that fires before any await -- if user sees this on game start, notifications work + loop reached. (b) An UNCONDITIONAL loop-tick probe (stepCode 2) every 15 ticks (= ~3s at 0.2s tick), tickCount in X, max observed Y in Y, gated by tick count NOT time -- avoids any GetMatchTimeElapsed NaN-on-startup issue. Both wrapped in try/catch so exceptions don't kill the loop. If user sees Z=0 once but no Z=2 thereafter, the loop dies after the first Wait. If user sees Z=2 ticking up steadily but never Z=10, the loop runs but never enters a transition. NOT FOR RELEASE.
+// v0.658: H-P1 DIAGNOSTIC fix -- the v0.657 probes were silently dropped because sendNotificationMessage was called with isGameplay=false, which routes through ENABLE_DEBUG_NOTIFICATION_MESSAGES (=false at types.ts:46). All 5 probe calls now pass true (isGameplay) so they route through ENABLE_GAMEPLAY_MESSAGES (=true). Also added a loop-tick probe (stepCode 1, throttled to ~3s) that fires whenever at least one aircraft is detected this tick, regardless of altitude -- X=aircraft count, Y=max vehicle Y observed, Z=1. This tells us if the loop is running and detecting aircraft, even if the altitude transition never fires. NOT FOR RELEASE.
+// v0.657: H-P1 DIAGNOSTIC PROBES -- v0.656 lazy-build also did not render. Stop guessing; add concrete worldlog probes inside setAltitudeWarningVisibleForPid so we know exactly where the pipeline is failing. Probes use the existing twl.debug.adminPos string ("ADMIN POS X:{0} Y:{1} Z:{2}") and DisplayNotificationMessage; format X=pid, Y=visibility-or-rootTruthy, Z=stepCode. Step codes: 10=entered visible-toggle (transition), 11=hudByPid refs missing, 12=ensure() called, 13=ensure() returned a root, 14=ensure() returned undefined, 15=post-toggle altitudeWarningRoot ref state. User test plan: take off, climb above vehicle Y=150, descend. Each transition should print a stream of stepCodes. If 10 never appears -> the loop never reaches the toggle. If 13 appears with root truthy at 15 but still no dialog -> widget construction succeeds but render is broken. If 14 appears -> ensure() silently fails. NOT FOR RELEASE.
+// v0.656: H-P1 hotfix #5 -- ROOT CAUSE for invisible altitude warning across v0.650-v0.655. The widget was built EAGERLY inside ensureHudForPlayer at OnPlayerJoinGame time. Cockpit-overlay widgets built that early render INVISIBLY regardless of construction recipe (modlib.ParseUI alone, Container + AddUIText long overload, atomic ParseUI tree -- all failed). Both proven working cockpit-overlay implementations (Conquest boundary prompt at prompt-ui.ts:101-390 + Helis's own overtime HUD at overtime.ts:1581) build LAZILY at first-show, called from showXxx(). Fix: extracted construction into standalone ensureAltitudeWarningUiForPlayer(player) in hud.ts (own region, own widget names, own state -- entirely separate from overtime/capture systems). setAltitudeWarningVisibleForPid in ready-dialog.ts now calls ensure() right before the first visibility toggle. Idempotent: subsequent calls just rehydrate refs and return early. Removed: eager altitude-warning block from ensureHudForPlayer + the 4 eager safeFind lines from the cache-init block. Diagnostic enterY=150/exitY=140 + customEnabled bypass from v0.654 still in place for the render-isolation test.
+// v0.655: H-P1 hotfix #4 -- widget construction was using the WRONG pattern. v0.652 ported the Container + separate AddUIText calls from Conquest's boundary/prompt-ui.ts, which despite being verbatim Conquest code did NOT render visibly in helis-only. The Helis-PROVEN pattern (used by ensureOvertimeHudForPlayer at overtime.ts:1581 -- the in-zone capture HUD which DOES render over the cockpit while flying) is different: ONE atomic modlib.ParseUI call with the Container PLUS all Text children nested inside `children: [...]`, then safeFind(root), then safeSetUIWidgetDepth(root, mod.UIDepth.AboveGameUI). Visibility toggles on the ROOT only -- children inherit (confirmed by overtime.ts:854,1043,1413,1448 patterns). Removed: 3 separate mod.AddUIText long-overload calls, redundant child visibility toggles in setAltitudeWarningVisibleForPid. Rebuilt: single atomic ParseUI tree. Diagnostic enterY=150/exitY=140 + customEnabled gate bypass from v0.654 remain in place -- still verifying render via static-Y trigger.
+// v0.654: H-P1 DIAGNOSTIC -- v0.653 still did not show the dialog despite scanning AllPlayers each tick. User observation on Operation Firestorm (hudFloorY=132, hudMaxY=735, ceiling=130, buffer=25): hard cap engages at vehicle Y ~272 (not the predicted 287), making the soft-to-hard window only ~10m wide and likely below vehicle Y resolution. Plus possible vehicle-Y vs soldier-Y offset on helis. To isolate render from math, hardcoded enterY=150 / exitY=140 in runAircraftWarningLoop and bypassed the customEnabled gate -- any player in any aircraft above world Y=150 should now trigger the dialog regardless of mode. If dialog appears: render works, math/window-too-tight is the original issue (need to either fix scale formula or widen buffer). If dialog still doesn't appear: deeper widget-render bug remains. Revert paths annotated in comments at both diagnostic sites. NOT FOR RELEASE.
+// v0.653: H-P1 hotfix #3 -- ROOT CAUSE for missing altitude warning dialog. The warning loop in v0.650-v0.652 iterated State.players.playerInAircraftByPid, a cache populated ONLY by OnPlayerEnterVehicle. But Helis's own index.ts:433 documents that event as "Known fragility -- error prone" and the early-return on unassigned-team at index.ts:451 skips the cache-write entirely. Net effect: cache stays empty across the entire match, loop iterates 0 entries, no warning dialog ever fires. The hard ceiling kept working because mod.SetMaxVehicleHeightLimitScale is engine-global, completely independent of our JS event handling -- explaining the v0.650-v0.652 symptom (hard cap engages, no warning). v0.651 (post-hoc SetUIWidgetDepth) and v0.652 (Conquest Container + AddUIText long-overload) were both correct widget-rendering improvements, but neither addressed the actual blocker: the visibility-toggle function was never being called. Fix: replaced the cache-iteration with mod.AllPlayers() + GetVehicleFromPlayer per tick. With N=2-8 players in helis-only the cost is negligible (~8 reads / 0.2s). The "avoid tick-based polling" optimization from the original plan was a premature optimization that introduced this bug. The cache field State.players.playerInAircraftByPid + the OnPlayerEnter/ExitVehicle writes are left in place as dead state for now (harmless; can be cleaned up later).
+// v0.652: H-P1 hotfix #2 -- altitude warning dialog STILL invisible in v0.651 because post-hoc SetUIWidgetDepth does not put modlib.ParseUI Text widgets above the in-cockpit HUD overlay. The working pattern requires: (1) a Container root via modlib.ParseUI with anchor Center, (2) each child widget via mod.AddUIText's LONG signature (the 17-arg overload, not the short 6-arg overload Helis uses elsewhere) -- the long overload accepts `parent` AND `mod.UIDepth.AboveGameUI` IN-SIGNATURE, (3) SetUIWidgetDepth(root, AboveGameUI) as belt-and-suspenders, (4) toggle visibility on root + each child individually (visibility does NOT cascade). Ported verbatim from Conquest boundary/prompt-ui.ts:139-390 (ensureBoundaryPromptUiForPlayer + setBoundaryPromptVisible). Changes: added altitudeWarningRoot?: mod.UIWidget to HudRefs (state.ts); replaced the 3 modlib.ParseUI calls in hud.ts with 1 Container root + 3 mod.AddUIText calls passing parent + depth + player; added altitudeWarningRoot safeFind in cache-init; setAltitudeWarningVisibleForPid now toggles root + 3 children. No behavior change to the warning loop, engine cap, or admin buffer knob.
+// v0.651: H-P1 hotfix -- altitude warning dialog widgets were invisible in v0.650 because they rendered behind the in-cockpit HUD overlay. Default UIDepth puts them below the cockpit; v0.650 shipped without setting depth (regression vs the existing pattern for SpawnDisabledLiveText + the overtime cockpit-overlay widgets, which both call SetUIWidgetDepth(..., AboveGameUI) after ParseUI). Fix: added 3 SetUIWidgetDepth(..., mod.UIDepth.AboveGameUI) calls in hud.ts right after each ParseUI for altitudeWarningTitle / altitudeWarningBody / altitudeWarningCountdown. Engine cap behavior was already correct in v0.650 (proven by user observation of hard ceiling pushback at soft+buffer); only the visual dialog was hidden.
+// v0.650: Plan H-P1 -- layered aircraft ceiling. The Ready-Dialog "Aircraft Ceiling" knob label is unchanged, but its meaning shifts from hard ceiling to SOFT (warning) threshold. Engine pushback (mod.SetMaxVehicleHeightLimitScale) now applies at soft + buffer; default buffer = 25m, admin-tunable in the Admin Panel ("Buffer +/-", range [5, 200], step 5). When an aircraft occupant crosses the soft ceiling (with 10m enter / 20m exit hysteresis), a big centered HUD dialog appears: "ALTITUDE WARNING" title (yellow, size 36) + "Descend immediately or you will be DESTROYED" body (white, size 20) + a LARGE countdown digit (yellow, size 64) that ticks down 3 -> 2 -> 1 -> 0 once per second and holds at 0. No behavior at 0 -- placeholder for future destruction. Countdown is per-pid, restarts fresh on each new ascent. Tracking is event-driven: OnPlayerEnter/ExitVehicle maintains State.players.playerInAircraftByPid; a 5Hz loop iterates ONLY pids in that cache (no AllPlayers/AllVehicles scan). Ported event-driven seat-kind pattern from Conquest boundary/enforcement.ts. Layered behavior is gated by State.round.aircraftCeiling.customEnabled (vanilla maps + Vanilla mode = no warning, no engine cap; Custom / TWL on useCustomCeiling=true maps = warning + engine cap at soft+buffer). Dead-code cleanup: removed the unused nudge-loop math (updateSoftCeilingForVehicle, getVehicleYawRad, startAircraftCeilingSoftEnforcementLoop, 5 nudge constants) + AIRCRAFT_CEILING_ENFORCEMENT_MODE constant + AircraftCeilingVehicleState type + vehicleStates state field. Plan: design_doc/5.30.26_heli_layered_aircraft_ceiling_plan.md.
+// v0.649: Plan H-P0 follow-on -- add coarse-step buttons to the Vehicle Health Multiplier knob. New "-10" / "+10" buttons sit OUTSIDE the existing "<" / ">" buttons (one on each side), so the dialog row reads visually: [-10] [<] Health:NNN% [>] [+10] then a gap, then Mode Settings. Step size 0.10 multiplier = 10% per click (vs the inner 0.01 = 1%). Wider 32px buttons (vs 26px for the inner < />) with textSize 13 to fit the 3-char label. Two new strings (twl.ui.minus10 = "-10", twl.ui.plus10 = "+10") added per the same approval as v0.648. Two new event-router cases in team-switch.ts route to setReadyDialogVehicleHealthMultiplier with the coarse step. No other behavior change: still confirm-only, still applies to new spawns, still clamps to [0.05, 4.0].
+// v0.648: Plan H-P0 -- Vehicle Health Multiplier slider on the Ready Dialog. New knob (5%-400%, step 1%) on the same row as Mode Settings, positioned to the LEFT of the Aircraft Ceiling block: [<] Health:NNN% [>] then Mode Settings row continues. Storage: float in (0, 4], confirmed-only (only takes effect after the user clicks Confirm), applied to NEW vehicle spawns via mod.SetVehicleMaxHealthMultiplier at the end of OnVehicleSpawned (wrapped in try/catch per the BillDukes VehicleUIUniversal precedent). Per-map default wired into MapConfig.defaultVehicleHealthMultiplier (all 9 maps explicit at 1.0 today; future maps can override). Touching the knob flips game-mode to Custom (matches ceiling pattern); picking a preset resets the knob to the map default. Reset / Fresh Setup preserves the confirmed value (matches existing ceiling/vehicles behavior). Settings-summary HUD line "Vehicle Health: NNN%" always shown. World-log broadcast "{player} changed the Vehicle Health to NNN%" on Confirm when value changes. Also retrofitted the two sibling broadcasts (aircraftCeilingChanged + gameModeChanged) to wrap changedBy via safePlayerArg -- they were missed by the v0.634 CQ_Bug_94 defensive pass. Plan: design_doc/5.27.26_heli_vehicle_health_multiplier_plan.md.
+// v0.647: Extend CQ_Bug_42 guards to two more unguarded mod.GetVariable(regVehiclesTeam1/2) callsites that the v0.646 helper-only fix missed. (1) clock.ts getRegisteredVehicleCount: was passing mod.GetVariable(...) directly to mod.CountOf() without a null guard. Called twice per main-loop tick (Team1 + Team2) inside the live-round gate -- when a player joins mid-round, the first tick after their join fires 2 errors matching the user-observed "exactly 2 errors on join in MP server" pattern. Added `if (!arr) return 0;` guard. (2) vehicles.ts registerVehicleToTeam: was passing mod.GetVariable(...) directly to mod.AppendToArray() in two paired Team1/Team2 branches. Coerced to mod.EmptyArray() via `?? mod.EmptyArray()` before append. Pure defensive guards, zero behavior change on valid-array path. Same fix family as v0.646; just covers more callsites Conquest's array-helpers consolidation took care of via different code shape.
+// v0.646: Port Conquest CQ_Bug_42 v1.073 fix for the 2 "Received undefined values" engine errors at game start. Source: mod.GetVariable(regVehiclesTeam1/2) can return a non-array during transient registry state, and Helis's arrayContainsVehicle/arrayRemoveVehicle helpers in vehicles.ts pass the undefined arr directly to modlib.IsTrueForAny / modlib.FilteredArray which internally call mod.CountOf(undefined) -> "Received undefined values as arguments" engine error. Once per team registry = exactly 2 errors (matches observed count). Fix: defensive guards at the helper level -- arrayContainsVehicle returns false when arr is falsy; arrayRemoveVehicle returns mod.EmptyArray() when arr is falsy. Pure defensive guards, zero behavior change on valid-array path. Conquest also added a similar guard at capture-tickets.ts but Helis-only does not have that code path. Also reverted v0.645's 50ms mod.Wait at the top of OnVehicleSpawned -- that was speculation that the position read was firing the error; CQ_Bug_42 prior art identifies the actual source as the registry helpers, not GetObjectPosition. Found via static analysis comparing Helis vehicles.ts:6-13 to Conquest's array-helpers.ts (post-v1.073).
+// v0.645: Option B fix attempt for "Received undefined values" errors (2 per game start) -- added 50ms `await mod.Wait(0.05)` at the top of OnVehicleSpawned before the first mod.GetObjectPosition(eventVehicle) call. Static analysis (post-probe) identified this unconditional position read at line 568 as the most likely source: engine can deliver OnVehicleSpawned before the vehicle transform is fully set, and reading position too early on a just-spawned vehicle fires the engine error log. Conquest avoids this by token-binding via bindSpawnedVehicleToExpectingSlot(vehicle) first and only reading position after a successful bind (vehicle-events.ts:67-71); Helis's bindSpawnedVehicleToSlot still needs vehiclePos for its position-fallback path, so we can't simply defer / skip the read. Smallest-risk fix is to give the engine 50ms to settle before any position query. If errors persist after v0.645 testing, consider Option A (restructure OnVehicleSpawned to defer the position read until after the inline token-bind shortcut, mirroring Conquest's architecture).
+// v0.644: Plan A11 cleanup -- probe instrumentation (v0.639 thru v0.643) removed entirely. HUD widget + dev-console correlation proved non-viable as a debug path: console is behind menus, HUD widget is in-game, user cannot view both simultaneously. Reverted ALL probe code: stripped 96 call sites (73 in index.ts, 19 in team-switch.ts, 4 in hud.ts), removed _probeStamp/_probeStampW/_stampIdFromName/_ensureProbeWidget helpers + State.debug.lastProbeStep / probeStepCount fields from state.ts. Substantive fixes from v0.638 (isAliveByPid cache + 6 callsite guards), v0.634 (safePlayerArg), v0.633 (RemoveEquipment drop + roundend loop gates), v0.632 (getUiSafePlayerMessage + DEPLOY_SETTLE_GRACE_SECONDS), v0.631 (safeUndeployPlayer) all preserved. Next: static analysis comparing Conquest vs Helis paired-op surfaces at game start (OGMS, OnVehicleSpawned, startVehicleSpawnerSystem) to identify the source of the 2 "Received undefined values" errors via code-level divergence.
+// v0.643: Plan A11 broad slow-mode -- v0.642 confirmed errors fire from a path OUTSIDE spawnTeamSwitchInteractPoint (function progressed cleanly 601-618 with errors still occurring). Added _probeStampW(name) async helper that stamps + awaits 0.5s. Bulk-replaced `_probeStamp(` -> `await _probeStampW(` in index.ts (73 sites: OGMS + OPJG + OPDEP + OVS) and team-switch.ts (19 STIP sites). Removed the 17 redundant explicit `await mod.Wait(0.5)` calls from STIP (now handled inside _probeStampW). Game start now takes ~45s but every stamp holds 0.5s visible. User reports the last visible stamp ID (1xx/2xx/3xx/4xx/6xx) on the HUD when each of the 2 "Received undefined values" errors appears in dev console.
+// v0.642: Plan A11 slow-mode -- v0.641 user caught stamp 603 (just before 1.5s mod.Wait) then settled on 312, meaning STIP stamps 604-619 fired too fast to read. Added 0.5s mod.Wait between every STIP stamp inside spawnTeamSwitchInteractPoint so each stamp holds long enough to read visually. Function takes ~9 extra seconds during spawn-in (acceptable for debug). User watches widget tick through 601...619 and reports the last STIP integer visible when each of the 2 "Received undefined values" errors appears in the dev console. No console.log path available (user confirmed dev console not visible to them).
+// v0.641: Plan A11 narrowing -- v0.640 probe identified that the 2 "Received undefined values" errors fire inside OnPlayerDeployed, specifically between stamps 311 (OPDEP_11_BEFORE_SPAWN_INTERACT) and 312 (OPDEP_12_AFTER_SPAWN_INTERACT). That window is the body of spawnTeamSwitchInteractPoint(eventPlayer) in team-switch.ts. Added STIP_NN stamps (prefix maps to 600+NN) at every mod.* call site inside that function: STIP_01-19 covering enter, deploy-settle wait, branch check, safeGetSoldierStateBool(IsOnGround), while loop, position/facing reads, mod.Add chain, mod.SpawnObject(InteractPoint), mod.EnableInteractPoint. Added STIP=600 to _stampIdFromName parser. Run again and report the LAST STIP integer (601-619) the widget shows when the 2 errors appear.
+// v0.640: Plan A11 fix -- v0.639 probe widget displayed "unknown string" because mod.Message treats string args as string-key lookups (per existing memory: "Literal strings produce 'unknown string'; must use mod.stringkeys.* from strings.json"). Switched probe display to NUMERIC ID parsed from the stamp name: prefix maps to a 100-bucket base (OGMS=100, OPJG=200, OPDEP=300, OVS=400, ENSUREHUD=500), suffix is the local NN. Example: OGMS_09_BEFORE_BROADCAST_INIT_T1 -> ID 109. Added _stampIdFromName(name) parser. mod.Message receives the numeric id via genericCounter "{0}" -- same pattern that safeSetUITextLabel + setCounterText use successfully across the codebase. Source-only change to state.ts; no call sites edited.
+// v0.639: Plan A11 -- TEMPORARY probe instrumentation to locate the source of the 2 "Received undefined values as arguments" engine errors at game/round start. After v0.637 mass migration of 57 mod.SetUITextLabel callsites did NOT fix the errors, an audit revealed Conquest only partially uses the safe-wrapper pattern (90% wrapped for SetUIWidgetVisible/SetUITextColor; sparse for other UI APIs), making a blind mass-migration of 200+ direct mod.SetUI* / mod.AddUI* callsites a guess rather than a Conquest port. Probe adds: State.debug.lastProbeStep + probeStepCount; _probeStamp(name) helper that increments counter, console.logs "[PROBE NN] name", and updates a per-player widget; _ensureProbeWidget(player) builds a top-left HUD text widget; ENABLE_PROBE constant gates the entire system. Instrumented checkpoints across OnGameModeStarted (~37 stamps), OnPlayerJoinGame (~19 stamps), OnPlayerDeployed (~12 stamps), OnVehicleSpawned (~4 stamps), and ensureHudForPlayer entry/fast-path/slow-path branches. User watches the HUD widget at game start; the LAST stamp displayed before the engine error appears in dev console indicates the section where the bad call lives. To be removed in v0.640 after source confirmed.
+// v0.638: Plan A10 -- port Conquest CQ_Bug_37/38 v1.074 cache-guard pattern for the "ERROR REPORTED BY GETSOLDIERSTATE WHILE: Failed to apply action to player due to player not being deployed" engine error on plain death + round end. Added State.players.isAliveByPid: Record<number, boolean> cache + isPlayerAlive(player) helper in state.ts. Cache mutations: flipped TRUE in OnPlayerDeployed; flipped FALSE in OnPlayerUndeploy, OnPlayerLeaveGame (delete), OnVehicleDestroyed (proactive flip via popLastDriver for the vehicle's victim - closes race window before OnPlayerUndeploy fires), and both safe-wrapper catch blocks (self-healing alongside existing deployedByPid flip). Callsite guards at 6 per-tick paths now check isPlayerAlive before invoking safeGetSoldierState*: team-switch.ts isVelocityBeyond, team-switch.ts checkTeamSwitchInteractPointRemoval (IsDead read), utils.ts InteractMultiClickDetector.checkMultiClick (IsInteracting read), ready-dialog.ts applyAutoReadyForPid (IsInVehicle read), ready-dialog.ts checkTakeoffLimitForAllPlayers (GetPosition read), hud.ts updateHelpTextVisibilityForPid (IsInVehicle read, paired with existing deploy-grace from Plan A2), overtime.ts syncOvertimePlayerVehicleState (IsInVehicle read). Per Conquest's own caveat the first-tick race still fires the engine log; subsequent ticks skip immediately. Plan: design_doc/5.27.26_heli_isAliveByPid_cache_plan.md.
+// v0.637: Plan A9 -- mass migration of direct mod.SetUITextLabel calls to safeSetUITextLabel wrapper. 57 direct callsites across clock.ts (4), hud.ts (10 plus 1 preserved inside the wrapper itself), ready-dialog.ts (42) were all bypassing the hardened safeSetUITextLabel wrapper from v0.636 -- the wrapper's null/undefined guard was dead code. This is the missing v0.763 half of Conquest's CQ_Bug_18 fix ("route the remaining ready-dialog and shared HUD label refresh paths through safe text setters"). Conquest has only 2 direct mod.SetUITextLabel calls in its entire codebase (both try/catch wrapped); Helis had 57. All migrated callsites now silently skip when label is undefined/null and re-resolve stale widget refs by name. Closes "Received undefined values as arguments" engine error class on UI text writes from previously-bypassing callers. No behavior change on success path.
+// v0.636: Plan A8 -- port Conquest CQ_Bug_18 v0.764 safeSetUITextLabel hardening into hud.ts. Added isUITextWidget(widget) probe via mod.GetUITextSize, resolveLiveUITextWidget(widget) re-resolution by name, and widened safeSetUITextLabel to accept mod.Message | number | undefined | null with `if (label === undefined || label === null) return;` guard plus numeric-key normalization. 84+ existing callers benefit transparently. Closes "Received undefined values as arguments" engine error class on UI text writes (callers passing undefined labels during transient UI lifecycle transitions are now silently skipped before reaching the engine). Honest residual: the "GetSoldierState... player not being deployed" engine log on plain death (#2) is documented in conquest_issues.md CQ_Bug_37/38/50 as "engine-logs-before-JS-catch residue remains cosmetic"; Helis already has the same safe-wrapper pattern and inherits the same cosmetic log. Plan: design_doc/5.27.26_heli_safesetuitextlabel_hardening_plan.md.
+// v0.635: Plan A7 -- dropped the vehicleSpawned broadcast at OnVehicleSpawned (index.ts). The broadcast read coords via mod.GetVehicleState(VehiclePosition) which can be invalid right after async spawn -- Math.floor(mod.XComponentOf(undefined)) = NaN, triggering "Received undefined values as arguments" engine errors (2 per round start in 1v1 default = 2 vehicle spawns). Conquest gates this exact broadcast behind FEATURE_PERF_DIAG (vehicle-events.ts:84-89); Helis equivalent is to drop it. The "vehicle registered for {team} by {player}" broadcast on vehicle entry (separate path) is unaffected and remains the gameplay-relevant scoring confirmation. Plan: design_doc/5.27.26_heli_vehicle_spawned_broadcast_drop_plan.md.
+// v0.634: Plan A6 -- defensive Player-as-format-arg wrap across all mod.Message call sites that pass a raw Player ref. Added safePlayerArg(player) helper in state.ts; migrated 14 call sites across index.ts (PENDING_TEAM x2, registration arg0/arg1 block), team-switch.ts (PLAYER_READIED_UP, bestOfChanged x2, adminPanel.accessed), hud.ts (adminPanel.actionPressed), ready-dialog.ts (playersChanged, matchupChanged, PLAYER_AUTO_READIED_UP, overLine.title x2). Closes the residual "Received undefined values as arguments" engine error class regardless of which specific Player ref goes stale (Conquest #94 mechanism). Also dropped extra arg from 3 zero-placeholder subtitle calls at ready-dialog.ts:3392/3837/3917. Plan: design_doc/5.27.26_heli_player_arg_safety_plan.md.
+// v0.633: Two more engine-error-log fixes ported from Conquest (P0-2 family). (1) Plan A3: drop the 2 mod.RemoveEquipment calls in OnPlayerDeployed; wrap the 2 mod.AddEquipment calls in try/catch. AddEquipment clobbers cleanly (Conquest v1.448 / #94 finding) -- the prior RemoveEquipment fired engine errors on empty gadget slots at first deploy ("Received undefined values as arguments", 2 instances per first deploy). (2) Plan A4: extend the guard in checkTakeoffLimitForAllPlayers and applyAutoReadyForAllPlayers to also skip during phase != NotReady and during cleanupActive. Eliminates "GETSOLDIERSTATE... player not being deployed" engine logs during the post-death undeploy race when the 1Hz master loop ran these pregame-only functions during GameOver / cleanup phases. Skip-path is faster (early return vs full AllPlayers iteration). Plans: design_doc/5.27.26_heli_remove_equipment_drop_plan.md + 5.27.26_heli_roundend_loop_gates_plan.md.
+// v0.632: Two spawn-time engine-error fixes ported from Conquest. (1) Add getUiSafePlayerMessage helper in state.ts; use in getRosterEntryNameMessage to guard stale Player refs from "Received undefined values as arguments" engine logs (Conquest roster-active.ts:100 + id-helpers.ts:152 pattern). (2) Add DEPLOY_SETTLE_GRACE_SECONDS (1.5s) + State.players.deployedAtSecondsByPid timestamp; stamp in OnPlayerDeployed and clear in OnPlayerLeaveGame; inline grace check at the 2 race-window call sites in hud.ts (updateHelpTextVisibilityForPid IsInVehicle read) and team-switch.ts (spawnTeamSwitchInteractPoint pre-SoldierState wait). Eliminates "GetSoldierState... player not being deployed" engine logs during deploy race window (Conquest GCZ_DEPLOY_GRACE_SECONDS pattern from boundary/enforcement.ts). Plans: design_doc/5.27.26_heli_roster_validity_plan.md + 5.27.26_heli_deploy_settle_plan.md.
+// v0.631: Wrap all mod.UndeployPlayer call sites in new safeUndeployPlayer helper (isPlayerDeployed precheck + try/catch). Eliminates cosmetic engine error logs on already-undeployed players; ports Conquest #36 / #39 defense pattern. 4 call sites updated across index.ts (deferForcedUndeploy), team-switch.ts (forceUndeployPlayer), round-flow.ts (round-end cleanup loop). No behavior change on success or engine-throw paths. Plan: design_doc/5.27.26_heli_undeployplayer_guards_plan.md.
+// v0.630: Port conquest's build pipeline passes into helis-only. Added BOM strip, full-line + block-comment strip, indentation strip, blank-line collapse, modlib source inlining (via new src/foundation/modlib.ts), header re-injection from src/header-file.ts, EOF version line restore, and non-ASCII guardrail. Adopted conquest's relaxed verify.js (existence + size + JSON validity) with strict byte-compare opt-in via VERIFY_GROUND_TRUTH=1, plus 1 MB bundle size cap. Dead-code elimination pass intentionally skipped (no FEATURE_* flags in helis source). Bundle dropped from 708,998 -> ~500,000 bytes (~30% reduction). No runtime behavior change. Also split Changelog/History, Gamemode Description, Improvements punchlist, and Portal Naming Notes out of header-file.ts into separate source-only files mirroring conquest's organization. Switched // policy: prefix to // *policy: so postbuild strips them from the bundle.
+// v0.623: We're using TS Template project now, thanks to @Dox and @MikeDeluca
+// v0.621: Adjusted Aircraft Ceilings for Ladder based on feedback
+// v0.620: Helis Alpha Candidate 1.0 release for 2v2 Ladder opening
+// v0.616: Fix gamemode settings with some minor UI tweaks
+// v0.608: Add helis-only H flag selection + per-mode overtime zones
+// v0.592: Add admin tie-breaker mode toggle (last round/all/disabled) along with more game mode controls and customizations
+// v0.591: Add takeoff limit gating + overtakeoff messaging (HUD floor + 20)
+// v0.577: Add reset button + heli spawn overrides tied to confirm
+// v0.568: Aircraft ceiling config per map + custom override controls for game modes
+// v0.567: Map configs now support heli spawns and mode-based selection
+// v0.544: Playtest ready, Alpha Candidate for 1.0....
+// v0.543: Guard join-prompt deletes + defer forced undeploy to avoid deploy lifecycle crashes
+// v0.541: Avoid hard-deleting overtime HUD on undeploy; hide + drop refs for safe rebuild
+// v0.539: Code cleanup, regions added, 1.0 Alpha Release candidate
+// v0.538: UI saftey wrappers, reorganized code, fixed disconnect Bugs, map crash bugs and UI inconsistencies with timing. Alpha candidate for 1.0 release.
+// v0.514: UI/UX Polish, capture bar progress % display, tie-breaker tip added
+// v0.477: Playtesting version, alpha candidate for 1.0 release
+// v0.468: Added Admin function for overriding random tie-breaker flag for testing
+// v0.443: Polished Tie-Breaker UI, capture zone rates, messaging and UX of capturing
+// v0.457: Half-time flag visibility + capture tuning
+// v0.395: Add overtime flag capture tiebreaker (randomized capture point + UI + capture logic)
+// v0.359: Require triple-tap to unlock join prompt tips
+// v0.358: Add join prompt tips sequence with unlock gating and per-player state
+// v0.357: Hide help/ready text while undeployed to avoid respawn overlay & fixed issues smaller aspect ratios or wierd resolutions due to dialog overlap
+// v0.346: Added MIT Licence and ensured spawn-disabled warning is shown while undeployed during live rounds for context
+// v0.340: Tweak HUD counter sizes, add victory crown + dynamic roster height + debug roster placeholders
+// v0.337: Added round-win crown and trending winner crown icons inside top HUD panels
+// v0.333: Added rosters to the bottom of the map victory dialog for improved UX / Screenshot auditing
+// v0.330: Cleaned up top HUD, made round scores more obvious, refactored some logic around ready status displays
+// v0.322: Cleaned up UI spacings, colors, constants, positions and opacity - most things controlled via constants now
+// v0.271: Added first-join help prompt overlay, controlled with SHOW_HELP_TEXT_PROMPT_ON_JOIN
+// v0.269: Disable respawn during live rounds with DISABLE_RESPAWN_DURING_LIVE_ROUND
+// v0.266: Increased triple tap window to 2s, instead of 1s. Clarified string to mention "standing still" while triple tapping.
+// v0.263: Fix for ready up roster refreshing when new player joins or old player disconnects
+// v0.262: Refactored round end process. Destroy all tanks, force undeploy all players, respawn all tanks, wait, force redeploy players, keep Round End dialog up longer
+// v0.259: Release version for Ladder with 8 maps
+// v0.258: Added MapConfig settings for Area 22B
+// v0.257: Fixed race condition on first tank spawned - need to clear it and spawn correct vehicle to avoid default Abrams spawn
+// v0.247: Added team names to MapConfig, fixed backend JS Errors on player being deployed or not (empty string args {} vs {0})
+// v0.240: Fixed spawner logic regressions (spawn block and failed to spawn with rapid mode increase)
+// v0.238: Submitted for Code Review by Dox & Poly
+// v0.233: Code cleanup, reorganization and comment clarity, prepping for 1.0 Release version
+// v0.228: Added dynamic binding to modes: 1v1 only spawns 1 tank, 4v4 spawns 4 tanks. Configurable when round is not live.
+// v0.224: Added Map Detector logic to auto-detect which MapConfig and spawners to use, then display the Map name on the Ready Up screen
+// v0.218: First pass on Spawn points for all 7 maps in Ladder rotation, using Admin Debug Position tool
+// v0.217: Added Admin Debug Position button to display X/Y/Z coordinates and Y rotation of player
+// v0.205: Added spawn camp scoring protection if a leftover vehicle remains in main base during round setup
+// v0.197: Adjusted some HUD/UI positions, added new labels and added "1v1" up to "4v4" matchup configuration buttons to Ready screen
+// v0.182: Functional version of Badlands working with respawn logic, orientation and vehicle assignments working
+// v0.177: Custom respawn logic implemented with unique data structures per map; custom vehicle and HQ spawn points needed per map
+// v0.152: Forcing supply boxes on every spawn, to ensure no other gadget loophole
+// v0.151: Finalized string.json into new format with updated strings policy
+// v0.148: Added Changelog / History section to script header and finalized enum/interface refactor bugs
+// v0.134: Last working version before enum/interface refactor (see archive\enum_interface_implementation_plan.md)
+// v0.129: Release version for Ladder with 7 maps
+// v0.059: Last version before switching primarly from GPT-5.2 web client to GPT-5.2-Codex in VS Code
+
+//#endregion ----------------- Changelog / History --------------------
