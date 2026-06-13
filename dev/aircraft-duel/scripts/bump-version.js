@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, "..");
 const headerPath = path.join(root, "src", "header-file.ts");
 const footerPath = path.join(root, "src", "footer-file.ts");
 const stringsPath = path.join(root, "src", "strings.json");
+const packageJsonPath = path.join(root, "package.json");
 
 function readText(filePath) {
   return fs.readFileSync(filePath, "utf8");
@@ -91,6 +92,7 @@ function main() {
   const header = readText(headerPath);
   const footer = readText(footerPath);
   const strings = readText(stringsPath);
+  const packageJson = readText(packageJsonPath);
 
   const headerVersion = extractVersion(
     header,
@@ -133,9 +135,18 @@ function main() {
     "strings branding title"
   );
 
+  // package.json "version" uses semver "X.YYY.0"; append .0 to the source version.
+  const nextPackageJson = replaceOrThrow(
+    packageJson,
+    /("version"\s*:\s*")[0-9]+\.[0-9]+(?:\.[0-9]+)?(")/,
+    `$1${targetVersion}.0$2`,
+    "package.json version field"
+  );
+
   writeTextIfChanged(headerPath, nextHeader);
   writeTextIfChanged(footerPath, nextFooter);
   writeTextIfChanged(stringsPath, nextStrings);
+  writeTextIfChanged(packageJsonPath, nextPackageJson);
 
   console.log(`Version bumped to ${targetVersion}`);
   console.log(`UTC timestamp: ${stamp.date} ${stamp.time}`);
@@ -143,6 +154,7 @@ function main() {
   console.log(`- ${path.relative(root, headerPath)}`);
   console.log(`- ${path.relative(root, footerPath)}`);
   console.log(`- ${path.relative(root, stringsPath)}`);
+  console.log(`- ${path.relative(root, packageJsonPath)}`);
 }
 
 try {

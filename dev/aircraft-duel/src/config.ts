@@ -34,6 +34,10 @@ type MapConfig = {
     team2TankSpawns: VehicleSpawnSpec[];
     team1HeliSpawns?: VehicleSpawnSpec[];
     team2HeliSpawns?: VehicleSpawnSpec[];
+    // Jet/plane spawn anchors (2 per team). Optional: a map WITHOUT these is jetless -- the Ready
+    // Dialog renders its jet knobs as "Not on this Map" and hides plane/mixed modes for that map.
+    team1PlaneSpawns?: VehicleSpawnSpec[];
+    team2PlaneSpawns?: VehicleSpawnSpec[];
     vehicleSpawnYawOffsetDeg: number; //This is not used anymore, but we're keeping it in case its needed in the future
     // Optional per-map overtime zone list (AreaTrigger ObjId + Sector Id + WorldIcon ObjId + CapturePoint ObjId).
     // Empty/undefined disables overtime on that map.
@@ -228,6 +232,16 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
             { slotNumber: 2, pos: mod.CreateVector( 461.746,  83.898,  -585.902), rot: mod.CreateVector( 0.0,     -157.452,  0.0),       vehicle: mod.VehicleList.Eurocopter   },
             { slotNumber: 3, pos: mod.CreateVector( 496.253,  83.173,  -600.711), rot: mod.CreateVector( 0.0,     -90.251,   0.0),       vehicle: VEHICLE_AH6M_PAX     },
             { slotNumber: 4, pos: mod.CreateVector( 427.213,  85.239,  -587.691), rot: mod.CreateVector( 0.0,     -92.212,   0.0),       vehicle: mod.VehicleList.UH60_Pax     },
+        ],
+        // TODO(plane-spawn): PLACEHOLDER jet anchors for Mirak Valley -- copied from heli slots 1-2 so they
+        // sit on valid ground. Author the real runway positions/yaw before shipping. Jets are 2 per team.
+        team1PlaneSpawns: [                       //posX      posY      posZ                             rotX      rotY      rotZ
+            { slotNumber: 1, pos: mod.CreateVector(-500.019,  81.257,  -292.899), rot: mod.CreateVector( 0.0,      98.404,   0.0),       vehicle: mod.VehicleList.F16          },
+            { slotNumber: 2, pos: mod.CreateVector(-498.055,  82.222,  -328.527), rot: mod.CreateVector( 0.0,      50.634,   0.0),       vehicle: mod.VehicleList.F16          },
+        ],
+        team2PlaneSpawns: [                       //posX      posY      posZ                             rotX      rotY      rotZ
+            { slotNumber: 1, pos: mod.CreateVector( 454.968,  84.306,  -612.495), rot: mod.CreateVector( 0.0,     -4.780,    0.0),       vehicle: mod.VehicleList.JAS39        },
+            { slotNumber: 2, pos: mod.CreateVector( 461.746,  83.898,  -585.902), rot: mod.CreateVector( 0.0,     -157.452,  0.0),       vehicle: mod.VehicleList.JAS39        },
         ],
     },
 

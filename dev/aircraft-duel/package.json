@@ -1,8 +1,8 @@
 {
-  "name": "twl-helis-only",
-  "version": "0.630.0",
+  "name": "twl-aircraft-duel",
+  "version": "0.739.0",
   "private": true,
-  "description": "Modular build for TWL Helis Only v0.621 BF6 Portal experience",
+  "description": "Modular build for TWL Aircraft-Duel BF6 Portal experience (forked from helis-only v0.737)",
   "scripts": {
     "build": "bf6-portal-bundler --entrypoint ./src/index.ts --outDir ./dist && node scripts/postbuild.js && node scripts/verify.js",
     "verify": "node scripts/verify.js",

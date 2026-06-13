@@ -3,6 +3,26 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.739: bumpVersion script now also updates package.json "version" field so all four
+// version-bearing files (header-file.ts, footer-file.ts, strings.json branding title,
+// package.json) stay in lockstep. Eliminates the package.json drift that helis-only
+// accumulated (where package.json sat ~100 versions behind the source-of-truth header).
+// Branding title also updated from "TWL Vehicles" -> "TWL Aerial Showdown" (user edit).
+// No gameplay changes.
+//
+// v0.738: AIRCRAFT-DUEL FORK. Forked from helis-only v0.737 on 2026-06-05. This folder
+// is now the aircraft-duel project (bf6-portal/dev/aircraft-duel). No gameplay changes
+// in this version -- this is a metadata/branding bump only:
+//   - package.json name: twl-helis-only -> twl-aircraft-duel
+//   - AGENTS.md / CLAUDE.md rewritten for aircraft-duel context, point at new
+//     design_doc/_aircraft_duel_kickoff.md as the orientation doc, with inherited
+//     helis-only docs moved to design_doc/old_archive/ for reference.
+//   - scripts/verify.js comments + ground-truth path updated (placeholder until
+//     aircraft-duel ships its first portal experience).
+// All gameplay code, src/strings.json (display strings still reference Helis Only /
+// Attack Helis / All Helis / Little Birds), and the engine-constraint policies are
+// unchanged. Future aircraft-duel changes begin at v0.739.
+//
 // v0.737: Viewer-relative team colors -- your team is always blue, enemy always red, on every
 // team-anchored HUD surface. Layout intentionally NOT flipped this round (T1 data stays on the
 // left, T2 data stays on the right) -- only colors flip per viewer. Plan stored at

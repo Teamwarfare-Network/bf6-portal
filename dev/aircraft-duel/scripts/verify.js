@@ -1,26 +1,31 @@
 /**
- * Build verification for helis-only development.
+ * Build verification for aircraft-duel development.
  *
  * Default behavior:
  * - Verifies local build artifacts exist and are readable.
  * - Verifies bundle.strings.json parses as JSON.
  * - Verifies emitted bundle size is within Portal's upload limit.
- * - Does NOT fail on ground-truth diffs (helis-only postbuild restructures
- *   the bundle in ways that intentionally diverge from the experience-file
+ * - Does NOT fail on ground-truth diffs (the postbuild restructures the
+ *   bundle in ways that intentionally diverge from any experience-file
  *   template).
  *
  * Optional strict mode:
  * - Set VERIFY_GROUND_TRUTH=1 (or true/yes/on) to re-enable byte-for-byte
- *   comparison against the legacy ground-truth files.
+ *   comparison against ground-truth files in `truthDir` (see below).
+ *   Update the `truthDir` path + filenames to point at this mode's
+ *   shipped experience folder if/when one exists.
  */
 
 const fs = require("fs");
 const path = require("path");
 
 const distDir = path.resolve(__dirname, "..", "dist");
+// Ground-truth folder. Aircraft-duel has not shipped a portal experience yet,
+// so this path is a placeholder. Update when the first build is uploaded;
+// the folder name typically follows "TWL <Mode Name> v<N.NNN>".
 const truthDir = path.resolve(
   __dirname, "..", "..", "..",
-  "bf6-portal", "experiences", "TWL Helis Only v0.621", "logic_scripts"
+  "bf6-portal", "experiences", "TWL Aircraft-Duel (TBD)", "logic_scripts"
 );
 
 const strictTruthCompare = /^(1|true|yes|on)$/i.test(
@@ -150,7 +155,7 @@ if (strictTruthCompare) {
 }
 
 if (!strictTruthCompare) {
-  console.log("\nGround-truth comparison is disabled for helis-only.");
+  console.log("\nGround-truth comparison is disabled for aircraft-duel.");
   console.log("Set VERIFY_GROUND_TRUTH=1 to re-enable strict truth checking.");
 }
 
