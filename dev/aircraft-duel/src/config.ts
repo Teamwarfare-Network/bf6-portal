@@ -300,6 +300,15 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
             { slotNumber: 3, pos: mod.CreateVector( 647.500,  110.562, -276.828), rot: mod.CreateVector( 0.0,     -126.059,  0.0),       vehicle: VEHICLE_AH6M_PAX     },
             { slotNumber: 4, pos: mod.CreateVector( 636.239,  110.580, -258.841), rot: mod.CreateVector( 0.0,     -129.259,  0.0),       vehicle: mod.VehicleList.UH60_Pax     },
         ],
+        // Jet anchors sourced from conquest Operation Firestorm spatial (team1/2JetSpawns). 2 per team.
+        team1PlaneSpawns: [                       //posX      posY      posZ                             rotX      rotY      rotZ
+            { slotNumber: 1, pos: mod.CreateVector(-703.347,  132.686,  259.311), rot: mod.CreateVector( 0.0,      52.372,   0.0),       vehicle: mod.VehicleList.F16          },
+            { slotNumber: 2, pos: mod.CreateVector(-698.153,  132.564,  291.282), rot: mod.CreateVector( 0.0,      51.454,   0.0),       vehicle: mod.VehicleList.F16          },
+        ],
+        team2PlaneSpawns: [                       //posX      posY      posZ                             rotX      rotY      rotZ
+            { slotNumber: 1, pos: mod.CreateVector( 612.576,  110.580, -316.309), rot: mod.CreateVector( 180.0,   -126.0,    180.0),     vehicle: mod.VehicleList.JAS39        },
+            { slotNumber: 2, pos: mod.CreateVector( 583.212,  110.595, -309.980), rot: mod.CreateVector( 180.0,   -126.0,    180.0),     vehicle: mod.VehicleList.JAS39        },
+        ],
     },
 
     //Capstone

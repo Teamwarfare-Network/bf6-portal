@@ -3361,8 +3361,52 @@ function isReadyDialogGameModeLittleBirdsTwl1v1(gameModeKey: number): boolean {
     return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeLittleBirdsTwl1v1;
 }
 
+function isReadyDialogGameModeJetsOnly1v1(gameModeKey: number): boolean {
+    return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeJetsOnly1v1;
+}
+
+function isReadyDialogGameModeJetsOnly2v2(gameModeKey: number): boolean {
+    return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeJetsOnly2v2;
+}
+
+// Any mode that fields jets. Plane-inclusive modes use the vanilla ceiling (D8) and are hidden on
+// jetless maps (D15). Currently the two Jets Only modes; mixed modes added later join here.
+function isPlaneInclusiveGameMode(gameModeKey: number): boolean {
+    return isReadyDialogGameModeJetsOnly1v1(gameModeKey)
+        || isReadyDialogGameModeJetsOnly2v2(gameModeKey);
+}
+
 function isReadyDialogGameModeCustom(gameModeKey: number): boolean {
     return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisCustom;
+}
+
+// Builds the full per-knob selection map for a game-mode preset (which knobs on, which vehicle).
+// All knobs default to Off (0); the mode then turns on its recipe. Faction-locked heli options
+// share index meaning across teams, so the same index yields the correct per-team variant.
+function buildDefaultVehicleSelectionForGameMode(gameModeKey: number): Record<string, number> {
+    const sel: Record<string, number> = {};
+    for (const k of READY_DIALOG_ALL_VEHICLE_KNOB_KEYS) sel[k] = 0;
+    const setHelis = (count: number, optIndex: number): void => {
+        for (let i = 1; i <= count; i++) {
+            sel["team1Heli" + i] = optIndex;
+            sel["team2Heli" + i] = optIndex;
+        }
+    };
+    const setPlanes = (count: number, t1OptIndex: number, t2OptIndex: number): void => {
+        for (let i = 1; i <= count; i++) {
+            sel["team1Plane" + i] = t1OptIndex;
+            sel["team2Plane" + i] = t2OptIndex;
+        }
+    };
+    if (isReadyDialogGameModeHelisOnlyVanilla(gameModeKey)) { setHelis(4, HELI_OPT_MAP_DEFAULT); return sel; }
+    if (isReadyDialogGameModeLittleBirdsVanilla(gameModeKey)) { setHelis(1, HELI_OPT_LITTLEBIRD); return sel; }
+    if (isReadyDialogGameModeLittleBirdsTwl2v2(gameModeKey)) { setHelis(2, HELI_OPT_LITTLEBIRD); return sel; }
+    if (isReadyDialogGameModeLittleBirdsTwl1v1(gameModeKey)) { setHelis(1, HELI_OPT_LITTLEBIRD); return sel; }
+    if (isReadyDialogGameModeJetsOnly1v1(gameModeKey)) { setPlanes(1, PLANE_OPT_F16, PLANE_OPT_JAS39); return sel; }
+    if (isReadyDialogGameModeJetsOnly2v2(gameModeKey)) { setPlanes(2, PLANE_OPT_F16, PLANE_OPT_JAS39); return sel; }
+    // Attack Helis family (Practice / Ladder / TWL 1v1) + Custom fallback: 1 Apache per side.
+    setHelis(1, HELI_OPT_APACHE);
+    return sel;
 }
 
 // Family helper: any "vanilla-derived" mode. These force vanilla aircraft ceiling regardless of map.
@@ -3450,6 +3494,9 @@ function getPresetVehicleIndicesForGameMode(gameModeKey: number): { t1: number; 
 }
 
 function shouldApplyCustomCeilingForGameMode(gameModeKey: number): boolean {
+    // D8: any plane-inclusive mode uses the vanilla ceiling (jets fly high; the soft ceiling would
+    // constantly punish them). Checked first so it wins over the TWL/custom branches.
+    if (isPlaneInclusiveGameMode(gameModeKey)) return false;
     if (isReadyDialogGameModeVanilla(gameModeKey)) return false;
     if (isReadyDialogGameModeCustom(gameModeKey)) return true;
     if (isReadyDialogGameModeTwlPreset(gameModeKey)) return !!ACTIVE_MAP_CONFIG.useCustomCeiling;
@@ -3573,12 +3620,15 @@ function applyReadyDialogModePresetForGameMode(gameModeKey: number): boolean {
     State.round.modeConfig.matchupPresetIndex = getPresetMatchupIndexForGameMode(gameModeKey);
     State.round.modeConfig.autoStartMinActivePlayers = getReadyDialogPresetPlayersPerSide(gameModeKey);
 
-    // v0.727 per-team vehicle indices (Little Birds presets ship asymmetric T1/T2).
+    // v0.727 per-team vehicle indices (legacy cycler -- retained until the matchup/cycler UI is removed).
     const presetVehicles = getPresetVehicleIndicesForGameMode(gameModeKey);
     State.round.modeConfig.vehicleIndexT1 = presetVehicles.t1;
     State.round.modeConfig.vehicleIndexT2 = presetVehicles.t2;
     State.round.modeConfig.vehiclesT1 = READY_DIALOG_VEHICLE_OPTIONS[presetVehicles.t1];
     State.round.modeConfig.vehiclesT2 = READY_DIALOG_VEHICLE_OPTIONS[presetVehicles.t2];
+
+    // Per-knob model: the preset sets the full per-slot vehicle selection (pending). Applied on Confirm.
+    State.round.modeConfig.vehicleSelectionIndexByKey = buildDefaultVehicleSelectionForGameMode(gameModeKey);
 
     State.round.modeConfig.aircraftCeiling = State.round.aircraftCeiling.mapDefaultHudCeiling;
     State.round.modeConfig.aircraftCeilingOverridePending = false;
@@ -3603,7 +3653,17 @@ function applyReadyDialogModePresetForGameMode(gameModeKey: number): boolean {
 function setReadyDialogGameModeIndex(nextIndex: number, applyPreset: boolean = true): void {
     const count = READY_DIALOG_GAME_MODE_OPTIONS.length;
     if (count <= 0) return;
-    const clamped = ((nextIndex % count) + count) % count;
+    const current = State.round.modeConfig.gameModeIndex;
+    const dir = nextIndex >= current ? 1 : -1;
+    let clamped = ((nextIndex % count) + count) % count;
+    // D15: skip plane-inclusive modes on jetless maps; keep stepping in the cycle direction.
+    if (!mapSupportsPlanes(ACTIVE_MAP_CONFIG)) {
+        let guard = 0;
+        while (isPlaneInclusiveGameMode(READY_DIALOG_GAME_MODE_OPTIONS[clamped]) && guard < count) {
+            clamped = (((clamped + dir) % count) + count) % count;
+            guard++;
+        }
+    }
     State.round.modeConfig.gameModeIndex = clamped;
     State.round.modeConfig.gameMode = READY_DIALOG_GAME_MODE_OPTIONS[clamped];
     if (applyPreset) {
@@ -3763,6 +3823,7 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
         soldierHpMultiplier: cfg.soldierHpMultiplier,
         matchupPresetIndex: cfg.matchupPresetIndex,
         autoStartMinActivePlayers: cfg.autoStartMinActivePlayers,
+        vehicleSelectionIndexByKey: { ...cfg.vehicleSelectionIndexByKey },
     };
     refreshOvertimeZonesFromMapConfig();
     // Apply custom ceiling only after the user confirms settings; enforcement runs while enabled.
@@ -3816,8 +3877,11 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
     // which force-spawns newly-enabled slots. If matchup were applied first, the new spawns would inherit
     // stale slot.vehicleType from the previous confirmed mode -- this is the exact bug v0.732 fixes.
     refreshVehicleSpawnSpecsFromModeConfig();
-    applyVehicleSpawnSpecsToExistingSlots();
-    applyMatchupPresetToLiveState(cfg.confirmed.matchupPresetIndex);
+    // Per-knob model: apply the confirmed selection to every slot (vehicle type + enable/disable +
+    // spawn newly-enabled). Replaces the old refreshSpecs -> applySpecsToSlots -> matchup-enablement chain.
+    applyVehicleSelectionToSlots(true);
+    // Kills target = active vehicles per side (symmetric presets -> T1 count == T2 count).
+    State.round.killsTarget = Math.max(1, getConfirmedActiveVehicleCountForTeam(TeamID.Team1));
     State.round.autoStartMinActivePlayers = cfg.confirmed.autoStartMinActivePlayers;
     updateMatchupLabelForAllPlayers();
     updateMatchupReadoutsForAllPlayers();

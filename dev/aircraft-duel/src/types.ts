@@ -250,6 +250,9 @@ type ReadyDialogModeConfig = {
     // in State.round and setter triggered tryAutoStartRoundIfAllReady immediately -- moved into
     // modeConfig so cycler navigation doesn't race the auto-start gate.
     autoStartMinActivePlayers: number;
+    // Per-knob vehicle selection: maps each knob key (team{1,2}Heli{1..4} / Plane{1,2}) to its
+    // option-list index. Pending value (mutated as the user cycles a knob); applied on Confirm.
+    vehicleSelectionIndexByKey: Record<string, number>;
     confirmed: {
         gameMode: number;
         gameSettings: number;
@@ -268,6 +271,9 @@ type ReadyDialogModeConfig = {
         matchupPresetIndex: number;
         // v0.732 Snapshotted on Confirm; applied to State.round.autoStartMinActivePlayers which drives the auto-start gate.
         autoStartMinActivePlayers: number;
+        // Snapshotted on Confirm; read by the spawn pipeline (refreshVehicleSpawnSpecsFromModeConfig)
+        // to build per-slot heli + plane specs.
+        vehicleSelectionIndexByKey: Record<string, number>;
     };
 };
 
@@ -299,7 +305,9 @@ const READY_DIALOG_GAME_MODE_OPTIONS: number[] = [
     mod.stringkeys.twl.readyDialog.gameModeHelisTwl1v1,          // 4: Attack Helis - TWL 1v1
     mod.stringkeys.twl.readyDialog.gameModeLittleBirdsTwl2v2,    // 5: Little Birds - TWL 2v2 (new)
     mod.stringkeys.twl.readyDialog.gameModeLittleBirdsTwl1v1,    // 6: Little Birds - TWL 1v1
-    mod.stringkeys.twl.readyDialog.gameModeHelisCustom,          // 7: Helis Only - Custom
+    mod.stringkeys.twl.readyDialog.gameModeJetsOnly1v1,          // 7: Jets Only - 1v1 (plane mode)
+    mod.stringkeys.twl.readyDialog.gameModeJetsOnly2v2,          // 8: Jets Only - 2v2 (plane mode)
+    mod.stringkeys.twl.readyDialog.gameModeHelisCustom,          // 9: Helis Only - Custom
 ];
 // v0.727 Ready Dialog cycler vehicle list. UH-60 PAX inserted at index 3 between BlackHawk and AH-6M.
 // Order: [Falchion, Panthera, BlackHawk, BlackHawk Pax, LittleBird, LittleBird PAX, Map Default].
@@ -346,9 +354,79 @@ const READY_DIALOG_GAME_MODE_LADDER_INDEX = 3;
 const READY_DIALOG_GAME_MODE_TWL_1V1_INDEX = 4;
 const READY_DIALOG_GAME_MODE_LITTLE_BIRDS_TWL_2V2_INDEX = 5;
 const READY_DIALOG_GAME_MODE_LITTLE_BIRDS_TWL_1V1_INDEX = 6;
-const READY_DIALOG_GAME_MODE_CUSTOM_INDEX = 7;
+const READY_DIALOG_GAME_MODE_JETS_ONLY_1V1_INDEX = 7;
+const READY_DIALOG_GAME_MODE_JETS_ONLY_2V2_INDEX = 8;
+const READY_DIALOG_GAME_MODE_CUSTOM_INDEX = 9;
 const READY_DIALOG_VEHICLE_T1_DEFAULT_INDEX = 0;
 const READY_DIALOG_VEHICLE_T2_DEFAULT_INDEX = 0;
+
+// ---- Per-spawner vehicle-knob model (aircraft-duel) ----------------------------------------------
+// Each spawner slot has its own Ready-Dialog knob cycling its own option list. A knob on "Off"
+// (vehicle undefined, mapDefault false) omits that slot from the spawn build, so vehicle count is
+// implicit. "Map Default" (mapDefault true) resolves to the slot anchor's authored vehicle.
+// Mirrors conquest's per-knob grid (conquest/src/foundation/gameplay.ts + config/map-runtime.ts).
+type ReadyDialogVehicleOption = {
+    label: number;             // strings.json key for the cycler value text
+    vehicle?: mod.VehicleList; // undefined + !mapDefault => "Off" (slot disabled, no spawn)
+    mapDefault?: boolean;      // true => resolve to the slot anchor's authored vehicle
+};
+
+// Helis are faction-locked per team (T1 NATO, T2 PAX); Apache + Eurocopter shared. Index 0 = Off.
+const READY_DIALOG_HELI_OPTIONS_T1: ReadyDialogVehicleOption[] = [
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionOff },
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionMapDefault, mapDefault: true },
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionFalchion, vehicle: mod.VehicleList.AH64 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionPanthera, vehicle: mod.VehicleList.Eurocopter },
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionBlackHawk, vehicle: mod.VehicleList.UH60 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionLittleBird, vehicle: VEHICLE_AH6M },
+];
+const READY_DIALOG_HELI_OPTIONS_T2: ReadyDialogVehicleOption[] = [
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionOff },
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionMapDefault, mapDefault: true },
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionFalchion, vehicle: mod.VehicleList.AH64 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionPanthera, vehicle: mod.VehicleList.Eurocopter },
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionBlackHawkPax, vehicle: mod.VehicleList.UH60_Pax },
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionLittleBirdPax, vehicle: VEHICLE_AH6M_PAX },
+];
+// Jets are shared (both teams cycle all four). No Map Default. Index 0 = Off.
+const READY_DIALOG_PLANE_OPTIONS: ReadyDialogVehicleOption[] = [
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionOff },
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionF16, vehicle: mod.VehicleList.F16 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionF22, vehicle: mod.VehicleList.F22 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionJas39, vehicle: mod.VehicleList.JAS39 },
+    { label: mod.stringkeys.twl.readyDialog.vehicleOptionSu57, vehicle: mod.VehicleList.SU57 },
+];
+// "Not on this Map" label -- shown (locked) when the active map has no plane anchors for a plane knob.
+const READY_DIALOG_VEHICLE_OPTION_NOT_ON_MAP_LABEL = mod.stringkeys.twl.readyDialog.vehicleOptionNotOnMap;
+
+// Knob keys: 4 heli + 2 plane per team (6/team, 12 total). Grid placement is set in the dialog UI.
+const READY_DIALOG_TEAM1_HELI_KNOB_KEYS = ["team1Heli1", "team1Heli2", "team1Heli3", "team1Heli4"] as const;
+const READY_DIALOG_TEAM2_HELI_KNOB_KEYS = ["team2Heli1", "team2Heli2", "team2Heli3", "team2Heli4"] as const;
+const READY_DIALOG_TEAM1_PLANE_KNOB_KEYS = ["team1Plane1", "team1Plane2"] as const;
+const READY_DIALOG_TEAM2_PLANE_KNOB_KEYS = ["team2Plane1", "team2Plane2"] as const;
+const READY_DIALOG_ALL_VEHICLE_KNOB_KEYS: string[] = [
+    ...READY_DIALOG_TEAM1_HELI_KNOB_KEYS,
+    ...READY_DIALOG_TEAM2_HELI_KNOB_KEYS,
+    ...READY_DIALOG_TEAM1_PLANE_KNOB_KEYS,
+    ...READY_DIALOG_TEAM2_PLANE_KNOB_KEYS,
+];
+const READY_DIALOG_HELI_KNOBS_PER_TEAM = 4;
+const READY_DIALOG_PLANE_KNOBS_PER_TEAM = 2;
+
+// Option-list indices for building per-mode knob recipes (parallel for T1/T2 -- faction-locked
+// lists share index meaning: index 4 = BlackHawk variant, index 5 = LittleBird variant per team).
+const HELI_OPT_OFF = 0;
+const HELI_OPT_MAP_DEFAULT = 1;
+const HELI_OPT_APACHE = 2;       // M77E Falchion (AH64)
+const HELI_OPT_EURO = 3;         // Panthera (Eurocopter)
+const HELI_OPT_BLACKHAWK = 4;    // UH60 (T1) / UH60_Pax (T2)
+const HELI_OPT_LITTLEBIRD = 5;   // AH6M (T1) / AH6M_Pax (T2)
+const PLANE_OPT_OFF = 0;
+const PLANE_OPT_F16 = 1;
+const PLANE_OPT_F22 = 2;
+const PLANE_OPT_JAS39 = 3;
+const PLANE_OPT_SU57 = 4;
+
 const READY_DIALOG_AIRCRAFT_CEILING_DEFAULT = 550;
 const READY_DIALOG_AIRCRAFT_CEILING_MIN = -200;
 const READY_DIALOG_AIRCRAFT_CEILING_MAX = 5000;

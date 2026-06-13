@@ -235,7 +235,8 @@ async function scheduleRoundEndCleanup(expectedToken: number): Promise<void> {
     resetSpawnerSlotStateForCleanup();
     clearVehicleCachesForCleanup();
 
-    applySpawnerEnablementForMatchup(State.round.matchupPresetIndex, true);
+    // Per-knob model: re-apply the confirmed per-slot selection (heli + plane) for the next round.
+    applyVehicleSelectionToSlots(true);
 
     const waitResult = await waitForCleanupSpawnsOrTimeout(expectedToken);
     if (waitResult === "timeout") {

@@ -46,6 +46,58 @@ function resolveHeliSpawnsForTeam(cfg: MapConfig, team: TeamID): VehicleSpawnSpe
     return buildHeliSpawnsFromTankSpawns(cfg.team2TankSpawns, TeamID.Team2);
 }
 
+// Plane (jet) anchors for a team. No fallback: a map without authored plane anchors is jetless --
+// returns [] so no plane slots are created and the Ready Dialog renders jet knobs as "Not on this Map".
+function resolvePlaneSpawnsForTeam(cfg: MapConfig, team: TeamID): VehicleSpawnSpec[] {
+    if (team === TeamID.Team1) return cfg.team1PlaneSpawns ?? [];
+    return cfg.team2PlaneSpawns ?? [];
+}
+
+// True when the active map can host jets (has plane anchors for both teams). Drives jet-knob lock
+// ("Not on this Map") and plane-mode hiding in the game-mode cycler.
+function mapSupportsPlanes(cfg: MapConfig): boolean {
+    return !!(cfg.team1PlaneSpawns && cfg.team1PlaneSpawns.length > 0
+        && cfg.team2PlaneSpawns && cfg.team2PlaneSpawns.length > 0);
+}
+
+// ---- Per-knob vehicle resolution (shared by spawn pipeline + Ready Dialog UI) -------------------
+// A knob key looks like "team1Heli3" / "team2Plane2". Plane knobs use the shared jet list; heli
+// knobs use the faction-locked list for that team (T1 NATO, T2 PAX).
+function isPlaneKnobKey(knobKey: string): boolean {
+    return knobKey.indexOf("Plane") >= 0;
+}
+function getReadyDialogVehicleOptionsForKnobKey(knobKey: string): ReadyDialogVehicleOption[] {
+    if (isPlaneKnobKey(knobKey)) return READY_DIALOG_PLANE_OPTIONS;
+    if (knobKey.indexOf("team1") >= 0) return READY_DIALOG_HELI_OPTIONS_T1;
+    return READY_DIALOG_HELI_OPTIONS_T2;
+}
+function getReadyDialogVehicleSelectionCount(knobKey: string): number {
+    return getReadyDialogVehicleOptionsForKnobKey(knobKey).length;
+}
+function getReadyDialogVehicleSelectionLabelKey(knobKey: string, selectionIndex: number): number {
+    const options = getReadyDialogVehicleOptionsForKnobKey(knobKey);
+    if (options.length <= 0) return mod.stringkeys.twl.readyDialog.vehicleOptionOff;
+    const clamped = ((selectionIndex % options.length) + options.length) % options.length;
+    return options[clamped] ? options[clamped].label : mod.stringkeys.twl.readyDialog.vehicleOptionOff;
+}
+// Resolves a knob's selected vehicle. undefined = "Off" (slot disabled). "Map Default" returns the
+// slot anchor's authored vehicle; explicit picks return the option's vehicle.
+function getReadyDialogSelectedVehicleForKnob(knobKey: string, selectionIndex: number, anchorVehicle: mod.VehicleList | undefined): mod.VehicleList | undefined {
+    const options = getReadyDialogVehicleOptionsForKnobKey(knobKey);
+    if (options.length <= 0) return undefined;
+    const clamped = ((selectionIndex % options.length) + options.length) % options.length;
+    const opt = options[clamped];
+    if (!opt) return undefined;
+    if (opt.mapDefault) return anchorVehicle;
+    return opt.vehicle;
+}
+// Reconstructs a slot's knob key from its family + team + slotNumber.
+function getKnobKeyForSlot(slot: VehicleSpawnerSlot): string {
+    const teamPart = slot.teamId === TeamID.Team1 ? "team1" : "team2";
+    const familyPart = slot.family === "plane" ? "Plane" : "Heli";
+    return teamPart + familyPart + slot.slotNumber;
+}
+
 function getReadyDialogVehicleListByIndex(index: number): mod.VehicleList {
     return READY_DIALOG_VEHICLE_LIST[index] ?? READY_DIALOG_VEHICLE_LIST[0];
 }
@@ -63,24 +115,12 @@ function applyVehicleOverrideToSpawns(spawns: VehicleSpawnSpec[], vehicle: mod.V
 // against MAP_DEFAULT -- Little Birds presets (T1=MH6, T2=MH6 PAX) and Helis Only Vanilla (T1=T2=Map
 // Default) both flow through here cleanly.
 function refreshVehicleSpawnSpecsFromModeConfig(): void {
-    const useHelis = isHeliGameMode(State.round.modeConfig.confirmed.gameMode);
-    if (useHelis) {
-        const baseT1 = resolveHeliSpawnsForTeam(ACTIVE_MAP_CONFIG, TeamID.Team1);
-        const baseT2 = resolveHeliSpawnsForTeam(ACTIVE_MAP_CONFIG, TeamID.Team2);
-        const t1Idx = State.round.modeConfig.confirmed.vehicleIndexT1;
-        const t2Idx = State.round.modeConfig.confirmed.vehicleIndexT2;
-        const t1IsMapDefault = t1Idx === READY_DIALOG_VEHICLE_MAP_DEFAULT_INDEX;
-        const t2IsMapDefault = t2Idx === READY_DIALOG_VEHICLE_MAP_DEFAULT_INDEX;
-        TEAM1_VEHICLE_SPAWN_SPECS = t1IsMapDefault
-            ? baseT1
-            : applyVehicleOverrideToSpawns(baseT1, getReadyDialogVehicleListByIndex(t1Idx));
-        TEAM2_VEHICLE_SPAWN_SPECS = t2IsMapDefault
-            ? baseT2
-            : applyVehicleOverrideToSpawns(baseT2, getReadyDialogVehicleListByIndex(t2Idx));
-        return;
-    }
-    TEAM1_VEHICLE_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team1TankSpawns;
-    TEAM2_VEHICLE_SPAWN_SPECS = ACTIVE_MAP_CONFIG.team2TankSpawns;
+    // Per-knob model: spawner slots are created from the RAW heli anchors (all 4/team). Each slot's
+    // actual vehicle type + enabled state is applied separately from the per-knob selection via
+    // applyVehicleSelectionToSlots. Plane slots come from resolvePlaneSpawnsForTeam in the spawner
+    // bootstrap. The old per-team cycler override + the dead tank fallback are removed.
+    TEAM1_VEHICLE_SPAWN_SPECS = resolveHeliSpawnsForTeam(ACTIVE_MAP_CONFIG, TeamID.Team1);
+    TEAM2_VEHICLE_SPAWN_SPECS = resolveHeliSpawnsForTeam(ACTIVE_MAP_CONFIG, TeamID.Team2);
 }
 
 function applyVehicleSpawnSpecsToExistingSlots(): void {
@@ -132,6 +172,19 @@ function applyMapConfig(mapKey: MapKey): void {
     State.round.mapDefaultSoldierHpMultiplier = mapDefaultSoldierHp;
     State.round.modeConfig.soldierHpMultiplier = mapDefaultSoldierHp;
     State.round.modeConfig.confirmed.soldierHpMultiplier = mapDefaultSoldierHp;
+
+    // Per-knob model: a jetless map can't run a confirmed plane mode -- snap to the default heli mode.
+    if (!mapSupportsPlanes(ACTIVE_MAP_CONFIG) && isPlaneInclusiveGameMode(State.round.modeConfig.confirmed.gameMode)) {
+        const fallbackMode = READY_DIALOG_GAME_MODE_OPTIONS[READY_DIALOG_GAME_MODE_DEFAULT_INDEX];
+        State.round.modeConfig.gameModeIndex = READY_DIALOG_GAME_MODE_DEFAULT_INDEX;
+        State.round.modeConfig.gameMode = fallbackMode;
+        State.round.modeConfig.confirmed.gameMode = fallbackMode;
+    }
+    // Seed the per-knob vehicle selection (pending + confirmed) from the confirmed game mode so the
+    // spawn pipeline has a valid recipe before any user interaction. REQUIRED for default spawns.
+    const seededSel = buildDefaultVehicleSelectionForGameMode(State.round.modeConfig.confirmed.gameMode);
+    State.round.modeConfig.vehicleSelectionIndexByKey = { ...seededSel };
+    State.round.modeConfig.confirmed.vehicleSelectionIndexByKey = { ...seededSel };
 
     updateReadyDialogMapLabelForAllPlayers();
     updateTeamNameWidgetsForAllPlayers();

@@ -36,9 +36,9 @@ import './utils';
  */
 export async function OnGameModeStarted(): Promise<void> {
     const detectedMapKey = detectMapKeyFromHqs();
-    if (detectedMapKey) {
-        applyMapConfig(detectedMapKey);
-    }
+    // Always apply a map config (detected, or the current default on detection failure) so the
+    // spawn-spec globals AND the per-knob vehicle selection are seeded before the spawner starts.
+    applyMapConfig(detectedMapKey ?? ACTIVE_MAP_KEY);
     State.vehicles.configReady = true;
 
     mod.SetGameModeTargetScore(GAMEMODE_TARGET_SCORE_SAFETY_CAP);

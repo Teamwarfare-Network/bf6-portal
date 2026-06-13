@@ -213,7 +213,7 @@ function sinkAndDestroyAllEmptyVehiclesForRestart(): void {
 }
 
 // Creates a spawner object, applies map-specific yaw, configures vehicle type, and registers the slot state.
-function addVehicleSpawnerSlot(teamId: TeamID, slotNumber: number, spawnPos: mod.Vector, spawnRot: mod.Vector, vehicleType: mod.VehicleList): number {
+function addVehicleSpawnerSlot(teamId: TeamID, family: "heli" | "plane", slotNumber: number, spawnPos: mod.Vector, spawnRot: mod.Vector, vehicleType: mod.VehicleList): number {
     const yaw = mod.YComponentOf(spawnRot) + VEHICLE_SPAWN_YAW_OFFSET_DEG;
     const spawnerRot = mod.CreateVector(mod.XComponentOf(spawnRot), yaw, mod.ZComponentOf(spawnRot));
     const spawner = mod.SpawnObject(
@@ -229,12 +229,14 @@ function addVehicleSpawnerSlot(teamId: TeamID, slotNumber: number, spawnPos: mod
 
     const slot: VehicleSpawnerSlot = {
         teamId,
+        family,
         slotNumber,
         spawner,
         spawnerObjId: getObjId(spawner),
         spawnPos,
         spawnRot: spawnerRot,
         vehicleType,
+        anchorVehicle: vehicleType,
         enabled: false,
         enableToken: 0,
         spawnRequestToken: 0,
@@ -280,6 +282,8 @@ function applySpawnerEnablementForMatchup(presetIndex: number, spawnOnEnable: bo
 
     for (let i = 0; i < State.vehicles.slots.length; i++) {
         const slot = State.vehicles.slots[i];
+        // Plane slots are driven by the per-knob selection, not the legacy matchup-count path.
+        if (slot.family !== "heli") continue;
         if (slot.teamId === TeamID.Team1) team1SlotIndices.push(i);
         else if (slot.teamId === TeamID.Team2) team2SlotIndices.push(i);
     }
@@ -317,6 +321,63 @@ function applySpawnerEnablementForMatchup(presetIndex: number, spawnOnEnable: bo
     if (spawnOnEnable && spawnQueue.length > 0) {
         queueSequentialSpawns(spawnQueue);
     }
+}
+
+// Applies the CONFIRMED per-knob vehicle selection to every spawner slot: sets each slot's
+// vehicleType + enabled state, and (when spawnOnEnable) queues spawns for newly-enabled slots.
+// Replaces applySpawnerEnablementForMatchup as the authoritative enablement path for both families.
+// "Off" knobs disable their slot; "Map Default" resolves to the slot's anchorVehicle.
+function applyVehicleSelectionToSlots(spawnOnEnable: boolean): void {
+    if (isRoundLive()) return;
+    if (State.vehicles.slots.length === 0) return;
+    const sel = State.round.modeConfig.confirmed.vehicleSelectionIndexByKey || {};
+    const spawnQueue: number[] = [];
+    for (let i = 0; i < State.vehicles.slots.length; i++) {
+        const slot = State.vehicles.slots[i];
+        const knobKey = getKnobKeyForSlot(slot);
+        const idx = sel[knobKey] !== undefined ? sel[knobKey] : 0;
+        const selectedVehicle = getReadyDialogSelectedVehicleForKnob(knobKey, idx, slot.anchorVehicle);
+        if (selectedVehicle === undefined) {
+            setSpawnerSlotEnabled(i, false);
+            continue;
+        }
+        if (slot.vehicleType !== selectedVehicle) {
+            slot.vehicleType = selectedVehicle;
+            configureVehicleSpawner(slot.spawner, selectedVehicle);
+        }
+        const needsSpawn = setSpawnerSlotEnabled(i, true);
+        if (spawnOnEnable && needsSpawn) spawnQueue.push(i);
+    }
+    if (spawnOnEnable) {
+        // Re-queue any enabled-but-empty slot (covers rapid re-confirms).
+        for (let i = 0; i < State.vehicles.slots.length; i++) {
+            const slot = State.vehicles.slots[i];
+            if (!slot.enabled) continue;
+            if (slot.vehicleId !== -1) continue;
+            if (slot.expectingSpawn) continue;
+            spawnQueue.push(i);
+        }
+    }
+    if (spawnOnEnable && spawnQueue.length > 0) {
+        queueSequentialSpawns(spawnQueue);
+    }
+}
+
+// Active (non-Off) vehicle count for a team from the CONFIRMED selection. Iterates the slots that
+// actually exist on the map, so plane knobs on a jetless map (no plane slot) correctly count 0.
+// Used for the kills target and the symmetric-count constraint.
+function getConfirmedActiveVehicleCountForTeam(teamNum: TeamID): number {
+    const sel = State.round.modeConfig.confirmed.vehicleSelectionIndexByKey || {};
+    let count = 0;
+    for (let i = 0; i < State.vehicles.slots.length; i++) {
+        const slot = State.vehicles.slots[i];
+        if (slot.teamId !== teamNum) continue;
+        const knobKey = getKnobKeyForSlot(slot);
+        const idx = sel[knobKey] !== undefined ? sel[knobKey] : 0;
+        const v = getReadyDialogSelectedVehicleForKnob(knobKey, idx, slot.anchorVehicle);
+        if (v !== undefined) count++;
+    }
+    return count;
 }
 
 function queueSequentialSpawns(slotIndices: number[]): void {
@@ -585,10 +646,21 @@ async function startVehicleSpawnerSystem(): Promise<void> {
     const team2Specs = [...TEAM2_VEHICLE_SPAWN_SPECS].sort((a, b) => a.slotNumber - b.slotNumber);
 
     for (const spec of team1Specs) {
-        addVehicleSpawnerSlot(TeamID.Team1, spec.slotNumber, spec.pos, spec.rot, spec.vehicle);
+        addVehicleSpawnerSlot(TeamID.Team1, "heli", spec.slotNumber, spec.pos, spec.rot, spec.vehicle);
     }
     for (const spec of team2Specs) {
-        addVehicleSpawnerSlot(TeamID.Team2, spec.slotNumber, spec.pos, spec.rot, spec.vehicle);
+        addVehicleSpawnerSlot(TeamID.Team2, "heli", spec.slotNumber, spec.pos, spec.rot, spec.vehicle);
+    }
+
+    // Plane (jet) slots. Created disabled; the per-knob selection enables them on Confirm. Empty on
+    // jetless maps (resolvePlaneSpawnsForTeam returns []), so no plane slots exist there at all.
+    const team1PlaneSpecs = [...resolvePlaneSpawnsForTeam(ACTIVE_MAP_CONFIG, TeamID.Team1)].sort((a, b) => a.slotNumber - b.slotNumber);
+    const team2PlaneSpecs = [...resolvePlaneSpawnsForTeam(ACTIVE_MAP_CONFIG, TeamID.Team2)].sort((a, b) => a.slotNumber - b.slotNumber);
+    for (const spec of team1PlaneSpecs) {
+        addVehicleSpawnerSlot(TeamID.Team1, "plane", spec.slotNumber, spec.pos, spec.rot, spec.vehicle);
+    }
+    for (const spec of team2PlaneSpecs) {
+        addVehicleSpawnerSlot(TeamID.Team2, "plane", spec.slotNumber, spec.pos, spec.rot, spec.vehicle);
     }
 
     // One-time cleanup: remove any default vehicles sitting on or near spawn pads before first forced spawns.
@@ -620,8 +692,8 @@ async function startVehicleSpawnerSystem(): Promise<void> {
 
     // Extra short wait reduces the chance of a default spawn appearing after cleanup.
     await mod.Wait(0.1);
-    // Apply enablement before spawning so only the desired slots can spawn.
-    applySpawnerEnablementForMatchup(State.round.matchupPresetIndex, false);
+    // Apply per-knob selection (vehicle type + enabled) before spawning so only selected slots spawn.
+    applyVehicleSelectionToSlots(false);
 
     // Kick initial spawns so each slot has a vehicle bound before the poll loop starts.
     for (let i = 0; i < State.vehicles.slots.length; i++) {

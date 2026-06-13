@@ -897,12 +897,18 @@ type OvertimeFlagUiSnapshot = {
 
 type VehicleSpawnerSlot = {
     teamId: TeamID;
+    // Vehicle family this slot belongs to. Drives which anchor set + knob group owns it, and lets
+    // enablement target heli vs plane slots independently. slotNumber is unique only within a family.
+    family: "heli" | "plane";
     slotNumber: number;
     spawner: mod.VehicleSpawner;
     spawnerObjId: number;
     spawnPos: mod.Vector;
     spawnRot: mod.Vector;
     vehicleType: mod.VehicleList;
+    // The map anchor's authored vehicle for this slot. Preserved at creation so a knob set to
+    // "Map Default" can resolve to it even after vehicleType is overridden by another selection.
+    anchorVehicle: mod.VehicleList;
     enabled: boolean;
     enableToken: number;
     spawnRequestToken: number;
@@ -1180,6 +1186,7 @@ const State: GameState = {
             soldierHpMultiplier: READY_DIALOG_SOLDIER_HP_MULT_DEFAULT,
             matchupPresetIndex: DEFAULT_MATCHUP_PRESET_INDEX,
             autoStartMinActivePlayers: DEFAULT_AUTO_START_MIN_ACTIVE_PLAYERS,
+            vehicleSelectionIndexByKey: {},
             confirmed: {
                 gameMode: READY_DIALOG_GAME_MODE_OPTIONS[READY_DIALOG_GAME_MODE_DEFAULT_INDEX],
                 gameSettings: mod.stringkeys.twl.readyDialog.modeSettingAircraftCeilingFormat,
@@ -1194,6 +1201,7 @@ const State: GameState = {
                 soldierHpMultiplier: READY_DIALOG_SOLDIER_HP_MULT_DEFAULT,
                 matchupPresetIndex: DEFAULT_MATCHUP_PRESET_INDEX,
                 autoStartMinActivePlayers: DEFAULT_AUTO_START_MIN_ACTIVE_PLAYERS,
+                vehicleSelectionIndexByKey: {},
             },
         },
         phase: RoundPhase.NotReady,
