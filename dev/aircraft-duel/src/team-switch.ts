@@ -399,6 +399,22 @@ function teamSwitchButtonEvent(
     const playerId = mod.GetObjId(eventPlayer);
     const widgetName = mod.GetUIWidgetName(eventUIWidget);
 
+    // Per-spawner knob dec/inc buttons: name = PREFIX + knobKey + "_" + playerId. Handled by prefix
+    // (12 knobs x 2 buttons is too many for explicit cases). knobKey is the slice between them.
+    {
+        const suffix = "_" + playerId;
+        if (widgetName.startsWith(UI_RD_KNOB_DEC_ID) && widgetName.endsWith(suffix)) {
+            const knobKey = widgetName.substring(UI_RD_KNOB_DEC_ID.length, widgetName.length - suffix.length);
+            handleReadyDialogKnobStep(eventPlayer, knobKey, -1);
+            return;
+        }
+        if (widgetName.startsWith(UI_RD_KNOB_INC_ID) && widgetName.endsWith(suffix)) {
+            const knobKey = widgetName.substring(UI_RD_KNOB_INC_ID.length, widgetName.length - suffix.length);
+            handleReadyDialogKnobStep(eventPlayer, knobKey, 1);
+            return;
+        }
+    }
+
     switch (widgetName) {
         case UI_TEAMSWITCH_BUTTON_TEAM1_ID + playerId:
         case UI_TEAMSWITCH_BUTTON_TEAM2_ID + playerId:

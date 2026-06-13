@@ -277,7 +277,9 @@ function hardResetOvertimeCapturePoints(ids: number[]): void {
             applyOvertimeCapturePointSuppression(cp);
             setOvertimeCapturePointOwner(cp, 0);
             mod.EnableGameModeObjective(cp, false);
-            mod.EnableSpatialObject(spatial, false);
+            // EnableSpatialObject exists at runtime (inherited helis-only overtime-marker code) but is
+            // absent from the newer Portal web-client mod type snapshot. Cast to silence web tsc.
+            (mod as any).EnableSpatialObject(spatial, false);
         } catch {
             continue;
         }
@@ -311,7 +313,8 @@ function setOvertimeCapturePointMarkerVisible(capturePointObjId: number, visible
         setOvertimeCapturePointOwner(cp, 0);
         // Toggle both objective visibility and the spatial object using the correct runtime handle.
         mod.EnableGameModeObjective(cp, visible);
-        mod.EnableSpatialObject(spatial, visible);
+        // EnableSpatialObject exists at runtime but is absent from the newer web-client type snapshot.
+        (mod as any).EnableSpatialObject(spatial, visible);
     } catch {
         return;
     }

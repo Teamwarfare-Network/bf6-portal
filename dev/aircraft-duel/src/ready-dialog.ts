@@ -472,6 +472,25 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     applyReadyDialogLabelTextColor(READY_HEADER6);
     mod.SetUIWidgetParent(READY_HEADER6, CONTAINER_BASE);
 
+    // "First to X Vehicle Kills" win-condition readout (top-left, below the headers). Re-added from the
+    // removed matchup row and reworded. X = pending active vehicle count (updates live as knobs change).
+    const READY_FIRST_TO_KILLS_ID = UI_READY_DIALOG_FIRST_TO_KILLS_ID + playerId;
+    mod.AddUIText(
+        READY_FIRST_TO_KILLS_ID,
+        mod.CreateVector(-11, 121, 0),
+        mod.CreateVector(900, 20, 0),
+        mod.UIAnchor.TopLeft,
+        mod.Message(mod.stringkeys.twl.readyDialog.firstToKillsFormat, Math.max(1, getActiveVehicleCountForTeamFromSelection(TeamID.Team1, State.round.modeConfig.vehicleSelectionIndexByKey || {}))),
+        eventPlayer
+    );
+    const READY_FIRST_TO_KILLS = mod.FindUIWidgetWithName(READY_FIRST_TO_KILLS_ID, mod.GetUIRoot());
+    if (READY_FIRST_TO_KILLS) {
+        mod.SetUIWidgetBgAlpha(READY_FIRST_TO_KILLS, 0);
+        mod.SetUITextSize(READY_FIRST_TO_KILLS, 16);
+        mod.SetUITextColor(READY_FIRST_TO_KILLS, COLOR_WARNING_YELLOW);
+        mod.SetUIWidgetParent(READY_FIRST_TO_KILLS, CONTAINER_BASE);
+    }
+
     const READY_MAP_LABEL_ID = UI_READY_DIALOG_MAP_LABEL_ID + playerId;
     const READY_MAP_VALUE_ID = UI_READY_DIALOG_MAP_VALUE_ID + playerId;
     const mapLabelX = ADMIN_PANEL_OFFSET_X + ADMIN_PANEL_TOGGLE_WIDTH + 70;
@@ -1207,6 +1226,19 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     const CEILING_LOCK_NOTICE = safeFind(CEILING_LOCK_NOTICE_ID);
     if (CEILING_LOCK_NOTICE) mod.SetUIWidgetParent(CEILING_LOCK_NOTICE, CONTAINER_BASE);
 
+    // Symmetric-count guard notice (red), a couple of rows below the ceiling-lock tip. Shown when the
+    // pending T1/T2 vehicle counts differ; Confirm is blocked until they match.
+    const SYMMETRIC_WARNING_ID = UI_READY_DIALOG_SYMMETRIC_WARNING_ID + playerId;
+    modlib.ParseUI({
+        name: SYMMETRIC_WARNING_ID, type: "Text", playerId: eventPlayer,
+        position: [0, confirmY - (bestOfButtonSizeY + 4)], size: [unsavedNoticeWidth, bestOfButtonSizeY],
+        anchor: mod.UIAnchor.TopCenter, visible: false, padding: 0, bgAlpha: 0, bgFill: mod.UIBgFill.None,
+        textLabel: mod.Message(mod.stringkeys.twl.readyDialog.symmetricCountWarning), textColor: COLOR_NOT_READY_RED,
+        textAlpha: 1, textSize: 12, textAnchor: mod.UIAnchor.Center,
+    });
+    const SYMMETRIC_WARNING = safeFind(SYMMETRIC_WARNING_ID);
+    if (SYMMETRIC_WARNING) mod.SetUIWidgetParent(SYMMETRIC_WARNING, CONTAINER_BASE);
+
     // v0.734 Red "Vehicles changed - Restart Needed" notice -- right-aligned under the Restart button.
     // TopRight anchor + same x offset (-3) as the Restart button so its right edge sits flush with the
     // button's right edge. textAnchor CenterRight keeps the text right-aligned inside the 250-wide box.
@@ -1528,34 +1560,54 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     const teamLabelWidth = READY_ROSTER_PANEL_WIDTH;
     const T1_LABEL_ID = UI_READY_DIALOG_TEAM1_LABEL_ID + playerId;
     const T2_LABEL_ID = UI_READY_DIALOG_TEAM2_LABEL_ID + playerId;
-    mod.AddUIText(
-        T1_LABEL_ID,
-        mod.CreateVector(0, teamLabelY, 0),
-        mod.CreateVector(teamLabelWidth, teamLabelHeight, 0),
-        mod.UIAnchor.TopCenter,
-        mod.Message(getTeamNameKey(TeamID.Team1)),
-        eventPlayer
-    );
+    // D12: team names centered above their sections (textAnchor Center; full-width widget at top).
+    modlib.ParseUI({
+        name: T1_LABEL_ID, type: "Text", playerId: eventPlayer,
+        position: [0, teamLabelY], size: [teamLabelWidth, teamLabelHeight], anchor: mod.UIAnchor.TopLeft,
+        visible: true, padding: 0, bgAlpha: 0, bgFill: mod.UIBgFill.None,
+        textLabel: mod.Message(getTeamNameKey(TeamID.Team1)), textColor: [1, 1, 1], textAlpha: 1, textSize: 20, textAnchor: mod.UIAnchor.Center,
+    });
     const T1_LABEL = mod.FindUIWidgetWithName(T1_LABEL_ID, mod.GetUIRoot());
-    mod.SetUIWidgetBgAlpha(T1_LABEL, 0);
-    mod.SetUITextSize(T1_LABEL, 20);
-    mod.SetUIWidgetParent(T1_LABEL, T1_CONTAINER);
+    if (T1_LABEL) mod.SetUIWidgetParent(T1_LABEL, T1_CONTAINER);
 
-    mod.AddUIText(
-        T2_LABEL_ID,
-        mod.CreateVector(0, teamLabelY, 0),
-        mod.CreateVector(teamLabelWidth, teamLabelHeight, 0),
-        mod.UIAnchor.TopCenter,
-        mod.Message(getTeamNameKey(TeamID.Team2)),
-        eventPlayer
-    );
+    modlib.ParseUI({
+        name: T2_LABEL_ID, type: "Text", playerId: eventPlayer,
+        position: [0, teamLabelY], size: [teamLabelWidth, teamLabelHeight], anchor: mod.UIAnchor.TopLeft,
+        visible: true, padding: 0, bgAlpha: 0, bgFill: mod.UIBgFill.None,
+        textLabel: mod.Message(getTeamNameKey(TeamID.Team2)), textColor: [1, 1, 1], textAlpha: 1, textSize: 20, textAnchor: mod.UIAnchor.Center,
+    });
     const T2_LABEL = mod.FindUIWidgetWithName(T2_LABEL_ID, mod.GetUIRoot());
-    mod.SetUIWidgetBgAlpha(T2_LABEL, 0);
-    mod.SetUITextSize(T2_LABEL, 20);
-    mod.SetUIWidgetParent(T2_LABEL, T2_CONTAINER);
+    if (T2_LABEL) mod.SetUIWidgetParent(T2_LABEL, T2_CONTAINER);
 
-    // Fixed rows: up to 16 players per team (32 max). If we ever want to go above 16 per team, we should introduce a Next Page or Previous Page button? Slider?
-    const rowStartY = teamLabelY + teamLabelHeight;
+    // Per-spawner knob grid at the top of each roster box (3 cols x 2 rows): Jet1/Heli1/Heli3 over
+    // Jet2/Heli2/Heli4. Lives in the space freed by capping the roster at 10 rows.
+    buildReadyDialogKnobGridForTeam(eventPlayer, playerId, T1_CONTAINER, TeamID.Team1);
+    buildReadyDialogKnobGridForTeam(eventPlayer, playerId, T2_CONTAINER, TeamID.Team2);
+    updateReadyDialogKnobGridForPid(playerId); // initial render (mode-config render above ran pre-build)
+
+    // Phase 3b: the in-roster knob grid replaces the old top-right matchup row + Vehicles T1/T2
+    // cyclers. Delete those legacy widgets (build-then-remove avoids surgery in this megalith builder).
+    // KEEP the Players (min-players) row + its readouts -- that drives the separate auto-start gate.
+    {
+        const delLegacy = (baseId: string): void => {
+            const w = safeFind(baseId + playerId);
+            if (w) mod.DeleteUIWidget(w);
+            const border = safeFind(baseId + playerId + "_BORDER");
+            if (border) mod.DeleteUIWidget(border);
+        };
+        const legacyIds = [
+            UI_READY_DIALOG_MODE_VEHICLES_T1_LABEL_ID, UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_ID, UI_READY_DIALOG_MODE_VEHICLES_T1_DEC_LABEL_ID,
+            UI_READY_DIALOG_MODE_VEHICLES_T1_VALUE_ID, UI_READY_DIALOG_MODE_VEHICLES_T1_INC_ID, UI_READY_DIALOG_MODE_VEHICLES_T1_INC_LABEL_ID,
+            UI_READY_DIALOG_MODE_VEHICLES_T2_LABEL_ID, UI_READY_DIALOG_MODE_VEHICLES_T2_DEC_ID, UI_READY_DIALOG_MODE_VEHICLES_T2_DEC_LABEL_ID,
+            UI_READY_DIALOG_MODE_VEHICLES_T2_VALUE_ID, UI_READY_DIALOG_MODE_VEHICLES_T2_INC_ID, UI_READY_DIALOG_MODE_VEHICLES_T2_INC_LABEL_ID,
+            UI_READY_DIALOG_MATCHUP_LABEL_ID, UI_READY_DIALOG_MATCHUP_DEC_ID, UI_READY_DIALOG_MATCHUP_DEC_LABEL_ID,
+            UI_READY_DIALOG_MATCHUP_INC_ID, UI_READY_DIALOG_MATCHUP_INC_LABEL_ID, UI_READY_DIALOG_MATCHUP_KILLSTARGET_ID,
+        ];
+        for (const id of legacyIds) delLegacy(id);
+    }
+
+    // Roster rows now start below the knob grid (grid spans y=28 + 2 rows x 42 ~= 112).
+    const rowStartY = 118;
     const rowH = 26;
     const colNameX = 10;
     const colReadyX = 280;
@@ -2798,6 +2850,20 @@ function applyDirtyStateColorsForPid(pid: number): void {
 function updateReadyDialogModeConfigForPid(pid: number): void {
     const cfg = State.round.modeConfig;
 
+    // Per-spawner knob grid (in-roster): value labels + dirty colors + "Not on this Map" lock.
+    updateReadyDialogKnobGridForPid(pid);
+
+    // D3 symmetric-count guard notice: visible when the pending T1/T2 vehicle counts differ.
+    const symWarn = safeFind(UI_READY_DIALOG_SYMMETRIC_WARNING_ID + pid);
+    if (symWarn) mod.SetUIWidgetVisible(symWarn, !isPendingVehicleCountSymmetric());
+
+    // "First to X Vehicle Kills" readout -- X = pending active vehicle count (per side).
+    const firstToKills = safeFind(UI_READY_DIALOG_FIRST_TO_KILLS_ID + pid);
+    if (firstToKills) {
+        const killsCount = Math.max(1, getActiveVehicleCountForTeamFromSelection(TeamID.Team1, State.round.modeConfig.vehicleSelectionIndexByKey || {}));
+        safeSetUITextLabel(firstToKills, mod.Message(mod.stringkeys.twl.readyDialog.firstToKillsFormat, killsCount));
+    }
+
     const gameLabel = safeFind(UI_READY_DIALOG_MODE_GAME_LABEL_ID + pid);
     if (gameLabel) safeSetUITextLabel(gameLabel, mod.Message(mod.stringkeys.twl.readyDialog.gameModeLabel));
     const gameValue = safeFind(UI_READY_DIALOG_MODE_GAME_VALUE_ID + pid);
@@ -3739,6 +3805,112 @@ function setReadyDialogVehicleIndexT2(nextIndex: number): void {
     updateReadyDialogModeConfigForAllVisibleViewers();
 }
 
+// Per-knob vehicle selection setter. Clamps + stores the pending index for one knob, flips to
+// Custom mode (manual change), and refreshes the dialog. Applied to spawner slots only on Confirm.
+function setReadyDialogVehicleSelectionIndexByKey(knobKey: string, nextIndex: number, _changedBy?: mod.Player): void {
+    const count = getReadyDialogVehicleSelectionCount(knobKey);
+    if (count <= 0) return;
+    ensureCustomGameModeForManualChange();
+    const clamped = ((nextIndex % count) + count) % count;
+    State.round.modeConfig.vehicleSelectionIndexByKey[knobKey] = clamped;
+    updateReadyDialogModeConfigForAllVisibleViewers();
+}
+
+// Routes a knob dec/inc click. Ignores locked knobs (live round, or jet knob on a jetless map).
+function handleReadyDialogKnobStep(eventPlayer: mod.Player, knobKey: string, delta: number): void {
+    if (isRoundLive()) return;
+    if (isPlaneKnobKey(knobKey) && !mapSupportsPlanes(ACTIVE_MAP_CONFIG)) return;
+    const current = State.round.modeConfig.vehicleSelectionIndexByKey[knobKey] ?? 0;
+    setReadyDialogVehicleSelectionIndexByKey(knobKey, current + delta, eventPlayer);
+}
+
+// True when the pending T1 and T2 active vehicle counts match (the D3 symmetric-count requirement).
+function isPendingVehicleCountSymmetric(): boolean {
+    const sel = State.round.modeConfig.vehicleSelectionIndexByKey || {};
+    return getActiveVehicleCountForTeamFromSelection(TeamID.Team1, sel)
+        === getActiveVehicleCountForTeamFromSelection(TeamID.Team2, sel);
+}
+
+// Builds the 3-col x 2-row per-spawner knob grid at the top of a team's roster box.
+// Layout: Jet1/Heli1/Heli3 (top row), Jet2/Heli2/Heli4 (bottom row).
+function buildReadyDialogKnobGridForTeam(eventPlayer: mod.Player, pid: number, container: mod.UIWidget, team: TeamID): void {
+    const teamPart = team === TeamID.Team1 ? "team1" : "team2";
+    const panelW = 580;
+    const cellW = Math.floor(panelW / 3);
+    const gridStartY = 28;
+    const cellH = 42;
+    const labelH = 14;
+    const btnW = 22;
+    const valueRowH = 22;
+    const cells: { knobKey: string; labelMsg: mod.Message; col: number; row: number }[] = [
+        { knobKey: teamPart + "Plane1", labelMsg: mod.Message(mod.stringkeys.twl.readyDialog.knobJetFormat, 1), col: 0, row: 0 },
+        { knobKey: teamPart + "Plane2", labelMsg: mod.Message(mod.stringkeys.twl.readyDialog.knobJetFormat, 2), col: 0, row: 1 },
+        { knobKey: teamPart + "Heli1", labelMsg: mod.Message(mod.stringkeys.twl.readyDialog.knobHeliFormat, 1), col: 1, row: 0 },
+        { knobKey: teamPart + "Heli2", labelMsg: mod.Message(mod.stringkeys.twl.readyDialog.knobHeliFormat, 2), col: 1, row: 1 },
+        { knobKey: teamPart + "Heli3", labelMsg: mod.Message(mod.stringkeys.twl.readyDialog.knobHeliFormat, 3), col: 2, row: 0 },
+        { knobKey: teamPart + "Heli4", labelMsg: mod.Message(mod.stringkeys.twl.readyDialog.knobHeliFormat, 4), col: 2, row: 1 },
+    ];
+    for (const cell of cells) {
+        const cellX = cell.col * cellW + 6;
+        const cellY = gridStartY + cell.row * cellH;
+        const innerW = cellW - 12;
+        const labelName = UI_RD_KNOB_LABEL_ID + cell.knobKey + "_" + pid;
+        modlib.ParseUI({
+            name: labelName, type: "Text", playerId: eventPlayer,
+            position: [cellX, cellY], size: [innerW, labelH], anchor: mod.UIAnchor.TopLeft,
+            visible: true, padding: 0, bgAlpha: 0, bgFill: mod.UIBgFill.None,
+            textLabel: cell.labelMsg, textColor: [1, 1, 1], textAlpha: 1, textSize: 11, textAnchor: mod.UIAnchor.Center,
+        });
+        const labelWidget = mod.FindUIWidgetWithName(labelName, mod.GetUIRoot());
+        if (labelWidget) mod.SetUIWidgetParent(labelWidget, container);
+        const valueY = cellY + labelH;
+        const decBorder = addOutlinedButton(UI_RD_KNOB_DEC_ID + cell.knobKey + "_" + pid, cellX, valueY, btnW, valueRowH, mod.UIAnchor.TopLeft, container, eventPlayer);
+        const decLabel = addCenteredButtonText(UI_RD_KNOB_DEC_LABEL_ID + cell.knobKey + "_" + pid, btnW, valueRowH, mod.Message(mod.stringkeys.twl.ui.left), eventPlayer, decBorder ?? container);
+        if (decLabel) mod.SetUITextSize(decLabel, 12);
+        const valueName = UI_RD_KNOB_VALUE_ID + cell.knobKey + "_" + pid;
+        const valueX = cellX + btnW + 2;
+        const valueW = innerW - 2 * btnW - 4;
+        modlib.ParseUI({
+            name: valueName, type: "Text", playerId: eventPlayer,
+            position: [valueX, valueY], size: [valueW, valueRowH], anchor: mod.UIAnchor.TopLeft,
+            visible: true, padding: 0, bgAlpha: 0, bgFill: mod.UIBgFill.None,
+            textLabel: mod.Message(mod.stringkeys.twl.readyDialog.vehicleOptionOff), textColor: [1, 1, 1], textAlpha: 1, textSize: 11, textAnchor: mod.UIAnchor.Center,
+        });
+        const valueWidget = mod.FindUIWidgetWithName(valueName, mod.GetUIRoot());
+        if (valueWidget) mod.SetUIWidgetParent(valueWidget, container);
+        const incBorder = addOutlinedButton(UI_RD_KNOB_INC_ID + cell.knobKey + "_" + pid, cellX + innerW - btnW, valueY, btnW, valueRowH, mod.UIAnchor.TopLeft, container, eventPlayer);
+        const incLabel = addCenteredButtonText(UI_RD_KNOB_INC_LABEL_ID + cell.knobKey + "_" + pid, btnW, valueRowH, mod.Message(mod.stringkeys.twl.ui.right), eventPlayer, incBorder ?? container);
+        if (incLabel) mod.SetUITextSize(incLabel, 12);
+    }
+}
+
+// Renders all 12 knob value labels + dirty colors + locked "Not on this Map" state for one viewer.
+function updateReadyDialogKnobGridForPid(pid: number): void {
+    const planesOk = mapSupportsPlanes(ACTIVE_MAP_CONFIG);
+    const live = isRoundLive();
+    const sel = State.round.modeConfig.vehicleSelectionIndexByKey || {};
+    const confirmedSel = State.round.modeConfig.confirmed.vehicleSelectionIndexByKey || {};
+    for (const knobKey of READY_DIALOG_ALL_VEHICLE_KNOB_KEYS) {
+        const valueWidget = safeFind(UI_RD_KNOB_VALUE_ID + knobKey + "_" + pid);
+        const decWidget = safeFind(UI_RD_KNOB_DEC_ID + knobKey + "_" + pid);
+        const incWidget = safeFind(UI_RD_KNOB_INC_ID + knobKey + "_" + pid);
+        const locked = isPlaneKnobKey(knobKey) && !planesOk;
+        const idx = sel[knobKey] ?? 0;
+        if (valueWidget) {
+            if (locked) {
+                safeSetUITextLabel(valueWidget, mod.Message(READY_DIALOG_VEHICLE_OPTION_NOT_ON_MAP_LABEL));
+                mod.SetUITextColor(valueWidget, COLOR_GRAY);
+            } else {
+                safeSetUITextLabel(valueWidget, mod.Message(getReadyDialogVehicleSelectionLabelKey(knobKey, idx)));
+                const dirty = idx !== (confirmedSel[knobKey] ?? 0);
+                mod.SetUITextColor(valueWidget, dirty ? COLOR_NOT_READY_RED : COLOR_READY_GREEN);
+            }
+        }
+        if (decWidget) mod.SetUIButtonEnabled(decWidget, !locked && !live);
+        if (incWidget) mod.SetUIButtonEnabled(incWidget, !locked && !live);
+    }
+}
+
 // TODO(1.0): Deprecated by "Fresh Respawn Setup" button; remove before final 1.0 release.
 function resetReadyDialogVehicleOverrides(): void {
     State.round.modeConfig.vehicleIndexT1 = READY_DIALOG_VEHICLE_T1_DEFAULT_INDEX;
@@ -3758,6 +3930,12 @@ function resetReadyDialogVehicleOverrides(): void {
 
 function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
     const cfg = State.round.modeConfig;
+    // D3 symmetric-count guard: block Confirm when the two teams' pending vehicle counts differ.
+    // The dialog shows the red symmetric-count warning (toggled in updateReadyDialogModeConfigForPid).
+    if (!isPendingVehicleCountSymmetric()) {
+        updateReadyDialogModeConfigForAllVisibleViewers();
+        return;
+    }
     const prevConfirmed = cfg.confirmed.aircraftCeiling;
     const prevGameMode = cfg.confirmed.gameMode;
     const prevConfirmedHealth = cfg.confirmed.vehicleHealthMultiplier;
@@ -4096,20 +4274,24 @@ function updateSettingsSummaryHudForPid(pid: number): void {
             mod.Message(STR_HUD_SETTINGS_SOLDIER_HP_FORMAT, Math.round(cfg.confirmed.soldierHpMultiplier * 100))
         );
     }
+    // D14: per-team vehicle composition readout from the confirmed selection (e.g. "1 Jet(s), 1 Chopper(s)").
     if (refs.settingsVehiclesT1Text) {
+        const c1 = getConfirmedVehicleCompositionForTeam(TeamID.Team1);
         safeSetUITextLabel(
             refs.settingsVehiclesT1Text,
-            mod.Message(STR_HUD_SETTINGS_VEHICLES_TEAM_FORMAT, getTeamNameKey(TeamID.Team1), vehiclesT1Value)
+            mod.Message(STR_HUD_SETTINGS_VEHICLES_COMPOSITION_TEAM_FORMAT, getTeamNameKey(TeamID.Team1), c1.jets, c1.choppers)
         );
     }
     if (refs.settingsVehiclesT2Text) {
+        const c2 = getConfirmedVehicleCompositionForTeam(TeamID.Team2);
         safeSetUITextLabel(
             refs.settingsVehiclesT2Text,
-            mod.Message(STR_HUD_SETTINGS_VEHICLES_TEAM_FORMAT, getTeamNameKey(TeamID.Team2), vehiclesT2Value)
+            mod.Message(STR_HUD_SETTINGS_VEHICLES_COMPOSITION_TEAM_FORMAT, getTeamNameKey(TeamID.Team2), c2.jets, c2.choppers)
         );
     }
+    // Matchup line retired by the per-knob model -- hide it (the two composition lines replace it).
     if (refs.settingsVehiclesMatchupText) {
-        safeSetUITextLabel(refs.settingsVehiclesMatchupText, mod.Message(STR_HUD_SETTINGS_VEHICLES_MATCHUP_FORMAT, vehiclesLeft, vehiclesRight));
+        mod.SetUIWidgetVisible(refs.settingsVehiclesMatchupText, false);
     }
     if (refs.settingsPlayersText) {
         safeSetUITextLabel(refs.settingsPlayersText, mod.Message(STR_HUD_SETTINGS_PLAYERS_FORMAT, autoStartCounts.left, autoStartCounts.right));

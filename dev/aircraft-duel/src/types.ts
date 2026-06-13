@@ -50,7 +50,7 @@ const SHOW_DEBUG_TIMELIMIT = false; // Show the top-right time limit debug text 
 const DEBUG_TEST_NAMES_TEAM_1 = 0; // Display-only roster rows for Team 1 (Ready dialog + Victory dialog).
 const DEBUG_TEST_NAMES_TEAM_2 = 0; // Display-only roster rows for Team 2 (Ready dialog + Victory dialog).
 const DEBUG_TEST_PLACEHOLDER_NAME_KEY = mod.stringkeys.twl.system.debugPlaceholderName;
-const TEAM_ROSTER_MAX_ROWS = 16;
+const TEAM_ROSTER_MAX_ROWS = 10; // 10v10 max (crew capacity: 4 helis x 2 + 2 jets x 1). Was 16.
 
 // Overtime flag capture (tiebreaker) tuning.
 // - Neutral progress starts at 0.5.
@@ -197,7 +197,7 @@ const TAKEOFF_LIMIT_HUD_OFFSET = 20; // Y offset above HUD floor that triggers t
 // Decoupled from matchup presets; defaults to 1v1 and is user-adjustable in the Ready dialog.
 const DEFAULT_AUTO_START_MIN_ACTIVE_PLAYERS = 2;
 const AUTO_START_MIN_ACTIVE_PLAYERS_MIN = 0; // 0 maps to the solo "1 vs 0" special-case.
-const AUTO_START_MIN_ACTIVE_PLAYERS_MAX = 8;
+const AUTO_START_MIN_ACTIVE_PLAYERS_MAX = 10; // Matches 10v10 roster cap. Was 8.
 // Matchup preset default selection remains 1v1.
 const DEFAULT_MATCHUP_PRESET_LEFT_PLAYERS = 1;
 const DEFAULT_MATCHUP_PRESET_RIGHT_PLAYERS = 1;
@@ -758,6 +758,7 @@ const STR_HUD_SETTINGS_AIRCRAFT_CEILING_FORMAT = mod.stringkeys.twl.hud.settings
 const STR_HUD_SETTINGS_VEHICLE_HEALTH_FORMAT = mod.stringkeys.twl.hud.settings.vehicleHealthFormat;
 const STR_HUD_SETTINGS_SOLDIER_HP_FORMAT = mod.stringkeys.twl.hud.settings.soldierHpFormat;
 const STR_HUD_SETTINGS_VEHICLES_TEAM_FORMAT = mod.stringkeys.twl.hud.settings.vehiclesTeamFormat;
+const STR_HUD_SETTINGS_VEHICLES_COMPOSITION_TEAM_FORMAT = mod.stringkeys.twl.hud.settings.vehiclesCompositionTeamFormat;
 const STR_HUD_SETTINGS_VEHICLES_MATCHUP_FORMAT = mod.stringkeys.twl.hud.settings.vehiclesMatchupFormat;
 const STR_HUD_SETTINGS_PLAYERS_FORMAT = mod.stringkeys.twl.hud.settings.playersFormat;
 const STR_HUD_SETTINGS_GAME_MODE_DEFAULT = mod.stringkeys.twl.hud.settings.gameModeDefault;

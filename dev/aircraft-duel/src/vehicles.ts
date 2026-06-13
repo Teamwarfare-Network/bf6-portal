@@ -363,11 +363,9 @@ function applyVehicleSelectionToSlots(spawnOnEnable: boolean): void {
     }
 }
 
-// Active (non-Off) vehicle count for a team from the CONFIRMED selection. Iterates the slots that
+// Active (non-Off) vehicle count for a team from a given selection map. Iterates the slots that
 // actually exist on the map, so plane knobs on a jetless map (no plane slot) correctly count 0.
-// Used for the kills target and the symmetric-count constraint.
-function getConfirmedActiveVehicleCountForTeam(teamNum: TeamID): number {
-    const sel = State.round.modeConfig.confirmed.vehicleSelectionIndexByKey || {};
+function getActiveVehicleCountForTeamFromSelection(teamNum: TeamID, sel: Record<string, number>): number {
     let count = 0;
     for (let i = 0; i < State.vehicles.slots.length; i++) {
         const slot = State.vehicles.slots[i];
@@ -378,6 +376,29 @@ function getConfirmedActiveVehicleCountForTeam(teamNum: TeamID): number {
         if (v !== undefined) count++;
     }
     return count;
+}
+
+// Active count from the CONFIRMED selection. Used for the kills target.
+function getConfirmedActiveVehicleCountForTeam(teamNum: TeamID): number {
+    return getActiveVehicleCountForTeamFromSelection(teamNum, State.round.modeConfig.confirmed.vehicleSelectionIndexByKey || {});
+}
+
+// Confirmed vehicle composition (jets + choppers) per team -- drives the upper-left settings readout.
+function getConfirmedVehicleCompositionForTeam(teamNum: TeamID): { jets: number; choppers: number } {
+    const sel = State.round.modeConfig.confirmed.vehicleSelectionIndexByKey || {};
+    let jets = 0;
+    let choppers = 0;
+    for (let i = 0; i < State.vehicles.slots.length; i++) {
+        const slot = State.vehicles.slots[i];
+        if (slot.teamId !== teamNum) continue;
+        const knobKey = getKnobKeyForSlot(slot);
+        const idx = sel[knobKey] !== undefined ? sel[knobKey] : 0;
+        const v = getReadyDialogSelectedVehicleForKnob(knobKey, idx, slot.anchorVehicle);
+        if (v === undefined) continue;
+        if (slot.family === "plane") jets++;
+        else choppers++;
+    }
+    return { jets, choppers };
 }
 
 function queueSequentialSpawns(slotIndices: number[]): void {

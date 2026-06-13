@@ -3,6 +3,70 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.744: Ready Dialog tweaks (part 1 of 2). Symmetric-count warning moved ABOVE the Unsaved-Changes
+// text. Re-added the removed matchup/kills row as a top-left "First to {N} Vehicle Kills to win the
+// Round" readout (yellow, below the header block; N = pending active vehicle count, updates live as
+// knobs change). STILL PENDING (part 2): the top-right config 2-column reshape (Soldier HP / Vehicle
+// HP / Aircraft Ceiling down the left; Game Mode / Best Of / Players down the right) + Aircraft
+// Ceiling -100/+100 outer buttons -- intricate blind layout work, deferred to the next version so it
+// can be nudged against a screenshot.
+//
+// v0.743: Phase 3b/4/5 -- knob-grid polish + legacy UI removal + symmetric guard + settings readout.
+//   - Centering: knob value text, knob labels ("Jet 1"/"Heli 1"), and the roster team names (WEST/EAST)
+//     now render centered (modlib.ParseUI textAnchor Center instead of left-aligned mod.AddUIText).
+//   - Removed the legacy top-right matchup row + Vehicles T1/T2 cyclers (build-then-delete by widget
+//     name in createTeamSwitchUI). The Players / min-players row + its readouts are KEPT -- they drive
+//     the separate auto-start gate, unrelated to vehicle count.
+//   - D3 symmetric-count guard: Confirm is blocked + a red "Both teams must field the same number of
+//     vehicles to Confirm" notice shows whenever the pending T1/T2 active vehicle counts differ.
+//   - D14 upper-left settings readout: the two "Vehicles {TEAM}" lines now show composition
+//     ("N Jet(s), M Chopper(s)") from the confirmed selection; the old "Vehicles: XvY" matchup line hidden.
+//   - Known remaining (minor): snap-back (detectAndApplyMatchingPreset / isReadyDialogModePresetActive)
+//     still compares legacy vehicleIndexT1/T2 + matchupPresetIndex, not the knob selection -- the mode
+//     label may stay "Custom" after knob edits that happen to match a preset. Dead legacy construction +
+//     render code remains for a later cleanup pass.
+//
+// v0.742: Web-client compile fix. mod.EnableSpatialObject (2 inherited overtime-marker call sites in
+// overtime.ts) is absent from the newer Portal web-client mod type snapshot (local bf6-portal-mod-types
+// still declares it, so local tsc passed) and blocked the web compile. Cast through (mod as any) at
+// both sites -- the function exists at runtime (shipped working in helis-only); behavior unchanged.
+// No gameplay change; same v0.741 knob-grid build.
+//
+// v0.741: In-roster per-spawner knob grid UI (Phase 3, partial). Each team's roster box now shows a
+// 3-col x 2-row knob grid at the top -- Jet1/Heli1/Heli3 over Jet2/Heli2/Heli4 -- one knob per
+// spawner, cycling [Off, Map Default, <helis>] for heli knobs or [Off, <jets>] for plane knobs.
+// Roster capped at 10 rows (was 16) + AUTO_START max 8->10 to make room. Jet knobs on jetless maps
+// render locked "Not on this Map" (grey, dec/inc disabled). Knob dec/inc clicks route by widget-name
+// prefix to setReadyDialogVehicleSelectionIndexByKey (pending; applied on Confirm). Value text is
+// red when dirty (pending != confirmed), green when clean.
+//   - NOTE: the OLD top-right matchup row + Vehicles T1/T2 cyclers are STILL on screen this build
+//     (now redundant -- use the new knob grid). They + team-name centering + symmetric-count Confirm
+//     block + the upper-left vehicles-composition readout land in the next version.
+//
+// v0.740: AIRCRAFT-DUEL planes + per-spawner vehicle-knob model (FUNCTIONAL CORE; in-roster knob
+// grid UI still pending -- the old matchup row + Vehicles T1/T2 cyclers are still on screen but are
+// now INERT this build; drive everything from the Game Mode cycler + Confirm). Replaces the
+// matchup-count + per-team cycler model with a per-spawner selection:
+// State.round.modeConfig.vehicleSelectionIndexByKey maps each knob (team{1,2}Heli{1..4} / Plane{1,2})
+// to its option-list index. "Off" omits the slot; "Map Default" resolves to the slot anchor's
+// authored vehicle; vehicle count is now implicit (non-Off knobs).
+//   - config.ts: MapConfig.team{1,2}PlaneSpawns (2 jet anchors/team). Operation Firestorm uses the
+//     real conquest jet spatial; Mirak Valley uses placeholder coords (TODO: author runway coords);
+//     all other maps are jetless -> jet knobs will render "Not on this Map" and plane modes are
+//     hidden in the Game Mode cycler (D15).
+//   - state.ts: VehicleSpawnerSlot.family ("heli"|"plane") + anchorVehicle; modeConfig
+//     vehicleSelectionIndexByKey (pending + confirmed); slot anchorVehicle preserves Map Default.
+//   - vehicles.ts: plane slots created (disabled by default); applyVehicleSelectionToSlots drives
+//     per-slot vehicleType + enable/disable + spawn from the CONFIRMED selection, replacing the
+//     matchup-count enablement at startup, Confirm, and between-round cleanup (round-flow.ts).
+//   - New modes "Jets Only - 1v1" + "Jets Only - 2v2" (T1=F16 / T2=JAS39, vanilla ceiling via D8).
+//     The 8 existing heli modes survive unchanged in name, re-expressed as knob recipes with jets Off.
+//   - Kills target = active (non-Off) vehicle count per side.
+//   - index.ts: applyMapConfig now always runs (detected map, or current default) so the per-knob
+//     selection is always seeded before the spawner starts.
+//   - NEXT version: roster 16->10, in-roster 12-knob grid, centered team names, "Not on this Map"
+//     lock, symmetric-count Confirm block, upper-left vehicles-composition readout, remove old UI.
+//
 // v0.739: bumpVersion script now also updates package.json "version" field so all four
 // version-bearing files (header-file.ts, footer-file.ts, strings.json branding title,
 // package.json) stay in lockstep. Eliminates the package.json drift that helis-only
