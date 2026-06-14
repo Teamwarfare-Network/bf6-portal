@@ -648,17 +648,11 @@ function updateVictoryDialogForPlayer(player: mod.Player, remainingSeconds: numb
         const actionCount = Math.max(0, Math.floor(State.admin.actionCount));
         setWidgetVisible(refs.victoryAdminActionsText, actionCount > 0);
         if (actionCount > 0) {
-            const overrideUsed = State.admin.tieBreakerOverrideUsed; // Highlight if any override was used this match.
             safeSetUITextLabel(
                 refs.victoryAdminActionsText,
-                mod.Message(
-                    overrideUsed
-                        ? mod.stringkeys.twl.adminPanel.actionCountVictoryFormatRandomOverride
-                        : mod.stringkeys.twl.adminPanel.actionCountVictoryFormat,
-                    actionCount
-                )
+                mod.Message(mod.stringkeys.twl.adminPanel.actionCountVictoryFormat, actionCount)
             );
-            safeSetUITextColor(refs.victoryAdminActionsText, overrideUsed ? COLOR_RED : COLOR_WARNING_YELLOW);
+            safeSetUITextColor(refs.victoryAdminActionsText, COLOR_WARNING_YELLOW);
         }
     }
 
@@ -1222,7 +1216,7 @@ function ensureEagerHudShellForPlayer(player: mod.Player): HudRefs | undefined {
             type: "Container",
             playerId: player,
             position: [SETTINGS_CONTAINER_X, SETTINGS_CONTAINER_Y],
-            size: [SETTINGS_TEXT_WIDTH, SETTINGS_LINE_HEIGHT * 8],
+            size: [SETTINGS_TEXT_WIDTH, SETTINGS_LINE_HEIGHT * 9],
             anchor: mod.UIAnchor.TopLeft,
             visible: true,
             padding: 1,
@@ -1366,6 +1360,22 @@ function ensureEagerHudShellForPlayer(player: mod.Player): HudRefs | undefined {
                     textSize: SETTINGS_TEXT_SIZE,
                     textAnchor: mod.UIAnchor.TopLeft,
                 },
+                {
+                    name: `Settings_Overtime_${pid}`,
+                    type: "Text",
+                    position: [6, SETTINGS_LINE_HEIGHT * 8],
+                    size: [SETTINGS_TEXT_WIDTH - 12, 16],
+                    anchor: mod.UIAnchor.TopLeft,
+                    visible: true,
+                    padding: 0,
+                    bgAlpha: 0,
+                    bgFill: mod.UIBgFill.None,
+                    textLabel: mod.Message(STR_HUD_SETTINGS_OVERTIME_FLAG_FORMAT, STR_HUD_SETTINGS_OVERTIME_FINAL_ROUND),
+                    textColor: SETTINGS_TEXT_COLOR,
+                    textAlpha: 1,
+                    textSize: SETTINGS_TEXT_SIZE,
+                    textAnchor: mod.UIAnchor.TopLeft,
+                },
             ],
         });
         if (settingsSummary) refs.roots.push(settingsSummary);
@@ -1448,6 +1458,7 @@ function ensureEagerHudShellForPlayer(player: mod.Player): HudRefs | undefined {
     refs.settingsVehiclesT2Text = safeFind(`Settings_VehiclesT2_${pid}`);
     refs.settingsVehiclesMatchupText = safeFind(`Settings_VehiclesMatchup_${pid}`);
     refs.settingsPlayersText = safeFind(`Settings_Players_${pid}`);
+    refs.settingsOvertimeText = safeFind(`Settings_Overtime_${pid}`);
     // Altitude warning widgets are NOT resolved here -- ensureAltitudeWarningUiForPlayer builds
     // them lazily on first show + populates refs at that time. Eager safeFind would return undefined
     // because the widgets don't exist yet.
@@ -1878,6 +1889,9 @@ function setHudRoundCountersForAllPlayers(cur: number, max: number): void {
     setRoundStateTextForAllPlayers();
     // Keep Ready Up dialog "Best of" label in sync with State.round.max.
     updateBestOfRoundsLabelForAllPlayers();
+    // The Overtime settings readout is round-relative (depends on current + max), so refresh it here --
+    // the single choke point for both round advancement and best-of changes.
+    updateSettingsSummaryHudForAllPlayers();
 }
 
 function setHudWinCountersForAllPlayers(t1Wins: number, t2Wins: number): void {

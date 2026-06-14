@@ -1,6 +1,6 @@
 {
   "name": "twl-aircraft-duel",
-  "version": "0.744.0",
+  "version": "0.767.0",
   "private": true,
   "description": "Modular build for TWL Aircraft-Duel BF6 Portal experience (forked from helis-only v0.737)",
   "scripts": {

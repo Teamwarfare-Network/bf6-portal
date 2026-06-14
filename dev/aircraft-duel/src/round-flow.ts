@@ -199,8 +199,28 @@ async function scheduleRoundEndCleanup(expectedToken: number): Promise<void> {
 
     quiesceSpawnerSystemForCleanup();
 
+    // Sink every EMPTY vehicle BELOW the terrain BEFORE destroying it, so the wreck/explosion happens
+    // out of sight and can't damage the pad or the replacement vehicles about to spawn at the same slots.
+    // getVehicleSinkXZ prefers the bound slot's spawnPos (GetObjectPosition is unreliable at reset).
+    // vehicleToSlot is still intact here -- resetSpawnerSlotStateForCleanup() clears it further below.
+    // Occupied vehicles are SKIPPED here (the winning side's pilots may still be seated): teleporting
+    // them to Y=-1000 would drag the pilot underground for ~3s before undeploy. They are still destroyed
+    // in place by the DealDamage pass below -- same as the pre-sink behavior. IsVehicleOccupied throws ->
+    // default occupied=true so we never yank a player.
     const vehicles = mod.AllVehicles();
     const vCount = mod.CountOf(vehicles);
+    for (let v = 0; v < vCount; v++) {
+        const vehicle = mod.ValueInArray(vehicles, v) as mod.Vehicle;
+        if (!vehicle) continue;
+        let occupied = true;
+        try { occupied = mod.IsVehicleOccupied(vehicle); } catch {}
+        if (occupied) continue;
+        const sinkXZ = getVehicleSinkXZ(vehicle);
+        try { mod.Teleport(vehicle, mod.CreateVector(sinkXZ.x, -1000, sinkXZ.z), 0); } catch {}
+    }
+
+    await mod.Wait(1);
+
     for (let v = 0; v < vCount; v++) {
         const vehicle = mod.ValueInArray(vehicles, v) as mod.Vehicle;
         if (!vehicle) continue;
@@ -211,7 +231,7 @@ async function scheduleRoundEndCleanup(expectedToken: number): Promise<void> {
         }
     }
 
-    await mod.Wait(3);
+    await mod.Wait(2);
 
     // Per-player undeploy to avoid global redeploy side effects.
     // safeUndeployPlayer no-ops on already-undeployed players (precheck) and try/catches engine throws;
@@ -638,6 +658,8 @@ function endRound(_triggerPlayer?: mod.Player, freezeRemainingSeconds?: number, 
 
     // Prepare next round counters after ending the active round.
     State.round.current = Math.floor(State.round.current) + 1;
+    // setHudRoundCountersForAllPlayers refreshes the round-relative Overtime readout (it is the choke
+    // point for current + max changes), so no separate settings-HUD refresh is needed here.
     setHudRoundCountersForAllPlayers(State.round.current, State.round.max);
     setRoundStateTextForAllPlayers();
     updateHelpTextVisibilityForAllPlayers();

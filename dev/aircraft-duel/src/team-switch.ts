@@ -923,35 +923,6 @@ function teamSwitchButtonEvent(
             break;
         }
 
-        case UI_ADMIN_TIEBREAKER_BUTTON_ID + "A_" + playerId:
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tieBreakerOverrideA);
-            applyAdminTieBreakerOverride(0);
-            break;
-        case UI_ADMIN_TIEBREAKER_BUTTON_ID + "B_" + playerId:
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tieBreakerOverrideB);
-            applyAdminTieBreakerOverride(1);
-            break;
-        case UI_ADMIN_TIEBREAKER_BUTTON_ID + "C_" + playerId:
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tieBreakerOverrideC);
-            applyAdminTieBreakerOverride(2);
-            break;
-        case UI_ADMIN_TIEBREAKER_BUTTON_ID + "D_" + playerId:
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tieBreakerOverrideD);
-            applyAdminTieBreakerOverride(3);
-            break;
-        case UI_ADMIN_TIEBREAKER_BUTTON_ID + "E_" + playerId:
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tieBreakerOverrideE);
-            applyAdminTieBreakerOverride(4);
-            break;
-        case UI_ADMIN_TIEBREAKER_BUTTON_ID + "F_" + playerId:
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tieBreakerOverrideF);
-            applyAdminTieBreakerOverride(5);
-            break;
-        case UI_ADMIN_TIEBREAKER_BUTTON_ID + "G_" + playerId:
-            handleAdminPanelAction(eventPlayer, mod.stringkeys.twl.adminPanel.actions.tieBreakerOverrideG);
-            applyAdminTieBreakerOverride(6);
-            break;
-
         case UI_ADMIN_TIEBREAKER_MODE_DEC_ID + playerId:
             if (isRoundLive()) break;
             State.admin.tieBreakerModeIndex = normalizeTieBreakerModeIndex(State.admin.tieBreakerModeIndex - 1);

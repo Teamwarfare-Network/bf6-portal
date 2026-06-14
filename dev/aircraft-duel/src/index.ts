@@ -91,7 +91,6 @@ export async function OnGameModeStarted(): Promise<void> {
     State.match.endElapsedSecondsSnapshot = 0;
     State.match.victoryStartElapsedSecondsSnapshot = 0;
     State.admin.actionCount = 0;
-    State.admin.tieBreakerOverrideUsed = false;
     State.admin.liveRespawnEnabled = DEFAULT_LIVE_RESPAWN_ENABLED;
     State.admin.ceilingPunishEnabled = DEFAULT_CEILING_PUNISH_ENABLED;
     syncAdminLiveRespawnLabelForAllPlayers();

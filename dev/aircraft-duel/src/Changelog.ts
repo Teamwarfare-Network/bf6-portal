@@ -3,6 +3,82 @@
 
 //#region -------------------- Changelog / History --------------------
 
+// v0.753: Round-reset vehicle teardown now SINKS vehicles below the terrain before destroying them.
+//   scheduleRoundEndCleanup (the between-round reset) previously called DealDamage in place, so the
+//   wreck/explosion fired right on the pad where the replacement vehicles were about to spawn. Now it
+//   teleports each vehicle to Y=-1000 first (using the bound slot's spawnPos for X/Z, since
+//   GetObjectPosition returns bad X/Z at the reset countdown), waits, then destroys -- out of sight,
+//   harmless to the pad + replacements. New getVehicleSinkXZ helper; sinkAndDestroyEmptyVehicle (the
+//   Reset-button path) now uses it too. Total cleanup wait unchanged (1s + 2s = 3s).
+//
+// v0.752: Removed the redundant admin "First to X Kills" row (added v0.748) -- it duplicated the
+//   existing "Target Round Kills" tester row. Reverted ADMIN_PANEL_HEIGHT to 780; removed its widget
+//   IDs, button handlers, visibility entries, sync hook, and the firstToKills string. (The green
+//   "First to N Vehicle Kills" settings-panel readout is a separate feature and stays.)
+//
+// v0.751: Custom ceiling no longer LOCKED off on jet/mixed modes -- vanilla is only the default start.
+//   Removed the blanket isPlaneInclusiveGameMode short-circuit from shouldApplyCustomCeilingForConfig
+//   (it was forcing vanilla even when an override was set). Plane-inclusive PRESETS still default to
+//   vanilla via shouldApplyCustomCeilingForGameMode; touching the ceiling flips the mode to the Jets/
+//   Mixed Custom flavor (ensureCustomGameModeForManualChange) and the numeric ceiling then applies.
+//
+// v0.750: The 3 red/yellow Ready-dialog callouts (Unsaved changes, Ceiling-lock, Symmetric-count)
+//   moved UP into the empty band the removed vehicle cyclers left -- right-aligned (TopRight +
+//   CenterRight) directly above the Confirm button, clearing the top-left header text. Restart-Needed
+//   notice left in place by the Reset button.
+//
+// v0.749: Mode display renames -- "Mixed Air - 6v6" -> "Mixed Air - 6v6 Vanilla"; "Jets Only - 1v1/2v2"
+//   -> "Jets - TWL 1v1" / "Jets - TWL 2v2" (display strings only; mode behavior unchanged).
+//
+// v0.748: Roster header clarity + admin First-to-X-Kills control.
+//   - Roster box headers reworded: the top header now reads "{TEAM} VEHICLES" (it labels the knob
+//     grid), and a new second header "{TEAM} PLAYERS" sits above the player roster rows (rows pushed
+//     down from y=118 to y=138 to make room; new rosterVehiclesHeaderFormat / rosterPlayersHeaderFormat
+//     strings; both refresh in updateTeamNameWidgetsForPid).
+//   - Admin panel: added a "First to X Kills:" value row (+/-) directly under the Ceiling Punish
+//     toggle, bound to State.round.killsTarget. Mirrors the upper "Target Round Kills" tester row and
+//     stays in sync with it via syncRoundKillsTargetTesterValueForAllPlayers. ADMIN_PANEL_HEIGHT
+//     +34px for the extra row. New adminPanel.tester.labels.firstToKills string; reuses the existing
+//     targetRoundKills inc/dec audit-action keys.
+//
+// v0.747: Knob-grid pattern parity + dynamic Custom flavor + Mixed Air modes.
+//   ROOT-CAUSE FIX: editing a vehicle knob did NOT flip the mode to Custom (and the "Unsaved changes!"
+//   notice never fired) because detectAndApplyMatchingPreset/isReadyDialogModePresetActive compared
+//   only the LEGACY vehicleIndexT1/T2 fields, which knob edits don't touch -- so the prior preset
+//   still "matched" and snapped the mode right back. isReadyDialogModePresetActive now also compares
+//   the per-knob vehicleSelectionIndexByKey against the preset's recipe. This single fix makes knob
+//   edits stick on Custom AND makes snap-back work (edit a knob back to a preset's exact recipe and
+//   the preset label returns).
+//   - Unsaved-changes notice: buildReadyDialogModeConfigDiffState now includes vehicleSelectionDirty
+//     (per-knob pending vs confirmed), so changing vehicles via the grid surfaces the global notice.
+//   - Restart-needed: Confirm now flags needsRestartForVehicleChange when the knob selection changed.
+//   - Dynamic Custom flavor: the single Custom slot now displays one of three labels resolved live
+//     from the selection composition -- "Helis Only - Custom" (no jets), "Jets Only - Custom" (no
+//     choppers), "Mixed Air - Custom" (both). Adding a jet to a heli-only Custom flips it to Mixed Air
+//     automatically (ensureCustomGameModeForManualChange re-resolves even while already Custom).
+//     Jets/Mixed Custom are plane-inclusive -> vanilla aircraft ceiling; Helis Only Custom keeps the
+//     custom-ceiling path.
+//   - NEW default preset "Mixed Air - 6v6" (game-mode index 9; Custom moved to index 10): enables all
+//     aircraft -- both jets + one of each chopper type (Apache/Euro/BlackHawk/LittleBird) per side
+//     (6 vehicles/side, first-to-6) and seeds 10 players-to-start per side (crew for 4 helis + 2 jets).
+//     Plane-inclusive, so it hides on jetless maps and uses the vanilla ceiling.
+//   - New strings: gameModeMixedAir6v6, gameModeJetsOnlyCustom, gameModeMixedAirCustom.
+//   - Known remaining (minor): a within-flavor vehicle swap (e.g. Apache->Euro while staying Helis
+//     Only Custom) does not emit a "X changed vehicles" chat broadcast (other settings do). Cosmetic.
+//
+// v0.746: Two position tweaks (per user; the full top-right 2-column reshape was set aside).
+//   - Players (min-players) row moved UP one row into the slot vacated by the removed matchup
+//     "Vehicles X v Y" row (playersY = matchupY). Only one element moved; rest of the panel unchanged.
+//   - "First to X Vehicle Kills" readout relocated again: OUT of the branding box (v0.745) and INTO
+//     the upper-left settings panel's old vehicle-count (matchup) line slot, rendered green. X =
+//     confirmed round kills target. Branding box reverted to its original 2-line / 30px height.
+//
+// v0.745: Moved the "First to {N} Vehicle Kills to win the Round" readout out of the Ready Dialog
+// header and INTO the persistent upper-left green branding box (Upper_Left_Container, new 3rd green
+// line; box height 30->44, settings summary panel pushed down to match). N = confirmed round kills
+// target; refreshed via updateSettingsSummaryHudForPid. The top-right config 2-column reshape +
+// Aircraft Ceiling -100/+100 buttons (#2/#3) are still in progress.
+//
 // v0.744: Ready Dialog tweaks (part 1 of 2). Symmetric-count warning moved ABOVE the Unsaved-Changes
 // text. Re-added the removed matchup/kills row as a top-left "First to {N} Vehicle Kills to win the
 // Round" readout (yellow, below the header block; N = pending active vehicle count, updates live as

@@ -74,11 +74,28 @@ function getReadyDialogVehicleOptionsForKnobKey(knobKey: string): ReadyDialogVeh
 function getReadyDialogVehicleSelectionCount(knobKey: string): number {
     return getReadyDialogVehicleOptionsForKnobKey(knobKey).length;
 }
-function getReadyDialogVehicleSelectionLabelKey(knobKey: string, selectionIndex: number): number {
+// Reverse lookup: the display label key for a concrete vehicle within a knob's option list
+// (undefined if that vehicle isn't a listed option).
+function getVehicleOptionLabelKeyForVehicle(knobKey: string, vehicle: mod.VehicleList): number | undefined {
+    const options = getReadyDialogVehicleOptionsForKnobKey(knobKey);
+    for (const opt of options) {
+        if (opt.vehicle !== undefined && opt.vehicle === vehicle) return opt.label;
+    }
+    return undefined;
+}
+function getReadyDialogVehicleSelectionLabelKey(knobKey: string, selectionIndex: number, anchorVehicle?: mod.VehicleList): number {
     const options = getReadyDialogVehicleOptionsForKnobKey(knobKey);
     if (options.length <= 0) return mod.stringkeys.twl.readyDialog.vehicleOptionOff;
     const clamped = ((selectionIndex % options.length) + options.length) % options.length;
-    return options[clamped] ? options[clamped].label : mod.stringkeys.twl.readyDialog.vehicleOptionOff;
+    const opt = options[clamped];
+    if (!opt) return mod.stringkeys.twl.readyDialog.vehicleOptionOff;
+    // For the "Map Default" option, show the actual resolved vehicle name (the slot's anchor) so the
+    // mode's lineup is obvious at a glance. Falls back to "Map Default" if the anchor isn't a listed option.
+    if (opt.mapDefault && anchorVehicle !== undefined) {
+        const anchorLabel = getVehicleOptionLabelKeyForVehicle(knobKey, anchorVehicle);
+        if (anchorLabel !== undefined) return anchorLabel;
+    }
+    return opt.label;
 }
 // Resolves a knob's selected vehicle. undefined = "Off" (slot disabled). "Map Default" returns the
 // slot anchor's authored vehicle; explicit picks return the option's vehicle.
@@ -276,6 +293,8 @@ const UI_READY_DIALOG_TEAM1_CONTAINER_ID = "UI_READY_DIALOG_TEAM1_CONTAINER_";
 const UI_READY_DIALOG_TEAM2_CONTAINER_ID = "UI_READY_DIALOG_TEAM2_CONTAINER_";
 const UI_READY_DIALOG_TEAM1_LABEL_ID = "UI_READY_DIALOG_TEAM1_LABEL_";
 const UI_READY_DIALOG_TEAM2_LABEL_ID = "UI_READY_DIALOG_TEAM2_LABEL_";
+const UI_READY_DIALOG_TEAM1_PLAYERS_LABEL_ID = "UI_READY_DIALOG_TEAM1_PLAYERS_LABEL_";
+const UI_READY_DIALOG_TEAM2_PLAYERS_LABEL_ID = "UI_READY_DIALOG_TEAM2_PLAYERS_LABEL_";
 const UI_READY_DIALOG_T1_ROW_NAME_ID = "UI_READY_DIALOG_T1_ROW_NAME_";
 const UI_READY_DIALOG_T1_ROW_READY_ID = "UI_READY_DIALOG_T1_ROW_READY_";
 const UI_READY_DIALOG_T1_ROW_BASE_ID = "UI_READY_DIALOG_T1_ROW_BASE_";
@@ -415,9 +434,6 @@ const UI_TEST_RESET_TEXT_ID = "UI_TEST_RESET_TEXT_";
 const UI_TEST_ROUND_START_TEXT_ID = "UI_TEST_ROUND_START_TEXT_";
 const UI_TEST_ROUND_END_TEXT_ID = "UI_TEST_ROUND_END_TEXT_";
 const UI_TEST_POS_DEBUG_TEXT_ID = "UI_TEST_POS_DEBUG_TEXT_";
-const UI_ADMIN_TIEBREAKER_LABEL_ID = "UI_ADMIN_TIEBREAKER_LABEL_";
-const UI_ADMIN_TIEBREAKER_BUTTON_ID = "UI_ADMIN_TIEBREAKER_BUTTON_";
-const UI_ADMIN_TIEBREAKER_BUTTON_TEXT_ID = "UI_ADMIN_TIEBREAKER_BUTTON_TEXT_";
 const UI_ADMIN_TIEBREAKER_MODE_DEC_ID = "UI_ADMIN_TIEBREAKER_MODE_DEC_";
 const UI_ADMIN_TIEBREAKER_MODE_INC_ID = "UI_ADMIN_TIEBREAKER_MODE_INC_";
 const UI_ADMIN_TIEBREAKER_MODE_LABEL_ID = "UI_ADMIN_TIEBREAKER_MODE_LABEL_";

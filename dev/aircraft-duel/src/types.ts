@@ -301,13 +301,15 @@ const READY_DIALOG_GAME_MODE_OPTIONS: number[] = [
     mod.stringkeys.twl.readyDialog.gameModeHelisPractice,        // 0: Attack Helis - BF6 Vanilla
     mod.stringkeys.twl.readyDialog.gameModeLittleBirdsVanilla,   // 1: Little Birds - BF6 Vanilla
     mod.stringkeys.twl.readyDialog.gameModeHelisOnlyVanilla,     // 2: All Helis - BF6 Vanilla
-    mod.stringkeys.twl.readyDialog.gameModeHelisLadder,          // 3: Attack Helis - TWL 2v2
-    mod.stringkeys.twl.readyDialog.gameModeHelisTwl1v1,          // 4: Attack Helis - TWL 1v1
-    mod.stringkeys.twl.readyDialog.gameModeLittleBirdsTwl2v2,    // 5: Little Birds - TWL 2v2 (new)
-    mod.stringkeys.twl.readyDialog.gameModeLittleBirdsTwl1v1,    // 6: Little Birds - TWL 1v1
-    mod.stringkeys.twl.readyDialog.gameModeJetsOnly1v1,          // 7: Jets Only - 1v1 (plane mode)
-    mod.stringkeys.twl.readyDialog.gameModeJetsOnly2v2,          // 8: Jets Only - 2v2 (plane mode)
-    mod.stringkeys.twl.readyDialog.gameModeHelisCustom,          // 9: Helis Only - Custom
+    mod.stringkeys.twl.readyDialog.gameModeJetsOnlyVanilla,      // 3: All Jets - BF6 Vanilla (plane mode)
+    mod.stringkeys.twl.readyDialog.gameModeMixedAir6v6,          // 4: All Air - BF6 Vanilla (plane mode; slug stays mixedAir6v6)
+    mod.stringkeys.twl.readyDialog.gameModeHelisLadder,          // 5: Attack Helis - TWL 2v2
+    mod.stringkeys.twl.readyDialog.gameModeHelisTwl1v1,          // 6: Attack Helis - TWL 1v1
+    mod.stringkeys.twl.readyDialog.gameModeLittleBirdsTwl2v2,    // 7: Little Birds - TWL 2v2
+    mod.stringkeys.twl.readyDialog.gameModeLittleBirdsTwl1v1,    // 8: Little Birds - TWL 1v1
+    mod.stringkeys.twl.readyDialog.gameModeJetsOnly2v2,          // 9: Jets - TWL 2v2 (plane mode, best-of-11)
+    mod.stringkeys.twl.readyDialog.gameModeJetsOnly1v1,          // 10: Jets - TWL 1v1 (plane mode, best-of-11)
+    mod.stringkeys.twl.readyDialog.gameModeHelisCustom,          // 11: Custom slot (display flavor resolved dynamically)
 ];
 // v0.727 Ready Dialog cycler vehicle list. UH-60 PAX inserted at index 3 between BlackHawk and AH-6M.
 // Order: [Falchion, Panthera, BlackHawk, BlackHawk Pax, LittleBird, LittleBird PAX, Map Default].
@@ -350,13 +352,15 @@ const READY_DIALOG_VEHICLE_INDEX_LITTLEBIRD_PAX = 5;
 const READY_DIALOG_GAME_MODE_DEFAULT_INDEX = 0;
 const READY_DIALOG_GAME_MODE_LITTLE_BIRDS_VANILLA_INDEX = 1;
 const READY_DIALOG_GAME_MODE_HELIS_ONLY_VANILLA_INDEX = 2;
-const READY_DIALOG_GAME_MODE_LADDER_INDEX = 3;
-const READY_DIALOG_GAME_MODE_TWL_1V1_INDEX = 4;
-const READY_DIALOG_GAME_MODE_LITTLE_BIRDS_TWL_2V2_INDEX = 5;
-const READY_DIALOG_GAME_MODE_LITTLE_BIRDS_TWL_1V1_INDEX = 6;
-const READY_DIALOG_GAME_MODE_JETS_ONLY_1V1_INDEX = 7;
-const READY_DIALOG_GAME_MODE_JETS_ONLY_2V2_INDEX = 8;
-const READY_DIALOG_GAME_MODE_CUSTOM_INDEX = 9;
+const READY_DIALOG_GAME_MODE_JETS_ONLY_VANILLA_INDEX = 3;
+const READY_DIALOG_GAME_MODE_MIXED_AIR_6V6_INDEX = 4;
+const READY_DIALOG_GAME_MODE_LADDER_INDEX = 5;
+const READY_DIALOG_GAME_MODE_TWL_1V1_INDEX = 6;
+const READY_DIALOG_GAME_MODE_LITTLE_BIRDS_TWL_2V2_INDEX = 7;
+const READY_DIALOG_GAME_MODE_LITTLE_BIRDS_TWL_1V1_INDEX = 8;
+const READY_DIALOG_GAME_MODE_JETS_ONLY_2V2_INDEX = 9;
+const READY_DIALOG_GAME_MODE_JETS_ONLY_1V1_INDEX = 10;
+const READY_DIALOG_GAME_MODE_CUSTOM_INDEX = 11;
 const READY_DIALOG_VEHICLE_T1_DEFAULT_INDEX = 0;
 const READY_DIALOG_VEHICLE_T2_DEFAULT_INDEX = 0;
 
@@ -602,7 +606,7 @@ const READY_DIALOG_LABEL_TEXT_COLOR = COLOR_WHITE;
 const READY_DIALOG_BORDER_COLOR = COLOR_GRAY;
 
 // Admin Panel
-const ADMIN_PANEL_HEIGHT = 780; // v0.703: +18px on top of v0.702's 762. Plan 2 row reorder moved Tie-Breaker rows to the bottom of the section (was at top); the new arrangement is ~12px taller because of the explicit TIEBREAKER_BOTTOM_GAP between the toggles cluster and the override block.
+const ADMIN_PANEL_HEIGHT = 728; // v0.767: -52px from 780 after removing the Tie-Breaker randomization-override block (label + A-G flag buttons). The Tie-Breaker Setting toggle is now the last admin row.
 const ADMIN_PANEL_PADDING = 5;
 const ADMIN_PANEL_BASE_X = -5;
 const ADMIN_PANEL_BASE_Y = 15;
@@ -618,16 +622,12 @@ const ADMIN_PANEL_LABEL_SIZE_X = 130;
 const ADMIN_PANEL_CONTENT_WIDTH = (ADMIN_PANEL_BUTTON_SIZE_X * 2) + ADMIN_PANEL_LABEL_SIZE_X + 16;
 const ADMIN_PANEL_ROW_SPACING_Y = 4;
 const ADMIN_PANEL_VALUE_SIZE_X = 46;
-const ADMIN_PANEL_TIEBREAKER_LABEL_HEIGHT = 16;
-const ADMIN_PANEL_TIEBREAKER_BUTTON_SIZE = 26;
-const ADMIN_PANEL_TIEBREAKER_BUTTON_SPACING = 4;
 const ADMIN_PANEL_BG_COLOR = COLOR_DARK_BLACK;
 const ADMIN_PANEL_BG_ALPHA = 1.0;
 const ADMIN_PANEL_BG_FILL = mod.UIBgFill.Blur;
 const ADMIN_PANEL_LABEL_TEXT_COLOR_RGB: [number, number, number] = [1, 1, 1];
 const ADMIN_PANEL_BUTTON_TEXT_COLOR = COLOR_WHITE;
 const ADMIN_PANEL_LABEL_TEXT_COLOR = COLOR_WHITE;
-const ADMIN_TIEBREAKER_OVERRIDE_LETTERS = ["A", "B", "C", "D", "E", "F", "G"];
 const OVERTIME_FLAG_LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 const OVERTIME_TANK_ZONE_LETTERS = ["A", "B", "C", "D", "E", "F", "G"];
 const OVERTIME_HELI_ZONE_LETTERS = ["H"];
@@ -641,7 +641,8 @@ const ADMIN_TIEBREAKER_MODE_ACTION_KEYS = [
     mod.stringkeys.twl.adminPanel.actions.tieBreakerModeAllRounds,
     mod.stringkeys.twl.adminPanel.actions.tieBreakerModeDisabled,
 ];
-const ADMIN_TIEBREAKER_MODE_DEFAULT_INDEX = 0;
+const ADMIN_TIEBREAKER_MODE_DEFAULT_INDEX = 0;  // Last Round ONLY
+const ADMIN_TIEBREAKER_MODE_DISABLED_INDEX = 2; // Disabled / OFF (matches ADMIN_TIEBREAKER_MODE_OPTIONS order)
 
 // Victory dialog theme colors (ParseUI expects RGB tuples, not vectors).
 const VICTORY_BG_RGB: [number, number, number] = [0.0314, 0.0431, 0.0431];
@@ -749,6 +750,8 @@ const STR_READY_DIALOG_PLAYERS_CHANGED = mod.stringkeys.twl.readyDialog.playersC
 const STR_READY_DIALOG_GAME_MODE_CHANGED = mod.stringkeys.twl.readyDialog.gameModeChanged;
 const STR_READY_DIALOG_AIRCRAFT_CEILING_CHANGED = mod.stringkeys.twl.readyDialog.aircraftCeilingChanged;
 const STR_READY_DIALOG_AIRCRAFT_CEILING_VANILLA = mod.stringkeys.twl.readyDialog.aircraftCeilingVanilla;
+const STR_READY_DIALOG_ROSTER_VEHICLES_HEADER_FORMAT = mod.stringkeys.twl.readyDialog.rosterVehiclesHeaderFormat;
+const STR_READY_DIALOG_ROSTER_PLAYERS_HEADER_FORMAT = mod.stringkeys.twl.readyDialog.rosterPlayersHeaderFormat;
 const STR_READY_DIALOG_VEHICLE_HEALTH_FORMAT = mod.stringkeys.twl.readyDialog.modeSettingVehicleHealthFormat;
 const STR_READY_DIALOG_VEHICLE_HEALTH_CHANGED = mod.stringkeys.twl.readyDialog.vehicleHealthChanged;
 const STR_READY_DIALOG_SOLDIER_HP_FORMAT = mod.stringkeys.twl.readyDialog.modeSettingSoldierHpFormat;
@@ -761,6 +764,10 @@ const STR_HUD_SETTINGS_VEHICLES_TEAM_FORMAT = mod.stringkeys.twl.hud.settings.ve
 const STR_HUD_SETTINGS_VEHICLES_COMPOSITION_TEAM_FORMAT = mod.stringkeys.twl.hud.settings.vehiclesCompositionTeamFormat;
 const STR_HUD_SETTINGS_VEHICLES_MATCHUP_FORMAT = mod.stringkeys.twl.hud.settings.vehiclesMatchupFormat;
 const STR_HUD_SETTINGS_PLAYERS_FORMAT = mod.stringkeys.twl.hud.settings.playersFormat;
+const STR_HUD_SETTINGS_OVERTIME_FLAG_FORMAT = mod.stringkeys.twl.hud.settings.overtimeFlagFormat;
+const STR_HUD_SETTINGS_OVERTIME_THIS_ROUND = mod.stringkeys.twl.hud.settings.overtimeFlagThisRound;
+const STR_HUD_SETTINGS_OVERTIME_FINAL_ROUND = mod.stringkeys.twl.hud.settings.overtimeFlagFinalRound;
+const STR_HUD_SETTINGS_OVERTIME_OFF = mod.stringkeys.twl.hud.settings.overtimeFlagOff;
 const STR_HUD_SETTINGS_GAME_MODE_DEFAULT = mod.stringkeys.twl.hud.settings.gameModeDefault;
 const STR_HUD_SETTINGS_VALUE_DEFAULT = mod.stringkeys.twl.hud.settings.valueDefault;
 const STR_HUD_SETTINGS_VALUE_MAP_DEFAULT = mod.stringkeys.twl.hud.settings.valueMapDefault;
@@ -787,7 +794,6 @@ const STR_OVERLINE_TAKEOFF_SUBTITLE = mod.stringkeys.twl.overLine.takeoffSubtitl
 // Overtime announcements + flag capture UI strings
 const STR_OVERTIME_SUB_NOTICE = mod.stringkeys.twl.overtime.subtitle.notice;
 const STR_OVERTIME_TITLE_VISIBLE = mod.stringkeys.twl.overtime.title.visible;
-const STR_OVERTIME_TITLE_VISIBLE_ADMIN = mod.stringkeys.twl.overtime.title.visibleAdmin;
 const STR_OVERTIME_SUB_UNLOCKS_IN = mod.stringkeys.twl.overtime.subtitle.unlocksIn;
 const STR_OVERTIME_SUB_UNLOCKS_NOW = mod.stringkeys.twl.overtime.subtitle.unlocksNow;
 const STR_FLAG_TITLE = mod.stringkeys.twl.flagCapture.title;

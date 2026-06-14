@@ -184,14 +184,27 @@ function findVehicleById(vehicleId: number): mod.Vehicle | undefined {
 // silently filtered out every vehicle. No spawner-flag manipulation in this version -- if v0.721
 // still shows vehicles blowing up at the pad, the next step is investigating the abandonment
 // flags (see heli_issues.md H_Bug_4 ranked hypotheses).
-async function sinkAndDestroyEmptyVehicle(v: mod.Vehicle): Promise<void> {
-    let x = 0;
-    let z = 0;
+// Reliable X/Z for sinking a vehicle below the terrain. Prefers the bound slot's spawnPos --
+// GetObjectPosition returns bad X/Z during the round-reset countdown (HQ-reset finding). Only Y
+// matters for the sink, but mod.Teleport still needs a sane X/Z. Falls back to GetObjectPosition, then 0.
+function getVehicleSinkXZ(v: mod.Vehicle): { x: number; z: number } {
+    try {
+        const objId = getObjId(v);
+        const slotIndex = State.vehicles.vehicleToSlot[objId];
+        if (slotIndex !== undefined) {
+            const slot = State.vehicles.slots[slotIndex];
+            if (slot) return { x: mod.XComponentOf(slot.spawnPos), z: mod.ZComponentOf(slot.spawnPos) };
+        }
+    } catch {}
     try {
         const pos = mod.GetObjectPosition(v);
-        x = mod.XComponentOf(pos);
-        z = mod.ZComponentOf(pos);
+        return { x: mod.XComponentOf(pos), z: mod.ZComponentOf(pos) };
     } catch {}
+    return { x: 0, z: 0 };
+}
+
+async function sinkAndDestroyEmptyVehicle(v: mod.Vehicle): Promise<void> {
+    const { x, z } = getVehicleSinkXZ(v);
     try { mod.Teleport(v, mod.CreateVector(x, -1000, z), 0); } catch {}
     await mod.Wait(1.5);
     try { mod.DealDamage(v, 9999); } catch {}
@@ -399,6 +412,21 @@ function getConfirmedVehicleCompositionForTeam(teamNum: TeamID): { jets: number;
         else choppers++;
     }
     return { jets, choppers };
+}
+
+// Active chopper count (both teams) for a given selection map. Used to detect jets-only compositions
+// (0 choppers) when auto-defaulting the overtime tie-breaker setting on a mode change.
+function getActiveChopperCountFromSelection(sel: Record<string, number>): number {
+    let choppers = 0;
+    for (let i = 0; i < State.vehicles.slots.length; i++) {
+        const slot = State.vehicles.slots[i];
+        if (slot.family === "plane") continue;
+        const knobKey = getKnobKeyForSlot(slot);
+        const idx = sel[knobKey] !== undefined ? sel[knobKey] : 0;
+        const v = getReadyDialogSelectedVehicleForKnob(knobKey, idx, slot.anchorVehicle);
+        if (v !== undefined) choppers++;
+    }
+    return choppers;
 }
 
 function queueSequentialSpawns(slotIndices: number[]): void {

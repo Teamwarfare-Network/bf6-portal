@@ -23,7 +23,6 @@ function setAdminPanelChildWidgetsVisible(playerId: number, visible: boolean): v
         UI_TEST_LABEL_CLOCK_TIME_ID,
         UI_ADMIN_LABEL_T1_ROUND_KILLS_ID,
         UI_ADMIN_LABEL_T2_ROUND_KILLS_ID,
-        UI_ADMIN_TIEBREAKER_LABEL_ID,
         UI_ADMIN_TIEBREAKER_MODE_HEADER_ID,
         UI_ADMIN_TIEBREAKER_MODE_LABEL_ID,
         UI_ADMIN_LIVE_RESPAWN_TEXT_ID,
@@ -62,16 +61,6 @@ function setAdminPanelChildWidgetsVisible(playerId: number, visible: boolean): v
         if (border) mod.SetUIWidgetVisible(border, visible);
     }
 
-    for (const letter of ADMIN_TIEBREAKER_OVERRIDE_LETTERS) {
-        const buttonBaseId = UI_ADMIN_TIEBREAKER_BUTTON_ID + letter + "_";
-        const textBaseId = UI_ADMIN_TIEBREAKER_BUTTON_TEXT_ID + letter + "_";
-        const button = safeFind(buttonBaseId + playerId);
-        if (button) mod.SetUIWidgetVisible(button, visible);
-        const border = safeFind(buttonBaseId + playerId + "_BORDER");
-        if (border) mod.SetUIWidgetVisible(border, visible);
-        const text = safeFind(textBaseId + playerId);
-        if (text) mod.SetUIWidgetVisible(text, visible);
-    }
 }
 
 // Admin Panel lifecycle helper.
@@ -471,25 +460,6 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     mod.SetUITextSize(READY_HEADER6, 16);
     applyReadyDialogLabelTextColor(READY_HEADER6);
     mod.SetUIWidgetParent(READY_HEADER6, CONTAINER_BASE);
-
-    // "First to X Vehicle Kills" win-condition readout (top-left, below the headers). Re-added from the
-    // removed matchup row and reworded. X = pending active vehicle count (updates live as knobs change).
-    const READY_FIRST_TO_KILLS_ID = UI_READY_DIALOG_FIRST_TO_KILLS_ID + playerId;
-    mod.AddUIText(
-        READY_FIRST_TO_KILLS_ID,
-        mod.CreateVector(-11, 121, 0),
-        mod.CreateVector(900, 20, 0),
-        mod.UIAnchor.TopLeft,
-        mod.Message(mod.stringkeys.twl.readyDialog.firstToKillsFormat, Math.max(1, getActiveVehicleCountForTeamFromSelection(TeamID.Team1, State.round.modeConfig.vehicleSelectionIndexByKey || {}))),
-        eventPlayer
-    );
-    const READY_FIRST_TO_KILLS = mod.FindUIWidgetWithName(READY_FIRST_TO_KILLS_ID, mod.GetUIRoot());
-    if (READY_FIRST_TO_KILLS) {
-        mod.SetUIWidgetBgAlpha(READY_FIRST_TO_KILLS, 0);
-        mod.SetUITextSize(READY_FIRST_TO_KILLS, 16);
-        mod.SetUITextColor(READY_FIRST_TO_KILLS, COLOR_WARNING_YELLOW);
-        mod.SetUIWidgetParent(READY_FIRST_TO_KILLS, CONTAINER_BASE);
-    }
 
     const READY_MAP_LABEL_ID = UI_READY_DIALOG_MAP_LABEL_ID + playerId;
     const READY_MAP_VALUE_ID = UI_READY_DIALOG_MAP_VALUE_ID + playerId;
@@ -1180,17 +1150,20 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         mod.SetUITextSize(MODE_RESET_LABEL, 12);
     }
 
-    // v0.724: notices centered on the dialog (TopCenter anchor, position X=0, textAnchor Center).
-    // Prior TopRight anchor with offset placed them visually left-of-center; recenter both for parity.
+    // v0.750: the 3 red/yellow callouts moved UP into the empty band the removed vehicle cyclers left
+    // behind -- directly above the Confirm button, below the top-right knobs. Right-aligned (TopRight +
+    // CenterRight) so they sit over the right-hand config/button column and clear the top-left header text.
+    // Stacked bottom-to-top: ceiling-lock (row 1), unsaved (row 2), symmetric (row 3).
+    const noticeStackStep = bestOfButtonSizeY - 2;
     const UNSAVED_NOTICE_ID = UI_READY_DIALOG_UNSAVED_NOTICE_ID + playerId;
     const unsavedNoticeWidth = 700;
     modlib.ParseUI({
         name: UNSAVED_NOTICE_ID,
         type: "Text",
         playerId: eventPlayer,
-        position: [0, confirmY],
+        position: [-3, confirmY - (noticeStackStep * 2)],
         size: [unsavedNoticeWidth, bestOfButtonSizeY],
-        anchor: mod.UIAnchor.TopCenter,
+        anchor: mod.UIAnchor.TopRight,
         visible: false,
         padding: 0,
         bgAlpha: 0,
@@ -1199,7 +1172,7 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         textColor: COLOR_NOT_READY_RED,
         textAlpha: 1,
         textSize: 12,
-        textAnchor: mod.UIAnchor.Center,
+        textAnchor: mod.UIAnchor.CenterRight,
     });
     const UNSAVED_NOTICE = safeFind(UNSAVED_NOTICE_ID);
     if (UNSAVED_NOTICE) mod.SetUIWidgetParent(UNSAVED_NOTICE, CONTAINER_BASE);
@@ -1210,9 +1183,9 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         name: CEILING_LOCK_NOTICE_ID,
         type: "Text",
         playerId: eventPlayer,
-        position: [0, confirmY + bestOfButtonSizeY + 4],
+        position: [-3, confirmY - noticeStackStep],
         size: [unsavedNoticeWidth, bestOfButtonSizeY],
-        anchor: mod.UIAnchor.TopCenter,
+        anchor: mod.UIAnchor.TopRight,
         visible: false,
         padding: 0,
         bgAlpha: 0,
@@ -1221,7 +1194,7 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         textColor: COLOR_WARNING_YELLOW,
         textAlpha: 1,
         textSize: 12,
-        textAnchor: mod.UIAnchor.Center,
+        textAnchor: mod.UIAnchor.CenterRight,
     });
     const CEILING_LOCK_NOTICE = safeFind(CEILING_LOCK_NOTICE_ID);
     if (CEILING_LOCK_NOTICE) mod.SetUIWidgetParent(CEILING_LOCK_NOTICE, CONTAINER_BASE);
@@ -1231,10 +1204,10 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     const SYMMETRIC_WARNING_ID = UI_READY_DIALOG_SYMMETRIC_WARNING_ID + playerId;
     modlib.ParseUI({
         name: SYMMETRIC_WARNING_ID, type: "Text", playerId: eventPlayer,
-        position: [0, confirmY - (bestOfButtonSizeY + 4)], size: [unsavedNoticeWidth, bestOfButtonSizeY],
-        anchor: mod.UIAnchor.TopCenter, visible: false, padding: 0, bgAlpha: 0, bgFill: mod.UIBgFill.None,
+        position: [-3, confirmY - (noticeStackStep * 3)], size: [unsavedNoticeWidth, bestOfButtonSizeY],
+        anchor: mod.UIAnchor.TopRight, visible: false, padding: 0, bgAlpha: 0, bgFill: mod.UIBgFill.None,
         textLabel: mod.Message(mod.stringkeys.twl.readyDialog.symmetricCountWarning), textColor: COLOR_NOT_READY_RED,
-        textAlpha: 1, textSize: 12, textAnchor: mod.UIAnchor.Center,
+        textAlpha: 1, textSize: 12, textAnchor: mod.UIAnchor.CenterRight,
     });
     const SYMMETRIC_WARNING = safeFind(SYMMETRIC_WARNING_ID);
     if (SYMMETRIC_WARNING) mod.SetUIWidgetParent(SYMMETRIC_WARNING, CONTAINER_BASE);
@@ -1433,7 +1406,8 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     const PLAYERS_DEC_LABEL_ID = UI_READY_DIALOG_MINPLAYERS_DEC_LABEL_ID + playerId;
     const PLAYERS_INC_ID = UI_READY_DIALOG_MINPLAYERS_INC_ID + playerId;
     const PLAYERS_INC_LABEL_ID = UI_READY_DIALOG_MINPLAYERS_INC_LABEL_ID + playerId;
-    const playersY = matchupY + bestOfButtonSizeY + 20;
+    // Players row moved up one row into the slot vacated by the removed matchup ("Vehicles X v Y") row.
+    const playersY = matchupY;
     const playersLabelSizeX = bestOfLabelSizeX + 30;
     const playersLabelOffsetX = -72;
     const playersLabelOffsetY = 4;
@@ -1560,12 +1534,13 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
     const teamLabelWidth = READY_ROSTER_PANEL_WIDTH;
     const T1_LABEL_ID = UI_READY_DIALOG_TEAM1_LABEL_ID + playerId;
     const T2_LABEL_ID = UI_READY_DIALOG_TEAM2_LABEL_ID + playerId;
-    // D12: team names centered above their sections (textAnchor Center; full-width widget at top).
+    // D12: team headers centered above their sections (textAnchor Center; full-width widget at top).
+    // Top header labels the VEHICLES section (the knob grid sits directly below it).
     modlib.ParseUI({
         name: T1_LABEL_ID, type: "Text", playerId: eventPlayer,
         position: [0, teamLabelY], size: [teamLabelWidth, teamLabelHeight], anchor: mod.UIAnchor.TopLeft,
         visible: true, padding: 0, bgAlpha: 0, bgFill: mod.UIBgFill.None,
-        textLabel: mod.Message(getTeamNameKey(TeamID.Team1)), textColor: [1, 1, 1], textAlpha: 1, textSize: 20, textAnchor: mod.UIAnchor.Center,
+        textLabel: mod.Message(STR_READY_DIALOG_ROSTER_VEHICLES_HEADER_FORMAT, getTeamNameKey(TeamID.Team1)), textColor: [1, 1, 1], textAlpha: 1, textSize: 20, textAnchor: mod.UIAnchor.Center,
     });
     const T1_LABEL = mod.FindUIWidgetWithName(T1_LABEL_ID, mod.GetUIRoot());
     if (T1_LABEL) mod.SetUIWidgetParent(T1_LABEL, T1_CONTAINER);
@@ -1574,10 +1549,31 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         name: T2_LABEL_ID, type: "Text", playerId: eventPlayer,
         position: [0, teamLabelY], size: [teamLabelWidth, teamLabelHeight], anchor: mod.UIAnchor.TopLeft,
         visible: true, padding: 0, bgAlpha: 0, bgFill: mod.UIBgFill.None,
-        textLabel: mod.Message(getTeamNameKey(TeamID.Team2)), textColor: [1, 1, 1], textAlpha: 1, textSize: 20, textAnchor: mod.UIAnchor.Center,
+        textLabel: mod.Message(STR_READY_DIALOG_ROSTER_VEHICLES_HEADER_FORMAT, getTeamNameKey(TeamID.Team2)), textColor: [1, 1, 1], textAlpha: 1, textSize: 20, textAnchor: mod.UIAnchor.Center,
     });
     const T2_LABEL = mod.FindUIWidgetWithName(T2_LABEL_ID, mod.GetUIRoot());
     if (T2_LABEL) mod.SetUIWidgetParent(T2_LABEL, T2_CONTAINER);
+
+    // Second header labels the PLAYERS section, sitting just above the roster rows (below the knob grid).
+    const playersHeaderY = 114;
+    const T1_PLAYERS_LABEL_ID = UI_READY_DIALOG_TEAM1_PLAYERS_LABEL_ID + playerId;
+    const T2_PLAYERS_LABEL_ID = UI_READY_DIALOG_TEAM2_PLAYERS_LABEL_ID + playerId;
+    modlib.ParseUI({
+        name: T1_PLAYERS_LABEL_ID, type: "Text", playerId: eventPlayer,
+        position: [0, playersHeaderY], size: [teamLabelWidth, 20], anchor: mod.UIAnchor.TopLeft,
+        visible: true, padding: 0, bgAlpha: 0, bgFill: mod.UIBgFill.None,
+        textLabel: mod.Message(STR_READY_DIALOG_ROSTER_PLAYERS_HEADER_FORMAT, getTeamNameKey(TeamID.Team1)), textColor: [1, 1, 1], textAlpha: 1, textSize: 15, textAnchor: mod.UIAnchor.Center,
+    });
+    const T1_PLAYERS_LABEL = mod.FindUIWidgetWithName(T1_PLAYERS_LABEL_ID, mod.GetUIRoot());
+    if (T1_PLAYERS_LABEL) mod.SetUIWidgetParent(T1_PLAYERS_LABEL, T1_CONTAINER);
+    modlib.ParseUI({
+        name: T2_PLAYERS_LABEL_ID, type: "Text", playerId: eventPlayer,
+        position: [0, playersHeaderY], size: [teamLabelWidth, 20], anchor: mod.UIAnchor.TopLeft,
+        visible: true, padding: 0, bgAlpha: 0, bgFill: mod.UIBgFill.None,
+        textLabel: mod.Message(STR_READY_DIALOG_ROSTER_PLAYERS_HEADER_FORMAT, getTeamNameKey(TeamID.Team2)), textColor: [1, 1, 1], textAlpha: 1, textSize: 15, textAnchor: mod.UIAnchor.Center,
+    });
+    const T2_PLAYERS_LABEL = mod.FindUIWidgetWithName(T2_PLAYERS_LABEL_ID, mod.GetUIRoot());
+    if (T2_PLAYERS_LABEL) mod.SetUIWidgetParent(T2_PLAYERS_LABEL, T2_CONTAINER);
 
     // Per-spawner knob grid at the top of each roster box (3 cols x 2 rows): Jet1/Heli1/Heli3 over
     // Jet2/Heli2/Heli4. Lives in the space freed by capping the roster at 10 rows.
@@ -1606,8 +1602,8 @@ function createTeamSwitchUI(eventPlayer: mod.Player) {
         for (const id of legacyIds) delLegacy(id);
     }
 
-    // Roster rows now start below the knob grid (grid spans y=28 + 2 rows x 42 ~= 112).
-    const rowStartY = 118;
+    // Roster rows start below the knob grid (~112) AND the PLAYERS header (114 + 20 = 134).
+    const rowStartY = 138;
     const rowH = 26;
     const colNameX = 10;
     const colReadyX = 280;
@@ -2085,68 +2081,9 @@ function buildAdminPanelWidgets(eventPlayer: mod.Player, adminContainer: mod.UIW
         mod.SetUITextSize(tieBreakerModeLabel, 11);
     }
 
-    // Tie-Breaker Randomization Override label + 7 flag buttons (LAST).
-    const overrideLabelId = UI_ADMIN_TIEBREAKER_LABEL_ID + playerId;
-    const overrideLabelY = tieBreakerModeRowY + (buttonSizeY + rowSpacingY) + 2;
-    modlib.ParseUI({
-        name: overrideLabelId,
-        type: "Text",
-        playerId: eventPlayer,
-        position: [0, overrideLabelY],
-        size: [ADMIN_PANEL_CONTENT_WIDTH, ADMIN_PANEL_TIEBREAKER_LABEL_HEIGHT],
-        anchor: mod.UIAnchor.TopCenter,
-        visible: true,
-        padding: 0,
-        bgAlpha: 0,
-        bgFill: mod.UIBgFill.None,
-        textLabel: mod.Message(mod.stringkeys.twl.adminPanel.labels.tieBreakerOverride),
-        textColor: ADMIN_PANEL_LABEL_TEXT_COLOR_RGB,
-        textAlpha: 1,
-        textSize: 12,
-        textAnchor: mod.UIAnchor.Center,
-    });
-    const OVERRIDE_LABEL = safeFind(overrideLabelId);
-    applyAdminPanelLabelTextColor(OVERRIDE_LABEL);
-    if (OVERRIDE_LABEL) mod.SetUIWidgetParent(OVERRIDE_LABEL, adminContainer);
-
-    const overrideButtonsY = overrideLabelY + ADMIN_PANEL_TIEBREAKER_LABEL_HEIGHT + 4;
-    const overrideButtonSize = ADMIN_PANEL_TIEBREAKER_BUTTON_SIZE;
-    const overrideSpacing = ADMIN_PANEL_TIEBREAKER_BUTTON_SPACING;
-    const overrideButtonsWidth = (overrideButtonSize * ADMIN_TIEBREAKER_OVERRIDE_LETTERS.length)
-        + (overrideSpacing * (ADMIN_TIEBREAKER_OVERRIDE_LETTERS.length - 1));
-    const overrideBaseX = Math.floor((ADMIN_PANEL_CONTENT_WIDTH - overrideButtonsWidth) / 2);
-
-    for (let i = 0; i < ADMIN_TIEBREAKER_OVERRIDE_LETTERS.length; i++) {
-        const letter = ADMIN_TIEBREAKER_OVERRIDE_LETTERS[i];
-        const buttonId = UI_ADMIN_TIEBREAKER_BUTTON_ID + letter + "_" + playerId;
-        const textId = UI_ADMIN_TIEBREAKER_BUTTON_TEXT_ID + letter + "_" + playerId;
-        const buttonX = overrideBaseX + (overrideButtonSize + overrideSpacing) * i;
-
-        addOutlinedButton(
-            buttonId,
-            buttonX,
-            overrideButtonsY,
-            overrideButtonSize,
-            overrideButtonSize,
-            mod.UIAnchor.TopLeft,
-            adminContainer,
-            eventPlayer
-        );
-
-        const BUTTON_BORDER = safeFind(buttonId + "_BORDER");
-        const BUTTON_TEXT = addCenteredButtonText(
-            textId,
-            overrideButtonSize,
-            overrideButtonSize,
-            mod.Message(getOvertimeFlagLetterKeyForIndex(i)),
-            eventPlayer,
-            BUTTON_BORDER ?? adminContainer
-        );
-        if (BUTTON_TEXT) {
-            mod.SetUITextSize(BUTTON_TEXT, 12);
-            mod.SetUITextColor(BUTTON_TEXT, ADMIN_PANEL_BUTTON_TEXT_COLOR);
-        }
-    }
+    // (Tie-Breaker is the last admin row. The randomization-override label + A-G flag buttons were
+    // removed in v0.767 -- aircraft modes only ever field the single H heli flag, so forcing a zone
+    // is meaningless. Overtime itself is unchanged; it still random-selects the one valid zone.)
 
     syncAdminTieBreakerModeLabelForAllPlayers();
     syncAdminLiveRespawnLabelForAllPlayers();
@@ -2754,6 +2691,7 @@ type ReadyDialogModeConfigDiffState = {
     soldierHpDirty: boolean;
     vehiclesT1Dirty: boolean;
     vehiclesT2Dirty: boolean;
+    vehicleSelectionDirty: boolean;
     matchupDirty: boolean;
     playersDirty: boolean;
 };
@@ -2781,10 +2719,19 @@ function buildReadyDialogModeConfigDiffState(): ReadyDialogModeConfigDiffState {
     // and the "Target Kills to win Round: K" subtitle (kills target is derived from MATCHUP_PRESETS).
     const matchupDirty = cfg.matchupPresetIndex !== c.matchupPresetIndex;
     const playersDirty = cfg.autoStartMinActivePlayers !== c.autoStartMinActivePlayers;
+    // Per-knob vehicle selection dirty: any knob whose pending index differs from confirmed. This is
+    // what makes the "Unsaved changes!" notice fire when vehicles are changed via the knob grid (the
+    // grid already colors individual knobs; this surfaces it to the global notice + Confirm gating).
+    let vehicleSelectionDirty = false;
+    const pendSel = cfg.vehicleSelectionIndexByKey || {};
+    const confSel = c.vehicleSelectionIndexByKey || {};
+    for (const k of READY_DIALOG_ALL_VEHICLE_KNOB_KEYS) {
+        if ((pendSel[k] ?? 0) !== (confSel[k] ?? 0)) { vehicleSelectionDirty = true; break; }
+    }
     const hasUnsavedChanges =
         gameModeDirty || aircraftCeilingDirty || vehicleHealthDirty || soldierHpDirty
-        || vehiclesT1Dirty || vehiclesT2Dirty || matchupDirty || playersDirty;
-    return { hasUnsavedChanges, gameModeDirty, aircraftCeilingDirty, vehicleHealthDirty, soldierHpDirty, vehiclesT1Dirty, vehiclesT2Dirty, matchupDirty, playersDirty };
+        || vehiclesT1Dirty || vehiclesT2Dirty || vehicleSelectionDirty || matchupDirty || playersDirty;
+    return { hasUnsavedChanges, gameModeDirty, aircraftCeilingDirty, vehicleHealthDirty, soldierHpDirty, vehiclesT1Dirty, vehiclesT2Dirty, vehicleSelectionDirty, matchupDirty, playersDirty };
 }
 
 // Three-color scheme per Q3 answer: labels stay white (untouched here), confirmed values green, dirty values red.
@@ -2856,13 +2803,6 @@ function updateReadyDialogModeConfigForPid(pid: number): void {
     // D3 symmetric-count guard notice: visible when the pending T1/T2 vehicle counts differ.
     const symWarn = safeFind(UI_READY_DIALOG_SYMMETRIC_WARNING_ID + pid);
     if (symWarn) mod.SetUIWidgetVisible(symWarn, !isPendingVehicleCountSymmetric());
-
-    // "First to X Vehicle Kills" readout -- X = pending active vehicle count (per side).
-    const firstToKills = safeFind(UI_READY_DIALOG_FIRST_TO_KILLS_ID + pid);
-    if (firstToKills) {
-        const killsCount = Math.max(1, getActiveVehicleCountForTeamFromSelection(TeamID.Team1, State.round.modeConfig.vehicleSelectionIndexByKey || {}));
-        safeSetUITextLabel(firstToKills, mod.Message(mod.stringkeys.twl.readyDialog.firstToKillsFormat, killsCount));
-    }
 
     const gameLabel = safeFind(UI_READY_DIALOG_MODE_GAME_LABEL_ID + pid);
     if (gameLabel) safeSetUITextLabel(gameLabel, mod.Message(mod.stringkeys.twl.readyDialog.gameModeLabel));
@@ -3435,15 +3375,61 @@ function isReadyDialogGameModeJetsOnly2v2(gameModeKey: number): boolean {
     return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeJetsOnly2v2;
 }
 
-// Any mode that fields jets. Plane-inclusive modes use the vanilla ceiling (D8) and are hidden on
-// jetless maps (D15). Currently the two Jets Only modes; mixed modes added later join here.
-function isPlaneInclusiveGameMode(gameModeKey: number): boolean {
-    return isReadyDialogGameModeJetsOnly1v1(gameModeKey)
-        || isReadyDialogGameModeJetsOnly2v2(gameModeKey);
+function isReadyDialogGameModeJetsOnlyVanilla(gameModeKey: number): boolean {
+    return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeJetsOnlyVanilla;
 }
 
-function isReadyDialogGameModeCustom(gameModeKey: number): boolean {
+function isReadyDialogGameModeMixedAir6v6(gameModeKey: number): boolean {
+    return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeMixedAir6v6;
+}
+function isReadyDialogGameModeHelisOnlyCustom(gameModeKey: number): boolean {
     return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeHelisCustom;
+}
+function isReadyDialogGameModeJetsOnlyCustom(gameModeKey: number): boolean {
+    return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeJetsOnlyCustom;
+}
+function isReadyDialogGameModeMixedAirCustom(gameModeKey: number): boolean {
+    return gameModeKey === mod.stringkeys.twl.readyDialog.gameModeMixedAirCustom;
+}
+
+// Any mode that fields jets. Plane-inclusive modes use the vanilla ceiling (D8) and are hidden on
+// jetless maps (D15): the two Jets Only presets, the Mixed Air 6v6 preset, and the Jets/Mixed Custom
+// flavors (the Custom flavor string already encodes the composition -- Helis Only Custom is excluded).
+function isPlaneInclusiveGameMode(gameModeKey: number): boolean {
+    return isReadyDialogGameModeJetsOnly1v1(gameModeKey)
+        || isReadyDialogGameModeJetsOnly2v2(gameModeKey)
+        || isReadyDialogGameModeJetsOnlyVanilla(gameModeKey)
+        || isReadyDialogGameModeMixedAir6v6(gameModeKey)
+        || isReadyDialogGameModeJetsOnlyCustom(gameModeKey)
+        || isReadyDialogGameModeMixedAirCustom(gameModeKey);
+}
+
+// The single Custom slot displays one of three flavor labels depending on the live selection
+// composition: Helis Only (no jets), Jets Only (no choppers), or Mixed Air (both). All three are
+// "Custom" for mode-machine purposes (isReadyDialogGameModeCustom).
+function isReadyDialogGameModeCustom(gameModeKey: number): boolean {
+    return isReadyDialogGameModeHelisOnlyCustom(gameModeKey)
+        || isReadyDialogGameModeJetsOnlyCustom(gameModeKey)
+        || isReadyDialogGameModeMixedAirCustom(gameModeKey);
+}
+
+// Resolve which Custom flavor string fits the current pending vehicle selection.
+function resolveCustomGameModeKey(): number {
+    const sel = State.round.modeConfig.vehicleSelectionIndexByKey || {};
+    let jets = 0;
+    let helis = 0;
+    for (let i = 0; i < State.vehicles.slots.length; i++) {
+        const slot = State.vehicles.slots[i];
+        const knobKey = getKnobKeyForSlot(slot);
+        const idx = sel[knobKey] !== undefined ? sel[knobKey] : 0;
+        const v = getReadyDialogSelectedVehicleForKnob(knobKey, idx, slot.anchorVehicle);
+        if (v === undefined) continue;
+        if (slot.family === "plane") jets++;
+        else helis++;
+    }
+    if (jets > 0 && helis > 0) return mod.stringkeys.twl.readyDialog.gameModeMixedAirCustom;
+    if (jets > 0) return mod.stringkeys.twl.readyDialog.gameModeJetsOnlyCustom;
+    return mod.stringkeys.twl.readyDialog.gameModeHelisCustom;
 }
 
 // Builds the full per-knob selection map for a game-mode preset (which knobs on, which vehicle).
@@ -3469,7 +3455,28 @@ function buildDefaultVehicleSelectionForGameMode(gameModeKey: number): Record<st
     if (isReadyDialogGameModeLittleBirdsTwl2v2(gameModeKey)) { setHelis(2, HELI_OPT_LITTLEBIRD); return sel; }
     if (isReadyDialogGameModeLittleBirdsTwl1v1(gameModeKey)) { setHelis(1, HELI_OPT_LITTLEBIRD); return sel; }
     if (isReadyDialogGameModeJetsOnly1v1(gameModeKey)) { setPlanes(1, PLANE_OPT_F16, PLANE_OPT_JAS39); return sel; }
-    if (isReadyDialogGameModeJetsOnly2v2(gameModeKey)) { setPlanes(2, PLANE_OPT_F16, PLANE_OPT_JAS39); return sel; }
+    if (isReadyDialogGameModeJetsOnly2v2(gameModeKey) || isReadyDialogGameModeJetsOnlyVanilla(gameModeKey)) {
+        // 2 distinct jets per side: NATO (F-61V + F-97) on T1; JAS-39 + Su-57 on T2. Shared by the
+        // best-of-11 "Jets - TWL 2v2" and the best-of-3 "All Jets - BF6 Vanilla".
+        sel["team1Plane1"] = PLANE_OPT_F16;
+        sel["team1Plane2"] = PLANE_OPT_F22;
+        sel["team2Plane1"] = PLANE_OPT_JAS39;
+        sel["team2Plane2"] = PLANE_OPT_SU57;
+        return sel;
+    }
+    if (isReadyDialogGameModeMixedAir6v6(gameModeKey)) {
+        // 6 vehicles/side: one of each chopper type (Apache, Euro, BlackHawk, LittleBird) + 2 distinct
+        // jets. NATO jets (F-16 + F-22) on T1; the other pair (JAS-39 + Su-57) on T2.
+        sel["team1Heli1"] = sel["team2Heli1"] = HELI_OPT_APACHE;
+        sel["team1Heli2"] = sel["team2Heli2"] = HELI_OPT_EURO;
+        sel["team1Heli3"] = sel["team2Heli3"] = HELI_OPT_BLACKHAWK;
+        sel["team1Heli4"] = sel["team2Heli4"] = HELI_OPT_LITTLEBIRD;
+        sel["team1Plane1"] = PLANE_OPT_F16;
+        sel["team1Plane2"] = PLANE_OPT_F22;
+        sel["team2Plane1"] = PLANE_OPT_JAS39;
+        sel["team2Plane2"] = PLANE_OPT_SU57;
+        return sel;
+    }
     // Attack Helis family (Practice / Ladder / TWL 1v1) + Custom fallback: 1 Apache per side.
     setHelis(1, HELI_OPT_APACHE);
     return sel;
@@ -3488,7 +3495,11 @@ function isReadyDialogGameModeTwlPreset(gameModeKey: number): boolean {
     return isReadyDialogGameModeLadder(gameModeKey)
         || isReadyDialogGameModeTwl1v1(gameModeKey)
         || isReadyDialogGameModeLittleBirdsTwl2v2(gameModeKey)
-        || isReadyDialogGameModeLittleBirdsTwl1v1(gameModeKey);
+        || isReadyDialogGameModeLittleBirdsTwl1v1(gameModeKey)
+        // Jets - TWL 1v1/2v2 run best-of-11 (HP stays stock, ceiling stays vanilla via the
+        // plane-inclusive short-circuit). The "All Jets - BF6 Vanilla" preset is NOT here -> best-of-3.
+        || isReadyDialogGameModeJetsOnly1v1(gameModeKey)
+        || isReadyDialogGameModeJetsOnly2v2(gameModeKey);
 }
 
 function getReadyDialogPresetPlayersPerSide(gameModeKey: number): number {
@@ -3496,8 +3507,13 @@ function getReadyDialogPresetPlayersPerSide(gameModeKey: number): number {
     if (isReadyDialogGameModeLittleBirdsVanilla(gameModeKey)) return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_1V1;
     if (isReadyDialogGameModeLittleBirdsTwl1v1(gameModeKey)) return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_1V1;
     if (isReadyDialogGameModeTwl1v1(gameModeKey)) return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_1V1;
+    if (isReadyDialogGameModeJetsOnly1v1(gameModeKey)) return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_1V1; // 1 jet/side = 1 pilot
+    if (isReadyDialogGameModeJetsOnly2v2(gameModeKey)) return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_2V2; // 2 jets/side = 2 pilots
+    if (isReadyDialogGameModeJetsOnlyVanilla(gameModeKey)) return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_2V2; // All Jets = 2 jets/side
     // All Helis - BF6 Vanilla ships as 4v4 (slug kept as gameModeHelisOnlyVanilla; display renamed v0.728).
     if (isReadyDialogGameModeHelisOnlyVanilla(gameModeKey)) return 4;
+    // Mixed Air 6v6: Apache(2)+Euro(2)+BlackHawk(2)+LittleBird(1) + 2 jets(1 each) = 9 players/side.
+    if (isReadyDialogGameModeMixedAir6v6(gameModeKey)) return 9;
     // 2v2-style modes (TWL Ladder, Practice Vanilla, new Little Birds TWL 2v2).
     if (isReadyDialogGameModeLadder(gameModeKey)) return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_2V2;
     if (isReadyDialogGameModeLittleBirdsTwl2v2(gameModeKey)) return READY_DIALOG_MODE_PRESET_PLAYERS_PER_SIDE_TWL_2V2;
@@ -3514,6 +3530,7 @@ function getPresetMatchupIndexForGameMode(gameModeKey: number): number {
     // to 1v1 matchup (1 vehicle slot/team) but keep 2 players/side. All Helis = 4v4. Little Birds
     // TWL 2v2 = 2v2 matchup (2 slots/team).
     if (isReadyDialogGameModeHelisOnlyVanilla(gameModeKey)) return 3;        // 4v4
+    if (isReadyDialogGameModeMixedAir6v6(gameModeKey)) return 3;             // legacy field caps at 4v4; knob selection is authoritative
     if (isReadyDialogGameModeLittleBirdsTwl2v2(gameModeKey)) return 1;       // Little Birds - TWL 2v2 -> 2v2
     // Everything else stays at the 1v1 default (incl. Attack Helis Practice + Ladder + Twl1v1,
     // Little Birds Vanilla + Twl1v1).
@@ -3573,7 +3590,12 @@ function hasCustomCeilingOverride(ceilingValue: number): boolean {
     return Math.floor(ceilingValue) !== Math.floor(State.round.aircraftCeiling.mapDefaultHudCeiling);
 }
 
-// Custom mode always applies the numeric ceiling; Vanilla/Ladder apply only when configured to do so.
+// Authoritative ceiling decision. Custom (incl. Jets/Mixed flavors) applies the numeric ceiling ONLY
+// when its override is set -- so a manually-tuned ceiling sticks even on jet modes. Plane-inclusive
+// PRESETS still DEFAULT to vanilla via shouldApplyCustomCeilingForGameMode (no override = vanilla);
+// the user must opt in by adjusting the ceiling (which flips the mode to a Custom flavor + sets the
+// override). v0.751: removed the blanket plane-inclusive short-circuit that previously DISABLED a
+// custom ceiling on jet modes entirely (vanilla is only the starting point, not a hard lock).
 function shouldApplyCustomCeilingForConfig(gameModeKey: number, overrideEnabled: boolean): boolean {
     if (isReadyDialogGameModeCustom(gameModeKey)) {
         return overrideEnabled;
@@ -3584,7 +3606,19 @@ function shouldApplyCustomCeilingForConfig(gameModeKey: number, overrideEnabled:
 // Forces Custom mode without applying presets or mutating other settings.
 function ensureCustomGameModeForManualChange(): void {
     if (suppressReadyDialogModeAutoSwitch) return;
-    if (State.round.modeConfig.gameModeIndex === READY_DIALOG_GAME_MODE_CUSTOM_INDEX) return;
+    const customKey = resolveCustomGameModeKey();
+    if (State.round.modeConfig.gameModeIndex === READY_DIALOG_GAME_MODE_CUSTOM_INDEX) {
+        // Already Custom -- the composition may have changed (e.g. a jet was added), so re-resolve the
+        // flavor label (Helis Only / Jets Only / Mixed Air) and repaint if it flipped.
+        if (State.round.modeConfig.gameMode !== customKey) {
+            State.round.modeConfig.gameMode = customKey;
+            suppressReadyDialogModeAutoSwitch = true;
+            updateReadyDialogModeConfigForAllVisibleViewers();
+            suppressReadyDialogModeAutoSwitch = false;
+            updateSettingsSummaryHudForAllPlayers();
+        }
+        return;
+    }
     const priorMode = State.round.modeConfig.gameMode;
     const shouldKeepCeilingOverride =
         shouldApplyCustomCeilingForGameMode(priorMode)
@@ -3594,7 +3628,7 @@ function ensureCustomGameModeForManualChange(): void {
         State.round.modeConfig.aircraftCeilingOverridePending = true;
     }
     State.round.modeConfig.gameModeIndex = READY_DIALOG_GAME_MODE_CUSTOM_INDEX;
-    State.round.modeConfig.gameMode = READY_DIALOG_GAME_MODE_OPTIONS[READY_DIALOG_GAME_MODE_CUSTOM_INDEX];
+    State.round.modeConfig.gameMode = customKey;
     // v0.715: suppress detectAndApplyMatchingPreset during this nested refresh. The knob
     // mutation that triggered us hasn't happened yet -- if snap-back ran now, it would see
     // the unchanged preset-matching values and undo this flip-to-Custom. The setter's OUTER
@@ -3665,6 +3699,14 @@ function isReadyDialogModePresetActive(gameModeKey: number): boolean {
     // Soldier HP check: parallel to vehicle health.
     const expectedSoldierHp = getPresetSoldierHpMultiplierForGameMode(gameModeKey);
     if (Math.round(State.round.modeConfig.soldierHpMultiplier * 100) !== Math.round(expectedSoldierHp * 100)) return false;
+    // Per-knob vehicle selection must match the preset's recipe. Without this, a knob edit (which
+    // leaves the legacy vehicleIndexT1/T2 fields untouched) would still "match" the prior preset and
+    // detectAndApplyMatchingPreset would snap the user right back out of Custom. This is also what
+    // makes snap-back work: editing a knob back to a preset's exact recipe restores its label.
+    const expectedSel = buildDefaultVehicleSelectionForGameMode(gameModeKey);
+    for (const k of READY_DIALOG_ALL_VEHICLE_KNOB_KEYS) {
+        if ((State.round.modeConfig.vehicleSelectionIndexByKey[k] ?? 0) !== (expectedSel[k] ?? 0)) return false;
+    }
     return true;
 }
 
@@ -3735,6 +3777,11 @@ function setReadyDialogGameModeIndex(nextIndex: number, applyPreset: boolean = t
     if (applyPreset) {
         const applied = applyReadyDialogModePresetForGameMode(State.round.modeConfig.gameMode);
         if (applied) return;
+    }
+    // Landed on the Custom slot (OPTIONS holds the Helis Only Custom placeholder) -- relabel to the
+    // flavor that matches the current selection so cycling onto Custom shows e.g. "Mixed Air - Custom".
+    if (State.round.modeConfig.gameModeIndex === READY_DIALOG_GAME_MODE_CUSTOM_INDEX) {
+        State.round.modeConfig.gameMode = resolveCustomGameModeKey();
     }
     // v0.718: suppress detectAndApplyMatchingPreset during the fall-through update. When user
     // explicitly picks Custom via the cycler, applyReadyDialogModePresetForGameMode returns
@@ -3810,9 +3857,11 @@ function setReadyDialogVehicleIndexT2(nextIndex: number): void {
 function setReadyDialogVehicleSelectionIndexByKey(knobKey: string, nextIndex: number, _changedBy?: mod.Player): void {
     const count = getReadyDialogVehicleSelectionCount(knobKey);
     if (count <= 0) return;
-    ensureCustomGameModeForManualChange();
     const clamped = ((nextIndex % count) + count) % count;
+    // Store the new selection FIRST so ensureCustomGameModeForManualChange/resolveCustomGameModeKey
+    // see the updated composition (adding a jet must flip the flavor to Mixed Air, not the stale value).
     State.round.modeConfig.vehicleSelectionIndexByKey[knobKey] = clamped;
+    ensureCustomGameModeForManualChange();
     updateReadyDialogModeConfigForAllVisibleViewers();
 }
 
@@ -3840,7 +3889,7 @@ function buildReadyDialogKnobGridForTeam(eventPlayer: mod.Player, pid: number, c
     const gridStartY = 28;
     const cellH = 42;
     const labelH = 14;
-    const btnW = 22;
+    const btnW = 18; // slim arrow buttons -> wider value box so longer vehicle names fit at textSize 12
     const valueRowH = 22;
     const cells: { knobKey: string; labelMsg: mod.Message; col: number; row: number }[] = [
         { knobKey: teamPart + "Plane1", labelMsg: mod.Message(mod.stringkeys.twl.readyDialog.knobJetFormat, 1), col: 0, row: 0 },
@@ -3859,7 +3908,7 @@ function buildReadyDialogKnobGridForTeam(eventPlayer: mod.Player, pid: number, c
             name: labelName, type: "Text", playerId: eventPlayer,
             position: [cellX, cellY], size: [innerW, labelH], anchor: mod.UIAnchor.TopLeft,
             visible: true, padding: 0, bgAlpha: 0, bgFill: mod.UIBgFill.None,
-            textLabel: cell.labelMsg, textColor: [1, 1, 1], textAlpha: 1, textSize: 11, textAnchor: mod.UIAnchor.Center,
+            textLabel: cell.labelMsg, textColor: [1, 1, 1], textAlpha: 1, textSize: 12, textAnchor: mod.UIAnchor.Center,
         });
         const labelWidget = mod.FindUIWidgetWithName(labelName, mod.GetUIRoot());
         if (labelWidget) mod.SetUIWidgetParent(labelWidget, container);
@@ -3868,13 +3917,13 @@ function buildReadyDialogKnobGridForTeam(eventPlayer: mod.Player, pid: number, c
         const decLabel = addCenteredButtonText(UI_RD_KNOB_DEC_LABEL_ID + cell.knobKey + "_" + pid, btnW, valueRowH, mod.Message(mod.stringkeys.twl.ui.left), eventPlayer, decBorder ?? container);
         if (decLabel) mod.SetUITextSize(decLabel, 12);
         const valueName = UI_RD_KNOB_VALUE_ID + cell.knobKey + "_" + pid;
-        const valueX = cellX + btnW + 2;
-        const valueW = innerW - 2 * btnW - 4;
+        const valueX = cellX + btnW + 1;
+        const valueW = innerW - 2 * btnW - 2;
         modlib.ParseUI({
             name: valueName, type: "Text", playerId: eventPlayer,
             position: [valueX, valueY], size: [valueW, valueRowH], anchor: mod.UIAnchor.TopLeft,
             visible: true, padding: 0, bgAlpha: 0, bgFill: mod.UIBgFill.None,
-            textLabel: mod.Message(mod.stringkeys.twl.readyDialog.vehicleOptionOff), textColor: [1, 1, 1], textAlpha: 1, textSize: 11, textAnchor: mod.UIAnchor.Center,
+            textLabel: mod.Message(mod.stringkeys.twl.readyDialog.vehicleOptionOff), textColor: [1, 1, 1], textAlpha: 1, textSize: 12, textAnchor: mod.UIAnchor.Center,
         });
         const valueWidget = mod.FindUIWidgetWithName(valueName, mod.GetUIRoot());
         if (valueWidget) mod.SetUIWidgetParent(valueWidget, container);
@@ -3882,6 +3931,15 @@ function buildReadyDialogKnobGridForTeam(eventPlayer: mod.Player, pid: number, c
         const incLabel = addCenteredButtonText(UI_RD_KNOB_INC_LABEL_ID + cell.knobKey + "_" + pid, btnW, valueRowH, mod.Message(mod.stringkeys.twl.ui.right), eventPlayer, incBorder ?? container);
         if (incLabel) mod.SetUITextSize(incLabel, 12);
     }
+}
+
+// Map-default (anchor) vehicle for a knob, read from its bound spawner slot (undefined if no slot yet).
+function getAnchorVehicleForKnobKey(knobKey: string): mod.VehicleList | undefined {
+    for (let i = 0; i < State.vehicles.slots.length; i++) {
+        const slot = State.vehicles.slots[i];
+        if (getKnobKeyForSlot(slot) === knobKey) return slot.anchorVehicle;
+    }
+    return undefined;
 }
 
 // Renders all 12 knob value labels + dirty colors + locked "Not on this Map" state for one viewer.
@@ -3901,7 +3959,7 @@ function updateReadyDialogKnobGridForPid(pid: number): void {
                 safeSetUITextLabel(valueWidget, mod.Message(READY_DIALOG_VEHICLE_OPTION_NOT_ON_MAP_LABEL));
                 mod.SetUITextColor(valueWidget, COLOR_GRAY);
             } else {
-                safeSetUITextLabel(valueWidget, mod.Message(getReadyDialogVehicleSelectionLabelKey(knobKey, idx)));
+                safeSetUITextLabel(valueWidget, mod.Message(getReadyDialogVehicleSelectionLabelKey(knobKey, idx, getAnchorVehicleForKnobKey(knobKey))));
                 const dirty = idx !== (confirmedSel[knobKey] ?? 0);
                 mod.SetUITextColor(valueWidget, dirty ? COLOR_NOT_READY_RED : COLOR_READY_GREEN);
             }
@@ -3950,11 +4008,14 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
     // vehicles. needsRestartForVehicleChange flips true so the Restart button highlights red.
     const prevConfirmedT1 = cfg.confirmed.vehicleIndexT1;
     const prevConfirmedT2 = cfg.confirmed.vehicleIndexT2;
+    // Snapshot the confirmed per-knob selection before it is overwritten below -- used to detect a
+    // vehicle change and flag needsRestartForVehicleChange (parallel to the legacy vehicleIndex check).
+    const prevConfirmedSel = { ...(cfg.confirmed.vehicleSelectionIndexByKey || {}) };
     // Confirm is authoritative: it can force Custom if settings diverge from presets
     // and it is the only place we apply ceiling + vehicle overrides.
     if (!isReadyDialogGameModeCustom(cfg.gameMode) && !isReadyDialogModePresetActive(cfg.gameMode)) {
         cfg.gameModeIndex = READY_DIALOG_GAME_MODE_CUSTOM_INDEX;
-        cfg.gameMode = READY_DIALOG_GAME_MODE_OPTIONS[READY_DIALOG_GAME_MODE_CUSTOM_INDEX];
+        cfg.gameMode = resolveCustomGameModeKey();
     }
     // v0.716: confirmed.overrideEnabled is now a DIRECT COPY of pending.overridePending, not
     // a sticky-OR with the previous confirmed value. The old sticky-OR meant once-true-always-true:
@@ -4094,10 +4155,40 @@ function confirmReadyDialogModeConfig(changedBy?: mod.Player): void {
     //     multiplier per-deploy; existing soldiers aren't re-applied until next death/redeploy).
     // Compare HP values via 2-decimal round to absorb 0.01-step float drift (same pattern as the
     // dirty-state diff).
+    let vehicleSelectionChanged = false;
+    for (const k of READY_DIALOG_ALL_VEHICLE_KNOB_KEYS) {
+        if ((cfg.confirmed.vehicleSelectionIndexByKey[k] ?? 0) !== (prevConfirmedSel[k] ?? 0)) { vehicleSelectionChanged = true; break; }
+    }
+    // Chat broadcast on vehicle-lineup change (parity with the ceiling/HP/mode change announcements).
+    // Fires for any knob-grid edit that confirms, including within-flavor swaps (Apache -> Euro) that
+    // don't move the game-mode label.
+    if (changedBy && vehicleSelectionChanged) {
+        sendHighlightedWorldLogMessage(
+            mod.Message(mod.stringkeys.twl.readyDialog.vehiclesLineupChanged, safePlayerArg(changedBy)),
+            true,
+            undefined,
+            mod.stringkeys.twl.readyDialog.vehiclesLineupChanged
+        );
+    }
+    // Overtime tie-breaker auto-default by composition. Jets can't capture the objective, so switching
+    // TO a jets-only comp defaults the admin Tie-Breaker setting to Disabled (the admin button reflects
+    // it, and players can still flip it back on if they choose). Switching back to a chopper-involved
+    // comp restores the standard "Last Round ONLY" default. Only fires on a composition TRANSITION, so a
+    // deliberate admin override within the same class persists.
+    const prevHadChoppers = getActiveChopperCountFromSelection(prevConfirmedSel) > 0;
+    const nowHasChoppers = getActiveChopperCountFromSelection(cfg.confirmed.vehicleSelectionIndexByKey) > 0;
+    if (prevHadChoppers && !nowHasChoppers) {
+        State.admin.tieBreakerModeIndex = ADMIN_TIEBREAKER_MODE_DISABLED_INDEX; // jets-only default
+        syncAdminTieBreakerModeLabelForAllPlayers();
+    } else if (!prevHadChoppers && nowHasChoppers) {
+        State.admin.tieBreakerModeIndex = ADMIN_TIEBREAKER_MODE_DEFAULT_INDEX; // Last Round ONLY
+        syncAdminTieBreakerModeLabelForAllPlayers();
+    }
     const matchupOrVehicleChanged =
         cfg.confirmed.matchupPresetIndex !== prevConfirmedMatchup
         || cfg.confirmed.vehicleIndexT1 !== prevConfirmedT1
-        || cfg.confirmed.vehicleIndexT2 !== prevConfirmedT2;
+        || cfg.confirmed.vehicleIndexT2 !== prevConfirmedT2
+        || vehicleSelectionChanged;
     const hpChanged =
         Math.round(cfg.confirmed.vehicleHealthMultiplier * 100) !== Math.round(prevConfirmedHealth * 100)
         || Math.round(cfg.confirmed.soldierHpMultiplier * 100) !== Math.round(prevConfirmedSoldierHp * 100);
@@ -4133,8 +4224,12 @@ function updateTeamNameWidgetsForPid(pid: number): void {
 
     const readyT1 = safeFind(UI_READY_DIALOG_TEAM1_LABEL_ID + pid);
     const readyT2 = safeFind(UI_READY_DIALOG_TEAM2_LABEL_ID + pid);
-    if (readyT1) safeSetUITextLabel(readyT1, mod.Message(t1NameKey));
-    if (readyT2) safeSetUITextLabel(readyT2, mod.Message(t2NameKey));
+    if (readyT1) safeSetUITextLabel(readyT1, mod.Message(STR_READY_DIALOG_ROSTER_VEHICLES_HEADER_FORMAT, t1NameKey));
+    if (readyT2) safeSetUITextLabel(readyT2, mod.Message(STR_READY_DIALOG_ROSTER_VEHICLES_HEADER_FORMAT, t2NameKey));
+    const playersT1 = safeFind(UI_READY_DIALOG_TEAM1_PLAYERS_LABEL_ID + pid);
+    const playersT2 = safeFind(UI_READY_DIALOG_TEAM2_PLAYERS_LABEL_ID + pid);
+    if (playersT1) safeSetUITextLabel(playersT1, mod.Message(STR_READY_DIALOG_ROSTER_PLAYERS_HEADER_FORMAT, t1NameKey));
+    if (playersT2) safeSetUITextLabel(playersT2, mod.Message(STR_READY_DIALOG_ROSTER_PLAYERS_HEADER_FORMAT, t2NameKey));
 
     updateReadyDialogModeConfigForPid(pid);
 }
@@ -4289,12 +4384,32 @@ function updateSettingsSummaryHudForPid(pid: number): void {
             mod.Message(STR_HUD_SETTINGS_VEHICLES_COMPOSITION_TEAM_FORMAT, getTeamNameKey(TeamID.Team2), c2.jets, c2.choppers)
         );
     }
-    // Matchup line retired by the per-knob model -- hide it (the two composition lines replace it).
+    // "First to X Vehicle Kills" -- reuses the empty slot where the old vehicle-count (matchup) line
+    // sat in the settings panel. Green to flag the win condition. X = confirmed round kills target.
     if (refs.settingsVehiclesMatchupText) {
-        mod.SetUIWidgetVisible(refs.settingsVehiclesMatchupText, false);
+        mod.SetUIWidgetVisible(refs.settingsVehiclesMatchupText, true);
+        mod.SetUITextColor(refs.settingsVehiclesMatchupText, COLOR_READY_GREEN);
+        safeSetUITextLabel(refs.settingsVehiclesMatchupText, mod.Message(mod.stringkeys.twl.readyDialog.firstToKillsFormat, Math.max(1, Math.floor(State.round.killsTarget))));
     }
     if (refs.settingsPlayersText) {
         safeSetUITextLabel(refs.settingsPlayersText, mod.Message(STR_HUD_SETTINGS_PLAYERS_FORMAT, autoStartCounts.left, autoStartCounts.right));
+    }
+    // Player-facing Overtime readout (when-based, 3 states). Reflects "will I see the tie-breaker
+    // objective?" on a single axis: "Off" = admin setting Disabled (auto-set for jets-only comps);
+    // "This Round" = active in the round being played (All Rounds, or the final round under Last-Round-
+    // ONLY); "Final Round" = enabled but not yet (Last-Round-ONLY before the last round). The third
+    // possible boolean combo (Disabled + active) can't occur, so this is 3 states, not 4.
+    if (refs.settingsOvertimeText) {
+        const otMode = State.admin.tieBreakerModeIndex;
+        let otValueKey: number;
+        if (normalizeTieBreakerModeIndex(otMode) === ADMIN_TIEBREAKER_MODE_DISABLED_INDEX) {
+            otValueKey = STR_HUD_SETTINGS_OVERTIME_OFF;
+        } else if (computeTieBreakerEnabledForRound(State.round.current, State.round.max, otMode)) {
+            otValueKey = STR_HUD_SETTINGS_OVERTIME_THIS_ROUND;
+        } else {
+            otValueKey = STR_HUD_SETTINGS_OVERTIME_FINAL_ROUND;
+        }
+        safeSetUITextLabel(refs.settingsOvertimeText, mod.Message(STR_HUD_SETTINGS_OVERTIME_FLAG_FORMAT, otValueKey));
     }
 }
 

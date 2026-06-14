@@ -233,15 +233,13 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
             { slotNumber: 3, pos: mod.CreateVector( 496.253,  83.173,  -600.711), rot: mod.CreateVector( 0.0,     -90.251,   0.0),       vehicle: VEHICLE_AH6M_PAX     },
             { slotNumber: 4, pos: mod.CreateVector( 427.213,  85.239,  -587.691), rot: mod.CreateVector( 0.0,     -92.212,   0.0),       vehicle: mod.VehicleList.UH60_Pax     },
         ],
-        // TODO(plane-spawn): PLACEHOLDER jet anchors for Mirak Valley -- copied from heli slots 1-2 so they
-        // sit on valid ground. Author the real runway positions/yaw before shipping. Jets are 2 per team.
         team1PlaneSpawns: [                       //posX      posY      posZ                             rotX      rotY      rotZ
-            { slotNumber: 1, pos: mod.CreateVector(-500.019,  81.257,  -292.899), rot: mod.CreateVector( 0.0,      98.404,   0.0),       vehicle: mod.VehicleList.F16          },
-            { slotNumber: 2, pos: mod.CreateVector(-498.055,  82.222,  -328.527), rot: mod.CreateVector( 0.0,      50.634,   0.0),       vehicle: mod.VehicleList.F16          },
+            { slotNumber: 1, pos: mod.CreateVector(-480.925,  81.355,  -306.407), rot: mod.CreateVector( 0.0,      161.795,  0.0),       vehicle: mod.VehicleList.F16          },
+            { slotNumber: 2, pos: mod.CreateVector(-462.641,  82.177,  -317.932), rot: mod.CreateVector( 0.0,      160.101,  0.0),       vehicle: mod.VehicleList.F22          },
         ],
         team2PlaneSpawns: [                       //posX      posY      posZ                             rotX      rotY      rotZ
-            { slotNumber: 1, pos: mod.CreateVector( 454.968,  84.306,  -612.495), rot: mod.CreateVector( 0.0,     -4.780,    0.0),       vehicle: mod.VehicleList.JAS39        },
-            { slotNumber: 2, pos: mod.CreateVector( 461.746,  83.898,  -585.902), rot: mod.CreateVector( 0.0,     -157.452,  0.0),       vehicle: mod.VehicleList.JAS39        },
+            { slotNumber: 1, pos: mod.CreateVector( 440.641,  84.683,  -601.762), rot: mod.CreateVector( 0.0,     -93.550,   0.0),       vehicle: mod.VehicleList.JAS39        },
+            { slotNumber: 2, pos: mod.CreateVector( 440.807,  84.694,  -617.233), rot: mod.CreateVector( 0.0,     -90.253,   0.0),       vehicle: mod.VehicleList.SU57         },
         ],
     },
 
@@ -303,11 +301,11 @@ const MAP_CONFIGS: Record<MapKey, MapConfig> = {
         // Jet anchors sourced from conquest Operation Firestorm spatial (team1/2JetSpawns). 2 per team.
         team1PlaneSpawns: [                       //posX      posY      posZ                             rotX      rotY      rotZ
             { slotNumber: 1, pos: mod.CreateVector(-703.347,  132.686,  259.311), rot: mod.CreateVector( 0.0,      52.372,   0.0),       vehicle: mod.VehicleList.F16          },
-            { slotNumber: 2, pos: mod.CreateVector(-698.153,  132.564,  291.282), rot: mod.CreateVector( 0.0,      51.454,   0.0),       vehicle: mod.VehicleList.F16          },
+            { slotNumber: 2, pos: mod.CreateVector(-698.153,  132.564,  291.282), rot: mod.CreateVector( 0.0,      51.454,   0.0),       vehicle: mod.VehicleList.F22          },
         ],
         team2PlaneSpawns: [                       //posX      posY      posZ                             rotX      rotY      rotZ
             { slotNumber: 1, pos: mod.CreateVector( 612.576,  110.580, -316.309), rot: mod.CreateVector( 180.0,   -126.0,    180.0),     vehicle: mod.VehicleList.JAS39        },
-            { slotNumber: 2, pos: mod.CreateVector( 583.212,  110.595, -309.980), rot: mod.CreateVector( 180.0,   -126.0,    180.0),     vehicle: mod.VehicleList.JAS39        },
+            { slotNumber: 2, pos: mod.CreateVector( 583.212,  110.595, -309.980), rot: mod.CreateVector( 180.0,   -126.0,    180.0),     vehicle: mod.VehicleList.SU57         },
         ],
     },
 

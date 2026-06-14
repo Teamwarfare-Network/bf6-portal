@@ -759,7 +759,9 @@ type HudRefs = {
     settingsVehiclesT1Text?: mod.UIWidget;
     settingsVehiclesT2Text?: mod.UIWidget;
     settingsVehiclesMatchupText?: mod.UIWidget;
+    brandingFirstToKillsText?: mod.UIWidget;
     settingsPlayersText?: mod.UIWidget;
+    settingsOvertimeText?: mod.UIWidget;
 
     // H-P1 altitude warning dialog (per-pid). Container is a full-screen opaque black backplate
     // that blocks the player's view while shown, with title + body + countdown digit centered.
@@ -1002,8 +1004,6 @@ interface GameState {
         trackingEnabled: boolean;
         unlockReminderSent: boolean;
         configValid: boolean;
-        // True only when an admin override actually selects the zone for this round.
-        overrideUsedThisRound: boolean;
         tieBreakerEnabledThisRound: boolean;
         candidateZones: OvertimeZoneCandidate[];
         activeAreaTriggerId?: number;
@@ -1057,9 +1057,6 @@ interface GameState {
     admin: {
         actionCount: number;
         debugLoopActive: boolean;
-        tieBreakerOverrideIndex?: number;
-        // Match-level flag if any tie-breaker override was used.
-        tieBreakerOverrideUsed: boolean;
         tieBreakerModeIndex: number;
         liveRespawnEnabled: boolean;
         // Admin-togglable: when true, aircraft is destroyed 1s after the altitude-warning countdown hits 0.
@@ -1252,7 +1249,6 @@ const State: GameState = {
         trackingEnabled: false,
         unlockReminderSent: false,
         configValid: false,
-        overrideUsedThisRound: false,
         tieBreakerEnabledThisRound: false,
         candidateZones: [],
         activeAreaTriggerId: undefined,
@@ -1305,8 +1301,6 @@ const State: GameState = {
     admin: {
         actionCount: 0,
         debugLoopActive: false,
-        tieBreakerOverrideIndex: undefined,
-        tieBreakerOverrideUsed: false,
         tieBreakerModeIndex: ADMIN_TIEBREAKER_MODE_DEFAULT_INDEX,
         liveRespawnEnabled: DEFAULT_LIVE_RESPAWN_ENABLED,
         ceilingPunishEnabled: DEFAULT_CEILING_PUNISH_ENABLED,

@@ -446,6 +446,9 @@ function syncAdminTieBreakerModeLabelForAllPlayers(): void {
         if (!label) continue;
         safeSetUITextLabel(label, mod.Message(labelKey));
     }
+    // Keep the upper-left "Overtime Flag: Enabled/Disabled" settings readout in sync. This is the single
+    // choke point for every tie-breaker change (admin dec/inc + the composition auto-default on Confirm).
+    updateSettingsSummaryHudForAllPlayers();
 }
 
 function getAdminLiveRespawnLabelKey(): number {
@@ -545,39 +548,12 @@ function syncTieBreakerEnabledForCurrentRound(): void {
     );
 }
 
-function resetOvertimeSelectionForOverride(): void {
-    // Clears the active overtime selection without touching stage/active flags.
-    // Used for admin overrides before the reveal stage.
-    hideOvertimeFlagPreviewIcon();
-    State.flag.activeAreaTriggerId = undefined;
-    State.flag.activeAreaTrigger = undefined;
-    State.flag.activeSectorId = undefined;
-    State.flag.activeSector = undefined;
-    State.flag.activeWorldIconId = undefined;
-    State.flag.activeWorldIcon = undefined;
-    State.flag.activeCapturePointId = undefined;
-    State.flag.activeCapturePoint = undefined;
-    State.flag.activeCandidateIndex = undefined;
-    State.flag.selectedZoneLetterKey = undefined;
-    State.flag.ownerTeam = 0;
-    State.flag.progress = 0.5;
-    State.flag.t1Count = 0;
-    State.flag.t2Count = 0;
-    State.flag.playersInZoneByPid = {};
-    State.flag.vehicleOccupantsByVid = {};
-    State.flag.vehicleTeamByVid = {};
-    State.flag.lastUiSnapshotByPid = {};
-    State.flag.lastGlobalProgressPercent = -1;
-    State.flag.lastMembershipPruneAtSeconds = 0;
-}
-
 function selectOvertimeZoneForRound(): boolean {
     // Select once per round; zone order defines A/B/C... letters.
     if (!isTieBreakerEnabledForRound()) return false;
     if (!State.flag.configValid) return false;
     const zones = State.flag.candidateZones;
     if (zones.length === 0) return false;
-    const canOverride = State.flag.stage < OvertimeStage.Visible;
     const hasActiveSelection = State.flag.activeAreaTriggerId !== undefined;
 
     const validIndices: number[] = [];
@@ -596,22 +572,12 @@ function selectOvertimeZoneForRound(): boolean {
         return false;
     }
 
-    let overrideIndex = canOverride ? State.admin.tieBreakerOverrideIndex : undefined;
-    if (overrideIndex !== undefined && validIndices.indexOf(overrideIndex) === -1) {
-        State.admin.tieBreakerOverrideIndex = undefined;
-        overrideIndex = undefined;
-    }
-
-    if (hasActiveSelection && overrideIndex === undefined) return true;
+    if (hasActiveSelection) return true;
 
     const portalArray = buildPortalNumberArray(validIndices);
-    const selectedIndex = overrideIndex !== undefined ? overrideIndex : (mod.RandomValueInArray(portalArray) as number);
+    const selectedIndex = mod.RandomValueInArray(portalArray) as number;
     if (selectedIndex === undefined) return false;
     const selectedZone = zones[selectedIndex];
-
-    if (hasActiveSelection && overrideIndex !== undefined && State.flag.activeCandidateIndex !== selectedIndex) {
-        resetOvertimeSelectionForOverride();
-    }
 
     State.flag.activeCandidateIndex = selectedIndex;
     State.flag.selectedZoneLetterKey = getOvertimeFlagLetterKeyForCandidateIndex(selectedIndex);
@@ -629,16 +595,6 @@ function selectOvertimeZoneForRound(): boolean {
         return false;
     }
 
-    // Track override usage only when it actually dictates the selection.
-    if (overrideIndex !== undefined) {
-        State.flag.overrideUsedThisRound = true;
-        State.admin.tieBreakerOverrideUsed = true;
-    }
-
-    if (overrideIndex !== undefined) {
-        State.admin.tieBreakerOverrideIndex = undefined;
-    }
-
     return State.flag.activeAreaTriggerId !== undefined;
 }
 
@@ -651,19 +607,7 @@ function getActiveOvertimeSector(): mod.Sector | undefined {
     return sector;
 }
 
-function applyAdminTieBreakerOverride(selectedIndex: number): void {
-    if (!isTieBreakerEnabledForRound()) return;
-    if (!State.flag.configValid) return;
-    if (State.flag.stage >= OvertimeStage.Visible) return;
-    State.admin.tieBreakerOverrideIndex = selectedIndex;
-    if (!isRoundLive()) return;
-    const selected = selectOvertimeZoneForRound();
-    if (selected) {
-        State.flag.trackingEnabled = true;
-    }
-}
-
-//#endregion -------------------- Overtime Flag Capture - Selection + Overrides --------------------
+//#endregion -------------------- Overtime Flag Capture - Selection --------------------
 
 
 
@@ -678,7 +622,6 @@ function resetOvertimeFlagState(): void {
     State.flag.active = false;
     State.flag.trackingEnabled = false;
     State.flag.unlockReminderSent = false;
-    State.flag.overrideUsedThisRound = false;
     State.flag.activeAreaTriggerId = undefined;
     State.flag.activeAreaTrigger = undefined;
     State.flag.activeSectorId = undefined;
@@ -2330,12 +2273,11 @@ function enterOvertimeVisibleStage(remainingSeconds: number): void {
     refreshOvertimeUiVisibilityForAllPlayers();
     updateOvertimeHudForAllPlayers();
     const letterKey = getActiveOvertimeFlagLetterKey();
-    const overrideUsed = State.flag.overrideUsedThisRound; // Admin override uses the red callout + text.
     void showGlobalTitleSubtitleMessageForAllPlayers(
-        mod.Message(overrideUsed ? STR_OVERTIME_TITLE_VISIBLE_ADMIN : STR_OVERTIME_TITLE_VISIBLE, letterKey),
+        mod.Message(STR_OVERTIME_TITLE_VISIBLE, letterKey),
         undefined,
-        overrideUsed ? COLOR_RED : COLOR_WHITE,
-        overrideUsed ? COLOR_RED : COLOR_WHITE,
+        COLOR_WHITE,
+        COLOR_WHITE,
         BIG_MESSAGE_DURATION_SECONDS,
         SMALL_MESSAGE_LAYOUT
     );
