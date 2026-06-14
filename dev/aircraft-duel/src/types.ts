@@ -509,7 +509,7 @@ const ALTIMETER_HUD_LABEL_TEXT_SIZE = 18;
 const ALTIMETER_HUD_CARD_OFFSET_Y = 24;       // card sits 24px below top of root (under the label)
 const ALTIMETER_HUD_CARD_OFFSET_X = 35;       // v0.685: card+text inset 35px within root so card center (root+35+65) aligns with the wider label's center (root+0+100)
 const ALTIMETER_HUD_LABEL_OFFSET_X = 0;       // warning label X offset within root (0 = root's left edge; label centered horizontally above card via Center textAnchor)
-const ALTIMETER_HUD_CARD_WIDTH = 130;         // black backplate; tight around "Altitude: YYY" text
+const ALTIMETER_HUD_CARD_WIDTH = 160;         // v0.769: 130->160 so "Altitude: 1000+" (4 digits) fits on one line
 const ALTIMETER_HUD_CARD_HEIGHT = 44;
 const ALTIMETER_HUD_TEXT_LEFT_PADDING = 10;   // text X offset inside root (sibling of card, overlays it)
 const ALTIMETER_HUD_TEXT_SIZE = 24;
@@ -730,6 +730,8 @@ const JOIN_PROMPT_BODY_SEQUENCE_KEYS: number[] = [
 
 // Add any body keys to skip (e.g., tips with empty strings).
 const JOIN_PROMPT_BODY_SEQUENCE_SKIP_KEYS: number[] = [
+    STR_JOIN_PROMPT_BODY_TIP12,
+    STR_JOIN_PROMPT_BODY_TIP13,
     STR_JOIN_PROMPT_BODY_TIP14,
     STR_JOIN_PROMPT_BODY_TIP15,
     STR_JOIN_PROMPT_BODY_TIP16,

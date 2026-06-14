@@ -2,7 +2,7 @@
   "twl": {
     "hud": {
       "branding": {
-        "title": "teamwarfare . net | TWL Aerial Showdown (v0.767)",
+        "title": "teamwarfare . net | TWL Aerial Showdown (v0.770)",
         "subtitle": "Experience Code: - - - -"
       },
       "roundText": "ROUND",
@@ -172,10 +172,10 @@
         "tip7": "Tip 7: All gadgets except torch and supply crates are banned:\n - Despite what is selected, you will only get these two gadgets by design.\n - Leaving or entering your main base resupplies your vehicle ammo crates.\n - Ammo resupply boxes, if unused, will persist between rounds.",
         "tip8": "Tip 8: Vehicles marked 'abandoned' slowly take damage over time:\n - This experience is curated for Vehicles only, do not stray too far from them.\n - After 5m, if no players are within this range they are classified as 'abandoned'.\n - Abandoned Vehicles take damage slowly; they can be repaired back up if needed.\n - Vehicles destroyed by abandonment still award points during a live round.",
         "tip9": "Tip 9: The captain goes down with his ship:\n - Repairing your friends is allowed, as long as your vehicle is still standing.\n - If you lose your vehicle, please redeploy and let the round play out without you.\n - You can repair torch enemy vehicles but only as long as your own vehicle is still in play.",
-        "tip10": "Tip 10: Vehicle Registration is required for scoring accuracy:\n - If you see no 'registration' message when entering a vehicle, get out and get back in.\n - If round results are innaccurate, you can address this with the admin panel.",
-        "tip11": "Tip 11: Be a sportsman, not a dingus:\n - It is encouraged to set your chat to configure to display when there is activity.\n - Communicate with your opponent when you have bugs, issues, or need to pause.\n - Agreements made in chat should be binding: have fun and try different things.",
-        "tip12": "Tip 12: This Experience is in active development! If bugs occur...\n - Access the Admin Panel in the top right while the 'Ready Up' screen is visible.\n - The Admin panel has global audit messaging and admin action counts.\n - Opening or using the Admin panel gives a global notification for all to see.\n - If any Admin buttons are used, the victory dialog shows this for awareness / visibility.\n - The Admin panel is for fixing innocent mistakes only (avoid using it unless necessary).",
-        "tip13": "Tip 13: If extra vehicles remain in the main base from toggling down a mode.\n(e.g. going from 3v3 to 2v2)\n - It's best to blow these vehicles up before the round starts.\n - Anti-spawn camp detection protects against getting points\n - But this triggers only if they're destroyed during their origin.\n - Do not abuse this feature, that'd be a douchey thing to do.",
+        "tip10": "Tip 10: Be a sportsman, not a dingus:\n - It is encouraged to set your chat to configure to display when there is activity.\n - Communicate with your opponent when you have bugs, issues, or need to pause.\n - Agreements made in chat should be binding: have fun and try different things.",
+        "tip11": "Tip 11: This Experience is in active development! If bugs occur...\n - Access the Admin Panel in the top right while the 'Ready Up' screen is visible.\n - The Admin panel has global audit messaging and admin action counts.\n - Opening or using the Admin panel gives a global notification for all to see.\n - If any Admin buttons are used, the victory dialog shows this for awareness / visibility.\n - The Admin panel is for fixing innocent mistakes only (avoid using it unless necessary).",
+        "tip12": "12-skip: remove from JOIN_PROMPT_BODY_SEQUENCE_SKIP_KEYS in order to display",
+        "tip13": "13-skip: remove from JOIN_PROMPT_BODY_SEQUENCE_SKIP_KEYS in order to display",
         "tip14": "14-skip: remove from JOIN_PROMPT_BODY_SEQUENCE_SKIP_KEYS in order to display",
         "tip15": "15-skip: remove from JOIN_PROMPT_BODY_SEQUENCE_SKIP_KEYS in order to display",
         "tip16": "16-skip: remove from JOIN_PROMPT_BODY_SEQUENCE_SKIP_KEYS in order to display",

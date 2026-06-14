@@ -3072,45 +3072,20 @@ async function runAircraftWarningLoop(): Promise<void> {
     const STAGE_YELLOW = 1;    // altimeter yellow + "ALTITUDE WARNING" label
     const STAGE_BLACK = 2;     // STAGE_YELLOW + 960x540 black-screen dialog
 
-    // Fix 4 (v0.692): teardown sentinel. When customEnabled flips false, tear down once and
-    // then skip the per-tick AllPlayers iteration until it flips back to true. Saves 5
-    // AllPlayers iterations / sec in Vanilla mode + on any map with useCustomCeiling: false.
-    let teardownComplete = false;
-
     while (true) {
         await mod.Wait(AIRCRAFT_SOFT_CEILING_TICK_SECONDS);
 
-        if (!State.round.aircraftCeiling.customEnabled) {
-            if (!teardownComplete) {
-                // Vanilla mode: tear down everything we own (one-shot).
-                for (const pidStr in State.players.altitudeWarningVisibleByPid) {
-                    const pid = Number(pidStr);
-                    if (State.players.altitudeWarningVisibleByPid[pid]) {
-                        setAltitudeWarningVisibleForPid(pid, false);
-                        delete lastCountdownByPid[pid];
-                    }
-                }
-                const players = mod.AllPlayers();
-                const count = mod.CountOf(players);
-                for (let i = 0; i < count; i++) {
-                    const player = mod.ValueInArray(players, i) as mod.Player;
-                    const pid = safeGetPlayerId(player);
-                    if (pid === undefined) continue;
-                    setAltimeterVisibleForPid(pid, false);
-                    setAltimeterWarningLabelVisibleForPid(pid, false);
-                    delete lastAltimeterTextYByPid[pid];
-                    delete lastAltimeterStageByPid[pid];
-                    delete lastWarningLabelVisibleByPid[pid];
-                }
-                teardownComplete = true;
-            }
-            continue;
-        }
-        teardownComplete = false;  // reset when custom ceiling re-enables (admin Confirm flip)
-
-        const softY = getAircraftSoftCeilingWorldY();
-        const warningY = getAircraftWarningCeilingWorldY();
-        if (softY <= 0) continue;
+        // v0.768: the altimeter is ALWAYS shown for aircraft occupants, regardless of ceiling mode.
+        // When the custom ceiling is OFF (vanilla), the per-tick loop still runs but forces STAGE_GREEN
+        // for every pilot: the altimeter reads green, with no warning label, no black-screen dialog, and
+        // no ceiling punish. The 3-stage thresholds (soft/warning/black) apply only when customEnabled is
+        // true. Pre-v0.768 this tore the altimeter down and skipped the loop entirely in vanilla.
+        const customEnabled = State.round.aircraftCeiling.customEnabled;
+        const softY = customEnabled ? getAircraftSoftCeilingWorldY() : 0;
+        const warningY = customEnabled ? getAircraftWarningCeilingWorldY() : 0;
+        // Custom mode: skip the tick until thresholds resolve. Vanilla mode: softY stays 0 and the stage
+        // is forced green below, so we must NOT skip -- the altimeter has to keep updating.
+        if (customEnabled && softY <= 0) continue;
         const now = mod.GetMatchTimeElapsed();
 
         const players = mod.AllPlayers();
@@ -3166,8 +3141,11 @@ async function runAircraftWarningLoop(): Promise<void> {
             ensureAltimeterUiForPlayer(player);
             setAltimeterVisibleForPid(pid, true);
 
-            // Determine 3-stage state (still uses world-Y thresholds — the math doesn't change).
-            const stage = posY > warningY ? STAGE_BLACK : (posY > softY ? STAGE_YELLOW : STAGE_GREEN);
+            // Determine 3-stage state. In vanilla (custom ceiling off) it is always green -- no warning
+            // is possible. In custom mode it uses the world-Y thresholds (the math doesn't change).
+            const stage = customEnabled
+                ? (posY > warningY ? STAGE_BLACK : (posY > softY ? STAGE_YELLOW : STAGE_GREEN))
+                : STAGE_GREEN;
 
             // Update altimeter text — diff-gated on integer HUD altitude so we don't rewrite 5×/sec
             // for sub-1m drift.
